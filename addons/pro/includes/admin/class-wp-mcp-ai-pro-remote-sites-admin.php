@@ -8758,6 +8758,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$tmp_file = wp_tempnam( 'teams-bot-' . $connection_id . '.zip' );
 		if ( ! $tmp_file ) {
 			wp_send_json_error( __( 'Could not create a temporary file. Please check server write permissions.', 'mcp-ai-wpoos-pro' ) );

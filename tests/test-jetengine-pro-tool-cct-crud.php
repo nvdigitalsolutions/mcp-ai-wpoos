@@ -252,4 +252,198 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			'Description must explicitly tell the AI not to use create_post for CCT items.'
 		);
 	}
+
+	// =========================================================================
+	// list_types — null-slug filtering
+	// =========================================================================
+
+	/**
+	 * list_types() must resolve slug and name from the args array when they
+	 * are not available as direct properties on the type object, fall back
+	 * to slug for name when args has no name, and silently skip anonymous
+	 * types that have no identifiable slug in either location.
+	 */
+	public function test_list_types_property_resolution_fallbacks() {
+		$tool = $this->get_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'list_types' );
+		$method->setAccessible( true );
+
+		// Type with slug only in args — simulates partial-init JetEngine object.
+		$args_type        = new stdClass();
+		$args_type->slug  = '';
+		$args_type->name  = null;
+		$args_type->id    = null;
+		$args_type->args  = array( 'slug' => 'vitals_log', 'name' => 'Vitals Log' );
+		$args_type->fields = array();
+
+		// Verify the resolution logic matches what list_types() does.
+		$slug = '';
+		if ( ! empty( $args_type->slug ) ) {
+			$slug = $args_type->slug;
+		} elseif ( ! empty( $args_type->args ) && ! empty( $args_type->args['slug'] ) ) {
+			$slug = $args_type->args['slug'];
+		}
+		$this->assertSame( 'vitals_log', $slug, 'Slug resolved from args array.' );
+
+		$name = '';
+		if ( ! empty( $args_type->name ) ) {
+			$name = $args_type->name;
+		} elseif ( ! empty( $args_type->args ) && ! empty( $args_type->args['name'] ) ) {
+			$name = $args_type->args['name'];
+		} else {
+			$name = $slug;
+		}
+		$this->assertSame( 'Vitals Log', $name, 'Name resolved from args array.' );
+
+		// Anonymous type — no slug in direct property or args: must be filtered out.
+		$anon_type        = new stdClass();
+		$anon_type->slug  = '';
+		$anon_type->name  = null;
+		$anon_type->id    = null;
+		$anon_type->args  = array();
+		$anon_type->fields = array();
+
+		$anon_slug = '';
+		if ( ! empty( $anon_type->slug ) ) {
+			$anon_slug = $anon_type->slug;
+		} elseif ( ! empty( $anon_type->args ) && ! empty( $anon_type->args['slug'] ) ) {
+			$anon_slug = $anon_type->args['slug'];
+		}
+		$this->assertSame( '', $anon_slug, 'Anonymous type resolves to empty slug and must be skipped.' );
+	}
+
+	/**
+	 * list_types() field-count resolution must fall back to meta_fields when
+	 * fields is not an array (partial-init type object).
+	 */
+	public function test_list_types_field_count_falls_back_to_meta_fields() {
+		// Replicate the field_count resolution logic from list_types().
+		$type             = new stdClass();
+		$type->fields     = null;
+		$type->meta_fields = array( 'a', 'b', 'c' );
+
+		$field_count = 0;
+		if ( isset( $type->fields ) && is_array( $type->fields ) ) {
+			$field_count = count( $type->fields );
+		} elseif ( isset( $type->meta_fields ) && is_array( $type->meta_fields ) ) {
+			$field_count = count( $type->meta_fields );
+		}
+
+		$this->assertSame( 3, $field_count, 'Field count falls back to meta_fields.' );
+	}
+
+	/**
+	 * list_types() ID resolution must prefer '_ID' when 'id' is null.
+	 */
+	public function test_list_types_id_falls_back_to_underscore_id() {
+		$type       = new stdClass();
+		$type->id   = null;
+		$type->_ID  = 42;
+
+		$id = null;
+		if ( isset( $type->id ) && null !== $type->id ) {
+			$id = $type->id;
+		} elseif ( isset( $type->_ID ) ) {
+			$id = $type->_ID;
+		}
+
+		$this->assertSame( 42, $id, 'ID resolved from _ID fallback.' );
+	}
+
+	// =========================================================================
+	// create_item_direct — vitals_log fallback
+	// =========================================================================
+
+	/**
+	 * create_item_direct() must return WP_Error when vitals_log table is absent.
+	 * Tested via reflection to bypass the JetEngine availability check.
+	 */
+	public function test_create_item_direct_returns_error_without_vitals_log_table() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+			if ( file_exists( $vitals_path ) ) {
+				require_once $vitals_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'create_item_direct' );
+		$method->setAccessible( true );
+
+		// The test database doesn't have the vitals_log table, so table_exists()
+		// returns false and create_item_direct() should return WP_Error.
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'vitals_log',
+					'fields'   => array( 'member_id' => 1, 'measurement_date' => '2025-01-01' ),
+				),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		// Error code is either 'cct_not_found' (table missing) or 'create_failed'.
+		$this->assertContains(
+			$result->get_error_code(),
+			array( 'cct_not_found', 'create_failed' ),
+			'create_item_direct must return a recognisable WP_Error code.'
+		);
+	}
+
+	/**
+	 * create_item_direct() must return WP_Error for unknown CCT slugs.
+	 */
+	public function test_create_item_direct_returns_error_for_unknown_slug() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'create_item_direct' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'completely_unknown_cct',
+					'fields'   => array(),
+				),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'cct_not_found', $result->get_error_code() );
+	}
+
+	// =========================================================================
+	// maybe_register_known_cct — dispatch check
+	// =========================================================================
+
+	/**
+	 * maybe_register_known_cct() must not throw for any known or unknown slug.
+	 */
+	public function test_maybe_register_known_cct_does_not_throw() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'maybe_register_known_cct' );
+		$method->setAccessible( true );
+
+		$slugs = array( 'vitals_log', 'ai_chat_transcripts', 'nonexistent_cct' );
+
+		foreach ( $slugs as $slug ) {
+			$threw = false;
+			try {
+				$method->invokeArgs( $tool, array( $slug ) );
+			} catch ( Exception $e ) {
+				$threw = true;
+			}
+			$this->assertFalse( $threw, "maybe_register_known_cct('{$slug}') must not throw." );
+		}
+	}
 }

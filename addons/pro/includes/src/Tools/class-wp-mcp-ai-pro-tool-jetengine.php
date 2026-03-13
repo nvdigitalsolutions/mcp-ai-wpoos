@@ -188,6 +188,11 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * List available CCT types.
 	 *
+	 * Handles environments where JetEngine returns partially-initialised type
+	 * objects whose slug/name are stored inside the args array rather than as
+	 * direct properties, and silently skips anonymous/system types that have
+	 * no identifiable slug.
+	 *
 	 * @return array
 	 */
 	protected function list_types() {
@@ -205,11 +210,50 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$result = array();
 
 		foreach ( $types as $type ) {
+			// Resolve slug — direct property first, then args array.
+			$slug = '';
+			if ( ! empty( $type->slug ) ) {
+				$slug = $type->slug;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+				$slug = $type->args['slug'];
+			}
+
+			// Skip anonymous / system types that have no identifiable slug.
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			// Resolve name — direct property, args array, then slug as fallback.
+			$name = '';
+			if ( ! empty( $type->name ) ) {
+				$name = $type->name;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+				$name = $type->args['name'];
+			} else {
+				$name = $slug;
+			}
+
+			// Resolve numeric ID — try 'id' first, then '_ID' (raw DB column name).
+			$id = null;
+			if ( isset( $type->id ) && null !== $type->id ) {
+				$id = $type->id;
+			} elseif ( isset( $type->_ID ) ) {
+				$id = $type->_ID;
+			}
+
+			// Resolve field count from whichever property is populated.
+			$field_count = 0;
+			if ( isset( $type->fields ) && is_array( $type->fields ) ) {
+				$field_count = count( $type->fields );
+			} elseif ( isset( $type->meta_fields ) && is_array( $type->meta_fields ) ) {
+				$field_count = count( $type->meta_fields );
+			}
+
 			$result[] = array(
-				'id'     => $type->id,
-				'slug'   => $type->slug,
-				'name'   => $type->name,
-				'fields' => count( $type->fields ),
+				'id'     => $id,
+				'slug'   => $slug,
+				'name'   => $name,
+				'fields' => $field_count,
 			);
 		}
 
@@ -316,6 +360,11 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Create a new CCT item.
 	 *
+	 * Falls back to a direct database insert for CCTs (such as vitals_log) that
+	 * have their own programmatic CCT class when JetEngine's manager cannot
+	 * locate the type object (e.g. because the CCT was registered programmatically
+	 * and the manager hasn't fully reloaded it into memory yet).
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error
@@ -349,10 +398,9 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
-			return new WP_Error(
-				'cct_not_found',
-				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
-			);
+			// Fall back to a direct DB insert for CCT slugs that have a
+			// dedicated programmatic class (e.g. vitals_log).
+			return $this->create_item_direct( $arguments );
 		}
 
 		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
@@ -367,6 +415,52 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return $type->db->get_item( $item_id );
+	}
+
+	/**
+	 * Attempt a direct database insert for CCT slugs that ship with a
+	 * dedicated programmatic CCT class (vitals_log).
+	 *
+	 * This is the fallback path for create_item() when JetEngine's manager
+	 * cannot locate the type object in memory — which can happen when a CCT is
+	 * registered programmatically and the manager hasn't reloaded it yet.
+	 *
+	 * @param array $arguments Tool arguments (must include 'cct_slug' and optionally 'fields').
+	 * @return array|WP_Error  Minimal item array on success, WP_Error on failure.
+	 */
+	protected function create_item_direct( $arguments ) {
+		$slug   = sanitize_key( $arguments['cct_slug'] );
+		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
+
+		if ( 'vitals_log' === $slug && class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			if ( ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+				return new WP_Error(
+					'cct_not_found',
+					__( 'CCT type not found and vitals_log table does not exist.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$member_id = isset( $fields['member_id'] ) ? absint( $fields['member_id'] ) : 0;
+			$item_id   = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $fields );
+
+			if ( ! $item_id ) {
+				return new WP_Error(
+					'create_failed',
+					__( 'Failed to create vitals_log item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return array(
+				'_ID'    => $item_id,
+				'cct'    => $slug,
+				'fields' => $fields,
+			);
+		}
+
+		return new WP_Error(
+			'cct_not_found',
+			__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 
 	/**
@@ -510,6 +604,11 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * uses `get_content_types()` and guards against future API changes with a
 	 * `method_exists()` check.
 	 *
+	 * When the type is not initially found this method attempts to trigger its
+	 * programmatic registration (if a matching CCT class exists) and retries
+	 * the lookup once — this covers environments where the type was registered
+	 * via `add_action( 'init', ... )` but the manager hasn't reloaded it yet.
+	 *
 	 * @param object $module CCT module instance (i.e. `$module_wrapper->instance`), which
 	 *                       exposes a `manager` property with a `get_content_types()` method.
 	 * @param string $slug   CCT slug to look up.
@@ -522,6 +621,49 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		$type = $module->manager->get_content_types( sanitize_key( $slug ) );
+
+		if ( is_object( $type ) ) {
+			return $type;
+		}
+
+		// Type not found in manager — try to trigger programmatic registration
+		// for known CCT slugs and reload the manager.
+		$this->maybe_register_known_cct( $slug );
+
+		// Reload content types if the data DB supports it.
+		if ( ! empty( $module->manager->data ) && ! empty( $module->manager->data->db ) &&
+			method_exists( $module->manager->data->db, 'query_raw' ) ) {
+			try {
+				$module->manager->data->db->query_raw( 'post_types' );
+			} catch ( Exception $e ) {
+				// Manager reload is best-effort; log and continue.
+				error_log( 'WP_MCP_AI JetEngine manager reload failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+		}
+
+		$type = $module->manager->get_content_types( sanitize_key( $slug ) );
 		return is_object( $type ) ? $type : null;
+	}
+
+	/**
+	 * Trigger programmatic registration for known CCT slugs that ship with
+	 * dedicated CCT classes but may not yet be loaded in the JetEngine manager.
+	 *
+	 * @param string $slug CCT slug.
+	 * @return void
+	 */
+	protected function maybe_register_known_cct( $slug ) {
+		switch ( sanitize_key( $slug ) ) {
+			case 'vitals_log':
+				if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+					WP_MCP_AI_JetEngine_Vitals_Log_CCT::maybe_register_cct();
+				}
+				break;
+			case 'ai_chat_transcripts':
+				if ( class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+					WP_MCP_AI_JetEngine_CCT::maybe_register_cct();
+				}
+				break;
+		}
 	}
 }
