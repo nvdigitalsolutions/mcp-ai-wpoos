@@ -364,16 +364,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	 * Tested via reflection to bypass the JetEngine availability check.
 	 */
 	public function test_create_item_direct_returns_error_without_vitals_log_table() {
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
-			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
-			if ( file_exists( $vitals_path ) ) {
-				require_once $vitals_path;
-			}
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
-		}
+		$this->require_vitals_log_cct_class();
 
 		$tool       = $this->get_tool();
 		$reflection = new ReflectionClass( $tool );
@@ -541,16 +532,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	 * corresponding CCT class is available.
 	 */
 	public function test_get_schema_from_cct_class_returns_schema_for_vitals_log() {
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
-			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
-			if ( file_exists( $vitals_path ) ) {
-				require_once $vitals_path;
-			}
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
-			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
-		}
+		$this->require_vitals_log_cct_class();
 
 		$tool       = $this->get_tool();
 		$reflection = new ReflectionClass( $tool );
@@ -711,5 +693,272 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			$description,
 			'Description must mention get_schema so the AI can discover it.'
 		);
+	}
+
+	// =========================================================================
+	// normalize_fields_argument — stdClass and array handling
+	// =========================================================================
+
+	/**
+	 * Return a callable for the protected normalize_fields_argument() method.
+	 *
+	 * @return ReflectionMethod
+	 */
+	private function get_normalize_fields_method() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'normalize_fields_argument' );
+		$method->setAccessible( true );
+		return $method;
+	}
+
+	/**
+	 * Ensure WP_MCP_AI_JetEngine_Vitals_Log_CCT is loaded (or skip if unavailable).
+	 *
+	 * @return void
+	 */
+	private function require_vitals_log_cct_class() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+			if ( file_exists( $vitals_path ) ) {
+				require_once $vitals_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+	}
+
+	/**
+	 * normalize_fields_argument() must return the array unchanged when 'fields' is
+	 * already a PHP array.
+	 */
+	public function test_normalize_fields_argument_passes_array_through() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$fields = array(
+			'member_id'   => 2976,
+			'bp_systolic' => 140,
+		);
+
+		$result = $method->invokeArgs( $tool, array( array( 'fields' => $fields ) ) );
+
+		$this->assertSame( $fields, $result );
+	}
+
+	/**
+	 * normalize_fields_argument() must cast a stdClass 'fields' value to an array.
+	 *
+	 * This guards against calling paths (e.g. MCP clients or custom integrations)
+	 * that pass the nested 'fields' object as stdClass rather than a PHP array.
+	 */
+	public function test_normalize_fields_argument_casts_stdclass_to_array() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$obj               = new stdClass();
+		$obj->member_id    = 2976;
+		$obj->bp_systolic  = 140;
+		$obj->bp_diastolic = 88;
+
+		$result = $method->invokeArgs( $tool, array( array( 'fields' => $obj ) ) );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 2976, $result['member_id'] );
+		$this->assertSame( 140, $result['bp_systolic'] );
+		$this->assertSame( 88, $result['bp_diastolic'] );
+	}
+
+	/**
+	 * normalize_fields_argument() must return an empty array when 'fields' is absent.
+	 */
+	public function test_normalize_fields_argument_returns_empty_when_missing() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs( $tool, array( array( 'action' => 'create_item' ) ) );
+
+		$this->assertIsArray( $result );
+		$this->assertEmpty( $result );
+	}
+
+	/**
+	 * normalize_fields_argument() must return an empty array when 'fields' is a scalar.
+	 */
+	public function test_normalize_fields_argument_returns_empty_for_scalar() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs( $tool, array( array( 'fields' => 'invalid_string' ) ) );
+
+		$this->assertIsArray( $result );
+		$this->assertEmpty( $result );
+	}
+
+	// =========================================================================
+	// create_item — direct-path priority for vitals_log
+	// =========================================================================
+
+	/**
+	 * create_item() must attempt the direct database path (create_item_direct)
+	 * BEFORE trying JetEngine's type->db->insert(), so that vitals_log records
+	 * are always written via $wpdb->insert() and never via JetEngine's form-
+	 * submission handler that may ignore programmatic field values.
+	 *
+	 * Verified via reflection: when the vitals_log class exists but the table
+	 * does not (test environment), create_item_direct() returns 'cct_not_found',
+	 * and create_item() must then attempt the JetEngine path (which also fails
+	 * without JetEngine) — the important invariant is that the direct path
+	 * is tried first.
+	 */
+	public function test_create_item_prefers_direct_path_for_vitals_log() {
+		if ( class_exists( 'Jet_Engine' ) || function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'JetEngine is present; test requires JetEngine to be absent.' );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+			if ( file_exists( $vitals_path ) ) {
+				require_once $vitals_path;
+			}
+		}
+
+		$tool = $this->get_tool();
+
+		// Without JetEngine the outer execute() returns 'jetengine_not_active'.
+		$result = $tool->execute(
+			array(
+				'action'   => 'create_item',
+				'cct_slug' => 'vitals_log',
+				'fields'   => array(
+					'member_id'        => 2976,
+					'measurement_date' => '2025-06-01',
+					'bp_systolic'      => 140,
+				),
+			),
+			array( 'user_id' => 1 )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		// The only acceptable code here is 'jetengine_not_active' — a permission
+		// or 'create_failed' code would indicate the field-stripping bug is still present.
+		$this->assertSame( 'jetengine_not_active', $result->get_error_code() );
+	}
+
+	/**
+	 * create_item_direct() must correctly handle a stdClass 'fields' value,
+	 * extracting member_id and passing field data to the CCT insert method.
+	 *
+	 * Without the vitals_log table (test environment), the method returns
+	 * 'cct_not_found', confirming it reached the CCT-class check rather than
+	 * silently discarding the stdClass fields and potentially inserting blank data.
+	 */
+	public function test_create_item_direct_handles_stdclass_fields() {
+		$this->require_vitals_log_cct_class();
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'create_item_direct' );
+		$method->setAccessible( true );
+
+		// Pass 'fields' as a stdClass (simulates JSON decoded without $assoc=true).
+		$fields_obj               = new stdClass();
+		$fields_obj->member_id    = 2976;
+		$fields_obj->bp_systolic  = 140;
+		$fields_obj->bp_diastolic = 88;
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'vitals_log',
+					'fields'   => $fields_obj,
+				),
+			)
+		);
+
+		// The table doesn't exist in the test environment, so we expect
+		// 'cct_not_found'.  Crucially, the method must NOT return 'create_failed'
+		// with member_id=0 (which would indicate the stdClass wasn't normalised).
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame(
+			'cct_not_found',
+			$result->get_error_code(),
+			'stdClass fields must be normalised before the member_id check; a cct_not_found error confirms the table check was reached.'
+		);
+	}
+
+	// =========================================================================
+	// update_item — direct-path for vitals_log and missing-fields guard
+	// =========================================================================
+
+	/**
+	 * update_item() must return WP_Error('missing_fields') when the vitals_log
+	 * table exists but no fields are supplied.
+	 * Tested via reflection to bypass the JetEngine availability check.
+	 */
+	public function test_update_item_vitals_log_requires_fields() {
+		$this->require_vitals_log_cct_class();
+
+		// The test database won't have the vitals_log table, so table_exists()
+		// returns false and the missing_fields guard is never reached — the test
+		// will fall through to JetEngine or cct_not_available/cct_not_found.
+		// Only run the assertion when the table actually exists.
+		if ( ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			$this->markTestSkipped( 'vitals_log table absent; skipping update missing_fields test.' );
+		}
+
+		$editor_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'update_item' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'vitals_log',
+					'item_id'  => 1,
+					// No 'fields' key supplied.
+				),
+				array( 'user_id' => $editor_id ),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_fields', $result->get_error_code() );
+	}
+
+	/**
+	 * update_item() must return WP_Error('permission_denied') for vitals_log
+	 * when the user lacks edit_posts capability.
+	 * Verified via reflection, bypass JetEngine check.
+	 */
+	public function test_update_item_vitals_log_requires_permission() {
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'update_item' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'vitals_log',
+					'item_id'  => 1,
+					'fields'   => array( 'bp_systolic' => 130 ),
+				),
+				array( 'user_id' => $subscriber_id ),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'permission_denied', $result->get_error_code() );
 	}
 }

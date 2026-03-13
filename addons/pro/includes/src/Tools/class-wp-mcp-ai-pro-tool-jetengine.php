@@ -536,10 +536,17 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Create a new CCT item.
 	 *
-	 * Falls back to a direct database insert for CCTs (such as vitals_log) that
-	 * have their own programmatic CCT class when JetEngine's manager cannot
-	 * locate the type object (e.g. because the CCT was registered programmatically
-	 * and the manager hasn't fully reloaded it into memory yet).
+	 * For CCTs that ship with a dedicated programmatic insert class (e.g.
+	 * vitals_log) the direct database path is always attempted first.  This
+	 * is necessary because JetEngine's type->db->insert() is designed for
+	 * form submissions and may read field values from $_POST/$_REQUEST
+	 * internally rather than from the supplied array, which causes blank
+	 * records to be created when called programmatically.  The reliable
+	 * $wpdb->insert() path in the dedicated class is preferred in all cases.
+	 *
+	 * When the direct path does not handle the requested slug (returns the
+	 * 'cct_not_found' error code) the method falls back to JetEngine's type
+	 * API, covering CCTs that have no dedicated programmatic class.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
@@ -571,15 +578,31 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
+		// For CCTs with a dedicated programmatic insert class (e.g. vitals_log),
+		// always try the direct $wpdb->insert() path first.  JetEngine's
+		// type->db->insert() is unreliable for programmatic writes and can
+		// silently discard the supplied field values, producing blank records.
+		$direct_result = $this->create_item_direct( $arguments );
+		if ( ! is_wp_error( $direct_result ) ) {
+			return $direct_result;
+		}
+
+		// create_item_direct() returns 'cct_not_found' for slugs it cannot handle.
+		// Any other error code (e.g. 'create_failed') means a handler was found but
+		// the insert failed — surface that error rather than attempting JetEngine's
+		// unreliable path.
+		if ( 'cct_not_found' !== $direct_result->get_error_code() ) {
+			return $direct_result;
+		}
+
+		// No dedicated handler for this slug — fall through to JetEngine's type API.
 		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
-			// Fall back to a direct DB insert for CCT slugs that have a
-			// dedicated programmatic class (e.g. vitals_log).
-			return $this->create_item_direct( $arguments );
+			return $direct_result;
 		}
 
-		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
+		$fields = $this->normalize_fields_argument( $arguments );
 
 		$item_id = $type->db->insert( $fields );
 
@@ -597,50 +620,76 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * Attempt a direct database insert for CCT slugs that ship with a
 	 * dedicated programmatic CCT class (vitals_log).
 	 *
-	 * This is the fallback path for create_item() when JetEngine's manager
-	 * cannot locate the type object in memory — which can happen when a CCT is
-	 * registered programmatically and the manager hasn't reloaded it yet.
+	 * Using $wpdb->insert() directly is the only reliable way to persist
+	 * programmatic field values for these CCTs.  JetEngine's handler
+	 * create_item() reads from $_POST/$_REQUEST internally and ignores the
+	 * supplied data array when invoked outside of a form submission context.
 	 *
 	 * @param array $arguments Tool arguments (must include 'cct_slug' and optionally 'fields').
 	 * @return array|WP_Error  Minimal item array on success, WP_Error on failure.
 	 */
 	protected function create_item_direct( $arguments ) {
 		$slug   = sanitize_key( $arguments['cct_slug'] );
-		$fields = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
+		$fields = $this->normalize_fields_argument( $arguments );
 
-		if ( 'vitals_log' === $slug && class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
-			if ( ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
-				return new WP_Error(
-					'cct_not_found',
-					__( 'CCT type not found and vitals_log table does not exist.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-
-			$member_id = isset( $fields['member_id'] ) ? absint( $fields['member_id'] ) : 0;
-			$item_id   = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $fields );
-
-			if ( ! $item_id ) {
-				return new WP_Error(
-					'create_failed',
-					__( 'Failed to create vitals_log item.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-
-			return array(
-				'_ID'    => $item_id,
-				'cct'    => $slug,
-				'fields' => $fields,
+		if ( 'vitals_log' !== $slug ) {
+			return new WP_Error(
+				'cct_not_found',
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		return new WP_Error(
-			'cct_not_found',
-			__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
+		if ( ! $this->is_vitals_log_direct_path_available() ) {
+			return new WP_Error(
+				'cct_not_found',
+				__( 'CCT type not found and vitals_log table does not exist.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$member_id = isset( $fields['member_id'] ) ? absint( $fields['member_id'] ) : 0;
+		$item_id   = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $fields );
+
+		if ( ! $item_id ) {
+			return new WP_Error(
+				'create_failed',
+				__( 'Failed to create vitals_log item.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array(
+			'_ID'    => $item_id,
+			'cct'    => $slug,
+			'fields' => $fields,
 		);
 	}
 
 	/**
+	 * Check whether the vitals_log direct-path (using $wpdb) is available.
+	 *
+	 * Returns true when the dedicated CCT class is loaded and its database
+	 * table exists, meaning a direct $wpdb->insert()/$wpdb->update() can be
+	 * performed without going through JetEngine's form-submission handler.
+	 *
+	 * Centralising this two-part predicate avoids repeating it in both
+	 * create_item_direct() and update_item().  The slug check ('vitals_log')
+	 * is intentionally left to each caller so this method remains reusable
+	 * if additional CCTs gain dedicated programmatic classes in the future.
+	 *
+	 * @return bool True when the vitals_log table is present and the class is loaded.
+	 */
+	protected function is_vitals_log_direct_path_available() {
+		return class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) &&
+			WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists();
+	}
+
+	/**
 	 * Update an existing CCT item.
+	 *
+	 * For CCTs with a dedicated programmatic class (vitals_log), the direct
+	 * $wpdb->update() path is always preferred.  This mirrors the same
+	 * rationale as create_item(): JetEngine's type->db->update() may ignore
+	 * the supplied field array when invoked outside of a form submission
+	 * context.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
@@ -663,6 +712,35 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
+		$item_id = absint( $arguments['item_id'] );
+		$fields  = $this->normalize_fields_argument( $arguments );
+
+		// For vitals_log, use the reliable direct $wpdb->update() path.
+		if ( 'vitals_log' === sanitize_key( $arguments['cct_slug'] ) && $this->is_vitals_log_direct_path_available() ) {
+
+			if ( empty( $fields ) ) {
+				return new WP_Error(
+					'missing_fields',
+					__( 'No fields provided for update_item action.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$updated = WP_MCP_AI_JetEngine_Vitals_Log_CCT::update_fields( $item_id, $fields );
+
+			if ( ! $updated ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update vitals_log item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return array(
+				'_ID'    => $item_id,
+				'cct'    => 'vitals_log',
+				'fields' => $fields,
+			);
+		}
+
 		$module = jet_engine()->modules->get_module( 'custom-content-types' );
 
 		if ( ! $module || ! $module->instance ) {
@@ -680,9 +758,6 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
-
-		$item_id = absint( $arguments['item_id'] );
-		$fields  = isset( $arguments['fields'] ) && is_array( $arguments['fields'] ) ? $arguments['fields'] : array();
 
 		$result = $type->db->update( $fields, array( '_ID' => $item_id ) );
 
@@ -769,6 +844,37 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$item_id
 			),
 		);
+	}
+
+	/**
+	 * Normalize the 'fields' entry from tool arguments into a PHP array.
+	 *
+	 * WordPress REST API decodes the top-level 'arguments' object as an
+	 * associative array (json_decode with $assoc=true), but nested JSON
+	 * objects may survive as stdClass instances depending on the calling
+	 * path (e.g. MCP server clients or custom integrations that pass
+	 * arguments differently).  This helper ensures the 'fields' value is
+	 * always a plain PHP array before it is used in database operations.
+	 *
+	 * @param array $arguments Tool arguments as received by execute().
+	 * @return array Normalised fields array (empty array when absent or invalid).
+	 */
+	protected function normalize_fields_argument( array $arguments ) {
+		if ( ! isset( $arguments['fields'] ) ) {
+			return array();
+		}
+
+		$fields = $arguments['fields'];
+
+		if ( is_array( $fields ) ) {
+			return $fields;
+		}
+
+		if ( is_object( $fields ) ) {
+			return (array) $fields;
+		}
+
+		return array();
 	}
 
 	/**
