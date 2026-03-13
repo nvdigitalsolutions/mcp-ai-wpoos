@@ -163,6 +163,9 @@ composer.phar
 !assets/js/chat-bundle.min.js
 !assets/js/chat-bundle.min.js.map
 
+# Keep the TMA standalone markdown renderer which is served directly to Telegram WebView.
+!assets/js/vendor/tma-markdown.min.js
+
 # Keep Pro addon bundles (orchestration and research) which are required for the plugin to work.
 # These bundle external npm dependencies (p-queue, cheerio, turndown) for browser use.
 !addons/pro/assets/js/orchestration-bundle.min.js
