@@ -439,6 +439,13 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * List items for a CCT type.
 	 *
+	 * Uses the JetEngine 3.3+ API: db->query( $filter_args, $limit, $offset ).
+	 * Passing limit/offset inside the filter array (the old pattern) causes
+	 * JetEngine to treat them as field-name conditions, which match nothing and
+	 * return an empty result set even when the table has rows.
+	 *
+	 * Falls back to the pre-3.3 item-handler path for older JetEngine versions.
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array|WP_Error
 	 */
@@ -472,17 +479,11 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$offset   = ( $page - 1 ) * $per_page;
 
-		$items = $type->db->query(
-			array(
-				'limit'  => $per_page,
-				'offset' => $offset,
-			)
-		);
-
+		$items = $this->query_cct_items( $type, array(), $per_page, $offset );
 		$total = $type->db->count();
 
 		return array(
-			'items'       => $items,
+			'items'       => is_array( $items ) ? $items : array(),
 			'total'       => $total,
 			'total_pages' => ceil( $total / $per_page ),
 			'page'        => $page,
@@ -519,6 +520,13 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'cct_not_found',
 				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
+		}
+
+		// Request associative-array output so the caller always receives a plain
+		// PHP array rather than a stdClass object (which JSON-encodes identically
+		// but is harder to work with in PHP).
+		if ( method_exists( $type->db, 'set_format_flag' ) ) {
+			$type->db->set_format_flag( ARRAY_A );
 		}
 
 		$item = $type->db->get_item( absint( $arguments['item_id'] ) );
@@ -617,13 +625,20 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	/**
-	 * Attempt a direct database insert for CCT slugs that ship with a
-	 * dedicated programmatic CCT class (vitals_log).
+	 * Attempt a direct database insert for any CCT whose table exists.
 	 *
-	 * Using $wpdb->insert() directly is the only reliable way to persist
-	 * programmatic field values for these CCTs.  JetEngine's handler
-	 * create_item() reads from $_POST/$_REQUEST internally and ignores the
-	 * supplied data array when invoked outside of a form submission context.
+	 * For CCTs that ship with a dedicated programmatic class (vitals_log) the
+	 * class's own static insert() method is used first — it handles field
+	 * mapping and type coercion specific to that CCT.
+	 *
+	 * For all other CCTs, a direct $wpdb->insert() is attempted against the
+	 * standard JetEngine table `{prefix}jet_cct_{slug}` whenever that table
+	 * exists.  This bypasses JetEngine's form-submission handler, which reads
+	 * field values from $_POST/$_REQUEST and silently discards the supplied
+	 * $fields array when invoked outside of a form context.
+	 *
+	 * Returns 'cct_not_found' only when no table can be located for the slug,
+	 * so the caller knows it is safe to attempt JetEngine's own API next.
 	 *
 	 * @param array $arguments Tool arguments (must include 'cct_slug' and optionally 'fields').
 	 * @return array|WP_Error  Minimal item array on success, WP_Error on failure.
@@ -632,29 +647,56 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$slug   = sanitize_key( $arguments['cct_slug'] );
 		$fields = $this->normalize_fields_argument( $arguments );
 
-		if ( 'vitals_log' !== $slug ) {
+		// --- vitals_log: use the dedicated class (handles field mapping). ---
+		if ( 'vitals_log' === $slug ) {
+			if ( ! $this->is_vitals_log_direct_path_available() ) {
+				return new WP_Error(
+					'cct_not_found',
+					__( 'CCT type not found and vitals_log table does not exist.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$member_id = isset( $fields['member_id'] ) ? absint( $fields['member_id'] ) : 0;
+			$item_id   = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $fields );
+
+			if ( ! $item_id ) {
+				return new WP_Error(
+					'create_failed',
+					__( 'Failed to create vitals_log item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return array(
+				'_ID'    => $item_id,
+				'cct'    => $slug,
+				'fields' => $fields,
+			);
+		}
+
+		// --- Generic CCT: direct $wpdb->insert() via standard JetEngine table. ---
+		$table_name = $this->get_cct_table_name( $slug );
+
+		if ( ! $this->cct_table_exists( $table_name ) ) {
+			// Table doesn't exist — caller should try JetEngine's own API.
 			return new WP_Error(
 				'cct_not_found',
 				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
-		if ( ! $this->is_vitals_log_direct_path_available() ) {
-			return new WP_Error(
-				'cct_not_found',
-				__( 'CCT type not found and vitals_log table does not exist.', 'mcp-ai-wpoos-pro' )
-			);
-		}
+		global $wpdb;
 
-		$member_id = isset( $fields['member_id'] ) ? absint( $fields['member_id'] ) : 0;
-		$item_id   = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $fields );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct insert required; JetEngine's db->insert() reads from $_POST and ignores the supplied array outside of a form-submission context.
+		$result = $wpdb->insert( $table_name, $fields );
 
-		if ( ! $item_id ) {
+		if ( false === $result ) {
 			return new WP_Error(
 				'create_failed',
-				__( 'Failed to create vitals_log item.', 'mcp-ai-wpoos-pro' )
+				__( 'Failed to create CCT item.', 'mcp-ai-wpoos-pro' )
 			);
 		}
+
+		$item_id = (int) $wpdb->insert_id;
 
 		return array(
 			'_ID'    => $item_id,
@@ -757,6 +799,32 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'cct_not_found',
 				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
+		}
+
+		// Try direct $wpdb->update() first — JetEngine's db->update() may read
+		// from $_POST and silently discard the supplied $fields array outside of
+		// a form-submission context.
+		$slug       = sanitize_key( $arguments['cct_slug'] );
+		$table_name = $this->get_cct_table_name( $slug );
+
+		if ( $this->cct_table_exists( $table_name ) ) {
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct update required; JetEngine's db->update() reads from $_POST and ignores the supplied array outside of a form-submission context.
+			$result = $wpdb->update( $table_name, $fields, array( '_ID' => $item_id ) );
+
+			if ( false === $result ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update CCT item.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Re-fetch updated item to return fresh data.
+			if ( method_exists( $type->db, 'set_format_flag' ) ) {
+				$type->db->set_format_flag( ARRAY_A );
+			}
+			return $type->db->get_item( $item_id );
 		}
 
 		$result = $type->db->update( $fields, array( '_ID' => $item_id ) );
@@ -875,6 +943,83 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array();
+	}
+
+	/**
+	 * Query items from a JetEngine CCT type with limit/offset pagination.
+	 *
+	 * Handles the API difference between JetEngine 3.3+ (db->query with
+	 * separate limit/offset arguments) and older versions (item-handler
+	 * query_items() with manual pagination).
+	 *
+	 * IMPORTANT: In JetEngine 3.3+, `limit` and `offset` MUST be passed as
+	 * the 2nd and 3rd arguments to `db->query()`.  Passing them inside the
+	 * filter-conditions array (the 1st argument) causes JetEngine to treat
+	 * them as field-name equality conditions, which match nothing and return
+	 * an empty result set even when the underlying table has rows.
+	 *
+	 * @param object $type        JetEngine CCT type object.
+	 * @param array  $filter_args Filter conditions in JetEngine query format.
+	 * @param int    $limit       Maximum number of items to return.
+	 * @param int    $offset      Number of items to skip (for pagination).
+	 * @return array              Array of items (associative arrays).
+	 */
+	protected function query_cct_items( $type, array $filter_args, $limit, $offset ) {
+		if ( empty( $type->db ) ) {
+			return array();
+		}
+
+		// JetEngine 3.3+ API: db->query( $filter_args, $limit, $offset ).
+		if ( method_exists( $type->db, 'query' ) ) {
+			// Request associative-array output for consistent field access.
+			if ( method_exists( $type->db, 'set_format_flag' ) ) {
+				$type->db->set_format_flag( ARRAY_A );
+			}
+
+			$items = $type->db->query( $filter_args, $limit, $offset );
+			return is_array( $items ) ? $items : array();
+		}
+
+		// Pre-3.3 fallback: item-handler path with manual pagination.
+		if ( method_exists( $type, 'get_item_handler' ) ) {
+			$handler = $type->get_item_handler();
+			if ( $handler && method_exists( $handler, 'query_items' ) ) {
+				$all_items = $handler->query_items( $filter_args );
+				if ( is_array( $all_items ) ) {
+					return array_slice( $all_items, $offset, $limit );
+				}
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Return the standard JetEngine table name for a CCT slug.
+	 *
+	 * JetEngine stores CCT records in `{wpdb_prefix}jet_cct_{slug}`.
+	 * The returned string is safe to pass directly to $wpdb->insert() and
+	 * $wpdb->update(), which handle their own escaping.  When interpolating
+	 * into a raw SQL string, wrap the result with esc_sql() first.
+	 *
+	 * @param string $slug CCT slug (already sanitised by the caller).
+	 * @return string Table name.
+	 */
+	protected function get_cct_table_name( $slug ) {
+		global $wpdb;
+		return $wpdb->prefix . 'jet_cct_' . $slug;
+	}
+
+	/**
+	 * Check whether a CCT table exists in the database.
+	 *
+	 * @param string $table_name Fully-qualified table name.
+	 * @return bool True when the table exists, false otherwise.
+	 */
+	protected function cct_table_exists( $table_name ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Schema existence check using SHOW TABLES; result intentionally not cached.
+		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
 	}
 
 	/**
