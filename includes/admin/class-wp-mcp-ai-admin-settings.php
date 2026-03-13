@@ -2405,6 +2405,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['gemini_thinking_budget_tokens'] = min( 24576, $budget );
 			}
 
+			if ( isset( $settings['gemini_default_reasoning'] ) ) {
+				$clean['gemini_default_reasoning'] = (bool) $settings['gemini_default_reasoning'];
+			}
+
+			if ( isset( $settings['openai_default_reasoning_effort'] ) ) {
+				$effort = sanitize_text_field( $settings['openai_default_reasoning_effort'] );
+				if ( in_array( $effort, array( 'off', 'low', 'medium', 'high' ), true ) ) {
+					$clean['openai_default_reasoning_effort'] = $effort;
+				}
+			}
+
+			if ( isset( $settings['anthropic_default_reasoning'] ) ) {
+				$clean['anthropic_default_reasoning'] = (bool) $settings['anthropic_default_reasoning'];
+			}
+
+			if ( isset( $settings['anthropic_thinking_budget_tokens'] ) ) {
+				$budget = absint( $settings['anthropic_thinking_budget_tokens'] );
+				$clean['anthropic_thinking_budget_tokens'] = max( 1024, min( 16000, $budget ) );
+			}
+
 			if ( isset( $settings['mubert_api_key'] ) ) {
 				$clean['mubert_api_key'] = trim( sanitize_text_field( $settings['mubert_api_key'] ) );
 			}

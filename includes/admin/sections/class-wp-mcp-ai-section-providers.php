@@ -362,6 +362,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'gemini-2.5-flash',
 				),
 
+				// OpenAI Reasoning Settings.
+				'openai_default_reasoning_effort'    => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Reasoning Effort (OpenAI)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default reasoning effort for OpenAI requests. When set, enables chain-of-thought reasoning by default for all OpenAI chats. Users can toggle reasoning mode per conversation in the chat interface. "Off" disables reasoning by default. Applies to all OpenAI models; o-series reasoning models are automatically detected.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'off'    => __( 'Off (default)', 'mcp-ai-wpoos' ),
+						'low'    => __( 'Low', 'mcp-ai-wpoos' ),
+						'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
+						'high'   => __( 'High', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'off',
+				),
+
 				// OpenAI Caching Settings.
 				'enable_openai_api_caching'          => array(
 					'type'           => 'checkbox',
@@ -430,6 +444,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'sanitize'    => 'absint',
 				),
 
+				// Anthropic Reasoning Settings.
+				'anthropic_default_reasoning'        => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Reasoning by Default (Anthropic)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable extended thinking for Anthropic Claude by default', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, activates Claude\'s extended thinking (chain-of-thought reasoning) for all Anthropic requests by default. Uses the thinking budget tokens setting below. Users can toggle reasoning mode per conversation in the chat interface.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'anthropic_thinking_budget_tokens'   => array(
+					'type'        => 'number',
+					'label'       => __( 'Anthropic Thinking Budget (tokens)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum thinking tokens for Anthropic Claude extended reasoning. Recommended: 5000–10000. Range: 1024–16000. Only active when reasoning mode is enabled (via default setting or chat button). Requires Claude 3.7 Sonnet or newer with extended thinking support.', 'mcp-ai-wpoos' ),
+					'default'     => '5000',
+					'min'         => '1024',
+					'max'         => '16000',
+					'step'        => '256',
+				),
+
 				// Anthropic Caching Settings.
 				'enable_anthropic_api_caching'       => array(
 					'type'           => 'checkbox',
@@ -482,6 +514,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'min'         => '0',
 					'max'         => '24576',
 					'step'        => '256',
+				),
+				'gemini_default_reasoning'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Reasoning by Default (Gemini)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable extended thinking for Gemini 2.5+ by default', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, activates Gemini\'s extended thinking (thinkingConfig) for all Gemini requests by default using the configured thinking budget above. Users can toggle reasoning mode per conversation in the chat interface.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 				'gemini_image_model'                 => array(
 					'type'        => 'select',
@@ -959,19 +998,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'openai_default_reasoning_effort', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'anthropic_default_reasoning', 'anthropic_thinking_budget_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_default_reasoning', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
