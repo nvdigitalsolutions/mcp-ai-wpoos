@@ -1273,6 +1273,53 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the Mini App controller registers the TMA-specific chat endpoint.
+	 *
+	 * The /chat route uses check_permission (TMA-token aware) so that templates
+	 * like Medical Vitals can authenticate via the X-WP-MCP-AI-TMA-Token header
+	 * without relying on a persistent WordPress auth cookie.
+	 */
+	public function test_telegram_mini_app_chat_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/chat',
+			$routes,
+			'The /mcp-ai/v1/telegram-mini-app/chat REST route should be registered'
+		);
+
+		// Verify the registered route accepts POST.
+		$route_config = $routes['/mcp-ai/v1/telegram-mini-app/chat'];
+		$methods      = array_column( $route_config, 'methods' );
+		$this->assertTrue(
+			in_array( WP_REST_Server::CREATABLE, $methods, true ),
+			'The /mcp-ai/v1/telegram-mini-app/chat route should accept POST requests'
+		);
+	}
+
+	/**
+	 * Test that the Mini App controller has a handle_tma_chat_request method.
+	 */
+	public function test_telegram_mini_app_controller_has_tma_chat_handler() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertTrue(
+			method_exists( $controller, 'handle_tma_chat_request' ),
+			'WP_MCP_AI_Telegram_Mini_App_Controller should have handle_tma_chat_request() method'
+		);
+	}
+
+	/**
 	 * Test that verify_init_data() verifies a correctly-signed initData string.
 	 *
 	 * Constructs a synthetic initData using the same algorithm Telegram uses:
