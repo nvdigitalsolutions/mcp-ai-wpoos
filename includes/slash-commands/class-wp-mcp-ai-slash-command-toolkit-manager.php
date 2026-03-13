@@ -161,6 +161,12 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	/**
 	 * Register toolkit commands.
 	 *
+	 * Command names are normalised at registration time: any hyphens are
+	 * replaced with underscores so that Telegram (which only accepts
+	 * lowercase letters, digits, and underscores in command names) can
+	 * use them. The original hyphenated name is added as an alias so that
+	 * other channels (Slack, Teams, WP admin) continue to work unchanged.
+	 *
 	 * @since 1.3.0
 	 */
 	public function register_toolkit_commands() {
@@ -171,7 +177,21 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			foreach ( $commands as $command ) {
-				$this->handler->register( $command['name'], $command['config'] );
+				$original_name   = $command['name'];
+				$normalized_name = str_replace( '-', '_', $original_name );
+				$config          = $command['config'];
+
+				// Add the hyphenated form as a backward-compatible alias when
+				// the name was changed so that existing integrations keep working.
+				if ( $normalized_name !== $original_name ) {
+					$existing_aliases = isset( $config['aliases'] ) && is_array( $config['aliases'] ) ? $config['aliases'] : array();
+					if ( ! in_array( $original_name, $existing_aliases, true ) ) {
+						$existing_aliases[] = $original_name;
+					}
+					$config['aliases'] = $existing_aliases;
+				}
+
+				$this->handler->register( $normalized_name, $config );
 			}
 		}
 	}

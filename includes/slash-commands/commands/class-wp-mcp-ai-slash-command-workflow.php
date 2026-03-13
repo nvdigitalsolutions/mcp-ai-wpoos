@@ -804,9 +804,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 * Maps workflow task names to their required WordPress capabilities.
 	 *
 	 * Task Naming Convention:
-	 * - Primary task names use kebab-case (e.g., 'optimize-perf', 'clean-content')
+	 * - Primary task names use snake_case (e.g., 'optimize_perf', 'clean_content')
+	 * - Legacy hyphenated aliases are still accepted (e.g., 'optimize-perf', 'clean-content')
 	 * - Descriptive aliases use snake_case (e.g., 'check_performance', 'publish_post')
-	 * This allows both slash-command-style and function-style naming.
+	 * This allows both underscore-style slash command names and function-style naming.
 	 *
 	 * @param string $task Task name.
 	 * @return string|null Required capability or null if none required.
@@ -814,15 +815,19 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	private function get_task_required_capability( $task ) {
 		// Map tasks to their required capabilities based on the slash command they call.
 		$task_capabilities = array(
+			'next_task'         => 'edit_posts',
 			'next-task'         => 'edit_posts',
 			'check_drafts'      => 'edit_posts',
 			'audit_drafts'      => 'edit_posts',
 			'ship'              => 'publish_posts',
 			'publish_post'      => 'publish_posts',
+			'clean_content'     => 'edit_posts',
 			'clean-content'     => 'edit_posts',
 			'check_content'     => 'edit_posts',
+			'optimize_perf'     => 'manage_options',
 			'optimize-perf'     => 'manage_options',
 			'check_performance' => 'manage_options',
+			'sync_docs'         => 'edit_posts',
 			'sync-docs'         => 'edit_posts',
 			'check_docs'        => 'edit_posts',
 			'notify_admin'      => 'edit_posts',
@@ -1218,26 +1223,30 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		// Map task to slash command or tool.
 		switch ( $task ) {
+			case 'next_task':
 			case 'next-task':
 			case 'check_drafts':
 			case 'audit_drafts':
-				return $this->execute_command( 'next-task', $params, $execution_context );
+				return $this->execute_command( 'next_task', $params, $execution_context );
 
 			case 'ship':
 			case 'publish_post':
 				return $this->execute_command( 'ship', $params, $execution_context );
 
+			case 'clean_content':
 			case 'clean-content':
 			case 'check_content':
-				return $this->execute_command( 'clean-content', $params, $execution_context );
+				return $this->execute_command( 'clean_content', $params, $execution_context );
 
+			case 'optimize_perf':
 			case 'optimize-perf':
 			case 'check_performance':
-				return $this->execute_command( 'optimize-perf', $params, $execution_context );
+				return $this->execute_command( 'optimize_perf', $params, $execution_context );
 
+			case 'sync_docs':
 			case 'sync-docs':
 			case 'check_docs':
-				return $this->execute_command( 'sync-docs', $params, $execution_context );
+				return $this->execute_command( 'sync_docs', $params, $execution_context );
 
 			case 'notify_admin':
 			case 'send_email':
