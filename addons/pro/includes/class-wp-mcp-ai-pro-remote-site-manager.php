@@ -35,6 +35,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
 
 	/**
+	 * Prefix that marks values encrypted with the modern AES-256-CBC scheme.
+	 *
+	 * Legacy values (XOR cipher) lack this prefix and are still readable by
+	 * decrypt_value() for backward compatibility.
+	 */
+	const ENCRYPT_V2_PREFIX = 'v2.';
+
+	/**
 	 * Get all configured remote site connections.
 	 *
 	 * @since 1.0.0
@@ -271,6 +279,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
 			}
 
+			// Preserve existing slack_bot_user_id (Slack) if not provided.
+			if ( empty( $connection_data['slack_bot_user_id'] ) && ! empty( $existing_connection['slack_bot_user_id'] ) ) {
+				$connection_data['slack_bot_user_id'] = $existing_connection['slack_bot_user_id'];
+			}
+
 			// Preserve existing Discord-specific fields if not provided.
 			if ( empty( $connection_data['application_id'] ) && ! empty( $existing_connection['application_id'] ) ) {
 				$connection_data['application_id'] = $existing_connection['application_id'];
@@ -287,6 +300,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing tenant_id (Microsoft Teams) if not provided.
 			if ( empty( $connection_data['tenant_id'] ) && ! empty( $existing_connection['tenant_id'] ) ) {
 				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
+			}
+
+			// Preserve existing token_expiry (Microsoft Teams OAuth) if not provided.
+			if ( empty( $connection_data['token_expiry'] ) && ! empty( $existing_connection['token_expiry'] ) ) {
+				$connection_data['token_expiry'] = $existing_connection['token_expiry'];
 			}
 
 			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
@@ -316,8 +334,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
 			}
 
-			// Preserve existing reply_webhook_url (Google Chat incoming webhook) if not provided.
-			if ( empty( $connection_data['reply_webhook_url'] ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) only when the
+			// key is entirely absent from the submitted data. When the admin form explicitly
+			// submits the field as an empty string (user cleared the optional field), the key
+			// will be present and we must honour that intent — using array_key_exists() rather
+			// than empty() is what makes the field clearable.
+			if ( ! array_key_exists( 'reply_webhook_url', $connection_data ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
 				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
 			}
 
@@ -441,7 +463,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'channel_url'         => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
 			'group_id'            => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
 			// Slack-specific fields.
-			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			'workspace_id'      => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			// Bot's Slack user ID (U-prefixed), populated by the admin connection test.
+			// Used to detect native Slack @mentions (<@USER_ID>) in incoming messages.
+			'slack_bot_user_id' => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
 			// Discord-specific fields.
 			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
 			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
@@ -449,6 +474,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'public_key'      => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
 			// Microsoft Teams-specific fields.
 			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// Unix timestamp when the OAuth access token expires (Teams / Office 365 OAuth connections).
+			'token_expiry'    => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
 			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
 			'signing_secret'  => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
 			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
@@ -847,6 +874,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_ezuite_connection( $connection );
 		}
 
+		// Handle Slack connections separately.
+		if ( 'slack' === $connection_type ) {
+			return self::test_slack_connection( $connection );
+		}
+
 		// Handle Google Chat connections separately.
 		if ( 'google_chat' === $connection_type ) {
 			return self::test_google_chat_connection( $connection );
@@ -917,9 +949,30 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Connection test results or error.
 	 */
 	protected static function test_google_chat_connection( $connection ) {
-		$has_api_key     = ! empty( $connection['api_key'] );
-		$has_refresh     = ! empty( $connection['refresh_token'] );
-		$has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$has_api_key       = ! empty( $connection['api_key'] );
+		$has_refresh       = ! empty( $connection['refresh_token'] );
+		$has_credentials   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$connection_method = isset( $connection['connection_method'] ) ? $connection['connection_method'] : 'service_account';
+
+		// When the connection method is Incoming Webhook (outbound-only), and no
+		// Service Account key or OAuth credentials are configured, verify the webhook
+		// URL is present and return an informative result. This method can post
+		// outbound messages but cannot receive inbound events from Google Chat.
+		if ( 'webhook' === $connection_method && ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			if ( ! empty( $connection['reply_webhook_url'] ) ) {
+				return array(
+					'success'     => true,
+					'google_chat' => true,
+					'partial'     => true,
+					'message'     => __( 'Incoming Webhook URL is configured. The bot can post outbound messages to the configured space.', 'mcp-ai-wpoos-pro' ),
+					'notice'      => __( 'Note: The Incoming Webhook method is outbound-only. To receive and respond to messages from Google Chat, switch to the Service Account or OAuth 2.0 method and configure the webhook URL in the Google Cloud Console.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_webhook_url',
+				__( 'No Incoming Webhook URL configured. Paste the webhook URL from your Google Chat space settings (Apps & integrations → Manage webhooks) to enable outbound messaging.', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		if ( ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
 			return new WP_Error(
@@ -1031,13 +1084,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$spaces      = isset( $body['spaces'] ) && is_array( $body['spaces'] ) ? $body['spaces'] : array();
 		$space_count = count( $spaces );
 
-		return array(
+		$result = array(
 			'success'     => true,
 			'google_chat' => true,
 			/* translators: %d: number of accessible Google Chat spaces */
 			'message'     => sprintf( _n( 'Google Chat connection successful. %d space accessible.', 'Google Chat connection successful. %d spaces accessible.', $space_count, 'mcp-ai-wpoos-pro' ), $space_count ),
 			'space_count' => $space_count,
 		);
+
+		// Warn when the Audience URL (verify_token) is not set and OIDC verification is
+		// not explicitly disabled. Without an audience URL, incoming webhook events will
+		// still be accepted (the OIDC token issuer is verified) but the audience claim
+		// will not be checked — which is less secure. Surfacing this in the test result
+		// helps admins configure the setting before going live.
+		if ( empty( $connection['verify_token'] ) && empty( $connection['disable_oidc_verification'] ) ) {
+			$result['notice'] = __( 'Tip: No Audience URL is configured. Incoming events will be accepted from any valid Google-signed token without audience checking. For stricter security, set the Audience URL to your webhook URL.', 'mcp-ai-wpoos-pro' );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1235,6 +1299,106 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 */
 	public static function is_valid_telegram_secret_token( $secret_token ) {
 		return 1 === preg_match( '/^[A-Za-z0-9_-]{1,256}$/', (string) $secret_token );
+	}
+
+	/**
+	 * Test Slack Bot API connection.
+	 *
+	 * Verifies the Slack Bot Token by calling the auth.test endpoint and
+	 * checks that the Event Subscriptions Request URL is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_slack_connection( $connection ) {
+		$bot_token = ! empty( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $bot_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_missing_token',
+				__( 'Slack Bot Token is required. Enter the Bot User OAuth Token (starts with xoxb-) and save before testing.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = wp_remote_post(
+			'https://slack.com/api/auth.test',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $bot_token,
+					'Content-Type'  => 'application/json; charset=utf-8',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Slack API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $body['ok'] ) ) {
+			$error_code = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_api_error',
+				sprintf(
+					/* translators: %s: Slack API error code */
+					__( 'Slack API error: %s — Check that the Bot Token is valid and that your Slack app has the required scopes (chat:write, channels:history, app_mentions:read).', 'mcp-ai-wpoos-pro' ),
+					$error_code
+				)
+			);
+		}
+
+		$connection_id     = isset( $connection['id'] ) ? $connection['id'] : '';
+		$webhook_path      = $connection_id
+			? '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection_id
+			: '/wp-json/mcp-ai/v1/webhooks/slack';
+		$webhook_url       = home_url( $webhook_path );
+		$team              = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
+		$bot_user          = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
+		$team_id           = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
+		$bot_user_id       = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
+
+		$message = sprintf(
+			/* translators: 1: Slack team name, 2: bot username, 3: Slack team ID, 4: bot user ID, 5: webhook URL */
+			__( 'Team: %1$s (%2$s), Bot: %3$s (%4$s). Event Subscriptions URL: %5$s', 'mcp-ai-wpoos-pro' ),
+			$team,
+			$team_id,
+			$bot_user,
+			$bot_user_id,
+			$webhook_url
+		);
+
+		// Warn when the Signing Secret is not configured. Without it, HMAC
+		// signature validation rejects every incoming Slack event with a 403,
+		// so the bot will never respond even when the token is valid and the
+		// Event Subscriptions URL is correctly set up in Slack.
+		$has_signing_secret = ! empty( $connection['signing_secret'] ) || ! empty( $connection['api_secret'] );
+		$warning            = $has_signing_secret ? '' : __(
+			'Signing Secret is not configured. Without it, all Slack event webhooks are rejected with a 403 error and the bot cannot respond to messages. Add the Signing Secret from your Slack app\'s Basic Information page, enter it in the Signing Secret field, and save the connection.',
+			'mcp-ai-wpoos-pro'
+		);
+
+		return array(
+			'success'     => true,
+			'slack'       => true,
+			'team'        => $team,
+			'bot_user'    => $bot_user,
+			'team_id'     => $team_id,
+			'bot_user_id' => $bot_user_id,
+			'webhook_url' => $webhook_url,
+			'message'     => $message,
+			'warning'     => $warning,
+		);
 	}
 
 	/**
@@ -2136,20 +2300,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Encrypt a sensitive value for storage.
 	 *
+	 * Uses AES-256-CBC via WP_MCP_AI_Encryption when available (PHP 7.4+,
+	 * OpenSSL required). Encrypted values are prefixed with ENCRYPT_V2_PREFIX
+	 * so decrypt_value() can distinguish them from legacy XOR-encrypted values.
+	 *
 	 * @since 1.0.0
+	 * @since 1.5.0 Upgraded from XOR to AES-256-CBC.
 	 *
 	 * @param string $value Value to encrypt.
-	 * @return string Encrypted value.
+	 * @return string Encrypted value (prefixed) or empty string on failure.
 	 */
 	public static function encrypt_value( $value ) {
 		if ( empty( $value ) ) {
 			return '';
 		}
 
-		// Use WordPress auth salt for encryption key.
-		$key = wp_salt( 'auth' );
+		// Prefer proper AES-256-CBC encryption when the base plugin class is loaded.
+		if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+			$encrypted = WP_MCP_AI_Encryption::encrypt( $value );
+			if ( false !== $encrypted ) {
+				return self::ENCRYPT_V2_PREFIX . $encrypted;
+			}
+		}
 
-		// Simple XOR encryption (WordPress doesn't have built-in encryption).
+		// Fallback: XOR cipher (used only if WP_MCP_AI_Encryption is unavailable).
+		$key          = wp_salt( 'auth' );
 		$encrypted    = '';
 		$key_length   = strlen( $key );
 		$value_length = strlen( $value );
@@ -2164,25 +2339,42 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Decrypt a sensitive value.
 	 *
-	 * @since 1.0.0
+	 * Handles both the modern AES-256-CBC format (prefixed with ENCRYPT_V2_PREFIX)
+	 * and the legacy XOR format (no prefix) for backward compatibility.
 	 *
-	 * @param string $encrypted Encrypted value.
-	 * @return string Decrypted value.
+	 * @since 1.0.0
+	 * @since 1.5.0 Added AES-256-CBC format support with legacy XOR fallback.
+	 *
+	 * @param string $encrypted Encrypted value (with or without version prefix).
+	 * @return string Decrypted value or empty string on failure.
 	 */
 	public static function decrypt_value( $encrypted ) {
 		if ( empty( $encrypted ) ) {
 			return '';
 		}
 
-		$key       = wp_salt( 'auth' );
-		$encrypted = base64_decode( $encrypted );
+		// Modern AES-256-CBC format: prefixed with ENCRYPT_V2_PREFIX.
+		if ( str_starts_with( $encrypted, self::ENCRYPT_V2_PREFIX ) ) {
+			if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
+				return ( false !== $decrypted ) ? $decrypted : '';
+			}
+			return '';
+		}
 
-		$decrypted        = '';
-		$key_length       = strlen( $key );
-		$encrypted_length = strlen( $encrypted );
+		// Legacy XOR format (no prefix).
+		$key  = wp_salt( 'auth' );
+		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
+		if ( false === $data ) {
+			return '';
+		}
 
-		for ( $i = 0; $i < $encrypted_length; $i++ ) {
-			$decrypted .= chr( ord( $encrypted[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+		$decrypted    = '';
+		$key_length   = strlen( $key );
+		$data_length  = strlen( $data );
+
+		for ( $i = 0; $i < $data_length; $i++ ) {
+			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
 		}
 
 		return $decrypted;

@@ -8,6 +8,19 @@
 (function($) {
 	'use strict';
 
+	// Simple HTML escaping to prevent XSS when inserting untrusted text into HTML
+	function escapeHtml(str) {
+		if (str === null || str === undefined) {
+			return '';
+		}
+		return String(str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
+
 	var WorkflowEditor = {
 		currentWorkflow: null,
 		steps: [],
@@ -111,13 +124,13 @@
 			// Workflow name
 			html += '<div class="form-row">';
 			html += '<label for="workflow-name">Workflow Name</label>';
-			html += '<input type="text" id="workflow-name" class="regular-text" value="' + (workflow ? workflow.name : '') + '" />';
+			html += '<input type="text" id="workflow-name" class="regular-text" value="' + escapeHtml(workflow ? workflow.name : '') + '" />';
 			html += '</div>';
 
 			// Workflow description
 			html += '<div class="form-row">';
 			html += '<label for="workflow-description">Description</label>';
-			html += '<textarea id="workflow-description" class="large-text">' + (workflow ? workflow.description : '') + '</textarea>';
+			html += '<textarea id="workflow-description" class="large-text">' + escapeHtml(workflow ? workflow.description : '') + '</textarea>';
 			html += '</div>';
 
 			// Workflow steps

@@ -37,6 +37,10 @@ if ( is_admin() ) {
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-research-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-settings-page.php';
 
+		// Load Event Consolidate & Add page (under Events menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-consolidate-page.php';
+		WP_MCP_AI_Event_Consolidate_Page::init();
+
 		// Load Task Research & Add page (under Tasks menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-task-research-page.php';
 		WP_MCP_AI_Task_Research_Page::init();

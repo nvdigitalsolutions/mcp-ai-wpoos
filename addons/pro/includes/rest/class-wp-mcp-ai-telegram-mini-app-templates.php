@@ -88,7 +88,12 @@ abstract class WP_MCP_AI_Telegram_Mini_App_Template_Base {
 	 *                    media_url, settings_url, analytics_url, shop_url,
 	 *                    login_url, chart_js_url, site_name, nonce, page_title,
 	 *                    assistant_id (resolved Mini App assistant ID string),
-	 *                    chat_url (absolute URL to /mcp-ai/v1/chat-client).
+	 *                    chat_url (absolute URL to /mcp-ai/v1/telegram-mini-app/chat –
+	 *                    a TMA-aware endpoint that accepts both WordPress nonces and the
+	 *                    TMA session token returned by validate_url),
+	 *                    validate_url (absolute URL to /mcp-ai/v1/telegram-mini-app/validate –
+	 *                    call this on page load to authenticate the Telegram user and
+	 *                    receive a fresh wp_nonce and tma_token for subsequent requests).
 	 * @return string
 	 */
 	abstract public function render_html( array $ctx );
@@ -1286,11 +1291,13 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
-		$chart_js_url = $ctx['chart_js_url'];
+		$site_name       = esc_html( $ctx['site_name'] );
+		$tools_exec      = $ctx['tools_url'] . '/execute';
+		$chat_url        = $ctx['chat_url'];
+		$validate_url    = $ctx['validate_url'] ?? '';
+		$assistant_id    = $ctx['assistant_id'];
+		$chart_js_url    = $ctx['chart_js_url'];
+		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-health-wellness-template">' .
@@ -1559,9 +1566,52 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var MARKDOWN_JS_URL=' . wp_json_encode( $markdown_js_url ) . ';' .
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var TMA_TOKEN="";' .
 		'var coachHist=[];' .
+
+		/* ── Markdown renderer loader ── */
+		/* Load the lightweight TMA markdown renderer on demand so coach     */
+		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		'function hwLoadMarkdown(cb){' .
+			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
+			'if(!MARKDOWN_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=MARKDOWN_JS_URL;' .
+			's.onload=function(){cb();};s.onerror=function(){cb();};' .
+			'document.head.appendChild(s);' .
+		'}' .
+
+		/* ── Render reply using the preferred markdown method ── */
+		'function hwRenderReply(el,text){' .
+			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
+				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
+			'}else if(el){' .
+				'el.textContent=text;' .
+			'}' .
+		'}' .
+
+		/* ── Session init: authenticate via Telegram initData ── */
+		/* Calls /validate so the coach tab chat requests are authenticated  */
+		/* even when Telegram's WebView does not persist the auth cookie.    */
+		'function hwInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",' .
+				'headers:{"Content-Type":"application/json"},' .
+				'body:JSON.stringify({init_data:initData})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d)return;' .
+				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
+				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── Storage helpers ── */
 		'var SK_PREFIX="hw_";' .
@@ -1797,8 +1847,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'coachHist.push({role:"user",content:msg});' .
 			'var body={messages:coachHist.slice(-20)};' .
 			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var hdrs={"Content-Type":"application/json","X-WP-Nonce":NONCE};' .
+			'if(TMA_TOKEN){hdrs["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+			'hwLoadMarkdown(function(){' .
 			'fetch(CHAT_URL,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:hdrs,' .
 				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
@@ -1806,16 +1859,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'var data=d&&d.data?d.data:{};' .
 				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
 					'||(data.content)||(data.response)||"' . esc_js( __( 'Keep up the great work! Stay consistent with your goals, hydrate well, and aim for 7-9 hours of sleep. 💪', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(loadEl)loadEl.textContent=reply;' .
+				'hwRenderReply(loadEl,reply);' .
 				'coachHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Stay hydrated! Aim for 8 glasses of water today. 💧', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'A 20-minute walk can boost your mood and energy. 🚶', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Quality sleep is foundational to health. Aim for 7-9 hours tonight. 😴', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Consistency is the key to long-term wellness. 🌟', 'mcp-ai-wpoos-pro' ) ) . '"];' .
-				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
+				'hwRenderReply(loadEl,tips[Math.floor(Math.random()*tips.length)]);' .
 			'}).finally(function(){if(msgs)msgs.scrollTop=msgs.scrollHeight;});' .
+			'});' .
 		'};' .
 
 		/* ── Init ── */
-		'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+		'hwInitSession();LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
 		/* Restore saved mood selection */
 		'if(LOG.mood){var mb=document.querySelector(".tma-hw-mood-btn[data-mood=\'"+LOG.mood+"\']");if(mb)mb.classList.add("selected");}' .
 		'})();</script></body>';
@@ -1872,11 +1926,13 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
-		$chart_js_url = $ctx['chart_js_url'];
+		$site_name       = esc_html( $ctx['site_name'] );
+		$tools_exec      = $ctx['tools_url'] . '/execute';
+		$chat_url        = $ctx['chat_url'];
+		$validate_url    = $ctx['validate_url'] ?? '';
+		$assistant_id    = $ctx['assistant_id'];
+		$chart_js_url    = $ctx['chart_js_url'];
+		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-medical-vitals-template">' .
@@ -2200,10 +2256,56 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var MARKDOWN_JS_URL=' . wp_json_encode( $markdown_js_url ) . ';' .
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
 		'var MEMBER_ID=' . (int) ( $ctx['member_id'] ?? 0 ) . ';' .
+		'var TMA_TOKEN="";' .
 		'var doctorHist=[];' .
+
+		/* ── Markdown renderer loader ── */
+		/* Load the lightweight TMA markdown renderer on demand so doctor    */
+		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		'function mvLoadMarkdown(cb){' .
+			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
+			'if(!MARKDOWN_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=MARKDOWN_JS_URL;' .
+			's.onload=function(){cb();};s.onerror=function(){cb();};' .
+			'document.head.appendChild(s);' .
+		'}' .
+
+		/* ── Render reply using the preferred markdown method ── */
+		'function mvRenderReply(el,text){' .
+			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
+				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
+			'}else if(el){' .
+				'el.textContent=text;' .
+			'}' .
+		'}' .
+
+		/* ── Session init: authenticate via Telegram initData ── */
+		/* Calls /validate on page load so the doctor tab chat requests are  */
+		/* authenticated even when Telegram's WebView does not persist the   */
+		/* WordPress auth cookie between page loads.                          */
+		'function mvInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",' .
+				'headers:{"Content-Type":"application/json"},' .
+				'body:JSON.stringify({init_data:initData})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d)return;' .
+				/* Update the REST nonce so authenticated requests succeed. */
+				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
+				/* Store the TMA session token for the doctor chat header. */
+				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── Storage helpers ── */
 		'var SK_READINGS="mv_readings";' .
@@ -2716,8 +2818,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'doctorHist.push({role:"user",content:msg});' .
 			'var body={messages:doctorHist.slice(-20)};' .
 			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var hdrs={"Content-Type":"application/json","X-WP-Nonce":NONCE};' .
+			'if(TMA_TOKEN){hdrs["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+			'mvLoadMarkdown(function(){' .
 			'fetch(CHAT_URL,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:hdrs,' .
 				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
@@ -2725,16 +2830,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'var data=d&&d.data?d.data:{};' .
 				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
 					'||(data.content)||(data.response)||"' . esc_js( __( 'I\'m unable to retrieve a response right now. Please consult your healthcare provider for medical advice.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(loadEl)loadEl.textContent=reply;' .
+				'mvRenderReply(loadEl,reply);' .
 				'doctorHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Monitor your blood pressure regularly and note any significant changes. 📊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Stay consistent with your medication schedule for best treatment outcomes. 💊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Track your vitals at the same time each day for more accurate trends. ⏰', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Always consult your doctor before adjusting any treatment plan. 🩺', 'mcp-ai-wpoos-pro' ) ) . '"];' .
-				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
+				'mvRenderReply(loadEl,tips[Math.floor(Math.random()*tips.length)]);' .
 			'}).finally(function(){if(msgs)msgs.scrollTop=msgs.scrollHeight;});' .
+			'});' .
 		'};' .
 
 		/* ── Init ── */
-		'mvRefresh();mvRenderMeds();mvSyncFromServer();' .
+		'mvInitSession();mvRefresh();mvRenderMeds();mvSyncFromServer();' .
 		'})();</script></body>';
 		// phpcs:enable
 	}

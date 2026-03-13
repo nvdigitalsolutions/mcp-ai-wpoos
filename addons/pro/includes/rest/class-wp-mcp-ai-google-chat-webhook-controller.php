@@ -120,6 +120,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 
 	/**
+	 * WordPress option key for the webhook receipt diagnostic log.
+	 */
+	const WEBHOOK_LOG_OPTION = 'wp_mcp_ai_gc_webhook_log';
+
+	/**
+	 * Maximum number of webhook log entries to retain.
+	 */
+	const WEBHOOK_LOG_MAX_ENTRIES = 25;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -352,7 +362,30 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
 		} else {
-			$connection = $this->get_active_google_chat_connection();
+			// When using the generic webhook URL (no connection_id in the URL),
+			// extract the space name from the request body so we can find a
+			// space-specific connection and correctly check its
+			// disable_oidc_verification flag. Without this, connections that have
+			// google_chat_space set are never found by get_active_google_chat_connection()
+			// (which only returns generic / no-space connections when called without an
+			// argument), so the disable_oidc_verification bypass never takes effect even
+			// when the admin has checked "Disable OIDC Verification" in the settings.
+			$body = $request->get_json_params();
+			if ( ! is_array( $body ) ) {
+				$body = array();
+			}
+			// Normalize Workspace Add-on wrapper so the space name can be read.
+			if (
+				isset( $body['type'] ) && 'GOOGLE_CHAT' === $body['type'] &&
+				isset( $body['google'] ) && is_array( $body['google'] ) &&
+				isset( $body['google']['chat'] ) && is_array( $body['google']['chat'] )
+			) {
+				$body = $body['google']['chat'];
+			}
+			$space_name_for_lookup = isset( $body['space']['name'] )
+				? sanitize_text_field( $body['space']['name'] )
+				: '';
+			$connection = $this->get_active_google_chat_connection( $space_name_for_lookup );
 		}
 
 		// When OIDC verification is disabled for this connection, accept any POST
@@ -408,6 +441,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook rejected: missing or malformed Authorization Bearer header.'
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'Missing or malformed Authorization Bearer header — Google Chat cannot reach this endpoint or the header is being stripped by a proxy/WAF.',
+			) );
 			return false;
 		}
 
@@ -415,6 +452,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( empty( $token ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: empty Bearer token.' );
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'Authorization Bearer header present but token value is empty.',
+			) );
 			return false;
 		}
 
@@ -425,10 +466,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		if ( empty( $audience ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat webhook rejected: no audience URL configured for OIDC verification. Configure the audience URL in the connection settings to enable token validation.'
+			// No audience URL configured — the OIDC token will still be cryptographically
+			// verified against Google's tokeninfo endpoint and its issuer will be validated,
+			// but the audience (aud) claim will NOT be checked. This matches the documented
+			// "Leave blank to skip audience verification (less secure)" setting behavior.
+			// Configure the Audience URL in the connection settings for stricter security.
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_oidc_no_audience',
+				'Google Chat webhook: no Audience URL configured — audience claim will not be verified. Set the Audience URL to your webhook URL in the connection settings for stricter OIDC security.',
+				array()
 			);
-			return false;
 		}
 
 		// Validate the OIDC token via Google's tokeninfo endpoint.
@@ -463,6 +510,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API call failed.',
 				array( 'error' => $response->get_error_message() )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo API call failed: ' . $response->get_error_message(),
+			) );
 			return false;
 		}
 
@@ -473,6 +524,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API returned non-200 status.',
 				array( 'status' => $status_code )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo API returned HTTP ' . $status_code . ' — token may be expired or invalid.',
+			) );
 			return false;
 		}
 
@@ -480,6 +535,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( ! is_array( $info ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: tokeninfo response is not valid JSON.' );
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo response was not valid JSON.',
+			) );
 			return false;
 		}
 
@@ -496,32 +555,49 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: OIDC token issuer is not a recognised Google issuer.',
 				array( 'iss' => '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC token issuer not recognised: ' . ( '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' ),
+			) );
 			return false;
 		}
 
-		// Validate audience claim against the configured audience URL.
+		// Validate audience claim against the configured audience URL only when one
+		// has been provided. When left blank (skip audience verification mode) the
+		// token's issuer has already been verified above, which is sufficient to
+		// confirm it is a legitimate Google-signed token.
 		// The JWT spec (RFC 7519 §4.1.3) allows 'aud' to be either a single string
 		// or an array of strings. Handle both forms to avoid incorrectly rejecting
 		// legitimate Google Chat OIDC tokens.
-		$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
+		if ( ! empty( $audience ) ) {
+			$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
 
-		if ( is_array( $token_aud ) ) {
-			if ( ! in_array( $audience, $token_aud, true ) ) {
+			if ( is_array( $token_aud ) ) {
+				if ( ! in_array( $audience, $token_aud, true ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
+						array( 'expected' => $audience )
+					);
+					$this->store_webhook_log_entry( array(
+						'status' => 'rejected',
+						'reason' => 'OIDC audience mismatch — token audience array does not contain the configured Audience URL. Check the Audience URL field on this connection.',
+					) );
+					return false;
+				}
+			} elseif ( $token_aud !== $audience ) {
 				WP_MCP_AI_Logger::log_error(
-					'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
-					array( 'expected' => $audience )
+					'Google Chat webhook rejected: OIDC token audience mismatch.',
+					array(
+						'expected' => $audience,
+						'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
+					)
 				);
+				$this->store_webhook_log_entry( array(
+					'status' => 'rejected',
+					'reason' => 'OIDC audience mismatch — token aud does not match the configured Audience URL. Check the Audience URL field on this connection.',
+				) );
 				return false;
 			}
-		} elseif ( $token_aud !== $audience ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat webhook rejected: OIDC token audience mismatch.',
-				array(
-					'expected' => $audience,
-					'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
-				)
-			);
-			return false;
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -611,6 +687,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( '' === $space_name ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
+			$this->store_webhook_log_entry( array(
+				'status'     => 'rejected',
+				'reason'     => 'Unable to determine space name from payload.',
+				'event_type' => $event_type,
+			) );
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -633,8 +714,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook: no active Google Chat connection found.'
 			);
+			$this->store_webhook_log_entry( array(
+				'status'     => 'rejected',
+				'reason'     => 'No active Google Chat connection found for this space. Check that a connection is saved and enabled, and that the Space Name field (if set) matches this space.',
+				'event_type' => $event_type,
+				'space'      => $space_name,
+			) );
 			return rest_ensure_response( $this->empty_response() );
 		}
+
+		$this->store_webhook_log_entry( array(
+			'status'     => 'accepted',
+			'reason'     => 'Message received and queued for AI reply.',
+			'event_type' => $event_type,
+			'space'      => $space_name,
+		) );
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
 			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
@@ -675,6 +769,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$should_reply = apply_filters( 'wp_mcp_ai_google_chat_should_auto_reply', ! empty( $assigned_assistant_ids ), $payload, $automation_rules );
 
 		if ( ! $should_reply ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'google_chat', $sender_name ) ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -943,7 +1044,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
 		);
 
-		if ( ! $has_credentials ) {
+		$has_reply_webhook = $connection && ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		// A valid connection must have either OAuth/Service-Account credentials or
+		// an incoming webhook URL to send replies. Connections that only have a
+		// Google Chat space configured (but no send capability) are skipped.
+		if ( ! $has_credentials && ! $has_reply_webhook ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -1733,13 +1840,20 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Find the best active Google Chat connection for the given space.
 	 *
-	 * When a space-specific connection is available (i.e. the connection's
-	 * `google_chat_space` field matches $space_name) it is preferred over a
-	 * generic connection. Falls back to the first enabled connection that has
-	 * NO specific space configured (a "generic" connection). Connections that
-	 * are space-specific for a DIFFERENT space are never used as fallback — using
-	 * the wrong credentials/assistant for an unrelated space would route messages
-	 * incorrectly and could expose one space's data to another.
+	 * Priority order:
+	 *  1. Space-specific connection whose `google_chat_space` matches $space_name.
+	 *  2. Generic connection (no `google_chat_space` configured).
+	 *  3. Last-resort: any enabled Google Chat connection.
+	 *
+	 * The last-resort fallback handles Direct Messages (DMs) and @mentions in
+	 * spaces that are not explicitly mapped to a connection. Each DM between a
+	 * user and the bot is delivered through a unique space ID (e.g.
+	 * spaces/dm-XXXXXXXX) that will never match a workspace-space-specific
+	 * connection, so without this fallback every DM is silently dropped.
+	 *
+	 * Note: the AI reply is always sent back to the *incoming* space, so even
+	 * when a space-specific connection is used as last resort the reply reaches
+	 * the correct DM or space rather than the connection's configured space.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1757,7 +1871,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return null;
 		}
 
-		$fallback = null;
+		$fallback     = null; // First generic (no specific space) connection.
+		$last_resort  = null; // First enabled google_chat connection of any kind.
 
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'google_chat' !== $connection['connection_type'] ) {
@@ -1768,14 +1883,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				continue;
 			}
 
+			// Keep the first enabled google_chat connection as an absolute last resort
+			// so DMs and messages from unregistered spaces always get a response.
+			if ( null === $last_resort ) {
+				$last_resort = $connection;
+			}
+
 			// Check for a space-specific match first.
 			if ( '' !== $space_name && ! empty( $connection['google_chat_space'] ) ) {
 				$conn_space = sanitize_text_field( $connection['google_chat_space'] );
 				if ( $conn_space === $space_name ) {
 					return $connection;
 				}
-				// This connection is space-specific for a different space — skip it
-				// entirely; it must not become the fallback for an unrelated space.
+				// This connection targets a different space — skip it for the generic
+				// fallback so it does not shadow the correct connection in multi-connection
+				// setups, but keep it tracked in $last_resort for DM routing.
 				continue;
 			}
 
@@ -1785,7 +1907,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 
-		return $fallback;
+		// Return the generic connection if available, otherwise any enabled connection.
+		return null !== $fallback ? $fallback : $last_resort;
 	}
 
 	/**
@@ -1818,17 +1941,28 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Return an empty Google Chat-compatible response body.
+	 * Return a Google Chat-compatible acknowledgement response body.
 	 *
-	 * Google Chat accepts an empty JSON object as a valid acknowledgement
-	 * when the bot opts to reply asynchronously.
+	 * Google Chat requires the synchronous HTTP response to include a card-shaped
+	 * JSON object with at minimum a `header` (containing a `title`) and a `sections`
+	 * array. Returning a bare empty object (`{}`) causes Google Chat to consider the
+	 * response invalid and display an alert in the space. The empty-sections card
+	 * satisfies the validation requirement without rendering any visible card content
+	 * to the user — the actual AI reply is sent asynchronously via the cron job.
+	 *
+	 * The response is always delivered with a `Content-Type: application/json` header
+	 * (set automatically by the WordPress REST API and by `wp_send_json()` on the
+	 * admin-ajax fallback path).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return stdClass Empty JSON object response.
+	 * @return array Google Chat card acknowledgement with empty sections.
 	 */
 	protected function empty_response() {
-		return new stdClass();
+		return array(
+			'header'   => array( 'title' => '' ),
+			'sections' => array(),
+		);
 	}
 
 	/**
@@ -2171,6 +2305,64 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Append a diagnostic entry to the webhook receipt log.
+	 *
+	 * Stores up to WEBHOOK_LOG_MAX_ENTRIES entries (newest first) in the
+	 * wp_mcp_ai_gc_webhook_log option so admins can inspect recent activity
+	 * from the connection settings page without enabling full debug logging.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $entry {
+	 *     Fields for the log entry.
+	 *
+	 *     @type string $status     'accepted', 'rejected', or 'processed'.
+	 *     @type string $reason     Human-readable status detail or rejection reason.
+	 *     @type string $event_type Google Chat event type (MESSAGE, ADDED_TO_SPACE, …).
+	 *     @type string $space      Space resource name (spaces/XXXXXXX).
+	 * }
+	 */
+	protected function store_webhook_log_entry( array $entry ) {
+		$log = get_option( self::WEBHOOK_LOG_OPTION, array() );
+		if ( ! is_array( $log ) ) {
+			$log = array();
+		}
+
+		$client_ip  = '';
+		$raw_ip     = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+		$raw_ip     = explode( ',', $raw_ip );
+		$raw_ip     = trim( reset( $raw_ip ) );
+		if ( filter_var( $raw_ip, FILTER_VALIDATE_IP ) ) {
+			// Mask the last octet (IPv4) or last segment (IPv6) for privacy.
+			$parts = explode( '.', $raw_ip );
+			if ( count( $parts ) === 4 ) {
+				$parts[3] = 'xxx';
+				$client_ip = implode( '.', $parts );
+			} else {
+				$colon_pos = strrpos( $raw_ip, ':' );
+				$client_ip = ( false !== $colon_pos ) ? substr( $raw_ip, 0, $colon_pos + 1 ) . 'xxxx' : $raw_ip;
+			}
+		}
+
+		$log_entry = array(
+			'ts'         => current_time( 'mysql', true ),
+			'status'     => isset( $entry['status'] ) ? sanitize_text_field( $entry['status'] ) : 'unknown',
+			'reason'     => isset( $entry['reason'] ) ? sanitize_text_field( $entry['reason'] ) : '',
+			'event_type' => isset( $entry['event_type'] ) ? sanitize_text_field( $entry['event_type'] ) : '',
+			'space'      => isset( $entry['space'] ) ? sanitize_text_field( $entry['space'] ) : '',
+			'ip'         => $client_ip,
+		);
+
+		array_unshift( $log, $log_entry );
+
+		if ( count( $log ) > self::WEBHOOK_LOG_MAX_ENTRIES ) {
+			$log = array_slice( $log, 0, self::WEBHOOK_LOG_MAX_ENTRIES );
+		}
+
+		update_option( self::WEBHOOK_LOG_OPTION, $log, false );
 	}
 
 	/**

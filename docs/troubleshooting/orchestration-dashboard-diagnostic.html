@@ -192,6 +192,19 @@
             });
         }
         
+        // Simple HTML escaping to safely render text values in innerHTML
+        function escapeHtml(str) {
+            if (str === null || str === undefined) {
+                return '';
+            }
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Test 5: Assets
         function testAssets() {
             let html = '';
@@ -212,7 +225,8 @@
                 
                 // List the metrics
                 const metrics = Array.from(metricElements).map(el => el.getAttribute('data-metric'));
-                html += '<div class="test-result info">Metrics: ' + metrics.join(', ') + '</div>';
+                const escapedMetrics = metrics.map(escapeHtml);
+                html += '<div class="test-result info">Metrics: ' + escapedMetrics.join(', ') + '</div>';
             } else {
                 html += '<div class="test-result fail">✗ No metric elements found</div>';
             }

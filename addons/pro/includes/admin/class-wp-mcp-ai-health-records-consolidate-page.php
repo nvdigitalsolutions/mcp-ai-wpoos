@@ -1596,14 +1596,30 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized inside helper.
 		$data = self::sanitize_vitals_post_data( $_POST );
 
-		if ( empty( array_filter( $data ) ) ) {
+		// Require at least one numeric vital sign measurement (server-side defence).
+		if ( ! self::has_numeric_vitals( $data ) ) {
 			wp_send_json_error( array( 'message' => __( 'No vital sign data provided. Please fill in at least one measurement.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$data['logged_by'] = get_current_user_id();
-		$data['source']    = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+		// Ensure measurement date/time are always populated.
+		if ( empty( $data['measurement_date'] ) ) {
+			$data['measurement_date'] = current_time( 'Y-m-d' );
+		}
+		if ( empty( $data['measurement_time'] ) ) {
+			$data['measurement_time'] = current_time( 'H:i' );
+		}
 
-		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $data );
+		// Validate source against the CCT allowed option list.
+		$allowed_sources = array( 'manual', 'tma', 'api', 'import' );
+		$raw_source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+		$data['source']  = in_array( $raw_source, $allowed_sources, true ) ? $raw_source : 'manual';
+
+		// Stamp the entry with an audit trail — these mirror what log_vital_signs tool sets.
+		$data['logged_at'] = current_time( 'mysql' );
+		$data['logged_by'] = get_current_user_id();
+		$data['entry_id']  = 'vs_' . time() . '_' . wp_rand( 1000, 9999 );
+
+		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $data );
 
 		if ( ! $item_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'mcp-ai-wpoos-pro' ) ) );
@@ -1622,30 +1638,52 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	}
 
 	/**
+	 * Return true when $data contains at least one numeric vital sign field.
+	 *
+	 * Meta-only payloads (date, time, units, notes, source) must not be saved
+	 * as empty vitals entries.
+	 *
+	 * @param array $data Sanitized POST data.
+	 * @return bool
+	 */
+	private static function has_numeric_vitals( array $data ) {
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+				'respiratory_rate', 'egfr', 'creatinine', 'bun',
+				'potassium', 'sodium', 'phosphorus', 'albumin',
+			);
+
+		foreach ( $numeric_fields as $field ) {
+			if ( isset( $data[ $field ] ) && '' !== (string) $data[ $field ] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Sanitize vitals data from a POST payload.
 	 *
 	 * @param array $post Raw POST data.
 	 * @return array      Sanitized key/value pairs matching the CCT schema.
 	 */
 	private static function sanitize_vitals_post_data( array $post ) {
-		$numeric_fields = array(
-			'bp_systolic',
-			'bp_diastolic',
-			'heart_rate',
-			'temperature',
-			'weight',
-			'bmi',
-			'blood_glucose',
-			'oxygen_saturation',
-			'respiratory_rate',
-			'egfr',
-			'creatinine',
-			'bun',
-			'potassium',
-			'sodium',
-			'phosphorus',
-			'albumin',
-		);
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+				'respiratory_rate', 'egfr', 'creatinine', 'bun',
+				'potassium', 'sodium', 'phosphorus', 'albumin',
+			);
 
 		$data = array();
 

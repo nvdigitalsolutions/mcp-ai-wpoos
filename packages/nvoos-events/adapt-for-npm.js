@@ -16,7 +16,9 @@ let eventBusCode = fs.readFileSync(eventBusFile, 'utf8');
 
 // Step 2: Process SSE service
 console.log('   → Processing SSE service');
-// Remove IIFE wrapper
+// Remove IIFE wrapper.
+// Note: no ^ anchor — the file starts with a JSDoc comment before the IIFE,
+// so ^ (start-of-string) would prevent matching.
 sseCode = sseCode.replace(/\(function \(window\) \{[\s]*'use strict';[\s]*\/\/ Prevent multiple initialization[\s]*if \(window\.wpMcpAiSSE\) \{[\s]*return;[\s]*\}/, '');
 sseCode = sseCode.replace(/\/\/ Export to global scope[\s]*window\.wpMcpAiSSE = SSEService;[\s]*\/\/ Clean up connections[\s\S]*?\}\)\(window\);/, '');
 
@@ -24,26 +26,28 @@ sseCode = sseCode.replace(/\/\/ Export to global scope[\s]*window\.wpMcpAiSSE = 
 sseCode = sseCode.replace(/if \(window\.wpMcpAiDebug && window\.console/g, 'if (this.debug && console');
 sseCode = sseCode.replace(/window\.console && console/g, 'console');
 
-// Add configuration support
+// Add debug property and helpers as object literal members (must use object literal syntax)
 const sseConfigAddition = `
-	SSEService.debug = false;
-	
-	/**
-	 * Enable debug logging
-	 */
-	SSEService.enableDebug = function() {
-		this.debug = true;
-	};
-	
-	/**
-	 * Disable debug logging
-	 */
-	SSEService.disableDebug = function() {
-		this.debug = false;
-	};
+		debug: false,
+
+		/**
+		 * Enable debug logging
+		 */
+		enableDebug: function() {
+			this.debug = true;
+		},
+
+		/**
+		 * Disable debug logging
+		 */
+		disableDebug: function() {
+			this.debug = false;
+		},
+
 `;
 
-sseCode = sseCode.replace('const SSEService = {', 'const SSEService = {' + sseConfigAddition);
+// Insert at the very start of the object body (right after the opening brace)
+sseCode = sseCode.replace(/const SSEService = \{\s*\n(\s*\/\*\*)/, 'const SSEService = {' + sseConfigAddition + '\t\t/**');
 
 // Step 3: Process Event Bus
 console.log('   → Processing event bus');

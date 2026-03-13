@@ -102,6 +102,16 @@ class WP_MCP_AI_Skill_Registry {
 	const ALLOWED_EXTRA_EXTENSIONS = array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp' );
 
 	/**
+	 * Maximum total decompressed size (in bytes) allowed from a ZIP archive (16 MB).
+	 *
+	 * Prevents zip-bomb (decompression bomb) attacks where a small compressed file
+	 * expands into an arbitrarily large payload that exhausts server memory or disk.
+	 *
+	 * @var int
+	 */
+	const MAX_ZIP_DECOMPRESSED_BYTES = 16 * 1024 * 1024; // 16 MB.
+
+	/**
 	 * Ensure the skills directory exists with proper protections.
 	 *
 	 * @since 1.7.0
@@ -288,6 +298,7 @@ class WP_MCP_AI_Skill_Registry {
 		}
 
 		// Write any extra files (e.g., examples, resources).
+		$decompressed_bytes = strlen( $content ); // Count SKILL.md itself.
 		foreach ( $extra_files as $relative_path => $file_content ) {
 			// Prevent directory traversal.
 			$safe_path = ltrim( $relative_path, '/' );
@@ -300,6 +311,17 @@ class WP_MCP_AI_Skill_Registry {
 			$ext = strtolower( pathinfo( $safe_path, PATHINFO_EXTENSION ) );
 			if ( ! in_array( $ext, self::ALLOWED_EXTRA_EXTENSIONS, true ) ) {
 				continue;
+			}
+
+			// Guard against decompression bombs: reject the whole archive if the
+			// cumulative decompressed size exceeds the configured limit.
+			$decompressed_bytes += strlen( $file_content );
+			if ( $decompressed_bytes > self::MAX_ZIP_DECOMPRESSED_BYTES ) {
+				return new WP_Error(
+					'wp_mcp_ai_skill_zip_too_large',
+					__( 'The ZIP archive decompresses to more than the allowed 16 MB. Please reduce the archive size.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
 			}
 
 			$full_path   = $skill_dir . '/' . $safe_path;

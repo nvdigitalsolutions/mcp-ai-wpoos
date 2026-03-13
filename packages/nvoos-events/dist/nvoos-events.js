@@ -33,27 +33,32 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 	};
 
 	/**
+	 * Maximum number of consecutive reconnection attempts before giving up
+	 */
+	const MAX_RECONNECT_ATTEMPTS = 10;
+
+	/**
 	 * SSE Service
 	 * 
 	 * Provides methods to create and manage Server-Sent Events connections
 	 * using @microsoft/fetch-event-source for improved capabilities.
 	 */
 	const SSEService = {
-	SSEService.debug = false;
-	
-	/**
-	 * Enable debug logging
-	 */
-	SSEService.enableDebug = function() {
-		this.debug = true;
-	};
-	
-	/**
-	 * Disable debug logging
-	 */
-	SSEService.disableDebug = function() {
-		this.debug = false;
-	};
+		debug: false,
+
+		/**
+		 * Enable debug logging
+		 */
+		enableDebug: function() {
+			this.debug = true;
+		},
+
+		/**
+		 * Disable debug logging
+		 */
+		disableDebug: function() {
+			this.debug = false;
+		},
 
 		/**
 		 * Active connections by key
@@ -116,6 +121,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 				const ctrl = new AbortController();
 				const connectionKey = this.generateConnectionKey(url);
 				const self = this;
+				let reconnectAttempts = 0;
 
 				// Build fetch options
 				const fetchOptions = {
@@ -129,6 +135,14 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 * Validates response before processing events
 					 */
 					async onopen(response) {
+						// Reset reconnect attempts on successful connection
+						reconnectAttempts = 0;
+
+						// Update connection status
+						if (self.connections[connectionKey]) {
+							self.connections[connectionKey].status = 'open';
+						}
+
 						// Check for successful response
 						if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
 							// Connection successful
@@ -197,6 +211,9 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 */
 					onclose: () => {
 						// Connection closed normally
+						if (self.connections[connectionKey]) {
+							self.connections[connectionKey].status = 'closed';
+						}
 						if (this.debug && console && console.log) {
 							console.log('[NV oOS SSE] Connection closed by server');
 						}
@@ -207,8 +224,10 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 * Can throw to stop reconnection, or return retry interval
 					 */
 					onerror: (err) => {
+						reconnectAttempts++;
+
 						if (this.debug && console && console.error) {
-							console.error('[NV oOS SSE] Connection error:', err);
+							console.error('[NV oOS SSE] Connection error (attempt ' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + '):', err);
 						}
 
 						// Call user's error handler if provided
@@ -220,6 +239,14 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 						// For retriable errors, don't throw (library will auto-retry)
 						if (err.message && err.message.includes('Client error')) {
 							throw err; // Stop reconnecting on client errors
+						}
+
+						// Stop reconnecting after max attempts to prevent infinite retry loops
+						if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+							if (console.warn) {
+								console.warn('[NV oOS SSE] Max reconnection attempts (' + MAX_RECONNECT_ATTEMPTS + ') reached, giving up');
+							}
+							throw new Error('Max reconnection attempts reached');
 						}
 						// For other errors, allow automatic retry
 					}
@@ -244,7 +271,8 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					ctrl: ctrl,
 					url: url,
 					createdAt: Date.now(),
-					promise: connectionPromise
+					promise: connectionPromise,
+					status: 'connecting'
 				};
 
 				// Return connection object with close method (backward compatible API)
@@ -256,6 +284,11 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					// Expose abort method for advanced use cases
 					abort: function () {
 						ctrl.abort();
+					},
+					// Get connection status
+					getStatus: function () {
+						const conn = self.connections[connectionKey];
+						return conn ? conn.status : 'closed';
 					}
 				};
 
@@ -319,6 +352,23 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 		 */
 		getConnectionCount: function () {
 			return Object.keys(this.connections).length;
+		},
+
+		/**
+		 * Get connection status for a given URL
+		 * 
+		 * @param {string} url - Connection URL to check
+		 * @return {string} Connection status ('connecting', 'open', 'closed', or 'unknown')
+		 */
+		getConnectionStatus: function (url) {
+			const keys = Object.keys(this.connections);
+			for (let i = 0; i < keys.length; i++) {
+				const conn = this.connections[keys[i]];
+				if (conn && conn.url === url) {
+					return conn.status || 'unknown';
+				}
+			}
+			return 'closed';
 		}
 	};
 
@@ -426,17 +476,28 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 	}
 
 	/**
+	 * Maximum number of jobs to keep in cache (LRU eviction)
+	 */
+	const MAX_CACHE_SIZE = 100;
+
+	/**
+	 * Maximum age for cached entries in milliseconds (30 minutes)
+	 */
+	const CACHE_MAX_AGE_MS = 1800000;
+
+	/**
 	 * Job Event Bus - Extended event emitter for job status coordination
 	 *
 	 * Extends the base mitt-compatible API with job-specific features:
-	 * - Job status caching
+	 * - Job status caching with LRU eviction
 	 * - Promise-based job watching
 	 * - Automatic status normalization
+	 * - Cache size limits to prevent memory leaks
 	 */
 	const JobEventBus = createEventBus();
 
 	/**
-	 * Cache of job statuses for quick access
+	 * Cache of job statuses for quick access (bounded by MAX_CACHE_SIZE)
 	 */
 	JobEventBus.cache = {};
 
@@ -451,6 +512,9 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 		if (!jobId || !data) {
 			return;
 		}
+
+		// Evict oldest entries if cache exceeds max size
+		this.evictStaleCache();
 
 		// Update cache
 		this.cache[jobId] = {
@@ -572,6 +636,48 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 				self.on('job:progress', progressHandler);
 			}
 		});
+	};
+
+	/**
+	 * Evict stale and oldest entries from cache to prevent unbounded growth
+	 *
+	 * Removes entries older than CACHE_MAX_AGE_MS first, then evicts
+	 * the oldest entries if cache still exceeds MAX_CACHE_SIZE.
+	 */
+	JobEventBus.evictStaleCache = function () {
+		const keys = Object.keys(this.cache);
+		const now = Date.now();
+
+		// First pass: remove entries older than max age
+		for (let i = 0; i < keys.length; i++) {
+			const entry = this.cache[keys[i]];
+			if (entry && (now - entry.updatedAt) > CACHE_MAX_AGE_MS) {
+				delete this.cache[keys[i]];
+			}
+		}
+
+		// Second pass: if still over limit, remove oldest entries
+		const remainingKeys = Object.keys(this.cache);
+		if (remainingKeys.length > MAX_CACHE_SIZE) {
+			// Pre-compute timestamps for sorting efficiency
+			const entries = [];
+			for (let i = 0; i < remainingKeys.length; i++) {
+				const key = remainingKeys[i];
+				const entry = this.cache[key];
+				entries.push({ key: key, time: entry ? entry.updatedAt : 0 });
+			}
+
+			// Sort by timestamp ascending (oldest first)
+			entries.sort(function (a, b) {
+				return a.time - b.time;
+			});
+
+			// Remove oldest entries until we're at the limit
+			const toRemove = entries.length - MAX_CACHE_SIZE;
+			for (let i = 0; i < toRemove; i++) {
+				delete this.cache[entries[i].key];
+			}
+		}
 	};
 
 	/**

@@ -28,10 +28,17 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	const PAGE_SLUG = 'product-consolidate';
 
 	/**
+	 * Singleton instance — prevents double hook registration between init() and render_page().
+	 *
+	 * @var self|null
+	 */
+	private static $instance = null;
+
+	/**
 	 * Initialize the page.
 	 */
 	public static function init() {
-		$instance = new self( 'ecommerce' );
+		self::$instance = new self( 'ecommerce' );
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 25 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
@@ -59,8 +66,10 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	 * Render the page.
 	 */
 	public static function render_page() {
-		$instance = new self( 'ecommerce' );
-		$instance->render();
+		if ( null === self::$instance ) {
+			self::$instance = new self( 'ecommerce' );
+		}
+		self::$instance->render();
 	}
 
 	/**

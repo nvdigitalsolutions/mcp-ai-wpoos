@@ -96,6 +96,19 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
 
 	/**
+	 * Maximum number of times a rate-limited (HTTP 429) Telegram reply job will
+	 * be retried before giving up. Each retry respects the Retry-After header
+	 * returned by the Telegram Bot API (typically 1–60 seconds).
+	 */
+	const MAX_RATE_LIMIT_RETRIES = 3;
+
+	/**
+	 * Minimum number of seconds to wait when rescheduling a rate-limited
+	 * (HTTP 429) reply job, regardless of the Retry-After header value.
+	 */
+	const MIN_RETRY_DELAY = 30;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -375,21 +388,86 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Resolve automation rules and assistant IDs early so they are available
+		// for both inbox persistence and the AI-reply pipeline below.
+		$automation_rules       = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return;
+		}
+
+		// ── Persist inbound message to the inbox ──────────────────────────────
+		// Group chats use the chat ID (not the sender's user ID) as the contact
+		// identifier so all messages from the same group appear in a single
+		// unified thread in the inbox. Private messages use from_id as before.
+		$tg_contact_id = $is_group ? $chat_id : ( '' !== $from_id ? $from_id : $chat_id );
+
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( $is_group ) {
+				$tg_contact_name = isset( $message['chat']['title'] ) ? sanitize_text_field( $message['chat']['title'] ) : $chat_id;
+				$tg_contact_extra = array(
+					'display_name' => $tg_contact_name,
+					'metadata'     => array( 'contact_type' => $chat_type ),
+				);
+			} else {
+				$tg_contact_name = '';
+				if ( isset( $message['from']['first_name'] ) ) {
+					$tg_contact_name = trim( $message['from']['first_name'] . ' ' . ( isset( $message['from']['last_name'] ) ? $message['from']['last_name'] : '' ) );
+				}
+				$tg_contact_extra = array(
+					'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id,
+					'metadata'     => array( 'contact_type' => 'private' ),
+				);
+			}
+
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'telegram',
+				$tg_contact_id,
+				$tg_contact_extra
+			);
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$tg_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'telegram',
+					'channel_contact_id' => $tg_contact_id,
+					'direction'          => 'inbound',
+					'message_id'         => $tg_message_id,
+					'message_type'       => 'text',
+					'content'            => $text,
+					'raw_payload'        => $message,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $chat_id,
+					'timestamp'          => isset( $message['date'] ) ? absint( $message['date'] ) : time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => ! empty( $assigned_assistant_ids ) ? (string) $assigned_assistant_ids[0] : '',
+				)
+			);
+		}
+
 		// In groups, only reply when the bot is mentioned or the message is a
 		// reply to one of the bot's own messages – but only when require_mention
 		// is explicitly enabled for this connection. Defaults to off so the bot
 		// responds to every group message out of the box.
+		// Note: the message is already stored in the inbox above regardless.
 		$require_mention_in_group = $is_group && ! empty( $connection['require_mention'] );
 		if ( $require_mention_in_group ) {
-			$bot_mentioned  = $this->message_mentions_bot( $text, $connection, $message );
-			$reply_to_bot   = $this->is_reply_to_bot( $message, $connection );
+			$bot_mentioned = $this->message_mentions_bot( $text, $connection, $message );
+			$reply_to_bot  = $this->is_reply_to_bot( $message, $connection );
 
 			if ( ! $bot_mentioned && ! $reply_to_bot ) {
 				// Also check for assistant @slug mentions.
-				$automation_rules      = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
-				$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
 				if ( ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
-					return; // Not addressed to the bot; stay silent.
+					return; // Not addressed to the bot; no reply will be sent.
 				}
 			}
 		}
@@ -399,15 +477,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$text = $this->strip_bot_mention( $text, $connection );
 
 		// --- Automation keyword checks (mirrors WhatsApp maybe_auto_reply) ---
-		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
-		$text_lower       = strtolower( $text );
+		$text_lower = strtolower( $text );
 
 		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && '' !== $text_lower ) {
 			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
 			foreach ( $takeover_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
-					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
 						}
@@ -429,8 +506,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
 			foreach ( $resume_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
-					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
 						}
@@ -449,8 +526,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// --- Human takeover gate ---
-		if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $from_id ) ) {
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $tg_contact_id ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'telegram_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -458,14 +535,6 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				);
 				return;
 			}
-		}
-
-		$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
-
-		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
-
-		if ( '' === $connection_id ) {
-			return;
 		}
 
 		/**
@@ -487,59 +556,26 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'telegram', '' !== $from_id ? $from_id : $chat_id ) ) {
+			return;
+		}
+
 		do_action( 'wp_mcp_ai_telegram_auto_reply', $message, $automation_rules, $assigned_assistant_ids );
 
 		if ( ! empty( $assigned_assistant_ids ) ) {
-			$tg_contact_id = '' !== $from_id ? $from_id : $chat_id;
-
-			// Find or create the contact in the Channel Contacts CCT.
-			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-				$tg_contact_name = '';
-				if ( isset( $message['from']['first_name'] ) ) {
-					$tg_contact_name = trim( $message['from']['first_name'] . ' ' . ( isset( $message['from']['last_name'] ) ? $message['from']['last_name'] : '' ) );
-				}
-				$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
-					'telegram',
-					$tg_contact_id,
-					array( 'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id )
-				);
-				if ( $contact_row_id ) {
-					WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
-				}
-			}
-
-			// Persist inbound message to Channel Messages CCT.
-			if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
-				$tg_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
-				WP_MCP_AI_Channel_Messages_CCT::insert(
-					array(
-						'channel'            => 'telegram',
-						'channel_contact_id' => $tg_contact_id,
-						'direction'          => 'inbound',
-						'message_id'         => $tg_message_id,
-						'message_type'       => 'text',
-						'content'            => $text,
-						'raw_payload'        => $message,
-						'status'             => 'received',
-						'connection_id'      => $connection_id,
-						'phone_number_id'    => $chat_id,
-						'timestamp'          => isset( $message['date'] ) ? absint( $message['date'] ) : time(),
-						'reply_sent'         => 0,
-						'assigned_agent'     => (string) $assigned_assistant_ids[0],
-					)
-				);
-			}
-
 			$reply_to_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
 
 			$job_args = array(
 				array(
-					'assistant_id'       => $assigned_assistant_ids[0],
-					'message_text'       => $text,
-					'chat_id'            => $chat_id,
-					'from_id'            => '' !== $from_id ? $from_id : $chat_id,
-					'connection_id'      => $connection_id,
-					'chat_type'          => $chat_type,
+					'assistant_id'        => $assigned_assistant_ids[0],
+					'message_text'        => $text,
+					'chat_id'             => $chat_id,
+					'from_id'             => '' !== $from_id ? $from_id : $chat_id,
+					'connection_id'       => $connection_id,
+					'chat_type'           => $chat_type,
 					'reply_to_message_id' => $is_group ? $reply_to_message_id : '',
 				),
 			);
@@ -573,6 +609,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$connection_id        = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		$chat_type            = isset( $args['chat_type'] ) ? (string) $args['chat_type'] : 'private';
 		$reply_to_message_id  = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
+		// retry_count incremented each time the job is rescheduled due to a 429.
+		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -601,6 +639,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 			return;
 		}
+
+		// Send a typing indicator before starting AI inference so the user knows
+		// their message is being processed. This is a widely-recommended industry
+		// practice for chatbots: the typing action is visible for up to 5 seconds
+		// and is automatically cleared when the reply arrives or after a timeout.
+		$this->send_typing_action( $bot_token, $chat_id );
 
 		// --- Per-user conversation history (mirrors PR #3844 for WhatsApp) ---
 		$history_key      = $this->get_conversation_history_key( $from_id, $connection_id );
@@ -796,6 +840,41 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		$http_code     = (int) wp_remote_retrieve_response_code( $result );
 		$response_body = json_decode( wp_remote_retrieve_body( $result ), true );
+
+		// Industry standard: handle HTTP 429 Too Many Requests by respecting the
+		// Retry-After header returned by the Telegram Bot API and rescheduling
+		// the job. A retry counter prevents indefinite loops.
+		if ( 429 === $http_code ) {
+			if ( $retry_count >= self::MAX_RATE_LIMIT_RETRIES ) {
+				WP_MCP_AI_Logger::log_error(
+					'Telegram AI reply: rate limit retry limit reached; giving up.',
+					array(
+						'connection_id' => $connection_id,
+						'retry_count'   => $retry_count,
+					)
+				);
+				return;
+			}
+
+			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
+			// Always wait at least MIN_RETRY_DELAY s; honour the Retry-After value when larger.
+			$delay = max( self::MIN_RETRY_DELAY, $retry_after );
+
+			WP_MCP_AI_Logger::log_error(
+				sprintf(
+					'Telegram AI reply: rate limited (429). Retrying in %d seconds (attempt %d/%d).',
+					$delay,
+					$retry_count + 1,
+					self::MAX_RATE_LIMIT_RETRIES
+				),
+				array( 'connection_id' => $connection_id )
+			);
+
+			$retry_args                = $args;
+			$retry_args['retry_count'] = $retry_count + 1;
+			wp_schedule_single_event( time() + $delay, self::REPLY_CRON_HOOK, array( $retry_args ) );
+			return;
+		}
 
 		if ( 200 !== $http_code ) {
 			$api_description = isset( $response_body['description'] ) ? $response_body['description'] : '';
@@ -1679,6 +1758,54 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				case 'app':
 					$this->cmd_app( $chat_id, $message );
 					return true;
+
+				case 'vectorstore':
+					$this->cmd_vectorstore( $chat_id, $message );
+					return true;
+			}
+		}
+
+		// Dispatch to the global slash command handler for dynamically registered commands.
+		if ( ! in_array( $command, $disabled_commands, true ) ) {
+			global $wp_mcp_ai_slash_command_handler;
+			if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler
+				&& $wp_mcp_ai_slash_command_handler->command_exists( $command )
+			) {
+				$from    = isset( $message['from'] ) ? $message['from'] : array();
+				$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
+				$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
+
+				$context = array(
+					'user_id'        => $user_id ? $user_id : 0,
+					'request_time'   => current_time( 'mysql' ),
+					'ip_address'     => '',
+					'correlation_id' => 'telegram_' . wp_generate_uuid4(),
+					'channel'        => 'telegram',
+					'chat_id'        => $chat_id,
+				);
+
+				$input  = '/' . $command . ( '' !== $args ? ' ' . $args : '' );
+				$result = $wp_mcp_ai_slash_command_handler->execute( $input, $context );
+
+				if ( is_wp_error( $result ) ) {
+					if ( ! $user_id && 'insufficient_capability' === $result->get_error_code() ) {
+						$reply = "🔐 This command requires a linked WordPress account.\n\nUse /settings to link your account.";
+					} else {
+						$reply = '⚠️ ' . wp_strip_all_tags( $result->get_error_message() );
+					}
+				} elseif ( is_string( $result ) && '' !== $result ) {
+					$reply = wp_strip_all_tags( $result );
+				} elseif ( is_array( $result ) && ! empty( $result['message'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['message'] );
+				} elseif ( is_array( $result ) && ! empty( $result['output'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['output'] );
+				} else {
+					/* translators: %s: command name */
+					$reply = '✅ ' . sprintf( __( 'Command /%s executed.', 'mcp-ai-wpoos-pro' ), sanitize_key( $command ) );
+				}
+
+				$this->send_command_reply( $chat_id, $reply, $message );
+				return true;
 			}
 		}
 
@@ -1713,10 +1840,23 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( $connection && ! empty( $connection['welcome_message'] ) ) {
 			$text = $connection['welcome_message'];
 		} else {
-			$text = sprintf(
-				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
-				$site_name
+			$welcome_lines = array(
+				sprintf( "👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:", $site_name ),
+				'/help – List available commands',
+				'/tools – Browse AI tools',
+				'/vectorstore – Get vector store info',
+				'/balance – Check credits',
+				'/app – Open the Mini App',
+				'/settings – Open settings',
+				'/status – Check connection status',
+				'/cancel – Reset conversation',
 			);
+			// Append dynamically registered slash commands.
+			foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
+				$welcome_lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
+			}
+			$welcome_lines[] = "\nJust type your question to get started!";
+			$text = implode( "\n", $welcome_lines );
 		}
 
 		/**
@@ -1767,7 +1907,13 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'/settings – Open the Mini App settings',
 			'/status – Check bot connection status',
 			'/cancel – Reset your conversation history',
+			'/vectorstore – Get vector store info for this assistant',
 		);
+
+		// Append dynamically registered slash commands.
+		foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
+			$lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
+		}
 
 		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
 		if ( $is_group ) {
@@ -2055,6 +2201,133 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Handle /vectorstore – retrieve vector store information for the assistant.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_vectorstore( $chat_id, array $message ) {
+		// Resolve the connected assistant to obtain its vector store configuration.
+		$vector_store_id = '';
+		$assistant_name  = '';
+
+		$connection = $this->get_active_telegram_connection();
+		if ( $connection ) {
+			$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$assistant_ids    = $this->resolve_assistant_ids( $connection, $automation_rules );
+			$assistant_id     = ! empty( $assistant_ids ) ? (int) $assistant_ids[0] : 0;
+
+			if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+				if ( ! empty( $config['vector_store_id'] ) ) {
+					$vector_store_id = sanitize_text_field( $config['vector_store_id'] );
+				}
+				$post = get_post( $assistant_id );
+				if ( $post ) {
+					$assistant_name = $post->post_title;
+				}
+			}
+		}
+
+		if ( empty( $vector_store_id ) ) {
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ No vector store is configured for this assistant.',
+				$message
+			);
+			return;
+		}
+
+		// Execute the get_vector_store tool via the registry when available,
+		// falling back to a direct instantiation.
+		$tool   = null;
+		$result = null;
+
+		if ( function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			$registry = wp_mcp_ai_get_tool_registry();
+			if ( $registry ) {
+				$tool = $registry->get_tool( 'get_vector_store' );
+			}
+		}
+
+		if ( ! $tool ) {
+			$tool_file = WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-vector-store.php';
+			if ( file_exists( $tool_file ) ) {
+				require_once $tool_file;
+			}
+			if ( class_exists( 'WP_MCP_AI_Tool_Get_Vector_Store' ) ) {
+				$tool = new WP_MCP_AI_Tool_Get_Vector_Store();
+			}
+		}
+
+		if ( ! $tool ) {
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ Vector store tool is not available.',
+				$message
+			);
+			return;
+		}
+
+		$result = $tool->execute(
+			array( 'vector_store_id' => $vector_store_id ),
+			array()
+		);
+
+		if ( empty( $result['success'] ) ) {
+			$error = ! empty( $result['error'] ) ? $result['error'] : __( 'Unknown error.', 'mcp-ai-wpoos' );
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ ' . wp_strip_all_tags( $error ),
+				$message
+			);
+			return;
+		}
+
+		$data   = ! empty( $result['data'] ) ? $result['data'] : array();
+		$name   = ! empty( $data['name'] ) ? $this->sanitize_for_telegram_markdown( $data['name'] ) : __( 'Unknown', 'mcp-ai-wpoos' );
+		$id     = ! empty( $data['id'] ) ? $this->sanitize_for_telegram_markdown( $data['id'] ) : $this->sanitize_for_telegram_markdown( $vector_store_id );
+		$status = ! empty( $data['status'] ) ? $this->sanitize_for_telegram_markdown( $data['status'] ) : __( 'unknown', 'mcp-ai-wpoos' );
+
+		$header = '🗄️ *Vector Store*';
+		if ( '' !== $assistant_name ) {
+			$safe_assistant = $this->sanitize_for_telegram_markdown( $assistant_name );
+			$header         = "🗄️ *Vector Store – $safe_assistant*";
+		}
+
+		$text  = $header . "\n\n";
+		$text .= "*Name:* $name\n";
+		$text .= "*ID:* `$id`\n";
+		$text .= "*Status:* $status\n";
+
+		if ( ! empty( $data['file_counts'] ) && is_array( $data['file_counts'] ) ) {
+			$counts = $data['file_counts'];
+			$text  .= "\n*Files:*\n";
+			if ( isset( $counts['completed'] ) ) {
+				$text .= '  ✅ Completed: ' . (int) $counts['completed'] . "\n";
+			}
+			if ( isset( $counts['in_progress'] ) ) {
+				$text .= '  🔄 In progress: ' . (int) $counts['in_progress'] . "\n";
+			}
+			if ( isset( $counts['failed'] ) ) {
+				$text .= '  ❌ Failed: ' . (int) $counts['failed'] . "\n";
+			}
+			if ( isset( $counts['cancelled'] ) ) {
+				$text .= '  ⏹ Cancelled: ' . (int) $counts['cancelled'] . "\n";
+			}
+		}
+
+		if ( ! empty( $data['expires_at'] ) ) {
+			$expires = date_i18n( get_option( 'date_format' ), (int) $data['expires_at'] );
+			$text   .= "\n*Expires:* " . $this->sanitize_for_telegram_markdown( $expires ) . "\n";
+		}
+
+		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
 	}
 
 	/**
@@ -2400,6 +2673,34 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get slash commands registered with the global slash command handler that
+	 * are not already handled as built-in Telegram bot commands.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Associative array of command_name => description.
+	 */
+	protected function get_registered_slash_commands() {
+		global $wp_mcp_ai_slash_command_handler;
+
+		if ( ! ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) ) {
+			return array();
+		}
+
+		// Commands handled natively by this controller – skip to avoid duplication.
+		$builtin = array( 'start', 'help', 'settings', 'status', 'cancel', 'tools', 'balance', 'app', 'vectorstore' );
+
+		$registered = array();
+		foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $name => $config ) {
+			if ( ! in_array( $name, $builtin, true ) ) {
+				$registered[ $name ] = ! empty( $config['description'] ) ? (string) $config['description'] : $name;
+			}
+		}
+
+		return $registered;
+	}
+
+	/**
 	 * Get the default set of bot commands to register with Telegram.
 	 *
 	 * These are the built-in commands the webhook controller handles.
@@ -2444,7 +2745,26 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'command'     => 'app',
 				'description' => 'Open the Mini App',
 			),
+			array(
+				'command'     => 'vectorstore',
+				'description' => 'Get vector store info for this assistant',
+			),
 		);
+
+		// Merge dynamically registered slash commands that are not already listed.
+		global $wp_mcp_ai_slash_command_handler;
+		if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) {
+			$builtin_names = wp_list_pluck( $commands, 'command' );
+			foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $cmd_name => $config ) {
+				if ( ! in_array( $cmd_name, $builtin_names, true ) ) {
+					$desc       = ! empty( $config['description'] ) ? wp_strip_all_tags( (string) $config['description'] ) : $cmd_name;
+					$commands[] = array(
+						'command'     => $cmd_name,
+						'description' => substr( $desc, 0, 256 ),
+					);
+				}
+			}
+		}
 
 		/**
 		 * Filters the default bot commands before registration with Telegram.
@@ -2665,7 +2985,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			)
 		);
 
-		// Persist to Channel Messages CCT.
+		// Persist to Channel Messages CCT and upsert the channel contact so that
+		// the conversation appears in the inbox (which queries the contacts table).
 		if ( '' !== $text && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
 			$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
 			$message_id    = isset( $post['message_id'] ) ? (string) $post['message_id'] : '';
@@ -2685,6 +3006,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'reply_sent'         => 0,
 				)
 			);
+
+			// Upsert the channel contact. Without a matching contact record the
+			// inbox REST endpoint (which queries the contacts table) would not
+			// return this channel's conversation.
+			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+				$channel_contact_name = $chat_title ? $chat_title : $chat_id;
+				$channel_contact_row  = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+					'telegram',
+					$chat_id,
+					array(
+						'display_name' => $channel_contact_name,
+						'metadata'     => array( 'contact_type' => 'channel' ),
+					)
+				);
+				if ( $channel_contact_row ) {
+					WP_MCP_AI_Channel_Contacts_CCT::touch( $channel_contact_row );
+				}
+			}
 		}
 
 		/**
@@ -2817,6 +3156,57 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Send a typing indicator to a Telegram chat.
+	 *
+	 * Sends the `typing` chat action via the Telegram Bot API so the user sees
+	 * a "Bot is typing…" status while the AI assistant generates its reply.
+	 * This is an industry-standard UX pattern for conversational bots:
+	 *
+	 * - Telegram's typing action auto-expires after ~5 seconds and is
+	 *   automatically cleared when the actual message arrives.
+	 * - The call is fire-and-forget: failures are logged but do not block
+	 *   the AI reply pipeline.
+	 *
+	 * @see https://core.telegram.org/bots/api#sendchataction
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $bot_token Decrypted Telegram bot token.
+	 * @param string $chat_id   Telegram chat ID to send the typing action to.
+	 */
+	protected function send_typing_action( $bot_token, $chat_id ) {
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendChatAction', rawurlencode( $bot_token ) );
+
+		$body = wp_json_encode(
+			array(
+				'chat_id' => $chat_id,
+				'action'  => 'typing',
+			)
+		);
+
+		if ( false === $body ) {
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 5,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_typing_action_failed',
+				'Telegram typing action could not be sent (non-blocking).',
+				array( 'error' => $result->get_error_message() )
+			);
+		}
 	}
 
 	/**

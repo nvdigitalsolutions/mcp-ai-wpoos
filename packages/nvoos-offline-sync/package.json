@@ -1,0 +1,49 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-offline-sync",
+  "version": "0.1.0-alpha.1",
+  "description": "IndexedDB-backed offline-first sync manager with automatic server sync on reconnect - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-offline-sync.js",
+  "module": "dist/nvoos-offline-sync.js",
+  "types": "dist/nvoos-offline-sync.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-offline-sync.js",
+      "default": "./dist/nvoos-offline-sync.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-offline-sync",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-offline-sync"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "offline",
+    "indexeddb",
+    "sync",
+    "offline-first",
+    "pwa",
+    "service-worker",
+    "queue",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

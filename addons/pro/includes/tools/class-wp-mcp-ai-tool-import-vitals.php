@@ -338,13 +338,13 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					$cct_data['weight_unit'] = sanitize_text_field( $row['weight_unit'] );
 				}
 
-				// Write to vitals_log CCT.
+				// Write to vitals_log CCT (upsert consolidates partial same-day rows).
 				if ( $has_log_cct ) {
-					$inserted = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $cct_data );
+					$inserted = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $cct_data );
 					if ( ! $inserted ) {
 						$save_errors[] = sprintf(
 							/* translators: %d: row index */
-							__( 'Row %d: CCT insert failed.', 'mcp-ai-wpoos-pro' ),
+							__( 'Row %d: CCT upsert failed.', 'mcp-ai-wpoos-pro' ),
 							$row_index + 1
 						);
 						++$skipped;

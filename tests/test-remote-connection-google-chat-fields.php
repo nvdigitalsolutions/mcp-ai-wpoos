@@ -1277,6 +1277,55 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that reply_webhook_url can be cleared on update by explicitly setting it to an empty string.
+	 *
+	 * Regression test: previously the save manager restored the old reply_webhook_url whenever the
+	 * submitted value was empty, making the optional "Incoming Webhook URL" field impossible to clear.
+	 */
+	public function test_google_chat_reply_webhook_url_can_be_cleared() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$webhook_url = 'https://chat.googleapis.com/v1/spaces/AAAAClearTest/messages?key=abc&token=def';
+
+		// First save with a webhook URL set.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'              => 'GC Clear Webhook Test',
+				'url'               => 'https://chat.googleapis.com/v1',
+				'connection_type'   => 'google_chat',
+				'auth_type'         => 'none',
+				'enabled'           => true,
+				'reply_webhook_url' => $webhook_url,
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Update with reply_webhook_url explicitly set to '' (simulates the admin form clearing the field).
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'                => $connection_id,
+				'name'              => 'GC Clear Webhook Test',
+				'url'               => 'https://chat.googleapis.com/v1',
+				'connection_type'   => 'google_chat',
+				'auth_type'         => 'none',
+				'enabled'           => true,
+				'reply_webhook_url' => '',
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $saved );
+		$this->assertSame( '', $saved['reply_webhook_url'], 'Clearing the Incoming Webhook URL should persist as empty' );
+	}
+
+	/**
 	 * Test that reply_webhook_url empty when not provided.
 	 */
 	public function test_google_chat_reply_webhook_url_empty_when_not_provided() {
