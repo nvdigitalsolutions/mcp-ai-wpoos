@@ -176,9 +176,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Inte
 				return new WP_Error( 'wp_mcp_ai_invalid_command', __( 'Each command must have "command" and "description" keys.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			// Replace hyphens with underscores (Telegram does not allow hyphens),
-			// then strip any remaining invalid characters before lower-casing.
-			$name = strtolower( preg_replace( '/[^a-zA-Z0-9_]/', '', str_replace( '-', '_', $cmd['command'] ) ) );
+			$name = strtolower( preg_replace( '/[^a-zA-Z0-9_]/', '', $cmd['command'] ) );
 			$name = substr( $name, 0, 32 );
 
 			if ( '' === $name || ! preg_match( '/^[a-z][a-z0-9_]*$/', $name ) ) {
