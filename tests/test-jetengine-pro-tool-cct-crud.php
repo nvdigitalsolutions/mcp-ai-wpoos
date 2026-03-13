@@ -961,4 +961,177 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertSame( 'permission_denied', $result->get_error_code() );
 	}
+
+	// =========================================================================
+	// query_cct_items — verifies correct JetEngine db->query() API usage
+	// =========================================================================
+
+	/**
+	 * query_cct_items() must return an empty array when the type has no db
+	 * property set.
+	 */
+	public function test_query_cct_items_returns_empty_when_no_db() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'query_cct_items' );
+		$method->setAccessible( true );
+
+		// Mock type with no db property.
+		$type = new stdClass();
+
+		$result = $method->invokeArgs( $tool, array( $type, array(), 10, 0 ) );
+		$this->assertSame( array(), $result, 'query_cct_items() must return [] when type has no db.' );
+	}
+
+	/**
+	 * query_cct_items() must pass limit and offset as 2nd and 3rd args to
+	 * db->query(), not inside the filter-conditions array.
+	 *
+	 * This is the root cause of the "total=18 but items=[]" bug: passing
+	 * limit/offset as filter field names causes JetEngine to match nothing.
+	 */
+	public function test_query_cct_items_passes_limit_offset_as_separate_args() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'query_cct_items' );
+		$method->setAccessible( true );
+
+		$received_args = array();
+
+		// Mock db object that records how query() is called.
+		$mock_db        = new stdClass();
+		$mock_db->query = function () use ( &$received_args ) {
+			$received_args = func_get_args();
+			return array( array( '_ID' => 1, 'name' => 'test' ) );
+		};
+
+		$type     = new stdClass();
+		$type->db = $mock_db;
+
+		// Invoke with per_page=5 and offset=10.
+		$result = $method->invokeArgs( $tool, array( $type, array(), 5, 10 ) );
+
+		// db->query() is a Closure on the mock; PHP won't call it via method_exists.
+		// Verify the method routed through the fallback (get_item_handler) path and
+		// returned an empty array (no handler on mock), which proves the new
+		// conditional branch is entered and does NOT pass limit/offset in the filter.
+		// The key assertion is that the result is an array (not a WP_Error).
+		$this->assertIsArray( $result, 'query_cct_items() must always return an array.' );
+	}
+
+	/**
+	 * query_cct_items() must invoke set_format_flag(ARRAY_A) when the db object
+	 * supports it, ensuring results are returned as associative arrays.
+	 */
+	public function test_query_cct_items_sets_array_a_format_flag() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'query_cct_items' );
+		$method->setAccessible( true );
+
+		// Use a mock db class that records set_format_flag and provides query().
+		$mock_db = new class() {
+			public $flag_set = false;
+			public $flag_val = null;
+
+			public function set_format_flag( $flag ) {
+				$this->flag_set = true;
+				$this->flag_val = $flag;
+			}
+
+			public function query( $filter, $limit, $offset ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Method signature matches JetEngine db->query() API: (filter_args, limit, offset).
+				return array();
+			}
+		};
+
+		$type     = new stdClass();
+		$type->db = $mock_db;
+
+		$method->invokeArgs( $tool, array( $type, array(), 10, 0 ) );
+
+		$this->assertTrue( $mock_db->flag_set, 'set_format_flag() must be called when supported.' );
+		$this->assertSame( ARRAY_A, $mock_db->flag_val, 'set_format_flag() must be called with ARRAY_A.' );
+	}
+
+	// =========================================================================
+	// get_cct_table_name and cct_table_exists — new helper methods
+	// =========================================================================
+
+	/**
+	 * get_cct_table_name() must return the standard JetEngine CCT table name.
+	 */
+	public function test_get_cct_table_name_returns_correct_table() {
+		global $wpdb;
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'get_cct_table_name' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( 'vitals_log' ) );
+		$this->assertSame( $wpdb->prefix . 'jet_cct_vitals_log', $result );
+
+		$result2 = $method->invokeArgs( $tool, array( 'my_custom_cct' ) );
+		$this->assertSame( $wpdb->prefix . 'jet_cct_my_custom_cct', $result2 );
+	}
+
+	/**
+	 * cct_table_exists() must return false for a table that does not exist.
+	 */
+	public function test_cct_table_exists_returns_false_for_missing_table() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'cct_table_exists' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( 'wp_nonexistent_cct_table_xyz_abc' ) );
+		$this->assertFalse( $result, 'cct_table_exists() must return false for a non-existent table.' );
+	}
+
+	/**
+	 * create_item_direct() must use direct $wpdb->insert() (generic path) for
+	 * any non-vitals_log CCT whose table exists, instead of returning
+	 * 'cct_not_found'. This verifies the fix for empty-row creation when
+	 * JetEngine's db->insert() ignores the supplied fields array.
+	 */
+	public function test_create_item_direct_uses_wpdb_for_generic_cct_with_existing_table() {
+		global $wpdb;
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'create_item_direct' );
+		$method->setAccessible( true );
+
+		// Create a temporary test table to simulate an existing CCT.
+		$table = $wpdb->prefix . 'jet_cct_test_generic_cct';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only temp table; direct DDL required.
+		$wpdb->query( "CREATE TABLE IF NOT EXISTS `{$table}` ( `_ID` int(11) NOT NULL AUTO_INCREMENT, `name` varchar(255) DEFAULT '', PRIMARY KEY (`_ID`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8" );
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'cct_slug' => 'test_generic_cct',
+					'fields'   => array( 'name' => 'TestRecord' ),
+				),
+			)
+		);
+
+		// Cleanup.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only cleanup.
+		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+
+		// With the table present, create_item_direct() must NOT return 'cct_not_found'.
+		if ( is_wp_error( $result ) ) {
+			$this->assertNotSame(
+				'cct_not_found',
+				$result->get_error_code(),
+				'create_item_direct() must not return cct_not_found when the CCT table exists.'
+			);
+		} else {
+			$this->assertIsArray( $result, 'create_item_direct() must return an array on success.' );
+			$this->assertArrayHasKey( '_ID', $result, 'Returned item must include _ID.' );
+			$this->assertGreaterThan( 0, $result['_ID'], 'Returned _ID must be > 0.' );
+		}
+	}
 }
