@@ -57,6 +57,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_teams_live', array( $this, 'ajax_test_teams_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_teams_auto_reply', array( $this, 'ajax_test_teams_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_teams_manifest', array( $this, 'ajax_generate_teams_manifest' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_generate_teams_app_package', array( $this, 'ajax_generate_teams_app_package' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_office365_live', array( $this, 'ajax_test_office365_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_office365_auto_reply', array( $this, 'ajax_test_office365_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_live', array( $this, 'ajax_test_icloud_live' ) );
@@ -73,6 +74,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	public function allow_google_oauth_host( $hosts ) {
 		$hosts[] = 'accounts.google.com';
+		$hosts[] = 'login.microsoftonline.com';
 		return $hosts;
 	}
 
@@ -219,6 +221,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_google_chat_oauth_callback();
 		}
 
+		// Handle Microsoft Teams OAuth connect action.
+		if ( 'teams_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'teams_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_teams_oauth_start( $connection_id );
+		}
+
+		// Handle Microsoft Teams OAuth callback action.
+		if ( 'teams_oauth_callback' === $oauth_handler ) {
+			$this->handle_teams_oauth_callback();
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -307,6 +326,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'microsoft_teams':
 					// Outgoing Webhook security token (HMAC-SHA256 key from Teams Admin Center).
 					$signing_secret = isset( $_POST['teams_security_token'] ) ? wp_unslash( $_POST['teams_security_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					// OAuth 2.0 credentials for Microsoft Graph (Azure AD app).
+					$client_id     = isset( $_POST['teams_oauth_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_oauth_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['teams_oauth_client_secret'] ) ? wp_unslash( $_POST['teams_oauth_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					// The Microsoft Graph API Bearer token is stored in 'token'; it is handled
 					// via the channel-aware 'token' entry in $connection_data below.
 					break;
@@ -3154,9 +3176,131 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="teams_tenant_id" id="teams_tenant_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['tenant_id'] ) ? esc_attr( $connection['tenant_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Optional: Azure AD tenant ID for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: Azure AD tenant ID. When provided, the OAuth flow is scoped to this tenant; otherwise "common" (multi-tenant) is used.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
+
+				<!-- Microsoft Teams: 1-click OAuth connect via Azure AD -->
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<td colspan="2" style="padding: 0;">
+						<div style="background: #eef0f9; border-left: 4px solid #6264a7; padding: 12px 16px 8px; margin-bottom: 2px;">
+							<h4 style="margin: 0 0 4px; font-size: 13px; color: #1d2327;">
+								<?php esc_html_e( '1-Click Microsoft Graph Connect (Optional)', 'mcp-ai-wpoos-pro' ); ?>
+							</h4>
+							<p style="margin: 0; font-size: 12px; color: #50575e;">
+								<?php
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: link to Azure AD app registration documentation */
+										__( 'Register an <a href="%s" target="_blank" rel="noopener noreferrer">Azure AD application</a>, enter its credentials below, then click the connect button to automatically obtain a Microsoft Graph access token. This enables the bot to send proactive replies to Teams channels and chats without manual token management.', 'mcp-ai-wpoos-pro' ),
+										'https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade'
+									),
+									array(
+										'a' => array(
+											'href'   => true,
+											'target' => true,
+											'rel'    => true,
+										),
+									)
+								);
+								?>
+							</p>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_oauth_client_id"><?php esc_html_e( 'Azure AD Client ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="teams_oauth_client_id" id="teams_oauth_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The Application (client) ID from your Azure AD app registration. Used for the 1-click OAuth connect flow.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_oauth_client_secret"><?php esc_html_e( 'Azure AD Client Secret (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['client_secret'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Client secret is saved. Leave blank to keep the existing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="teams_oauth_client_secret" id="teams_oauth_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'The client secret value from your Azure AD app registration. Stored encrypted. Used for the 1-click OAuth connect flow.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'OAuth Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$teams_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'teams_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $teams_redirect_uri ); ?>" class="large-text code" id="teams_oauth_redirect_uri" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Add this exact URL to the "Redirect URIs" in your Azure AD app registration (under Authentication → Web).', 'mcp-ai-wpoos-pro' ); ?>
+							&nbsp;<a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Open Azure Portal', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span></a>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Microsoft Teams: 1-click connect button -->
+				<?php if ( $is_edit && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="microsoft_teams-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( '1-Click Connect', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$teams_has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+							$teams_oauth_url       = $teams_has_credentials
+								? wp_nonce_url(
+									add_query_arg(
+										array(
+											'page'          => 'wp-mcp-ai-remote-sites',
+											'oauth_handler' => 'teams_oauth_connect',
+											'connection_id' => $connection['id'],
+										),
+										admin_url( 'admin.php' )
+									),
+									'teams_oauth_connect_' . $connection['id']
+								)
+								: '#';
+							?>
+							<a href="<?php echo esc_url( $teams_oauth_url ); ?>" class="button button-primary" <?php echo $teams_has_credentials ? '' : 'aria-disabled="true" style="opacity:0.5;cursor:not-allowed;" onclick="return false;"'; ?>>
+								<span class="dashicons dashicons-microsoft" style="margin-top: 3px; font-size: 16px; vertical-align: middle;"></span>
+								<?php esc_html_e( 'Connect with Microsoft', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<?php if ( ! $teams_has_credentials ) : ?>
+								<p class="description" style="color: #d63638; margin-top: 6px;">
+									<span class="dashicons dashicons-warning"></span>
+									<?php esc_html_e( 'Enter and save the Azure AD Client ID and Client Secret above before using this button.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description" style="margin-top: 6px;">
+									<?php esc_html_e( 'Click to authorize this connection with your Microsoft account. You will be redirected to Microsoft login and then returned here with tokens automatically saved.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+							<?php if ( ! empty( $connection['refresh_token'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+								<p class="description" style="color: #46b450; margin-top: 4px;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized via OAuth. The Graph token is managed automatically. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
 
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
@@ -3164,16 +3308,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
-							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Connection-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
-							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Connection-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+								<input type="text" readonly="readonly" id="teams_webhook_url_specific" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; flex: 1;">
+								<button type="button" class="button button-secondary wp-mcp-ai-copy-btn" data-copy-target="teams_webhook_url_specific" title="<?php esc_attr_e( 'Copy to clipboard', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span> <?php esc_html_e( 'Copy', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
 							<p class="description" style="margin-bottom: 10px;">
 								<?php esc_html_e( 'Register this URL as the Callback URL when creating an Outgoing Webhook in Microsoft Teams. Each Teams organisation has its own dedicated endpoint so that multiple tenants can receive messages independently.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all tenants):', 'mcp-ai-wpoos-pro' ); ?></p>
-							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<div style="display: flex; gap: 6px; align-items: center;">
+								<input type="text" readonly="readonly" id="teams_webhook_url_generic" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; flex: 1;">
+								<button type="button" class="button button-secondary wp-mcp-ai-copy-btn" data-copy-target="teams_webhook_url_generic" title="<?php esc_attr_e( 'Copy to clipboard', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span> <?php esc_html_e( 'Copy', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
 							<p class="description"><?php esc_html_e( 'Use this generic URL only if a single Teams tenant is configured. The connection-specific URL above is preferred for multi-tenant setups.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<div style="display: flex; gap: 6px; align-items: center;">
+								<input type="text" readonly="readonly" id="teams_webhook_url_generic" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; flex: 1;">
+								<button type="button" class="button button-secondary wp-mcp-ai-copy-btn" data-copy-target="teams_webhook_url_generic" title="<?php esc_attr_e( 'Copy to clipboard', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span> <?php esc_html_e( 'Copy', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
 							<p class="description"><?php esc_html_e( 'Save this connection first to get a connection-specific webhook URL to register in Microsoft Teams. Each connection gets its own dedicated URL, enabling multiple Teams organisations to connect independently.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
@@ -3272,6 +3431,38 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							?>
 						</p>
 						<div id="teams_manifest_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Teams App Package', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="teams_generate_app_package_btn" class="button button-secondary">
+							<?php esc_html_e( 'Download App Package (.zip)', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="teams_app_package_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description">
+							<?php
+							echo wp_kses(
+								sprintf(
+									/* translators: 1: link to Teams Developer Portal, 2: link to Teams app sideloading docs */
+									__( 'Generates a complete <a href="%1$s" target="_blank" rel="noopener noreferrer">Teams Bot app package</a> (.zip) containing <code>manifest.json</code> and icons. Save the connection first, then upload the package via <strong>Teams Developer Portal → Apps → Import app</strong> or <a href="%2$s" target="_blank" rel="noopener noreferrer">sideload it directly into Teams</a>.', 'mcp-ai-wpoos-pro' ),
+									'https://dev.teams.microsoft.com/apps',
+									'https://learn.microsoft.com/en-us/microsoftteams/platform/concepts/deploy-and-publish/apps-upload'
+								),
+								array(
+									'a'      => array(
+										'href'   => true,
+										'target' => true,
+										'rel'    => true,
+									),
+									'strong' => array(),
+									'code'   => array(),
+								)
+							);
+							?>
+						</p>
+						<div id="teams_app_package_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -7284,6 +7475,97 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
+
+			// Microsoft Teams: Download App Package button.
+			const teamsAppPackageBtn     = document.getElementById('teams_generate_app_package_btn');
+			const teamsAppPackageSpinner = document.getElementById('teams_app_package_spinner');
+			const teamsAppPackageResult  = document.getElementById('teams_app_package_result');
+			if (teamsAppPackageBtn) {
+				teamsAppPackageBtn.addEventListener('click', function() {
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!connectionId) {
+						if (teamsAppPackageResult) {
+							teamsAppPackageResult.style.display = 'block';
+							teamsAppPackageResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Save the connection first, then download the app package.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					teamsAppPackageBtn.disabled = true;
+					if (teamsAppPackageSpinner) { teamsAppPackageSpinner.style.display = 'inline-block'; }
+					if (teamsAppPackageResult)  { teamsAppPackageResult.style.display = 'none'; teamsAppPackageResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_generate_teams_app_package');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_generate_teams_app_package' ) ); ?>);
+					data.append('connection_id', connectionId);
+
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							teamsAppPackageBtn.disabled = false;
+							if (teamsAppPackageSpinner) { teamsAppPackageSpinner.style.display = 'none'; }
+							if (!teamsAppPackageResult) { return; }
+							teamsAppPackageResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var byteArray = Uint8Array.from(atob(d.zip_base64), function(c) { return c.charCodeAt(0); });
+								var blob = new Blob([byteArray], { type: 'application/zip' });
+								var url  = URL.createObjectURL(blob);
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'App package ready!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								html += '<p style="margin:6px 0 4px;"><a href="' + url + '" download="' + (d.filename || 'teams-bot.zip') + '" class="button button-primary">' + <?php echo wp_json_encode( __( 'Download teams-bot.zip', 'mcp-ai-wpoos-pro' ) ); ?> + '</a></p>';
+								html += '<p style="margin:6px 0 0;font-size:12px;">' + <?php echo wp_json_encode( __( 'Upload this .zip via Teams Developer Portal → Apps → Import app, or sideload it directly into a Teams channel.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+								html += '</div>';
+								teamsAppPackageResult.innerHTML = html;
+								setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+							} else {
+								teamsAppPackageResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'App package generation failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							teamsAppPackageBtn.disabled = false;
+							if (teamsAppPackageSpinner) { teamsAppPackageSpinner.style.display = 'none'; }
+							if (teamsAppPackageResult) {
+								teamsAppPackageResult.style.display = 'block';
+								teamsAppPackageResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Copy-to-clipboard buttons for webhook URLs and other read-only fields.
+			document.querySelectorAll('.wp-mcp-ai-copy-btn').forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					var targetId = btn.getAttribute('data-copy-target');
+					var targetEl = targetId ? document.getElementById(targetId) : null;
+					if (!targetEl) { return; }
+					var textToCopy = targetEl.value || targetEl.innerText || '';
+					if (!textToCopy) { return; }
+					var originalHtml = btn.innerHTML;
+					if (navigator.clipboard && navigator.clipboard.writeText) {
+						navigator.clipboard.writeText(textToCopy).then(function() {
+							btn.innerHTML = '<span class="dashicons dashicons-yes" style="margin-top:3px;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos-pro' ) ); ?>';
+							setTimeout(function() { btn.innerHTML = originalHtml; }, 2000);
+						}).catch(function() {
+							targetEl.select();
+							document.execCommand('copy');
+						});
+					} else {
+						targetEl.select();
+						try {
+							document.execCommand('copy');
+							btn.innerHTML = '<span class="dashicons dashicons-yes" style="margin-top:3px;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos-pro' ) ); ?>';
+							setTimeout(function() { btn.innerHTML = originalHtml; }, 2000);
+						} catch (e) { /* ignore */ }
+					}
+				});
+			});
+
 			// 1-click connection test button (edit page, saved connections).
 			var testBtn = document.getElementById('wp_mcp_ai_test_connection_btn');
 			if (testBtn) {
@@ -8051,6 +8333,467 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 		exit;
 	}
+	/**
+	 * Handle Microsoft Teams OAuth 2.0 start for a remote connection.
+	 *
+	 * Redirects to the Microsoft identity platform to begin the OAuth 2.0
+	 * authorization code flow. The tenant is taken from the stored tenant_id
+	 * (single-tenant) or falls back to "common" (multi-tenant).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 */
+	protected function handle_teams_oauth_start( $connection_id ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( 'microsoft_teams' !== $connection['connection_type'] ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Microsoft Teams connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Azure AD Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Generate OAuth state and store connection ID in a short-lived transient (CSRF protection).
+		$state     = wp_generate_uuid4();
+		$transient = 'wp_mcp_ai_teams_oauth_state_' . md5( $state );
+
+		set_transient(
+			$transient,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Use the stored tenant_id for single-tenant apps; fall back to "common" for multi-tenant.
+		$tenant = ! empty( $connection['tenant_id'] ) ? sanitize_text_field( $connection['tenant_id'] ) : 'common';
+
+		$redirect_uri = add_query_arg(
+			array(
+				'page'          => 'wp-mcp-ai-remote-sites',
+				'oauth_handler' => 'teams_oauth_callback',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		// Microsoft Graph scopes required for Teams bot reply functionality.
+		$scopes = implode(
+			' ',
+			array(
+				'https://graph.microsoft.com/Chat.ReadWrite',
+				'https://graph.microsoft.com/ChannelMessage.Send',
+				'offline_access',
+				'openid',
+				'profile',
+				'email',
+			)
+		);
+
+		$params = array(
+			'client_id'     => $connection['client_id'],
+			'response_type' => 'code',
+			'redirect_uri'  => $redirect_uri,
+			'scope'         => $scopes,
+			'response_mode' => 'query',
+			'state'         => $state,
+			'prompt'        => 'select_account',
+		);
+
+		$authorize_url = add_query_arg(
+			$params,
+			'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/authorize'
+		);
+
+		wp_safe_redirect( $authorize_url );
+		exit;
+	}
+
+	/**
+	 * Handle Microsoft Teams OAuth 2.0 callback.
+	 *
+	 * Exchanges the authorization code for an access token and refresh token,
+	 * then stores them in the connection record. The access token is saved to
+	 * the existing `token` field (used by the Teams webhook controller) and the
+	 * refresh token to the `refresh_token` field for automatic renewal.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function handle_teams_oauth_callback() {
+		// OAuth callback parameters from Microsoft. No nonce verification required – state provides CSRF protection.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error_description = isset( $_GET['error_description'] ) ? sanitize_text_field( wp_unslash( $_GET['error_description'] ) ) : '';
+
+		if ( $error ) {
+			$message = $error_description ? $error_description : $error;
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Microsoft OAuth error: %s', 'mcp-ai-wpoos-pro' ), $message ) ) ) );
+			exit;
+		}
+
+		$transient_key = 'wp_mcp_ai_teams_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+
+		delete_transient( $transient_key );
+
+		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $code ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$connection_id = $state_data['connection_id'];
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Decrypt client_secret for token exchange.
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$tenant = ! empty( $connection['tenant_id'] ) ? sanitize_text_field( $connection['tenant_id'] ) : 'common';
+
+		$redirect_uri = add_query_arg(
+			array(
+				'page'          => 'wp-mcp-ai-remote-sites',
+				'oauth_handler' => 'teams_oauth_callback',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		// Exchange authorization code for tokens.
+		$response = wp_remote_post(
+			'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'client_id'     => $connection['client_id'],
+					'client_secret' => $client_secret,
+					'code'          => $code,
+					'redirect_uri'  => $redirect_uri,
+					'grant_type'    => 'authorization_code',
+				),
+				'headers' => array(
+					'Accept'       => 'application/json',
+					'Content-Type' => 'application/x-www-form-urlencoded',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== (int) $status_code ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Microsoft rejected the authorization. Please check your Azure AD app configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( ! is_array( $decoded ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+		$expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
+
+		if ( '' === $access_token ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No access token received from Microsoft.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// If no refresh token returned, reuse the existing one (Microsoft may not return it on every auth).
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['refresh_token'] );
+		}
+
+		// Retrieve the signed-in user's display name and email from Microsoft Graph.
+		$display_name  = '';
+		$email_address = '';
+		$me_response = wp_remote_get(
+			'https://graph.microsoft.com/v1.0/me',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		if ( ! is_wp_error( $me_response ) && 200 === (int) wp_remote_retrieve_response_code( $me_response ) ) {
+			$me_body = json_decode( wp_remote_retrieve_body( $me_response ), true );
+			if ( is_array( $me_body ) ) {
+				$display_name  = isset( $me_body['displayName'] ) ? sanitize_text_field( $me_body['displayName'] ) : '';
+				$email_address = isset( $me_body['mail'] ) ? sanitize_email( $me_body['mail'] ) : '';
+				if ( ! $email_address && isset( $me_body['userPrincipalName'] ) ) {
+					$email_address = sanitize_email( $me_body['userPrincipalName'] );
+				}
+			}
+		}
+
+		// Build the update data preserving all existing connection fields.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'microsoft_teams',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			// Empty string + _client_secret_encrypted flag instructs save_connection to
+			// preserve the existing encrypted value (same pattern as Google OAuth callbacks).
+			'client_secret'   => '',
+			'token'           => $access_token,
+			'refresh_token'   => $refresh_token,
+			'token_expiry'    => time() + $expires_in,
+			'tenant_id'       => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
+			'app_id'          => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
+			// Empty string + _signing_secret_encrypted flag preserves the existing encrypted value.
+			'signing_secret'  => '',
+			'require_mention' => ! empty( $connection['require_mention'] ),
+			'enabled'         => $connection['enabled'],
+			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
+		);
+
+		// Flags tell save_connection to copy the existing encrypted values rather than
+		// treating the empty strings above as a request to clear those fields.
+		$update_data['_client_secret_encrypted'] = true;
+		$update_data['_signing_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			exit;
+		}
+
+		$success_message = __( 'Microsoft Teams connected successfully via OAuth!', 'mcp-ai-wpoos-pro' );
+		if ( $display_name || $email_address ) {
+			$identity = $display_name ? $display_name : $email_address;
+			$success_message = sprintf(
+				/* translators: %s: display name or email address of the authenticated Microsoft account */
+				__( 'Microsoft Teams connected successfully for %s! Graph token saved automatically.', 'mcp-ai-wpoos-pro' ),
+				$identity
+			);
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+		exit;
+	}
+
+	/**
+	 * AJAX handler: generate a complete Microsoft Teams Bot app package (.zip).
+	 *
+	 * Creates a Teams-compatible app package containing:
+	 * - manifest.json  (Teams app manifest v1.17 with bot definition)
+	 * - color.png      (192×192 colour icon placeholder)
+	 * - outline.png    (32×32 outline icon placeholder)
+	 *
+	 * The .zip is returned as a base64-encoded string so the browser can trigger
+	 * a client-side download without a temporary file on disk.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_generate_teams_app_package() {
+		check_ajax_referer( 'wp_mcp_ai_generate_teams_app_package', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Resolve bot name and description.
+		$bot_name = isset( $connection['name'] ) && '' !== trim( $connection['name'] )
+			? sanitize_text_field( $connection['name'] )
+			: get_bloginfo( 'name' );
+
+		$assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		$description = sprintf(
+			/* translators: %s: site URL */
+			__( 'AI assistant powered by NV oOS at %s', 'mcp-ai-wpoos-pro' ),
+			home_url()
+		);
+
+		if ( ! empty( $assistant_ids ) ) {
+			$assistant_post = get_post( $assistant_ids[0] );
+			if ( $assistant_post instanceof WP_Post ) {
+				$description = sprintf(
+					/* translators: 1: assistant title, 2: site URL */
+					__( '%1$s — AI assistant powered by NV oOS at %2$s', 'mcp-ai-wpoos-pro' ),
+					$assistant_post->post_title,
+					home_url()
+				);
+			}
+		}
+
+		// Use existing App ID as bot ID, or generate a placeholder UUID.
+		$bot_id = ! empty( $connection['app_id'] ) ? sanitize_text_field( $connection['app_id'] ) : wp_generate_uuid4();
+
+		$valid_domain = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		// Build the Teams app manifest (schema v1.17).
+		$manifest = array(
+			'$schema'         => 'https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json',
+			'manifestVersion' => '1.17',
+			'version'         => '1.0.0',
+			'id'              => $bot_id,
+			'packageName'     => 'com.nvoos.teams.' . $connection_id,
+			'developer'       => array(
+				'name'          => sanitize_text_field( get_bloginfo( 'name' ) ),
+				'websiteUrl'    => home_url(),
+				'privacyUrl'    => home_url( '/privacy-policy' ),
+				'termsOfUseUrl' => home_url( '/terms-of-service' ),
+			),
+			'name'        => array(
+				'short' => mb_substr( $bot_name, 0, 30 ),
+				'full'  => mb_substr( $bot_name . ' — NV oOS AI', 0, 100 ),
+			),
+			'description' => array(
+				'short' => mb_substr( $bot_name . ' AI assistant', 0, 80 ),
+				'full'  => mb_substr( $description, 0, 4000 ),
+			),
+			'icons'       => array(
+				'color'   => 'color.png',
+				'outline' => 'outline.png',
+			),
+			'accentColor' => '#6264A7',
+			'bots'        => array(
+				array(
+					'botId'                => $bot_id,
+					'needsChannelSelector' => false,
+					'isNotificationOnly'   => false,
+					'scopes'               => array( 'team', 'personal', 'groupchat' ),
+					'supportsFiles'        => false,
+					'commandLists'         => array(
+						array(
+							'scopes'   => array( 'team', 'personal', 'groupchat' ),
+							'commands' => array(
+								array(
+									'title'       => __( 'Help', 'mcp-ai-wpoos-pro' ),
+									'description' => __( 'Get help from the AI assistant', 'mcp-ai-wpoos-pro' ),
+								),
+							),
+						),
+					),
+				),
+			),
+			'permissions'   => array( 'identity', 'messageTeamMembers' ),
+			'validDomains'  => array( $valid_domain ),
+		);
+
+		/**
+		 * Filters the Teams Bot app manifest before packaging.
+		 *
+		 * @param array  $manifest      The manifest array.
+		 * @param string $connection_id The Teams connection ID.
+		 * @param array  $connection    The full connection data.
+		 */
+		$manifest = apply_filters( 'wp_mcp_ai_teams_bot_app_manifest', $manifest, $connection_id, $connection );
+
+		$manifest_json = wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+		if ( false === $manifest_json ) {
+			wp_send_json_error( __( 'Failed to encode app manifest as JSON.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Build minimal placeholder PNG icons for the Teams app package.
+		// color.png  : 192×192 purple placeholder icon (Teams colour icon requirement).
+		// outline.png: 32×32  purple outline placeholder icon (Teams outline icon requirement).
+		// For production deployments, replace these with a proper branded icon.
+		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		$color_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADAAQMAAABCs85oAAAABlBMVEViZKcAAADJ9rBRAAAAFElEQVR42mP4z8BQDwQMoxpGNQAAYqkAAV/XhQAAAABJRU5ErkJggg==';
+		$outline_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABlBMVEX///8AAABVwtN+AAAAGUlEQVR42mP4z8BQDwQMoxpGNQAAcsIAAeMLN78AAAAASUVORK5CYII=';
+		$color_png   = base64_decode( $color_png_b64 );
+		$outline_png = base64_decode( $outline_png_b64 );
+		// phpcs:enable
+
+		// Package the files into a ZIP archive.
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			wp_send_json_error( __( 'ZipArchive extension is not available on this server. Please install the php-zip extension.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$tmp_file = wp_tempnam( 'teams-bot-' . $connection_id . '.zip' );
+		if ( ! $tmp_file ) {
+			wp_send_json_error( __( 'Could not create a temporary file. Please check server write permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$zip = new ZipArchive();
+		if ( true !== $zip->open( $tmp_file, ZipArchive::OVERWRITE ) ) {
+			@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_send_json_error( __( 'Could not open ZIP archive for writing.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$zip->addFromString( 'manifest.json', $manifest_json );
+		$zip->addFromString( 'color.png',     $color_png );
+		$zip->addFromString( 'outline.png',   $outline_png );
+		$zip->close();
+
+		$zip_contents = @file_get_contents( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( false === $zip_contents ) {
+			wp_send_json_error( __( 'Could not read the generated ZIP file.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$filename = sanitize_file_name( 'teams-bot-' . $connection_id . '.zip' );
+
+		wp_send_json_success(
+			array(
+				'zip_base64' => base64_encode( $zip_contents ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+				'filename'   => $filename,
+			)
+		);
+	}
+
 
 	/**
 	 * AJAX handler: test a saved remote connection.

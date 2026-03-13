@@ -486,11 +486,11 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+		$access_token = $this->get_or_refresh_graph_token( $connection );
 
 		if ( '' === $access_token ) {
 			WP_MCP_AI_Logger::log_error(
-				'Teams AI reply: access token decryption returned empty string.',
+				'Teams AI reply: access token is empty after refresh attempt.',
 				array( 'connection_id' => $connection_id )
 			);
 			return;
@@ -1455,6 +1455,126 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Return a valid Microsoft Graph access token for the given connection.
+	 *
+	 * When the connection was authorized via the 1-click OAuth flow, the stored
+	 * access token may have expired (Microsoft tokens typically last 1 hour).
+	 * If a refresh token is present and the access token is expired (or within
+	 * 5 minutes of expiry), this method exchanges the refresh token for a new
+	 * access token and updates the stored connection record automatically.
+	 *
+	 * Falls back to the raw stored token for connections that use a manually
+	 * provided bearer token without a refresh token.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection The connection data array from the Remote Site Manager.
+	 * @return string Decrypted access token string, or empty string on failure.
+	 */
+	protected function get_or_refresh_graph_token( array $connection ) {
+		$token_expiry  = isset( $connection['token_expiry'] ) ? (int) $connection['token_expiry'] : 0;
+		$access_token  = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['token'] );
+		$refresh_token = ! empty( $connection['refresh_token'] )
+			? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['refresh_token'] )
+			: '';
+
+		// If the token is still valid (with a 5-minute safety buffer), return it directly.
+		if ( $access_token && $token_expiry > 0 && ( $token_expiry - 300 ) > time() ) {
+			return $access_token;
+		}
+
+		// No refresh token available – return whatever we have and let the caller handle errors.
+		if ( '' === $refresh_token ) {
+			return $access_token;
+		}
+
+		// Token is expired or near expiry; exchange refresh token for a new access token.
+		$tenant = ! empty( $connection['tenant_id'] ) ? sanitize_text_field( $connection['tenant_id'] ) : 'common';
+
+		$client_id     = isset( $connection['client_id'] ) ? sanitize_text_field( $connection['client_id'] ) : '';
+		$client_secret = ! empty( $connection['client_secret'] )
+			? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] )
+			: '';
+
+		if ( '' === $client_id || '' === $client_secret ) {
+			// OAuth credentials not set; return the existing token as-is.
+			return $access_token;
+		}
+
+		$response = wp_remote_post(
+			'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'refresh_token' => $refresh_token,
+					'grant_type'    => 'refresh_token',
+				),
+				'headers' => array(
+					'Accept'       => 'application/json',
+					'Content-Type' => 'application/x-www-form-urlencoded',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Teams: Failed to refresh Graph access token.',
+				array(
+					'connection_id' => $connection['id'],
+					'error'         => is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_body( $response ),
+				)
+			);
+			// Return existing token as a fallback; it may still work if the expiry is inaccurate.
+			return $access_token;
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Teams: Invalid token refresh response from Microsoft.',
+				array( 'connection_id' => $connection['id'] )
+			);
+			return $access_token;
+		}
+
+		$new_access_token  = trim( (string) $decoded['access_token'] );
+		$new_refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : $refresh_token;
+		$new_expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
+
+		// Persist the refreshed token back to the connection.
+		$update = array(
+			'id'              => $connection['id'],
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'microsoft_teams',
+			'auth_type'       => 'none',
+			'client_id'       => $client_id,
+			// Empty string + _client_secret_encrypted flag tells save_connection to
+			// preserve the existing encrypted client_secret without re-encrypting it.
+			'client_secret'   => '',
+			'token'           => $new_access_token,
+			'refresh_token'   => $new_refresh_token,
+			'token_expiry'    => time() + $new_expires_in,
+			'tenant_id'       => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
+			'app_id'          => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
+			// Empty string + _signing_secret_encrypted flag preserves the existing encrypted signing_secret.
+			'signing_secret'  => '',
+			'require_mention' => ! empty( $connection['require_mention'] ),
+			'enabled'         => $connection['enabled'],
+			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
+		);
+		$update['_client_secret_encrypted'] = true;
+		$update['_signing_secret_encrypted'] = true;
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update );
+
+		return $new_access_token;
 	}
 }
 

@@ -302,6 +302,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
 			}
 
+			// Preserve existing token_expiry (Microsoft Teams OAuth) if not provided.
+			if ( empty( $connection_data['token_expiry'] ) && ! empty( $existing_connection['token_expiry'] ) ) {
+				$connection_data['token_expiry'] = $existing_connection['token_expiry'];
+			}
+
 			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
 			if ( empty( $connection_data['signing_secret'] ) && ! empty( $existing_connection['signing_secret'] ) ) {
 				$connection_data['signing_secret']            = $existing_connection['signing_secret'];
@@ -465,6 +470,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'public_key'      => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
 			// Microsoft Teams-specific fields.
 			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// Unix timestamp when the OAuth access token expires (Teams / Office 365 OAuth connections).
+			'token_expiry'    => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
 			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
 			'signing_secret'  => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
 			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
