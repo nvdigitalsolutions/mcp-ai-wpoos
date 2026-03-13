@@ -553,7 +553,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
 			$log_cct_data              = $cct_data;
 			$log_cct_data['logged_at'] = current_time( 'mysql' );
-			$log_cct_id                = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $log_cct_data );
+			$log_cct_id                = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $log_cct_data );
 		}
 
 		// Generate a semantic embedding for the vital signs entry so it can be

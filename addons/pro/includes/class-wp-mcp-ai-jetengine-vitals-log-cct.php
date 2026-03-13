@@ -37,6 +37,18 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	const FIELD_ID_BASE = 44000;
 
 	/**
+	 * Deduplication window in minutes.
+	 *
+	 * When the same numeric vital-sign values are submitted more than once for
+	 * the same member + measurement_date and the measurement times are within
+	 * this many minutes of each other (or no time is specified), the duplicate
+	 * write is silently skipped and the existing row ID is returned unchanged.
+	 * Raise this value if your workflow commonly produces readings spaced more
+	 * than an hour apart that could share identical numbers.
+	 */
+	const DEDUP_WINDOW_MINUTES = 60;
+
+	/**
 	 * Hook into JetEngine to provision the content type.
 	 */
 	public static function bootstrap() {
@@ -75,19 +87,27 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * Insert a vitals log record into the CCT.
+	 * Insert a new vitals log record into the CCT.
+	 *
+	 * Direct `$wpdb->insert()` is always used when the table exists because the
+	 * JetEngine item-handler's `create_item()` is designed for form submissions
+	 * and reads field values from `$_POST` / `$_REQUEST` internally — it does
+	 * not reliably persist custom fields when called programmatically.  The
+	 * handler is only attempted as a last-resort fallback when the table has not
+	 * been created yet.
+	 *
+	 * Prefer {@see upsert()} over this method when same-day consolidation of
+	 * partial readings is desired.
 	 *
 	 * @param int   $member_id WordPress post ID of the member.
 	 * @param array $data      Flat key/value pairs matching the CCT schema.
-	 * @return int|false       Inserted CCT item ID, or false on failure.
+	 * @return int|false       Inserted CCT item _ID, or false on failure.
 	 */
 	public static function insert( $member_id, array $data ) {
 		$member_id = absint( $member_id );
 		if ( ! $member_id ) {
 			return false;
 		}
-
-		$handler = self::get_item_handler();
 
 		$record = array_merge(
 			array(
@@ -97,11 +117,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			$data
 		);
 
-		if ( $handler && method_exists( $handler, 'create_item' ) ) {
-			$result = $handler->create_item( $record );
-			return is_numeric( $result ) ? (int) $result : false;
-		}
-
+		// Prefer a direct DB insert — reliable for programmatic writes.
 		if ( self::table_exists() ) {
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -109,7 +125,266 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			return $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
+		// Last-resort: JetEngine handler (covers fresh installs where the table
+		// may not exist yet but JetEngine can initialise it on the fly).
+		$handler = self::get_item_handler();
+		if ( $handler && method_exists( $handler, 'create_item' ) ) {
+			$result = $handler->create_item( $record );
+			return is_numeric( $result ) ? (int) $result : false;
+		}
+
 		return false;
+	}
+
+	/**
+	 * Find the first vitals log row for a member on a specific measurement date.
+	 *
+	 * @param int    $member_id Member post ID.
+	 * @param string $date      Measurement date string 'YYYY-MM-DD'.
+	 * @return object|null      CCT row object (oldest matching), or null.
+	 */
+	public static function get_for_date( $member_id, $date ) {
+		$member_id = absint( $member_id );
+		$date      = sanitize_text_field( $date );
+
+		if ( ! $member_id || ! $date || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+
+		return $row ? $row : null;
+	}
+
+	/**
+	 * Update specific fields on an existing CCT row.
+	 *
+	 * @param int   $item_id CCT row primary key (_ID).
+	 * @param array $data    Flat key/value pairs to update.
+	 * @return bool          True when at least one row was affected.
+	 */
+	public static function update_fields( $item_id, array $data ) {
+		$item_id = absint( $item_id );
+
+		if ( ! $item_id || empty( $data ) || ! self::table_exists() ) {
+			return false;
+		}
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$result = $wpdb->update(
+			self::get_table_name(),
+			$data,
+			array( '_ID' => $item_id )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Insert or consolidate a vitals log entry for the given member and date.
+	 *
+	 * When a record already exists for the same member + measurement_date the
+	 * incoming data is merged into that row:
+	 *  - Near-duplicate guard: if every numeric vital field in $data already
+	 *    matches the stored value (within float tolerance) AND the measurement
+	 *    times are within {@see DEDUP_WINDOW_MINUTES} of each other (or no time
+	 *    is present in either record), the write is skipped entirely and the
+	 *    existing row ID is returned immediately — preventing duplicate rows
+	 *    from the same lab printout being added multiple times.
+	 *  - Otherwise every non-empty field in $data overwrites its counterpart in
+	 *    the existing row, so partial readings from separate sessions accumulate
+	 *    into a single complete day-record.
+	 *  - The original `entry_id` and `logged_by` are always preserved (set on
+	 *    first write only).
+	 *  - `measurement_time` is preserved from the first write unless the
+	 *    existing value is empty.
+	 *  - `logged_at` is always refreshed to reflect the most-recent write.
+	 *
+	 * When no record exists a fresh row is created via {@see insert()}.
+	 *
+	 * @param int   $member_id Member post ID.
+	 * @param array $data      Flat key/value pairs matching the CCT schema.
+	 * @return int|false       CCT item _ID on success, or false on failure.
+	 */
+	public static function upsert( $member_id, array $data ) {
+		$measurement_date = ! empty( $data['measurement_date'] )
+			? $data['measurement_date']
+			: current_time( 'Y-m-d' );
+
+		$existing = self::get_for_date( absint( $member_id ), $measurement_date );
+
+		if ( $existing ) {
+			// Near-duplicate guard: same values within the same time window
+			// means the same source data is being submitted again (e.g. the
+			// same lab printout scanned or pasted more than once).  Return the
+			// existing row silently — no DB write, no logged_at update.
+			if ( self::is_near_duplicate( $existing, $data ) ) {
+				return (int) $existing->_ID;
+			}
+
+			// Build the update payload: new non-empty values fill / overwrite.
+			$update = array();
+			foreach ( $data as $key => $val ) {
+				// Preserve originals set on first write.
+				if ( in_array( $key, array( 'entry_id', 'logged_by' ), true ) ) {
+					continue;
+				}
+				// Preserve measurement_time when already recorded.
+				if ( 'measurement_time' === $key && ! empty( $existing->measurement_time ) ) {
+					continue;
+				}
+				if ( '' !== (string) $val && null !== $val ) {
+					$update[ $key ] = $val;
+				}
+			}
+
+			// Always refresh the last-write audit timestamp.
+			$update['logged_at'] = current_time( 'mysql' );
+
+			self::update_fields( (int) $existing->_ID, $update );
+
+			return (int) $existing->_ID;
+		}
+
+		return self::insert( $member_id, $data );
+	}
+
+	/**
+	 * Return the list of numeric vital-sign CCT field names.
+	 *
+	 * Centralised here so that every consumer (is_near_duplicate, import tools,
+	 * the admin consolidate page) shares the same authoritative list.  Add new
+	 * fields here and they are automatically picked up everywhere.
+	 *
+	 * @return string[]
+	 */
+	public static function get_numeric_vital_fields() {
+		return array(
+			'bp_systolic',
+			'bp_diastolic',
+			'heart_rate',
+			'temperature',
+			'weight',
+			'bmi',
+			'blood_glucose',
+			'oxygen_saturation',
+			'respiratory_rate',
+			'egfr',
+			'creatinine',
+			'bun',
+			'potassium',
+			'sodium',
+			'phosphorus',
+			'albumin',
+		);
+	}
+
+	/**
+	 * Determine whether incoming data is a near-duplicate of an existing row.
+	 *
+	 * A near-duplicate is defined as:
+	 *  1. Every numeric vital-sign field present in $data already exists in
+	 *     $existing with an equal value (±0.001 float tolerance).  If any
+	 *     incoming field is missing from the existing row, or differs by more
+	 *     than the tolerance, it is NOT a duplicate (new or updated data).
+	 *  2. When both the existing row and $data carry a measurement_time, the
+	 *     times must be within {@see DEDUP_WINDOW_MINUTES} of each other.
+	 *     When either time is absent the time condition is waived.
+	 *
+	 * @param object $existing        Existing CCT row object (from get_for_date).
+	 * @param array  $data            Incoming flat key/value pairs.
+	 * @param int    $window_minutes  Override for the dedup window (optional).
+	 * @return bool True when the incoming data is a near-duplicate.
+	 */
+	protected static function is_near_duplicate( $existing, array $data, $window_minutes = null ) {
+		if ( null === $window_minutes ) {
+			$window_minutes = self::DEDUP_WINDOW_MINUTES;
+		}
+
+		// Collect the numeric vital fields actually present in the incoming data.
+		$incoming_numeric = array();
+		foreach ( self::get_numeric_vital_fields() as $field ) {
+			if ( isset( $data[ $field ] ) && '' !== (string) $data[ $field ] ) {
+				$incoming_numeric[ $field ] = (float) $data[ $field ];
+			}
+		}
+
+		// No numeric vitals incoming — nothing to deduplicate.
+		if ( empty( $incoming_numeric ) ) {
+			return false;
+		}
+
+		// Every incoming numeric field must match the stored value.
+		foreach ( $incoming_numeric as $field => $value ) {
+			$existing_val = isset( $existing->$field ) ? $existing->$field : null;
+
+			if ( null === $existing_val || '' === (string) $existing_val ) {
+				// The existing row doesn't have this field yet — incoming adds
+				// new data, so this is NOT a duplicate.
+				return false;
+			}
+
+			if ( abs( (float) $existing_val - $value ) > 0.001 ) {
+				// Values differ — NOT a duplicate.
+				return false;
+			}
+		}
+
+		// All numeric values match.  Now apply the time-window check.
+		$existing_mins = self::time_to_minutes(
+			! empty( $existing->measurement_time ) ? $existing->measurement_time : ''
+		);
+		$incoming_mins = self::time_to_minutes(
+			! empty( $data['measurement_time'] ) ? $data['measurement_time'] : ''
+		);
+
+		if ( false !== $existing_mins && false !== $incoming_mins ) {
+			$diff_minutes = abs( $existing_mins - $incoming_mins );
+			if ( $diff_minutes > $window_minutes ) {
+				// Times are far apart — treat as a different reading at a
+				// different time of day even though the numbers are the same.
+				return false;
+			}
+		}
+
+		// Duplicate confirmed: same values, within the same time window.
+		return true;
+	}
+
+	/**
+	 * Convert a time string to total minutes since midnight.
+	 *
+	 * Accepts HH:MM, H:MM, HH:MM:SS, or H:MM:SS (24-hour).  Returns false
+	 * when the string is empty or cannot be parsed.
+	 *
+	 * @param string $time_str Time string.
+	 * @return int|false Total minutes since midnight, or false on failure.
+	 */
+	private static function time_to_minutes( $time_str ) {
+		$time_str = trim( (string) $time_str );
+
+		if ( '' === $time_str ) {
+			return false;
+		}
+
+		// Match H:MM or HH:MM, optionally followed by :SS.
+		if ( ! preg_match( '/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $time_str, $m ) ) {
+			return false;
+		}
+
+		$hours   = (int) $m[1];
+		$minutes = (int) $m[2];
+
+		if ( $hours > 23 || $minutes > 59 ) {
+			return false;
+		}
+
+		return $hours * 60 + $minutes;
 	}
 
 	/**
