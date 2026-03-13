@@ -2351,6 +2351,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$response_format = 'b64_json';
 			}
 
+			// gpt-image-1 and gpt-image-1.5 do not accept the response_format parameter.
+			$model_supports_response_format = self::image_model_supports_response_format( $model );
+
 			// Prepare multipart form data.
 			$boundary = wp_generate_password( 24, false );
 			$body     = '';
@@ -2394,9 +2397,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
 			$body .= $size . "\r\n";
 
-			$body .= "--{$boundary}\r\n";
-			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
-			$body .= $response_format . "\r\n";
+			if ( $model_supports_response_format ) {
+				$body .= "--{$boundary}\r\n";
+				$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+				$body .= $response_format . "\r\n";
+			}
 
 			$body .= "--{$boundary}--\r\n";
 
@@ -2413,9 +2418,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_image_edit_request',
 				'Sending image edit request to OpenAI.',
 				array(
-					'model' => $model,
-					'size'  => $size,
-					'n'     => $n,
+					'model'            => $model,
+					'size'             => $size,
+					'n'                => $n,
+					'response_format'  => $model_supports_response_format ? $response_format : 'b64_json (default)',
 				)
 			);
 
