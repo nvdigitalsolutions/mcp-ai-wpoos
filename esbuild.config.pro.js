@@ -14,6 +14,7 @@
 const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
+const { builtinModules } = require('module');
 
 // Configuration for Node.js script bundling
 const nodeScriptOptions = {
@@ -21,10 +22,14 @@ const nodeScriptOptions = {
 	platform: 'node',
 	target: 'node14', // WordPress typically runs on Node 14+
 	format: 'cjs', // CommonJS format for Node.js
-	external: ['fs', 'path', 'pdfkit', 'cheerio', 'docx', 'exceljs'], // Don't bundle Node.js built-ins and vendor packages
+	// Only exclude Node.js built-ins — vendor packages (pdfkit, cheerio, docx, exceljs) are bundled.
+	// Use builtinModules to get the complete, version-accurate list (includes both 'fs' and 'node:fs' forms).
+	external: [...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
 	minify: false, // Keep readable for debugging
 	sourcemap: true,
 	logLevel: 'info',
+	// Resolve packages from Pro addon's node_modules (pdfkit, cheerio, docx, exceljs)
+	nodePaths: [path.join(__dirname, 'addons', 'pro', 'node_modules')],
 };
 
 // Browser bundle options for orchestration (IIFE for WordPress)
