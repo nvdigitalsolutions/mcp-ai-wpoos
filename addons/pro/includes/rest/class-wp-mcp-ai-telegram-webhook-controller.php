@@ -1768,59 +1768,44 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// Dispatch to the global slash command handler for dynamically registered commands.
 		if ( ! in_array( $command, $disabled_commands, true ) ) {
 			global $wp_mcp_ai_slash_command_handler;
-			if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) {
-				// Telegram normalises command names by disallowing hyphens; internal
-				// commands may be registered with hyphens (e.g. content-translate).
-				// Resolve the canonical (handler-registered) name: prefer an exact
-				// match, then fall back to the hyphenated variant so that Telegram's
-				// underscore form (content_translate) maps to the internal name.
-				$canonical_command = null;
-				if ( $wp_mcp_ai_slash_command_handler->command_exists( $command ) ) {
-					$canonical_command = $command;
-				} else {
-					$hyphen_command = str_replace( '_', '-', $command );
-					if ( $wp_mcp_ai_slash_command_handler->command_exists( $hyphen_command ) ) {
-						$canonical_command = $hyphen_command;
-					}
-				}
+			if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler
+				&& $wp_mcp_ai_slash_command_handler->command_exists( $command )
+			) {
+				$from    = isset( $message['from'] ) ? $message['from'] : array();
+				$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
+				$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
 
-				if ( null !== $canonical_command ) {
-					$from    = isset( $message['from'] ) ? $message['from'] : array();
-					$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
-					$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
+				$context = array(
+					'user_id'        => $user_id ? $user_id : 0,
+					'request_time'   => current_time( 'mysql' ),
+					'ip_address'     => '',
+					'correlation_id' => 'telegram_' . wp_generate_uuid4(),
+					'channel'        => 'telegram',
+					'chat_id'        => $chat_id,
+				);
 
-					$context = array(
-						'user_id'        => $user_id ? $user_id : 0,
-						'request_time'   => current_time( 'mysql' ),
-						'ip_address'     => '',
-						'correlation_id' => 'telegram_' . wp_generate_uuid4(),
-						'channel'        => 'telegram',
-						'chat_id'        => $chat_id,
-					);
+				$input  = '/' . $command . ( '' !== $args ? ' ' . $args : '' );
+				$result = $wp_mcp_ai_slash_command_handler->execute( $input, $context );
 
-					$input  = '/' . $canonical_command . ( '' !== $args ? ' ' . $args : '' );
-					$result = $wp_mcp_ai_slash_command_handler->execute( $input, $context );
-
-					if ( is_wp_error( $result ) ) {
-						if ( ! $user_id && 'insufficient_capability' === $result->get_error_code() ) {
-							$reply = "🔐 This command requires a linked WordPress account.\n\nUse /settings to link your account.";
-						} else {
-							$reply = '⚠️ ' . wp_strip_all_tags( $result->get_error_message() );
-						}
-					} elseif ( is_string( $result ) && '' !== $result ) {
-						$reply = wp_strip_all_tags( $result );
-					} elseif ( is_array( $result ) && ! empty( $result['message'] ) ) {
-						$reply = wp_strip_all_tags( (string) $result['message'] );
-					} elseif ( is_array( $result ) && ! empty( $result['output'] ) ) {
-						$reply = wp_strip_all_tags( (string) $result['output'] );
+				if ( is_wp_error( $result ) ) {
+					if ( ! $user_id && 'insufficient_capability' === $result->get_error_code() ) {
+						$reply = "🔐 This command requires a linked WordPress account.\n\nUse /settings to link your account.";
 					} else {
-						/* translators: %s: command name */
-						$reply = '✅ ' . sprintf( __( 'Command /%s executed.', 'mcp-ai-wpoos-pro' ), sanitize_key( $command ) );
+						$reply = '⚠️ ' . wp_strip_all_tags( $result->get_error_message() );
 					}
-
-					$this->send_command_reply( $chat_id, $reply, $message );
-					return true;
+				} elseif ( is_string( $result ) && '' !== $result ) {
+					$reply = wp_strip_all_tags( $result );
+				} elseif ( is_array( $result ) && ! empty( $result['message'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['message'] );
+				} elseif ( is_array( $result ) && ! empty( $result['output'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['output'] );
+				} else {
+					/* translators: %s: command name */
+					$reply = '✅ ' . sprintf( __( 'Command /%s executed.', 'mcp-ai-wpoos-pro' ), sanitize_key( $command ) );
 				}
+
+				$this->send_command_reply( $chat_id, $reply, $message );
+				return true;
 			}
 		}
 
@@ -2708,11 +2693,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$registered = array();
 		foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $name => $config ) {
 			if ( ! in_array( $name, $builtin, true ) ) {
-				// Telegram only allows letters, digits and underscores in command names.
-				// Replace hyphens with underscores so commands like /content-translate
-				// are exposed as /content_translate and are fully clickable.
-				$tg_name              = str_replace( '-', '_', $name );
-				$registered[ $tg_name ] = ! empty( $config['description'] ) ? (string) $config['description'] : $tg_name;
+				$registered[ $name ] = ! empty( $config['description'] ) ? (string) $config['description'] : $name;
 			}
 		}
 
@@ -2775,14 +2756,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) {
 			$builtin_names = wp_list_pluck( $commands, 'command' );
 			foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $cmd_name => $config ) {
-				// Telegram only allows letters, digits and underscores in command names.
-				// Normalise hyphens to underscores so /content-translate becomes
-				// /content_translate and remains fully clickable.
-				$tg_cmd_name = str_replace( '-', '_', $cmd_name );
-				if ( ! in_array( $tg_cmd_name, $builtin_names, true ) ) {
-					$desc       = ! empty( $config['description'] ) ? wp_strip_all_tags( (string) $config['description'] ) : $tg_cmd_name;
+				if ( ! in_array( $cmd_name, $builtin_names, true ) ) {
+					$desc       = ! empty( $config['description'] ) ? wp_strip_all_tags( (string) $config['description'] ) : $cmd_name;
 					$commands[] = array(
-						'command'     => $tg_cmd_name,
+						'command'     => $cmd_name,
 						'description' => substr( $desc, 0, 256 ),
 					);
 				}
