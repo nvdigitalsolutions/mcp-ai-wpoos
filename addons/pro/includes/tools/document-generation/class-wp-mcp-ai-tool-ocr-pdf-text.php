@@ -255,6 +255,9 @@ The downloaded file is empty.
 				);
 			}
 
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = wp_tempnam( 'mcp_ai_pdf_' );
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $temp_file, $body ) ) {

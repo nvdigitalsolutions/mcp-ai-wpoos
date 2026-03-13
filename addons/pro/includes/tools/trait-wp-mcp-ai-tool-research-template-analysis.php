@@ -484,6 +484,9 @@ trait WP_MCP_AI_Tool_Research_Template_Analysis {
 			}
 
 			// Save to temp file then upload via WP Filesystem.
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = wp_tempnam( 'research_' );
 			$writer    = \PhpOffice\PhpWord\IOFactory::createWriter( $phpword, 'Word2007' );
 			$writer->save( $temp_file );

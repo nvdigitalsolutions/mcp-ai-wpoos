@@ -581,6 +581,9 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		$document_data['html_content'] = $html_content;
 
 		// Create temporary file for PDF output.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$upload_dir = wp_upload_dir();
 		$temp_file  = wp_tempnam( 'pdf-' . time() );
 		$pdf_file   = $temp_file . '.pdf';

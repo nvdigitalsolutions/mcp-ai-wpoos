@@ -383,6 +383,9 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$allow_proc_open = apply_filters( 'wp_mcp_ai_allow_php_lint', function_exists( 'proc_open' ) );
 
 		if ( $allow_proc_open ) {
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = wp_tempnam();
 			file_put_contents( $temp_file, $code ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
