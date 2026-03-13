@@ -24,6 +24,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Top-level parameter keys that are part of the tool's own interface and
+	 * must not be forwarded to the CCT as record field values.
+	 *
+	 * Used by normalize_fields_argument() when falling back to top-level field
+	 * extraction (i.e. when the caller omits the 'fields' wrapper key).
+	 * Keep this list in sync with get_parameters_schema() properties.
+	 */
+	const TOOL_PARAM_KEYS = array( 'action', 'cct_slug', 'item_id', 'per_page', 'page', 'fields' );
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -107,8 +117,9 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'default'     => 1,
 				),
 				'fields'   => array(
-					'type'        => 'object',
-					'description' => __( 'Field values for create/update operations.', 'mcp-ai-wpoos-pro' ),
+					'type'                 => 'object',
+					'description'          => __( 'Key/value pairs for the CCT record fields. Pass all CCT field names and their values here. Example: {"member_id": 2976, "measurement_date": "2026-02-09", "bp_systolic": 105}. Run get_schema first to discover all available field names for the CCT.', 'mcp-ai-wpoos-pro' ),
+					'additionalProperties' => true,
 				),
 			),
 			'required'   => array(),
@@ -924,25 +935,34 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * arguments differently).  This helper ensures the 'fields' value is
 	 * always a plain PHP array before it is used in database operations.
 	 *
+	 * Fallback: when 'fields' is absent, any top-level keys that are not
+	 * standard tool parameters are treated as field key/value pairs.  This
+	 * handles AI models that pass CCT field data directly at the top level
+	 * of the arguments object rather than nested under a 'fields' key.
+	 *
 	 * @param array $arguments Tool arguments as received by execute().
 	 * @return array Normalised fields array (empty array when absent or invalid).
 	 */
 	protected function normalize_fields_argument( array $arguments ) {
-		if ( ! isset( $arguments['fields'] ) ) {
+		if ( isset( $arguments['fields'] ) ) {
+			$fields = $arguments['fields'];
+
+			if ( is_array( $fields ) ) {
+				return $fields;
+			}
+
+			if ( is_object( $fields ) ) {
+				return (array) $fields;
+			}
+
 			return array();
 		}
 
-		$fields = $arguments['fields'];
-
-		if ( is_array( $fields ) ) {
-			return $fields;
-		}
-
-		if ( is_object( $fields ) ) {
-			return (array) $fields;
-		}
-
-		return array();
+		// Fallback: extract any top-level keys that are not standard tool
+		// parameters and treat them as the CCT field payload.  Some AI
+		// models emit field data at the top level of the arguments object
+		// instead of nesting it under a 'fields' key.
+		return array_diff_key( $arguments, array_flip( self::TOOL_PARAM_KEYS ) );
 	}
 
 	/**

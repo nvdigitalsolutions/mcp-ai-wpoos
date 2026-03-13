@@ -110,7 +110,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * get_definition() must return an array with the required orchestration keys.
+	 * The get_definition() method must return an array with the required orchestration keys.
 	 */
 	public function test_get_definition_returns_expected_structure() {
 		$tool       = $this->get_tool();
@@ -138,7 +138,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * delete_item must return WP_Error when JetEngine is not active.
+	 * The delete_item action must return WP_Error when JetEngine is not active.
 	 */
 	public function test_delete_item_returns_error_without_jetengine() {
 		if ( class_exists( 'Jet_Engine' ) || function_exists( 'jet_engine' ) ) {
@@ -165,7 +165,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * delete_item must return WP_Error when cct_slug or item_id is absent.
+	 * The delete_item action must return WP_Error when cct_slug or item_id is absent.
 	 * Tested via reflection to bypass the JetEngine availability check.
 	 */
 	public function test_delete_item_requires_cct_slug_and_item_id() {
@@ -204,7 +204,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * delete_item must return WP_Error when the user lacks edit_posts capability.
+	 * The delete_item action must return WP_Error when the user lacks edit_posts capability.
 	 * Tested via reflection to bypass the JetEngine availability check.
 	 */
 	public function test_delete_item_requires_edit_posts_capability() {
@@ -258,7 +258,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * list_types() must resolve slug and name from the args array when they
+	 * The list_types() method must resolve slug and name from the args array when they
 	 * are not available as direct properties on the type object, fall back
 	 * to slug for name when args has no name, and silently skip anonymous
 	 * types that have no identifiable slug in either location.
@@ -318,7 +318,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * list_types() field-count resolution must fall back to meta_fields when
+	 * The list_types() field-count resolution must fall back to meta_fields when
 	 * fields is not an array (partial-init type object).
 	 */
 	public function test_list_types_field_count_falls_back_to_meta_fields() {
@@ -338,18 +338,18 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * list_types() ID resolution must prefer '_ID' when 'id' is null.
+	 * The list_types() ID resolution must prefer '_ID' when 'id' is null.
 	 */
 	public function test_list_types_id_falls_back_to_underscore_id() {
 		$type      = new stdClass();
 		$type->id  = null;
-		$type->_ID = 42;
+		$type->_ID = 42; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- JetEngine CCT primary key column name.
 
 		$id = null;
 		if ( isset( $type->id ) && null !== $type->id ) {
 			$id = $type->id;
-		} elseif ( isset( $type->_ID ) ) {
-			$id = $type->_ID;
+		} elseif ( isset( $type->_ID ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- JetEngine CCT primary key column name.
+			$id = $type->_ID; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- JetEngine CCT primary key column name.
 		}
 
 		$this->assertSame( 42, $id, 'ID resolved from _ID fallback.' );
@@ -360,7 +360,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * create_item_direct() must return WP_Error when vitals_log table is absent.
+	 * The create_item_direct() method must return WP_Error when vitals_log table is absent.
 	 * Tested via reflection to bypass the JetEngine availability check.
 	 */
 	public function test_create_item_direct_returns_error_without_vitals_log_table() {
@@ -396,7 +396,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_item_direct() must return WP_Error for unknown CCT slugs.
+	 * The create_item_direct() method must return WP_Error for unknown CCT slugs.
 	 */
 	public function test_create_item_direct_returns_error_for_unknown_slug() {
 		$tool       = $this->get_tool();
@@ -423,7 +423,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * maybe_register_known_cct() must not throw for any known or unknown slug.
+	 * The maybe_register_known_cct() method must not throw for any known or unknown slug.
 	 */
 	public function test_maybe_register_known_cct_does_not_throw() {
 		$tool       = $this->get_tool();
@@ -731,7 +731,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_fields_argument() must return the array unchanged when 'fields' is
+	 * The normalize_fields_argument() method must return the array unchanged when 'fields' is
 	 * already a PHP array.
 	 */
 	public function test_normalize_fields_argument_passes_array_through() {
@@ -749,7 +749,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_fields_argument() must cast a stdClass 'fields' value to an array.
+	 * The normalize_fields_argument() method must cast a stdClass 'fields' value to an array.
 	 *
 	 * This guards against calling paths (e.g. MCP clients or custom integrations)
 	 * that pass the nested 'fields' object as stdClass rather than a PHP array.
@@ -772,7 +772,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_fields_argument() must return an empty array when 'fields' is absent.
+	 * The normalize_fields_argument() method must return an empty array when 'fields' is absent.
 	 */
 	public function test_normalize_fields_argument_returns_empty_when_missing() {
 		$tool   = $this->get_tool();
@@ -785,7 +785,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * normalize_fields_argument() must return an empty array when 'fields' is a scalar.
+	 * The normalize_fields_argument() method must return an empty array when 'fields' is a scalar.
 	 */
 	public function test_normalize_fields_argument_returns_empty_for_scalar() {
 		$tool   = $this->get_tool();
@@ -797,12 +797,100 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$this->assertEmpty( $result );
 	}
 
+	/**
+	 * The normalize_fields_argument() method must extract top-level non-standard keys as
+	 * fields when the 'fields' key is absent — fallback for AI models that pass
+	 * CCT field data at the top level of the arguments object.
+	 */
+	public function test_normalize_fields_argument_fallback_extracts_top_level_fields() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'action'           => 'create_item',
+					'cct_slug'         => 'vitals_log',
+					'member_id'        => 2976,
+					'measurement_date' => '2026-02-09',
+					'bp_systolic'      => 105,
+					'bp_diastolic'     => 56,
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		// Standard params must be excluded.
+		$this->assertArrayNotHasKey( 'action', $result );
+		$this->assertArrayNotHasKey( 'cct_slug', $result );
+		// CCT fields must be present.
+		$this->assertArrayHasKey( 'member_id', $result );
+		$this->assertSame( 2976, $result['member_id'] );
+		$this->assertArrayHasKey( 'measurement_date', $result );
+		$this->assertSame( '2026-02-09', $result['measurement_date'] );
+		$this->assertArrayHasKey( 'bp_systolic', $result );
+		$this->assertSame( 105, $result['bp_systolic'] );
+	}
+
+	/**
+	 * The normalize_fields_argument() method must prefer the 'fields' key over top-level
+	 * field data when both are present in the arguments array.
+	 */
+	public function test_normalize_fields_argument_fields_key_takes_precedence_over_top_level() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'action'      => 'create_item',
+					'cct_slug'    => 'vitals_log',
+					'member_id'   => 9999,  // top-level — must be ignored.
+					'bp_systolic' => 200,   // top-level — must be ignored.
+					'fields'      => array(
+						'member_id'   => 2976,
+						'bp_systolic' => 105,
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 2976, $result['member_id'], "'fields' key must take precedence." );
+		$this->assertSame( 105, $result['bp_systolic'], "'fields' key must take precedence." );
+	}
+
 	// =========================================================================
-	// create_item — direct-path priority for vitals_log
+	// Schema — additionalProperties on 'fields'
 	// =========================================================================
 
 	/**
-	 * create_item() must attempt the direct database path (create_item_direct)
+	 * The 'fields' schema property must declare additionalProperties: true so
+	 * that AI models know they can pass arbitrary key/value pairs.
+	 */
+	public function test_schema_fields_has_additional_properties_true() {
+		$tool   = $this->get_tool();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'fields', $schema['properties'] );
+		$fields_schema = $schema['properties']['fields'];
+
+		$this->assertArrayHasKey(
+			'additionalProperties',
+			$fields_schema,
+			"'fields' schema must declare additionalProperties."
+		);
+		$this->assertTrue(
+			$fields_schema['additionalProperties'],
+			"'fields' schema additionalProperties must be true so AI models can pass any CCT field key."
+		);
+	}
+
+
+
+	/**
+	 * The create_item() method must attempt the direct database path (create_item_direct)
 	 * BEFORE trying JetEngine's type->db->insert(), so that vitals_log records
 	 * are always written via $wpdb->insert() and never via JetEngine's form-
 	 * submission handler that may ignore programmatic field values.
@@ -848,7 +936,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_item_direct() must correctly handle a stdClass 'fields' value,
+	 * The create_item_direct() method must correctly handle a stdClass 'fields' value,
 	 * extracting member_id and passing field data to the CCT insert method.
 	 *
 	 * Without the vitals_log table (test environment), the method returns
@@ -895,7 +983,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * update_item() must return WP_Error('missing_fields') when the vitals_log
+	 * The update_item() method must return WP_Error('missing_fields') when the vitals_log
 	 * table exists but no fields are supplied.
 	 * Tested via reflection to bypass the JetEngine availability check.
 	 */
@@ -934,7 +1022,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * update_item() must return WP_Error('permission_denied') for vitals_log
+	 * The update_item() method must return WP_Error('permission_denied') for vitals_log
 	 * when the user lacks edit_posts capability.
 	 * Verified via reflection, bypass JetEngine check.
 	 */
@@ -967,7 +1055,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * query_cct_items() must return an empty array when the type has no db
+	 * The query_cct_items() method must return an empty array when the type has no db
 	 * property set.
 	 */
 	public function test_query_cct_items_returns_empty_when_no_db() {
@@ -984,7 +1072,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * query_cct_items() must pass limit and offset as 2nd and 3rd args to
+	 * The query_cct_items() method must pass limit and offset as 2nd and 3rd args to
 	 * db->query(), not inside the filter-conditions array.
 	 *
 	 * This is the root cause of the "total=18 but items=[]" bug: passing
@@ -1002,7 +1090,12 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$mock_db        = new stdClass();
 		$mock_db->query = function () use ( &$received_args ) {
 			$received_args = func_get_args();
-			return array( array( '_ID' => 1, 'name' => 'test' ) );
+			return array(
+				array(
+					'_ID'  => 1,
+					'name' => 'test',
+				),
+			);
 		};
 
 		$type     = new stdClass();
@@ -1020,7 +1113,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * query_cct_items() must invoke set_format_flag(ARRAY_A) when the db object
+	 * The query_cct_items() method must invoke set_format_flag(ARRAY_A) when the db object
 	 * supports it, ensuring results are returned as associative arrays.
 	 */
 	public function test_query_cct_items_sets_array_a_format_flag() {
@@ -1031,14 +1124,29 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 
 		// Use a mock db class that records set_format_flag and provides query().
 		$mock_db = new class() {
+			/** @var bool Whether set_format_flag() was called. */
 			public $flag_set = false;
+			/** @var mixed Value passed to set_format_flag(). */
 			public $flag_val = null;
 
+			/**
+			 * Sets the format flag for the mock db object.
+			 *
+			 * @param mixed $flag Format flag value.
+			 */
 			public function set_format_flag( $flag ) {
 				$this->flag_set = true;
 				$this->flag_val = $flag;
 			}
 
+			/**
+			 * Stub implementation of JetEngine db->query() for testing.
+			 *
+			 * @param array $filter Filter args.
+			 * @param int   $limit  Max results.
+			 * @param int   $offset Result offset.
+			 * @return array
+			 */
 			public function query( $filter, $limit, $offset ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Method signature matches JetEngine db->query() API: (filter_args, limit, offset).
 				return array();
 			}
@@ -1058,7 +1166,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * get_cct_table_name() must return the standard JetEngine CCT table name.
+	 * The get_cct_table_name() method must return the standard JetEngine CCT table name.
 	 */
 	public function test_get_cct_table_name_returns_correct_table() {
 		global $wpdb;
@@ -1076,7 +1184,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * cct_table_exists() must return false for a table that does not exist.
+	 * The cct_table_exists() method must return false for a table that does not exist.
 	 */
 	public function test_cct_table_exists_returns_false_for_missing_table() {
 		$tool       = $this->get_tool();
@@ -1089,7 +1197,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_item_direct() must use direct $wpdb->insert() (generic path) for
+	 * The create_item_direct() method must use direct $wpdb->insert() (generic path) for
 	 * any non-vitals_log CCT whose table exists, instead of returning
 	 * 'cct_not_found'. This verifies the fix for empty-row creation when
 	 * JetEngine's db->insert() ignores the supplied fields array.

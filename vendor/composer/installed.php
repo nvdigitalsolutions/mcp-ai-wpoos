@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-cct-tool-item-payloads',
-        'version' => 'dev-copilot/fix-cct-tool-item-payloads',
-        'reference' => '223c96222a21508ff62b761b30e65b8b52059e96',
+        'pretty_version' => 'dev-copilot/fix-import-failed-records',
+        'version' => 'dev-copilot/fix-import-failed-records',
+        'reference' => '9535a0702d8ace400642e0d7d6a04c8e5b5124dd',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-cct-tool-item-payloads',
-            'version' => 'dev-copilot/fix-cct-tool-item-payloads',
-            'reference' => '223c96222a21508ff62b761b30e65b8b52059e96',
+            'pretty_version' => 'dev-copilot/fix-import-failed-records',
+            'version' => 'dev-copilot/fix-import-failed-records',
+            'reference' => '9535a0702d8ace400642e0d7d6a04c8e5b5124dd',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
