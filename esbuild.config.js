@@ -442,6 +442,11 @@ const builds = [
 		...commonOptions,
 	},
 	{
+		entryPoints: ['addons/pro/assets/js/skill-manager-admin.js'],
+		outfile: 'addons/pro/assets/js/skill-manager-admin.min.js',
+		...commonOptions,
+	},
+	{
 		entryPoints: ['addons/pro/assets/js/cpt-assistant.js'],
 		outfile: 'addons/pro/assets/js/cpt-assistant.min.js',
 		...commonOptions,
