@@ -2123,9 +2123,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// For Shopify connections, build the Admin GraphQL API URL.
 		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
-			$api_version = isset( $connection['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection['shopify_api_version'] )
-				? $connection['shopify_api_version']
-				: '2025-01';
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+			}
+			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
+				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
+			);
 			if ( '' === $endpoint || 'graphql' === $endpoint || 'graphql.json' === $endpoint ) {
 				return $base_url . '/admin/api/' . $api_version . '/graphql.json';
 			}

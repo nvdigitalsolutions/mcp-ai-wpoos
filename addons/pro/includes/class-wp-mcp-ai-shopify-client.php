@@ -70,6 +70,36 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		// ------------------------------------------------------------------ //
+		//  Static helpers                                                       //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Validate a Shopify API version string.
+		 *
+		 * Valid format: YYYY-MM (e.g. 2025-01).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $version Version string to validate.
+		 * @return bool True if valid, false otherwise.
+		 */
+		public static function is_valid_api_version( $version ) {
+			return is_string( $version ) && 1 === preg_match( '/^\d{4}-\d{2}$/', $version );
+		}
+
+		/**
+		 * Return a valid Shopify API version, falling back to the default.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $version User-supplied version string.
+		 * @return string Validated version or DEFAULT_API_VERSION.
+		 */
+		public static function sanitize_api_version( $version ) {
+			return self::is_valid_api_version( $version ) ? $version : self::DEFAULT_API_VERSION;
+		}
+
+		// ------------------------------------------------------------------ //
 		//  Credential helpers                                                  //
 		// ------------------------------------------------------------------ //
 
@@ -143,12 +173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		public function get_api_version() {
 			$connection  = $this->get_connection();
 			$api_version = isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : '';
-
-			if ( ! preg_match( '/^\d{4}-\d{2}$/', $api_version ) ) {
-				$api_version = self::DEFAULT_API_VERSION;
-			}
-
-			return $api_version;
+			return self::sanitize_api_version( $api_version );
 		}
 
 		// ------------------------------------------------------------------ //
