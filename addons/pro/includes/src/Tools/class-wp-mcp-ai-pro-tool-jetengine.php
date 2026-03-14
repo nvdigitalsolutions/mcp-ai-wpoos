@@ -79,7 +79,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD, bulk import, and schema discovery: list_types, get_schema, list_items, get_item, create_item, bulk_create, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items. Use bulk_create to import multiple records in a single call — pass an array of field objects in the "items" parameter.', 'mcp-ai-wpoos-pro' );
+		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vitals_log, channel_messages, or any other CCT slug. Supports full CRUD, bulk import, and schema discovery: list_types, get_schema, list_items, get_item, create_item, bulk_create, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items. Use bulk_create to import multiple records in a single call — pass an array of field objects in the "items" parameter.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -349,7 +349,6 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	protected function get_schema_from_cct_class( $slug ) {
 		$known = array(
 			'vitals_log'          => 'WP_MCP_AI_JetEngine_Vitals_Log_CCT',
-			'vital_signs'         => 'WP_MCP_AI_JetEngine_Vitals_CCT',
 			'quizzes'             => 'WP_MCP_AI_JetEngine_Quizzes_CCT',
 			'webchat_messages'    => 'WP_MCP_AI_JetEngine_Webchat_Messages_CCT',
 			'assistants'          => 'WP_MCP_AI_JetEngine_Assistants_CCT',

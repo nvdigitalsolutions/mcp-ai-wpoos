@@ -150,7 +150,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$result = $tool->execute(
 			array(
 				'action'   => 'delete_item',
-				'cct_slug' => 'vital_signs',
+				'cct_slug' => 'vitals_log',
 				'item_id'  => 1,
 			),
 			array( 'user_id' => 1 )
@@ -180,7 +180,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$result = $method->invokeArgs(
 			$tool,
 			array(
-				array( 'cct_slug' => 'vital_signs' ),
+				array( 'cct_slug' => 'vitals_log' ),
 				array( 'user_id' => 1 ),
 			)
 		);
@@ -220,7 +220,7 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			$tool,
 			array(
 				array(
-					'cct_slug' => 'vital_signs',
+					'cct_slug' => 'vitals_log',
 					'item_id'  => 1,
 				),
 				array( 'user_id' => $subscriber_id ),
@@ -236,14 +236,14 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * The description must explicitly mention vital_signs and instruct the AI
+	 * The description must explicitly mention vitals_log and instruct the AI
 	 * NOT to use create_post for CCT items, so the correct tool is always chosen.
 	 */
 	public function test_description_directs_ai_away_from_create_post() {
 		$tool        = $this->get_tool();
 		$description = $tool->get_description();
 
-		$this->assertStringContainsString( 'vital_signs', $description );
+		$this->assertStringContainsString( 'vitals_log', $description );
 
 		// Description must contain explicit negative guidance (NOT / not) alongside create_post.
 		$this->assertMatchesRegularExpression(

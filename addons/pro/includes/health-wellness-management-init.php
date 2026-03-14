@@ -40,14 +40,14 @@ add_action(
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
-// Load JetEngine Vital Signs CCT if JetEngine is active and health management enabled.
+// Load JetEngine CCTs if JetEngine is active.
 if ( function_exists( 'jet_engine' ) ) {
-	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-cct.php';
-	WP_MCP_AI_JetEngine_Vitals_CCT::bootstrap();
-
-	// Load the dedicated Vitals Log CCT — primary storage for compiled log entries.
+	// Load the vitals_log CCT — primary storage for all vital-sign log entries.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
 	WP_MCP_AI_JetEngine_Vitals_Log_CCT::bootstrap();
+
+	// The legacy vital_signs CCT is intentionally NOT bootstrapped here.
+	// All vital-sign writes go to the vitals_log CCT above.
 }
 
 // Load Policy Research & Add page.
