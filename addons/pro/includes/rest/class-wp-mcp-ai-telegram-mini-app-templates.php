@@ -2152,6 +2152,41 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.tma-member-msg{color:var(--tma-hint);font-size:14px;text-align:center;padding:20px 0}' .
 		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
 			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
+
+		/* New-member creation form inside the member picker */
+		'.mv-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
+			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
+		'.mv-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
+		'.mv-new-member-type-row{display:flex;gap:8px;margin-bottom:12px}' .
+		'.mv-type-btn{flex:1;padding:8px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:13px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.mv-type-btn.active{border-color:var(--tma-btn);color:var(--tma-btn);background:var(--tma-secondary-bg);font-weight:600}' .
+		'.mv-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
+		'.mv-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
+
+		/* Settings tab */
+		'.mv-settings-wrap{padding:12px}' .
+		'.mv-settings-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:14px;margin-bottom:12px}' .
+		'.mv-settings-card-title{font-size:12px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;' .
+			'letter-spacing:.5px;margin-bottom:10px}' .
+		'.mv-settings-row{display:flex;justify-content:space-between;align-items:center;' .
+			'padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.mv-settings-row:last-child{border-bottom:none}' .
+		'.mv-settings-label{font-size:13px;color:var(--tma-text)}' .
+		'.mv-settings-value{font-size:13px;color:var(--tma-hint)}' .
+		'.mv-settings-btn{font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid var(--tma-btn);' .
+			'background:none;color:var(--tma-btn);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
+		'.mv-settings-btn.danger{border-color:#c62828;color:#c62828}' .
+
+		/* Inline member row inside settings — compact version of the picker cards */
+		'.mv-settings-member-row{display:flex;align-items:center;gap:10px;padding:10px 0;' .
+			'border-bottom:1px solid var(--tma-border);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
+		'.mv-settings-member-row:last-child{border-bottom:none}' .
+		'.mv-settings-member-row.selected .tma-member-card-icon{background:#1565c0}' .
+		'.mv-settings-member-check{margin-left:auto;font-size:16px;color:var(--tma-btn);opacity:0}' .
+		'.mv-settings-member-row.selected .mv-settings-member-check{opacity:1}' .
 		'</style>' .
 
 		/* ── Member picker overlay ─────────────────────────────────────────── */
@@ -2161,6 +2196,38 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'<div class="tma-member-picker-sub">' . esc_html__( 'Choose a member to view their medical vitals data.', 'mcp-ai-wpoos-pro' ) . '</div>' .
 			'<div class="tma-member-list" id="tma-mv-member-list">' .
 				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'</div>' .
+			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+			'<div class="mv-new-member-form" id="mv-new-member-form">' .
+				'<div class="mv-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="mv-new-member-type-row">' .
+					'<button class="mv-type-btn active" id="mv-type-btn-person" onclick="mvSetMemberType(\'person\',this)">' . esc_html__( '👤 Person', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-type-btn" id="mv-type-btn-pet" onclick="mvSetMemberType(\'pet\',this)">' . esc_html__( '🐶 Pet', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="text" id="mv-new-member-name" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'Full name…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Date of Birth', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="date" id="mv-new-member-dob" class="tma-input" style="width:100%" />' .
+				'</div>' .
+				'<div style="margin-bottom:14px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Blood Type', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<select id="mv-new-member-blood" class="tma-input" style="width:100%">' .
+						'<option value="">' . esc_html__( '— Select —', 'mcp-ai-wpoos-pro' ) . '</option>' .
+						'<option value="A+">A+</option><option value="A-">A-</option>' .
+						'<option value="B+">B+</option><option value="B-">B-</option>' .
+						'<option value="AB+">AB+</option><option value="AB-">AB-</option>' .
+						'<option value="O+">O+</option><option value="O-">O-</option>' .
+					'</select>' .
+				'</div>' .
+				'<div class="mv-new-member-err" id="mv-new-member-err"></div>' .
+				'<div class="mv-new-member-saving" id="mv-new-member-saving">' . esc_html__( 'Saving…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div style="display:flex;gap:8px">' .
+					'<button class="tma-btn tma-btn-secondary" style="flex:1" onclick="mvHideNewMemberForm()">' . esc_html__( 'Cancel', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="tma-btn tma-btn-primary" style="flex:1" onclick="mvSubmitNewMember()">' . esc_html__( 'Create', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
 			'</div>' .
 		'</div>' .
 
@@ -2360,6 +2427,57 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
+		/* ── Settings ── */
+		'<div class="tma-tab-pane" id="mv-tab-settings">' .
+			'<div class="mv-scroll">' .
+				'<div class="mv-settings-wrap">' .
+
+					/* Default member selector card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#128101; ' . esc_html__( 'Default Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Select the member whose data is loaded by default when the app opens.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div id="mv-settings-member-list">' .
+							'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'</div>' .
+						'<div style="margin-top:8px">' .
+							'<button class="mv-settings-btn" onclick="mvSettingsAddMember()">' . esc_html__( '+ Add New Member', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data management card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#128266; ' . esc_html__( 'Local Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Readings stored', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value" id="mv-settings-reading-count">—</span>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Medications stored', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value" id="mv-settings-med-count">—</span>' .
+						'</div>' .
+						'<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' .
+							'<button class="mv-settings-btn" onclick="mvSettingsSyncServer()">' . esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="mv-settings-btn danger" onclick="mvSettingsClearData()">' . esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+					'</div>' .
+
+					/* About card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#8505; ' . esc_html__( 'About', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Template', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value">' . esc_html__( 'Medical Vitals', 'mcp-ai-wpoos-pro' ) . '</span>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value">' . $site_name . '</span>' .
+						'</div>' .
+					'</div>' .
+
+				'</div>' .
+			'</div>' .
+		'</div>' .
+
 		'</div>' . /* .tma-content */
 
 		/* Bottom navigation */
@@ -2383,6 +2501,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'<button class="tma-nav-btn" id="mv-nav-doctor" onclick="mvTab(\'doctor\',this)">' .
 				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
 				esc_html__( 'Doctor', 'mcp-ai-wpoos-pro' ) .
+			'</button>' .
+			'<button class="tma-nav-btn" id="mv-nav-settings" onclick="mvTab(\'settings\',this)">' .
+				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+				esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
 		'</nav>' .
 
@@ -2521,11 +2643,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
-				'if(!members.length){' .
-					'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'No members found. Please add a member first.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-					'return;' .
-				'}' .
-				'list.innerHTML=members.map(function(m){' .
+				/* Build member cards (may be empty) then always append "+ New Member" */
+				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
 					'return\'<div class="tma-member-card" onclick="mvSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
 						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
@@ -2533,6 +2652,13 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
 						'+\'</div>\';' .
 				'}).join("");' .
+				/* Always show the New Member card at the bottom */
+				'var newCard=\'<div class="tma-member-card" onclick="mvShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
+					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
+					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
+					'+\'<div class="tma-member-card-type">' . esc_js( __( 'Create a new profile', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'' .
+					'+\'</div>\';' .
+				'list.innerHTML=cards+newCard;' .
 			'})' .
 			'.catch(function(){' .
 				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -2550,7 +2676,90 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvRefresh();mvRenderMeds();mvSyncFromServer();' .
 		'};' .
 
-		'window.mvSwitchMember=function(){mvShowMemberPicker();};' .
+		'window.mvSwitchMember=function(){' .
+			'mvHideNewMemberForm();' .
+			'mvShowMemberPicker();' .
+		'};' .
+
+		/* ── New member form ── */
+		'var mvNewMemberType="person";' .
+		'var mvNewMemberFromSettings=false;' .
+
+		'window.mvSetMemberType=function(type,btn){' .
+			'mvNewMemberType=type;' .
+			'var btns=document.querySelectorAll(".mv-type-btn");' .
+			'btns.forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+		'};' .
+
+		'window.mvShowNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-mv-member-list");' .
+			'var form=document.getElementById("mv-new-member-form");' .
+			'if(list)list.style.display="none";' .
+			'if(form)form.style.display="block";' .
+			/* Reset form state */
+			'mvNewMemberType="person";' .
+			'var btnPerson=document.getElementById("mv-type-btn-person");' .
+			'var btnPet=document.getElementById("mv-type-btn-pet");' .
+			'if(btnPerson)btnPerson.classList.add("active");' .
+			'if(btnPet)btnPet.classList.remove("active");' .
+			'var nameEl=document.getElementById("mv-new-member-name");if(nameEl)nameEl.value="";' .
+			'var dobEl=document.getElementById("mv-new-member-dob");if(dobEl)dobEl.value="";' .
+			'var bloodEl=document.getElementById("mv-new-member-blood");if(bloodEl)bloodEl.value="";' .
+			'var errEl=document.getElementById("mv-new-member-err");if(errEl)errEl.style.display="none";' .
+			'var savingEl=document.getElementById("mv-new-member-saving");if(savingEl)savingEl.style.display="none";' .
+		'};' .
+
+		'window.mvHideNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-mv-member-list");' .
+			'var form=document.getElementById("mv-new-member-form");' .
+			'if(form)form.style.display="none";' .
+			'if(list)list.style.display="block";' .
+		'};' .
+
+		'window.mvSubmitNewMember=function(){' .
+			'var nameEl=document.getElementById("mv-new-member-name");' .
+			'var name=(nameEl?nameEl.value:"").trim();' .
+			'var errEl=document.getElementById("mv-new-member-err");' .
+			'var savingEl=document.getElementById("mv-new-member-saving");' .
+			'if(!name){' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Name is required.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+				'return;' .
+			'}' .
+			'if(errEl)errEl.style.display="none";' .
+			'if(savingEl)savingEl.style.display="block";' .
+			'var args={name:name,type:mvNewMemberType};' .
+			'var dobEl=document.getElementById("mv-new-member-dob");' .
+			'var dob=(dobEl?dobEl.value:"").trim();if(dob)args.date_of_birth=dob;' .
+			'var bloodEl=document.getElementById("mv-new-member-blood");' .
+			'var blood=(bloodEl?bloodEl.value:"").trim();if(blood)args.blood_type=blood;' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'body:JSON.stringify({slug:"create_member",arguments:args})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'var memberId=d&&d.result&&d.result.member_id?d.result.member_id:0;' .
+				'if(!memberId){' .
+					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+					'return;' .
+				'}' .
+				/* Auto-select the newly created member */
+				'var fromSettings=mvNewMemberFromSettings;' .
+				'mvNewMemberFromSettings=false;' .
+				'mvSelectMember(memberId,name);' .
+				/* If triggered from Settings, navigate back to the settings tab */
+				'if(fromSettings){' .
+					'var settingsBtn=document.getElementById("mv-nav-settings");' .
+					'mvTab("settings",settingsBtn);' .
+				'}' .
+			'})' .
+			'.catch(function(){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+			'});' .
+		'};' .
 		/* Returns "normal" | "warning" | "alert" */
 		'function mvBpStatus(sys,dia){' .
 			'if(!sys||!dia)return"";' .
@@ -2662,6 +2871,81 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(tab==="dashboard")mvRefresh();' .
 			'if(tab==="trends")mvRenderTrends();' .
 			'if(tab==="dosage")mvRenderMeds();' .
+			'if(tab==="settings")mvRenderSettings();' .
+		'};' .
+
+		/* ── Settings tab ── */
+		'window.mvRenderSettings=function(){' .
+			/* Update data counts */
+			'var readingCountEl=document.getElementById("mv-settings-reading-count");' .
+			'if(readingCountEl)readingCountEl.textContent=mvLoadReadings().length;' .
+			'var medCountEl=document.getElementById("mv-settings-med-count");' .
+			'if(medCountEl)medCountEl.textContent=mvLoadMeds().length;' .
+			/* Fetch members and render inline member selector */
+			'var list=document.getElementById("mv-settings-member-list");' .
+			'if(!list)return;' .
+			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
+				'if(!members.length){' .
+					'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'No members yet. Use "+ Add New Member" below to create one.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+					'return;' .
+				'}' .
+				'list.innerHTML=members.map(function(m){' .
+					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
+					'var sel=m.id===MEMBER_ID?" selected":"";' .
+					'return\'<div class="mv-settings-member-row\'+sel+\'" onclick="mvSettingsSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
+						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
+						'+\'<div><div class="tma-member-card-name">\'+escH(m.name)+\'</div>\'' .
+						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
+						'+\'<span class="mv-settings-member-check">&#10003;</span>\'' .
+						'+\'</div>\';' .
+				'}).join("");' .
+			'})' .
+			'.catch(function(){' .
+				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'};' .
+
+		/* Select a member as default directly from the Settings tab */
+		'window.mvSettingsSelectMember=function(id,name){' .
+			'MEMBER_ID=id;MEMBER_NAME=name;' .
+			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:id,name:name}));}catch(e){}' .
+			/* Update header label */
+			'var lbl=document.getElementById("tma-mv-member-label");' .
+			'if(lbl)lbl.textContent=name;' .
+			/* Clear cached readings so fresh data is loaded for the new default member */
+			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
+			'tmaHaptic("success");' .
+			/* Re-render the settings list to show the new selection, then sync */
+			'mvRenderSettings();' .
+			'mvSyncFromServer();' .
+		'};' .
+
+		/* Open new-member form from the Settings tab */
+		'window.mvSettingsAddMember=function(){' .
+			'mvNewMemberFromSettings=true;' .
+			'mvHideNewMemberForm();' .
+			'mvShowMemberPicker();' .
+			'mvShowNewMemberForm();' .
+		'};' .
+
+		'window.mvSettingsSyncServer=function(){' .
+			'if(!MEMBER_ID){window.alert("' . esc_js( __( 'Please select a member first.', 'mcp-ai-wpoos-pro' ) ) . '");return;}' .
+			'mvSyncFromServer();' .
+			'tmaHaptic("success");' .
+		'};' .
+
+		'window.mvSettingsClearData=function(){' .
+			'if(!window.confirm("' . esc_js( __( 'Clear all locally stored readings and medications? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '"))return;' .
+			'try{localStorage.removeItem(SK_READINGS);localStorage.removeItem(SK_MEDS);}catch(e){}' .
+			'tmaHaptic("medium");' .
+			'mvRenderSettings();' .
 		'};' .
 
 		/* ── Dashboard ── */
