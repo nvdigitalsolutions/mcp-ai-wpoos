@@ -69,6 +69,9 @@ if ( is_admin() ) {
 
 		// Load Health Records Consolidate & Add page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-records-consolidate-page.php';
+
+		// Load Health & Wellness Dashboard page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
 	}
 }
 
