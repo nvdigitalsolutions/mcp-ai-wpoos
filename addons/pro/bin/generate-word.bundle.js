@@ -65133,7 +65133,8 @@ var require_util5 = __commonJS({
           return false;
         }
       }
-      return true;
+      const num = Number(value);
+      return num >= 8 && num <= 15;
     }
     function getURLRecord(url, baseURL) {
       let urlRecord;
@@ -65494,7 +65495,14 @@ var require_permessage_deflate = __commonJS({
             }
             windowBits = Number.parseInt(__privateGet(this, _options).serverMaxWindowBits);
           }
-          __privateSet(this, _inflate, createInflateRaw({ windowBits }));
+          let inflate;
+          try {
+            inflate = createInflateRaw({ windowBits });
+          } catch (err) {
+            callback(err);
+            return;
+          }
+          __privateSet(this, _inflate, inflate);
           __privateGet(this, _inflate)[kBuffer] = [];
           __privateGet(this, _inflate)[kLength] = 0;
           __privateGet(this, _inflate).on("data", (data) => {
