@@ -204,8 +204,8 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=research-skill' ) ); ?>"
 				   class="nav-tab wp-mcp-ai-skill-manager-research-tab <?php echo 'research-skill' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<span class="dashicons dashicons-search" style="font-size:16px;vertical-align:text-bottom;"></span>
-					<?php esc_html_e( 'Research &amp; Build', 'mcp-ai-wpoos-pro' ); ?>
+					<span class="dashicons dashicons-hammer" style="font-size:16px;vertical-align:text-bottom;"></span>
+					<?php esc_html_e( 'Builder', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 			</nav>
 
@@ -227,7 +227,7 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 				<?php self::render_tab_editor( $edit_name, $edit_content ); ?>
 			</div>
 
-			<?php /* ── Tab: Research & Build ── */ ?>
+			<?php /* ── Tab: Builder ── */ ?>
 			<div id="tab-research-skill" class="tab-content <?php echo 'research-skill' === $active_tab ? 'active' : ''; ?>">
 				<?php self::render_tab_research(); ?>
 			</div>
@@ -308,7 +308,7 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 	}
 
 /**
- * Render the "Research & Build" tab content.
+ * Render the "Builder" tab content.
  *
  * Provides a guided 4-step wizard for creating a new SKILL.md bundle,
  * informed by the agentskills.io specification and the OpenAI Cookbook
