@@ -49,6 +49,21 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	const DEDUP_WINDOW_MINUTES = 60;
 
 	/**
+	 * Same-session merge window in minutes.
+	 *
+	 * Two timed readings are treated as belonging to the same session (and
+	 * therefore eligible for field-level merging) only when their
+	 * measurement_times differ by at most this many minutes.  Readings further
+	 * apart than this threshold are always stored as separate rows, even when
+	 * they share the same measurement_date.
+	 *
+	 * A value of 5 minutes prevents distinct ED or clinical readings taken at
+	 * e.g. 18:00, 18:20, and 19:00 from being collapsed into a single row,
+	 * while still allowing minor timing jitter within the same logging session.
+	 */
+	const SAME_SESSION_WINDOW_MINUTES = 5;
+
+	/**
 	 * Hook into JetEngine to provision the content type.
 	 */
 	public static function bootstrap() {
@@ -161,6 +176,67 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
+	 * Find the best-matching vitals log row for a member, date, and optional time.
+	 *
+	 * Lookup strategy:
+	 *  - When $time is a non-empty HH:MM string the method returns the oldest
+	 *    existing row whose measurement_time is within {@see SAME_SESSION_WINDOW_MINUTES}
+	 *    minutes of $time, or null when no such row exists.  This means timed
+	 *    readings taken more than SAME_SESSION_WINDOW_MINUTES apart (e.g. ED
+	 *    vitals at 18:00, 18:20, and 19:00) are always treated as distinct rows.
+	 *  - When $time is empty the method returns the oldest existing row that also
+	 *    has an empty / null measurement_time.  This prevents untimed lab-result
+	 *    rows from merging into timed vital-sign rows that happen to share the
+	 *    same date.
+	 *
+	 * @param int    $member_id Member post ID.
+	 * @param string $date      Measurement date (YYYY-MM-DD).
+	 * @param string $time      Optional measurement time (HH:MM). Empty string to
+	 *                          match no-time rows exclusively.
+	 * @return object|null      Best-matching CCT row object, or null.
+	 */
+	public static function get_for_date_and_time( $member_id, $date, $time = '' ) {
+		$member_id = absint( $member_id );
+		$date      = sanitize_text_field( $date );
+
+		if ( ! $member_id || ! $date || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		if ( '' === trim( (string) $time ) ) {
+			// No time — match only rows that also have no measurement_time, so
+			// untimed partial readings (e.g. lab panels without a clock time)
+			// accumulate into their own no-time row and never overwrite timed
+			// vital-sign rows from the same day.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+			return $row ? $row : null;
+		}
+
+		// Time provided — find the oldest row within SAME_SESSION_WINDOW_MINUTES.
+		$incoming_mins = self::time_to_minutes( $time );
+		if ( false === $incoming_mins ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
+
+		$window = self::SAME_SESSION_WINDOW_MINUTES;
+		foreach ( $rows as $row ) {
+			$row_mins = self::time_to_minutes( $row->measurement_time );
+			if ( false !== $row_mins && abs( $row_mins - $incoming_mins ) <= $window ) {
+				return $row;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Update specific fields on an existing CCT row.
 	 *
 	 * @param int   $item_id CCT row primary key (_ID).
@@ -188,24 +264,27 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	/**
 	 * Insert or consolidate a vitals log entry for the given member and date.
 	 *
-	 * When a record already exists for the same member + measurement_date the
-	 * incoming data is merged into that row:
+	 * Lookup strategy (time-aware):
+	 *  - When the incoming $data carries a non-empty measurement_time, this
+	 *    method searches only for an existing row at the same time (±
+	 *    {@see SAME_SESSION_WINDOW_MINUTES}).  Readings at different times (e.g.
+	 *    ED vitals at 18:00, 18:20, and 19:00) each produce a distinct row.
+	 *  - When $data has no measurement_time, this method searches only for an
+	 *    existing no-time row.  Untimed lab panels never overwrite timed rows.
+	 *
+	 * When a matching row is found:
 	 *  - Near-duplicate guard: if every numeric vital field in $data already
-	 *    matches the stored value (within float tolerance) AND the measurement
-	 *    times are within {@see DEDUP_WINDOW_MINUTES} of each other (or no time
-	 *    is present in either record), the write is skipped entirely and the
-	 *    existing row ID is returned immediately — preventing duplicate rows
-	 *    from the same lab printout being added multiple times.
+	 *    matches the stored value (within float tolerance), the write is skipped
+	 *    entirely and the existing row ID is returned — preventing the same lab
+	 *    printout from being imported twice.
 	 *  - Otherwise every non-empty field in $data overwrites its counterpart in
-	 *    the existing row, so partial readings from separate sessions accumulate
-	 *    into a single complete day-record.
-	 *  - The original `entry_id` and `logged_by` are always preserved (set on
-	 *    first write only).
-	 *  - `measurement_time` is preserved from the first write unless the
-	 *    existing value is empty.
+	 *    the existing row (partial-reading consolidation).
+	 *  - The original `entry_id` and `logged_by` are always preserved (first
+	 *    write only).
+	 *  - `measurement_time` is preserved from the first write unless empty.
 	 *  - `logged_at` is always refreshed to reflect the most-recent write.
 	 *
-	 * When no record exists a fresh row is created via {@see insert()}.
+	 * When no matching row is found, a fresh row is created via {@see insert()}.
 	 *
 	 * @param int   $member_id Member post ID.
 	 * @param array $data      Flat key/value pairs matching the CCT schema.
@@ -216,10 +295,16 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			? $data['measurement_date']
 			: current_time( 'Y-m-d' );
 
-		$existing = self::get_for_date( absint( $member_id ), $measurement_date );
+		$measurement_time = isset( $data['measurement_time'] )
+			? trim( (string) $data['measurement_time'] )
+			: '';
+
+		// Time-aware lookup: timed readings match only same-time rows;
+		// untimed readings match only no-time rows.
+		$existing = self::get_for_date_and_time( absint( $member_id ), $measurement_date, $measurement_time );
 
 		if ( $existing ) {
-			// Near-duplicate guard: same values within the same time window
+			// Near-duplicate guard: same values within the same session window
 			// means the same source data is being submitted again (e.g. the
 			// same lab printout scanned or pasted more than once).  Return the
 			// existing row silently — no DB write, no logged_at update.

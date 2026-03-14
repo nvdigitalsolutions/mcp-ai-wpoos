@@ -1242,4 +1242,100 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			$this->assertGreaterThan( 0, $result['_ID'], 'Returned _ID must be > 0.' );
 		}
 	}
+
+	// =========================================================================
+	// bulk_create — schema
+	// =========================================================================
+
+	/**
+	 * The 'bulk_create' action must be present in the schema enum.
+	 */
+	public function test_schema_includes_bulk_create_action() {
+		$tool   = $this->get_tool();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'action', $schema['properties'] );
+		$this->assertContains( 'bulk_create', $schema['properties']['action']['enum'] );
+	}
+
+	/**
+	 * The schema must declare an 'items' array property for bulk_create.
+	 */
+	public function test_schema_includes_items_property() {
+		$tool   = $this->get_tool();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'items', $schema['properties'], 'Schema must include an "items" property for bulk_create.' );
+		$this->assertSame( 'array', $schema['properties']['items']['type'] );
+	}
+
+	// =========================================================================
+	// bulk_create — missing JetEngine
+	// =========================================================================
+
+	/**
+	 * bulk_create must return WP_Error when JetEngine is not active.
+	 */
+	public function test_bulk_create_returns_error_without_jetengine() {
+		if ( class_exists( 'Jet_Engine' ) || function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'JetEngine is present; skipping unavailability test.' );
+		}
+
+		$tool   = $this->get_tool();
+		$result = $tool->execute(
+			array(
+				'action'   => 'bulk_create',
+				'cct_slug' => 'vitals_log',
+				'items'    => array(
+					array( 'member_id' => 1, 'measurement_date' => '2026-01-01' ),
+				),
+			),
+			array( 'user_id' => 1 )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+	}
+
+	// =========================================================================
+	// bulk_create — validation
+	// =========================================================================
+
+	/**
+	 * bulk_create must return WP_Error when cct_slug is absent.
+	 */
+	public function test_bulk_create_requires_cct_slug() {
+		$tool = $this->get_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'bulk_create' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( array( 'items' => array() ), array() ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_cct_slug', $result->get_error_code() );
+	}
+
+	/**
+	 * bulk_create must return WP_Error when the items array is absent.
+	 */
+	public function test_bulk_create_requires_items_array() {
+		$tool = $this->get_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'bulk_create' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array( 'cct_slug' => 'vitals_log' ),
+				array(),
+			)
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_items', $result->get_error_code() );
+	}
 }
