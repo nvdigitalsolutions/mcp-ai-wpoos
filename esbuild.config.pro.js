@@ -62,6 +62,22 @@ const builds = [
 		outfile: 'addons/pro/bin/generate-excel.bundle.js',
 		...nodeScriptOptions,
 	},
+	// Remotion video render — bundles @remotion/bundler + @remotion/renderer + puppeteer-core.
+	// Users never need to run `npm install remotion …` themselves; this bundle ships with the plugin.
+	// System requirements at render-time: Node.js + Chrome/Chromium (found automatically by puppeteer).
+	{
+		entryPoints: ['addons/pro/scripts/remotion-render.js'],
+		outfile: 'addons/pro/bin/remotion-render.bundle.js',
+		...nodeScriptOptions,
+		// @remotion/bundler uses webpack at runtime — keep it require()-able, not statically bundled,
+		// so the bundle can locate webpack's native loaders from node_modules at render time.
+		external: [
+			...builtinModules,
+			...builtinModules.map((m) => `node:${m}`),
+			'@remotion/bundler',
+			'webpack',
+		],
+	},
 	// Orchestration and research bundles are pre-built and committed
 	// Uncomment to rebuild (requires node_modules with p-queue, cheerio, turndown)
 	/*

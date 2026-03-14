@@ -3,8 +3,8 @@
  * Create Remotion Video Tool
  *
  * Render programmatic videos using the Remotion framework (React-based).
- * Accepts a Remotion composition script, renders it via `npx remotion render`,
- * and optionally uploads the resulting MP4 / WebM / GIF to the media library.
+ * Uses the pre-built bin/remotion-render.bundle.js script so that end users
+ * never need to install npm packages themselves.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
@@ -19,16 +19,13 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 /**
  * Tool: create_remotion_video
  *
- * Renders a Remotion composition to a video file.  The tool writes a minimal
- * Remotion project to a temporary directory, runs `npx remotion render`, and
- * then (optionally) uploads the rendered file to the WordPress media library.
+ * Renders a Remotion composition to a video file using the pre-built
+ * bin/remotion-render.bundle.js script (shipped with the plugin — no separate
+ * npm install step is required).
  *
- * Remotion must be available in one of:
- *   - addons/pro/node_modules/remotion  (development install)
- *   - addons/pro/assets/vendor/remotion  (production vendor bundle)
- *
- * For a production environment run:
- *   npm install remotion @remotion/cli --prefix <addons/pro dir>
+ * System requirements:
+ *   - Node.js ≥ 18 in the server PATH
+ *   - Chrome or Chromium (found automatically by Puppeteer)
  *
  * @since 1.2.0
  */
@@ -42,13 +39,19 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Whether this tool can be used on the current site.
 	 *
-	 * Requires Node.js to be available on the server (Remotion runs via Node.js).
+	 * Requires Node.js and the pre-built remotion-render.bundle.js (which ships
+	 * with the plugin — no separate npm install is needed).
 	 *
 	 * @return bool
 	 */
 	public static function is_available() {
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		return $process_service->is_command_available( 'node' );
+		if ( ! $process_service->is_command_available( 'node' ) ) {
+			return false;
+		}
+		// The pre-built bundle is always present when the plugin is installed.
+		return file_exists( WP_MCP_AI_PRO_PATH . 'bin/remotion-render.bundle.js' )
+			|| static::check_remotion_node_modules();
 	}
 
 	/**
@@ -57,7 +60,44 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'Create Remotion Video requires Node.js to be installed on the server. Install Node.js and ensure it is available in the system PATH.', 'mcp-ai-wpoos-pro' );
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		if ( ! $process_service->is_command_available( 'node' ) ) {
+			return __( 'Create Remotion Video requires Node.js to be installed on the server. Install Node.js and ensure it is available in the system PATH.', 'mcp-ai-wpoos-pro' );
+		}
+		return __( 'Remotion render bundle not found. Please rebuild the plugin assets with `npm run build:js:pro`.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Check whether the Remotion npm packages are available in node_modules or
+	 * the vendored assets/vendor/ directory (fallback for development installs).
+	 *
+	 * @return bool
+	 */
+	private static function check_remotion_node_modules() {
+		$pro_path = WP_MCP_AI_PRO_PATH;
+
+		$paths = array(
+			$pro_path . 'node_modules/remotion/package.json',
+			$pro_path . 'assets/vendor/remotion/package.json',
+		);
+
+		/**
+		 * Filter to override the Remotion availability check.
+		 *
+		 * @param bool|null $available Null to use built-in check, bool to force.
+		 */
+		$override = apply_filters( 'wp_mcp_ai_remotion_available', null );
+		if ( null !== $override ) {
+			return (bool) $override;
+		}
+
+		foreach ( $paths as $path ) {
+			if ( file_exists( $path ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -197,11 +237,11 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Guard: Remotion must be installed.
+		// Guard: Remotion render bundle or npm packages must be present.
 		if ( ! $this->check_remotion_availability() ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Remotion is not installed. Please run "npm install remotion @remotion/cli" in the addons/pro directory, or "npm install --prefix <plugin-dir>/addons/pro remotion @remotion/cli".', 'mcp-ai-wpoos-pro' ),
+				'error'   => __( 'Remotion is not available. Ensure the plugin assets have been built (`npm run build:js:pro`) and that Node.js is installed on the server.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -303,76 +343,23 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 * @return bool
 	 */
 	private function check_remotion_availability() {
-		$pro_path = WP_MCP_AI_PRO_PATH;
-
-		// Production vendor bundle.
-		$vendor_path = $pro_path . 'assets/vendor/remotion/package.json';
-		// Development node_modules.
-		$node_modules_path = $pro_path . 'node_modules/remotion/package.json';
-
-		/**
-		 * Filter to allow overriding the Remotion availability check.
-		 *
-		 * @param bool|null $available Null to use built-in check, bool to force.
-		 */
-		$override = apply_filters( 'wp_mcp_ai_remotion_available', null );
-		if ( null !== $override ) {
-			return (bool) $override;
-		}
-
-		return file_exists( $vendor_path ) || file_exists( $node_modules_path );
+		return file_exists( WP_MCP_AI_PRO_PATH . 'bin/remotion-render.bundle.js' )
+			|| static::check_remotion_node_modules();
 	}
 
 	/**
-	 * Return the path to the Remotion CLI binary (remotion or @remotion/cli).
-	 *
-	 * @return string|WP_Error CLI path or WP_Error if not found.
-	 */
-	private function get_remotion_cli_path() {
-		$pro_path = WP_MCP_AI_PRO_PATH;
-
-		// Prefer locally installed binary (avoids version conflicts).
-		$local_bin = $pro_path . 'node_modules/.bin/remotion';
-		if ( file_exists( $local_bin ) ) {
-			return $local_bin;
-		}
-
-		// Vendor bundle binary.
-		$vendor_bin = $pro_path . 'assets/vendor/remotion/bin/remotion.js';
-		if ( file_exists( $vendor_bin ) ) {
-			return $vendor_bin;
-		}
-
-		// Fall back to npx (global).
-		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		if ( $process_service->is_command_available( 'npx' ) ) {
-			return 'npx';
-		}
-
-		return new WP_Error(
-			'wp_mcp_ai_remotion_cli_not_found',
-			__( 'Remotion CLI not found. Please install Remotion: npm install @remotion/cli --prefix <addons/pro dir>', 'mcp-ai-wpoos-pro' )
-		);
-	}
-
-	/**
-	 * Write a minimal Remotion project to a temp directory and return its path.
+	 * Write a minimal Remotion composition index.js to a temp directory.
 	 *
 	 * @param string $composition_id     Composition ID.
 	 * @param int    $fps                Frames per second.
 	 * @param int    $duration_in_frames Total frames.
-	 * @param int    $width              Video width (0 = use composition default).
-	 * @param int    $height             Video height (0 = use composition default).
+	 * @param int    $width              Video width (0 = composition default).
+	 * @param int    $height             Video height (0 = composition default).
 	 * @param string $custom_script      Optional custom composition source code.
-	 * @param array  $props              Props for the composition.
+	 * @param array  $props              Props for the default composition.
 	 * @return string|WP_Error Temp directory path or WP_Error.
 	 */
 	private function create_temp_project( $composition_id, $fps, $duration_in_frames, $width, $height, $custom_script, $props ) {
-		if ( ! function_exists( 'wp_tempnam' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-
-		// Create a uniquely named temp directory.
 		$tmp_base = get_temp_dir() . 'remotion-' . uniqid( '', true );
 		if ( ! wp_mkdir_p( $tmp_base ) ) {
 			return new WP_Error(
@@ -385,26 +372,17 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Create output directory.
 		wp_mkdir_p( $tmp_base . '/out' );
-
-		// Determine which node_modules to reference.
-		$pro_path          = WP_MCP_AI_PRO_PATH;
-		$node_modules_path = $pro_path . 'node_modules';
-		if ( ! is_dir( $node_modules_path ) ) {
-			$node_modules_path = $pro_path . 'assets/vendor';
-		}
 
 		// Build the index source (either custom or default animated title card).
 		if ( ! empty( $custom_script ) ) {
 			$index_source = $custom_script;
 		} else {
-			$safe_title       = isset( $props['title'] ) ? esc_html( $props['title'] ) : get_bloginfo( 'name' );
-			$safe_subtitle    = isset( $props['subtitle'] ) ? esc_html( $props['subtitle'] ) : get_bloginfo( 'description' );
-			$safe_bg_color    = isset( $props['background_color'] ) ? sanitize_hex_color( $props['background_color'] ) : '#0a0a0a';
-			$safe_text_color  = isset( $props['text_color'] ) ? sanitize_hex_color( $props['text_color'] ) : '#ffffff';
+			$safe_title      = isset( $props['title'] ) ? esc_html( $props['title'] ) : get_bloginfo( 'name' );
+			$safe_subtitle   = isset( $props['subtitle'] ) ? esc_html( $props['subtitle'] ) : get_bloginfo( 'description' );
+			$safe_bg_color   = isset( $props['background_color'] ) ? sanitize_hex_color( $props['background_color'] ) : '#0a0a0a';
+			$safe_text_color = isset( $props['text_color'] ) ? sanitize_hex_color( $props['text_color'] ) : '#ffffff';
 
-			// Use simple defaults when sanitize_hex_color returns empty.
 			if ( ! $safe_bg_color ) {
 				$safe_bg_color = '#0a0a0a';
 			}
@@ -412,7 +390,6 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 				$safe_text_color = '#ffffff';
 			}
 
-			// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			$index_source = $this->build_default_composition(
 				$composition_id,
 				$fps,
@@ -424,12 +401,10 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 				$safe_bg_color,
 				$safe_text_color
 			);
-			// phpcs:enable
 		}
 
-		// Write index.js.
-		$index_path = $tmp_base . '/index.js';
-		if ( false === file_put_contents( $index_path, $index_source ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem; WP_Filesystem unavailable in this context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $tmp_base . '/index.js', $index_source ) ) {
 			$this->recursive_rmdir( $tmp_base );
 			return new WP_Error(
 				'wp_mcp_ai_remotion_write_index',
@@ -437,40 +412,14 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Write a minimal package.json so Remotion can resolve dependencies.
-		$package_json = wp_json_encode(
-			array(
-				'name'         => 'remotion-render-' . sanitize_title( $composition_id ),
-				'version'      => '1.0.0',
-				'description'  => 'Temporary Remotion project for WP MCP AI rendering.',
-				'dependencies' => array(
-					'remotion' => '*',
-					'react'    => '*',
-					'react-dom' => '*',
-				),
-			),
-			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
-		);
-
-		if ( false === file_put_contents( $tmp_base . '/package.json', $package_json ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem; WP_Filesystem unavailable in this context.
-			$this->recursive_rmdir( $tmp_base );
-			return new WP_Error(
-				'wp_mcp_ai_remotion_write_pkg',
-				__( 'Failed to write package.json to temporary Remotion project directory.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		// Symlink node_modules so Remotion can find its runtime without a slow npm install.
-		if ( is_dir( $node_modules_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink -- No WP_Filesystem equivalent.
-			@symlink( $node_modules_path, $tmp_base . '/node_modules' );
-		}
-
 		return $tmp_base;
 	}
 
 	/**
 	 * Build the source code for the built-in animated title-card composition.
+	 *
+	 * Uses registerRoot() so the composition is compatible with both the
+	 * pre-built bin/remotion-render.bundle.js and the Remotion CLI.
 	 *
 	 * @param string $composition_id     Composition ID.
 	 * @param int    $fps                Frames per second.
@@ -484,16 +433,15 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 * @return string JavaScript source code.
 	 */
 	private function build_default_composition( $composition_id, $fps, $duration_in_frames, $width, $height, $title, $subtitle, $bg_color, $text_color ) {
-		// Escape values for safe embedding in a JS template literal.
-		$js_title           = addslashes( $title );
-		$js_subtitle        = addslashes( $subtitle );
-		$js_bg_color        = addslashes( $bg_color );
-		$js_text_color      = addslashes( $text_color );
-		$js_composition_id  = addslashes( $composition_id );
+		$js_title          = addslashes( $title );
+		$js_subtitle       = addslashes( $subtitle );
+		$js_bg_color       = addslashes( $bg_color );
+		$js_text_color     = addslashes( $text_color );
+		$js_composition_id = addslashes( $composition_id );
 
 		return <<<JS
 'use strict';
-const { Composition, AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } = require('remotion');
+const { registerRoot, Composition, AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } = require('remotion');
 const React = require('react');
 
 const TitleCard = ({ title, subtitle, bgColor, textColor }) => {
@@ -520,7 +468,7 @@ const TitleCard = ({ title, subtitle, bgColor, textColor }) => {
   );
 };
 
-exports.RemotionRoot = () =>
+registerRoot(() =>
   React.createElement(
     Composition,
     {
@@ -537,12 +485,17 @@ exports.RemotionRoot = () =>
         textColor: '$js_text_color',
       },
     }
-  );
+  )
+);
 JS;
 	}
 
 	/**
-	 * Run `remotion render` via Node.js subprocess.
+	 * Render the Remotion composition to a video file.
+	 *
+	 * Prefers the pre-built bin/remotion-render.bundle.js (ships with the plugin
+	 * — no separate npm install required).  Falls back to the locally installed
+	 * Remotion CLI binary when the bundle is absent.
 	 *
 	 * @param string $project_dir    Path to the temporary Remotion project.
 	 * @param string $composition_id Composition ID to render.
@@ -551,11 +504,6 @@ JS;
 	 * @return array|WP_Error Result array or WP_Error.
 	 */
 	private function run_remotion_render( $project_dir, $composition_id, $output_file, $output_format ) {
-		$cli = $this->get_remotion_cli_path();
-		if ( is_wp_error( $cli ) ) {
-			return $cli;
-		}
-
 		$codec_map = array(
 			'mp4'  => 'h264',
 			'webm' => 'vp8',
@@ -568,8 +516,8 @@ JS;
 		 *
 		 * Return a non-false value to bypass the built-in Node.js subprocess call.
 		 *
-		 * @param array|WP_Error|false $result     Custom result or false to use built-in.
-		 * @param string               $project_dir Temp project directory.
+		 * @param array|WP_Error|false $result         Custom result or false to use built-in.
+		 * @param string               $project_dir    Temp project directory.
 		 * @param string               $composition_id Composition ID.
 		 * @param string               $output_file    Output file path.
 		 * @param string               $output_format  Format string (mp4/webm/gif).
@@ -579,32 +527,78 @@ JS;
 			return $custom_result;
 		}
 
-		// Build the render command arguments.
-		// When cli === 'npx' we use Node.js to call npx; otherwise we call the binary directly via node.
 		$node_path = $this->get_nodejs_executable();
 		if ( is_wp_error( $node_path ) ) {
 			return $node_path;
 		}
 
 		$index_file = $project_dir . '/index.js';
+		$pro_path   = WP_MCP_AI_PRO_PATH;
+		$bundle     = $pro_path . 'bin/remotion-render.bundle.js';
 
-		if ( 'npx' === $cli ) {
-			// Run npx directly; Process Service can invoke it without a node wrapper.
+		// ------------------------------------------------------------------
+		// Path A: pre-built bundle (ships with the plugin, no install needed)
+		// ------------------------------------------------------------------
+		if ( file_exists( $bundle ) ) {
+			$node_modules = is_dir( $pro_path . 'node_modules' )
+				? $pro_path . 'node_modules'
+				: $pro_path . 'assets/vendor';
+
+			$json_arg = wp_json_encode(
+				array(
+					'indexFile'        => $index_file,
+					'nodeModulesPath'  => $node_modules,
+					'compositionId'    => $composition_id,
+					'outputFile'       => $output_file,
+					'codec'            => $codec,
+				)
+			);
+
+			$command         = array( $node_path, $bundle, $json_arg );
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			$result          = $process_service->run_silent(
+				$command,
+				array( 'timeout' => 300 )
+			);
+
+			return $this->parse_render_result( $result, $output_file );
+		}
+
+		// ------------------------------------------------------------------
+		// Path B: fall back to locally installed Remotion CLI
+		// ------------------------------------------------------------------
+		$local_bin = $pro_path . 'node_modules/.bin/remotion';
+		if ( file_exists( $local_bin ) ) {
+			$command = array( $node_path, $local_bin, 'render', $index_file, $composition_id, $output_file, '--codec=' . $codec, '--log=error' );
+		} elseif ( \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance()->is_command_available( 'npx' ) ) {
 			$command = array( 'npx', '--yes', 'remotion', 'render', $index_file, $composition_id, $output_file, '--codec=' . $codec, '--log=error' );
 		} else {
-			// Use the local binary: node <cli-path> render ...
-			$command = array( $node_path, $cli, 'render', $index_file, $composition_id, $output_file, '--codec=' . $codec, '--log=error' );
+			return new WP_Error(
+				'wp_mcp_ai_remotion_not_found',
+				__( 'Remotion render bundle not found and no local CLI is installed. Please rebuild the plugin assets with `npm run build:js:pro`.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 		$result          = $process_service->run_silent(
 			$command,
 			array(
-				'timeout' => 300, // 5 minutes — rendering can take a while.
+				'timeout' => 300,
 				'cwd'     => $project_dir,
 			)
 		);
 
+		return $this->parse_render_result( $result, $output_file );
+	}
+
+	/**
+	 * Parse a raw Process Service result into a WP_Error or success array.
+	 *
+	 * @param array  $result      Result from WP_MCP_AI_Process_Service::run_silent().
+	 * @param string $output_file Expected output file path.
+	 * @return array|WP_Error
+	 */
+	private function parse_render_result( $result, $output_file ) {
 		if ( isset( $result['timeout'] ) && $result['timeout'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_remotion_timeout',
@@ -615,6 +609,14 @@ JS;
 		$exit_code = isset( $result['exit_code'] ) ? (int) $result['exit_code'] : -1;
 		if ( 0 !== $exit_code ) {
 			$stderr = isset( $result['stderr'] ) ? trim( $result['stderr'] ) : '';
+			// The pre-built bundle writes a JSON error to stdout.
+			$stdout = isset( $result['stdout'] ) ? trim( $result['stdout'] ) : '';
+			if ( $stdout ) {
+				$decoded = json_decode( $stdout, true );
+				if ( is_array( $decoded ) && ! empty( $decoded['error'] ) ) {
+					$stderr = $decoded['error'];
+				}
+			}
 			return new WP_Error(
 				'wp_mcp_ai_remotion_render_failed',
 				sprintf(
