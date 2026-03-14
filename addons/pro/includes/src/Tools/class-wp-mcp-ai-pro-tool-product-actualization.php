@@ -85,8 +85,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'type'                 => 'object',
 			'properties'           => array(
 				'product_attachment_id' => array(
-					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the product image to be composited. Can also accept a file_id string from chat file uploads (e.g., "file-abc123").', 'mcp-ai-wpoos-pro' ),
+					'type'        => array( 'integer', 'string' ),
+					'description' => __( 'WordPress attachment ID of the product image to be composited. Also accepts a public image URL (https://...) or a file_id string from chat file uploads (e.g., "file-abc123").', 'mcp-ai-wpoos-pro' ),
 				),
 				'mode'                  => array(
 					'type'        => 'string',
@@ -186,13 +186,22 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Validate required parameters.
-		$product_id_param = isset( $arguments['product_attachment_id'] ) ? $arguments['product_attachment_id'] : 0;
+		$product_id_param = isset( $arguments['product_attachment_id'] ) ? $arguments['product_attachment_id'] : '';
 
-		// Handle both integer attachment IDs and string file IDs from chat uploads.
-		// When files are uploaded via the chat attach button with OpenAI, they get a file_id like "file-abc123".
-		// We need to resolve this back to the WordPress attachment_id.
-		$product_id = 0;
-		if ( is_int( $product_id_param ) || is_numeric( $product_id_param ) ) {
+		// Handle three input types: public image URL, numeric attachment ID, or file_id string from chat uploads.
+		// URLs are downloaded to a temp working file directly (no WordPress attachment lookup needed).
+		// file_ids (e.g. "file-abc123") are resolved to a WordPress attachment_id via the message-attachments helper.
+		$product_id   = 0;
+		$working_path = null; // Set directly for URL inputs, bypassing the attachment lookup below.
+
+		if ( is_string( $product_id_param ) && $this->is_valid_http_url( $product_id_param ) ) {
+			// URL input: download to a temp working file, skipping attachment DB lookup.
+			$url_result = $this->download_url_to_temp( $product_id_param );
+			if ( is_wp_error( $url_result ) ) {
+				return $url_result;
+			}
+			$working_path = $url_result['file_path'];
+		} elseif ( is_int( $product_id_param ) || is_numeric( $product_id_param ) ) {
 			$product_id = absint( $product_id_param );
 		} elseif ( is_string( $product_id_param ) && '' !== $product_id_param ) {
 			// This might be a file_id from OpenAI - try to resolve it to an attachment_id.
@@ -213,10 +222,10 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$integration_mode = isset( $arguments['integration_mode'] ) ? sanitize_key( $arguments['integration_mode'] ) : 'ai';
 		$provider         = isset( $arguments['provider'] ) ? sanitize_key( $arguments['provider'] ) : 'auto';
 
-		if ( ! $product_id ) {
+		if ( ! $product_id && null === $working_path ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_product',
-				__( 'Product attachment ID is required.', 'mcp-ai-wpoos-pro' ),
+				__( 'A product attachment ID, image URL, or file ID is required.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -249,30 +258,33 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			$provider = 'auto';
 		}
 
-		// Step 1: Validate and fetch product attachment.
-		$file_path = get_attached_file( $product_id );
-		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_product',
-				__( 'Invalid product attachment ID - file not found.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 400 )
-			);
-		}
+		// Step 1: Resolve the product to a working file path.
+		if ( null === $working_path ) {
+			// Attachment ID or file_id path: look up the file on disk.
+			$file_path = get_attached_file( $product_id );
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_product',
+					__( 'Invalid product attachment ID - file not found.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
 
-		// Validate file type.
-		$mime_type = get_post_mime_type( $product_id );
-		if ( ! $mime_type || ! str_starts_with( $mime_type, 'image/' ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_file_type',
-				__( 'Product attachment must be an image.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 400 )
-			);
-		}
+			// Validate file type.
+			$mime_type = get_post_mime_type( $product_id );
+			if ( ! $mime_type || ! str_starts_with( $mime_type, 'image/' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_file_type',
+					__( 'Product attachment must be an image.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
 
-		// Step 2: Duplicate to avoid touching the original.
-		$working_path = $this->duplicate_attachment_file( $product_id );
-		if ( is_wp_error( $working_path ) ) {
-			return $working_path;
+			// Step 2: Duplicate to avoid touching the original.
+			$working_path = $this->duplicate_attachment_file( $product_id );
+			if ( is_wp_error( $working_path ) ) {
+				return $working_path;
+			}
 		}
 
 		// Step 3: Optional background removal.
@@ -434,6 +446,129 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return $temp_path;
+	}
+
+	/**
+	 * Check whether a string is a valid public HTTP or HTTPS URL.
+	 *
+	 * Uses filter_var() for format validation only — no DNS lookup is performed.
+	 * Security against private/loopback IP ranges is enforced by wp_safe_remote_get()
+	 * when the URL is actually fetched.
+	 *
+	 * @param string $url String to test.
+	 * @return bool True when the string is a syntactically valid http(s) URL.
+	 */
+	protected function is_valid_http_url( $url ) {
+		return is_string( $url )
+			&& false !== filter_var( $url, FILTER_VALIDATE_URL )
+			&& (bool) preg_match( '#^https?://#i', $url );
+	}
+
+	/**
+	 * Download an image from a URL to a temporary working file.
+	 *
+	 * Uses wp_safe_remote_get (which blocks private/localhost URLs) and validates
+	 * that the response content-type is an image before saving.
+	 *
+	 * @param string $url Public URL of the product image.
+	 * @return array|WP_Error Array with 'file_path' key, or WP_Error on failure.
+	 */
+	protected function download_url_to_temp( $url ) {
+		// Validate URL format (must be http/https, no DNS lookup at this stage).
+		// Security against private IPs is enforced by wp_safe_remote_get() below.
+		if ( ! $this->is_valid_http_url( $url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_url',
+				__( 'Invalid product image URL provided.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Download the image; wp_safe_remote_get blocks private/localhost addresses.
+		$response = wp_safe_remote_get(
+			$url,
+			array(
+				'timeout'    => 30,
+				'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_url_download_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to download product image from URL: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== (int) $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_url_download_failed',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Product image URL returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$status_code
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Validate content-type is an image.
+		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+		// Strip charset and other parameters (e.g. "image/png; charset=utf-8" → "image/png").
+		$mime_type = trim( strtok( (string) $content_type, ';' ) );
+
+		if ( ! $mime_type || ! str_starts_with( $mime_type, 'image/' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_file_type',
+				__( 'Product URL does not point to a supported image.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Determine file extension from content-type.
+		$ext_map = array(
+			'image/jpeg' => 'jpg',
+			'image/jpg'  => 'jpg',
+			'image/png'  => 'png',
+			'image/gif'  => 'gif',
+			'image/webp' => 'webp',
+		);
+		$extension = isset( $ext_map[ $mime_type ] ) ? $ext_map[ $mime_type ] : 'png';
+
+		$image_data = wp_remote_retrieve_body( $response );
+		if ( empty( $image_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_data',
+				__( 'Product image URL returned empty content.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$upload_dir = wp_upload_dir();
+		$temp_dir   = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
+
+		if ( ! file_exists( $temp_dir ) ) {
+			wp_mkdir_p( $temp_dir );
+		}
+
+		$file_name = 'product-url-' . wp_generate_password( 12, false ) . '.' . $extension;
+		$file_path = trailingslashit( $temp_dir ) . $file_name;
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $file_path, $image_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_save_failed',
+				__( 'Failed to save downloaded product image to temporary file.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array( 'file_path' => $file_path );
 	}
 
 	/**
