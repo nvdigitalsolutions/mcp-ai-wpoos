@@ -1091,6 +1091,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Video Analysis tools.
 				'WP_MCP_AI_Tool_Extract_Video_Metadata'    => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-metadata.php',
 				'WP_MCP_AI_Tool_Generate_Video_Thumbnails' => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-generate-video-thumbnails.php',
+				// Remotion programmatic video creation (React-based rendering).
+				'WP_MCP_AI_Tool_Create_Remotion_Video'     => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			);
 			$pro_tools                      = array_merge( $pro_tools, $video_production_toolkit_tools );
 		}
