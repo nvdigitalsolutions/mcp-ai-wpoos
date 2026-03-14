@@ -423,7 +423,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'slack',
 				$user_id,
-				array( 'display_name' => $user_id )
+				array( 'display_name' => $user_id, 'connection_id' => $connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -827,7 +827,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'slack', $user_id );
+			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'slack', $user_id, array( 'connection_id' => $connection_id ) );
 			if ( $sl_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $sl_contact_row_id );
 			}

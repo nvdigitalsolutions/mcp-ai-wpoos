@@ -792,7 +792,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'google_chat',
 				$sender_name,
-				array( 'display_name' => $sender_name )
+				array( 'display_name' => $sender_name, 'connection_id' => $connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -912,7 +912,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// --- Human takeover gate ---
 		// Skip AI auto-reply when a human agent is actively handling this contact.
 		if ( ! empty( $sender_name ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'google_chat', $sender_name ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'google_chat', $sender_name, $connection_id ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'google_chat_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -1577,7 +1577,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name );
+			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name, array( 'connection_id' => $connection_id ) );
 			if ( $gc_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $gc_contact_row_id );
 			}
