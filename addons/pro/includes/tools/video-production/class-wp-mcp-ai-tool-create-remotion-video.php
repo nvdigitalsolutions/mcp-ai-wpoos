@@ -42,15 +42,13 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Whether this tool can be used on the current site.
 	 *
+	 * Requires Node.js to be available on the server (Remotion runs via Node.js).
+	 *
 	 * @return bool
 	 */
 	public static function is_available() {
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-			return false;
-		}
-
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $settings['enable_video_production_toolkit'] );
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		return $process_service->is_command_available( 'node' );
 	}
 
 	/**
@@ -59,11 +57,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_video_production_toolkit'] ) ) {
-			return __( 'Video Production toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
-		}
-		return __( 'Create Remotion Video tool is not available.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create Remotion Video requires Node.js to be installed on the server. Install Node.js and ensure it is available in the system PATH.', 'mcp-ai-wpoos-pro' );
 	}
 
 	// ---------------------------------------------------------------------------
@@ -195,15 +189,6 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Result array with 'success' key.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Guard: Video Production Toolkit must be enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_video_production_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Video Production toolkit is not enabled. Please enable it in the plugin settings.', 'mcp-ai-wpoos-pro' ),
-			);
-		}
-
 		// Guard: Node.js must be available.
 		if ( ! $this->is_nodejs_available() ) {
 			return array(
@@ -255,11 +240,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		// Run Remotion render.
 		$render_result = $this->run_remotion_render( $tmp_dir, $composition_id, $output_file, $output_format );
 
-		// Clean up temp project dir after render (keep output file if upload requested).
-		$this->cleanup_temp_project( $tmp_dir, $output_file );
-
 		if ( is_wp_error( $render_result ) ) {
-			wp_delete_file( $output_file );
 			$this->recursive_rmdir( $tmp_dir );
 			return array(
 				'success' => false,
@@ -268,7 +249,6 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( empty( $render_result['success'] ) ) {
-			wp_delete_file( $output_file );
 			$this->recursive_rmdir( $tmp_dir );
 			return array(
 				'success' => false,
@@ -287,8 +267,7 @@ class WP_MCP_AI_Tool_Create_Remotion_Video implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
-		// Clean up remaining temp files.
-		wp_delete_file( $output_file );
+		// Clean up the entire temp project directory (including the rendered output).
 		$this->recursive_rmdir( $tmp_dir );
 
 		$file_size = isset( $render_result['file_size'] ) ? $render_result['file_size'] : null;
@@ -610,8 +589,7 @@ JS;
 		$index_file = $project_dir . '/index.js';
 
 		if ( 'npx' === $cli ) {
-			// Use npx: execute npx via node -e require('child_process').execSync(...)
-			// Actually, run npx directly since Process Service can handle it.
+			// Run npx directly; Process Service can invoke it without a node wrapper.
 			$command = array( 'npx', '--yes', 'remotion', 'render', $index_file, $composition_id, $output_file, '--codec=' . $codec, '--log=error' );
 		} else {
 			// Use the local binary: node <cli-path> render ...
@@ -706,25 +684,6 @@ JS;
 		}
 
 		return false;
-	}
-
-	/**
-	 * Remove the temporary project directory, preserving the output file.
-	 *
-	 * @param string $tmp_dir     Path to the temp project directory.
-	 * @param string $output_file Path to the output video file (preserved).
-	 */
-	private function cleanup_temp_project( $tmp_dir, $output_file ) {
-		// Move output file out of temp dir before deleting the directory tree.
-		if ( file_exists( $output_file ) && 0 === strpos( $output_file, $tmp_dir ) ) {
-			$preserve = get_temp_dir() . basename( $output_file );
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- WP_Filesystem unavailable here.
-			@rename( $output_file, $preserve );
-			// Update the caller's reference via a filter trick — instead,
-			// we just leave the moved file and let the caller use the new path.
-			// However since PHP can't modify $output_file in the caller by ref here,
-			// we'll skip cleanup and let the caller handle deletion after upload.
-		}
 	}
 
 	/**
