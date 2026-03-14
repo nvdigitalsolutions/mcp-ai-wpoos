@@ -893,6 +893,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $woo_tools );
 		}
 
+		// Add Shopify tools — always available when a Shopify connection is configured.
+		// The tools themselves validate the connection at execution time.
+		$shopify_tools = array(
+			'WP_MCP_AI_Pro_Tool_Shopify_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+		);
+		$pro_tools     = array_merge( $pro_tools, $shopify_tools );
+
 		// Add JetEngine tools if enabled.
 		if ( ! empty( $settings['enable_jetengine_tools'] ) ) {
 			$jetengine_tools = array(
@@ -1443,6 +1453,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'quickbooks_report'               => 'external-tools',
 			// iSAMS School Management System - Requires external API credentials.
 			'isams_query'                     => 'external-tools',
+			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
+			'shopify_products'                => 'external-tools',
+			'shopify_orders'                  => 'external-tools',
+			'shopify_customers'               => 'external-tools',
+			'shopify_inventory'               => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',

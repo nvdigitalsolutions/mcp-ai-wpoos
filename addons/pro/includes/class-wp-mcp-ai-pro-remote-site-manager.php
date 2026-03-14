@@ -516,6 +516,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
 			'cache_ttl'       => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
+			// Shopify-specific fields.
+			'shopify_api_version' => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
+				? sanitize_text_field( $connection_data['shopify_api_version'] )
+				: '2025-01',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -869,6 +873,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_flowhub_connection( $connection );
 		}
 
+		// Handle Shopify connections separately.
+		if ( 'shopify' === $connection_type ) {
+			return self::test_shopify_connection( $connection );
+		}
+
 		// Handle EZuite ERP connections separately.
 		if ( 'ezuite_erp' === $connection_type ) {
 			return self::test_ezuite_connection( $connection );
@@ -1141,6 +1150,54 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test Shopify Admin GraphQL API connection.
+	 *
+	 * Queries the shop's basic information using the Admin GraphQL API to
+	 * verify that the access token and store URL are correct.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$query    = 'query { shop { name myshopifyDomain plan { displayName } } }';
+		$response = $client->graphql( $query );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		if ( isset( $response['errors'] ) && ! empty( $response['errors'] ) ) {
+			$error_msg = isset( $response['errors'][0]['message'] ) ? $response['errors'][0]['message'] : __( 'Unknown GraphQL error.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error( 'wp_mcp_ai_pro_shopify_error', $error_msg );
+		}
+
+		$shop_name = isset( $response['data']['shop']['name'] ) ? $response['data']['shop']['name'] : '';
+		$shop_plan = isset( $response['data']['shop']['plan']['displayName'] ) ? $response['data']['shop']['plan']['displayName'] : '';
+
+		/* translators: 1: store name, 2: plan name */
+		$message = ! empty( $shop_name )
+			? sprintf( __( 'Shopify connection successful. Connected to "%1$s" (%2$s).', 'mcp-ai-wpoos-pro' ), $shop_name, $shop_plan )
+			: __( 'Shopify connection successful.', 'mcp-ai-wpoos-pro' );
+
+		return array(
+			'success'    => true,
+			'shopify'    => true,
+			'shop_name'  => $shop_name,
+			'shop_plan'  => $shop_plan,
+			'message'    => $message,
+		);
 	}
 
 	/**
@@ -2064,6 +2121,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $api_url;
 		}
 
+		// For Shopify connections, build the Admin GraphQL API URL.
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+			}
+			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
+				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
+			);
+			if ( '' === $endpoint || 'graphql' === $endpoint || 'graphql.json' === $endpoint ) {
+				return $base_url . '/admin/api/' . $api_version . '/graphql.json';
+			}
+			// REST fallback: endpoint is used as-is under the versioned admin path.
+			return $base_url . '/admin/api/' . $api_version . '/' . ltrim( $endpoint, '/' );
+		}
+
 		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
 		// Determine if this is a WooCommerce endpoint.
 		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
@@ -2087,6 +2159,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$headers = array(
 			'User-Agent' => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
 		);
+
+		// For Shopify connections, use the X-Shopify-Access-Token header (Admin API).
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			$access_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+			if ( ! empty( $access_token ) ) {
+				$headers['X-Shopify-Access-Token'] = $access_token;
+			}
+			$headers['Content-Type'] = 'application/json';
+			return $headers;
+		}
 
 		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
 
@@ -2203,6 +2285,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
 					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shopify' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shopify_credentials',
+					__( 'Admin API access token is required for Shopify connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
