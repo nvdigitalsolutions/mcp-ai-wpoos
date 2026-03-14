@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-assets-and-create-zips',
-        'version' => 'dev-copilot/rebuild-assets-and-create-zips',
-        'reference' => '8b932a04470fceda317225551fdf24e93e31e8bb',
+        'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
+        'version' => 'dev-copilot/add-googleworkspace-cli-skill',
+        'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-assets-and-create-zips',
-            'version' => 'dev-copilot/rebuild-assets-and-create-zips',
-            'reference' => '8b932a04470fceda317225551fdf24e93e31e8bb',
+            'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
+            'version' => 'dev-copilot/add-googleworkspace-cli-skill',
+            'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

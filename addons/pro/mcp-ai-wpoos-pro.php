@@ -1715,6 +1715,9 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		WP_MCP_AI_Media_Template_Presets::seed_presets();
 	}
 
+	// Schedule installation of Pro bundled skills (Google Workspace CLI skills, etc.).
+	set_transient( 'wp_mcp_ai_pro_install_bundled_skills', true, HOUR_IN_SECONDS );
+
 	flush_rewrite_rules();
 }
 
@@ -1758,3 +1761,45 @@ if ( function_exists( 'register_activation_hook' ) && function_exists( 'register
 		register_deactivation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_deactivate' );
 	}
 }
+
+/**
+ * Install Pro bundled skills on init if the activation transient is set.
+ *
+ * Copies pre-packaged SKILL.md files from the Pro addon's bundled-skills directory
+ * (Google Workspace CLI skills and other Pro-exclusive skills) to the uploads skill
+ * storage. Already-installed skills are skipped.
+ *
+ * @since 1.7.2
+ */
+add_action(
+	'init',
+	function () {
+		if ( ! get_transient( 'wp_mcp_ai_pro_install_bundled_skills' ) ) {
+			return;
+		}
+
+		delete_transient( 'wp_mcp_ai_pro_install_bundled_skills' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+			return;
+		}
+
+		$pro_bundled_dir = defined( 'WP_MCP_AI_PRO_PATH' )
+			? trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills'
+			: '';
+
+		if ( empty( $pro_bundled_dir ) || ! is_dir( $pro_bundled_dir ) ) {
+			return;
+		}
+
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+		$result   = $registry->install_bundled_skills_from_dir( $pro_bundled_dir );
+
+		// Log any errors for debugging.
+		if ( ! empty( $result['errors'] ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
+			error_log( 'WP_MCP_AI Pro: Bundled skills install errors: ' . implode( '; ', $result['errors'] ) );
+		}
+	},
+	100
+);
