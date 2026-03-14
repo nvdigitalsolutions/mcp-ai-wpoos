@@ -376,6 +376,13 @@ function wp_mcp_ai_tma_base_js() {
 		'document.documentElement.style.setProperty("--tma-vh",h+"px");' .
 	'}' .
 	'function tmaHaptic(t){if(twa&&twa.HapticFeedback)twa.HapticFeedback.impactOccurred(t||"light");}' .
+	/* Build tool-execution request headers, including TMA token when available */
+	'function tmaToolHeaders(){' .
+		'var h={"Content-Type":"application/json"};' .
+		'if(typeof NONCE!=="undefined"&&NONCE){h["X-WP-Nonce"]=NONCE;}' .
+		'if(typeof TMA_TOKEN!=="undefined"&&TMA_TOKEN){h["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+		'return h;' .
+	'}' .
 	'tmaApplyTheme();tmaUpdateVH();' .
 	'if(twa){twa.onEvent("viewportChanged",tmaUpdateVH);twa.onEvent("themeChanged",tmaApplyTheme);twa.ready();}' .
 	'window.addEventListener("resize",tmaUpdateVH);';
@@ -1418,6 +1425,18 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-member-msg{color:var(--tma-hint);font-size:14px;text-align:center;padding:20px 0}' .
 		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
 			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
+
+		/* New-member creation form inside the member picker */
+		'.hw-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
+			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
+		'.hw-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
+		'.hw-new-member-type-row{display:flex;gap:8px;margin-bottom:12px}' .
+		'.hw-type-btn{flex:1;padding:8px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:13px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.hw-type-btn.active{border-color:var(--tma-btn);color:var(--tma-btn);background:var(--tma-secondary-bg);font-weight:600}' .
+		'.hw-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
+		'.hw-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
 		'</style>' .
 
 		/* ── Member picker overlay ─────────────────────────────────────────── */
@@ -1427,6 +1446,28 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'<div class="tma-member-picker-sub">' . esc_html__( 'Choose a member to view their health & wellness data.', 'mcp-ai-wpoos-pro' ) . '</div>' .
 			'<div class="tma-member-list" id="tma-hw-member-list">' .
 				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'</div>' .
+			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+			'<div class="hw-new-member-form" id="hw-new-member-form">' .
+				'<div class="hw-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="hw-new-member-type-row">' .
+					'<button class="hw-type-btn active" id="hw-type-btn-person" onclick="hwSetMemberType(\'person\',this)">' . esc_html__( '👤 Person', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="hw-type-btn" id="hw-type-btn-pet" onclick="hwSetMemberType(\'pet\',this)">' . esc_html__( '🐶 Pet', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="tma-hw-log-label" for="hw-new-member-name">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="text" id="hw-new-member-name" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'Full name…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+				'<div style="margin-bottom:14px">' .
+					'<label class="tma-hw-log-label" for="hw-new-member-dob">' . esc_html__( 'Date of Birth', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="date" id="hw-new-member-dob" class="tma-input" style="width:100%" />' .
+				'</div>' .
+				'<div class="hw-new-member-err" id="hw-new-member-err"></div>' .
+				'<div class="hw-new-member-saving" id="hw-new-member-saving">' . esc_html__( 'Saving…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div style="display:flex;gap:8px">' .
+					'<button class="tma-btn tma-btn-secondary" style="flex:1" onclick="hwHideNewMemberForm()">' . esc_html__( 'Cancel', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="tma-btn tma-btn-primary" style="flex:1" onclick="hwSubmitNewMember()">' . esc_html__( 'Create', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
 			'</div>' .
 		'</div>' .
 
@@ -1644,6 +1685,9 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'if(!d)return;' .
 				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
 				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+				/* Re-fetch members with fresh auth if the picker is still open */
+				'var picker=document.getElementById("tma-member-picker");' .
+				'if(picker&&picker.style.display==="flex"){hwFetchMembers();}' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -1709,17 +1753,14 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(!list)return;' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
-				'if(!members.length){' .
-					'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'No members found. Please add a member first.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-					'return;' .
-				'}' .
-				'list.innerHTML=members.map(function(m){' .
+				/* Build member cards (may be empty) then always append "+ New Member" */
+				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
 					'return\'<div class="tma-member-card" onclick="hwSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
 						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
@@ -1727,6 +1768,13 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
 						'+\'</div>\';' .
 				'}).join("");' .
+				/* Always show the New Member card at the bottom */
+				'var newCard=\'<div class="tma-member-card" onclick="hwShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
+					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
+					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
+					'+\'<div class="tma-member-card-type">' . esc_js( __( 'Create a new profile', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'' .
+					'+\'</div>\';' .
+				'list.innerHTML=cards+newCard;' .
 			'})' .
 			'.catch(function(){' .
 				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -1742,7 +1790,76 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
 		'};' .
 
-		'window.hwSwitchMember=function(){hwShowMemberPicker();};' .
+		'window.hwSwitchMember=function(){hwHideNewMemberForm();hwShowMemberPicker();};' .
+
+		/* ── New member form ── */
+		'var hwNewMemberType="person";' .
+
+		'window.hwSetMemberType=function(type,btn){' .
+			'hwNewMemberType=type;' .
+			'var btns=document.querySelectorAll(".hw-type-btn");' .
+			'btns.forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+		'};' .
+
+		'window.hwShowNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-hw-member-list");' .
+			'var form=document.getElementById("hw-new-member-form");' .
+			'if(list)list.style.display="none";' .
+			'if(form)form.style.display="block";' .
+			/* Reset form state */
+			'hwNewMemberType="person";' .
+			'var btnPerson=document.getElementById("hw-type-btn-person");' .
+			'var btnPet=document.getElementById("hw-type-btn-pet");' .
+			'if(btnPerson)btnPerson.classList.add("active");' .
+			'if(btnPet)btnPet.classList.remove("active");' .
+			'var nameEl=document.getElementById("hw-new-member-name");if(nameEl)nameEl.value="";' .
+			'var dobEl=document.getElementById("hw-new-member-dob");if(dobEl)dobEl.value="";' .
+			'var errEl=document.getElementById("hw-new-member-err");if(errEl)errEl.style.display="none";' .
+			'var savingEl=document.getElementById("hw-new-member-saving");if(savingEl)savingEl.style.display="none";' .
+		'};' .
+
+		'window.hwHideNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-hw-member-list");' .
+			'var form=document.getElementById("hw-new-member-form");' .
+			'if(form)form.style.display="none";' .
+			'if(list)list.style.display="block";' .
+		'};' .
+
+		'window.hwSubmitNewMember=function(){' .
+			'var nameEl=document.getElementById("hw-new-member-name");' .
+			'var name=(nameEl?nameEl.value:"").trim();' .
+			'var errEl=document.getElementById("hw-new-member-err");' .
+			'var savingEl=document.getElementById("hw-new-member-saving");' .
+			'if(!name){' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Name is required.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+				'return;' .
+			'}' .
+			'if(errEl)errEl.style.display="none";' .
+			'if(savingEl)savingEl.style.display="block";' .
+			'var args={name:name,type:hwNewMemberType};' .
+			'var dobEl=document.getElementById("hw-new-member-dob");' .
+			'var dob=(dobEl?dobEl.value:"").trim();if(dob)args.date_of_birth=dob;' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"create_member",arguments:args})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'var memberId=d&&d.result&&d.result.member_id?d.result.member_id:0;' .
+				'if(!memberId){' .
+					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+					'return;' .
+				'}' .
+				/* Auto-select the newly created member */
+				'hwSelectMember(memberId,name);' .
+			'})' .
+			'.catch(function(){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+			'});' .
+		'};' .
 
 		/* ── Tab switcher ── */
 		'window.hwTab=function(tab,btn){' .
@@ -1865,7 +1982,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			/* Optional server-side persistence when a member is resolved — silent on error */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'fetch(TOOLS_EXEC,{method:"POST",' .
-					'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+					'headers:tmaToolHeaders(),' .
 					'body:JSON.stringify({slug:"log_health_metrics",arguments:{date:hwTodayKey(),' .
 						'member_id:MEMBER_ID,steps:LOG.steps,water:LOG.water,sleep:LOG.sleep,' .
 						'calories:LOG.calories,sodium:LOG.sodium||0,mood:LOG.mood}})' .
@@ -2564,8 +2681,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'if(!d)return;' .
 				/* Update the REST nonce so authenticated requests succeed. */
 				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
-				/* Store the TMA session token for the doctor chat header. */
+				/* Store the TMA session token for authenticated headers. */
 				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+				/* Re-fetch members with fresh auth if the picker is still open */
+				'var picker=document.getElementById("tma-member-picker");' .
+				'if(picker&&picker.style.display==="flex"){mvFetchMembers();}' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -2637,7 +2757,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(!list)return;' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
@@ -2734,7 +2854,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var bloodEl=document.getElementById("mv-new-member-blood");' .
 			'var blood=(bloodEl?bloodEl.value:"").trim();if(blood)args.blood_type=blood;' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"create_member",arguments:args})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
@@ -2886,7 +3006,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(!list)return;' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
@@ -3096,7 +3216,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'if(reading.albumin)sArgs.albumin=reading.albumin;' .
 				'if(reading.notes)sArgs.notes=reading.notes;' .
 				'fetch(TOOLS_EXEC,{method:"POST",' .
-					'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+					'headers:tmaToolHeaders(),' .
 					'body:JSON.stringify({slug:"log_vital_signs",arguments:sArgs})' .
 				'}).catch(function(){});' .
 			'}' .
@@ -3106,7 +3226,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'function mvSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
@@ -3239,7 +3359,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvStoreMeds(meds);tmaHaptic("light");' .
 			/* Optional server sync */
 			'var med=meds.find(function(m){return m.id===id;});' .
-			'if(med){fetch(TOOLS_EXEC,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+			'if(med){fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({tool:"log_medication_taken",arguments:{medication:med.name,dose:med.dose,taken:med.taken_today,ts:med.taken_ts}})' .
 			'}).catch(function(){});}' .
 			'mvRenderMeds();' .
