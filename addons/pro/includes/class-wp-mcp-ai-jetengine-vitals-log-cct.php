@@ -5,8 +5,8 @@
  * Stores structured vital-sign log entries (blood pressure, heart rate,
  * temperature, weight/BMI, glucose, SpO2, respiratory rate, and kidney
  * indicators) as first-class CCT items when JetEngine is active.  This CCT is
- * the primary destination for compiled log data written by the log_vital_signs
- * tool; the older vital_signs CCT is retained for backward compatibility.
+ * the sole JetEngine destination for vital-sign data written by the
+ * log_vital_signs tool and the import_vitals tool.
  *
  * Each row represents a single measurement event linked to a health member,
  * with a precise logged_at timestamp in addition to the measurement date/time.
@@ -30,9 +30,6 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 
 	/**
 	 * Base ID for meta field identifiers (44000 range).
-	 *
-	 * Uses a distinct range from the legacy vital_signs CCT (43000) to avoid
-	 * any field-ID collisions inside JetEngine's internal registry.
 	 */
 	const FIELD_ID_BASE = 44000;
 

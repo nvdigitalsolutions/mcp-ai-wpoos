@@ -245,6 +245,9 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 	/**
 	 * Compile vital signs from CCT and/or options storage.
 	 *
+	 * Prefers the vitals_log CCT (primary store).  Falls back to the legacy
+	 * options-based store when the CCT table is unavailable.
+	 *
 	 * @param int   $member_id Member ID.
 	 * @param int   $days_back Days of history.
 	 * @param array $types     Limit to specific vital types (empty = all).
@@ -254,10 +257,10 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 		$sources = array();
 		$records = array();
 
-		// ── CCT source ────────────────────────────────────────────────────
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
+		// ── vitals_log CCT (primary source) ───────────────────────────────
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
 			$after_date = gmdate( 'Y-m-d', time() - ( $days_back * DAY_IN_SECONDS ) );
-			$rows       = WP_MCP_AI_JetEngine_Vitals_CCT::get_for_member( $member_id, $after_date );
+			$rows       = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, $after_date );
 
 			foreach ( $rows as $row ) {
 				$row_arr = (array) $row;
@@ -268,7 +271,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 			}
 
 			if ( ! empty( $records ) ) {
-				$sources[] = 'jetengine_cct';
+				$sources[] = 'vitals_log_cct';
 			}
 		}
 
