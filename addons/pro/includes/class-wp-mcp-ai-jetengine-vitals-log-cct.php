@@ -65,6 +65,8 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		// Run after maybe_register_cct so the table is guaranteed to exist first.
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns' ), 101 );
 	}
 
 	/**
@@ -133,7 +135,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		if ( self::table_exists() ) {
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->insert( self::get_table_name(), $record );
+			$wpdb->insert( self::get_table_name(), $record, self::build_row_format( $record ) );
 			return $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
@@ -252,7 +254,9 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$result = $wpdb->update(
 			self::get_table_name(),
 			$data,
-			array( '_ID' => $item_id )
+			array( '_ID' => $item_id ),
+			self::build_row_format( $data ),
+			array( '%d' )
 		);
 
 		return false !== $result;
@@ -364,6 +368,126 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'phosphorus',
 			'albumin',
 		);
+	}
+
+	/**
+	 * Return the subset of numeric fields that require decimal (float) precision.
+	 *
+	 * JetEngine provisions `number` CCT fields as `bigint(20)` in MySQL.  For
+	 * fields where sub-integer precision is clinically significant (e.g.
+	 * creatinine = 1.44, potassium = 4.8) the MySQL columns must be
+	 * DECIMAL(10,4).  {@see maybe_migrate_decimal_columns()} converts existing
+	 * bigint columns to DECIMAL once on first activation.
+	 *
+	 * Integer vital-sign fields (blood pressure, heart rate, etc.) are NOT
+	 * included here — they remain as integer-typed columns.
+	 *
+	 * @return string[]
+	 */
+	public static function get_decimal_vital_fields() {
+		return array(
+			'temperature',
+			'weight',
+			'bmi',
+			'egfr',
+			'creatinine',
+			'bun',
+			'potassium',
+			'sodium',
+			'phosphorus',
+			'albumin',
+		);
+	}
+
+	/**
+	 * Build a $wpdb-compatible format array for a row array.
+	 *
+	 * Returns one format specifier per key in $row, in the same order:
+	 *  - `%d` for known integer vital-sign fields.
+	 *  - `%f` for fields listed in get_decimal_vital_fields().
+	 *  - `%s` for all other fields (text, date, status, etc.).
+	 *
+	 * Passing the result as the third argument to $wpdb->insert() / fourth
+	 * argument to $wpdb->update() prevents WordPress from defaulting every
+	 * value to `%s`, which causes MySQL to round decimal values to the nearest
+	 * integer when the underlying column is numeric.
+	 *
+	 * @param array $row Key/value pairs to be inserted or updated.
+	 * @return string[]  Indexed array of format specifiers.
+	 */
+	public static function build_row_format( array $row ) {
+		$integer_fields = array(
+			'member_id',
+			'bp_systolic',
+			'bp_diastolic',
+			'heart_rate',
+			'blood_glucose',
+			'oxygen_saturation',
+			'respiratory_rate',
+		);
+		$decimal_fields = self::get_decimal_vital_fields();
+
+		$format = array();
+		foreach ( $row as $key => $val ) {
+			if ( in_array( $key, $integer_fields, true ) ) {
+				$format[] = '%d';
+			} elseif ( in_array( $key, $decimal_fields, true ) ) {
+				$format[] = '%f';
+			} else {
+				$format[] = '%s';
+			}
+		}
+		return $format;
+	}
+
+	/**
+	 * One-time migration: convert bigint columns to DECIMAL(10,4) for fields
+	 * that store clinically-significant decimal values.
+	 *
+	 * JetEngine creates `number` CCT fields as `bigint(20)` in MySQL.  Inserting
+	 * a float such as 1.44 into a bigint column causes MySQL to round it to 1,
+	 * silently discarding decimal precision for renal indicators like creatinine,
+	 * potassium, eGFR, and others.
+	 *
+	 * This method checks a wp_options flag; on first run it issues an
+	 * ALTER TABLE … MODIFY for each decimal field and records the flag so
+	 * subsequent requests skip the check entirely.  It is intentionally a no-op
+	 * when the vitals_log table does not yet exist.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_decimal_columns() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_decimal_migration_v1';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table          = self::get_table_name();
+		$allowed_fields = self::get_decimal_vital_fields();
+
+		foreach ( $allowed_fields as $field ) {
+			// Validate against the known whitelist before interpolating into SQL.
+			// get_decimal_vital_fields() is the authoritative source; the explicit
+			// in_array check here is a defence-in-depth guard.
+			if ( ! in_array( $field, $allowed_fields, true ) ) {
+				continue;
+			}
+			// ALTER TABLE … MODIFY is idempotent: if the column is already
+			// DECIMAL(10,4) MySQL accepts the statement without error.  A
+			// simultaneous request racing past the get_option() check would
+			// therefore run a harmless duplicate ALTER and then also record the
+			// flag — a benign double-write that MySQL and WordPress both handle
+			// safely.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+		}
+
+		update_option( $option_key, '1', false );
 	}
 
 	/**

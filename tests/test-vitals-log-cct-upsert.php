@@ -373,4 +373,123 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 			);
 		}
 	}
+
+	// =========================================================================
+	// Decimal field handling
+	// =========================================================================
+
+	/**
+	 * get_decimal_vital_fields() must exist and return an array that includes
+	 * the renal indicators affected by the decimal-truncation bug.
+	 */
+	public function test_get_decimal_vital_fields_includes_renal_indicators() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT', 'get_decimal_vital_fields' ),
+			'get_decimal_vital_fields() must exist on WP_MCP_AI_JetEngine_Vitals_Log_CCT.'
+		);
+
+		$fields = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_decimal_vital_fields();
+
+		$this->assertIsArray( $fields );
+
+		foreach ( array( 'egfr', 'creatinine', 'potassium', 'bun', 'albumin', 'phosphorus' ) as $expected ) {
+			$this->assertContains(
+				$expected,
+				$fields,
+				"get_decimal_vital_fields() must include '{$expected}'."
+			);
+		}
+
+		// Integer-only fields must NOT be in the decimal list.
+		foreach ( array( 'bp_systolic', 'bp_diastolic', 'heart_rate', 'blood_glucose', 'oxygen_saturation', 'respiratory_rate' ) as $int_field ) {
+			$this->assertNotContains(
+				$int_field,
+				$fields,
+				"Integer field '{$int_field}' must not appear in get_decimal_vital_fields()."
+			);
+		}
+	}
+
+	/**
+	 * build_row_format() must return '%f' for decimal fields, '%d' for integer
+	 * fields, and '%s' for text fields.
+	 */
+	public function test_build_row_format_returns_correct_specifiers() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT', 'build_row_format' ),
+			'build_row_format() must exist on WP_MCP_AI_JetEngine_Vitals_Log_CCT.'
+		);
+
+		$row = array(
+			'member_id'        => 42,
+			'measurement_date' => '2026-02-05',
+			'measurement_time' => '10:00',
+			'bp_systolic'      => 120,
+			'bp_diastolic'     => 80,
+			'heart_rate'       => 72,
+			'temperature'      => 98.6,
+			'egfr'             => 55.4,
+			'creatinine'       => 1.44,
+			'potassium'        => 4.8,
+			'notes'            => 'test',
+			'source'           => 'import',
+		);
+
+		$format = WP_MCP_AI_JetEngine_Vitals_Log_CCT::build_row_format( $row );
+
+		$this->assertIsArray( $format );
+		$this->assertCount( count( $row ), $format, 'build_row_format() must return one specifier per row key.' );
+
+		$keys = array_keys( $row );
+		$map  = array_combine( $keys, $format );
+
+		// Integer fields → %d.
+		$this->assertSame( '%d', $map['member_id'], 'member_id must map to %d.' );
+		$this->assertSame( '%d', $map['bp_systolic'], 'bp_systolic must map to %d.' );
+		$this->assertSame( '%d', $map['bp_diastolic'], 'bp_diastolic must map to %d.' );
+		$this->assertSame( '%d', $map['heart_rate'], 'heart_rate must map to %d.' );
+
+		// Decimal fields → %f.
+		$this->assertSame( '%f', $map['temperature'], 'temperature must map to %f.' );
+		$this->assertSame( '%f', $map['egfr'], 'egfr must map to %f.' );
+		$this->assertSame( '%f', $map['creatinine'], 'creatinine must map to %f.' );
+		$this->assertSame( '%f', $map['potassium'], 'potassium must map to %f.' );
+
+		// Text / date fields → %s.
+		$this->assertSame( '%s', $map['measurement_date'], 'measurement_date must map to %s.' );
+		$this->assertSame( '%s', $map['measurement_time'], 'measurement_time must map to %s.' );
+		$this->assertSame( '%s', $map['notes'], 'notes must map to %s.' );
+		$this->assertSame( '%s', $map['source'], 'source must map to %s.' );
+	}
+
+	/**
+	 * maybe_migrate_decimal_columns() must exist and be a no-op when the table
+	 * does not exist.
+	 */
+	public function test_maybe_migrate_decimal_columns_noop_without_table() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT', 'maybe_migrate_decimal_columns' ),
+			'maybe_migrate_decimal_columns() must exist on WP_MCP_AI_JetEngine_Vitals_Log_CCT.'
+		);
+
+		if ( WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			$this->markTestSkipped( 'vitals_log table exists; skipping no-table migration test.' );
+		}
+
+		// Must not throw or produce an error when the table is absent.
+		WP_MCP_AI_JetEngine_Vitals_Log_CCT::maybe_migrate_decimal_columns();
+		$this->assertTrue( true, 'maybe_migrate_decimal_columns() must not throw when the table is absent.' );
+	}
 }

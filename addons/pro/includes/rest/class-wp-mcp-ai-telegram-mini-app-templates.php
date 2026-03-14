@@ -2652,7 +2652,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'local.forEach(function(r){var k=r.ts?r.ts.slice(0,10):"";if(k&&!byDay[k])byDay[k]=r;});' .
 				'var merged=Object.keys(byDay).sort().reverse().map(function(k){return byDay[k];});' .
 				'mvStoreReadings(merged);' .
-				'mvRenderDashboard();' .
+				'mvRefresh();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
