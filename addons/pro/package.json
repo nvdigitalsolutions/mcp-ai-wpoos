@@ -64,6 +64,7 @@
 		"puppeteer-core": "^21.0.0"
 	},
 	"overrides": {
+		"yauzl": ">=3.2.1",
 		"shelljs": "~0.8.5",
 		"html-minifier": "^5.0.0",
 		"tmp": ">=0.2.4",
