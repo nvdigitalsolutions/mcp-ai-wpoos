@@ -95,7 +95,8 @@
 		"minimatch@^3": "3.1.5",
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
-		"serialize-javascript": ">=7.0.3"
+		"serialize-javascript": ">=7.0.3",
+		"undici": ">=7.24.0"
 	},
 	"engines": {
 		"node": ">=18.17.0",
