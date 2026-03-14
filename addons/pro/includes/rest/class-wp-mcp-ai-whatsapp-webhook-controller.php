@@ -737,8 +737,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'whatsapp',
 				$from,
 				array(
-					'display_name' => $contact_name,
-					'phone_number' => $from,
+					'display_name'  => $contact_name,
+					'phone_number'  => $from,
+					'connection_id' => $connection_id_meta,
 				)
 			);
 
@@ -924,7 +925,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// --- Human takeover gate ---
 		if ( ! empty( $from ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', $from ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', $from, isset( $message_data['connection_id'] ) ? $message_data['connection_id'] : '' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'whatsapp_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -1337,7 +1338,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id ) );
 							if ( $wa_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 							}
@@ -1390,7 +1391,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id ) );
 			if ( $wa_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 			}

@@ -944,7 +944,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'messenger',
 				$sender_id,
-				array( 'display_name' => $sender_id )
+				array( 'display_name' => $sender_id, 'connection_id' => $connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -1240,7 +1240,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$msng_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'messenger', $sender_id );
+			$msng_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'messenger', $sender_id, array( 'connection_id' => $connection_id ) );
 			if ( $msng_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $msng_contact_row_id );
 			}

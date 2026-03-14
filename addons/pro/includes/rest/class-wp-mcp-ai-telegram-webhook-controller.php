@@ -411,6 +411,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				$tg_contact_extra = array(
 					'display_name' => $tg_contact_name,
 					'metadata'     => array( 'contact_type' => $chat_type ),
+					'connection_id' => $connection_id,
 				);
 			} else {
 				$tg_contact_name = '';
@@ -420,6 +421,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				$tg_contact_extra = array(
 					'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id,
 					'metadata'     => array( 'contact_type' => 'private' ),
+					'connection_id' => $connection_id,
 				);
 			}
 
@@ -527,7 +529,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// --- Human takeover gate ---
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $tg_contact_id ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $tg_contact_id, $connection_id ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'telegram_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -1033,7 +1035,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $from_id );
+			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $from_id, array( 'connection_id' => $connection_id ) );
 			if ( $tg_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tg_contact_row_id );
 			}
@@ -3016,8 +3018,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'telegram',
 					$chat_id,
 					array(
-						'display_name' => $channel_contact_name,
-						'metadata'     => array( 'contact_type' => 'channel' ),
+						'display_name'  => $channel_contact_name,
+						'metadata'      => array( 'contact_type' => 'channel' ),
+						'connection_id' => $connection_id,
 					)
 				);
 				if ( $channel_contact_row ) {

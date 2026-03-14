@@ -367,7 +367,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// Resolve channel + contact ID from the contacts table.
 		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id, connection_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
 
 		if ( empty( $contact ) ) {
 			return new WP_Error(
@@ -379,26 +379,54 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
-				$contact['channel'],
-				$contact['channel_contact_id']
-			)
-		);
+		$contact_connection_id = isset( $contact['connection_id'] ) ? $contact['connection_id'] : '';
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
-				$contact['channel'],
-				$contact['channel_contact_id'],
-				$per_page,
-				$offset
-			),
-			ARRAY_A
-		);
+		if ( '' !== $contact_connection_id ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$contact_connection_id
+				)
+			);
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$contact_connection_id,
+					$per_page,
+					$offset
+				),
+				ARRAY_A
+			);
+		} else {
+			// Backward-compatible query for contacts without a stored connection_id.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
+					$contact['channel'],
+					$contact['channel_contact_id']
+				)
+			);
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$per_page,
+					$offset
+				),
+				ARRAY_A
+			);
+		}
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
@@ -444,6 +472,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		if ( empty( $contact ) ) {
 			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		// When connection_id is not explicitly supplied by the client, resolve it
+		// from the contact record so replies always go via the correct connection.
+		if ( '' === $connection_id && ! empty( $contact['connection_id'] ) ) {
+			$connection_id = sanitize_text_field( $contact['connection_id'] );
 		}
 
 		$channel            = $contact['channel'];
@@ -797,6 +831,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'id'                 => isset( $row['_ID'] ) ? (int) $row['_ID'] : 0,
 			'channel'            => isset( $row['channel'] ) ? $row['channel'] : '',
 			'channel_contact_id' => isset( $row['channel_contact_id'] ) ? $row['channel_contact_id'] : '',
+			'connection_id'      => isset( $row['connection_id'] ) ? $row['connection_id'] : '',
 			'display_name'       => isset( $row['display_name'] ) ? $row['display_name'] : '',
 			'phone_number'       => isset( $row['phone_number'] ) ? $row['phone_number'] : '',
 			'email'              => isset( $row['email'] ) ? $row['email'] : '',
