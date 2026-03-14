@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array|WP_Error Result or error.
 	 */
 	private function log_vital_signs( $arguments, $member_id, $current_user_id, $context = array() ) {
-		if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
+		if ( ! user_can( $current_user_id, 'read' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to log vital signs.', 'mcp-ai-wpoos-pro' ) );
 		}
 

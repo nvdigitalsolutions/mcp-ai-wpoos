@@ -1788,9 +1788,39 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var lbl=document.getElementById("tma-hw-member-label");' .
 			'if(lbl)lbl.textContent=name;' .
 			'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+			'hwSyncFromServer();' .
 		'};' .
 
 		'window.hwSwitchMember=function(){hwHideNewMemberForm();hwShowMemberPicker();};' .
+
+		/* ── Server sync: pull stored health metrics into localStorage ── */
+		/* Calls log_health_metrics get_history and merges server entries   */
+		/* into localStorage so historical data survives device changes.    */
+		'function hwSyncFromServer(){' .
+			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
+			/* 90 days gives 3 months of history for streak/goal calculations */
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"log_health_metrics",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
+				'd.result.history.forEach(function(row){' .
+					'var k=row.date;if(!k)return;' .
+					/* Only fill dates that have no local data yet */
+					'var existing=null;try{existing=localStorage.getItem(SK_PREFIX+k);}catch(e){}' .
+					'if(!existing){' .
+						'try{localStorage.setItem(SK_PREFIX+k,JSON.stringify({' .
+							'steps:row.steps||0,water:row.water||0,sleep:row.sleep||0,' .
+							'calories:row.calories||0,sodium:row.sodium||0,mood:row.mood||0' .
+						'}));}catch(e){}' .
+					'}' .
+				'});' .
+				'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── New member form ── */
 		'var hwNewMemberType="person";' .
@@ -2096,6 +2126,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'hwInitSession();LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
 		/* Restore saved mood selection */
 		'if(LOG.mood){var mb=document.querySelector(".tma-hw-mood-btn[data-mood=\'"+LOG.mood+"\']");if(mb)mb.classList.add("selected");}' .
+		'if(MEMBER_ID)hwSyncFromServer();' .
 		'})();</script></body>';
 		// phpcs:enable
 	}
