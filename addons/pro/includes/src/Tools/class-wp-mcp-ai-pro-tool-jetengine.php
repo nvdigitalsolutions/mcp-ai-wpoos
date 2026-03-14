@@ -31,7 +31,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * extraction (i.e. when the caller omits the 'fields' wrapper key).
 	 * Keep this list in sync with get_parameters_schema() properties.
 	 */
-	const TOOL_PARAM_KEYS = array( 'action', 'cct_slug', 'item_id', 'per_page', 'page', 'fields' );
+	const TOOL_PARAM_KEYS = array( 'action', 'cct_slug', 'item_id', 'per_page', 'page', 'fields', 'items' );
 
 	/**
 	 * Check if this tool is available.
@@ -79,7 +79,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD and schema discovery: list_types, get_schema, list_items, get_item, create_item, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items.', 'mcp-ai-wpoos-pro' );
+		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD, bulk import, and schema discovery: list_types, get_schema, list_items, get_item, create_item, bulk_create, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items. Use bulk_create to import multiple records in a single call — pass an array of field objects in the "items" parameter.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -93,8 +93,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'action'   => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list_types, get_schema, list_items, get_item, create_item, update_item, delete_item. Use get_schema to discover all field names and types for a CCT before creating or updating items.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'list_types', 'get_schema', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item' ),
+					'description' => __( 'The action to perform: list_types, get_schema, list_items, get_item, create_item, update_item, delete_item, bulk_create. Use get_schema to discover all field names and types for a CCT before creating or updating items. Use bulk_create to insert multiple CCT records in a single call.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'list_types', 'get_schema', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item', 'bulk_create' ),
 					'default'     => 'list_types',
 				),
 				'cct_slug' => array(
@@ -120,6 +120,14 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'type'                 => 'object',
 					'description'          => __( 'Key/value pairs for the CCT record fields. Pass all CCT field names and their values here. Example: {"member_id": 2976, "measurement_date": "2026-02-09", "bp_systolic": 105}. Run get_schema first to discover all available field names for the CCT.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => true,
+				),
+				'items'    => array(
+					'type'        => 'array',
+					'description' => __( 'Array of field objects for bulk_create. Each element follows the same structure as the "fields" parameter. Example: [{"member_id": 2976, "measurement_date": "2026-02-09", "bp_systolic": 105}, {"member_id": 2976, "measurement_date": "2026-02-10", "creatinine": 1.44}].', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type'                 => 'object',
+						'additionalProperties' => true,
+					),
 				),
 			),
 			'required'   => array(),
@@ -186,6 +194,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return $this->get_item( $arguments );
 			case 'create_item':
 				return $this->create_item( $arguments, $context );
+			case 'bulk_create':
+				return $this->bulk_create( $arguments, $context );
 			case 'update_item':
 				return $this->update_item( $arguments, $context );
 			case 'delete_item':
@@ -550,6 +560,92 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return $item;
+	}
+
+	/**
+	 * Batch-create multiple CCT items in a single call.
+	 *
+	 * Accepts an `items` array where each element is a flat field object (the
+	 * same structure as the `fields` parameter for create_item).  Items are
+	 * written individually through the same direct-path / JetEngine-fallback
+	 * logic used by create_item(), so vitals_log records are routed through
+	 * WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert() and inherit its
+	 * time-aware deduplication and partial-merge behaviour.
+	 *
+	 * Returns a summary with per-item success/failure details so the caller
+	 * can identify which records were created and which failed without having
+	 * to iterate individually.
+	 *
+	 * @param array $arguments Tool arguments (must include 'cct_slug' and 'items').
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	protected function bulk_create( $arguments, $context ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error(
+				'missing_cct_slug',
+				__( 'CCT slug is required for bulk_create action.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['items'] ) || ! is_array( $arguments['items'] ) ) {
+			return new WP_Error(
+				'missing_items',
+				__( 'The "items" parameter is required for bulk_create and must be an array of field objects.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! user_can( $user_id, 'edit_posts' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__( 'You do not have permission to create CCT items.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$slug    = sanitize_key( $arguments['cct_slug'] );
+		$created = array();
+		$failed  = array();
+
+		foreach ( $arguments['items'] as $index => $item_fields ) {
+			if ( ! is_array( $item_fields ) && ! is_object( $item_fields ) ) {
+				$failed[] = array(
+					'index' => $index,
+					'error' => __( 'Item must be a field object.', 'mcp-ai-wpoos-pro' ),
+				);
+				continue;
+			}
+
+			$item_args = array(
+				'cct_slug' => $slug,
+				'fields'   => is_object( $item_fields ) ? (array) $item_fields : $item_fields,
+			);
+
+			$result = $this->create_item( $item_args, $context );
+
+			if ( is_wp_error( $result ) ) {
+				$failed[] = array(
+					'index' => $index,
+					'error' => $result->get_error_message(),
+				);
+			} else {
+				$created[] = array(
+					'index'   => $index,
+					'item_id' => isset( $result['_ID'] ) ? $result['_ID'] : ( isset( $result['id'] ) ? $result['id'] : null ),
+					'result'  => $result,
+				);
+			}
+		}
+
+		return array(
+			'cct_slug'      => $slug,
+			'total'         => count( $arguments['items'] ),
+			'created_count' => count( $created ),
+			'failed_count'  => count( $failed ),
+			'created'       => $created,
+			'failed'        => $failed,
+		);
 	}
 
 	/**

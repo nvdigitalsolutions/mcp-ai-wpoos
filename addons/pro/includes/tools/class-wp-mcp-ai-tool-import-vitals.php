@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Import vital-sign measurements into the vitals_log CCT from industry-standard formats: FHIR R4 JSON (HL7 Observation Bundle with LOINC codes) or CSV (flexible column mapping compatible with Apple Health, Google Fit, CommonHealth, and most EHR portal exports). Supports dry-run validation and returns a per-row import summary.', 'mcp-ai-wpoos-pro' );
+		return __( 'Import vital-sign measurements into the vitals_log CCT from industry-standard formats: FHIR R4 JSON (HL7 Observation Bundle with LOINC codes), CSV (flexible column mapping compatible with Apple Health, Google Fit, CommonHealth, and most EHR portal exports), or a pre-structured JSON array of CCT records (field names matching the vitals_log schema — the simplest format when an AI assistant has already prepared the payload). Supports dry-run validation and returns a per-row import summary.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -171,9 +171,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 				'format'    => array(
 					'type'        => 'string',
-					'enum'        => array( 'fhir_json', 'csv' ),
+					'enum'        => array( 'fhir_json', 'csv', 'json' ),
 					'default'     => 'csv',
-					'description' => 'Import format. "fhir_json" accepts HL7 FHIR R4 JSON (Bundle or single Observation). "csv" accepts a comma-separated text with flexible header names.',
+					'description' => 'Import format. "fhir_json" accepts HL7 FHIR R4 JSON (Bundle or single Observation). "csv" accepts a comma-separated text with flexible header names. "json" accepts a JSON array of record objects whose keys match the vitals_log CCT field names (bp_systolic, bp_diastolic, heart_rate, oxygen_saturation, respiratory_rate, egfr, creatinine, bun, potassium, sodium, phosphorus, albumin, etc.) — use this format when the AI has already prepared a structured payload.',
 				),
 				'data'      => array(
 					'type'        => 'string',
@@ -244,6 +244,9 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			case 'fhir_json':
 				$result = $this->parse_fhir_json( $data );
 				break;
+			case 'json':
+				$result = $this->parse_json_array( $data );
+				break;
 			case 'csv':
 			default:
 				$result = $this->parse_csv( $data );
@@ -298,36 +301,57 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			try {
 				$cct_data = array(
 					'measurement_date' => $row['measurement_date'] ?? gmdate( 'Y-m-d' ),
-					'measurement_time' => $row['measurement_time'] ?? '00:00',
+					// Empty string (not '00:00') so the upsert can distinguish
+					// timed from untimed records and store them as separate rows.
+					'measurement_time' => isset( $row['measurement_time'] ) ? trim( (string) $row['measurement_time'] ) : '',
 					'source'           => ! empty( $row['source'] ) ? sanitize_text_field( $row['source'] ) : $source,
 					'notes'            => ! empty( $row['notes'] ) ? wp_kses_post( $row['notes'] ) : '',
 					'logged_by'        => get_current_user_id(),
 					'logged_at'        => current_time( 'mysql' ),
 				);
 
-				// Map numeric/float vitals fields.
-				$numeric_fields = array(
-					'blood_pressure_systolic'  => 'bp_systolic',
-					'blood_pressure_diastolic' => 'bp_diastolic',
-					'heart_rate'               => 'heart_rate',
-					'temperature'              => 'temperature',
-					'weight'                   => 'weight',
-					'bmi'                      => 'bmi',
-					'blood_glucose'            => 'blood_glucose',
-					'oxygen_saturation'        => 'oxygen_saturation',
-					'respiratory_rate'         => 'respiratory_rate',
-					'egfr'                     => 'egfr',
-					'creatinine'               => 'creatinine',
-					'bun'                      => 'bun',
-					'potassium'                => 'potassium',
-					'sodium'                   => 'sodium',
-					'phosphorus'               => 'phosphorus',
-					'albumin'                  => 'albumin',
-				);
+				if ( 'json' === $format ) {
+					// JSON rows already carry CCT field names directly — copy
+					// numeric fields without going through the intermediate map.
+					$direct_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+						? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+						: array(
+							'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+							'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+							'respiratory_rate', 'egfr', 'creatinine', 'bun',
+							'potassium', 'sodium', 'phosphorus', 'albumin',
+						);
 
-				foreach ( $numeric_fields as $parsed_key => $cct_key ) {
-					if ( isset( $row[ $parsed_key ] ) && '' !== (string) $row[ $parsed_key ] ) {
-						$cct_data[ $cct_key ] = (float) $row[ $parsed_key ];
+					foreach ( $direct_fields as $field ) {
+						if ( isset( $row[ $field ] ) && '' !== (string) $row[ $field ] ) {
+							$cct_data[ $field ] = (float) $row[ $field ];
+						}
+					}
+				} else {
+					// CSV / FHIR: map intermediate field names to CCT field names.
+					$numeric_fields = array(
+						'blood_pressure_systolic'  => 'bp_systolic',
+						'blood_pressure_diastolic' => 'bp_diastolic',
+						'heart_rate'               => 'heart_rate',
+						'temperature'              => 'temperature',
+						'weight'                   => 'weight',
+						'bmi'                      => 'bmi',
+						'blood_glucose'            => 'blood_glucose',
+						'oxygen_saturation'        => 'oxygen_saturation',
+						'respiratory_rate'         => 'respiratory_rate',
+						'egfr'                     => 'egfr',
+						'creatinine'               => 'creatinine',
+						'bun'                      => 'bun',
+						'potassium'                => 'potassium',
+						'sodium'                   => 'sodium',
+						'phosphorus'               => 'phosphorus',
+						'albumin'                  => 'albumin',
+					);
+
+					foreach ( $numeric_fields as $parsed_key => $cct_key ) {
+						if ( isset( $row[ $parsed_key ] ) && '' !== (string) $row[ $parsed_key ] ) {
+							$cct_data[ $cct_key ] = (float) $row[ $parsed_key ];
+						}
 					}
 				}
 
@@ -394,6 +418,118 @@ class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	// ── Parsers ──────────────────────────────────────────────────────────────
+
+	/**
+	 * Parse a JSON array of pre-structured CCT record objects.
+	 *
+	 * Accepts a JSON string that is either:
+	 *  - An array of record objects: [ { "member_id": 2976, "bp_systolic": 105, … }, … ]
+	 *  - A single record object: { "member_id": 2976, "bp_systolic": 105, … }
+	 *
+	 * Keys must match vitals_log CCT field names (bp_systolic, bp_diastolic,
+	 * heart_rate, oxygen_saturation, respiratory_rate, egfr, creatinine, bun,
+	 * potassium, sodium, phosphorus, albumin, measurement_date, measurement_time,
+	 * source, notes, etc.).  The `member_id` field in each record is silently
+	 * ignored — the tool-level member_id parameter is authoritative.
+	 *
+	 * @param string $json Raw JSON string (array of record objects or single object).
+	 * @return array {success, rows, parse_errors}.
+	 */
+	private function parse_json_array( $json ) {
+		$decoded = json_decode( $json, true );
+
+		if ( null === $decoded ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'Invalid JSON: could not decode the supplied data.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Accept both a JSON array and a single object.
+		if ( is_array( $decoded ) && array_keys( $decoded ) !== range( 0, count( $decoded ) - 1 ) ) {
+			// Associative array (single object) — wrap in a list.
+			$decoded = array( $decoded );
+		}
+
+		if ( ! is_array( $decoded ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'JSON data must be an array of record objects or a single record object.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Numeric CCT field names plus standard meta fields that may appear.
+		$numeric_cct_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+				'respiratory_rate', 'egfr', 'creatinine', 'bun',
+				'potassium', 'sodium', 'phosphorus', 'albumin',
+			);
+
+		$allowed_text_fields = array( 'measurement_date', 'measurement_time', 'source', 'notes', 'temperature_unit', 'weight_unit' );
+
+		$rows   = array();
+		$errors = array();
+
+		foreach ( $decoded as $record_index => $record ) {
+			if ( ! is_array( $record ) ) {
+				$errors[] = sprintf(
+					/* translators: %d: record index */
+					__( 'Record %d is not a valid object — skipped.', 'mcp-ai-wpoos-pro' ),
+					$record_index + 1
+				);
+				continue;
+			}
+
+			$row = array();
+
+			foreach ( $record as $key => $val ) {
+				$key = sanitize_key( $key );
+
+				// member_id is authoritative from the tool parameter — skip.
+				if ( 'member_id' === $key ) {
+					continue;
+				}
+
+				if ( '' === (string) $val || null === $val ) {
+					continue;
+				}
+
+				if ( in_array( $key, $numeric_cct_fields, true ) ) {
+					$row[ $key ] = $val; // Kept as-is; cast to float in execute().
+				} elseif ( in_array( $key, $allowed_text_fields, true ) ) {
+					$row[ $key ] = $val;
+				}
+				// Unrecognised keys are silently dropped.
+			}
+
+			if ( empty( $row ) ) {
+				$errors[] = sprintf(
+					/* translators: %d: record index */
+					__( 'Record %d: no recognisable CCT fields found — skipped.', 'mcp-ai-wpoos-pro' ),
+					$record_index + 1
+				);
+				continue;
+			}
+
+			// Normalise date.
+			if ( ! empty( $row['measurement_date'] ) ) {
+				$row['measurement_date'] = $this->normalise_date( $row['measurement_date'] );
+			} else {
+				$row['measurement_date'] = gmdate( 'Y-m-d' );
+			}
+
+			$rows[] = $row;
+		}
+
+		return array(
+			'success'      => true,
+			'rows'         => $rows,
+			'parse_errors' => $errors,
+		);
+	}
 
 	/**
 	 * Parse a FHIR R4 JSON string (Bundle or single Observation).
