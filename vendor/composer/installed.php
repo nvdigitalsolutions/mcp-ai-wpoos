@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
         'version' => 'dev-copilot/add-googleworkspace-cli-skill',
-        'reference' => '389d7c851a03b47e2435d000f256cab58d9af74b',
+        'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
             'version' => 'dev-copilot/add-googleworkspace-cli-skill',
-            'reference' => '389d7c851a03b47e2435d000f256cab58d9af74b',
+            'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

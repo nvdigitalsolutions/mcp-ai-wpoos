@@ -1690,10 +1690,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$installed_skills = $skill_registry->get_all_skills();
 			$installed_count  = count( $installed_skills );
 
-			// Count bundled skills available.
-			$bundled_dir   = $skill_registry->get_bundled_skills_dir();
+			// Count bundled skills available (base + pro).
 			$bundled_count = 0;
-			if ( is_dir( $bundled_dir ) ) {
+			$bundled_dirs_to_scan = array( $skill_registry->get_bundled_skills_dir() );
+
+			// Include pro addon bundled skills when the pro plugin is active.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_bundled_dir = trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills';
+				if ( is_dir( $pro_bundled_dir ) ) {
+					$bundled_dirs_to_scan[] = $pro_bundled_dir;
+				}
+			}
+
+			foreach ( $bundled_dirs_to_scan as $bundled_dir ) {
+				if ( ! is_dir( $bundled_dir ) ) {
+					continue;
+				}
 				$bundled_dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 				if ( is_array( $bundled_dirs ) ) {
 					foreach ( $bundled_dirs as $b_dir ) {
