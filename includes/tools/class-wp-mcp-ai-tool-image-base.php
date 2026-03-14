@@ -631,7 +631,15 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Generate unique filename.
-		$extension = $this->get_extension_from_mime_type( $image_editor->get_mime_type() );
+		// WP_Image_Editor::get_mime_type() is protected; derive the extension from the
+		// filename that generate_filename() computes (which preserves the source extension).
+		// If the generated path has no extension (uncommon), fall back to get_extension_from_mime_type()
+		// using the MIME type resolved from the source arguments.
+		$generated_name = $image_editor->generate_filename();
+		$extension      = pathinfo( $generated_name, PATHINFO_EXTENSION );
+		if ( '' === $extension ) {
+			$extension = $this->get_extension_from_mime_type( $this->resolve_source_mime_type( $arguments ) );
+		}
 		$file_name = sprintf( '%s-%s-%s.%s', sanitize_title( $file_name ), sanitize_title( $operation ), gmdate( 'Ymd-His' ), $extension );
 
 		// Save to uploads directory.
@@ -644,6 +652,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		if ( is_wp_error( $saved ) ) {
 			return $saved;
 		}
+
+		// Capture the MIME type from the save result.
+		// WP_Image_Editor::save() returns 'mime-type' in its result array, avoiding
+		// the need to call the protected WP_Image_Editor::get_mime_type() method.
+		$saved_mime_type = isset( $saved['mime-type'] ) ? $saved['mime-type'] : '';
 
 		$file_path = isset( $saved['path'] ) ? $saved['path'] : '';
 
@@ -678,7 +691,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$title = $this->generate_attachment_title( $operation, $arguments );
 
 		$attachment = array(
-			'post_mime_type' => $image_editor->get_mime_type(),
+			'post_mime_type' => $saved_mime_type,
 			'post_title'     => $title,
 			'post_content'   => '',
 			'post_status'    => 'inherit',
@@ -712,7 +725,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			'file'          => $final_file_path,
 			'file_name'     => wp_basename( $final_file_path ),
 			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-			'mime_type'     => $image_editor->get_mime_type(),
+			'mime_type'     => $saved_mime_type,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
 			'size'          => $image_editor->get_size(),
@@ -815,6 +828,60 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_extension_from_mime_type( $mime_type ) {
 		$allowed = $this->get_allowed_mime_types();
 		return isset( $allowed[ $mime_type ] ) ? $allowed[ $mime_type ] : 'jpg';
+	}
+
+	/**
+	 * Resolve the MIME type of the source image from tool arguments.
+	 *
+	 * WP_Image_Editor::get_mime_type() is a protected method and cannot be called
+	 * from outside the class hierarchy. This helper determines the source MIME type
+	 * from the information available in the arguments array, without touching the
+	 * image editor instance.
+	 *
+	 * @param array $arguments Enriched tool arguments (attachment_id, url, image_url, file_id).
+	 * @return string MIME type string (e.g. 'image/jpeg'), or empty string if undetectable.
+	 */
+	protected function resolve_source_mime_type( array $arguments ) {
+		// Prefer attachment ID — most reliable and avoids filesystem calls.
+		if ( ! empty( $arguments['attachment_id'] ) ) {
+			$mime = get_post_mime_type( absint( $arguments['attachment_id'] ) );
+			if ( $mime ) {
+				return $mime;
+			}
+		}
+
+		if ( ! empty( $arguments['file_id'] ) ) {
+			$mime = get_post_mime_type( absint( $arguments['file_id'] ) );
+			if ( $mime ) {
+				return $mime;
+			}
+		}
+
+		// Try to resolve MIME type from URL via attachment ID lookup.
+		$url = '';
+		if ( ! empty( $arguments['url'] ) ) {
+			$url = $arguments['url'];
+		} elseif ( ! empty( $arguments['image_url'] ) ) {
+			$url = $arguments['image_url'];
+		}
+
+		if ( '' !== $url ) {
+			$resolved_id = $this->resolve_attachment_id_from_url( $url );
+			if ( $resolved_id > 0 ) {
+				$mime = get_post_mime_type( $resolved_id );
+				if ( $mime ) {
+					return $mime;
+				}
+			}
+
+			// Fall back to checking the file extension from the URL basename.
+			$type_info = wp_check_filetype( wp_basename( $url ) );
+			if ( ! empty( $type_info['type'] ) ) {
+				return $type_info['type'];
+			}
+		}
+
+		return '';
 	}
 
 	/**

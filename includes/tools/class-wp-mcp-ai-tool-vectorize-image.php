@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			'mime_type'     => 'image/svg+xml',
 			'bytes'         => $storage['bytes'],
 			'title'         => $storage['title'],
-			'source_format' => $image_editor->get_mime_type(),
+			'source_format' => $this->resolve_source_mime_type( $arguments ),
 			'source_size'   => isset( $result['input_size'] ) ? $result['input_size'] : 0,
 			'svg_size'      => isset( $result['output_size'] ) ? $result['output_size'] : $storage['bytes'],
 			'size_ratio'    => isset( $result['size_ratio'] ) ? $result['size_ratio'] : '0',

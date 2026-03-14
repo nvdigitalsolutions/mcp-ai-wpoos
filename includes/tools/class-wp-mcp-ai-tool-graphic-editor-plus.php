@@ -436,7 +436,9 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		return array(
 			'data'      => base64_encode( $image_data ),
-			'mime_type' => $image_editor->get_mime_type(),
+			// WP_Image_Editor::get_mime_type() is protected; use the MIME type returned
+			// by save(), which provides the same value via the public 'mime-type' key.
+			'mime_type' => isset( $save_result['mime-type'] ) ? $save_result['mime-type'] : '',
 		);
 	}
 
