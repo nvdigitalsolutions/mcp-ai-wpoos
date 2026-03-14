@@ -11,6 +11,22 @@
 class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 
 	/**
+	 * Minimal 1×1 white PNG as raw binary, used across multiple image-fixture tests.
+	 *
+	 * @var string
+	 */
+	private $minimal_png;
+
+	/**
+	 * Set up per-test state.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding known-safe test fixture binary.
+		$this->minimal_png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==' );
+	}
+
+	/**
 	 * Test tool availability check.
 	 */
 	public function test_tool_requires_image_extension() {
@@ -432,8 +448,7 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
 		}
 
-		// Create a minimal 1x1 white PNG (valid binary image data).
-		$png_data = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding known-safe test fixture binary, not obfuscating code.
+		$png_data = $this->minimal_png;
 
 		$tool = new WP_MCP_AI_Pro_Tool_Product_Actualization();
 
@@ -520,4 +535,192 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 		// Without the strip, strict decode would fail.
 		$this->assertFalse( base64_decode( $wrapped_b64, true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Testing that un-stripped wrapped base64 fails strict-mode decode.
 	}
+/**
+ * Test that product_attachment_id schema accepts both integer and string types.
+ */
+public function test_product_attachment_id_schema_accepts_string_type() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+$tool   = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+$schema = $tool->get_parameters_schema();
+
+$type = $schema['properties']['product_attachment_id']['type'];
+// Must accept both integer (attachment ID) and string (URL / file_id).
+$this->assertContains( 'integer', (array) $type );
+$this->assertContains( 'string', (array) $type );
+}
+
+/**
+ * Test download_url_to_temp rejects a non-URL string.
+ */
+public function test_download_url_to_temp_rejects_invalid_url() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+$tool = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+
+$reflection = new ReflectionClass( $tool );
+$method     = $reflection->getMethod( 'download_url_to_temp' );
+$method->setAccessible( true );
+
+$result = $method->invoke( $tool, 'not-a-url' );
+
+$this->assertInstanceOf( WP_Error::class, $result );
+$this->assertSame( 'wp_mcp_ai_invalid_url', $result->get_error_code() );
+}
+
+/**
+ * Test download_url_to_temp rejects a response with a non-image content-type.
+ */
+public function test_download_url_to_temp_rejects_non_image_content_type() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+// Intercept the HTTP request and return an HTML response.
+$pre_http_request = function ( $preempt, $args, $url ) {
+return array(
+'headers'       => array( 'content-type' => 'text/html; charset=utf-8' ),
+'body'          => '<html></html>',
+'response'      => array( 'code' => 200, 'message' => 'OK' ),
+'cookies'       => array(),
+'http_response' => null,
+);
+};
+add_filter( 'pre_http_request', $pre_http_request, 10, 3 );
+
+$tool = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+
+$reflection = new ReflectionClass( $tool );
+$method     = $reflection->getMethod( 'download_url_to_temp' );
+$method->setAccessible( true );
+
+$result = $method->invoke( $tool, 'https://example.com/page.html' );
+
+remove_filter( 'pre_http_request', $pre_http_request, 10 );
+
+$this->assertInstanceOf( WP_Error::class, $result );
+$this->assertSame( 'wp_mcp_ai_invalid_file_type', $result->get_error_code() );
+}
+
+/**
+ * Test download_url_to_temp rejects a non-200 HTTP response.
+ */
+public function test_download_url_to_temp_rejects_non_200_status() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+$pre_http_request = function ( $preempt, $args, $url ) {
+return array(
+'headers'       => array( 'content-type' => 'image/png' ),
+'body'          => '',
+'response'      => array( 'code' => 404, 'message' => 'Not Found' ),
+'cookies'       => array(),
+'http_response' => null,
+);
+};
+add_filter( 'pre_http_request', $pre_http_request, 10, 3 );
+
+$tool = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+
+$reflection = new ReflectionClass( $tool );
+$method     = $reflection->getMethod( 'download_url_to_temp' );
+$method->setAccessible( true );
+
+$result = $method->invoke( $tool, 'https://example.com/missing.png' );
+
+remove_filter( 'pre_http_request', $pre_http_request, 10 );
+
+$this->assertInstanceOf( WP_Error::class, $result );
+$this->assertSame( 'wp_mcp_ai_url_download_failed', $result->get_error_code() );
+}
+
+/**
+ * Test download_url_to_temp saves a valid image response to a temp file.
+ */
+public function test_download_url_to_temp_saves_valid_image() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+// A minimal 1×1 white PNG in binary.
+$png_data = $this->minimal_png;
+
+$pre_http_request = function ( $preempt, $args, $url ) use ( $png_data ) {
+return array(
+'headers'       => array( 'content-type' => 'image/png' ),
+'body'          => $png_data,
+'response'      => array( 'code' => 200, 'message' => 'OK' ),
+'cookies'       => array(),
+'http_response' => null,
+);
+};
+add_filter( 'pre_http_request', $pre_http_request, 10, 3 );
+
+$tool = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+
+$reflection = new ReflectionClass( $tool );
+$method     = $reflection->getMethod( 'download_url_to_temp' );
+$method->setAccessible( true );
+
+$result = $method->invoke( $tool, 'https://example.com/product.png' );
+
+remove_filter( 'pre_http_request', $pre_http_request, 10 );
+
+$this->assertIsArray( $result );
+$this->assertArrayHasKey( 'file_path', $result );
+$this->assertFileExists( $result['file_path'] );
+// The saved file must use the .png extension derived from content-type.
+$this->assertStringEndsWith( '.png', $result['file_path'] );
+$this->assertSame( $png_data, file_get_contents( $result['file_path'] ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading temp file in unit test.
+
+// Clean up.
+wp_delete_file( $result['file_path'] );
+}
+
+/**
+ * Test execute() routes a URL input via download_url_to_temp and produces
+ * wp_mcp_ai_invalid_file_type when the URL returns non-image content.
+ *
+ * This validates the full execute() URL code path without requiring a live
+ * AI provider by using a mocked HTTP response that fails content-type validation.
+ */
+public function test_execute_with_url_rejects_non_image_content() {
+if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+}
+
+$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+wp_set_current_user( $user_id );
+
+// Mock: URL returns text/html.
+$pre_http_request = function ( $preempt, $args, $url ) {
+return array(
+'headers'       => array( 'content-type' => 'text/html' ),
+'body'          => '<html></html>',
+'response'      => array( 'code' => 200, 'message' => 'OK' ),
+'cookies'       => array(),
+'http_response' => null,
+);
+};
+add_filter( 'pre_http_request', $pre_http_request, 10, 3 );
+
+$tool    = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+$context = array( 'user_id' => $user_id );
+$args    = array(
+'product_attachment_id' => 'https://example.com/product.html',
+'scene_prompt'          => 'Bright kitchen counter scene',
+);
+
+$result = $tool->execute( $args, $context );
+
+remove_filter( 'pre_http_request', $pre_http_request, 10 );
+
+$this->assertInstanceOf( WP_Error::class, $result );
+$this->assertSame( 'wp_mcp_ai_invalid_file_type', $result->get_error_code() );
+}
 }
