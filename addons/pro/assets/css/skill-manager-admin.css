@@ -1,0 +1,232 @@
+/**
+ * Skill Manager Admin – stylesheet.
+ *
+ * Scoped entirely under .wp-mcp-ai-skill-manager so rules cannot bleed
+ * into other admin pages.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.9.0
+ */
+
+/* ── Page wrapper ── */
+.wp-mcp-ai-skill-manager { max-width: 1200px; }
+.wp-mcp-ai-skill-manager .nav-tab-wrapper { margin-bottom: 20px; }
+
+/* ── Tab panels ── */
+.wp-mcp-ai-skill-manager .tab-content { display: none; }
+.wp-mcp-ai-skill-manager .tab-content.active { display: block; }
+
+/* ── Research & Build tab nav link (icon + label layout) ── */
+.wp-mcp-ai-skill-manager-research-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* ── Skill badge (count chip on the Installed Skills tab) ── */
+.wp-mcp-ai-skill-manager .skill-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 3px;
+	background: #e7f3ff;
+	color: #0073aa;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+/* ── Skill action links/buttons ── */
+.wp-mcp-ai-skill-manager .skill-actions a,
+.wp-mcp-ai-skill-manager .skill-actions button { margin-right: 6px; }
+
+/* ── Skill Editor textarea ── */
+.wp-mcp-ai-skill-manager #skill-editor-textarea {
+	width: 100%;
+	min-height: 400px;
+	font-family: monospace;
+	font-size: 13px;
+}
+.wp-mcp-ai-skill-manager .CodeMirror { height: 420px; border: 1px solid #ddd; }
+
+/* ── Shared notice bar ── */
+.wp-mcp-ai-skill-manager .skill-manager-notice {
+	display: none;
+	margin: 10px 0;
+	padding: 10px 12px;
+	border-left: 4px solid #46b450;
+	background: #f0fff0;
+}
+.wp-mcp-ai-skill-manager .skill-manager-notice.error {
+	border-color: #dc3232;
+	background: #fff0f0;
+}
+
+/* ── Install section cards ── */
+.wp-mcp-ai-skill-manager .install-section {
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	padding: 20px;
+	margin-bottom: 20px;
+	border-radius: 3px;
+}
+.wp-mcp-ai-skill-manager .install-section h3 { margin-top: 0; }
+
+/* ── Research & Build wizard ── */
+
+.wp-mcp-ai-skill-manager .wizard-progress {
+	display: flex;
+	align-items: center;
+	margin: 20px 0 30px;
+	padding: 18px 20px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	overflow-x: auto;
+}
+
+.wp-mcp-ai-skill-manager .wizard-step-indicator {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex-shrink: 0;
+	cursor: default;
+	opacity: 0.45;
+	transition: opacity 0.2s;
+}
+.wp-mcp-ai-skill-manager .wizard-step-indicator.active,
+.wp-mcp-ai-skill-manager .wizard-step-indicator.completed { opacity: 1; }
+.wp-mcp-ai-skill-manager .wizard-step-indicator.clickable { cursor: pointer; }
+
+.wp-mcp-ai-skill-manager .wizard-step-num {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	font-size: 14px;
+	font-weight: 700;
+	background: #ddd;
+	color: #555;
+	border: 2px solid #ddd;
+	transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.wp-mcp-ai-skill-manager .wizard-step-indicator.active .wizard-step-num {
+	background: #0073aa;
+	border-color: #0073aa;
+	color: #fff;
+}
+.wp-mcp-ai-skill-manager .wizard-step-indicator.completed .wizard-step-num {
+	background: #46b450;
+	border-color: #46b450;
+	color: #fff;
+}
+
+.wp-mcp-ai-skill-manager .wizard-step-label {
+	margin-top: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	color: #555;
+	white-space: nowrap;
+	text-align: center;
+}
+.wp-mcp-ai-skill-manager .wizard-step-indicator.active .wizard-step-label { color: #0073aa; }
+.wp-mcp-ai-skill-manager .wizard-step-indicator.completed .wizard-step-label { color: #46b450; }
+
+.wp-mcp-ai-skill-manager .wizard-step-connector {
+	flex: 1;
+	height: 2px;
+	background: #ddd;
+	margin: 0 8px;
+	min-width: 20px;
+	position: relative;
+	top: -10px;
+}
+.wp-mcp-ai-skill-manager .wizard-step-connector.completed { background: #46b450; }
+
+.wp-mcp-ai-skill-manager .wizard-step-panel { display: none; }
+.wp-mcp-ai-skill-manager .wizard-step-panel.active { display: block; }
+
+.wp-mcp-ai-skill-manager .wizard-panel-header {
+	padding: 0 0 15px;
+	border-bottom: 1px solid #eee;
+	margin-bottom: 20px;
+}
+.wp-mcp-ai-skill-manager .wizard-panel-header h3 { margin: 0 0 4px; font-size: 17px; }
+.wp-mcp-ai-skill-manager .wizard-panel-header p { margin: 0; color: #666; font-size: 13px; }
+
+.wp-mcp-ai-skill-manager .wizard-step-nav {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px solid #eee;
+}
+.wp-mcp-ai-skill-manager .wizard-step-nav .spacer { flex: 1; }
+
+/* ── Character counters ── */
+.wp-mcp-ai-skill-manager .char-counter {
+	font-size: 11px;
+	color: #999;
+	margin-top: 3px;
+	display: block;
+}
+.wp-mcp-ai-skill-manager .char-counter.warn { color: #dc3232; font-weight: 600; }
+
+/* ── Code preview blocks ── */
+.wp-mcp-ai-skill-manager .skill-preview-block {
+	background: #1e1e1e;
+	color: #d4d4d4;
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.55;
+	padding: 16px 18px;
+	border-radius: 4px;
+	overflow: auto;
+	max-height: 420px;
+	white-space: pre;
+	tab-size: 2;
+}
+.wp-mcp-ai-skill-manager .skill-preview-copy {
+	float: right;
+	font-size: 11px;
+	margin: -4px 0 8px 8px;
+}
+
+/* ── Research field tips ── */
+.wp-mcp-ai-skill-manager .research-field-tip {
+	background: #f0f6fc;
+	border-left: 3px solid #0073aa;
+	padding: 8px 12px;
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #444;
+	border-radius: 0 3px 3px 0;
+}
+
+/* ── License grid picker ── */
+.wp-mcp-ai-skill-manager .license-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 6px;
+	margin-top: 4px;
+}
+.wp-mcp-ai-skill-manager .license-option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 6px 10px;
+	cursor: pointer;
+	background: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	transition: border-color 0.15s, background 0.15s;
+}
+.wp-mcp-ai-skill-manager .license-option:hover { border-color: #0073aa; }
+.wp-mcp-ai-skill-manager .license-option.selected {
+	border-color: #0073aa;
+	background: #e7f3ff;
+	color: #0073aa;
+}
