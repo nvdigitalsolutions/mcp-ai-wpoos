@@ -593,21 +593,32 @@ function renderMVDashboard(history){
 		return getEntryDate(a).localeCompare(getEntryDate(b));
 	});
 
-	/* Latest entry KPIs */
-	var latest = history[history.length-1];
-	var sys     = parseFloat(extractVitalValue(latest,'bp_systolic'))   || 0;
-	var dia     = parseFloat(extractVitalValue(latest,'bp_diastolic'))  || 0;
-	var hr      = parseFloat(extractVitalValue(latest,'heart_rate'))    || 0;
-	var spo2    = parseFloat(extractVitalValue(latest,'oxygen_saturation')) || 0;
-	var temp    = parseFloat(extractVitalValue(latest,'temperature'))   || 0;
-	var gluc    = parseFloat(extractVitalValue(latest,'blood_glucose')) || 0;
-	var egfr    = parseFloat(extractVitalValue(latest,'egfr'))         || 0;
-	var creat   = parseFloat(extractVitalValue(latest,'creatinine'))   || 0;
-	var bun     = parseFloat(extractVitalValue(latest,'bun'))          || 0;
-	var pot     = parseFloat(extractVitalValue(latest,'potassium'))    || 0;
-	var sodMv   = parseFloat(extractVitalValue(latest,'sodium'))       || 0;
-	var phos    = parseFloat(extractVitalValue(latest,'phosphorus'))   || 0;
-	var alb     = parseFloat(extractVitalValue(latest,'albumin'))      || 0;
+	/* Latest-reading KPIs — for each metric, scan backwards through history
+	   to find the most recent entry that actually carries a value for that
+	   metric.  Records are often stored as separate log rows per measurement
+	   type (e.g. one row for BP/HR/SpO₂ and another for renal labs), so the
+	   chronologically last entry frequently has only partial data and cannot
+	   reliably represent all KPIs on its own. */
+	function latestFor(field){
+		for(var i=history.length-1;i>=0;i--){
+			var v=parseFloat(extractVitalValue(history[i],field));
+			if(v>0) return v;
+		}
+		return 0;
+	}
+	var sys   = latestFor('bp_systolic');
+	var dia   = latestFor('bp_diastolic');
+	var hr    = latestFor('heart_rate');
+	var spo2  = latestFor('oxygen_saturation');
+	var temp  = latestFor('temperature');
+	var gluc  = latestFor('blood_glucose');
+	var egfr  = latestFor('egfr');
+	var creat = latestFor('creatinine');
+	var bun   = latestFor('bun');
+	var pot   = latestFor('potassium');
+	var sodMv = latestFor('sodium');
+	var phos  = latestFor('phosphorus');
+	var alb   = latestFor('albumin');
 
 	/* BP KPI */
 	if(sys||dia){
