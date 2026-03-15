@@ -46,6 +46,20 @@ if ( $is_enabled && ! $is_base ) {
 	}
 	unset( $_cc_messages_cct, $_cc_contacts_cct );
 
+	// --- CPTs: Channel Messages and Channel Contacts (JetEngine-free fallback) ---
+	$_cc_messages_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cpt.php';
+	$_cc_contacts_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cpt.php';
+
+	if ( file_exists( $_cc_messages_cpt ) ) {
+		require_once $_cc_messages_cpt;
+		WP_MCP_AI_Channel_Messages_CPT::bootstrap();
+	}
+	if ( file_exists( $_cc_contacts_cpt ) ) {
+		require_once $_cc_contacts_cpt;
+		WP_MCP_AI_Channel_Contacts_CPT::bootstrap();
+	}
+	unset( $_cc_messages_cpt, $_cc_contacts_cpt );
+
 	// --- REST API: Chat Channels inbox controller ---
 	$_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php';
 	if ( file_exists( $_cc_rest ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_REST_Controller' ) ) {
