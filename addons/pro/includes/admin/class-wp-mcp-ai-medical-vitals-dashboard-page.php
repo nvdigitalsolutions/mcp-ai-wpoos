@@ -266,12 +266,6 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<div class="hw-dash-kpi-sub" id="mv-kpi-temp-status"></div>
 						</div>
 						<div class="hw-dash-kpi">
-							<div class="hw-dash-kpi-icon">🩸</div>
-							<div class="hw-dash-kpi-value" id="mv-kpi-glucose">—</div>
-							<div class="hw-dash-kpi-label"><?php esc_html_e( 'Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></div>
-							<div class="hw-dash-kpi-sub" id="mv-kpi-glucose-status"></div>
-						</div>
-						<div class="hw-dash-kpi">
 							<div class="hw-dash-kpi-icon">🫀</div>
 							<div class="hw-dash-kpi-value" id="mv-kpi-egfr">—</div>
 							<div class="hw-dash-kpi-label"><?php esc_html_e( 'eGFR', 'mcp-ai-wpoos-pro' ); ?></div>
@@ -555,6 +549,16 @@ function normTempToF(value, unit){
 
 /* ── Vital value extractor ───────────────────────────────────── */
 function extractVitalValue(entry, fieldOrPath){
+	/* Temperature: handle first (before the generic early-return) so that
+	   normTempToF is always applied — legacy Celsius entries stored in both
+	   flat CCT rows and nested options-storage objects are converted to °F. */
+	if(fieldOrPath==='temperature'){
+		if(entry.measurements&&entry.measurements.temperature)
+			return normTempToF(entry.measurements.temperature.value||0, entry.measurements.temperature.unit||'F');
+		if(entry.temperature!==undefined)
+			return normTempToF(parseFloat(entry.temperature)||0, entry.temperature_unit||'F');
+		return 0;
+	}
 	/* Supports both flat (from JetEngine CCT: bp_systolic) and
 	   nested (from options storage: measurements.blood_pressure.systolic) */
 	if(entry[fieldOrPath]!==undefined) return entry[fieldOrPath];
@@ -565,7 +569,6 @@ function extractVitalValue(entry, fieldOrPath){
 		if(fieldOrPath==='bp_diastolic'&&m.blood_pressure) return m.blood_pressure.diastolic||0;
 		if(fieldOrPath==='heart_rate'&&m.heart_rate)        return m.heart_rate.value||0;
 		if(fieldOrPath==='oxygen_saturation'&&m.oxygen_saturation) return m.oxygen_saturation.value||0;
-		if(fieldOrPath==='temperature'&&m.temperature)     return m.temperature.value||0;
 		if(fieldOrPath==='blood_glucose'&&m.blood_glucose) return m.blood_glucose.value||0;
 		if(fieldOrPath==='egfr'&&m.egfr)                   return m.egfr.value||0;
 		if(fieldOrPath==='creatinine'&&m.creatinine)       return m.creatinine.value||0;
@@ -575,12 +578,7 @@ function extractVitalValue(entry, fieldOrPath){
 		if(fieldOrPath==='phosphorus'&&m.phosphorus)       return m.phosphorus.value||0;
 		if(fieldOrPath==='albumin'&&m.albumin)             return m.albumin.value||0;
 		if(fieldOrPath==='hemoglobin'&&m.hemoglobin)       return m.hemoglobin.value||0;
-		/* Temperature: normalise legacy °C entries to °F for consistent display */
-		if(fieldOrPath==='temperature'&&m.temperature)     return normTempToF(m.temperature.value||0, m.temperature.unit||'F');
 	}
-	/* Flat CCT row: temperature_unit column tells us the stored unit */
-	if(fieldOrPath==='temperature'&&entry.temperature)     return normTempToF(parseFloat(entry.temperature)||0, entry.temperature_unit||'F');
-	if(fieldOrPath==='hemoglobin'&&entry.hemoglobin!==undefined) return parseFloat(entry.hemoglobin)||0;
 	return 0;
 }
 
@@ -597,7 +595,6 @@ function bpStatusClass(sys,dia){
 function hrStatus(v){ return (v>=60&&v<=100)?'status-normal':(v<50||v>110)?'status-alert':'status-warning'; }
 function spo2Status(v){ return v>=95?'status-normal':v>=90?'status-warning':'status-alert'; }
 function tempStatus(v){ return (v>=97&&v<=99)?'status-normal':(v>=99.1&&v<=100.4)?'status-warning':'status-alert'; }
-function glucoseStatus(v){ return (v>=70&&v<=99)?'status-normal':(v>=100&&v<=125)?'status-warning':'status-alert'; }
 function egfrCkd(v){
 	if(!v||v===0) return '—';
 	if(v>=90) return 'Stage 1 (Normal)';
@@ -640,7 +637,6 @@ function renderMVDashboard(history){
 	var hr    = latestFor('heart_rate');
 	var spo2  = latestFor('oxygen_saturation');
 	var temp  = latestFor('temperature');
-	var gluc  = latestFor('blood_glucose');
 	var egfr  = latestFor('egfr');
 	var creat = latestFor('creatinine');
 	var bun   = latestFor('bun');
@@ -660,7 +656,6 @@ function renderMVDashboard(history){
 	if(hr){ $('#mv-kpi-hr').text(hr+' bpm'); $('#mv-kpi-hr-status').text(hr>=60&&hr<=100?'Normal':'Out of range').removeClass().addClass('hw-dash-kpi-sub '+hrStatus(hr)); }
 	if(spo2){ $('#mv-kpi-spo2').text(spo2+'%'); $('#mv-kpi-spo2-status').text(spo2>=95?'Normal':spo2>=90?'Low':'Critical').removeClass().addClass('hw-dash-kpi-sub '+spo2Status(spo2)); }
 	if(temp){ $('#mv-kpi-temp').text(temp+'°F'); $('#mv-kpi-temp-status').text(temp>=97&&temp<=99?'Normal':'Abnormal').removeClass().addClass('hw-dash-kpi-sub '+tempStatus(temp)); }
-	if(gluc){ $('#mv-kpi-glucose').text(gluc+' mg/dL'); $('#mv-kpi-glucose-status').text(gluc>=70&&gluc<=99?'Normal':gluc<=125?'Pre-diabetic':'High').removeClass().addClass('hw-dash-kpi-sub '+glucoseStatus(gluc)); }
 	if(egfr){ $('#mv-kpi-egfr').text(egfr); $('#mv-kpi-egfr-stage').text(egfrCkd(egfr)).removeClass().addClass('hw-dash-kpi-sub '+egfrStatusClass(egfr)); }
 	if(hgb){ $('#mv-kpi-hgb').text(hgb+' g/dL'); $('#mv-kpi-hgb-status').text(hgb>=12?'Normal':hgb>=11?'Low':'Anaemia').removeClass().addClass('hw-dash-kpi-sub '+hgbStatus(hgb)); }
 
