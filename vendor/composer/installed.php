@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-remotion-video-creation-tool',
-        'version' => 'dev-copilot/add-remotion-video-creation-tool',
-        'reference' => 'b6d493838d236a6f25f123dd960b48b11c15f38d',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-5263817d-23a4-41a8-98be-2bdd5e12e739',
+        'version' => 'dev-copilot/rebuild-all-zips-with-script-5263817d-23a4-41a8-98be-2bdd5e12e739',
+        'reference' => '698e2733e883a6c33e42cc6be18140ab9d03d88e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-remotion-video-creation-tool',
-            'version' => 'dev-copilot/add-remotion-video-creation-tool',
-            'reference' => 'b6d493838d236a6f25f123dd960b48b11c15f38d',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-5263817d-23a4-41a8-98be-2bdd5e12e739',
+            'version' => 'dev-copilot/rebuild-all-zips-with-script-5263817d-23a4-41a8-98be-2bdd5e12e739',
+            'reference' => '698e2733e883a6c33e42cc6be18140ab9d03d88e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
