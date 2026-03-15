@@ -25,6 +25,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
+// Load onboarding wizard.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-onboarding-wizard.php';
+
 // Load simple settings saver (for optimized flat settings page).
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-saver.php';
 
@@ -183,6 +186,11 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize simple settings page (Settings menu).
 		// This provides a flat diagnostic view of all saved settings.
 		$GLOBALS['wp_mcp_ai_simple_settings_page'] = new WP_MCP_AI_Simple_Settings_Page();
+
+		// Initialize onboarding wizard.
+		// Registers the "Getting Started" sub-menu, handles activation redirect,
+		// and renders the welcome notice for new installs.
+		$GLOBALS['wp_mcp_ai_onboarding_wizard'] = new WP_MCP_AI_Onboarding_Wizard();
 
 		// Initialize integration admin pages.
 		// Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.

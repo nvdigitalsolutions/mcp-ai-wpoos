@@ -1895,6 +1895,12 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// Skills that are already installed in uploads will be skipped.
 		set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
 
+		// Set a transient to redirect new users to the onboarding wizard on the next
+		// admin page load. Only triggers when the wizard has not been completed yet.
+		if ( ! get_option( 'wp_mcp_ai_onboarding_complete' ) ) {
+			set_transient( 'wp_mcp_ai_activation_redirect', true, 30 );
+		}
+
 		// Trigger optional components download (vectorizer & knowledge base).
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
