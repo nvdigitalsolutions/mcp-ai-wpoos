@@ -428,9 +428,12 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .status-normal{color:#2e7d32!important;font-weight:600;}
 .status-warning{color:#e65100!important;font-weight:600;}
 .status-alert{color:#c62828!important;font-weight:600;}
-/* Alternating row colours for vitals table (manual, since notes rows break nth-child) */
-.hw-dash-vitals-table tbody tr.mv-vitals-data-row:nth-of-type(odd) td{background:#fff;}
-.hw-dash-vitals-table tbody tr.mv-vitals-data-row:nth-of-type(even) td{background:#f6f7f7;}
+/* Alternating row colours for vitals table — index-based classes set by JS so
+   stripes remain correct even when every data row has a notes sub-row. */
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row.mv-row-odd td{background:#fff;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row.mv-row-even td{background:#f6f7f7;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row.mv-row-odd td{background:#e8f0fe;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row.mv-row-even td{background:#f0f4ff;}
 /* Notes row — full-width, visually attached to its data row */
 .hw-dash-vitals-table tbody tr.mv-vitals-notes-row td{
 	background:#f0f4ff;
@@ -700,10 +703,13 @@ function renderMVDashboard(history){
 	buildLineChart('mv-chart-hemoglobin',labels, hgbArr,   MV_COLORS.hemoglobin,12,    'Normal ≥12 g/dL', null);
 
 	/* Vitals table (last 20 entries, newest first)
-	   Notes are rendered as a full-width second row beneath each data record. */
+	   Notes are rendered as a full-width second row beneath each data record.
+	   Index-based mv-row-odd/mv-row-even classes are stamped so stripes alternate
+	   correctly even when every record has a notes sub-row. */
 	var tbody = $('#mv-dash-vitals-tbody').empty();
 	var tableRows = history.slice().reverse().slice(0,20);
-	$.each(tableRows,function(_,r){
+	$.each(tableRows,function(idx,r){
+		var rowParity = idx%2===0 ? 'mv-row-odd' : 'mv-row-even';
 		var rSys   = parseFloat(extractVitalValue(r,'bp_systolic'))||'';
 		var rDia   = parseFloat(extractVitalValue(r,'bp_diastolic'))||'';
 		var rHr    = parseFloat(extractVitalValue(r,'heart_rate'))||'';
@@ -716,7 +722,7 @@ function renderMVDashboard(history){
 		var rNotes = r.notes||'';
 
 		tbody.append(
-			'<tr class="mv-vitals-data-row">'+
+			'<tr class="mv-vitals-data-row '+rowParity+'">'+
 			'<td>'+getEntryDate(r)+'</td>'+
 			'<td>'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
 			'<td>'+(rHr||'—')+'</td>'+
@@ -731,8 +737,8 @@ function renderMVDashboard(history){
 
 		if(rNotes){
 			tbody.append(
-				'<tr class="mv-vitals-notes-row">'+
-				'<td colspan="9">'+rNotes+'</td>'+
+				'<tr class="mv-vitals-notes-row '+rowParity+'">'+
+				'<td colspan="8">'+rNotes+'</td>'+
 				'</tr>'
 			);
 		}
