@@ -2507,6 +2507,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
 					'</div>' .
 
+					/* Hemoglobin */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#129978; ' . esc_html__( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<input type="number" id="mv-hemoglobin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 13.5', 'mcp-ai-wpoos-pro' ) . '" min="1" max="25" step="0.1" />' .
+					'</div>' .
+
 					/* Notes */
 					'<div class="mv-log-section">' .
 						'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
@@ -3144,13 +3150,15 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(kg){' .
 				'var egfr=latest.egfr||0;var creat=latest.creatinine||0;var bun=latest.bun||0;' .
 				'var kpot=latest.potassium||0;var kna=latest.sodium||0;var phos=latest.phosphorus||0;var alb=latest.albumin||0;' .
-				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb;' .
+				'var hgb=latest.hemoglobin||0;' .
+				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb||hgb;' .
 				'if(!hasKidney){' .
 					'kg.innerHTML=\'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_js( __( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 				'}else{' .
 					'var egfrSt=mvEgfrStatus(egfr);var creatSt=mvCreatinineStatus(creat);' .
 					'var bunSt=mvBunStatus(bun);var potSt=mvPotassiumStatus(kpot);' .
 					'var naSt=mvSodiumStatus(kna);var phosSt=mvPhosphorusStatus(phos);var albSt=mvAlbuminStatus(alb);' .
+					'var hgbSt=hgb>=12?"normal":hgb>=11?"warning":"alert";' .
 					'var egfrColor=egfrSt==="alert"?"#c62828":egfrSt==="warning"?"#e65100":"#1565c0";' .
 					'var creatColor=creatSt==="alert"?"#c62828":creatSt==="warning"?"#e65100":"#00796b";' .
 					'var bunColor=bunSt==="alert"?"#c62828":bunSt==="warning"?"#e65100":"#00796b";' .
@@ -3158,6 +3166,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'var naColor=naSt==="alert"?"#c62828":naSt==="warning"?"#e65100":"#0277bd";' .
 					'var phosColor=phosSt==="alert"?"#c62828":phosSt==="warning"?"#e65100":"#558b2f";' .
 					'var albColor=albSt==="alert"?"#c62828":albSt==="warning"?"#e65100":"#4527a0";' .
+					'var hgbColor=hgbSt==="alert"?"#c62828":hgbSt==="warning"?"#e65100":"#b71c1c";' .
 					'var egfrLabel=egfr?mvEgfrStageLabel(egfr):"--";' .
 					'kg.innerHTML=' .
 						'(egfr?kpiCard(egfrColor,"&#129506;","eGFR",egfr,"mL/min",egfrSt)+\'<div style="grid-column:span 2;margin:-8px 0 4px;font-size:11px;color:\'+egfrColor+\';font-weight:600;padding-left:4px">&#9679; \'+escH(egfrLabel)+\'</div>\':"")  +' .
@@ -3166,7 +3175,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'(kpot?kpiCard(potColor,"&#9889;","K\u207a ' . esc_js( __( 'Potassium', 'mcp-ai-wpoos-pro' ) ) . '",kpot,"mEq/L",potSt):"")  +' .
 						'(kna?kpiCard(naColor,"&#9889;","Na\u207a ' . esc_js( __( 'Sodium', 'mcp-ai-wpoos-pro' ) ) . '",kna,"mEq/L",naSt):"")  +' .
 						'(phos?kpiCard(phosColor,"&#129514;","' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",phos,"mg/dL",phosSt):"")  +' .
-						'(alb?kpiCard(albColor,"&#129514;","' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",alb,"g/dL",albSt):"")  ;' .
+						'(alb?kpiCard(albColor,"&#129514;","' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",alb,"g/dL",albSt):"")  +' .
+						'(hgb?kpiCard(hgbColor,"&#129978;","' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",hgb,"g/dL",hgbSt):"")  ;' .
 				'}' .
 			'}' .
 			/* Mini sparkline chart */
@@ -3216,16 +3226,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var sodium=parseFloat((document.getElementById("mv-sodium")||{}).value||"")||0;' .
 			'var phosphorus=parseFloat((document.getElementById("mv-phosphorus")||{}).value||"")||0;' .
 			'var albumin=parseFloat((document.getElementById("mv-albumin")||{}).value||"")||0;' .
+			'var hemoglobin=parseFloat((document.getElementById("mv-hemoglobin")||{}).value||"")||0;' .
 			'var notes=((document.getElementById("mv-notes")||{}).value||"").trim();' .
 			/* Require at least one field */
-			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin)return;' .
+			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin&&!hemoglobin)return;' .
 			'var reading={ts:new Date().toISOString(),bp_sys:sys,bp_dia:dia,hr:hr,spo2:spo2,temp:temp,glucose:glucose,' .
 				'egfr:egfr,creatinine:creatinine,bun:bun,potassium:potassium,sodium:sodium,phosphorus:phosphorus,albumin:albumin,' .
-				'notes:notes};' .
+				'hemoglobin:hemoglobin,notes:notes};' .
 			'var arr=mvLoadReadings();arr.unshift(reading);if(arr.length>200)arr=arr.slice(0,200);' .
 			'mvStoreReadings(arr);tmaHaptic("success");' .
 			/* Clear fields */
-			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
+			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-hemoglobin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
 			/* Show saved message */
 			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
 			/* Server sync via log_vital_signs tool when a member is resolved */
@@ -3245,6 +3256,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'if(reading.sodium)sArgs.sodium=reading.sodium;' .
 				'if(reading.phosphorus)sArgs.phosphorus=reading.phosphorus;' .
 				'if(reading.albumin)sArgs.albumin=reading.albumin;' .
+				'if(reading.hemoglobin)sArgs.hemoglobin=reading.hemoglobin;' .
 				'if(reading.notes)sArgs.notes=reading.notes;' .
 				'fetch(TOOLS_EXEC,{method:"POST",' .
 					'headers:tmaToolHeaders(),' .
@@ -3278,6 +3290,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'sodium:row.sodium?parseFloat(row.sodium):0,' .
 						'phosphorus:row.phosphorus?parseFloat(row.phosphorus):0,' .
 						'albumin:row.albumin?parseFloat(row.albumin):0,' .
+						'hemoglobin:row.hemoglobin?parseFloat(row.hemoglobin):0,' .
 						'notes:row.notes||""};' .
 				'});' .
 				/* Merge: server rows keyed by day, local-only days preserved */
@@ -3336,7 +3349,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'{id:"mv-tc-phos",icon:"&#129514;",title:"' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 2.5–4.5 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
 					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.phosphorus||null;}),color:"#ef6c00"}]},' .
 				'{id:"mv-tc-alb",icon:"&#129514;",title:"' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 3.5–5.0 g/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
-					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.albumin||null;}),color:"#4527a0"}]}' .
+					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.albumin||null;}),color:"#4527a0"}]},' .
+				'{id:"mv-tc-hgb",icon:"&#129978;",title:"' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal ≥12 g/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.hemoglobin||null;}),color:"#b71c1c"}]}' .
 			'];' .
 
 			'cw.innerHTML=charts.map(function(ch){' .
@@ -3446,6 +3461,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'+", Na+: "+(latest.sodium||"?")+" mEq/L"' .
 				'+", Phosphorus: "+(latest.phosphorus||"?")+" mg/dL"' .
 				'+", Albumin: "+(latest.albumin||"?")+" g/dL"' .
+				'+", Hemoglobin: "+(latest.hemoglobin||"?")+" g/dL"' .
 				'+(latest.notes?". Notes: "+latest.notes:"")+".";' .
 				'doctorHist.push({role:"user",content:vitCtx});' .
 				'doctorHist.push({role:"assistant",content:"' . esc_js( __( 'I have your latest vitals on file. How can I help you today?', 'mcp-ai-wpoos-pro' ) ) . '"});' .

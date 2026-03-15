@@ -277,6 +277,12 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<div class="hw-dash-kpi-label"><?php esc_html_e( 'eGFR', 'mcp-ai-wpoos-pro' ); ?></div>
 							<div class="hw-dash-kpi-sub" id="mv-kpi-egfr-stage"></div>
 						</div>
+						<div class="hw-dash-kpi">
+							<div class="hw-dash-kpi-icon">🩸</div>
+							<div class="hw-dash-kpi-value" id="mv-kpi-hgb">—</div>
+							<div class="hw-dash-kpi-label"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></div>
+							<div class="hw-dash-kpi-sub" id="mv-kpi-hgb-status"></div>
+						</div>
 					</div>
 
 					<!-- Vitals trend charts -->
@@ -325,6 +331,10 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<canvas id="mv-chart-albumin" height="120"></canvas>
 						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-hemoglobin" height="120"></canvas>
+						</div>
 					</div>
 
 					<!-- Latest readings table — Notes appear as full-width second row -->
@@ -341,10 +351,11 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Glucose', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'eGFR', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Creatinine', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Hgb (g/dL)', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-dash-vitals-tbody">
-								<tr><td colspan="8" class="hw-dash-placeholder"><?php esc_html_e( 'Select a member to view vitals.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td colspan="9" class="hw-dash-placeholder"><?php esc_html_e( 'Select a member to view vitals.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
 							</tbody>
 						</table>
 					</div>
@@ -468,7 +479,8 @@ var MV_COLORS = {
 	potassium:  '#1b5e20',
 	sodium_mv:  '#006064',
 	phosphorus: '#bf360c',
-	albumin:    '#37474f'
+	albumin:    '#37474f',
+	hemoglobin: '#b71c1c'
 };
 
 /* ── Chart registry (so we can destroy before rebuilding) ────── */
@@ -534,6 +546,13 @@ function buildMultiLineChart(canvasId,labels,datasets){
 	});
 }
 
+/* ── Temperature normalisation helper ───────────────────────── */
+function normTempToF(value, unit){
+	var u=(unit||'F').toUpperCase();
+	if(u==='C') return Math.round(((value*9/5)+32)*10)/10;
+	return value;
+}
+
 /* ── Vital value extractor ───────────────────────────────────── */
 function extractVitalValue(entry, fieldOrPath){
 	/* Supports both flat (from JetEngine CCT: bp_systolic) and
@@ -555,7 +574,13 @@ function extractVitalValue(entry, fieldOrPath){
 		if(fieldOrPath==='sodium'&&m.sodium)               return m.sodium.value||0;
 		if(fieldOrPath==='phosphorus'&&m.phosphorus)       return m.phosphorus.value||0;
 		if(fieldOrPath==='albumin'&&m.albumin)             return m.albumin.value||0;
+		if(fieldOrPath==='hemoglobin'&&m.hemoglobin)       return m.hemoglobin.value||0;
+		/* Temperature: normalise legacy °C entries to °F for consistent display */
+		if(fieldOrPath==='temperature'&&m.temperature)     return normTempToF(m.temperature.value||0, m.temperature.unit||'F');
 	}
+	/* Flat CCT row: temperature_unit column tells us the stored unit */
+	if(fieldOrPath==='temperature'&&entry.temperature)     return normTempToF(parseFloat(entry.temperature)||0, entry.temperature_unit||'F');
+	if(fieldOrPath==='hemoglobin'&&entry.hemoglobin!==undefined) return parseFloat(entry.hemoglobin)||0;
 	return 0;
 }
 
@@ -583,6 +608,7 @@ function egfrCkd(v){
 	return 'Stage 5 (Kidney Failure)';
 }
 function egfrStatusClass(v){ return v>=60?'status-normal':v>=30?'status-warning':'status-alert'; }
+function hgbStatus(v){ return v>=12?'status-normal':v>=11?'status-warning':'status-alert'; }
 
 /* ── Medical Vitals rendering ────────────────────────────────── */
 function renderMVDashboard(history){
@@ -622,6 +648,7 @@ function renderMVDashboard(history){
 	var sodMv = latestFor('sodium');
 	var phos  = latestFor('phosphorus');
 	var alb   = latestFor('albumin');
+	var hgb   = latestFor('hemoglobin');
 
 	/* BP KPI */
 	if(sys||dia){
@@ -635,6 +662,7 @@ function renderMVDashboard(history){
 	if(temp){ $('#mv-kpi-temp').text(temp+'°F'); $('#mv-kpi-temp-status').text(temp>=97&&temp<=99?'Normal':'Abnormal').removeClass().addClass('hw-dash-kpi-sub '+tempStatus(temp)); }
 	if(gluc){ $('#mv-kpi-glucose').text(gluc+' mg/dL'); $('#mv-kpi-glucose-status').text(gluc>=70&&gluc<=99?'Normal':gluc<=125?'Pre-diabetic':'High').removeClass().addClass('hw-dash-kpi-sub '+glucoseStatus(gluc)); }
 	if(egfr){ $('#mv-kpi-egfr').text(egfr); $('#mv-kpi-egfr-stage').text(egfrCkd(egfr)).removeClass().addClass('hw-dash-kpi-sub '+egfrStatusClass(egfr)); }
+	if(hgb){ $('#mv-kpi-hgb').text(hgb+' g/dL'); $('#mv-kpi-hgb-status').text(hgb>=12?'Normal':hgb>=11?'Low':'Anaemia').removeClass().addClass('hw-dash-kpi-sub '+hgbStatus(hgb)); }
 
 	/* Build chart data */
 	var labels    = history.map(function(r){var d=getEntryDate(r);return d?d.slice(5):'';});
@@ -651,6 +679,7 @@ function renderMVDashboard(history){
 	var sodMvArr  = history.map(function(r){return parseFloat(extractVitalValue(r,'sodium'))||null;});
 	var phosArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'phosphorus'))||null;});
 	var albArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'albumin'))||null;});
+	var hgbArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hemoglobin'))||null;});
 
 	/* BP dual-line */
 	buildMultiLineChart('mv-chart-bp', labels, [
@@ -671,6 +700,7 @@ function renderMVDashboard(history){
 	]);
 	buildLineChart('mv-chart-phosphorus',labels, phosArr,  MV_COLORS.phosphorus,4.5,   'Normal ≤4.5', null);
 	buildLineChart('mv-chart-albumin',   labels, albArr,   MV_COLORS.albumin,   null,  null, null);
+	buildLineChart('mv-chart-hemoglobin',labels, hgbArr,   MV_COLORS.hemoglobin,12,    'Normal ≥12 g/dL', null);
 
 	/* Vitals table (last 20 entries, newest first)
 	   Notes are rendered as a full-width second row beneath each data record.
@@ -688,6 +718,7 @@ function renderMVDashboard(history){
 		var rGluc  = parseFloat(extractVitalValue(r,'blood_glucose'))||'';
 		var rEgfr  = parseFloat(extractVitalValue(r,'egfr'))||'';
 		var rCreat = parseFloat(extractVitalValue(r,'creatinine'))||'';
+		var rHgb   = parseFloat(extractVitalValue(r,'hemoglobin'))||'';
 		var rNotes = r.notes||'';
 
 		tbody.append(
@@ -700,6 +731,7 @@ function renderMVDashboard(history){
 			'<td>'+(rGluc||'—')+'</td>'+
 			'<td>'+(rEgfr||'—')+'</td>'+
 			'<td>'+(rCreat||'—')+'</td>'+
+			'<td>'+(rHgb||'—')+'</td>'+
 			'</tr>'
 		);
 
@@ -712,7 +744,7 @@ function renderMVDashboard(history){
 		}
 	});
 	if(!tableRows.length){
-		tbody.html('<tr><td colspan="8" class="hw-dash-placeholder">'+wpMcpAiMvDashboard.strings.noData+'</td></tr>');
+		tbody.html('<tr><td colspan="9" class="hw-dash-placeholder">'+wpMcpAiMvDashboard.strings.noData+'</td></tr>');
 	}
 
 	/* Kidney health markers table */
@@ -723,9 +755,10 @@ function renderMVDashboard(history){
 		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert'},
 		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert'},
 		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert'},
-		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert'}
+		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert'},
+		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb)}
 	];
-	var hasKidney = egfr||creat||bun||pot||sodMv||phos||alb;
+	var hasKidney = egfr||creat||bun||pot||sodMv||phos||alb||hgb;
 	if(hasKidney){
 		var kTbody=$('#mv-kidney-tbody').empty();
 		$.each(kidneyMarkers,function(_,m){

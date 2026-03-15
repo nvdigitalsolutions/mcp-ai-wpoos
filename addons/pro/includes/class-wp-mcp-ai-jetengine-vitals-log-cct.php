@@ -67,6 +67,8 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 		// Run after maybe_register_cct so the table is guaranteed to exist first.
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns' ), 101 );
+		// v2 migration: convert the new hemoglobin column to DECIMAL(10,4).
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns_v2' ), 102 );
 	}
 
 	/**
@@ -367,6 +369,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'sodium',
 			'phosphorus',
 			'albumin',
+			'hemoglobin',
 		);
 	}
 
@@ -396,6 +399,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'sodium',
 			'phosphorus',
 			'albumin',
+			'hemoglobin',
 		);
 	}
 
@@ -684,6 +688,35 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 
 		$module->manager->data->set_request( self::get_registration_request() );
 		$module->manager->data->create_item( false );
+	}
+
+	/**
+	 * v2 migration: ensure the hemoglobin column is DECIMAL(10,4).
+	 *
+	 * Sites that ran the v1 migration before hemoglobin was added will have
+	 * hemoglobin created by JetEngine as bigint.  This one-time migration
+	 * converts it to DECIMAL so decimal precision is preserved.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_decimal_columns_v2() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_decimal_migration_v2';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Only the new hemoglobin field needs DECIMAL conversion in v2.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "ALTER TABLE `{$table}` MODIFY `hemoglobin` DECIMAL(10,4) NULL DEFAULT NULL" );
+
+		update_option( $option_key, '1', false );
 	}
 
 	/**
@@ -1152,6 +1185,18 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				'width'       => '25%',
 				'default_val' => '',
 				'description' => __( 'Serum albumin in g/dL — nutritional/kidney health marker', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Hemoglobin ────────────────────────────────────────────────
+			array(
+				'id'          => $b + 35,
+				'title'       => __( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'hemoglobin',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Hemoglobin level in g/dL — red blood cell / anaemia indicator', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
