@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-hidden-files-and-warnings',
-        'version' => 'dev-copilot/fix-hidden-files-and-warnings',
-        'reference' => '449b8ab386240fe0c256d9341e19760629fea892',
+        'pretty_version' => 'dev-copilot/create-zip-assets-scripts',
+        'version' => 'dev-copilot/create-zip-assets-scripts',
+        'reference' => 'cd5c2286d94c3db1c59c93af5c9dd2ee00195554',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-hidden-files-and-warnings',
-            'version' => 'dev-copilot/fix-hidden-files-and-warnings',
-            'reference' => '449b8ab386240fe0c256d9341e19760629fea892',
+            'pretty_version' => 'dev-copilot/create-zip-assets-scripts',
+            'version' => 'dev-copilot/create-zip-assets-scripts',
+            'reference' => 'cd5c2286d94c3db1c59c93af5c9dd2ee00195554',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
