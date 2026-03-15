@@ -294,6 +294,12 @@ class WP_MCP_AI_Pro_License {
 	 * @return void
 	 */
 	public function license_notices() {
+		// Only show license notices on NV oOS admin pages to avoid noise on unrelated admin pages.
+		$screen = get_current_screen();
+		if ( ! $screen || false === strpos( $screen->id, 'mcp-ai' ) ) {
+			return;
+		}
+
 		$license_status  = get_option( 'wp_mcp_ai_pro_license_status', '' );
 		$license_expires = get_option( 'wp_mcp_ai_pro_license_expires', '' );
 

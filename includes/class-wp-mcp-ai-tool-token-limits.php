@@ -2406,16 +2406,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$tier_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				"SHOW INDEX FROM `{$wpdb->usermeta}` WHERE Key_name = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $wpdb->usermeta is an internal trusted property, not user input.
 				'idx_wp_mcp_ai_token_tier'
 			)
 		);
 
 		if ( ! $tier_index_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ALTER TABLE/ADD INDEX does not support placeholders; $wpdb->usermeta is an internal trusted property, not user input.
 			$wpdb->query(
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
-				"ALTER TABLE {$wpdb->usermeta}
+				"ALTER TABLE `{$wpdb->usermeta}`
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
 			);
 		}
@@ -2423,16 +2422,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$usage_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				"SHOW INDEX FROM `{$wpdb->usermeta}` WHERE Key_name = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $wpdb->usermeta is an internal trusted property, not user input.
 				'idx_wp_mcp_ai_usage'
 			)
 		);
 
 		if ( ! $usage_index_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ALTER TABLE/ADD INDEX does not support placeholders; $wpdb->usermeta is an internal trusted property, not user input.
 			$wpdb->query(
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
-				"ALTER TABLE {$wpdb->usermeta}
+				"ALTER TABLE `{$wpdb->usermeta}`
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"
 			);
 		}

@@ -9,7 +9,7 @@ Stable tag: 1.1.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin.
+AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base (165 tools) or Full Version (519 tools) via Pro add-on.
 
 == Description ==
 

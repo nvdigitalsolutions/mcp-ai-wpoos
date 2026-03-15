@@ -295,9 +295,9 @@ class WP_MCP_AI_Optional_Components {
 	 * @return void
 	 */
 	public static function show_download_notice() {
-		// Only show on plugin pages.
+		// Only show on NV oOS plugin pages.
 		$screen = get_current_screen();
-		if ( ! $screen || false === strpos( $screen->id, 'mcp' ) ) {
+		if ( ! $screen || false === strpos( $screen->id, 'mcp-ai' ) ) {
 			return;
 		}
 
