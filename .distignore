@@ -29,7 +29,6 @@ CODEOWNERS
 # Build tools and dependencies
 node_modules
 vendor-dev
-composer.json
 composer.lock
 package.json
 package-lock.json
