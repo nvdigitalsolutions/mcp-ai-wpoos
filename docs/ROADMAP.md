@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** March 8, 2026  
-**Version:** 1.1.3
+**Last Updated:** March 15, 2026  
+**Version:** 1.1.4
 
 ---
 
@@ -19,12 +19,34 @@
 
 ---
 
-## Current Release (v1.1.3) - March 2026 ✅
+## Current Release (v1.1.4) - March 2026 ✅
+
+**Release Date:** March 15, 2026  
+**Focus:** Security hardening, chat channel reliability, Telegram Mini App improvements, AI-powered product actualization, PDF bundling, WordPress.org plugin check compliance
+
+### What's Included in v1.1.4
+
+**Core Features:**
+- ✅ 165 built-in tools (base version)
+- ✅ 519 total tools (full version with Pro addon)
+- ✅ **Security Hardening** – AES-256-GCM encryption upgrade, finfo fail-closed, Discord replay attack protection, HTTPS enforcement, ZIP bomb guard
+- ✅ **Chat Channels** – Fixed Slack @mentions, Google Chat routing/OIDC, Teams OAuth 1-click + multi-connection, Telegram slash commands + typing indicator
+- ✅ **Telegram Mini App** – Doctor tab uses connection-assigned assistant; AI replies rendered as Markdown HTML
+- ✅ **Gemini Embeddings** – embedding-001 model, output_dimensionality, 9 new task types
+- ✅ **AI Product Actualization** – Provider-agnostic AI integration mode (Gemini/OpenAI)
+- ✅ **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled; no server-side node_modules needed
+- ✅ **WordPress.org Compliance** – Plugin check errors resolved (.gitattributes, composer.json, languages/)
+
+**See** [CHANGELOG.md](../CHANGELOG.md) for the complete v1.1.4 change log.
+
+---
+
+## Released: v1.1.3 - March 2026 ✅
 
 **Release Date:** March 3, 2026  
 **Focus:** WordPress.org compliance final audit, Telegram Mini App media tab, Office 365 & iCloud Drive, Gemini Corpus RAG, Tavily web search
 
-### What's Included in v1.1.3
+### What Was Delivered in v1.1.3
 
 **Core Features:**
 - ✅ 165 built-in tools (base version) - up from 127 in v1.1.0

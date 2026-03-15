@@ -1,18 +1,20 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.3  
-**Last Updated:** March 5, 2026
+**Version:** 1.1.4  
+**Last Updated:** March 15, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## 🆕 Recent Updates (March 2026)
 
-- **Office 365 & iCloud Drive Connection Types** ⭐ NEW – 8 new Chat Channels Toolkit tools: Outlook mail (send/retrieve), OneDrive files (list/download/upload), iCloud Drive files (list/download/upload via HTTPS gateway). Chat Channels Toolkit now has **47 tools across 11 platforms**.
-- **Telegram Mini App Authentication Fix** – Fixed Mini App stuck on "Authenticating" in Telegram WebView; added TMA session token mechanism as auth fallback; reduced `check_permission()` to `read` for GET endpoints so subscriber-level users can access the app.
-- **WordPress.org Compliance — Final Audit** – `esc_attr()` escaping added to 5 admin page attribute echoes; `ABSPATH` guards added to 4 missing files; last hardcoded menu position removed. Status: **100% — Ready for Submission**.
-- **Telegram Mini App Media Badges** – File-type extension badges (`.TXT`, `.PDF`, `.DOCX`) overlaid on file icons in the media tab.
+- **Security Hardening** ⭐ NEW – AES-256-GCM encryption upgrade, finfo fail-closed MIME detection, Discord replay attack protection, HTTPS enforcement, ZIP bomb protection, OCR error info-disclosure fix.
+- **Chat Channels** – Fixed Slack @mentions, Google Chat OIDC/route issues, Teams multi-connection with OAuth one-click, Telegram typing indicator and slash-command integration.
+- **Telegram Mini App** – Doctor tab now uses connection-assigned assistant; AI replies rendered as Markdown HTML; vitals log import improved.
+- **AI Providers** – Gemini embedding-001 model, output_dimensionality, 9 new task types. Product actualization tool defaults to AI-powered mode (Gemini/OpenAI).
+- **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled into generate-*.bundle.js; no runtime node_modules needed.
+- **WordPress.org Compliance** – .gitattributes excluded from ZIPs; composer.json now ships with vendor/; languages/ directory created.
 
-### Previous Updates (February 2026)
+### Previous Updates (February – early March 2026)
 
 - **WordPress.org Compliance** - Removed hardcoded admin menu positions (v1.1.2)
 - **JetEngine CPT/Taxonomy AI Integration** - AI metaboxes and Research & Add pages for all JetEngine CPTs

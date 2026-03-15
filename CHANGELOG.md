@@ -1,7 +1,44 @@
 # oOS – Changelog
 
 
-## [Unreleased]
+## [1.1.4] - 2026-03-15
+
+### Security
+- **AES Encryption Upgrade (March 11, 2026)**: Upgraded stored credential encryption to AES-256-GCM for stronger security (was AES-256-CBC)
+- **finfo Fail-Closed (March 11, 2026)**: MIME type detection now fails closed — uploads are denied when finfo cannot determine the type rather than falling through
+- **OCR Error Info Disclosure (March 11, 2026)**: Fixed OCR error responses that could expose internal file paths or stack traces
+- **Discord Replay Attack (March 11, 2026)**: Added webhook replay attack protection for Discord channel connections
+- **HTTPS Enforcement (March 11, 2026)**: All external webhook registrations and remote site connections now require HTTPS
+- **Backup Path Leak (March 11, 2026)**: Fixed file export handler leaking internal backup file paths in error responses
+- **ZIP Bomb Protection (March 11, 2026)**: Added size-limit checks during ZIP file processing to prevent decompression bombs
+
+### Added
+- **Gemini Embedding Model Improvements (March 12, 2026)** (PR #4184): Added `gemini-embedding-001` model, `output_dimensionality` parameter, 9 new task types (RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING, FACT_VERIFICATION, CODE_RETRIEVAL_QUERY, IMAGE_SIMILARITY), and per-request model override in batch embedding calls
+- **AI-Powered Product Actualization (March 12, 2026)** (PR #4186): Product actualization tool now defaults to AI-powered integration mode using Gemini (gemini-2.5-flash-image) or OpenAI (gpt-image-1); composite mode retained as legacy fallback; provider auto-detection based on configured API keys
+- **Teams Declarative Agent Manifest (March 12, 2026)** (PR #4181): Added Teams declarative agent manifest generation to Chat Channels admin for easier Teams App Package deployment
+- **Teams OAuth One-Click Connect (March 12, 2026)** (PR #4182): Microsoft OAuth 2.0 one-click connect for Teams — configure Azure AD client ID/secret, auto-refreshes access tokens, downloadable App Package ZIP
+- **Telegram Slash Commands Integration (March 12, 2026)** (PR #4185): Dynamically integrates the mcp-ai-slash-commands plugin into the Telegram bot at runtime; added /vectorstore to /start message and admin slash command reference table
+- **TMA Markdown Rendering (March 13, 2026)** (PR #4200): AI replies in Telegram Mini App doctor and coach chat tabs now rendered as formatted HTML via lazy-loaded Markdown renderer
+- **Chat Channel Connection Docs (March 12, 2026)**: Improved in-admin setup documentation for Teams, Discord, and Google Chat connection types
+
+### Fixed
+- **Slack @Mentions (March 12, 2026)** (PR #4171): Fixed Slack bot not responding to channel @mentions
+- **Slack Channel Settings (March 12, 2026)** (PR #4175): Slack auto-reply now uses mrkdwn formatting; channel-specific settings surfaced on the connection page; enhanced channel type handling per 2025 industry standards
+- **Chat Channel Console Errors (March 12, 2026)** (PR #4170): Fixed settings page JavaScript console errors — removed duplicate event listener, added ajaxurl fallback
+- **Google Chat Events (March 12, 2026)** (PR #4172): Fixed Google Chat channel events not being received even when connection tests passed (route conflict, OIDC bypass)
+- **Google Chat Auto-Reply (March 12, 2026)** (PR #4179): Fixed auto-reply for DMs and @mentions; fixed connection test when OIDC verification is disabled
+- **Google Chat Diagnostic Log (March 12, 2026)** (PR #4183): Added webhook diagnostic log to the Settings page for easier Google Chat connection troubleshooting
+- **Teams Multi-Connection (March 12, 2026)** (PR #4182): Extended Teams to support multiple simultaneous connections with per-connection setup guide in admin UI
+- **Teams Webhook (March 12, 2026)** (PR #4180): Enhanced Teams webhook handler; filled cross-channel consistency gaps (Slack/Telegram parity for rate limiting and retry logic)
+- **Telegram Typing Indicator (March 12, 2026)** (PR #4173): Added typing indicator and rate-limiting enforcement for Telegram chat channel auto-replies
+- **TMA Doctor Tab Assistant (March 13, 2026)** (PR #4198): Telegram Mini App doctor tab now uses the assistant assigned to the connection instead of a hardcoded fallback
+- **Vitals Log Import (March 13, 2026)** (PR #4197, #4202): Fixed vitals_log import fallback for partial-row edge cases; fixed JetEngine list_types returning null slugs/names
+- **wp_tempnam Guard (March 13, 2026)** (PR #4203): Fixed `wp_tempnam()` undefined function error in Pro tools by requiring `wp-admin/includes/file.php` before use
+- **Consolidate & Add Page (March 13, 2026)** (PR #4199): Fixed consolidate & add page setup — singleton pattern, init hook registration, sanitize delegation
+- **HTML-to-PDF Media Sideload (March 13, 2026)** (PR #4208): Fixed HTML-to-PDF tool by loading required wp-admin includes before calling `media_handle_sideload()`
+- **PDF Bundle (March 13, 2026)** (PR #4206): Fixed PDF generation by bundling pdfkit, cheerio, docx, and exceljs into generate-*.bundle.js — no runtime node_modules needed on the server
+- **WordPress Plugin Check (March 15, 2026)**: Fixed three plugin check errors — excluded `.gitattributes` hidden file from distribution ZIPs; included `composer.json` alongside `vendor/` directory; created `languages/` directory so `Domain Path: /languages` header resolves correctly
+
 
 ### Added - March 2026
 - **Web Search: Tavily provider, geo/freshness params, snippet grounding (March 7, 2026)** (PR #4060): Enhanced the `web_search` tool with a new provider and richer result grounding
