@@ -873,6 +873,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
 				// Health Research: compile data from CCT, options, files, and vector store.
 				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-compile-health-research-data.php',
+				// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
+				'WP_MCP_AI_Tool_Guide_Health_Record_Creation' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-guide-health-record-creation.php',
+				'WP_MCP_AI_Tool_Parse_Health_Information'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-parse-health-information.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 

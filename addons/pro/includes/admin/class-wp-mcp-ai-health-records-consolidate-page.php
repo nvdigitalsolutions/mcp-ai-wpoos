@@ -27,47 +27,68 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	/**
 	 * Default tools for health consolidation chat interface.
 	 *
+	 * Covers all USCDI data classes and full CPT CRUD for data entry.
+	 *
 	 * @var array
 	 */
 	const CHAT_TOOLS = array(
-		// Member management.
+		// Member management (USCDI: Patient Demographics).
 		'create_member',
 		'get_member',
 		'list_members',
 		'update_member',
 		'delete_member',
 		'get_member_health_summary',
-		// Medical records.
+		// Policy/insurance management (USCDI: Insurance Coverage — FHIR Coverage).
+		'create_policy',
+		'get_policy',
+		'list_policies',
+		'update_policy',
+		'delete_policy',
+		'search_policies',
+		'research_policy',
+		// Medical records (USCDI: Problems/Conditions — FHIR Condition/ICD-10).
 		'create_medical_record',
 		'get_medical_record',
 		'list_medical_records',
 		'update_medical_record',
 		'delete_medical_record',
 		'search_medical_records',
-		// Checkups.
+		// Checkups (USCDI: Encounters — FHIR Encounter).
 		'create_checkup',
 		'get_checkup',
 		'list_checkups',
 		'update_checkup',
 		'delete_checkup',
 		'get_upcoming_checkups',
-		// Prescriptions.
+		// Prescriptions (USCDI: Medications — FHIR MedicationStatement/NDC/RxNorm).
 		'create_prescription',
 		'get_prescription',
 		'list_prescriptions',
 		'update_prescription',
 		'delete_prescription',
 		'search_prescriptions',
-		// Allergies.
+		// Allergies (USCDI: Allergies & Intolerances — FHIR AllergyIntolerance).
 		'create_allergy',
 		'get_allergy',
 		'list_allergies',
 		'update_allergy',
 		'delete_allergy',
-		// Vital signs (CCT storage + trend analysis).
+		// Vital signs (USCDI: Vital Signs — FHIR Observation/LOINC CCT storage).
 		'log_vital_signs',
-		// Health tools.
+		'import_vitals',
+		// Immunizations (USCDI: Immunizations — FHIR Immunization).
+		'track_vaccinations',
+		// Specialized health tools.
+		'get_medication_schedule',
+		'create_health_reminder',
+		'log_health_metrics',
 		'generate_health_chart',
+		// Data operations & interoperability.
+		'export_fhir_data',
+		'manage_care_plan',
+		'compile_health_research_data',
+		// AI-assisted data entry (agentic flow — USCDI-aligned completeness).
 		'guide_health_record_creation',
 		'parse_health_information',
 		// Document processing tools (from Document Generation toolkit).
