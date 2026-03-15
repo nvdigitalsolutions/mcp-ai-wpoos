@@ -594,10 +594,10 @@ const dependencies = [
 	},
 	// ========================================================================
 	// REMOTION VIDEO PRODUCTION PACKAGES
-	// @remotion/bundler is marked external in bin/remotion-render.bundle.js so
-	// it (and its webpack dependency) is resolved from assets/vendor/ at runtime.
-	// remotion, react, and react-dom are needed by @remotion/bundler's webpack
-	// pass when it bundles user compositions at render time.
+	// All @remotion/* packages are marked external in bin/remotion-render.bundle.js
+	// and resolved at runtime from assets/vendor/ (production) or node_modules/ (dev).
+	// remotion, react, and react-dom are needed at render time by @remotion/bundler's
+	// webpack pass when it bundles user compositions.
 	// ========================================================================
 	{
 		name: 'remotion',
@@ -619,6 +619,15 @@ const dependencies = [
 		// @remotion/bundler shells out to webpack — also copy webpack so it is
 		// resolvable from assets/vendor/ when node_modules is absent.
 		dependencies: [ 'webpack' ],
+	},
+	{
+		name: '@remotion/renderer',
+		dirs: [
+			{ src: 'dist', dest: '@remotion/renderer/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@remotion/renderer/package.json' },
+		],
 	},
 ];
 

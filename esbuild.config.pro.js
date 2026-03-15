@@ -62,20 +62,33 @@ const builds = [
 		outfile: 'addons/pro/bin/generate-excel.bundle.js',
 		...nodeScriptOptions,
 	},
-	// Remotion video render — bundles @remotion/bundler + @remotion/renderer + puppeteer-core.
-	// Users never need to run `npm install remotion …` themselves; this bundle ships with the plugin.
-	// System requirements at render-time: Node.js + Chrome/Chromium (found automatically by puppeteer).
+	// Remotion video render — all Remotion and React packages are marked external so they
+	// resolve at runtime from addons/pro/node_modules (or assets/vendor/ for ZIP distribution).
+	// This avoids bundling platform-specific compositor binaries and webpack's dynamic loaders.
+	// The pre-built bundle ships with the plugin so users never need to run npm install.
 	{
 		entryPoints: ['addons/pro/scripts/remotion-render.js'],
 		outfile: 'addons/pro/bin/remotion-render.bundle.js',
 		...nodeScriptOptions,
-		// @remotion/bundler uses webpack at runtime — keep it require()-able, not statically bundled,
-		// so the bundle can locate webpack's native loaders from node_modules at render time.
+		// All @remotion/* packages use platform-specific binaries or webpack internals —
+		// mark them ALL external so esbuild doesn't try to statically bundle them.
 		external: [
 			...builtinModules,
 			...builtinModules.map((m) => `node:${m}`),
+			'remotion',
 			'@remotion/bundler',
+			'@remotion/renderer',
+			'@remotion/cli',
+			'@remotion/compositor-linux-x64-gnu',
+			'@remotion/compositor-linux-x64-musl',
+			'@remotion/compositor-linux-arm64-gnu',
+			'@remotion/compositor-linux-arm64-musl',
+			'@remotion/compositor-darwin-x64',
+			'@remotion/compositor-darwin-arm64',
+			'@remotion/compositor-win32-x64-msvc',
 			'webpack',
+			'react',
+			'react-dom',
 		],
 	},
 	// Orchestration and research bundles are pre-built and committed
