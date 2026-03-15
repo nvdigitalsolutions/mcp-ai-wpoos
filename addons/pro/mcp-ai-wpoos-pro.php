@@ -621,6 +621,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// Remotion programmatic video creation tool (React/Node.js, always-on pro tool).
+			'WP_MCP_AI_Tool_Create_Remotion_Video'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.

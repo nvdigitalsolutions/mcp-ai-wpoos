@@ -27,6 +27,8 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-pro/
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
+# Ignore all generated files in build/ (ZIPs, docs, etc.)
+/build/WORDPRESS_ORG_SUBMISSION_README.md
 
 # Ignore base build directory (workflow builder moved to pro addon)
 /build/workflow-builder/

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
-        'version' => 'dev-copilot/add-googleworkspace-cli-skill',
-        'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
+        'pretty_version' => 'dev-copilot/add-remotion-video-creation-tool',
+        'version' => 'dev-copilot/add-remotion-video-creation-tool',
+        'reference' => 'b6d493838d236a6f25f123dd960b48b11c15f38d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-googleworkspace-cli-skill',
-            'version' => 'dev-copilot/add-googleworkspace-cli-skill',
-            'reference' => 'bca2c56cdc2723f54776481269f1064c42c1e7bb',
+            'pretty_version' => 'dev-copilot/add-remotion-video-creation-tool',
+            'version' => 'dev-copilot/add-remotion-video-creation-tool',
+            'reference' => 'b6d493838d236a6f25f123dd960b48b11c15f38d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

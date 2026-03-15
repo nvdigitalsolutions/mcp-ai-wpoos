@@ -592,6 +592,43 @@ const dependencies = [
 			{ src: 'package.json', dest: 'canvas/package.json' },
 		],
 	},
+	// ========================================================================
+	// REMOTION VIDEO PRODUCTION PACKAGES
+	// All @remotion/* packages are marked external in bin/remotion-render.bundle.js
+	// and resolved at runtime from assets/vendor/ (production) or node_modules/ (dev).
+	// remotion, react, and react-dom are needed at render time by @remotion/bundler's
+	// webpack pass when it bundles user compositions.
+	// ========================================================================
+	{
+		name: 'remotion',
+		dirs: [
+			{ src: 'dist', dest: 'remotion/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'remotion/package.json' },
+		],
+	},
+	{
+		name: '@remotion/bundler',
+		dirs: [
+			{ src: 'dist', dest: '@remotion/bundler/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@remotion/bundler/package.json' },
+		],
+		// @remotion/bundler shells out to webpack — also copy webpack so it is
+		// resolvable from assets/vendor/ when node_modules is absent.
+		dependencies: [ 'webpack' ],
+	},
+	{
+		name: '@remotion/renderer',
+		dirs: [
+			{ src: 'dist', dest: '@remotion/renderer/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@remotion/renderer/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;
