@@ -173,6 +173,11 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			return $wpdb->insert_id ? $wpdb->insert_id : false;
 		}
 
+		// Fall back to the CPT store when JetEngine is not available.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			return WP_MCP_AI_Channel_Contacts_CPT::find_or_create( $channel, $channel_contact_id, $extra );
+		}
+
 		return false;
 	}
 
@@ -280,6 +285,10 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 */
 	public static function is_human_takeover_active( $channel, $channel_contact_id, $connection_id = '' ) {
 		if ( ! self::table_exists() ) {
+			// Fall back to the CPT store when the CCT table is unavailable.
+			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+				return WP_MCP_AI_Channel_Contacts_CPT::is_human_takeover_active( $channel, $channel_contact_id, $connection_id );
+			}
 			return false;
 		}
 

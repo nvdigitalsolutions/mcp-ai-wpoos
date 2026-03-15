@@ -120,13 +120,19 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			return is_numeric( $result ) ? (int) $result : false;
 		}
 
-		// Fallback: direct DB insert when JetEngine is not available.
+		// Fallback: direct DB insert when JetEngine is not available but table exists.
 		if ( self::table_exists() ) {
 			global $wpdb;
 			$table = self::get_table_name();
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( $table, $row );
 			return $wpdb->insert_id ? $wpdb->insert_id : false;
+		}
+
+		// Final fallback: use the CPT store when neither JetEngine nor the table
+		// is available (e.g. first run without JetEngine installed).
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			return WP_MCP_AI_Channel_Messages_CPT::insert( $data );
 		}
 
 		return false;
@@ -154,6 +160,10 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 */
 	public static function get_recent_messages( $channel, $contact_id, $connection_id, $limit = 10 ) {
 		if ( ! self::table_exists() ) {
+			// Fall back to the CPT store when the CCT table is unavailable.
+			if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+				return WP_MCP_AI_Channel_Messages_CPT::get_recent_messages( $channel, $contact_id, $connection_id, $limit );
+			}
 			return array();
 		}
 
