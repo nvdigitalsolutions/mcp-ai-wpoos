@@ -5,12 +5,15 @@
  * Comprehensive vital signs monitoring including blood pressure, heart rate,
  * temperature, weight, BMI, glucose, oxygen saturation, respiratory rate,
  * kidney-health indicators (eGFR, creatinine, BUN, K+, Na+, phosphorus,
- * albumin), and a full CBC / anemia panel (hemoglobin, hematocrit, RBC, WBC,
+ * albumin), a full CBC / anemia panel (hemoglobin, hematocrit, RBC, WBC,
  * platelets, MCV, MCH, MCHC, RDW, plus WBC differential in % and absolute
- * counts).  Provenance/QA fields (facility_name, document_name, test_panel,
- * document_date, collection_time, result_time, import_batch_id, review_status,
- * review_notes, is_abnormal, abnormal_flags) are stored alongside measurements
- * so every record can be traced back to its source document and reviewed.
+ * counts), extended BMP/CMP electrolytes (chloride, CO2/bicarbonate, calcium,
+ * magnesium), and liver function tests / LFT (total bilirubin, AST, ALT,
+ * total protein).  Provenance/QA fields (facility_name, document_name,
+ * test_panel, document_date, collection_time, result_time, import_batch_id,
+ * review_status, review_notes, is_abnormal, abnormal_flags) are stored
+ * alongside measurements so every record can be traced back to its source
+ * document and reviewed.
  *
  * When JetEngine is available measurements are stored in the vitals_log CCT
  * (primary store for compiled log data).  Options-based storage is always
@@ -65,7 +68,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin), and a complete CBC panel (hemoglobin, hematocrit, RBC, WBC, platelets, MCV, MCH, MCHC, RDW, and WBC differential with percent and absolute counts). Provenance fields (facility_name, document_name, test_panel, document_date, collection_time, result_time, import_batch_id, review_status, abnormal_flags) support audit trails for imported lab data. When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin), a complete CBC panel (hemoglobin, hematocrit, RBC, WBC, platelets, MCV, MCH, MCHC, RDW, and WBC differential with percent and absolute counts), extended BMP/CMP electrolytes (chloride, CO2/bicarbonate, calcium, magnesium), and liver function tests (total bilirubin, AST, ALT, total protein). Provenance fields (facility_name, document_name, test_panel, document_date, collection_time, result_time, import_batch_id, review_status, abnormal_flags) support audit trails for imported lab data. When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -325,6 +328,56 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'description' => __( 'Absolute basophil count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.0,
 					'maximum'     => 10.0,
+				),
+				// Extended BMP / CMP electrolytes.
+				'chloride'         => array(
+					'type'        => 'number',
+					'description' => __( 'Serum chloride Cl- (mEq/L) — BMP/CMP electrolyte panel (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 70.0,
+					'maximum'     => 130.0,
+				),
+				'co2'              => array(
+					'type'        => 'number',
+					'description' => __( 'Serum CO2 / bicarbonate (mEq/L) — BMP/CMP electrolyte panel (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 5.0,
+					'maximum'     => 45.0,
+				),
+				'calcium'          => array(
+					'type'        => 'number',
+					'description' => __( 'Serum calcium Ca2+ (mg/dL) — BMP/CMP panel (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 4.0,
+					'maximum'     => 15.0,
+				),
+				'magnesium'        => array(
+					'type'        => 'number',
+					'description' => __( 'Serum magnesium Mg2+ (mg/dL) — electrolyte / metabolic panel (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.5,
+					'maximum'     => 5.0,
+				),
+				// Liver function tests (LFT).
+				'bilirubin'        => array(
+					'type'        => 'number',
+					'description' => __( 'Total bilirubin (mg/dL) — liver function / jaundice indicator (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 30.0,
+				),
+				'ast'              => array(
+					'type'        => 'number',
+					'description' => __( 'AST / SGOT (U/L) — aspartate aminotransferase liver health marker (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 5000.0,
+				),
+				'alt'              => array(
+					'type'        => 'number',
+					'description' => __( 'ALT / SGPT (U/L) — alanine aminotransferase liver health marker (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 5000.0,
+				),
+				'total_protein'    => array(
+					'type'        => 'number',
+					'description' => __( 'Total protein (g/dL) — liver function and nutritional status (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1.0,
+					'maximum'     => 12.0,
 				),
 				// Provenance / QA.
 				'facility_name'    => array(
@@ -646,6 +699,66 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 			$has_data = true;
 		}
+
+		// Extended BMP / CMP electrolytes.
+		if ( isset( $arguments['chloride'] ) ) {
+			$measurements['chloride'] = array(
+				'value' => round( floatval( $arguments['chloride'] ), 1 ),
+				'unit'  => 'mEq/L',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['co2'] ) ) {
+			$measurements['co2'] = array(
+				'value' => round( floatval( $arguments['co2'] ), 1 ),
+				'unit'  => 'mEq/L',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['calcium'] ) ) {
+			$measurements['calcium'] = array(
+				'value' => round( floatval( $arguments['calcium'] ), 1 ),
+				'unit'  => 'mg/dL',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['magnesium'] ) ) {
+			$measurements['magnesium'] = array(
+				'value' => round( floatval( $arguments['magnesium'] ), 2 ),
+				'unit'  => 'mg/dL',
+			);
+			$has_data = true;
+		}
+
+		// Liver function tests (LFT).
+		if ( isset( $arguments['bilirubin'] ) ) {
+			$measurements['bilirubin'] = array(
+				'value' => round( floatval( $arguments['bilirubin'] ), 2 ),
+				'unit'  => 'mg/dL',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['ast'] ) ) {
+			$measurements['ast'] = array(
+				'value' => round( floatval( $arguments['ast'] ), 1 ),
+				'unit'  => 'U/L',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['alt'] ) ) {
+			$measurements['alt'] = array(
+				'value' => round( floatval( $arguments['alt'] ), 1 ),
+				'unit'  => 'U/L',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['total_protein'] ) ) {
+			$measurements['total_protein'] = array(
+				'value' => round( floatval( $arguments['total_protein'] ), 1 ),
+				'unit'  => 'g/dL',
+			);
+			$has_data = true;
+		}
 		if ( isset( $arguments['hemoglobin'] ) ) {
 			$hgb = round( floatval( $arguments['hemoglobin'] ), 1 );
 			$measurements['hemoglobin'] = array(
@@ -823,8 +936,10 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$cct_data['respiratory_rate']        = $measurements['respiratory_rate']['value'];
 			$cct_data['respiratory_rate_status'] = $measurements['respiratory_rate']['status'];
 		}
-		// Kidney indicators and hemoglobin.
-		foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin', 'hemoglobin' ) as $ki ) {
+		// Kidney indicators, hemoglobin, extended electrolytes, and LFT fields.
+		foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin', 'hemoglobin',
+			'chloride', 'co2', 'calcium', 'magnesium',
+			'bilirubin', 'ast', 'alt', 'total_protein' ) as $ki ) {
 			if ( isset( $measurements[ $ki ] ) ) {
 				$cct_data[ $ki ] = $measurements[ $ki ]['value'];
 			}

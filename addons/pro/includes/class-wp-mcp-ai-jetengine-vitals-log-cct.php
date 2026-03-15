@@ -23,6 +23,10 @@
  *     eosinophils / basophils — percent and absolute)
  *  F. Provenance / QA (facility, document, test panel, review status,
  *     abnormal flags, import batch)
+ *  G. Extended BMP / CMP electrolytes (chloride, CO2/bicarbonate,
+ *     calcium, magnesium)
+ *  H. Liver function tests / LFT (total bilirubin, AST, ALT,
+ *     total protein)
  *
  * @package WP_MCP_AI_Pro
  */
@@ -84,6 +88,8 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns_v2' ), 102 );
 		// v3 migration: add CBC and provenance/QA columns.
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v3' ), 103 );
+		// v4 migration: add extended BMP/CMP electrolytes and liver function test columns.
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v4' ), 104 );
 	}
 
 	/**
@@ -408,6 +414,16 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'monocytes_absolute',
 			'eosinophils_absolute',
 			'basophils_absolute',
+			// Extended BMP / CMP electrolytes.
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			// Liver function tests (LFT).
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
 		);
 	}
 
@@ -460,6 +476,16 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'monocytes_absolute',
 			'eosinophils_absolute',
 			'basophils_absolute',
+			// Extended BMP / CMP electrolytes.
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			// Liver function tests (LFT).
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
 		);
 	}
 
@@ -894,6 +920,65 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		if ( ! in_array( 'review_status', $existing_cols, true ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `review_status` VARCHAR(50) NULL DEFAULT NULL" );
+		}
+
+		update_option( $option_key, '1', false );
+	}
+
+	/**
+	 * v4 migration: add extended BMP/CMP electrolyte and liver function test columns.
+	 *
+	 * Adds the following new DECIMAL(10,4) columns:
+	 *  - chloride, co2, calcium, magnesium (BMP/CMP electrolytes)
+	 *  - bilirubin, ast, alt, total_protein (liver function / LFT)
+	 *
+	 * Runs once per site and records a wp_options flag to skip future requests.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_columns_v4() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_migration_v4';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Retrieve existing columns once to avoid redundant DESCRIBE queries.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+
+		// All new fields use DECIMAL(10,4) for sub-integer precision.
+		$new_decimal_fields = array(
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
+		);
+
+		// Authoritative whitelist — defence-in-depth guard matching the pattern
+		// used in v1/v3.  Ensures no arbitrary string can reach the interpolated
+		// ALTER TABLE statement even if the loop variable is changed by refactoring.
+		$allowed_fields = $new_decimal_fields;
+
+		foreach ( $new_decimal_fields as $field ) {
+			if ( ! in_array( $field, $allowed_fields, true ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $field, $existing_cols, true ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+			}
 		}
 
 		update_option( $option_key, '1', false );
@@ -1682,6 +1767,90 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				'width'       => '75%',
 				'default_val' => '',
 				'description' => __( 'Comma-separated list of field names flagged as abnormal (e.g. hemoglobin,wbc)', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Extended BMP / CMP electrolytes ───────────────────────────────
+			array(
+				'id'          => $b + 65,
+				'title'       => __( 'Chloride Cl- (mEq/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'chloride',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum chloride in mEq/L — BMP/CMP electrolyte panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 66,
+				'title'       => __( 'CO2 / Bicarbonate (mEq/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'co2',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum CO2/bicarbonate in mEq/L — BMP/CMP electrolyte panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 67,
+				'title'       => __( 'Calcium Ca2+ (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'calcium',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum calcium in mg/dL — BMP/CMP panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 68,
+				'title'       => __( 'Magnesium Mg2+ (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'magnesium',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum magnesium in mg/dL — electrolyte / metabolic panel', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Liver function tests (LFT) ─────────────────────────────────────
+			array(
+				'id'          => $b + 69,
+				'title'       => __( 'Total Bilirubin (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'bilirubin',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Total bilirubin in mg/dL — liver function / jaundice indicator', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 70,
+				'title'       => __( 'AST / SGOT (U/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'ast',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Aspartate aminotransferase (AST/SGOT) in U/L — liver health marker', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 71,
+				'title'       => __( 'ALT / SGPT (U/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'alt',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Alanine aminotransferase (ALT/SGPT) in U/L — liver health marker', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 72,
+				'title'       => __( 'Total Protein (g/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'total_protein',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Total protein in g/dL — liver function and nutritional status marker', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}

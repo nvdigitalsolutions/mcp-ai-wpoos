@@ -353,6 +353,30 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Platelets (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<canvas id="mv-chart-platelets" height="120"></canvas>
 						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Chloride / CO2 (mEq/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-electrolytes-ext" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Calcium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-calcium" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Magnesium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-magnesium" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'AST / ALT (U/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-liver" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Bilirubin (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-bilirubin" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Protein (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-total-protein" height="120"></canvas>
+						</div>
 					</div>
 
 					<!-- Latest readings table — Notes appear as full-width second row -->
@@ -407,6 +431,22 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 								</tr>
 							</thead>
 							<tbody id="mv-cbc-tbody"></tbody>
+						</table>
+					</div>
+
+					<!-- Extended BMP / LFT panel summary table -->
+					<div class="hw-dash-table-wrap" id="mv-lft-table-wrap" style="display:none">
+						<h3 class="hw-dash-table-title"><?php esc_html_e( 'Extended BMP / Liver Function — Latest Reading', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<table class="wp-list-table widefat fixed striped hw-dash-kidney-table">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Marker', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="mv-lft-tbody"></tbody>
 						</table>
 					</div>
 
@@ -517,7 +557,15 @@ var MV_COLORS = {
 	hemoglobin: '#b71c1c',
 	hematocrit: '#c62828',
 	wbc:        '#00838f',
-	platelets:  '#6a1b9a'
+	platelets:  '#6a1b9a',
+	chloride:   '#00695c',
+	co2:        '#4e342e',
+	calcium:    '#558b2f',
+	magnesium:  '#283593',
+	bilirubin:  '#f57f17',
+	ast:        '#e65100',
+	alt:        '#bf360c',
+	total_protein: '#546e7a'
 };
 
 /* ── Chart registry (so we can destroy before rebuilding) ────── */
@@ -707,6 +755,14 @@ function renderMVDashboard(history){
 	var wbc   = latestFor('wbc');
 	var hct   = latestFor('hematocrit');
 	var plt   = latestFor('platelets');
+	var chlor = latestFor('chloride');
+	var co2   = latestFor('co2');
+	var calc  = latestFor('calcium');
+	var mag   = latestFor('magnesium');
+	var bili  = latestFor('bilirubin');
+	var ast   = latestFor('ast');
+	var alt   = latestFor('alt');
+	var tprot = latestFor('total_protein');
 
 	/* BP KPI */
 	if(sys||dia){
@@ -742,6 +798,14 @@ function renderMVDashboard(history){
 	var wbcArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'wbc'))||null;});
 	var hctArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hematocrit'))||null;});
 	var pltArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'platelets'))||null;});
+	var chlorArr  = history.map(function(r){return parseFloat(r.chloride)||null;});
+	var co2Arr    = history.map(function(r){return parseFloat(r.co2)||null;});
+	var calcArr   = history.map(function(r){return parseFloat(r.calcium)||null;});
+	var magArr    = history.map(function(r){return parseFloat(r.magnesium)||null;});
+	var biliArr   = history.map(function(r){return parseFloat(r.bilirubin)||null;});
+	var astArr    = history.map(function(r){return parseFloat(r.ast)||null;});
+	var altArr    = history.map(function(r){return parseFloat(r.alt)||null;});
+	var tprotArr  = history.map(function(r){return parseFloat(r.total_protein)||null;});
 
 	/* BP dual-line */
 	buildMultiLineChart('mv-chart-bp', labels, [
@@ -766,6 +830,18 @@ function renderMVDashboard(history){
 	buildLineChart('mv-chart-wbc',        labels, wbcArr,   MV_COLORS.wbc,       null,  null, null);
 	buildLineChart('mv-chart-hematocrit', labels, hctArr,   MV_COLORS.hematocrit,null,  null, null);
 	buildLineChart('mv-chart-platelets',  labels, pltArr,   MV_COLORS.platelets, 150,   'Low <150', null);
+	buildMultiLineChart('mv-chart-electrolytes-ext', labels, [
+		{label:'Cl⁻ Chloride',data:chlorArr,borderColor:MV_COLORS.chloride,tension:.3,fill:false},
+		{label:'HCO₃⁻ CO2',data:co2Arr,borderColor:MV_COLORS.co2,tension:.3,fill:false,borderDash:[4,2]}
+	]);
+	buildLineChart('mv-chart-calcium',    labels, calcArr,  MV_COLORS.calcium,   10.2,  'Normal ≤10.2', null);
+	buildLineChart('mv-chart-magnesium',  labels, magArr,   MV_COLORS.magnesium, null,  null, null);
+	buildMultiLineChart('mv-chart-liver', labels, [
+		{label:'AST',data:astArr,borderColor:MV_COLORS.ast,tension:.3,fill:false},
+		{label:'ALT',data:altArr,borderColor:MV_COLORS.alt,tension:.3,fill:false,borderDash:[4,2]}
+	]);
+	buildLineChart('mv-chart-bilirubin',  labels, biliArr,  MV_COLORS.bilirubin, 1.2,   'Normal ≤1.2', null);
+	buildLineChart('mv-chart-total-protein', labels, tprotArr, MV_COLORS.total_protein, null, null, null);
 
 	/* Vitals table (last 20 entries, newest first)
 	   Notes are rendered as a full-width second row beneath each data record.
@@ -886,6 +962,36 @@ function renderMVDashboard(history){
 			);
 		});
 		$('#mv-cbc-table-wrap').show();
+	}
+
+	/* Extended BMP / Liver function table */
+	var lftMarkers = [
+		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert'},
+		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert'},
+		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert'},
+		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert'},
+		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert'},
+		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert'},
+		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert'},
+		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert'}
+	];
+	var hasLft = chlor||co2||calc||mag||bili||ast||alt||tprot;
+	if(hasLft){
+		var lTbody=$('#mv-lft-tbody').empty();
+		$.each(lftMarkers,function(_,m){
+			if(!m.value) return; // skip absent markers.
+			var displayVal = m.value+' '+m.unit;
+			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
+			lTbody.append(
+				'<tr>'+
+				'<td><strong>'+m.label+'</strong></td>'+
+				'<td>'+displayVal+'</td>'+
+				'<td>'+m.normal+'</td>'+
+				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'</tr>'
+			);
+		});
+		$('#mv-lft-table-wrap').show();
 	}
 }
 
