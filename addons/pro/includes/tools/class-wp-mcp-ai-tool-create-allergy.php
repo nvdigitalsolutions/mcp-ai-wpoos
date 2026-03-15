@@ -71,6 +71,26 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Date diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
+				'allergy_type'   => array(
+					'type'        => 'string',
+					'description' => __( 'Allergy category (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'food', 'drug', 'environmental', 'contact', 'latex', 'insect', 'other', '' ),
+				),
+				'onset_type'     => array(
+					'type'        => 'string',
+					'description' => __( 'Onset type: immediate (< 1 hour) or delayed (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'immediate', 'delayed', 'unknown', '' ),
+				),
+				'last_reaction_date' => array(
+					'type'        => 'string',
+					'description' => __( 'Date of most recent allergic reaction (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'treatment'      => array(
+					'type'        => 'string',
+					'description' => __( 'Treatment or management protocol (optional, e.g. "EpiPen, avoid peanuts")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 1000,
+				),
 				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
@@ -163,13 +183,21 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Sanitize optional fields.
-		$reactions      = isset( $arguments['reactions'] ) ? sanitize_textarea_field( $arguments['reactions'] ) : '';
-		$diagnosed_date = isset( $arguments['diagnosed_date'] ) ? sanitize_text_field( $arguments['diagnosed_date'] ) : '';
-		$notes          = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$reactions          = isset( $arguments['reactions'] ) ? sanitize_textarea_field( $arguments['reactions'] ) : '';
+		$diagnosed_date     = isset( $arguments['diagnosed_date'] ) ? sanitize_text_field( $arguments['diagnosed_date'] ) : '';
+		$allergy_type       = isset( $arguments['allergy_type'] ) ? sanitize_key( $arguments['allergy_type'] ) : '';
+		$onset_type         = isset( $arguments['onset_type'] ) ? sanitize_key( $arguments['onset_type'] ) : '';
+		$last_reaction_date = isset( $arguments['last_reaction_date'] ) ? sanitize_text_field( $arguments['last_reaction_date'] ) : '';
+		$treatment          = isset( $arguments['treatment'] ) ? sanitize_textarea_field( $arguments['treatment'] ) : '';
+		$notes              = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
 
 		// Validate date if provided.
 		if ( $diagnosed_date && ! $this->validate_date( $diagnosed_date ) ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid diagnosed date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( $last_reaction_date && ! $this->validate_date( $last_reaction_date ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid last reaction date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( $is_update ) {
@@ -193,6 +221,9 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
 			update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
 			update_post_meta( $allergy_id, '_allergy_severity', $severity );
+			update_post_meta( $allergy_id, '_allergy_type', $allergy_type );
+			update_post_meta( $allergy_id, '_allergy_onset_type', $onset_type );
+			update_post_meta( $allergy_id, '_allergy_treatment', $treatment );
 
 			if ( $reactions ) {
 				update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
@@ -202,6 +233,10 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
 			}
 
+			if ( $last_reaction_date ) {
+				update_post_meta( $allergy_id, '_allergy_last_reaction_date', $last_reaction_date );
+			}
+
 			$allergy = get_post( $allergy_id );
 
 			return array(
@@ -209,14 +244,18 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'message'    => __( 'Allergy updated successfully.', 'mcp-ai-wpoos-pro' ),
 				'allergy_id' => $allergy_id,
 				'allergy'    => array(
-					'id'             => $allergy_id,
-					'member_id'      => $member_id,
-					'allergen'       => $allergen,
-					'severity'       => $severity,
-					'reactions'      => $reactions,
-					'diagnosed_date' => $diagnosed_date,
-					'notes'          => $notes,
-					'updated_at'     => $allergy->post_modified,
+					'id'                 => $allergy_id,
+					'member_id'          => $member_id,
+					'allergen'           => $allergen,
+					'severity'           => $severity,
+					'allergy_type'       => $allergy_type,
+					'reactions'          => $reactions,
+					'onset_type'         => $onset_type,
+					'diagnosed_date'     => $diagnosed_date,
+					'last_reaction_date' => $last_reaction_date,
+					'treatment'          => $treatment,
+					'notes'              => $notes,
+					'updated_at'         => $allergy->post_modified,
 				),
 				'updated'    => true,
 			);
@@ -243,6 +282,9 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
 			update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
 			update_post_meta( $allergy_id, '_allergy_severity', $severity );
+			update_post_meta( $allergy_id, '_allergy_type', $allergy_type );
+			update_post_meta( $allergy_id, '_allergy_onset_type', $onset_type );
+			update_post_meta( $allergy_id, '_allergy_treatment', $treatment );
 
 			if ( $reactions ) {
 				update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
@@ -252,6 +294,10 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
 			}
 
+			if ( $last_reaction_date ) {
+				update_post_meta( $allergy_id, '_allergy_last_reaction_date', $last_reaction_date );
+			}
+
 			$allergy = get_post( $allergy_id );
 
 			return array(
@@ -259,14 +305,18 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'message'    => __( 'Allergy created successfully.', 'mcp-ai-wpoos-pro' ),
 				'allergy_id' => $allergy_id,
 				'allergy'    => array(
-					'id'             => $allergy_id,
-					'member_id'      => $member_id,
-					'allergen'       => $allergen,
-					'severity'       => $severity,
-					'reactions'      => $reactions,
-					'diagnosed_date' => $diagnosed_date,
-					'notes'          => $notes,
-					'created_at'     => $allergy->post_date,
+					'id'                 => $allergy_id,
+					'member_id'          => $member_id,
+					'allergen'           => $allergen,
+					'severity'           => $severity,
+					'allergy_type'       => $allergy_type,
+					'reactions'          => $reactions,
+					'onset_type'         => $onset_type,
+					'diagnosed_date'     => $diagnosed_date,
+					'last_reaction_date' => $last_reaction_date,
+					'treatment'          => $treatment,
+					'notes'              => $notes,
+					'created_at'         => $allergy->post_date,
 				),
 				'updated'    => false,
 			);
