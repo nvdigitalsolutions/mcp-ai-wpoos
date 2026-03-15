@@ -523,6 +523,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
@@ -704,6 +705,7 @@ if ( is_admin() ) {
 	WP_MCP_AI_Admin_Scripts::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dlq-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-crawl4ai-monitor.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
@@ -1042,6 +1044,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_crawl4ai_monitor;
 
 		/**
+		 * Admin Dead Letter Queue manager instance.
+		 *
+		 * @var WP_MCP_AI_Admin_DLQ_Manager
+		 */
+		public $admin_dlq_manager;
+
+		/**
 		 * Resource manager instance.
 		 *
 		 * @var WP_MCP_AI_Resource_Manager
@@ -1117,6 +1126,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( is_admin() ) {
 				$this->admin_cron_manager     = $container->get( 'admin.cron_manager' );
+				$this->admin_dlq_manager      = $container->get( 'admin.dlq_manager' );
 				$this->admin_token_manager    = $container->get( 'admin.token_manager' );
 				$this->admin_crawl4ai_monitor = $container->get( 'admin.crawl4ai_monitor' );
 			}
@@ -1130,6 +1140,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( is_admin() ) {
 				$GLOBALS['wp_mcp_ai_admin_cron_manager']     = $this->admin_cron_manager;
+				$GLOBALS['wp_mcp_ai_admin_dlq_manager']      = $this->admin_dlq_manager;
 				$GLOBALS['wp_mcp_ai_admin_token_manager']    = $this->admin_token_manager;
 				$GLOBALS['wp_mcp_ai_admin_crawl4ai_monitor'] = $this->admin_crawl4ai_monitor;
 			}
