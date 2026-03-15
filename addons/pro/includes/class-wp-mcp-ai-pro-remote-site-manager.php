@@ -216,6 +216,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['mini_app_template'] = $existing_connection['mini_app_template'];
 			}
 
+			// Preserve existing mini_app_woo_source (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_source'] ) && isset( $existing_connection['mini_app_woo_source'] ) ) {
+				$connection_data['mini_app_woo_source'] = $existing_connection['mini_app_woo_source'];
+			}
+
+			// Preserve existing mini_app_woo_connection_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_connection_id'] ) && isset( $existing_connection['mini_app_woo_connection_id'] ) ) {
+				$connection_data['mini_app_woo_connection_id'] = $existing_connection['mini_app_woo_connection_id'];
+			}
+
 			// Preserve existing auto_create_wp_user (Telegram) if not provided.
 			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
 				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
@@ -450,9 +460,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
 			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
 			// Telegram Mini App settings.
-			'enable_mini_app'        => ! empty( $connection_data['enable_mini_app'] ),
-			'mini_app_assistant_id'  => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
-			'mini_app_template'      => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'enable_mini_app'            => ! empty( $connection_data['enable_mini_app'] ),
+			'mini_app_assistant_id'      => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
+			'mini_app_template'          => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'mini_app_woo_source'        => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
+			'mini_app_woo_connection_id' => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',

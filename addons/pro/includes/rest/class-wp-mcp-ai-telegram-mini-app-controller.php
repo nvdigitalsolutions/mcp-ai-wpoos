@@ -637,23 +637,30 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'         => $request,
-					'connection'      => $connection,
-					'namespace'       => $this->namespace,
-					'rest_base'       => $this->rest_base,
-					'assistant'       => $request->get_param( 'assistant' ),
-					'assistant_id'    => $assistant_id,
-					'chat_url'        => $chat_url,
-					'validate_url'    => $validate_url,
-					'site_name'       => $page_title,
-					'nonce'           => wp_create_nonce( 'wp_rest' ),
-					'tools_url'       => $tools_url,
-					'analytics_url'   => $analytics_url,
-					'chart_js_url'    => $chart_js_url,
-					'markdown_js_url' => $markdown_js_url,
-					'member_id'       => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+					'request'              => $request,
+					'connection'           => $connection,
+					'namespace'            => $this->namespace,
+					'rest_base'            => $this->rest_base,
+					'assistant'            => $request->get_param( 'assistant' ),
+					'assistant_id'         => $assistant_id,
+					'chat_url'             => $chat_url,
+					'validate_url'         => $validate_url,
+					'site_name'            => $page_title,
+					'nonce'                => wp_create_nonce( 'wp_rest' ),
+					'tools_url'            => $tools_url,
+					'analytics_url'        => $analytics_url,
+					'chart_js_url'         => $chart_js_url,
+					'markdown_js_url'      => $markdown_js_url,
+					'member_id'            => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
+					// WooCommerce data-source fields (used by the woo_shop template).
+					'woo_source'           => ( $connection && ! empty( $connection['mini_app_woo_source'] ) )
+						? sanitize_key( $connection['mini_app_woo_source'] )
+						: 'local',
+					'woo_connection_id'    => ( $connection && ! empty( $connection['mini_app_woo_connection_id'] ) )
+						? sanitize_key( $connection['mini_app_woo_connection_id'] )
+						: '',
 				);
 
 				// render_html() returns a <body>…</body> fragment.  All
