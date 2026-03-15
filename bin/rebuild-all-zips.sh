@@ -2,15 +2,22 @@
 #
 # Rebuild All ZIPs
 #
-# Convenience script to rebuild all plugin ZIP files:
-# - Base version (standalone)
-# - Pro add-on
-# - Combined (base + pro)
-# - Core plugin (lightweight)
-# - WordPress.org compliant package (with CDN exclusions and text domain transformation)
+# Convenience script to rebuild all 8 plugin ZIP files:
+#
+# Original packages (repository text domains - mcp-ai-wpoos-*):
+#   1. mcp-ai-wpoos-base-{version}.zip        - Base version (standalone)
+#   2. mcp-ai-wpoos-pro-{version}.zip         - Pro add-on
+#   3. mcp-ai-wpoos-{version}.zip             - Combined (base + pro)
+#   4. mcp-ai-wpoos-core-{version}.zip        - Core plugin (lightweight)
+#
+# WordPress.org packages (WordPress text domains - nvdigital-open-operator-system-oos-*):
+#   5. nvdigital-open-operator-system-oos-{version}.zip          - BASE (WP.org submission ready)
+#   6. nvdigital-open-operator-system-oos-pro-{version}.zip      - PRO (self-hosted add-on)
+#   7. nvdigital-open-operator-system-oos-complete-{version}.zip - COMPLETE (self-hosted only)
+#   8. nvdigital-open-operator-system-oos-core-{version}.zip     - CORE (lightweight, WP.org ready)
 #
 # Usage:
-#   ./bin/rebuild-all-zips.sh                          # Rebuild all versions
+#   ./bin/rebuild-all-zips.sh                          # Rebuild all 8 ZIPs
 #   ./bin/rebuild-all-zips.sh --version 1.0.0          # Specify version
 #   ./bin/rebuild-all-zips.sh --skip-npm-build         # Use pre-built assets
 #
@@ -62,25 +69,47 @@ echo ""
 
 echo ""
 echo "=========================================="
-echo "Building WordPress.org Compliant Package"
+echo "Building WordPress.org Compliant Packages"
 echo "=========================================="
 echo ""
 
-# Build WordPress.org package from base build (ensures identical functionality)
-echo "Creating WordPress.org package from base build..."
+# Build all 4 WordPress.org packages with fully transformed text domains
 "$SCRIPT_DIR/build-wordpress-org-from-base.sh" --version "$VERSION"
 
 echo ""
 echo "=========================================="
-echo "✅ All ZIPs rebuilt successfully!"
+echo "✅ All 8 ZIPs rebuilt successfully!"
 echo "=========================================="
 echo ""
-echo "📦 Build output in build/:"
-ls -lh "$ROOT_DIR/build/"*.zip | awk '{print "   " $9 " (" $5 ")"}'
+
+# Detect core version separately (core/mcp-ai-wpoos-core.php may differ from main version)
+CORE_VERSION=$(grep -E "^\s*\*\s*Version:" "$ROOT_DIR/core/mcp-ai-wpoos-core.php" 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+if [ -z "$CORE_VERSION" ]; then
+    CORE_VERSION="$VERSION"
+fi
+
+echo "📦 Original packages (repository text domains):"
+for ZIP in \
+    "mcp-ai-wpoos-base-${VERSION}.zip" \
+    "mcp-ai-wpoos-pro-${VERSION}.zip" \
+    "mcp-ai-wpoos-${VERSION}.zip" \
+    "mcp-ai-wpoos-core-${CORE_VERSION}.zip"; do
+    if [ -f "$ROOT_DIR/build/$ZIP" ]; then
+        SIZE=$(du -h "$ROOT_DIR/build/$ZIP" | cut -f1)
+        echo "   build/$ZIP ($SIZE)"
+    fi
+done
 echo ""
-echo "📄 WordPress.org submission package:"
-WPORG_ZIP_NAME="nvdigital-open-operator-system-oos-${VERSION}.zip"
-WPORG_SIZE=$(du -h "$ROOT_DIR/build/$WPORG_ZIP_NAME" | cut -f1)
-echo "   build/$WPORG_ZIP_NAME ($WPORG_SIZE)"
-echo "   Built from: mcp-ai-wpoos-base-${VERSION}.zip"
-echo "   See build/WORDPRESS_ORG_SUBMISSION_README.md for instructions"
+echo "📦 WordPress.org packages (production text domains):"
+for ZIP in \
+    "nvdigital-open-operator-system-oos-${VERSION}.zip" \
+    "nvdigital-open-operator-system-oos-pro-${VERSION}.zip" \
+    "nvdigital-open-operator-system-oos-complete-${VERSION}.zip" \
+    "nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip"; do
+    if [ -f "$ROOT_DIR/build/$ZIP" ]; then
+        SIZE=$(du -h "$ROOT_DIR/build/$ZIP" | cut -f1)
+        echo "   build/$ZIP ($SIZE)"
+    fi
+done
+echo ""
+echo "📄 See build/WORDPRESS_ORG_SUBMISSION_README.md for submission instructions"

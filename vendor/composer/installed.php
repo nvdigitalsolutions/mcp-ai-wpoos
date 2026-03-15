@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-hidden-files-and-warnings',
-        'version' => 'dev-copilot/fix-hidden-files-and-warnings',
-        'reference' => '449b8ab386240fe0c256d9341e19760629fea892',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-f92c09a9-5858-4663-b14e-f0c436e074fd',
+        'version' => 'dev-copilot/rebuild-all-zips-script-f92c09a9-5858-4663-b14e-f0c436e074fd',
+        'reference' => 'd2409cc98fdc0fe2a34f27bacd14836da56f552e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-hidden-files-and-warnings',
-            'version' => 'dev-copilot/fix-hidden-files-and-warnings',
-            'reference' => '449b8ab386240fe0c256d9341e19760629fea892',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-f92c09a9-5858-4663-b14e-f0c436e074fd',
+            'version' => 'dev-copilot/rebuild-all-zips-script-f92c09a9-5858-4663-b14e-f0c436e074fd',
+            'reference' => 'd2409cc98fdc0fe2a34f27bacd14836da56f552e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
