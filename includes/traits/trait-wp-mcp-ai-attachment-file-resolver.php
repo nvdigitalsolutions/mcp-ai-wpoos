@@ -371,19 +371,19 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 	 */
 	protected function guess_extension_from_content_type( $content_type ) {
 		$map = array(
-			'application/pdf'                                                          => '.pdf',
-			'text/plain'                                                               => '.txt',
-			'text/html'                                                                => '.html',
-			'text/csv'                                                                 => '.csv',
-			'application/json'                                                         => '.json',
-			'application/msword'                                                       => '.doc',
+			'application/pdf'          => '.pdf',
+			'text/plain'               => '.txt',
+			'text/html'                => '.html',
+			'text/csv'                 => '.csv',
+			'application/json'         => '.json',
+			'application/msword'       => '.doc',
 			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => '.docx',
-			'application/vnd.ms-excel'                                                 => '.xls',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'       => '.xlsx',
-			'image/jpeg'                                                               => '.jpg',
-			'image/png'                                                                => '.png',
-			'image/gif'                                                                => '.gif',
-			'image/webp'                                                               => '.webp',
+			'application/vnd.ms-excel' => '.xls',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '.xlsx',
+			'image/jpeg'               => '.jpg',
+			'image/png'                => '.png',
+			'image/gif'                => '.gif',
+			'image/webp'               => '.webp',
 		);
 
 		foreach ( $map as $mime => $ext ) {

@@ -58,10 +58,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
-				'wp_ajax_wp_mcp_ai_test_tavily_connection'       => 'handle_test_tavily_connection',
-				'wp_ajax_wp_mcp_ai_test_anthropic_connection'    => 'handle_test_anthropic_connection',
-				'wp_ajax_wp_mcp_ai_test_exa_connection'          => 'handle_test_exa_connection',
-				'wp_ajax_wp_mcp_ai_test_perplexity_connection'   => 'handle_test_perplexity_connection',
+				'wp_ajax_wp_mcp_ai_test_tavily_connection' => 'handle_test_tavily_connection',
+				'wp_ajax_wp_mcp_ai_test_anthropic_connection' => 'handle_test_anthropic_connection',
+				'wp_ajax_wp_mcp_ai_test_exa_connection'    => 'handle_test_exa_connection',
+				'wp_ajax_wp_mcp_ai_test_perplexity_connection' => 'handle_test_perplexity_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
 				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
@@ -935,10 +935,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr         = WP_MCP_AI_Resource_Manager::instance();
-			$timeout              = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout              = max( 10, min( 30, $timeout ) );
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 10, min( 30, $timeout ) );
 
 			// Send a minimal chat completion to validate the key.
 			$response = wp_remote_post(
@@ -1110,9 +1110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					),
 					'body'    => wp_json_encode(
 						array(
-							'model'       => 'sonar',
-							'max_tokens'  => 5,
-							'messages'    => array(
+							'model'      => 'sonar',
+							'max_tokens' => 5,
+							'messages'   => array(
 								array(
 									'role'    => 'user',
 									'content' => 'Hi',

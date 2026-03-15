@@ -1375,9 +1375,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_batch_embeddings_created',
 				'OpenAI batch embeddings job created.',
 				array(
-					'batch_id'      => isset( $batch_result['id'] ) ? $batch_result['id'] : '',
-					'status'        => isset( $batch_result['status'] ) ? $batch_result['status'] : '',
-					'text_count'    => count( $clean_texts ),
+					'batch_id'   => isset( $batch_result['id'] ) ? $batch_result['id'] : '',
+					'status'     => isset( $batch_result['status'] ) ? $batch_result['status'] : '',
+					'text_count' => count( $clean_texts ),
 				)
 			);
 
@@ -2418,10 +2418,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_image_edit_request',
 				'Sending image edit request to OpenAI.',
 				array(
-					'model'            => $model,
-					'size'             => $size,
-					'n'                => $n,
-					'response_format'  => $model_supports_response_format ? $response_format : 'b64_json (default)',
+					'model'           => $model,
+					'size'            => $size,
+					'n'               => $n,
+					'response_format' => $model_supports_response_format ? $response_format : 'b64_json (default)',
 				)
 			);
 

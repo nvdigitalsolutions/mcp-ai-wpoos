@@ -2852,8 +2852,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return void
 		 */
 		private static function render_tma_template_builder_card() {
-			$active_template  = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
-			$mini_app_url     = rest_url( 'mcp-ai/v1/telegram-mini-app' );
+			$active_template = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+			$mini_app_url    = rest_url( 'mcp-ai/v1/telegram-mini-app' );
 
 			$chat_channels_url    = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=mini_app_builder' );
 			$chat_channels_config = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=configuration' );
