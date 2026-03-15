@@ -3,8 +3,9 @@
  * Tool for logging and tracking vital signs.
  *
  * Comprehensive vital signs monitoring including blood pressure, heart rate,
- * temperature, weight, BMI, glucose, oxygen saturation, respiratory rate, and
- * kidney-health indicators (eGFR, creatinine, BUN, K+, Na+, phosphorus, albumin).
+ * temperature, weight, BMI, glucose, oxygen saturation, respiratory rate,
+ * hemoglobin, and kidney-health indicators (eGFR, creatinine, BUN, K+, Na+,
+ * phosphorus, albumin).
  *
  * When JetEngine is available measurements are stored in the vitals_log CCT
  * (primary store for compiled log data).  Options-based storage is always
@@ -59,7 +60,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Log and track vital signs including blood pressure, heart rate, temperature, weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, hemoglobin (g/dL), and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -110,8 +111,8 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'temperature'      => array(
 					'type'        => 'number',
-					'description' => __( 'Body temperature in Fahrenheit or Celsius (optional)', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 90.0,
+					'description' => __( 'Body temperature in Fahrenheit or Celsius (optional). Use temperature_unit to specify the unit — the value is always stored normalised to °F. Provide the raw value as measured (e.g. 37 for 37 °C or 98.6 for 98.6 °F). Minimum 32 covers Celsius inputs (≥ 32 °C).', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 32.0,
 					'maximum'     => 115.0,
 				),
 				'temperature_unit' => array(
@@ -202,6 +203,12 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'description' => __( 'Serum albumin (g/dL) — nutritional and kidney health marker (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.5,
 					'maximum'     => 6.0,
+				),
+				'hemoglobin'       => array(
+					'type'        => 'number',
+					'description' => __( 'Hemoglobin level (g/dL) — red blood cell / anaemia indicator (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1.0,
+					'maximum'     => 25.0,
 				),
 				'source'           => array(
 					'type'        => 'string',
@@ -344,14 +351,20 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$has_data = true;
 		}
 
-		// Temperature.
+		// Temperature — always stored normalised to °F so all downstream
+		// consumers (dashboard, charts, TMA) work with a single consistent unit.
 		if ( isset( $arguments['temperature'] ) ) {
-			$temperature = floatval( $arguments['temperature'] );
-			$temp_unit = isset( $arguments['temperature_unit'] ) ? sanitize_text_field( $arguments['temperature_unit'] ) : 'F';
+			$temperature_raw  = floatval( $arguments['temperature'] );
+			$temp_unit_in     = isset( $arguments['temperature_unit'] ) ? strtoupper( sanitize_text_field( $arguments['temperature_unit'] ) ) : 'F';
+			$temperature_f    = ( 'C' === $temp_unit_in )
+				? round( ( $temperature_raw * 9.0 / 5.0 ) + 32.0, 1 )
+				: round( $temperature_raw, 1 );
 			$measurements['temperature'] = array(
-				'value'  => $temperature,
-				'unit'   => $temp_unit,
-				'status' => $this->assess_temperature( $temperature, $temp_unit ),
+				'value'            => $temperature_f,
+				'unit'             => 'F',
+				'original_value'   => $temperature_raw,
+				'original_unit'    => $temp_unit_in,
+				'status'           => $this->assess_temperature( $temperature_raw, $temp_unit_in ),
 			);
 			$has_data = true;
 		}
@@ -461,6 +474,15 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 			$has_data = true;
 		}
+		if ( isset( $arguments['hemoglobin'] ) ) {
+			$hgb = round( floatval( $arguments['hemoglobin'] ), 1 );
+			$measurements['hemoglobin'] = array(
+				'value'  => $hgb,
+				'unit'   => 'g/dL',
+				'status' => $this->assess_hemoglobin( $hgb ),
+			);
+			$has_data = true;
+		}
 
 		if ( ! $has_data ) {
 			return new WP_Error( 'wp_mcp_ai_no_measurements', __( 'At least one vital sign measurement is required.', 'mcp-ai-wpoos-pro' ) );
@@ -518,8 +540,9 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$cct_data['heart_rate_status'] = $measurements['heart_rate']['status'];
 		}
 		if ( isset( $measurements['temperature'] ) ) {
-			$cct_data['temperature']        = $measurements['temperature']['value'];
-			$cct_data['temperature_unit']   = $measurements['temperature']['unit'];
+			// Always persist the normalised °F value so dashboard/charts are consistent.
+			$cct_data['temperature']        = $measurements['temperature']['value']; // always °F.
+			$cct_data['temperature_unit']   = 'F';
 			$cct_data['temperature_status'] = $measurements['temperature']['status'];
 		}
 		if ( isset( $measurements['weight'] ) ) {
@@ -542,8 +565,8 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$cct_data['respiratory_rate']        = $measurements['respiratory_rate']['value'];
 			$cct_data['respiratory_rate_status'] = $measurements['respiratory_rate']['status'];
 		}
-		// Kidney indicators.
-		foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin' ) as $ki ) {
+		// Kidney indicators and hemoglobin.
+		foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin', 'hemoglobin' ) as $ki ) {
 			if ( isset( $measurements[ $ki ] ) ) {
 				$cct_data[ $ki ] = $measurements[ $ki ]['value'];
 			}
@@ -865,6 +888,31 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * Assess hemoglobin level.
+	 *
+	 * Reference ranges (adults):
+	 *   Male   ≥ 13.5 g/dL normal; 12.0–13.4 mild; < 12.0 anaemia.
+	 *   Female ≥ 12.0 g/dL normal; 11.0–11.9 mild; < 11.0 anaemia.
+	 * A gender-neutral single threshold is used here (12.0 g/dL) so that
+	 * the tool can flag anaemia without requiring a gender parameter.
+	 * High values may indicate polycythaemia (> 17.5 g/dL is flagged).
+	 *
+	 * @param float $hgb Hemoglobin in g/dL.
+	 * @return string Status: 'normal', 'low', 'anaemia', or 'high'.
+	 */
+	private function assess_hemoglobin( $hgb ) {
+		if ( $hgb > 17.5 ) {
+			return 'high';
+		} elseif ( $hgb >= 12.0 ) {
+			return 'normal';
+		} elseif ( $hgb >= 11.0 ) {
+			return 'low';
+		} else {
+			return 'anaemia';
+		}
+	}
+
+	/**
 	 * Format vital signs measurements as a natural-language text for embedding.
 	 *
 	 * The resulting sentence is used as the document text when generating an
@@ -964,6 +1012,11 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( isset( $measurements['albumin'] ) ) {
 			/* translators: %s: albumin value */
 			$parts[] = sprintf( __( 'Albumin (serum protein, nutritional marker) %s g/dL.', 'mcp-ai-wpoos-pro' ), $measurements['albumin']['value'] );
+		}
+
+		if ( isset( $measurements['hemoglobin'] ) ) {
+			/* translators: 1: hemoglobin value, 2: status */
+			$parts[] = sprintf( __( 'Hemoglobin (red blood cell indicator, anaemia marker) %1$s g/dL (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['hemoglobin']['value'], $measurements['hemoglobin']['status'] );
 		}
 
 		return implode( ' ', $parts );
