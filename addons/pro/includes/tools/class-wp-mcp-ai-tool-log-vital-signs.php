@@ -664,13 +664,26 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
 			$after_date = gmdate( 'Y-m-d', time() - ( $days_back * DAY_IN_SECONDS ) );
 			$rows       = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, $after_date );
+			$history    = array_map( 'get_object_vars', $rows );
+
+			// Supplement CCT rows with full-precision decimal values from options storage.
+			// Two scenarios require this:
+			// (a) Hemoglobin was added to the CCT schema after some entries were logged —
+			//     those rows have NULL in the hemoglobin column, but options storage holds
+			//     the original value.
+			// (b) Creatinine (and other renal indicators) were stored in a bigint MySQL
+			//     column before the DECIMAL migration ran — MySQL silently rounded 0.9 to 1,
+			//     1.1 to 1, etc.  The options store was written with floatval() and
+			//     preserves the original decimal precision.
+			$history = $this->supplement_cct_with_options_decimals( $history, $member_id );
+
 			return array(
 				'success'   => true,
 				'member_id' => $member_id,
 				'days_back' => $days_back,
 				'source'    => 'vitals_log_cct',
-				'count'     => count( $rows ),
-				'history'   => array_map( 'get_object_vars', $rows ),
+				'count'     => count( $history ),
+				'history'   => $history,
 			);
 		}
 
@@ -1146,5 +1159,77 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'average_first'  => round( $avg_first, 1 ),
 			'average_second' => round( $avg_second, 1 ),
 		);
+	}
+
+	/**
+	 * Supplement CCT history rows with decimal-precision values from options storage.
+	 *
+	 * Matches rows by their shared `entry_id` and, for each decimal vital-sign
+	 * field, replaces the CCT value with the options-storage value whenever the
+	 * options store holds a non-zero reading.  This corrects two historical data
+	 * quality issues:
+	 *
+	 *  1. Hemoglobin: the CCT column was added after some entries were already
+	 *     logged, so those rows have NULL in the CCT — but the original value is
+	 *     intact in options storage.
+	 *  2. Creatinine / renal indicators: before the DECIMAL migration, JetEngine
+	 *     provisioned the columns as bigint, causing MySQL to silently truncate
+	 *     values such as 0.9 → 1.  Options storage preserved the correct floats.
+	 *
+	 * @param array $history   CCT history rows as flat associative arrays.
+	 * @param int   $member_id Member post ID.
+	 * @return array Enriched history rows.
+	 */
+	private function supplement_cct_with_options_decimals( array $history, $member_id ) {
+		if ( empty( $history ) ) {
+			return $history;
+		}
+
+		$vital_signs_key = 'wp_mcp_ai_vital_signs_' . $member_id;
+		$options_data    = get_option( $vital_signs_key, array() );
+
+		if ( empty( $options_data ) || ! is_array( $options_data ) ) {
+			return $history;
+		}
+
+		// Index options entries by entry_id (the outer key of options storage)
+		// for O(1) lookups during row enrichment.
+		$by_entry_id = array();
+		foreach ( $options_data as $eid => $entry ) {
+			if ( ! empty( $entry['measurements'] ) ) {
+				$by_entry_id[ $eid ] = $entry['measurements'];
+			}
+		}
+
+		// Decimal vital-sign fields that may have lost precision in old CCT rows.
+		$decimal_fields = array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin', 'hemoglobin' );
+
+		foreach ( $history as &$row ) {
+			$entry_id = isset( $row['entry_id'] ) ? (string) $row['entry_id'] : '';
+			if ( ! $entry_id || ! isset( $by_entry_id[ $entry_id ] ) ) {
+				continue;
+			}
+
+			$measurements = $by_entry_id[ $entry_id ];
+
+			foreach ( $decimal_fields as $field ) {
+				if ( ! isset( $measurements[ $field ]['value'] ) ) {
+					continue;
+				}
+
+				$opts_val = floatval( $measurements[ $field ]['value'] );
+				if ( $opts_val <= 0.0 ) {
+					// No meaningful value in options; leave CCT value untouched.
+					continue;
+				}
+
+				// Prefer the options-storage value: it was saved with full float
+				// precision, unlike the CCT column which may have truncated it.
+				$row[ $field ] = $opts_val;
+			}
+		}
+		unset( $row );
+
+		return $history;
 	}
 }
