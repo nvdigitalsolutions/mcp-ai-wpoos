@@ -735,6 +735,46 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
+	 * Retrieve a single vitals log row by its primary key.
+	 *
+	 * @param int $item_id CCT row primary key (_ID).
+	 * @return object|null CCT row object or null when not found.
+	 */
+	public static function get_by_id( $item_id ) {
+		$item_id = absint( $item_id );
+		if ( ! $item_id || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE _ID = %d LIMIT 1", $item_id ) );
+
+		return $row ? $row : null;
+	}
+
+	/**
+	 * Delete a single vitals log row by its primary key.
+	 *
+	 * @param int $item_id CCT row primary key (_ID).
+	 * @return bool True when the row was deleted, false otherwise.
+	 */
+	public static function delete( $item_id ) {
+		$item_id = absint( $item_id );
+		if ( ! $item_id || ! self::table_exists() ) {
+			return false;
+		}
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$result = $wpdb->delete( self::get_table_name(), array( '_ID' => $item_id ), array( '%d' ) );
+
+		return false !== $result && $result > 0;
+	}
+
+	/**
 	 * Retrieve the JetEngine item handler.
 	 *
 	 * @return object|null

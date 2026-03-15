@@ -81,12 +81,17 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'action'           => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform (required)', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'log', 'get_latest', 'get_history', 'analyze_trends' ),
+					'enum'        => array( 'log', 'get_latest', 'get_history', 'analyze_trends', 'update', 'delete' ),
 					'default'     => 'log',
 				),
 				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'cct_id'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Vitals log CCT row ID (_ID) — required for update and delete actions', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'measurement_date' => array(
@@ -523,6 +528,12 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			case 'analyze_trends':
 				$days_back = isset( $arguments['days_back'] ) ? absint( $arguments['days_back'] ) : 30;
 				return $this->analyze_vital_signs_trends( $member_id, $days_back );
+
+			case 'update':
+				return $this->update_vital_signs( $arguments, $member_id, $current_user_id );
+
+			case 'delete':
+				return $this->delete_vital_sign_entry( $arguments, $member_id, $current_user_id );
 
 			default:
 				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
@@ -1011,6 +1022,177 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'source'            => $source,
 			'measurements'      => $measurements,
 			'alerts'            => $alerts,
+		);
+	}
+
+	/**
+	 * Update specific fields on an existing vitals log CCT entry.
+	 *
+	 * The caller must supply `cct_id` identifying the row to update.  Only
+	 * fields that are explicitly present in $arguments and are recognised vital
+	 * field names are written — any unrecognised key is silently ignored.
+	 * `member_id`, `logged_by`, and `entry_id` are always preserved.
+	 *
+	 * @param array $arguments       Tool arguments (includes cct_id).
+	 * @param int   $member_id       Verified member post ID.
+	 * @param int   $current_user_id Current WP user ID.
+	 * @return array|WP_Error        Result or error.
+	 */
+	private function update_vital_signs( $arguments, $member_id, $current_user_id ) {
+		if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update vital signs.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$cct_id = isset( $arguments['cct_id'] ) ? absint( $arguments['cct_id'] ) : 0;
+		if ( ! $cct_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_cct_id', __( 'cct_id is required for the update action.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			return new WP_Error( 'wp_mcp_ai_cct_unavailable', __( 'Vitals log CCT storage is not available. Update requires JetEngine.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Load the existing row so we can verify ownership.
+		$existing = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_by_id( $cct_id );
+		if ( ! $existing ) {
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Vitals log entry not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Ensure the row belongs to the requested member.
+		if ( (int) $existing->member_id !== $member_id ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'This vitals log entry does not belong to the specified member.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Allowed updatable fields (mirrors CCT schema, excluding immutable keys).
+		$allowed_string_fields = array(
+			'measurement_date', 'measurement_time', 'source', 'notes',
+			'facility_name', 'document_name', 'test_panel', 'document_date',
+			'collection_time', 'result_time', 'import_batch_id',
+			'review_status', 'review_notes', 'abnormal_flags',
+		);
+		$allowed_numeric_fields = array(
+			'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+			'weight', 'bmi', 'blood_glucose', 'oxygen_saturation', 'respiratory_rate',
+			'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin',
+			'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'platelets',
+			'mcv', 'mch', 'mchc', 'rdw',
+			'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent',
+			'eosinophils_percent', 'basophils_percent',
+			'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute',
+			'eosinophils_absolute', 'basophils_absolute',
+			'chloride', 'co2', 'calcium', 'magnesium',
+			'bilirubin', 'ast', 'alt', 'total_protein',
+		);
+
+		// Tool parameter names that map directly to CCT column names (non-1:1 mappings).
+		$param_to_cct = array(
+			'blood_pressure_systolic'  => 'bp_systolic',
+			'blood_pressure_diastolic' => 'bp_diastolic',
+		);
+
+		$update_data = array();
+
+		// Numeric fields — accept both the tool parameter name and the CCT column name.
+		foreach ( $allowed_numeric_fields as $col ) {
+			// Check for CCT column name directly.
+			if ( isset( $arguments[ $col ] ) ) {
+				$update_data[ $col ] = round( floatval( $arguments[ $col ] ), 4 );
+			}
+		}
+
+		// Handle the bp_systolic / bp_diastolic parameter aliases.
+		foreach ( $param_to_cct as $param => $col ) {
+			if ( isset( $arguments[ $param ] ) ) {
+				$update_data[ $col ] = absint( $arguments[ $param ] );
+			}
+		}
+
+		// String fields.
+		foreach ( $allowed_string_fields as $col ) {
+			if ( isset( $arguments[ $col ] ) ) {
+				$update_data[ $col ] = sanitize_text_field( $arguments[ $col ] );
+			}
+		}
+
+		// review_notes may contain longer text.
+		if ( isset( $arguments['review_notes'] ) ) {
+			$update_data['review_notes'] = sanitize_textarea_field( $arguments['review_notes'] );
+		}
+
+		// notes may contain longer text.
+		if ( isset( $arguments['notes'] ) ) {
+			$update_data['notes'] = sanitize_textarea_field( $arguments['notes'] );
+		}
+
+		// is_abnormal boolean.
+		if ( isset( $arguments['is_abnormal'] ) ) {
+			$update_data['is_abnormal'] = (int) (bool) $arguments['is_abnormal'];
+		}
+
+		if ( empty( $update_data ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_fields', __( 'No updatable fields were provided.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$ok = WP_MCP_AI_JetEngine_Vitals_Log_CCT::update_fields( $cct_id, $update_data );
+
+		if ( ! $ok ) {
+			return new WP_Error( 'wp_mcp_ai_update_failed', __( 'Failed to update vitals log entry.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return array(
+			'success'        => true,
+			'message'        => __( 'Vitals log entry updated successfully.', 'mcp-ai-wpoos-pro' ),
+			'cct_id'         => $cct_id,
+			'member_id'      => $member_id,
+			'updated_fields' => array_keys( $update_data ),
+		);
+	}
+
+	/**
+	 * Delete a single vitals log CCT entry.
+	 *
+	 * @param array $arguments       Tool arguments (includes cct_id).
+	 * @param int   $member_id       Verified member post ID.
+	 * @param int   $current_user_id Current WP user ID.
+	 * @return array|WP_Error        Result or error.
+	 */
+	private function delete_vital_sign_entry( $arguments, $member_id, $current_user_id ) {
+		if ( ! user_can( $current_user_id, 'delete_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete vital signs.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$cct_id = isset( $arguments['cct_id'] ) ? absint( $arguments['cct_id'] ) : 0;
+		if ( ! $cct_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_cct_id', __( 'cct_id is required for the delete action.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			return new WP_Error( 'wp_mcp_ai_cct_unavailable', __( 'Vitals log CCT storage is not available. Delete requires JetEngine.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Load the existing row so we can verify ownership before deleting.
+		$existing = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_by_id( $cct_id );
+		if ( ! $existing ) {
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Vitals log entry not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Ensure the row belongs to the requested member.
+		if ( (int) $existing->member_id !== $member_id ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'This vitals log entry does not belong to the specified member.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$ok = WP_MCP_AI_JetEngine_Vitals_Log_CCT::delete( $cct_id );
+
+		if ( ! $ok ) {
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete vitals log entry.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return array(
+			'success'            => true,
+			'message'            => __( 'Vitals log entry deleted successfully.', 'mcp-ai-wpoos-pro' ),
+			'cct_id'             => $cct_id,
+			'member_id'          => $member_id,
+			'measurement_date'   => isset( $existing->measurement_date ) ? $existing->measurement_date : null,
 		);
 	}
 
