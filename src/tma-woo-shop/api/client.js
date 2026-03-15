@@ -3,8 +3,13 @@
  *
  * Thin wrapper around `fetch` providing:
  *  - Automatic WordPress nonce & TMA token injection.
- *  - A helper for executing plugin tool-endpoint calls.
- *  - A helper for direct WooCommerce Store API calls (cart / checkout).
+ *  - `wooFetch()` – the single entry-point for ALL WooCommerce data calls.
+ *    When `wooSource === 'local'` it calls built-in local WooCommerce tools.
+ *    When `wooSource === 'remote'` it routes through `remote_wp_connection`
+ *    with the configured `wooConnectionId`, using the same tool-execution
+ *    endpoint that every other TMA template uses.
+ *  - `sendChat()` – AI assistant chat.
+ *  - `validateInitData()` – Telegram initData verification.
  *
  * All config is read from `window.wpTmaWooConfig` which is injected by the
  * PHP template before this script loads.
@@ -13,10 +18,33 @@
  * @since   1.1.5
  */
 
-/** @type {{ validateUrl:string, toolsUrl:string, chatUrl:string, nonce:string, assistantId:string, siteName:string, siteUrl:string }} */
-const cfg = window.wpTmaWooConfig ?? {};
+/**
+ * @type {{
+ *   validateUrl: string,
+ *   toolsUrl: string,
+ *   chatUrl: string,
+ *   nonce: string,
+ *   assistantId: string,
+ *   siteName: string,
+ *   siteUrl: string,
+ *   wooSource: 'local'|'remote',
+ *   wooConnectionId: string,
+ * }}
+ */
+const cfg = {
+	validateUrl:     '',
+	toolsUrl:        '',
+	chatUrl:         '',
+	nonce:           '',
+	assistantId:     '',
+	siteName:        '',
+	siteUrl:         window.location.origin,
+	wooSource:       'local',
+	wooConnectionId: '',
+	...( window.wpTmaWooConfig ?? {} ),
+};
 
-// TMA session token is populated after calling /validate on page load.
+// TMA session token populated after calling /validate on page load.
 let tmaToken = '';
 
 /**
@@ -55,11 +83,11 @@ function buildHeaders() {
 }
 
 /**
- * Execute a plugin tool via the TMA tools endpoint.
+ * Execute a plugin tool via the TMA tools/execute endpoint.
  *
- * @param {string} tool      Tool slug (e.g. 'get_woo_products').
- * @param {object} args      Tool arguments object.
- * @return {Promise<any>}    Parsed JSON response.
+ * @param {string} tool   Tool slug.
+ * @param {object} args   Tool arguments.
+ * @return {Promise<any>}
  */
 export async function executeTool( tool, args ) {
 	const url = cfg.toolsUrl + '/execute';
@@ -73,6 +101,119 @@ export async function executeTool( tool, args ) {
 	}
 	return res.json();
 }
+
+// ─── WooCommerce data routing ──────────────────────────────────────────────
+
+/**
+ * Normalise the response shape from both local tools and remote_wp_connection.
+ * Both return data inside `result.data` but the key name differs per action.
+ *
+ * @param {any}    raw
+ * @param {string} dataKey  e.g. 'products', 'orders', 'categories', 'product'
+ * @return {any}
+ */
+function extractData( raw, dataKey ) {
+	// Local tools wrap in raw.data.<key>; remote wraps in raw.data.<key> too
+	// but may also use raw.<key> directly.
+	return (
+		raw?.data?.[ dataKey ] ??
+		raw?.[ dataKey ] ??
+		raw?.data ??
+		null
+	);
+}
+
+/**
+ * Call a WooCommerce action, automatically routing to:
+ *  - local built-in tools  (wooSource === 'local')
+ *  - remote_wp_connection  (wooSource === 'remote')
+ *
+ * Supported actions and their argument shapes:
+ *
+ *  get_wc_products     { search, category, limit, orderby, order }
+ *  get_wc_product      { product_id }
+ *  get_wc_categories   { per_page }
+ *  get_wc_orders       { per_page }
+ *  get_wc_order        { order_id }
+ *
+ * @param {string} action  WooCommerce action name.
+ * @param {object} args    Action arguments (action-specific).
+ * @return {Promise<any>}  Resolved data (array or object).
+ */
+export async function wooFetch( action, args = {} ) {
+	const source       = cfg.wooSource ?? 'local';
+	const connectionId = cfg.wooConnectionId ?? '';
+
+	if ( source === 'remote' && connectionId ) {
+		// Route through the remote_wp_connection tool.
+		const raw = await executeTool( 'remote_wp_connection', {
+			action,
+			connection_id: connectionId,
+			...args,
+		} );
+
+		// remote_wp_connection returns { data: { products/orders/... } } or similar.
+		const dataKeyMap = {
+			get_wc_products:   'products',
+			get_wc_product:    'product',
+			get_wc_categories: 'categories',
+			get_wc_orders:     'orders',
+			get_wc_order:      'order',
+		};
+		return extractData( raw, dataKeyMap[ action ] ?? action );
+	}
+
+	// ── Local store path ──────────────────────────────────────────────────────
+	// Map remote-style action names to the local tool slugs + arg shapes.
+	switch ( action ) {
+		case 'get_wc_products': {
+			const raw = await executeTool( 'get_woo_products', {
+				limit:   args.limit ?? 20,
+				search:  args.search ?? '',
+				category: args.category ?? '',
+				orderby: args.orderby ?? '',
+				order:   args.order ?? '',
+			} );
+			return extractData( raw, 'products' ) ?? [];
+		}
+		case 'get_wc_product': {
+			// Local tool does not expose a single-product fetch; fall back to
+			// the public WooCommerce Store API (no auth required for published products).
+			const siteUrl = cfg.siteUrl || window.location.origin;
+			const res = await fetch(
+				siteUrl.replace( /\/$/, '' ) + `/wp-json/wc/store/v1/products/${ args.product_id }`,
+				{ headers: { 'Content-Type': 'application/json' } }
+			);
+			if ( ! res.ok ) {
+				throw new Error( `Product fetch failed: HTTP ${ res.status }` );
+			}
+			return res.json();
+		}
+		case 'get_wc_categories': {
+			// Use the public WooCommerce Store API for category listing.
+			const siteUrl = cfg.siteUrl || window.location.origin;
+			const perPage = args.per_page ?? 50;
+			const res = await fetch(
+				siteUrl.replace( /\/$/, '' ) + `/wp-json/wc/store/v1/products/categories?per_page=${ perPage }`,
+				{ headers: { 'Content-Type': 'application/json' } }
+			);
+			if ( ! res.ok ) {
+				throw new Error( `Category fetch failed: HTTP ${ res.status }` );
+			}
+			return res.json();
+		}
+		case 'get_wc_orders': {
+			const raw = await executeTool( 'get_woo_recent_orders', {
+				per_page: args.per_page ?? 10,
+			} );
+			return extractData( raw, 'orders' ) ?? [];
+		}
+		default:
+			throw new Error( `Unknown local WooCommerce action: ${ action }` );
+	}
+}
+
+// ─── AI assistant ──────────────────────────────────────────────────────────
 
 /**
  * Send a chat message to the TMA AI assistant.
@@ -96,6 +237,8 @@ export async function sendChat( messages ) {
 	return res.json();
 }
 
+// ─── Auth ─────────────────────────────────────────────────────────────────
+
 /**
  * Validate Telegram initData against the server and receive a fresh nonce.
  *
@@ -116,41 +259,12 @@ export async function validateInitData() {
 			return null;
 		}
 		return res.json();
-	} catch ( _e ) {
+	} catch ( err ) {
+		// eslint-disable-next-line no-console
+		console.error( '[TmaWooShop] validateInitData failed:', err );
 		return null;
 	}
 }
 
-/**
- * Direct WooCommerce Store API call (cart, checkout).
- *
- * @param {string} path    e.g. '/wc/store/v1/cart'
- * @param {'GET'|'POST'|'PUT'|'DELETE'} method
- * @param {object|null} body
- * @param {string|null} storeNonce  WooCommerce Store API nonce.
- * @return {Promise<any>}
- */
-export async function storeApi( path, method = 'GET', body = null, storeNonce = null ) {
-	const siteUrl = cfg.siteUrl || window.location.origin;
-	const url = siteUrl.replace( /\/$/, '' ) + '/wp-json' + path;
-	/** @type {Record<string,string>} */
-	const headers = { 'Content-Type': 'application/json' };
-	if ( cfg.nonce ) {
-		headers[ 'X-WP-Nonce' ] = cfg.nonce;
-	}
-	if ( storeNonce ) {
-		headers[ 'Nonce' ] = storeNonce;
-	}
-	const init = { method, headers };
-	if ( body ) {
-		init.body = JSON.stringify( body );
-	}
-	const res = await fetch( url, init );
-	if ( ! res.ok ) {
-		const errBody = await res.json().catch( () => ( {} ) );
-		throw new Error( errBody?.message || `Store API ${ method } ${ path } failed: ${ res.status }` );
-	}
-	return res.json();
-}
-
 export { cfg };
+

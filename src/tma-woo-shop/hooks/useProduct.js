@@ -1,15 +1,15 @@
 /**
  * useProduct – Single product detail hook
  *
- * Fetches a single product by ID via the WooCommerce Store API (public,
- * no auth required for published products).
+ * Fetches a single product by ID via `wooFetch()`. Routes through local
+ * Store API or remote_wp_connection depending on the configured data source.
  *
  * @package WP_MCP_AI
  * @since   1.1.5
  */
 
 import { useState, useEffect } from '@wordpress/element';
-import { storeApi } from '../api/client';
+import { wooFetch } from '../api/client';
 
 /**
  * @param {number|null} productId
@@ -28,7 +28,7 @@ export function useProduct( productId ) {
 		setLoading( true );
 		setError( null );
 
-		storeApi( `/wc/store/v1/products/${ productId }` )
+		wooFetch( 'get_wc_product', { product_id: productId } )
 			.then( ( data ) => {
 				if ( ! cancelled ) {
 					setProduct( data );
@@ -52,3 +52,9 @@ export function useProduct( productId ) {
 
 	return { product, loading, error };
 }
+
+
+/**
+ * @param {number|null} productId
+ * @return {{ product:object|null, loading:boolean, error:string|null }}
+ */

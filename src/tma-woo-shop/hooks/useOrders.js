@@ -1,14 +1,15 @@
 /**
  * useOrders – Order history hook
  *
- * Fetches recent orders via the `get_woo_recent_orders` plugin tool.
+ * Fetches recent orders via `wooFetch()`. Routes through local WooCommerce
+ * tools or remote_wp_connection depending on the configured data source.
  *
  * @package WP_MCP_AI
  * @since   1.1.5
  */
 
 import { useState, useEffect, useCallback } from '@wordpress/element';
-import { executeTool } from '../api/client';
+import { wooFetch } from '../api/client';
 
 /**
  * @param {{ perPage?: number }} params
@@ -23,11 +24,10 @@ export function useOrders( params = {} ) {
 		setLoading( true );
 		setError( null );
 		try {
-			const data = await executeTool( 'get_woo_recent_orders', {
+			const list = await wooFetch( 'get_wc_orders', {
 				per_page: params.perPage ?? 10,
 			} );
-			const list = data?.data?.orders ?? data?.orders ?? [];
-			setOrders( list );
+			setOrders( Array.isArray( list ) ? list : [] );
 		} catch ( err ) {
 			setError( err.message );
 		} finally {
@@ -41,3 +41,9 @@ export function useOrders( params = {} ) {
 
 	return { orders, loading, error, reload: load };
 }
+
+
+/**
+ * @param {{ perPage?: number }} params
+ * @return {{ orders:object[], loading:boolean, error:string|null, reload:Function }}
+ */

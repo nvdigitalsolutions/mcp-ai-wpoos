@@ -38,6 +38,8 @@ composer.phar
 
 # Allow tma-template-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/tma-template-builder/
+# Allow tma-woo-shop compiled assets in Pro addon (needed for plugin to work)
+!/addons/pro/build/tma-woo-shop/
 
 # Ignore ZIP files everywhere (build artifacts should not be committed)
 *.zip

@@ -1,7 +1,8 @@
 /**
  * useCategories – Product categories hook
  *
- * Fetches product categories from the WooCommerce Store API.
+ * Fetches product categories via `wooFetch()`. Routes through local Store
+ * API or remote_wp_connection depending on the configured data source.
  * Results are cached in module scope for the lifetime of the Mini App session.
  *
  * @package WP_MCP_AI
@@ -9,7 +10,7 @@
  */
 
 import { useState, useEffect } from '@wordpress/element';
-import { storeApi } from '../api/client';
+import { wooFetch } from '../api/client';
 
 /** @type {object[]|null} Simple module-level cache. */
 let cached = null;
@@ -27,12 +28,12 @@ export function useCategories() {
 			return;
 		}
 		let cancelled = false;
-		storeApi( '/wc/store/v1/products/categories?per_page=50' )
-			.then( ( data ) => {
+		wooFetch( 'get_wc_categories', { per_page: 50 } )
+			.then( ( list ) => {
 				if ( ! cancelled ) {
-					const list = Array.isArray( data ) ? data : [];
-					cached = list;
-					setCategories( list );
+					const arr = Array.isArray( list ) ? list : [];
+					cached = arr;
+					setCategories( arr );
 				}
 			} )
 			.catch( ( err ) => {
@@ -52,3 +53,6 @@ export function useCategories() {
 
 	return { categories, loading, error };
 }
+
+
+/** @type {object[]|null} Simple module-level cache. */

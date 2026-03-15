@@ -262,6 +262,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_Default() );
 		$this->register( new WP_MCP_AI_TMA_Template_AI_Chat() );
 		$this->register( new WP_MCP_AI_TMA_Template_Ecommerce() );
+		$this->register( new WP_MCP_AI_TMA_Template_Woo_Shop() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -3504,6 +3505,94 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'mvInitSession();mvRefresh();mvRenderMeds();' .
 		'if(MEMBER_ID)mvSyncFromServer();' .
 		'})();</script></body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   WooCommerce Shop React SPA Template
+   ========================================================================== */
+
+/**
+ * WooCommerce Shop Mini App template – React SPA.
+ *
+ * Renders an HTML shell that mounts the compiled React SPA
+ * (addons/pro/build/tma-woo-shop/tma-woo-shop.js) into a root div.
+ *
+ * The PHP context is serialised into `window.wpTmaWooConfig` so the React
+ * app can reach the plugin's REST endpoints and knows which WooCommerce data
+ * source to use:
+ *
+ *   wooSource         – 'local' | 'remote'
+ *   wooConnectionId   – remote connection ID (only when wooSource === 'remote')
+ *
+ * When wooSource is 'local', the React app calls the built-in local WooCommerce
+ * tool endpoints (get_woo_products, get_woo_recent_orders).
+ * When wooSource is 'remote', every fetch goes through the remote_wp_connection
+ * tool with the supplied connection ID.
+ *
+ * @since 1.1.5
+ */
+class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'woo_shop';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'WooCommerce Shop (React)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Full-featured React SPA with product catalog, filters, product pages, cart, checkout and AI shopping assistant. Connect to local WooCommerce or any configured remote store.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '🛍️';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#7c3aed';
+	}
+
+	/** @inheritdoc */
+	public function render_html( array $ctx ) {
+		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.js' : '';
+		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.css' : '';
+
+		// Serialise all values the React app needs.  wp_json_encode escapes
+		// characters that could break out of a <script> tag.
+		$config = wp_json_encode(
+			array(
+				'validateUrl'     => $ctx['validate_url'] ?? '',
+				'toolsUrl'        => $ctx['tools_url'] ?? '',
+				'chatUrl'         => $ctx['chat_url'] ?? '',
+				'nonce'           => $ctx['nonce'] ?? '',
+				'assistantId'     => $ctx['assistant_id'] ?? '',
+				'siteName'        => $ctx['site_name'] ?? get_bloginfo( 'name' ),
+				'siteUrl'         => home_url(),
+				'wooSource'       => $ctx['woo_source'] ?? 'local',
+				'wooConnectionId' => $ctx['woo_connection_id'] ?? '',
+			)
+		);
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure; dynamic values escaped individually.
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-woo-shop-template">' .
+			'<div id="tma-woo-shop-root"></div>' .
+			'<script>window.wpTmaWooConfig=' . $config . ';</script>' .
+			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			'</body>';
 		// phpcs:enable
 	}
 }

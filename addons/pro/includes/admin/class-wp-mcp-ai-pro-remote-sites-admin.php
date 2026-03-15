@@ -577,9 +577,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					? array_map( 'sanitize_text_field', array_map( 'wp_unslash', $_POST['telegram_command_descriptions'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
 					: array(),
 				// Mini App settings.
-				'enable_mini_app'         => ! empty( $_POST['telegram_enable_mini_app'] ),
-				'mini_app_assistant_id'   => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
-				'mini_app_template'       => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
+				'enable_mini_app'              => ! empty( $_POST['telegram_enable_mini_app'] ),
+				'mini_app_assistant_id'        => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
+				'mini_app_template'            => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
+				'mini_app_woo_source'          => ( isset( $_POST['telegram_mini_app_woo_source'] ) && 'remote' === $_POST['telegram_mini_app_woo_source'] ) ? 'remote' : 'local',
+				'mini_app_woo_connection_id'   => isset( $_POST['telegram_mini_app_woo_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_woo_connection_id'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -2414,6 +2416,102 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
+
+				<?php
+				/*
+				 * WooCommerce Data Source row – visible only when an e-commerce Mini App
+				 * template (woo_shop or ecommerce) is selected for this connection.
+				 */
+				$tg_woo_source        = ( $is_edit && isset( $connection['mini_app_woo_source'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) )
+					? sanitize_key( $connection['mini_app_woo_source'] )
+					: 'local';
+				$tg_woo_connection_id = ( $is_edit && isset( $connection['mini_app_woo_connection_id'] ) )
+					? sanitize_key( $connection['mini_app_woo_connection_id'] )
+					: '';
+
+				// Gather all WordPress/WooCommerce remote connections for the dropdown.
+				$_woo_remote_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
+						if ( isset( $_rc['connection_type'] ) && 'wordpress' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+							$_woo_remote_connections[] = $_rc;
+						}
+					}
+				}
+				?>
+				<tr class="telegram-only-field tma-woo-source-row" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'WooCommerce Data Source', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<fieldset>
+							<label style="display:block;margin-bottom:8px;">
+								<input type="radio" name="telegram_mini_app_woo_source" id="tma-woo-source-local" value="local"
+									<?php checked( $tg_woo_source, 'local' ); ?>>
+								<?php esc_html_e( 'Local Store — use WooCommerce on this WordPress site', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<label style="display:block;margin-bottom:8px;">
+								<input type="radio" name="telegram_mini_app_woo_source" id="tma-woo-source-remote" value="remote"
+									<?php checked( $tg_woo_source, 'remote' ); ?>>
+								<?php esc_html_e( 'Remote Connection — use a configured WooCommerce remote site', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<div id="tma-woo-remote-wrap" style="margin-top:8px;padding-left:20px;<?php echo 'remote' === $tg_woo_source ? '' : 'display:none'; ?>">
+								<select name="telegram_mini_app_woo_connection_id" id="telegram_mini_app_woo_connection_id">
+									<option value=""><?php esc_html_e( '— Select a remote WooCommerce connection —', 'mcp-ai-wpoos-pro' ); ?></option>
+									<?php foreach ( $_woo_remote_connections as $_rc ) : ?>
+										<option value="<?php echo esc_attr( $_rc['id'] ); ?>" <?php selected( $tg_woo_connection_id, $_rc['id'] ); ?>>
+											<?php echo esc_html( ( $_rc['name'] ?? $_rc['id'] ) . ' (' . ( $_rc['url'] ?? '' ) . ')' ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<?php if ( empty( $_woo_remote_connections ) ) : ?>
+									<p class="description" style="color:#d63638;">
+										<?php
+										printf(
+											/* translators: %s: URL to remote sites admin page */
+											esc_html__( 'No WordPress remote connections found. %s first.', 'mcp-ai-wpoos-pro' ),
+											'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '">' . esc_html__( 'Add one in Remote Sites', 'mcp-ai-wpoos-pro' ) . '</a>'
+										);
+										?>
+									</p>
+								<?php endif; ?>
+							</div>
+						</fieldset>
+						<p class="description">
+							<?php esc_html_e( 'Choose where the WooCommerce Shop Mini App reads its product and order data from. "Local Store" uses WooCommerce installed on this site. "Remote Connection" lets you power the Mini App from a separate WooCommerce store configured in Remote Sites.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<script>
+				( function() {
+					/* Toggle the WooCommerce Data Source row when the template changes. */
+					var tplSel      = document.getElementById( 'telegram_mini_app_template' );
+					var wooRow      = document.querySelector( '.tma-woo-source-row' );
+					var remoteWrap  = document.getElementById( 'tma-woo-remote-wrap' );
+					var radioLocal  = document.getElementById( 'tma-woo-source-local' );
+					var radioRemote = document.getElementById( 'tma-woo-source-remote' );
+
+					var ecommerceTemplates = [ 'woo_shop', 'ecommerce' ];
+
+					function toggleWooRow() {
+						if ( ! tplSel || ! wooRow ) { return; }
+						var show = ecommerceTemplates.indexOf( tplSel.value ) !== -1;
+						wooRow.style.display = show ? '' : 'none';
+					}
+
+					function toggleRemoteWrap() {
+						if ( ! remoteWrap ) { return; }
+						remoteWrap.style.display = ( radioRemote && radioRemote.checked ) ? 'block' : 'none';
+					}
+
+					if ( tplSel ) {
+						tplSel.addEventListener( 'change', toggleWooRow );
+						toggleWooRow();
+					}
+					if ( radioLocal )  { radioLocal.addEventListener( 'change', toggleRemoteWrap ); }
+					if ( radioRemote ) { radioRemote.addEventListener( 'change', toggleRemoteWrap ); }
+				}() );
+				</script>
 
 				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Bot Creation Guide', 'mcp-ai-wpoos-pro' ); ?></th>
