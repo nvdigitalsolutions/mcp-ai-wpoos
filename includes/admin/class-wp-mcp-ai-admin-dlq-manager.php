@@ -34,11 +34,11 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	}
 
 	/**
-	 * Register the DLQ manager page as a hidden admin page (not shown in menu).
+	 * Register the DLQ manager page under the NV oOS menu.
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
-			null,
+			'wp-mcp-ai-dashboard',
 			__( 'Dead Letter Queue', 'mcp-ai-wpoos' ),
 			__( 'Dead Letter Queue', 'mcp-ai-wpoos' ),
 			'manage_options',
