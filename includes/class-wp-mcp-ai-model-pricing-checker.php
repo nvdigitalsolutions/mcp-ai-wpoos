@@ -123,6 +123,12 @@ class WP_MCP_AI_Model_Pricing_Checker {
 	 * Show admin notice if there are price changes.
 	 */
 	public static function show_price_change_notice() {
+		// Only show on NV oOS admin pages to avoid noise on unrelated admin pages.
+		$screen = get_current_screen();
+		if ( ! $screen || false === strpos( $screen->id, 'mcp-ai' ) ) {
+			return;
+		}
+
 		$price_changes = get_option( self::OPTION_PRICE_CHANGES, array() );
 
 		if ( empty( $price_changes ) ) {
