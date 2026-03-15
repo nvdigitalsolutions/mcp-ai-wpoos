@@ -4,8 +4,13 @@
  *
  * Comprehensive vital signs monitoring including blood pressure, heart rate,
  * temperature, weight, BMI, glucose, oxygen saturation, respiratory rate,
- * hemoglobin, and kidney-health indicators (eGFR, creatinine, BUN, K+, Na+,
- * phosphorus, albumin).
+ * kidney-health indicators (eGFR, creatinine, BUN, K+, Na+, phosphorus,
+ * albumin), and a full CBC / anemia panel (hemoglobin, hematocrit, RBC, WBC,
+ * platelets, MCV, MCH, MCHC, RDW, plus WBC differential in % and absolute
+ * counts).  Provenance/QA fields (facility_name, document_name, test_panel,
+ * document_date, collection_time, result_time, import_batch_id, review_status,
+ * review_notes, is_abnormal, abnormal_flags) are stored alongside measurements
+ * so every record can be traced back to its source document and reviewed.
  *
  * When JetEngine is available measurements are stored in the vitals_log CCT
  * (primary store for compiled log data).  Options-based storage is always
@@ -60,7 +65,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, hemoglobin (g/dL), and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+		return __( 'Log and track vital signs including blood pressure, heart rate, temperature (F or C — automatically normalised to °F), weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin), and a complete CBC panel (hemoglobin, hematocrit, RBC, WBC, platelets, MCV, MCH, MCHC, RDW, and WBC differential with percent and absolute counts). Provenance fields (facility_name, document_name, test_panel, document_date, collection_time, result_time, import_batch_id, review_status, abnormal_flags) support audit trails for imported lab data. When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -209,6 +214,173 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'description' => __( 'Hemoglobin level (g/dL) — red blood cell / anaemia indicator (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1.0,
 					'maximum'     => 25.0,
+				),
+				// CBC — main indices.
+				'hematocrit'       => array(
+					'type'        => 'number',
+					'description' => __( 'Hematocrit (%) — percentage of RBCs in blood (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 5.0,
+					'maximum'     => 65.0,
+				),
+				'rbc'              => array(
+					'type'        => 'number',
+					'description' => __( 'Red blood cell count (x10⁶/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.5,
+					'maximum'     => 8.0,
+				),
+				'wbc'              => array(
+					'type'        => 'number',
+					'description' => __( 'White blood cell count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.1,
+					'maximum'     => 100.0,
+				),
+				'platelets'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Platelet count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+					'maximum'     => 2000,
+				),
+				'mcv'              => array(
+					'type'        => 'number',
+					'description' => __( 'Mean corpuscular volume (fL) — RBC size indicator (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 50.0,
+					'maximum'     => 150.0,
+				),
+				'mch'              => array(
+					'type'        => 'number',
+					'description' => __( 'Mean corpuscular hemoglobin (pg) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 10.0,
+					'maximum'     => 50.0,
+				),
+				'mchc'             => array(
+					'type'        => 'number',
+					'description' => __( 'Mean corpuscular hemoglobin concentration (g/dL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 20.0,
+					'maximum'     => 40.0,
+				),
+				'rdw'              => array(
+					'type'        => 'number',
+					'description' => __( 'Red cell distribution width (%) — RBC size variation (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 5.0,
+					'maximum'     => 30.0,
+				),
+				// CBC differential — percent.
+				'neutrophils_percent'   => array(
+					'type'        => 'number',
+					'description' => __( 'Neutrophils (% of WBC differential) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 100.0,
+				),
+				'lymphocytes_percent'   => array(
+					'type'        => 'number',
+					'description' => __( 'Lymphocytes (% of WBC differential) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 100.0,
+				),
+				'monocytes_percent'     => array(
+					'type'        => 'number',
+					'description' => __( 'Monocytes (% of WBC differential) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 100.0,
+				),
+				'eosinophils_percent'   => array(
+					'type'        => 'number',
+					'description' => __( 'Eosinophils (% of WBC differential) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 100.0,
+				),
+				'basophils_percent'     => array(
+					'type'        => 'number',
+					'description' => __( 'Basophils (% of WBC differential) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 100.0,
+				),
+				// CBC differential — absolute counts.
+				'neutrophils_absolute'  => array(
+					'type'        => 'number',
+					'description' => __( 'Absolute neutrophil count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 50.0,
+				),
+				'lymphocytes_absolute'  => array(
+					'type'        => 'number',
+					'description' => __( 'Absolute lymphocyte count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 50.0,
+				),
+				'monocytes_absolute'    => array(
+					'type'        => 'number',
+					'description' => __( 'Absolute monocyte count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 20.0,
+				),
+				'eosinophils_absolute'  => array(
+					'type'        => 'number',
+					'description' => __( 'Absolute eosinophil count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 20.0,
+				),
+				'basophils_absolute'    => array(
+					'type'        => 'number',
+					'description' => __( 'Absolute basophil count (x10³/µL) (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0.0,
+					'maximum'     => 10.0,
+				),
+				// Provenance / QA.
+				'facility_name'    => array(
+					'type'        => 'string',
+					'description' => __( 'Facility or laboratory name (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 255,
+				),
+				'document_name'    => array(
+					'type'        => 'string',
+					'description' => __( 'Source document filename or reference (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 255,
+				),
+				'test_panel'       => array(
+					'type'        => 'string',
+					'description' => __( 'Lab panel name e.g. CBC, CMP, BMP, Lipid, Renal (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'document_date'    => array(
+					'type'        => 'string',
+					'description' => __( 'Date shown on the source document (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'collection_time'  => array(
+					'type'        => 'string',
+					'description' => __( 'Specimen collection time (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{2}:\d{2}$',
+				),
+				'result_time'      => array(
+					'type'        => 'string',
+					'description' => __( 'Time results were reported (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{2}:\d{2}$',
+				),
+				'import_batch_id'  => array(
+					'type'        => 'string',
+					'description' => __( 'Import batch identifier for tracing bulk-imported records (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'review_status'    => array(
+					'type'        => 'string',
+					'description' => __( 'QA review status for this record (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'unreviewed', 'auto_imported', 'reviewed', 'corrected', 'needs_manual_review' ),
+					'default'     => 'unreviewed',
+				),
+				'review_notes'     => array(
+					'type'        => 'string',
+					'description' => __( 'Reviewer audit notes for corrections or QA comments (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 2000,
+				),
+				'is_abnormal'      => array(
+					'type'        => 'boolean',
+					'description' => __( 'True when any result in this record is flagged as abnormal by the lab (optional)', 'mcp-ai-wpoos-pro' ),
+				),
+				'abnormal_flags'   => array(
+					'type'        => 'string',
+					'description' => __( 'Comma-separated field names flagged as abnormal e.g. "hemoglobin,wbc" (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 500,
 				),
 				'source'           => array(
 					'type'        => 'string',
@@ -484,6 +656,92 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$has_data = true;
 		}
 
+		// CBC — main indices.
+		if ( isset( $arguments['hematocrit'] ) ) {
+			$hct = round( floatval( $arguments['hematocrit'] ), 2 );
+			$measurements['hematocrit'] = array(
+				'value'  => $hct,
+				'unit'   => '%',
+				'status' => $this->assess_hematocrit( $hct ),
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['rbc'] ) ) {
+			$measurements['rbc'] = array(
+				'value' => round( floatval( $arguments['rbc'] ), 3 ),
+				'unit'  => 'x10⁶/µL',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['wbc'] ) ) {
+			$wbc = round( floatval( $arguments['wbc'] ), 2 );
+			$measurements['wbc'] = array(
+				'value'  => $wbc,
+				'unit'   => 'x10³/µL',
+				'status' => $this->assess_wbc( $wbc ),
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['platelets'] ) ) {
+			$plt = absint( $arguments['platelets'] );
+			$measurements['platelets'] = array(
+				'value'  => $plt,
+				'unit'   => 'x10³/µL',
+				'status' => $this->assess_platelets( $plt ),
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['mcv'] ) ) {
+			$measurements['mcv'] = array(
+				'value' => round( floatval( $arguments['mcv'] ), 2 ),
+				'unit'  => 'fL',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['mch'] ) ) {
+			$measurements['mch'] = array(
+				'value' => round( floatval( $arguments['mch'] ), 2 ),
+				'unit'  => 'pg',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['mchc'] ) ) {
+			$measurements['mchc'] = array(
+				'value' => round( floatval( $arguments['mchc'] ), 2 ),
+				'unit'  => 'g/dL',
+			);
+			$has_data = true;
+		}
+		if ( isset( $arguments['rdw'] ) ) {
+			$measurements['rdw'] = array(
+				'value' => round( floatval( $arguments['rdw'] ), 2 ),
+				'unit'  => '%',
+			);
+			$has_data = true;
+		}
+
+		// CBC differential — percent.
+		foreach ( array( 'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent', 'eosinophils_percent', 'basophils_percent' ) as $diff_field ) {
+			if ( isset( $arguments[ $diff_field ] ) ) {
+				$measurements[ $diff_field ] = array(
+					'value' => round( floatval( $arguments[ $diff_field ] ), 2 ),
+					'unit'  => '%',
+				);
+				$has_data = true;
+			}
+		}
+
+		// CBC differential — absolute counts.
+		foreach ( array( 'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute', 'eosinophils_absolute', 'basophils_absolute' ) as $abs_field ) {
+			if ( isset( $arguments[ $abs_field ] ) ) {
+				$measurements[ $abs_field ] = array(
+					'value' => round( floatval( $arguments[ $abs_field ] ), 2 ),
+					'unit'  => 'x10³/µL',
+				);
+				$has_data = true;
+			}
+		}
+
 		if ( ! $has_data ) {
 			return new WP_Error( 'wp_mcp_ai_no_measurements', __( 'At least one vital sign measurement is required.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -570,6 +828,43 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			if ( isset( $measurements[ $ki ] ) ) {
 				$cct_data[ $ki ] = $measurements[ $ki ]['value'];
 			}
+		}
+		// CBC — main indices.
+		foreach ( array( 'hematocrit', 'rbc', 'wbc', 'platelets', 'mcv', 'mch', 'mchc', 'rdw' ) as $cbc_field ) {
+			if ( isset( $measurements[ $cbc_field ] ) ) {
+				$cct_data[ $cbc_field ] = $measurements[ $cbc_field ]['value'];
+			}
+		}
+		// CBC differential.
+		$diff_fields = array(
+			'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent',
+			'eosinophils_percent', 'basophils_percent',
+			'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute',
+			'eosinophils_absolute', 'basophils_absolute',
+		);
+		foreach ( $diff_fields as $diff_field ) {
+			if ( isset( $measurements[ $diff_field ] ) ) {
+				$cct_data[ $diff_field ] = $measurements[ $diff_field ]['value'];
+			}
+		}
+
+		// Provenance / QA fields (stored directly from arguments, not measurements).
+		$provenance_fields = array(
+			'facility_name', 'document_name', 'test_panel', 'document_date',
+			'collection_time', 'result_time', 'import_batch_id', 'review_status',
+			'abnormal_flags',
+		);
+		foreach ( $provenance_fields as $prov_field ) {
+			if ( isset( $arguments[ $prov_field ] ) && '' !== (string) $arguments[ $prov_field ] ) {
+				$cct_data[ $prov_field ] = sanitize_text_field( $arguments[ $prov_field ] );
+			}
+		}
+		if ( isset( $arguments['review_notes'] ) && '' !== (string) $arguments['review_notes'] ) {
+			// review_notes may contain longer structured text — use textarea-level sanitisation.
+			$cct_data['review_notes'] = wp_kses_post( $arguments['review_notes'] );
+		}
+		if ( isset( $arguments['is_abnormal'] ) ) {
+			$cct_data['is_abnormal'] = $arguments['is_abnormal'] ? 1 : 0;
 		}
 
 		// Write to the vitals_log CCT (includes logged_at timestamp).
@@ -926,6 +1221,54 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	}
 
 	/**
+	 * Assess hematocrit level (gender-neutral threshold).
+	 *
+	 * @param float $hct Hematocrit percentage.
+	 * @return string Status: 'normal', 'low', or 'high'.
+	 */
+	private function assess_hematocrit( $hct ) {
+		if ( $hct > 52 ) {
+			return 'high';
+		} elseif ( $hct >= 36 ) {
+			return 'normal';
+		} else {
+			return 'low';
+		}
+	}
+
+	/**
+	 * Assess WBC (white blood cell count).
+	 *
+	 * @param float $wbc WBC in x10³/µL.
+	 * @return string Status: 'normal', 'low' (leukopenia), or 'high' (leukocytosis).
+	 */
+	private function assess_wbc( $wbc ) {
+		if ( $wbc > 11.0 ) {
+			return 'high';
+		} elseif ( $wbc >= 4.0 ) {
+			return 'normal';
+		} else {
+			return 'low';
+		}
+	}
+
+	/**
+	 * Assess platelet count.
+	 *
+	 * @param int $plt Platelets in x10³/µL.
+	 * @return string Status: 'normal', 'low' (thrombocytopenia), or 'high' (thrombocytosis).
+	 */
+	private function assess_platelets( $plt ) {
+		if ( $plt > 400 ) {
+			return 'high';
+		} elseif ( $plt >= 150 ) {
+			return 'normal';
+		} else {
+			return 'low';
+		}
+	}
+
+	/**
 	 * Format vital signs measurements as a natural-language text for embedding.
 	 *
 	 * The resulting sentence is used as the document text when generating an
@@ -1032,6 +1375,53 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$parts[] = sprintf( __( 'Hemoglobin (red blood cell indicator, anaemia marker) %1$s g/dL (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['hemoglobin']['value'], $measurements['hemoglobin']['status'] );
 		}
 
+		// CBC — main indices.
+		if ( isset( $measurements['hematocrit'] ) ) {
+			/* translators: 1: hematocrit value, 2: status */
+			$parts[] = sprintf( __( 'Hematocrit (CBC red blood cell percentage) %1$s%% (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['hematocrit']['value'], $measurements['hematocrit']['status'] );
+		}
+		if ( isset( $measurements['rbc'] ) ) {
+			/* translators: %s: RBC value */
+			$parts[] = sprintf( __( 'RBC (red blood cell count) %s x10⁶/µL.', 'mcp-ai-wpoos-pro' ), $measurements['rbc']['value'] );
+		}
+		if ( isset( $measurements['wbc'] ) ) {
+			/* translators: 1: WBC value, 2: status */
+			$parts[] = sprintf( __( 'WBC (white blood cell count, immune system indicator) %1$s x10³/µL (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['wbc']['value'], $measurements['wbc']['status'] );
+		}
+		if ( isset( $measurements['platelets'] ) ) {
+			/* translators: 1: platelet value, 2: status */
+			$parts[] = sprintf( __( 'Platelets (clotting indicator) %1$s x10³/µL (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['platelets']['value'], $measurements['platelets']['status'] );
+		}
+		if ( isset( $measurements['mcv'] ) ) {
+			/* translators: %s: MCV value */
+			$parts[] = sprintf( __( 'MCV (mean corpuscular volume, RBC size) %s fL.', 'mcp-ai-wpoos-pro' ), $measurements['mcv']['value'] );
+		}
+		if ( isset( $measurements['mch'] ) ) {
+			/* translators: %s: MCH value */
+			$parts[] = sprintf( __( 'MCH (mean corpuscular hemoglobin) %s pg.', 'mcp-ai-wpoos-pro' ), $measurements['mch']['value'] );
+		}
+		if ( isset( $measurements['mchc'] ) ) {
+			/* translators: %s: MCHC value */
+			$parts[] = sprintf( __( 'MCHC (mean corpuscular hemoglobin concentration) %s g/dL.', 'mcp-ai-wpoos-pro' ), $measurements['mchc']['value'] );
+		}
+		if ( isset( $measurements['rdw'] ) ) {
+			/* translators: %s: RDW value */
+			$parts[] = sprintf( __( 'RDW (red cell distribution width, size variation) %s%%.', 'mcp-ai-wpoos-pro' ), $measurements['rdw']['value'] );
+		}
+
+		// CBC differential (brief summary when present).
+		$diff_summary = array();
+		foreach ( array( 'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent', 'eosinophils_percent', 'basophils_percent' ) as $dp ) {
+			if ( isset( $measurements[ $dp ] ) ) {
+				$label         = ucfirst( str_replace( '_percent', '', $dp ) );
+				$diff_summary[] = $label . ' ' . $measurements[ $dp ]['value'] . '%';
+			}
+		}
+		if ( ! empty( $diff_summary ) ) {
+			/* translators: %s: differential summary list */
+			$parts[] = sprintf( __( 'CBC differential: %s.', 'mcp-ai-wpoos-pro' ), implode( ', ', $diff_summary ) );
+		}
+
 		return implode( ' ', $parts );
 	}
 
@@ -1113,13 +1503,26 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$alerts = array();
 
 		foreach ( $measurements as $type => $data ) {
-			if ( isset( $data['status'] ) && in_array( $data['status'], array( 'critical', 'hypertensive_crisis', 'fever', 'diabetic_range' ), true ) ) {
+			if ( isset( $data['status'] ) && in_array( $data['status'], array( 'critical', 'hypertensive_crisis', 'fever', 'diabetic_range', 'anaemia' ), true ) ) {
 				$alerts[] = array(
 					'type'     => $type,
 					'severity' => 'high',
 					'message'  => sprintf(
 						/* translators: %s: measurement type */
 						__( 'Abnormal %s reading detected. Consult healthcare provider if symptoms persist.', 'mcp-ai-wpoos-pro' ),
+						str_replace( '_', ' ', $type )
+					),
+				);
+			}
+
+			// Additional alert for low CBC values.
+			if ( isset( $data['status'] ) && 'low' === $data['status'] && in_array( $type, array( 'hemoglobin', 'hematocrit', 'wbc', 'platelets' ), true ) ) {
+				$alerts[] = array(
+					'type'     => $type,
+					'severity' => 'medium',
+					'message'  => sprintf(
+						/* translators: %s: measurement type */
+						__( 'Low %s detected. Consult healthcare provider.', 'mcp-ai-wpoos-pro' ),
 						str_replace( '_', ' ', $type )
 					),
 				);
@@ -1202,7 +1605,17 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		// Decimal vital-sign fields that may have lost precision in old CCT rows.
-		$decimal_fields = array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin', 'hemoglobin' );
+		$decimal_fields = array(
+			// Renal / metabolic.
+			'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin',
+			// CBC indices.
+			'hemoglobin', 'hematocrit', 'rbc', 'wbc', 'mcv', 'mch', 'mchc', 'rdw',
+			// CBC differential.
+			'neutrophils_percent', 'lymphocytes_percent', 'monocytes_percent',
+			'eosinophils_percent', 'basophils_percent',
+			'neutrophils_absolute', 'lymphocytes_absolute', 'monocytes_absolute',
+			'eosinophils_absolute', 'basophils_absolute',
+		);
 
 		foreach ( $history as &$row ) {
 			$entry_id = isset( $row['entry_id'] ) ? (string) $row['entry_id'] : '';

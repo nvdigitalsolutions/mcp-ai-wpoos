@@ -277,6 +277,18 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<div class="hw-dash-kpi-label"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></div>
 							<div class="hw-dash-kpi-sub" id="mv-kpi-hgb-status"></div>
 						</div>
+						<div class="hw-dash-kpi">
+							<div class="hw-dash-kpi-icon">🔬</div>
+							<div class="hw-dash-kpi-value" id="mv-kpi-wbc">—</div>
+							<div class="hw-dash-kpi-label"><?php esc_html_e( 'WBC (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></div>
+							<div class="hw-dash-kpi-sub" id="mv-kpi-wbc-status"></div>
+						</div>
+						<div class="hw-dash-kpi">
+							<div class="hw-dash-kpi-icon">🩹</div>
+							<div class="hw-dash-kpi-value" id="mv-kpi-plt">—</div>
+							<div class="hw-dash-kpi-label"><?php esc_html_e( 'Platelets (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></div>
+							<div class="hw-dash-kpi-sub" id="mv-kpi-plt-status"></div>
+						</div>
 					</div>
 
 					<!-- Vitals trend charts -->
@@ -329,6 +341,18 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<canvas id="mv-chart-hemoglobin" height="120"></canvas>
 						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'WBC (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-wbc" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hematocrit (%)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-hematocrit" height="120"></canvas>
+						</div>
+						<div class="hw-dash-chart-card">
+							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Platelets (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<canvas id="mv-chart-platelets" height="120"></canvas>
+						</div>
 					</div>
 
 					<!-- Latest readings table — Notes appear as full-width second row -->
@@ -367,6 +391,22 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 								</tr>
 							</thead>
 							<tbody id="mv-kidney-tbody"></tbody>
+						</table>
+					</div>
+
+					<!-- CBC / Anemia panel summary table -->
+					<div class="hw-dash-table-wrap" id="mv-cbc-table-wrap" style="display:none">
+						<h3 class="hw-dash-table-title"><?php esc_html_e( 'CBC / Anemia Panel — Latest Reading', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<table class="wp-list-table widefat fixed striped hw-dash-kidney-table">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Marker', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="mv-cbc-tbody"></tbody>
 						</table>
 					</div>
 
@@ -474,7 +514,10 @@ var MV_COLORS = {
 	sodium_mv:  '#006064',
 	phosphorus: '#bf360c',
 	albumin:    '#37474f',
-	hemoglobin: '#b71c1c'
+	hemoglobin: '#b71c1c',
+	hematocrit: '#c62828',
+	wbc:        '#00838f',
+	platelets:  '#6a1b9a'
 };
 
 /* ── Chart registry (so we can destroy before rebuilding) ────── */
@@ -578,6 +621,19 @@ function extractVitalValue(entry, fieldOrPath){
 		if(fieldOrPath==='phosphorus'&&m.phosphorus)       return m.phosphorus.value||0;
 		if(fieldOrPath==='albumin'&&m.albumin)             return m.albumin.value||0;
 		if(fieldOrPath==='hemoglobin'&&m.hemoglobin)       return m.hemoglobin.value||0;
+		if(fieldOrPath==='hematocrit'&&m.hematocrit)       return m.hematocrit.value||0;
+		if(fieldOrPath==='rbc'&&m.rbc)                     return m.rbc.value||0;
+		if(fieldOrPath==='wbc'&&m.wbc)                     return m.wbc.value||0;
+		if(fieldOrPath==='platelets'&&m.platelets)         return m.platelets.value||0;
+		if(fieldOrPath==='mcv'&&m.mcv)                     return m.mcv.value||0;
+		if(fieldOrPath==='mch'&&m.mch)                     return m.mch.value||0;
+		if(fieldOrPath==='mchc'&&m.mchc)                   return m.mchc.value||0;
+		if(fieldOrPath==='rdw'&&m.rdw)                     return m.rdw.value||0;
+		if(fieldOrPath==='neutrophils_percent'&&m.neutrophils_percent) return m.neutrophils_percent.value||0;
+		if(fieldOrPath==='lymphocytes_percent'&&m.lymphocytes_percent) return m.lymphocytes_percent.value||0;
+		if(fieldOrPath==='monocytes_percent'&&m.monocytes_percent)     return m.monocytes_percent.value||0;
+		if(fieldOrPath==='eosinophils_percent'&&m.eosinophils_percent) return m.eosinophils_percent.value||0;
+		if(fieldOrPath==='basophils_percent'&&m.basophils_percent)     return m.basophils_percent.value||0;
 	}
 	return 0;
 }
@@ -606,6 +662,9 @@ function egfrCkd(v){
 }
 function egfrStatusClass(v){ return v>=60?'status-normal':v>=30?'status-warning':'status-alert'; }
 function hgbStatus(v){ return v>=12?'status-normal':v>=11?'status-warning':'status-alert'; }
+function wbcStatus(v){ return (v>=4&&v<=11)?'status-normal':v<=15?'status-warning':'status-alert'; }
+function pltStatus(v){ return (v>=150&&v<=400)?'status-normal':v>=100?'status-warning':'status-alert'; }
+function hctStatus(v){ return (v>=36&&v<=52)?'status-normal':v>=30?'status-warning':'status-alert'; }
 
 /* ── Medical Vitals rendering ────────────────────────────────── */
 function renderMVDashboard(history){
@@ -645,6 +704,9 @@ function renderMVDashboard(history){
 	var phos  = latestFor('phosphorus');
 	var alb   = latestFor('albumin');
 	var hgb   = latestFor('hemoglobin');
+	var wbc   = latestFor('wbc');
+	var hct   = latestFor('hematocrit');
+	var plt   = latestFor('platelets');
 
 	/* BP KPI */
 	if(sys||dia){
@@ -658,6 +720,8 @@ function renderMVDashboard(history){
 	if(temp){ $('#mv-kpi-temp').text(temp+'°F'); $('#mv-kpi-temp-status').text(temp>=97&&temp<=99?'Normal':'Abnormal').removeClass().addClass('hw-dash-kpi-sub '+tempStatus(temp)); }
 	if(egfr){ $('#mv-kpi-egfr').text(egfr); $('#mv-kpi-egfr-stage').text(egfrCkd(egfr)).removeClass().addClass('hw-dash-kpi-sub '+egfrStatusClass(egfr)); }
 	if(hgb){ $('#mv-kpi-hgb').text(hgb+' g/dL'); $('#mv-kpi-hgb-status').text(hgb>=12?'Normal':hgb>=11?'Low':'Anaemia').removeClass().addClass('hw-dash-kpi-sub '+hgbStatus(hgb)); }
+	if(wbc){ $('#mv-kpi-wbc').text(wbc); $('#mv-kpi-wbc-status').text((wbc>=4&&wbc<=11)?'Normal':wbc<4?'Low':'High').removeClass().addClass('hw-dash-kpi-sub '+wbcStatus(wbc)); }
+	if(plt){ $('#mv-kpi-plt').text(plt); $('#mv-kpi-plt-status').text((plt>=150&&plt<=400)?'Normal':plt<150?'Low':'High').removeClass().addClass('hw-dash-kpi-sub '+pltStatus(plt)); }
 
 	/* Build chart data */
 	var labels    = history.map(function(r){var d=getEntryDate(r);return d?d.slice(5):'';});
@@ -675,6 +739,9 @@ function renderMVDashboard(history){
 	var phosArr   = history.map(function(r){return parseFloat(extractVitalValue(r,'phosphorus'))||null;});
 	var albArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'albumin'))||null;});
 	var hgbArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hemoglobin'))||null;});
+	var wbcArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'wbc'))||null;});
+	var hctArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'hematocrit'))||null;});
+	var pltArr    = history.map(function(r){return parseFloat(extractVitalValue(r,'platelets'))||null;});
 
 	/* BP dual-line */
 	buildMultiLineChart('mv-chart-bp', labels, [
@@ -696,6 +763,9 @@ function renderMVDashboard(history){
 	buildLineChart('mv-chart-phosphorus',labels, phosArr,  MV_COLORS.phosphorus,4.5,   'Normal ≤4.5', null);
 	buildLineChart('mv-chart-albumin',   labels, albArr,   MV_COLORS.albumin,   null,  null, null);
 	buildLineChart('mv-chart-hemoglobin',labels, hgbArr,   MV_COLORS.hemoglobin,12,    'Normal ≥12 g/dL', null);
+	buildLineChart('mv-chart-wbc',        labels, wbcArr,   MV_COLORS.wbc,       null,  null, null);
+	buildLineChart('mv-chart-hematocrit', labels, hctArr,   MV_COLORS.hematocrit,null,  null, null);
+	buildLineChart('mv-chart-platelets',  labels, pltArr,   MV_COLORS.platelets, 150,   'Low <150', null);
 
 	/* Vitals table (last 20 entries, newest first)
 	   Notes are rendered as a full-width second row beneath each data record.
@@ -769,6 +839,53 @@ function renderMVDashboard(history){
 			);
 		});
 		$('#mv-kidney-table-wrap').show();
+	}
+
+	/* CBC / anemia panel table */
+	var rbc  = latestFor('rbc');
+	var mcv  = latestFor('mcv');
+	var mch  = latestFor('mch');
+	var mchc = latestFor('mchc');
+	var rdw  = latestFor('rdw');
+	var neutPct  = latestFor('neutrophils_percent');
+	var lymphPct = latestFor('lymphocytes_percent');
+	var monoPct  = latestFor('monocytes_percent');
+	var eoPct    = latestFor('eosinophils_percent');
+	var bsoPct   = latestFor('basophils_percent');
+
+	var cbcMarkers = [
+		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb)},
+		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct)},
+		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert'},
+		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc)},
+		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt)},
+		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert'},
+		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert'},
+		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert'},
+		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert'},
+		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning'},
+		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning'},
+		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning'},
+		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert'},
+		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning'}
+	];
+	var hasCbc = hgb||hct||rbc||wbc||plt||mcv||mch||mchc||rdw;
+	if(hasCbc){
+		var cTbody=$('#mv-cbc-tbody').empty();
+		$.each(cbcMarkers,function(_,m){
+			if(!m.value) return; // skip absent markers.
+			var displayVal = m.value+' '+m.unit;
+			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
+			cTbody.append(
+				'<tr>'+
+				'<td><strong>'+m.label+'</strong></td>'+
+				'<td>'+displayVal+'</td>'+
+				'<td>'+m.normal+'</td>'+
+				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'</tr>'
+			);
+		});
+		$('#mv-cbc-table-wrap').show();
 	}
 }
 
