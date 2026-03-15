@@ -72,6 +72,9 @@ if ( is_admin() ) {
 
 		// Load Health & Wellness Dashboard page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
+
+		// Load Medical Vitals Dashboard page (separate from Health & Wellness).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-medical-vitals-dashboard-page.php';
 	}
 }
 
