@@ -150,10 +150,6 @@ function rimraf( dir ) {
 			serveUrl,
 			codec,
 			outputLocation: outputFile,
-			chromiumOptions: {
-				disableWebSecurity: true,
-				ignoreCertificateErrors: true,
-			},
 		} );
 
 		const stat = fs.statSync( outputFile );

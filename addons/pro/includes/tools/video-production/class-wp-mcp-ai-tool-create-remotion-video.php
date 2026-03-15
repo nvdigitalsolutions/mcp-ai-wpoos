@@ -705,7 +705,10 @@ JS;
 			$path = $dir . '/' . $item;
 			if ( is_link( $path ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- WP_Filesystem unavailable here.
-				@unlink( $path );
+				if ( ! unlink( $path ) ) {
+					// Log but do not abort — best-effort cleanup of temporary files.
+					error_log( 'WP_MCP_AI: recursive_rmdir could not remove symlink: ' . $path ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
 			} elseif ( is_dir( $path ) ) {
 				$this->recursive_rmdir( $path );
 			} else {
@@ -713,6 +716,8 @@ JS;
 			}
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- WP_Filesystem unavailable here.
-		@rmdir( $dir );
+		if ( ! rmdir( $dir ) ) {
+			error_log( 'WP_MCP_AI: recursive_rmdir could not remove directory: ' . $dir ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
 	}
 }
