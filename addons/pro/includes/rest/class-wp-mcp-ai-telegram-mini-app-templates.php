@@ -1759,7 +1759,10 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
+				/* If the request failed (auth not yet established), keep the Loading… placeholder
+				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds. */
+				'if(!d){return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
 				/* Build member cards (may be empty) then always append "+ New Member" */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
@@ -2800,7 +2803,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
+				/* If the request failed (auth not yet established), keep the Loading… placeholder
+				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds. */
+				'if(!d){return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
 				/* Build member cards (may be empty) then always append "+ New Member" */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
@@ -3049,7 +3055,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
-				'var members=d&&d.result&&d.result.members?d.result.members:[];' .
+				/* Auth failure – keep the Loading… placeholder rather than showing
+				 * 'No members yet' when the list may actually be non-empty. */
+				'if(!d){return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
 				'if(!members.length){' .
 					'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'No members yet. Use "+ Add New Member" below to create one.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 					'return;' .
