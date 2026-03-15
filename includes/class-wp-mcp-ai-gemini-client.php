@@ -1021,10 +1021,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'text'                 => $text,
-					'model'                => $model,
-					'task_type'            => $task_type,
-					'title'                => $title,
+					'text'                  => $text,
+					'model'                 => $model,
+					'task_type'             => $task_type,
+					'title'                 => $title,
 					'output_dimensionality' => $output_dims,
 				);
 
@@ -1246,9 +1246,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'texts'                => $texts,
-					'model'                => $model,
-					'task_type'            => $task_type,
+					'texts'                 => $texts,
+					'model'                 => $model,
+					'task_type'             => $task_type,
 					'output_dimensionality' => $output_dims,
 				);
 
@@ -1290,7 +1290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
 
 			// Resolve shared options once before the loop.
-			$task_type            = '';
+			$task_type             = '';
 			$output_dimensionality = 0;
 
 			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {

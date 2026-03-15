@@ -1082,16 +1082,16 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
-		$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 10;
-		$timeout      = max( 5, min( 15, $timeout ) );
+		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 10;
+		$timeout = max( 5, min( 15, $timeout ) );
 
 		// Build request payload.
 		$payload = array(
-			'query'          => $query,
-			'numResults'     => $max_results,
-			'useAutoprompt'  => true,
-			'type'           => 'auto',
-			'contents'       => array(
+			'query'         => $query,
+			'numResults'    => $max_results,
+			'useAutoprompt' => true,
+			'type'          => 'auto',
+			'contents'      => array(
 				'text' => array(
 					'maxCharacters' => 1000,
 				),
@@ -1107,7 +1107,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'py' => 365,
 			);
 			if ( isset( $days_map[ $options['freshness'] ] ) ) {
-				$days                         = $days_map[ $options['freshness'] ];
+				$days                          = $days_map[ $options['freshness'] ];
 				$payload['startPublishedDate'] = gmdate( 'Y-m-d\TH:i:s\Z', strtotime( "-{$days} days" ) );
 			}
 		}

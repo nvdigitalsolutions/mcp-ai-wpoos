@@ -167,7 +167,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			$nonce      = wp_create_nonce( 'wp_mcp_ai_dismiss_welcome_notice' );
 			?>
 			<div class="notice notice-info is-dismissible wp-mcp-ai-welcome-notice"
-				 data-nonce="<?php echo esc_attr( $nonce ); ?>">
+				data-nonce="<?php echo esc_attr( $nonce ); ?>">
 				<p>
 					<strong><?php esc_html_e( '👋 Welcome to NV oOS!', 'mcp-ai-wpoos' ); ?></strong>
 					<?php esc_html_e( 'Complete the quick setup wizard to configure your first AI assistant in under 2 minutes.', 'mcp-ai-wpoos' ); ?>
@@ -312,8 +312,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				</nav>
 
 				<a href="<?php echo $skip_url; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already escaped. ?>"
-				   class="wp-mcp-ai-wizard-skip"
-				   onclick="return confirm('<?php esc_attr_e( 'Skip the setup wizard? You can always return via the "Getting Started" menu.', 'mcp-ai-wpoos' ); ?>')">
+					class="wp-mcp-ai-wizard-skip"
+					onclick="return confirm('<?php esc_attr_e( 'Skip the setup wizard? You can always return via the "Getting Started" menu.', 'mcp-ai-wpoos' ); ?>')">
 					<?php esc_html_e( 'Skip Setup', 'mcp-ai-wpoos' ); ?> &rsaquo;
 				</a>
 			</div>
@@ -408,11 +408,11 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 * Step 2: AI Provider connection.
 		 */
 		private function render_step_provider() {
-			$settings    = get_option( 'wp_mcp_ai_settings', array() );
-			$openai_key  = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
-			$gemini_key  = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
-			$ollama_url  = ! empty( $settings['ollama_url'] ) ? esc_url( $settings['ollama_url'] ) : 'http://localhost:11434';
-			$nonce       = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+			$settings   = get_option( 'wp_mcp_ai_settings', array() );
+			$openai_key = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
+			$gemini_key = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
+			$ollama_url = ! empty( $settings['ollama_url'] ) ? esc_url( $settings['ollama_url'] ) : 'http://localhost:11434';
+			$nonce      = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
 			?>
 			<div class="wp-mcp-ai-wizard-step-content">
 				<h2><?php esc_html_e( 'Connect Your AI Provider', 'mcp-ai-wpoos' ); ?></h2>
@@ -423,14 +423,14 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<div class="wp-mcp-ai-wizard-provider-tabs">
 					<button type="button" class="wp-mcp-ai-provider-tab is-active" data-provider="openai">
 						<img src="<?php echo esc_url( WP_MCP_AI_URL . 'assets/images/openai-logo.svg' ); ?>"
-							 onerror="this.style.display='none'"
-							 alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
+							onerror="this.style.display='none'"
+							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
 						OpenAI
 					</button>
 					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="gemini">
 						<img src="<?php echo esc_url( WP_MCP_AI_URL . 'assets/images/gemini-logo.svg' ); ?>"
-							 onerror="this.style.display='none'"
-							 alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
+							onerror="this.style.display='none'"
+							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
 						Google Gemini
 					</button>
 					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="ollama">
@@ -450,12 +450,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							<td>
 								<div style="display:flex;gap:8px;align-items:center;">
 									<input type="password"
-										   id="wp_mcp_ai_openai_key"
-										   name="wp_mcp_ai_openai_key"
-										   class="regular-text"
-										   value="<?php echo esc_attr( $openai_key ); ?>"
-										   placeholder="sk-proj-…"
-										   autocomplete="off">
+											id="wp_mcp_ai_openai_key"
+											name="wp_mcp_ai_openai_key"
+											class="regular-text"
+											value="<?php echo esc_attr( $openai_key ); ?>"
+											placeholder="sk-proj-…"
+											autocomplete="off">
 									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_openai_key">
 										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
 									</button>
@@ -493,12 +493,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							<td>
 								<div style="display:flex;gap:8px;align-items:center;">
 									<input type="password"
-										   id="wp_mcp_ai_gemini_key"
-										   name="wp_mcp_ai_gemini_key"
-										   class="regular-text"
-										   value="<?php echo esc_attr( $gemini_key ); ?>"
-										   placeholder="AIza…"
-										   autocomplete="off">
+											id="wp_mcp_ai_gemini_key"
+											name="wp_mcp_ai_gemini_key"
+											class="regular-text"
+											value="<?php echo esc_attr( $gemini_key ); ?>"
+											placeholder="AIza…"
+											autocomplete="off">
 									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_gemini_key">
 										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
 									</button>
@@ -535,10 +535,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							</th>
 							<td>
 								<input type="url"
-									   id="wp_mcp_ai_ollama_url"
-									   name="wp_mcp_ai_ollama_url"
-									   class="regular-text"
-									   value="<?php echo esc_attr( $ollama_url ); ?>">
+										id="wp_mcp_ai_ollama_url"
+										name="wp_mcp_ai_ollama_url"
+										class="regular-text"
+										value="<?php echo esc_attr( $ollama_url ); ?>">
 								<p class="description">
 									<?php esc_html_e( 'The URL of your running Ollama instance. Default: http://localhost:11434', 'mcp-ai-wpoos' ); ?>
 								</p>
@@ -666,10 +666,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<?php foreach ( $presets as $key => $preset ) : ?>
 						<label class="wp-mcp-ai-preset-card <?php echo in_array( $key, $saved_selection, true ) ? 'is-selected' : ''; ?>">
 							<input type="checkbox"
-								   name="wp_mcp_ai_presets[]"
-								   value="<?php echo esc_attr( $key ); ?>"
-								   class="wp-mcp-ai-preset-checkbox"
-								   <?php checked( in_array( $key, $saved_selection, true ) ); ?>>
+									name="wp_mcp_ai_presets[]"
+									value="<?php echo esc_attr( $key ); ?>"
+									class="wp-mcp-ai-preset-checkbox"
+									<?php checked( in_array( $key, $saved_selection, true ) ); ?>>
 							<span class="wp-mcp-ai-preset-icon"><?php echo esc_html( $preset['icon'] ); ?></span>
 							<span class="wp-mcp-ai-preset-title"><?php echo esc_html( $preset['label'] ); ?></span>
 							<span class="wp-mcp-ai-preset-desc"><?php echo esc_html( $preset['description'] ); ?></span>
@@ -867,10 +867,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 * Save the provider API key from step 2.
 		 */
 		private function handle_save_provider_step() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
 			$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
 			// API keys are typically alphanumeric with hyphens, dashes, and underscores.
 			// Using sanitize_text_field + wp_unslash is the standard WordPress approach.
-			$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 			$valid_providers = array( 'openai', 'gemini', 'ollama' );
 			if ( ! in_array( $provider, $valid_providers, true ) ) {
@@ -891,7 +893,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			} elseif ( 'ollama' === $provider ) {
 				// For Ollama, save the URL rather than an API key.
 				// Unslash the extra array first, then apply esc_url_raw directly to the URL value.
-				$extra_raw  = isset( $_POST['extra'] ) && is_array( $_POST['extra'] ) ? wp_unslash( $_POST['extra'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below with esc_url_raw.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in ajax_save_step(); array sanitized below with esc_url_raw.
+				$extra_raw  = isset( $_POST['extra'] ) && is_array( $_POST['extra'] ) ? wp_unslash( $_POST['extra'] ) : array();
 				$ollama_url = ! empty( $extra_raw['ollama_url'] ) ? esc_url_raw( wp_unslash( (string) $extra_raw['ollama_url'] ) ) : '';
 				if ( $ollama_url ) {
 					$settings['ollama_url'] = $ollama_url;
@@ -907,7 +910,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		private function handle_save_presets_step() {
 			// Unslash the raw POST data first, then validate the structure, then sanitize each key.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below with array_map+sanitize_key.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in ajax_save_step(); array sanitized below with array_map+sanitize_key.
 			$post_presets = isset( $_POST['presets'] ) ? wp_unslash( $_POST['presets'] ) : array();
 			$raw_presets  = is_array( $post_presets ) ? $post_presets : array();
 			$presets      = array_map( 'sanitize_key', $raw_presets );

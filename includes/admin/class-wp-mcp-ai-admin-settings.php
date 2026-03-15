@@ -2401,7 +2401,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['gemini_thinking_budget_tokens'] ) ) {
-				$budget = absint( $settings['gemini_thinking_budget_tokens'] );
+				$budget                                 = absint( $settings['gemini_thinking_budget_tokens'] );
 				$clean['gemini_thinking_budget_tokens'] = min( 24576, $budget );
 			}
 
@@ -3891,11 +3891,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings  = self::get_settings();
 			$current   = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 			$providers = array(
-				'duckduckgo'  => __( 'DuckDuckGo Instant Answer API (free, no key)', 'mcp-ai-wpoos' ),
-				'brave'       => __( 'Brave Search API (requires API key)', 'mcp-ai-wpoos' ),
-				'tavily'      => __( 'Tavily (AI-optimised, requires API key)', 'mcp-ai-wpoos' ),
-				'exa'         => __( 'Exa AI (neural search, requires API key)', 'mcp-ai-wpoos' ),
-				'perplexity'  => __( 'Perplexity Sonar (AI answers + citations, requires API key)', 'mcp-ai-wpoos' ),
+				'duckduckgo' => __( 'DuckDuckGo Instant Answer API (free, no key)', 'mcp-ai-wpoos' ),
+				'brave'      => __( 'Brave Search API (requires API key)', 'mcp-ai-wpoos' ),
+				'tavily'     => __( 'Tavily (AI-optimised, requires API key)', 'mcp-ai-wpoos' ),
+				'exa'        => __( 'Exa AI (neural search, requires API key)', 'mcp-ai-wpoos' ),
+				'perplexity' => __( 'Perplexity Sonar (AI answers + citations, requires API key)', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
@@ -3934,9 +3934,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						__( 'Required when Exa AI is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">exa.ai</a>.', 'mcp-ai-wpoos' ),
 						array(
 							'a' => array(
-								'href' => array(),
+								'href'   => array(),
 								'target' => array(),
-								'rel' => array(),
+								'rel'    => array(),
 							),
 						)
 					),
@@ -3963,9 +3963,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						__( 'Required when Perplexity Sonar is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">perplexity.ai</a>.', 'mcp-ai-wpoos' ),
 						array(
 							'a' => array(
-								'href' => array(),
+								'href'   => array(),
 								'target' => array(),
-								'rel' => array(),
+								'rel'    => array(),
 							),
 						)
 					),

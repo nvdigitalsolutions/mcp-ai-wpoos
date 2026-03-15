@@ -1691,7 +1691,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$installed_count  = count( $installed_skills );
 
 			// Count bundled skills available (base + pro).
-			$bundled_count = 0;
+			$bundled_count        = 0;
 			$bundled_dirs_to_scan = array( $skill_registry->get_bundled_skills_dir() );
 
 			// Include pro addon bundled skills when the pro plugin is active.
