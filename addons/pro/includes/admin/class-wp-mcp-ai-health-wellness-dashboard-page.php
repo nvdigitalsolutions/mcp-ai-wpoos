@@ -29,10 +29,20 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 	const PAGE_SLUG = 'health-wellness-dashboard';
 
 	/**
+	 * Parent menu slug for the Health & Wellness CPT.
+	 *
+	 * @var string
+	 */
+	const PARENT_SLUG = 'edit.php?post_type=mcp_ai_member';
+
+	/**
 	 * Initialize the page (hooks).
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 24 );
+		add_action( 'admin_menu', array( __CLASS__, 'set_as_landing_page' ), 9999 );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_redirect_to_dashboard' ) );
+		add_filter( 'submenu_file', array( __CLASS__, 'fix_submenu_highlight' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_hw_dashboard_get_health_metrics', array( __CLASS__, 'ajax_get_health_metrics' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_hw_dashboard_get_vital_signs', array( __CLASS__, 'ajax_get_vital_signs' ) );
@@ -47,13 +57,126 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_member',
+			self::PARENT_SLUG,
 			__( 'Health & Wellness Dashboard', 'mcp-ai-wpoos-pro' ),
 			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
 		);
+	}
+
+	/**
+	 * Reorder the Health & Wellness submenu so Dashboard is first and Members is second.
+	 *
+	 * Runs at admin_menu priority 9999, after all submenus have been registered.
+	 * The "All Members" entry URL is updated to include a bypass query param so
+	 * that the admin_init redirect does not intercept it.
+	 */
+	public static function set_as_landing_page() {
+		global $submenu;
+
+		$parent = self::PARENT_SLUG;
+
+		if ( empty( $submenu[ $parent ] ) ) {
+			return;
+		}
+
+		$dashboard_item = null;
+		$members_item   = null;
+		$other_items    = array();
+
+		foreach ( $submenu[ $parent ] as $item ) {
+			if ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+				// Dashboard entry — will go first.
+				$dashboard_item = $item;
+			} elseif ( isset( $item[2] ) && $parent === $item[2] ) {
+				// Auto-generated "All Members" entry — add bypass param so it is
+				// not caught by the admin_init redirect, then place it second.
+				$item[2]      = add_query_arg( 'list', '1', $parent );
+				$members_item = $item;
+			} else {
+				$other_items[] = $item;
+			}
+		}
+
+		// Rebuild: Dashboard → All Members → everything else (Add New, Consolidate, etc.).
+		$new_order = array();
+		if ( null !== $dashboard_item ) {
+			$new_order[] = $dashboard_item;
+		}
+		if ( null !== $members_item ) {
+			$new_order[] = $members_item;
+		}
+		foreach ( $other_items as $item ) {
+			$new_order[] = $item;
+		}
+
+		$submenu[ $parent ] = $new_order;
+	}
+
+	/**
+	 * Redirect the bare Health & Wellness members list to the Dashboard.
+	 *
+	 * Fires on admin_init. Only redirects when accessing
+	 * edit.php?post_type=mcp_ai_member with no additional query parameters,
+	 * which is the URL WordPress uses for the top-level menu item click.
+	 * Any extra params (list, paged, s, action, etc.) bypass the redirect so
+	 * that the "All Members" submenu and post-action redirects still work.
+	 */
+	public static function maybe_redirect_to_dashboard() {
+		global $pagenow;
+
+		if ( 'edit.php' !== $pagenow ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		if ( 'mcp_ai_member' !== $post_type ) {
+			return;
+		}
+
+		// Bypass if any extra query param beyond post_type is present.
+		// This covers pagination (paged), search (s), bulk actions (action),
+		// sorting (orderby/order), status filters (post_status), our own
+		// bypass marker (list), and any other WordPress or plugin-added params.
+		foreach ( array_keys( $_GET ) as $key ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( 'post_type' !== $key ) {
+				return;
+			}
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		wp_safe_redirect( admin_url( self::PARENT_SLUG . '&page=' . self::PAGE_SLUG ) );
+		exit;
+	}
+
+	/**
+	 * Fix the active-state highlight for the "All Members" submenu entry.
+	 *
+	 * When on the members list screen (edit.php?post_type=mcp_ai_member&list=1),
+	 * WordPress sets $submenu_file to the bare CPT list URL. Since we modified
+	 * the "All Members" entry to include &list=1, we adjust the submenu_file to
+	 * match so WordPress highlights the correct menu item.
+	 *
+	 * @param string $submenu_file Current submenu file.
+	 * @param string $parent_file  Current parent file.
+	 * @return string Adjusted submenu file.
+	 */
+	public static function fix_submenu_highlight( $submenu_file, $parent_file ) {
+		// Only relevant under the Health & Wellness parent menu.
+		if ( self::PARENT_SLUG !== $parent_file ) {
+			return $submenu_file;
+		}
+		$screen = get_current_screen();
+		if ( $screen && 'edit' === $screen->base && 'mcp_ai_member' === $screen->post_type ) {
+			return add_query_arg( 'list', '1', self::PARENT_SLUG );
+		}
+		return $submenu_file;
 	}
 
 	/**
