@@ -42,6 +42,16 @@ composer.phar
 # Ignore ZIP files everywhere (build artifacts should not be committed)
 *.zip
 
+# Allow build distribution ZIPs to be committed
+!/build/mcp-ai-wpoos-base-*.zip
+!/build/mcp-ai-wpoos-pro-*.zip
+!/build/mcp-ai-wpoos-*.zip
+!/build/mcp-ai-wpoos-core-*.zip
+!/build/nvdigital-open-operator-system-oos-*.zip
+!/build/nvdigital-open-operator-system-oos-pro-*.zip
+!/build/nvdigital-open-operator-system-oos-complete-*.zip
+!/build/nvdigital-open-operator-system-oos-core-*.zip
+
 # Ignore all vendor by default
 /vendor/*
 
