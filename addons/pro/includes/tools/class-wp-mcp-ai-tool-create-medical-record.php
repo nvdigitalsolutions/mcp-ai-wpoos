@@ -201,7 +201,6 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		$lab_unit     = isset( $arguments['lab_unit'] ) ? sanitize_text_field( $arguments['lab_unit'] ) : '';
 		$lab_ref      = isset( $arguments['lab_reference_range'] ) ? sanitize_text_field( $arguments['lab_reference_range'] ) : '';
 		$lab_abnormal = ! empty( $arguments['lab_abnormal'] ) ? 1 : 0;
-
 		// Validate date.
 		if ( $date && ! $this->validate_date( $date ) ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );

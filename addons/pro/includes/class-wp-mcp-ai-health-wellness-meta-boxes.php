@@ -368,10 +368,9 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 			array(
 				'post_type'      => 'mcp_ai_member',
 				'post_status'    => 'publish',
-				'posts_per_page' => 200,
+				'posts_per_page' => 500,
 				'orderby'        => 'title',
 				'order'          => 'ASC',
-				'fields'         => array( 'ID', 'post_title' ),
 				'no_found_rows'  => true,
 			)
 		);
@@ -855,7 +854,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 				</tr>
 				<?php
 				self::select_field( __( 'Allergy Type', 'mcp-ai-wpoos-pro' ), '_allergy_type', $allergy_type, self::ALLERGY_TYPES, true );
-				self::select_field( __( 'Severity', 'mcp-ai-wpoos-pro' ), '_allergy_severity_meta', $severity, $severity_options, true );
+				self::select_field( __( 'Severity', 'mcp-ai-wpoos-pro' ), 'hw_allergy_severity', $severity, $severity_options, true );
 				self::select_field( __( 'Onset Type', 'mcp-ai-wpoos-pro' ), '_allergy_onset_type', $onset_type, self::ONSET_TYPES );
 				self::textarea_field( __( 'Reactions / Symptoms', 'mcp-ai-wpoos-pro' ), '_allergy_reactions', $reactions, 3, __( 'Describe typical reactions', 'mcp-ai-wpoos-pro' ) );
 				self::textarea_field( __( 'Treatment / Management', 'mcp-ai-wpoos-pro' ), '_allergy_treatment', $treatment, 3, __( 'e.g. EpiPen, antihistamine, avoid exposure', 'mcp-ai-wpoos-pro' ) );
@@ -933,6 +932,9 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @param string $sanitize Sanitization function name (default: sanitize_text_field).
 	 */
 	private static function save_text( $post_id, $key, $sanitize = 'sanitize_text_field' ) {
+		if ( ! is_callable( $sanitize ) ) {
+			$sanitize = 'sanitize_text_field';
+		}
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
 		$value = isset( $_POST[ $key ] ) ? call_user_func( $sanitize, wp_unslash( $_POST[ $key ] ) ) : '';
 		update_post_meta( $post_id, $key, $value );
@@ -1036,6 +1038,10 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 		$raw_dt = isset( $_POST['_checkup_datetime'] ) ? sanitize_text_field( wp_unslash( $_POST['_checkup_datetime'] ) ) : '';
 		if ( $raw_dt ) {
 			$raw_dt = str_replace( 'T', ' ', $raw_dt );
+			// Validate format: YYYY-MM-DD HH:MM or YYYY-MM-DD HH:MM:SS.
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/', $raw_dt ) ) {
+				$raw_dt = '';
+			}
 		}
 		update_post_meta( $post_id, '_checkup_datetime', $raw_dt );
 
@@ -1095,7 +1101,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 
 		// Sync severity from admin form → meta and taxonomy.
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$severity = isset( $_POST['_allergy_severity_meta'] ) ? sanitize_key( $_POST['_allergy_severity_meta'] ) : '';
+		$severity = isset( $_POST['hw_allergy_severity'] ) ? sanitize_key( $_POST['hw_allergy_severity'] ) : '';
 		if ( $severity ) {
 			update_post_meta( $post_id, '_allergy_severity', $severity );
 			wp_set_object_terms( $post_id, $severity, 'mcp_ai_allergy_severity' );

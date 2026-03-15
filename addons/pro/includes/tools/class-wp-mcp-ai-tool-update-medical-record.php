@@ -159,7 +159,7 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		$lab_value = isset( $arguments['lab_value'] ) ? sanitize_text_field( $arguments['lab_value'] ) : '';
 		$lab_unit  = isset( $arguments['lab_unit'] ) ? sanitize_text_field( $arguments['lab_unit'] ) : '';
 		$lab_ref   = isset( $arguments['lab_reference_range'] ) ? sanitize_text_field( $arguments['lab_reference_range'] ) : '';
-		$lab_abnormal = isset( $arguments['lab_abnormal'] ) ? (int) (bool) $arguments['lab_abnormal'] : null;
+		$lab_abnormal = isset( $arguments['lab_abnormal'] ) ? ( $arguments['lab_abnormal'] ? 1 : 0 ) : null;
 
 		// Validate date if provided.
 		if ( $date && ! $this->validate_date( $date ) ) {
