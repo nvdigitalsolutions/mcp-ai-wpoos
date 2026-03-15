@@ -81,12 +81,19 @@ echo "=========================================="
 echo "✅ All 8 ZIPs rebuilt successfully!"
 echo "=========================================="
 echo ""
+
+# Detect core version separately (core/mcp-ai-wpoos-core.php may differ from main version)
+CORE_VERSION=$(grep -E "^\s*\*\s*Version:" "$ROOT_DIR/core/mcp-ai-wpoos-core.php" 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+if [ -z "$CORE_VERSION" ]; then
+    CORE_VERSION="$VERSION"
+fi
+
 echo "📦 Original packages (repository text domains):"
 for ZIP in \
     "mcp-ai-wpoos-base-${VERSION}.zip" \
     "mcp-ai-wpoos-pro-${VERSION}.zip" \
     "mcp-ai-wpoos-${VERSION}.zip" \
-    "mcp-ai-wpoos-core-${VERSION}.zip"; do
+    "mcp-ai-wpoos-core-${CORE_VERSION}.zip"; do
     if [ -f "$ROOT_DIR/build/$ZIP" ]; then
         SIZE=$(du -h "$ROOT_DIR/build/$ZIP" | cut -f1)
         echo "   build/$ZIP ($SIZE)"
@@ -98,7 +105,7 @@ for ZIP in \
     "nvdigital-open-operator-system-oos-${VERSION}.zip" \
     "nvdigital-open-operator-system-oos-pro-${VERSION}.zip" \
     "nvdigital-open-operator-system-oos-complete-${VERSION}.zip" \
-    "nvdigital-open-operator-system-oos-core-${VERSION}.zip"; do
+    "nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip"; do
     if [ -f "$ROOT_DIR/build/$ZIP" ]; then
         SIZE=$(du -h "$ROOT_DIR/build/$ZIP" | cut -f1)
         echo "   build/$ZIP ($SIZE)"
