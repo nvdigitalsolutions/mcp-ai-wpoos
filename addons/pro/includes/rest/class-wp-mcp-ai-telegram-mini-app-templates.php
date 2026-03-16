@@ -1765,7 +1765,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(p)p.style.display="none";' .
 		'}' .
 
-		'function hwFetchMembers(){' .
+		'window.hwFetchMembers=function(){' .
 			'var list=document.getElementById("tma-hw-member-list");' .
 			'if(!list)return;' .
 			/* Shared error markup — used in both the failed-response and catch paths */
@@ -1802,7 +1802,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'list.innerHTML=cards+newCard;' .
 			'})' .
 			'.catch(function(){if(list)list.innerHTML=hwErrHtml;});' .
-		'}' .
+		'};' .
 
 		'window.hwSelectMember=function(id,name){' .
 			'MEMBER_ID=id;MEMBER_NAME=name;' .
@@ -2842,7 +2842,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(p)p.style.display="none";' .
 		'}' .
 
-		'function mvFetchMembers(){' .
+		'window.mvFetchMembers=function(){' .
 			'var list=document.getElementById("tma-mv-member-list");' .
 			'if(!list)return;' .
 			/* Shared error markup — used in both the failed-response and catch paths */
@@ -2879,7 +2879,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'list.innerHTML=cards+newCard;' .
 			'})' .
 			'.catch(function(){if(list)list.innerHTML=mvErrHtml;});' .
-		'}' .
+		'};' .
 
 		'window.mvSelectMember=function(id,name){' .
 			'MEMBER_ID=id;MEMBER_NAME=name;' .
