@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Dashboard Chart Test</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- jQuery is provided by the WordPress admin environment.
+         For standalone testing outside WordPress, supply a local copy of jQuery. -->
+    <script>
+        if (typeof jQuery === 'undefined') {
+            document.write('<p style="color:red;font-weight:bold;padding:20px;">Error: jQuery is required. Open this page through the WordPress admin environment, or provide jQuery locally.</p>');
+        }
+    </script>
     <script src="../js/vendor/chart.min.js"></script>
     <script src="../js/pro-dashboard.js"></script>
     <style>

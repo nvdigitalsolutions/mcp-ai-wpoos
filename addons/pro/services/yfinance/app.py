@@ -24,6 +24,7 @@ import os
 import json
 import logging
 import time
+import hashlib
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
@@ -109,8 +110,8 @@ class SimpleCache:
         self.ttl = timedelta(minutes=ttl_minutes)
     
     def _get_cache_path(self, key: str) -> str:
-        """Generate cache file path."""
-        safe_key = key.replace('/', '_').replace('\\', '_')
+        """Generate cache file path using a SHA-256 hash to avoid path traversal."""
+        safe_key = hashlib.sha256(key.encode('utf-8')).hexdigest()
         return os.path.join(self.cache_dir, f"{safe_key}.json")
     
     def get(self, key: str) -> Optional[Any]:
@@ -266,7 +267,7 @@ def get_ticker_info(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch ticker information. Please try again later.'}), 500
 
 
 @app.route('/price/<symbol>', methods=['GET'])
@@ -328,7 +329,7 @@ def get_current_price(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching price for {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch price data. Please try again later.'}), 500
 
 
 @app.route('/prices', methods=['POST'])
@@ -408,7 +409,7 @@ def get_multiple_prices():
         
     except Exception as e:
         logger.error(f"Error fetching batch prices: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch batch price data. Please try again later.'}), 500
 
 
 @app.route('/history/<symbol>', methods=['GET'])
@@ -469,7 +470,7 @@ def get_price_history(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching history for {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch price history. Please try again later.'}), 500
 
 
 @app.route('/search', methods=['GET'])
@@ -541,7 +542,7 @@ def clear_cache():
         })
     except Exception as e:
         logger.error(f"Error clearing cache: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to clear cache. Please try again later.'}), 500
 
 
 @app.errorhandler(404)

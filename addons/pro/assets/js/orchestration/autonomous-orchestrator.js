@@ -315,7 +315,9 @@ class AutonomousOrchestrator {
 	 * @return {string} Session ID
 	 */
 	generateSessionId() {
-		return `session_${Date.now()}_${Math.random().toString( 36 ).substr( 2, 9 )}`;
+		const array = new Uint8Array( 12 );
+		crypto.getRandomValues( array );
+		return 'session_' + Date.now() + '_' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 	}
 
 	/**
