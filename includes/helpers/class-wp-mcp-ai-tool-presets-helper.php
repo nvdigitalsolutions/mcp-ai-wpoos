@@ -34,7 +34,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	/**
 	 * Get the tool presets configuration.
 	 *
-	 * Updated 2026-03-16 to include all 760 current tools organized by:
+	 * Updated 2026-03-16 to include all 760+ current tools organized by:
 	 * - Core functionality (AI/ML, Media, Content, etc.)
 	 * - Profession categories (Healthcare, Legal, Education, etc.)
 	 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
