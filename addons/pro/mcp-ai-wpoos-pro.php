@@ -713,6 +713,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
 			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
+			// Webpage Screenshot tool — always available, Playwright + mshots fallback.
+			'WP_MCP_AI_Tool_Capture_Webpage_Screenshot'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-capture-webpage-screenshot.php',
 		);
 
 		// Add CRM Toolkit tools if enabled.

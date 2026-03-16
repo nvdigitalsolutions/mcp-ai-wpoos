@@ -834,6 +834,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'vision_object_localization'         => 'external-tools',
 				'schedule_notify_sms'                => 'external-tools',
 				'web_search'                         => 'external-tools',
+				'web_browser'                        => 'external-tools',
+				'capture_webpage_screenshot'         => 'external-tools',
 				'search_gmail'                       => 'external-tools',
 				'search_drive'                       => 'external-tools',
 				'crawl4ai_price_lookup'              => 'external-tools',
