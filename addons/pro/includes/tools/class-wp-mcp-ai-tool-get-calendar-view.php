@@ -84,6 +84,24 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'event_management',
+			'post_type'             => 'mcp_ai_event',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'event_manager', 'project_manager' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array(
 			'pro',

@@ -90,6 +90,24 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'media_content',
+			'post_type'             => 'mcp_ai_media_tpl',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'content_creator', 'designer', 'marketer' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.
