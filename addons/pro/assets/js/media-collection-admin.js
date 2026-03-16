@@ -29,7 +29,15 @@
 	 * @return {string} The original URL if safe, otherwise '#'.
 	 */
 	function safeUrl( url ) {
-		return /^https?:\/\//i.test( String( url ) ) ? escapeHtml( url ) : '#';
+		const str = String( url );
+		if ( ! /^https?:\/\//i.test( str ) ) {
+			return '#';
+		}
+		return str
+			.replace( /&/g, '&amp;' )
+			.replace( /"/g, '&quot;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' );
 	}
 
 	const MediaCollectionAdmin = {
