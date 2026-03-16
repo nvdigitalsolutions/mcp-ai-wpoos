@@ -382,6 +382,11 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		// is therefore only enforced for channel/group messages.
 		$is_dm = ( 'im' === $channel_type || 'mpim' === $channel_type );
 
+		// For channel/group messages use the channel_id as the inbox conversation thread.
+		// For DMs keep the user_id so each DM conversation is per-user.
+		$inbox_contact_id = $is_dm ? $user_id : $channel_id;
+		$inbox_conv_type  = $is_dm ? 'dm' : 'channel';
+
 		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention && ! $is_dm ) {
 			$has_slack_bot_mention = '' !== $bot_user_id && false !== strpos( $text, '<@' . $bot_user_id . '>' );
 			if ( ! $has_slack_bot_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
@@ -422,8 +427,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'slack',
-				$user_id,
-				array( 'display_name' => $user_id, 'connection_id' => $connection_id )
+				$inbox_contact_id,
+				array( 'display_name' => $is_dm ? $user_id : ( '#' . $channel_id ), 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -435,7 +440,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
 					'channel'            => 'slack',
-					'channel_contact_id' => $user_id,
+					'channel_contact_id' => $inbox_contact_id,
 					'direction'          => 'inbound',
 					'message_id'         => isset( $event['event_ts'] ) ? sanitize_text_field( $event['event_ts'] ) : '',
 					'message_type'       => 'text',
@@ -446,6 +451,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 					'timestamp'          => '' !== $message_ts ? (int) (float) $message_ts : time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+					'conversation_type'  => $inbox_conv_type,
 				)
 			);
 		}
@@ -550,7 +556,9 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		// Thread-aware history: when the message is inside a Slack thread, scope
 		// the history to that thread so each thread maintains independent context.
 		// DMs and top-level channel messages use the channel-level key (no thread_ts).
-		$is_dm       = ( 'im' === $channel_type || 'mpim' === $channel_type );
+		$is_dm            = ( 'im' === $channel_type || 'mpim' === $channel_type );
+		$inbox_contact_id = $is_dm ? $user_id : $channel_id;
+		$inbox_conv_type  = $is_dm ? 'dm' : 'channel';
 		$history_key = $this->get_conversation_history_key(
 			$user_id,
 			$channel_id,
@@ -811,7 +819,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
 					'channel'            => 'slack',
-					'channel_contact_id' => $user_id,
+					'channel_contact_id' => $inbox_contact_id,
 					'direction'          => 'outbound',
 					'message_type'       => 'text',
 					'content'            => $content,
@@ -821,13 +829,14 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => $inbox_conv_type,
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'slack', $user_id, array( 'connection_id' => $connection_id ) );
+			$sl_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'slack', $inbox_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type ) );
 			if ( $sl_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $sl_contact_row_id );
 			}

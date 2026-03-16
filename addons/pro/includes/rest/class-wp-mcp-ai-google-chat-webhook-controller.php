@@ -684,6 +684,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$space_type  = $this->get_space_type( $payload );
 		$sender_name = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
 		$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
+		$gc_conv_type = ( 'DIRECT_MESSAGE' === $space_type ) ? 'dm' : ( ( 'ROOM' === $space_type || 'SPACE' === $space_type ) ? 'channel' : 'group' );
 
 		if ( '' === $space_name ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
@@ -792,7 +793,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'google_chat',
 				$sender_name,
-				array( 'display_name' => $sender_name, 'connection_id' => $connection_id )
+				array( 'display_name' => $sender_name, 'connection_id' => $connection_id, 'conversation_type' => $gc_conv_type )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -815,6 +816,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+					'conversation_type'  => $gc_conv_type,
 				)
 			);
 		}
@@ -828,7 +830,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$connection_id,
 			$thread_name,
 			$assigned_assistant_ids,
-			$automation_rules
+			$automation_rules,
+			$space_type
 		);
 
 		// Return empty response — Google Chat accepts 200 with an empty JSON body
@@ -852,8 +855,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * @param string $thread_name            Thread resource name (may be empty for new threads).
 	 * @param int[]  $assigned_assistant_ids Assistant post IDs assigned to this connection.
 	 * @param array  $automation_rules       Global chat channels automation rule settings.
+	 * @param string $space_type             Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
 	 */
-	protected function maybe_auto_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, array $automation_rules ) {
+	protected function maybe_auto_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, array $automation_rules, $space_type = '' ) {
 		// Nothing to do for empty messages — dispatch_google_chat_ai_reply() would
 		// reject them too, but checking early avoids unnecessary keyword iterations.
 		if ( '' === $message_text ) {
@@ -929,7 +933,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$space_name,
 			$connection_id,
 			$thread_name,
-			$assigned_assistant_ids
+			$assigned_assistant_ids,
+			$space_type
 		);
 	}
 
@@ -948,8 +953,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * @param string $connection_id          Remote connection ID.
 	 * @param string $thread_name            Thread resource name (may be empty).
 	 * @param int[]  $assigned_assistant_ids Assistant post IDs for this connection.
+	 * @param string $space_type             Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
 	 */
-	protected function dispatch_google_chat_ai_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids ) {
+	protected function dispatch_google_chat_ai_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, $space_type = '' ) {
 		if ( '' === $message_text || '' === $space_name || '' === $connection_id || empty( $assigned_assistant_ids ) ) {
 			return;
 		}
@@ -962,6 +968,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'sender_name'   => $sender_name,
 				'connection_id' => $connection_id,
 				'thread_name'   => $thread_name,
+				'space_type'    => $space_type,
 			),
 		);
 
@@ -1282,6 +1289,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$sender_name   = isset( $args['sender_name'] ) ? sanitize_text_field( (string) $args['sender_name'] ) : '';
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		$thread_name   = isset( $args['thread_name'] ) ? sanitize_text_field( (string) $args['thread_name'] ) : '';
+		$space_type    = isset( $args['space_type'] ) ? sanitize_text_field( (string) $args['space_type'] ) : '';
+		$gc_conv_type  = ( 'DIRECT_MESSAGE' === $space_type ) ? 'dm' : ( ( 'ROOM' === $space_type || 'SPACE' === $space_type ) ? 'channel' : 'group' );
 
 		if ( ! $assistant_id || '' === $message_text || '' === $space_name || '' === $connection_id ) {
 			return;
@@ -1571,13 +1580,14 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => $gc_conv_type,
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name, array( 'connection_id' => $connection_id ) );
+			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name, array( 'connection_id' => $connection_id, 'conversation_type' => $gc_conv_type ) );
 			if ( $gc_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $gc_contact_row_id );
 			}

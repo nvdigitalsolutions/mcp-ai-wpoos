@@ -56,24 +56,28 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'get_conversations' ),
 				'permission_callback' => array( $this, 'admin_permissions_check' ),
 				'args'                => array(
-					'channel'   => array(
+					'channel'           => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'status'    => array(
+					'status'            => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'search'    => array(
+					'conversation_type' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'search'            => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'page'      => array(
+					'page'              => array(
 						'type'    => 'integer',
 						'default' => 1,
 						'minimum' => 1,
 					),
-					'per_page'  => array(
+					'per_page'          => array(
 						'type'    => 'integer',
 						'default' => 25,
 						'minimum' => 1,
@@ -281,15 +285,16 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_conversations( $request ) {
-		$page       = max( 1, (int) $request->get_param( 'page' ) );
-		$per_page   = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
-		$channel    = $request->get_param( 'channel' );
-		$crm_status = $request->get_param( 'status' );
-		$search     = $request->get_param( 'search' );
+		$page              = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page          = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
+		$channel           = $request->get_param( 'channel' );
+		$crm_status        = $request->get_param( 'status' );
+		$search            = $request->get_param( 'search' );
+		$conversation_type = $request->get_param( 'conversation_type' );
 
 		// CCT path (preferred when JetEngine table exists).
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
-			return $this->get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search );
+			return $this->get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search, $conversation_type );
 		}
 
 		// CPT fallback path.
@@ -303,14 +308,15 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Fetch conversations from the CCT table.
 	 *
-	 * @param int    $page       Page number.
-	 * @param int    $per_page   Items per page.
-	 * @param string $channel    Optional channel filter.
-	 * @param string $crm_status Optional CRM status filter.
-	 * @param string $search     Optional search term.
+	 * @param int    $page              Page number.
+	 * @param int    $per_page          Items per page.
+	 * @param string $channel           Optional channel filter.
+	 * @param string $crm_status        Optional CRM status filter.
+	 * @param string $search            Optional search term.
+	 * @param string $conversation_type Optional conversation type filter.
 	 * @return WP_REST_Response
 	 */
-	protected function get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search ) {
+	protected function get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search, $conversation_type = '' ) {
 		global $wpdb;
 		$table  = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
 		$offset = ( $page - 1 ) * $per_page;
@@ -326,6 +332,11 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		if ( ! empty( $crm_status ) ) {
 			$where[]  = 'crm_status = %s';
 			$values[] = $crm_status;
+		}
+
+		if ( ! empty( $conversation_type ) ) {
+			$where[]  = 'conversation_type = %s';
+			$values[] = $conversation_type;
 		}
 
 		if ( ! empty( $search ) ) {
@@ -470,23 +481,27 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$contact_connection_id = isset( $contact['connection_id'] ) ? $contact['connection_id'] : '';
 
 		if ( '' !== $contact_connection_id ) {
+			// Use OR to match both correctly-stored connection_id values and legacy
+			// inbound messages stored with connection_id = '' before the WhatsApp fix.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = (int) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s",
+					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = %s)",
 					$contact['channel'],
 					$contact['channel_contact_id'],
-					$contact_connection_id
+					$contact_connection_id,
+					''
 				)
 			);
 
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = %s) ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
 					$contact['channel'],
 					$contact['channel_contact_id'],
 					$contact_connection_id,
+					'',
 					$per_page,
 					$offset
 				),
@@ -1125,6 +1140,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'channel'            => isset( $row['channel'] ) ? $row['channel'] : '',
 			'channel_contact_id' => isset( $row['channel_contact_id'] ) ? $row['channel_contact_id'] : '',
 			'connection_id'      => isset( $row['connection_id'] ) ? $row['connection_id'] : '',
+			'conversation_type'  => isset( $row['conversation_type'] ) ? $row['conversation_type'] : 'dm',
 			'display_name'       => isset( $row['display_name'] ) ? $row['display_name'] : '',
 			'phone_number'       => isset( $row['phone_number'] ) ? $row['phone_number'] : '',
 			'email'              => isset( $row['email'] ) ? $row['email'] : '',
@@ -1160,6 +1176,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'timestamp'          => isset( $row['message_timestamp'] ) ? (int) $row['message_timestamp'] : 0,
 			'reply_sent'         => ! empty( $row['reply_sent'] ),
 			'assigned_agent'     => isset( $row['assigned_agent'] ) ? $row['assigned_agent'] : '',
+			'conversation_type'  => isset( $row['conversation_type'] ) ? $row['conversation_type'] : 'dm',
 		);
 
 		if ( $include_metadata ) {

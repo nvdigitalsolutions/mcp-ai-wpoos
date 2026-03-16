@@ -232,6 +232,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						'replySent'       => __( 'Reply sent.', 'mcp-ai-wpoos-pro' ),
 						'errorSending'    => __( 'Failed to send reply. Please try again.', 'mcp-ai-wpoos-pro' ),
 						'allChannels'     => __( 'All Channels', 'mcp-ai-wpoos-pro' ),
+						'convTypeDM'      => __( 'DM', 'mcp-ai-wpoos-pro' ),
+						'convTypeChannel' => __( 'Channel', 'mcp-ai-wpoos-pro' ),
+						'convTypeGroup'   => __( 'Group', 'mcp-ai-wpoos-pro' ),
+						'allTypes'        => __( 'All Types', 'mcp-ai-wpoos-pro' ),
 					),
 					'channelLabels' => array(
 						'whatsapp'    => 'WhatsApp',
@@ -402,6 +406,12 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						<option value="new"><?php esc_html_e( 'New', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="active"><?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="resolved"><?php esc_html_e( 'Resolved', 'mcp-ai-wpoos-pro' ); ?></option>
+					</select>
+					<select id="cc-filter-conv-type" class="cc-select">
+						<option value=""><?php esc_html_e( 'All Types', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="dm"><?php esc_html_e( 'Direct Messages', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="channel"><?php esc_html_e( 'Channels', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="group"><?php esc_html_e( 'Groups', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
 					<input type="search" id="cc-search" class="cc-input" placeholder="<?php esc_attr_e( 'Search conversations…', 'mcp-ai-wpoos-pro' ); ?>" />
 				</div>
