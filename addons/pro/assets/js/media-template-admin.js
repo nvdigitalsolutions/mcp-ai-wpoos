@@ -19,7 +19,17 @@
 	function escapeHtml( text ) {
 		const d = document.createElement( 'div' );
 		d.textContent = String( text );
-		return d.innerHTML;
+		return d.innerHTML.replace( /"/g, '&quot;' );
+	}
+
+	/**
+	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
+	 *
+	 * @param {string} url URL to validate.
+	 * @return {string} The original URL if safe, otherwise '#'.
+	 */
+	function safeUrl( url ) {
+		return /^https?:\/\//i.test( String( url ) ) ? escapeHtml( url ) : '#';
 	}
 
 	const MediaTemplateAdmin = {
@@ -242,7 +252,7 @@
 				const safeCount = parseInt( exportedCount, 10 );
 				const safeKey = encodeURIComponent( exportKey );
 				const safeNonce = encodeURIComponent( mcpAiMediaTemplate.nonce );
-				const safeAjaxUrl = escapeHtml( mcpAiMediaTemplate.ajaxUrl );
+				const safeAjaxUrl = safeUrl( mcpAiMediaTemplate.ajaxUrl );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
 						<p><strong>Export Complete!</strong> ${safeCount} template(s) exported.</p>

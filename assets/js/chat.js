@@ -17304,7 +17304,7 @@
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv'];
             for (let i = 0; i < videoExtensions.length; i++) {
                 const ext = videoExtensions[i];
-                if (urlPath.lastIndexOf(ext) === urlPath.length - ext.length) {
+                if (urlPath.endsWith(ext)) {
                     return true;
                 }
             }

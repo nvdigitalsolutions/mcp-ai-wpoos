@@ -16,7 +16,17 @@
 	function escapeHtml( text ) {
 		const d = document.createElement( 'div' );
 		d.textContent = String( text );
-		return d.innerHTML;
+		return d.innerHTML.replace( /"/g, '&quot;' );
+	}
+
+	/**
+	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
+	 *
+	 * @param {string} url URL to validate.
+	 * @return {string} The original URL if safe, otherwise '#'.
+	 */
+	function safeUrl( url ) {
+		return /^https?:\/\//i.test( String( url ) ) ? escapeHtml( url ) : '#';
 	}
 
 	/**
@@ -475,7 +485,7 @@
 				const addUrl = getAddUrl( recordType );
 				guidedFormContainer.html(
 					'<div class="notice notice-warning inline">' +
-					'<p>AI assistant not available. <a href="' + escapeHtml( addUrl ) + '" class="button">Create ' + escapeHtml( recordTypeName ) + ' manually</a></p>' +
+					'<p>AI assistant not available. <a href="' + safeUrl( addUrl ) + '" class="button">Create ' + escapeHtml( recordTypeName ) + ' manually</a></p>' +
 					'</div>'
 				).show();
 			}
