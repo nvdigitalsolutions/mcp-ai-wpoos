@@ -243,6 +243,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'cosmos.config.json' \
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -461,6 +462,8 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '.git' \
             --exclude '.gitignore' \
             --exclude '.gitattributes' \
+            --exclude '.distignore' \
+            --exclude '.npmrc' \
             --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
@@ -702,6 +705,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'cosmos.config.json' \
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
