@@ -480,7 +480,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .hw-dash-select{min-width:220px;}
 .hw-dash-section{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px 24px;margin:20px 0;}
 .hw-dash-section-title{font-size:18px;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid #f0f0f1;}
-.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
 .hw-dash-kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
 .hw-dash-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#1565c0;}
 .hw-dash-kpi-bp::before{background:#c62828;}
