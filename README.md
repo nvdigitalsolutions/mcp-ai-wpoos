@@ -268,6 +268,19 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (February–March 2026)
 
+### Telegram Mini App – Member Loading Fix & Role-Based Access (March 2026) ⭐ **NEW**
+
+**Health & Wellness and Medical Vitals templates now reliably load member CPT data**
+
+- ✅ **Server-side member pre-selection**: When a logged-in WordPress subscriber opens a health mini app template, their linked `mcp_ai_member` post is resolved server-side and injected into the page. The member picker overlay is bypassed entirely — the dashboard loads immediately without the user having to select themselves.
+- ✅ **Auto-select single member**: When `list_members` returns exactly one result (e.g. first Telegram session after creating a profile), the picker auto-selects that member and closes without requiring a manual tap.
+- ✅ **Role-based member visibility** — `list_members` tool now enforces:
+  - **Subscribers** (`read` only): see only members they authored — their own profiles.
+  - **Authors / Editors / Admins** (`edit_posts`+): see **all** members across the site for care-team management.
+- ✅ **Retry button on auth failure**: If the member list fetch fails (e.g. network error or unauthenticated first load outside Telegram), a **Retry** button replaces the infinite "Loading…" spinner so users are never stuck.
+- ✅ `wp_mcp_ai_get_member_id_by_user_id()` updated to return `0` for users above subscriber level so higher-role users always get the full member picker.
+- [Template developer reference →](docs/telegram-mini-app-templates.md)
+
 ### WordPress.org Compliance — Final Audit Complete (March 3, 2026) ✅ **FULLY COMPLIANT**
 
 **All 20 compliance categories resolved (PR #4004 + compliance audit)**

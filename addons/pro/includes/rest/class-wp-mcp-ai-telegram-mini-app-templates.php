@@ -1768,6 +1768,8 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'function hwFetchMembers(){' .
 			'var list=document.getElementById("tma-hw-member-list");' .
 			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var hwErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
@@ -1778,10 +1780,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				/* If the request failed (auth not yet established), keep the Loading… placeholder
 				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds.
 				 * Outside Telegram we also add a manual retry button so users are not stuck. */
-				'if(!d){' .
-					'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
-					'return;' .
-				'}' .
+				'if(!d){if(list)list.innerHTML=hwErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
 				/* Auto-select when exactly one member exists — skip picker entirely */
 				'if(members.length===1){hwSelectMember(members[0].id,members[0].name);return;}' .
@@ -1802,9 +1801,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'+\'</div>\';' .
 				'list.innerHTML=cards+newCard;' .
 			'})' .
-			'.catch(function(){' .
-				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
-			'});' .
+			'.catch(function(){if(list)list.innerHTML=hwErrHtml;});' .
 		'}' .
 
 		'window.hwSelectMember=function(id,name){' .
@@ -2139,23 +2136,27 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'};' .
 
 		/* ── Init ── */
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function hwActivateMember(){' .
+			'hwHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-hw-member-label");' .
+			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
 		/* Priority order for member selection:                                  */
 		/*  1. localStorage (fastest – avoids any flicker)                       */
 		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
 		/*  3. Show member picker (user must choose or create)                   */
 		'hwLoadSavedMember();' .
 		'if(MEMBER_ID){' .
-			'hwHideMemberPicker();' .
-			'var lbl=document.getElementById("tma-hw-member-label");' .
-			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+			'hwActivateMember();' .
 		'}else if(SERVER_MEMBER_ID){' .
 			/* Server already knows which member belongs to this user – auto-select
 			 * without showing the picker so data loads immediately. */
 			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
 			'try{localStorage.setItem("hw_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
-			'hwHideMemberPicker();' .
-			'var lbl=document.getElementById("tma-hw-member-label");' .
-			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+			'hwActivateMember();' .
 		'}else{' .
 			'hwShowMemberPicker();' .
 		'}' .
@@ -2844,6 +2845,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'function mvFetchMembers(){' .
 			'var list=document.getElementById("tma-mv-member-list");' .
 			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var mvErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
@@ -2854,10 +2857,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				/* If the request failed (auth not yet established), keep the Loading… placeholder
 				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds.
 				 * Outside Telegram we also add a manual retry button so users are not stuck. */
-				'if(!d){' .
-					'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
-					'return;' .
-				'}' .
+				'if(!d){if(list)list.innerHTML=mvErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
 				/* Auto-select when exactly one member exists — skip picker entirely */
 				'if(members.length===1){mvSelectMember(members[0].id,members[0].name);return;}' .
@@ -2878,9 +2878,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'+\'</div>\';' .
 				'list.innerHTML=cards+newCard;' .
 			'})' .
-			'.catch(function(){' .
-				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
-			'});' .
+			'.catch(function(){if(list)list.innerHTML=mvErrHtml;});' .
 		'}' .
 
 		'window.mvSelectMember=function(id,name){' .
@@ -3555,23 +3553,27 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'};' .
 
 		/* ── Init ── */
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function mvActivateMember(){' .
+			'mvHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-mv-member-label");' .
+			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
 		/* Priority order for member selection:                                  */
 		/*  1. localStorage (fastest – avoids any flicker)                       */
 		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
 		/*  3. Show member picker (user must choose or create)                   */
 		'mvLoadSavedMember();' .
 		'if(MEMBER_ID){' .
-			'mvHideMemberPicker();' .
-			'var lbl=document.getElementById("tma-mv-member-label");' .
-			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+			'mvActivateMember();' .
 		'}else if(SERVER_MEMBER_ID){' .
 			/* Server already knows which member belongs to this user – auto-select
 			 * without showing the picker so vitals data loads immediately. */
 			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
 			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
-			'mvHideMemberPicker();' .
-			'var lbl=document.getElementById("tma-mv-member-label");' .
-			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+			'mvActivateMember();' .
 		'}else{' .
 			'mvShowMemberPicker();' .
 		'}' .

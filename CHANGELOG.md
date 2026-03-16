@@ -1,6 +1,19 @@
 # oOS – Changelog
 
 
+## [Unreleased]
+
+### Fixed
+- **Telegram Mini App – Member Loading (March 2026)**: Health & Wellness and Medical Vitals mini app templates no longer get stuck on "Loading…" when a subscriber opens the app for the first time.
+  - Server-side member pre-selection: the current WordPress user's linked `mcp_ai_member` post is resolved at page-render time and injected as `SERVER_MEMBER_ID`/`SERVER_MEMBER_NAME` JS variables; the member picker is skipped when a match is found.
+  - Auto-select single member: `hwFetchMembers()` / `mvFetchMembers()` now auto-select and close the picker when only one member is returned, eliminating the manual-tap requirement after first member creation.
+  - Retry button: when the member list request fails (auth not yet established or network error) a **Retry** button is shown instead of leaving the user on an infinite "Loading…" state.
+
+### Changed
+- **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
+- **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
+
+
 ## [1.1.4] - 2026-03-15
 
 ### Security

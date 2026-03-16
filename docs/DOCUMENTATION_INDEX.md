@@ -1084,11 +1084,16 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
+| [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
 **Pro Custom Post Types:**
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**Telegram Mini App Health Templates:**
+- **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach
+- **Medical Vitals** (`medical_vitals`) – Vitals + kidney lab tracking (BP, HR, SpO₂, eGFR, creatinine, BUN, K⁺, Na⁺), 7-day trends, medication dosage, AI doctor assistant
 
 ### Performance & Optimization
 
