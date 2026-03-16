@@ -412,6 +412,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-kidney-tbody"></tbody>
@@ -428,6 +429,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-cbc-tbody"></tbody>
@@ -444,6 +446,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-lft-tbody"></tbody>
@@ -739,6 +742,13 @@ function renderMVDashboard(history){
 		}
 		return 0;
 	}
+	function latestDateFor(field){
+		for(var i=history.length-1;i>=0;i--){
+			var v=parseFloat(extractVitalValue(history[i],field));
+			if(v>0) return getEntryDate(history[i]);
+		}
+		return '';
+	}
 	var sys   = latestFor('bp_systolic');
 	var dia   = latestFor('bp_diastolic');
 	var hr    = latestFor('heart_rate');
@@ -890,14 +900,14 @@ function renderMVDashboard(history){
 
 	/* Kidney health markers table */
 	var kidneyMarkers=[
-		{label:'eGFR',       value:egfr,   unit:'mL/min/1.73m²',normal:'≥60',   cls:egfrStatusClass(egfr)},
-		{label:'Creatinine', value:creat,  unit:'mg/dL',         normal:'0.6–1.2',cls:(creat>0&&creat<=1.2)?'status-normal':creat<=1.5?'status-warning':'status-alert'},
-		{label:'BUN',        value:bun,    unit:'mg/dL',         normal:'7–20',  cls:(bun>=7&&bun<=20)?'status-normal':bun<=25?'status-warning':'status-alert'},
-		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert'},
-		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert'},
-		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert'},
-		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert'},
-		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb)}
+		{label:'eGFR',       value:egfr,   unit:'mL/min/1.73m²',normal:'≥60',   cls:egfrStatusClass(egfr),  date:latestDateFor('egfr')},
+		{label:'Creatinine', value:creat,  unit:'mg/dL',         normal:'0.6–1.2',cls:(creat>0&&creat<=1.2)?'status-normal':creat<=1.5?'status-warning':'status-alert', date:latestDateFor('creatinine')},
+		{label:'BUN',        value:bun,    unit:'mg/dL',         normal:'7–20',  cls:(bun>=7&&bun<=20)?'status-normal':bun<=25?'status-warning':'status-alert', date:latestDateFor('bun')},
+		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert', date:latestDateFor('potassium')},
+		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert', date:latestDateFor('sodium')},
+		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert', date:latestDateFor('phosphorus')},
+		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert', date:latestDateFor('albumin')},
+		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb), date:latestDateFor('hemoglobin')}
 	];
 	var hasKidney = egfr||creat||bun||pot||sodMv||phos||alb||hgb;
 	if(hasKidney){
@@ -911,6 +921,7 @@ function renderMVDashboard(history){
 				'<td>'+displayVal+'</td>'+
 				'<td>'+m.normal+'</td>'+
 				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -930,20 +941,20 @@ function renderMVDashboard(history){
 	var bsoPct   = latestFor('basophils_percent');
 
 	var cbcMarkers = [
-		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb)},
-		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct)},
-		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert'},
-		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc)},
-		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt)},
-		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert'},
-		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert'},
-		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert'},
-		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert'},
-		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning'},
-		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning'},
-		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning'},
-		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert'},
-		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning'}
+		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb),                                                                         date:latestDateFor('hemoglobin')},
+		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct),                                                                         date:latestDateFor('hematocrit')},
+		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert',         date:latestDateFor('rbc')},
+		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc),                                                                         date:latestDateFor('wbc')},
+		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt),                                                                         date:latestDateFor('platelets')},
+		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert',           date:latestDateFor('mcv')},
+		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert',            date:latestDateFor('mch')},
+		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert',         date:latestDateFor('mchc')},
+		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert',       date:latestDateFor('rdw')},
+		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning',                           date:latestDateFor('neutrophils_percent')},
+		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning',                         date:latestDateFor('lymphocytes_percent')},
+		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning',                             date:latestDateFor('monocytes_percent')},
+		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert',        date:latestDateFor('eosinophils_percent')},
+		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning',                              date:latestDateFor('basophils_percent')}
 	];
 	var hasCbc = hgb||hct||rbc||wbc||plt||mcv||mch||mchc||rdw;
 	if(hasCbc){
@@ -958,6 +969,7 @@ function renderMVDashboard(history){
 				'<td>'+displayVal+'</td>'+
 				'<td>'+m.normal+'</td>'+
 				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -966,14 +978,14 @@ function renderMVDashboard(history){
 
 	/* Extended BMP / Liver function table */
 	var lftMarkers = [
-		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert'},
-		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert'},
-		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert'},
-		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert'},
-		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert'},
-		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert'},
-		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert'},
-		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert'}
+		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert', date:latestDateFor('chloride')},
+		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert',        date:latestDateFor('co2')},
+		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert', date:latestDateFor('calcium')},
+		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert',    date:latestDateFor('magnesium')},
+		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert',            date:latestDateFor('bilirubin')},
+		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert',        date:latestDateFor('ast')},
+		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert',        date:latestDateFor('alt')},
+		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert', date:latestDateFor('total_protein')}
 	];
 	var hasLft = chlor||co2||calc||mag||bili||ast||alt||tprot;
 	if(hasLft){
@@ -988,6 +1000,7 @@ function renderMVDashboard(history){
 				'<td>'+displayVal+'</td>'+
 				'<td>'+m.normal+'</td>'+
 				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
