@@ -477,7 +477,6 @@
 		filterMonitoringEvents: function() {
 			const eventType = $('#monitoring-event-type').val();
 			const severity = $('#monitoring-severity').val();
-			const timeframe = $('#monitoring-timeframe').val();
 			const search = $('#monitoring-search').val().toLowerCase();
 			
 			// Filter event table rows
@@ -594,7 +593,6 @@
 		 * Refresh monitoring data.
 		 */
 		refreshMonitoringData: function() {
-			const self = this;
 			const $refreshButton = $('#wp-mcp-ai-refresh-monitoring');
 			
 			// Show loading state

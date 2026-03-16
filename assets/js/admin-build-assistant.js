@@ -6,7 +6,7 @@
  * @package WP_MCP_AI
  */
 
-/* global jQuery, wpMcpAiCreateAssistant, wpMcpAiChat */
+/* global jQuery, wpMcpAiCreateAssistant */
 
 ( function( $ ) {
 	'use strict';

@@ -11,22 +11,10 @@
 	'use strict';
 
 	/**
-	 * Escape HTML special characters to prevent XSS.
-	 *
-	 * @param {string} text Text to escape.
-	 * @return {string} Escaped text.
-	 */
-	function escapeHtml( text ) {
-		const d = document.createElement( 'div' );
-		d.textContent = String( text );
-		return d.innerHTML.replace( /"/g, '&quot;' );
-	}
-
-	/**
 	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
 	 *
 	 * @param {string} url URL to validate.
-	 * @return {string} The original URL if safe, otherwise '#'.
+	 * @return {string} The URL HTML-encoded if safe, otherwise '#'.
 	 */
 	function safeUrl( url ) {
 		const str = String( url );

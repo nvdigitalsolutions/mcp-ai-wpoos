@@ -36,17 +36,12 @@
 		 * @param {Object} config     Configuration object.
 		 */
 		initInstance: function($container, config) {
-			const $form = $container.find('[data-selector-form]');
 			const $modal = $container.find('[data-modal]');
 			const $modalClose = $container.find('[data-modal-close]');
 			const $modalBackdrop = $container.find('[data-modal-backdrop]');
-			const $assistantSelect = $container.find('[data-assistant-select]');
 			const $providerSelect = $container.find('[data-provider-select]');
 			const $modelSelect = $container.find('[data-model-select]');
-			const $modelLoading = $container.find('[data-model-loading]');
 			const $professionalSelect = $container.find('[data-professional-select]');
-			const $errorMessage = $container.find('[data-error-message]');
-			const $temperatureInput = $container.find('[data-temperature-input]');
 
 			// Store instance data.
 			$container.data('selector-config', config);
@@ -250,7 +245,6 @@
 		 * @param {Object} state      Selection state.
 		 */
 		openModal: function($container, state) {
-			const config = $container.data('selector-config');
 			const $modal = $container.find('[data-modal]');
 			const $modalTitle = $container.find('[data-modal-title]');
 			const $modalConfig = $container.find('[data-modal-config]');
