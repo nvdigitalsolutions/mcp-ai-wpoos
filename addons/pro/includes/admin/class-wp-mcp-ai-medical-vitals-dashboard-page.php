@@ -527,6 +527,19 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 	font-weight:600;
 	color:#1565c0;
 }
+/* ── Mobile: stack table rows as cards ───────────────────────── */
+@media(max-width:782px){
+.hw-dash-vitals-table,.hw-dash-kidney-table{table-layout:auto;width:100%;}
+.hw-dash-vitals-table thead,.hw-dash-kidney-table thead{display:none;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row,.hw-dash-kidney-table tbody tr{display:block;margin-bottom:12px;border:1px solid #dcdcde;border-radius:4px;overflow:hidden;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row td,.hw-dash-kidney-table tbody td{display:flex;justify-content:space-between;align-items:flex-start;width:100%;box-sizing:border-box;border-bottom:1px solid #f0f0f1;white-space:normal;word-break:break-word;background:inherit;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row td::before,.hw-dash-kidney-table tbody td::before{content:attr(data-label);font-weight:600;color:#555;flex-shrink:0;margin-right:10px;min-width:40%;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row{display:block;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row td{display:block;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row td::before{content:"📋 Notes: ";display:inline;font-weight:600;color:#1565c0;}
+.hw-dash-placeholder::before{content:none!important;}
+.hw-dash-placeholder{display:block!important;text-align:center;}
+}
 		';
 	}
 
@@ -874,15 +887,15 @@ function renderMVDashboard(history){
 
 		tbody.append(
 			'<tr class="mv-vitals-data-row '+rowParity+'">'+
-			'<td>'+getEntryDate(r)+'</td>'+
-			'<td>'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
-			'<td>'+(rHr||'—')+'</td>'+
-			'<td>'+(rSpo2||'—')+'</td>'+
-			'<td>'+(rTemp||'—')+'</td>'+
-			'<td>'+(rGluc||'—')+'</td>'+
-			'<td>'+(rEgfr||'—')+'</td>'+
-			'<td>'+(rCreat||'—')+'</td>'+
-			'<td>'+(rHgb||'—')+'</td>'+
+			'<td data-label="Date">'+getEntryDate(r)+'</td>'+
+			'<td data-label="BP (sys/dia)">'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
+			'<td data-label="HR">'+(rHr||'—')+'</td>'+
+			'<td data-label="SpO₂">'+(rSpo2||'—')+'</td>'+
+			'<td data-label="Temp °F">'+(rTemp||'—')+'</td>'+
+			'<td data-label="Glucose">'+(rGluc||'—')+'</td>'+
+			'<td data-label="eGFR">'+(rEgfr||'—')+'</td>'+
+			'<td data-label="Creatinine">'+(rCreat||'—')+'</td>'+
+			'<td data-label="Hgb (g/dL)">'+(rHgb||'—')+'</td>'+
 			'</tr>'
 		);
 
@@ -917,11 +930,11 @@ function renderMVDashboard(history){
 			var statusText = m.value ? (m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert') : '—';
 			kTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
-				'<td>'+(m.date||'—')+'</td>'+
+				'<td data-label="Marker"><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value">'+displayVal+'</td>'+
+				'<td data-label="Normal Range">'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Date">'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -965,11 +978,11 @@ function renderMVDashboard(history){
 			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
 			cTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
-				'<td>'+(m.date||'—')+'</td>'+
+				'<td data-label="Marker"><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value">'+displayVal+'</td>'+
+				'<td data-label="Normal Range">'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Date">'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -996,11 +1009,11 @@ function renderMVDashboard(history){
 			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
 			lTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
-				'<td>'+(m.date||'—')+'</td>'+
+				'<td data-label="Marker"><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value">'+displayVal+'</td>'+
+				'<td data-label="Normal Range">'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Date">'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});

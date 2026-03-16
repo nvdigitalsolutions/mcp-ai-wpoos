@@ -525,6 +525,16 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 .status-warning{color:#e65100!important;font-weight:600;}
 .status-alert{color:#c62828!important;font-weight:600;}
 .hw-dash-no-members{color:#757575;}
+/* ── Mobile: stack table rows as cards ───────────────────────── */
+@media(max-width:782px){
+.hw-dash-goals-table{table-layout:auto;width:100%;}
+.hw-dash-goals-table thead{display:none;}
+.hw-dash-goals-table tbody tr{display:block;margin-bottom:12px;border:1px solid #dcdcde;border-radius:4px;overflow:hidden;}
+.hw-dash-goals-table tbody td{display:flex;justify-content:space-between;align-items:flex-start;width:100%;box-sizing:border-box;border-bottom:1px solid #f0f0f1;white-space:normal;word-break:break-word;}
+.hw-dash-goals-table tbody td::before{content:attr(data-label);font-weight:600;color:#555;flex-shrink:0;margin-right:10px;min-width:40%;}
+.hw-dash-placeholder::before{content:none!important;}
+.hw-dash-placeholder{display:block!important;text-align:center;}
+}
 		';
 	}
 
@@ -684,11 +694,11 @@ return avg(last5) > avg(prev5) ? '↑' : avg(last5)<avg(prev5) ? '↓' : '→';
 })(g.label==='Steps'?stepsArr:g.label==='Water'?waterArr:g.label==='Sleep'?sleepArr:g.label==='Calories'?calArr:sodArr) : '—';
 tbody.append(
 '<tr>'+
-'<td>'+g.icon+' '+g.label+'</td>'+
-'<td>'+g.total.toLocaleString()+' '+g.unit+'</td>'+
-'<td>'+g.daily+' '+g.unit+'/day</td>'+
-'<td>'+avgDay+'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="'+fillCls+'" style="width:'+fillW+'%"></div></div> <small>'+pctVal+'%</small></td>'+
-'<td>'+trend+'</td>'+
+'<td data-label="Metric">'+g.icon+' '+g.label+'</td>'+
+'<td data-label="Period Total / Avg">'+g.total.toLocaleString()+' '+g.unit+'</td>'+
+'<td data-label="Daily Goal">'+g.daily+' '+g.unit+'/day</td>'+
+'<td data-label="Avg Achievement">'+avgDay+'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="'+fillCls+'" style="width:'+fillW+'%"></div></div> <small>'+pctVal+'%</small></td>'+
+'<td data-label="Trend">'+trend+'</td>'+
 '</tr>'
 );
 });
