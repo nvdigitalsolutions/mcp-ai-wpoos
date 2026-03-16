@@ -155,6 +155,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				array(),
 				$asset['version']
 			);
+		} elseif ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: ReactFlow style file not found: %s', $style_file ) );
 		}
 
 		// Localize script with data.
