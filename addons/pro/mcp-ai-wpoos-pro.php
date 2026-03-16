@@ -275,6 +275,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
+		// Load CPT meta schema registry — exposes custom meta field definitions for all
+		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
+		// base get_post_type_schema tool can return complete field information.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cpt-meta-schema.php';
+		WP_MCP_AI_Pro_CPT_Meta_Schema::init();
+
 		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
 		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';

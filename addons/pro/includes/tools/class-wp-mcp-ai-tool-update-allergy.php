@@ -85,6 +85,24 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_allergy',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'caregiver' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

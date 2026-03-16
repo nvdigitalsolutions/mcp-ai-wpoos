@@ -137,6 +137,24 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_med_record',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'caregiver' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'database-write', 'pii-data', 'hipaa-relevant' );
 	}

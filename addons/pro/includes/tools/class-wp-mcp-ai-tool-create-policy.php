@@ -160,6 +160,24 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_policy',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'insurance_agent', 'healthcare_provider', 'patient' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}

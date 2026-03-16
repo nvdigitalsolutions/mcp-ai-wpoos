@@ -84,6 +84,24 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'education',
+			'post_type'             => 'mcp_ai_eca',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'school_admin', 'it_admin' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'external-api', 'database-write' );
 	}

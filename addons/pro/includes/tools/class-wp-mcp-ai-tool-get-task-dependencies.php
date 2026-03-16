@@ -79,6 +79,24 @@ class WP_MCP_AI_Tool_Get_Task_Dependencies implements WP_MCP_AI_Tool_Interface, 
 	 *
 	 * @return array Array of capability flag strings.
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'project_management',
+			'post_type'             => 'mcp_ai_task',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'project_manager', 'developer' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array(
 			'pro',
