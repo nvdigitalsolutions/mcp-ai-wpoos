@@ -237,6 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
 				'enable_fantasy_football'                => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
+				'enable_healthcare_imaging'              => __( 'Healthcare Imaging Viewer', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -439,6 +440,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'tools_count'   => 1,
 					'tools'         => array(
 						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'healthcare_imaging'              => array(
+					'name'          => __( 'Healthcare Imaging Viewer', 'mcp-ai-wpoos' ),
+					'description'   => __( 'DICOM medical imaging viewer with Cornerstone3D. Secure PET/CT/MR study upload, metadata extraction, REST API, and HIPAA-aligned audit logging.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_healthcare_imaging'] ),
+					'category'      => 'specialized',
+					'php_functions' => array( 'fopen', 'fread', 'fclose', 'move_uploaded_file' ),
+					'npm_packages'  => array( '@cornerstonejs/core', '@cornerstonejs/tools', '@cornerstonejs/dicom-image-loader' ),
+					'tools_count'   => 1,
+					'tools'         => array(
+						__( 'manage_imaging_studies tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'quiz_system'                     => array(
