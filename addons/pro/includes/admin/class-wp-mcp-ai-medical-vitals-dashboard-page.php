@@ -493,8 +493,9 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .hw-dash-kpi-sub.status-warning{color:#e65100;}
 .hw-dash-kpi-sub.status-alert{color:#c62828;}
 .hw-dash-charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}}
+@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-card canvas{height:240px;}}
 .hw-dash-chart-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px;}
+.hw-dash-chart-card canvas{display:block;height:160px;}
 .hw-dash-chart-title{font-size:13px;font-weight:600;margin:0 0 10px;color:#1e1e1e;}
 .hw-dash-table-wrap{margin-bottom:20px;}
 .hw-dash-table-title{font-size:14px;font-weight:600;margin:0 0 8px;}
@@ -620,6 +621,7 @@ function buildLineChart(canvasId,labels,data,color,refLine,refLabel,maxY){
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
+			maintainAspectRatio:false,
 			plugins:{legend:{display:!!refLine}},
 			scales:{
 				y:{beginAtZero:true,max:maxY||undefined,ticks:{maxTicksLimit:5}},
@@ -638,6 +640,7 @@ function buildMultiLineChart(canvasId,labels,datasets){
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
+			maintainAspectRatio:false,
 			plugins:{legend:{display:true,position:'top'}},
 			scales:{
 				y:{beginAtZero:false,ticks:{maxTicksLimit:5}},
