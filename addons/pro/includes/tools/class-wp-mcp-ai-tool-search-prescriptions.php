@@ -249,10 +249,10 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				$prescription_id = get_the_ID();
 
 				// Get member info.
-				$member_id   = get_post_meta( $prescription_id, '_prescription_member_id', true );
-				$member_name = '';
-				if ( $member_id ) {
-					$member      = get_post( $member_id );
+				$rx_member_id = get_post_meta( $prescription_id, '_prescription_member_id', true );
+				$member_name  = '';
+				if ( $rx_member_id ) {
+					$member      = get_post( $rx_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 
@@ -265,7 +265,7 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				$prescriptions[] = array(
 					'id'                 => $prescription_id,
 					'medication_name'    => get_the_title(),
-					'member_id'          => $member_id,
+					'member_id'          => $rx_member_id,
 					'member_name'        => $member_name,
 					'dosage'             => get_post_meta( $prescription_id, '_prescription_dosage', true ),
 					'frequency'          => get_post_meta( $prescription_id, '_prescription_frequency', true ),
