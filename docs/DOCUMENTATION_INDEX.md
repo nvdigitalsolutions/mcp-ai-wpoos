@@ -1,12 +1,18 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 15, 2026  
+**Last Updated:** March 16, 2026  
 **Plugin Version:** 1.1.4  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – FULL 760-TOOL COVERAGE**
+> - **Quick Tool Presets Expanded** – All 760 available tools are now reachable via one-click presets on the assistant CPT edit page (was ~527 tools)
+> - **New Preset** – `📋 Registration & Compliance` (44 tools): registration lifecycle, regulated products, compliance certificates, authority submission, NMRA/MOHAP sync
+> - **20+ Updated Presets** – E-commerce (Shopify), Communication (Discord/Slack/Teams/Apple/Telegram/WhatsApp/Messenger/Google Chat), Development (tool scaffolding), Files (cloud storage/PDF/Excel), SEO (social listening/competitor analysis), Site Management (page builder sections), Healthcare (health metrics/vitals import), Sales/CRM, Finance, and more
+> - **Total**: 61 presets covering all 760 tools (2,030 tool references) — up from 60 presets covering ~527 tools
 
 > **📌 MARCH 15, 2026 UPDATE:** 🔒 **SECURITY HARDENING + CHANNEL FIXES + v1.1.4**
 > - **Security** – AES-256-GCM encryption, finfo fail-closed, Discord replay protection, HTTPS enforcement, ZIP bomb guard, OCR info-disclosure fix

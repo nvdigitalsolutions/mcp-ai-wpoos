@@ -7,6 +7,7 @@ This quick reference provides fast access to the most common tasks and commands 
 
 ## 🆕 Recent Updates (March 2026)
 
+- **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
 - **Security Hardening** ⭐ NEW – AES-256-GCM encryption upgrade, finfo fail-closed MIME detection, Discord replay attack protection, HTTPS enforcement, ZIP bomb protection, OCR error info-disclosure fix.
 - **Chat Channels** – Fixed Slack @mentions, Google Chat OIDC/route issues, Teams multi-connection with OAuth one-click, Telegram typing indicator and slash-command integration.
 - **Telegram Mini App** – Doctor tab now uses connection-assigned assistant; AI replies rendered as Markdown HTML; vitals log import improved.
