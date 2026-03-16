@@ -889,7 +889,7 @@ function renderMVDashboard(history){
 		if(rNotes){
 			tbody.append(
 				'<tr class="mv-vitals-notes-row '+rowParity+'">'+
-				'<td colspan="8">'+rNotes+'</td>'+
+				'<td colspan="9">'+rNotes+'</td>'+
 				'</tr>'
 			);
 		}
