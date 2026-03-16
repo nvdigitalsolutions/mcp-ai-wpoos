@@ -27,6 +27,8 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-pro/
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
+# Ignore all generated files in build/ (ZIPs, docs, etc.)
+/build/WORDPRESS_ORG_SUBMISSION_README.md
 
 # Ignore base build directory (workflow builder moved to pro addon)
 /build/workflow-builder/
@@ -36,9 +38,12 @@ composer.phar
 
 # Allow tma-template-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/tma-template-builder/
+# Allow tma-woo-shop compiled assets in Pro addon (needed for plugin to work)
+!/addons/pro/build/tma-woo-shop/
 
-# Ignore ZIP files everywhere (build artifacts should not be committed)
+# Ignore ZIP files everywhere except the final build output in build/
 *.zip
+!/build/*.zip
 
 # Ignore all vendor by default
 /vendor/*

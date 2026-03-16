@@ -40,14 +40,18 @@ add_action(
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
-// Load JetEngine Vital Signs CCT if JetEngine is active and health management enabled.
-if ( function_exists( 'jet_engine' ) ) {
-	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-cct.php';
-	WP_MCP_AI_JetEngine_Vitals_CCT::bootstrap();
+// Load Health and Wellness meta boxes (WP Admin form fields, save hooks, admin columns).
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-meta-boxes.php';
+WP_MCP_AI_Health_Wellness_Meta_Boxes::init();
 
-	// Load the dedicated Vitals Log CCT — primary storage for compiled log entries.
+// Load JetEngine CCTs if JetEngine is active.
+if ( function_exists( 'jet_engine' ) ) {
+	// Load the vitals_log CCT — primary storage for all vital-sign log entries.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
 	WP_MCP_AI_JetEngine_Vitals_Log_CCT::bootstrap();
+
+	// The legacy vital_signs CCT is intentionally NOT bootstrapped here.
+	// All vital-sign writes go to the vitals_log CCT above.
 }
 
 // Load Policy Research & Add page.
@@ -69,6 +73,12 @@ if ( is_admin() ) {
 
 		// Load Health Records Consolidate & Add page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-records-consolidate-page.php';
+
+		// Load Health & Wellness Dashboard page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-health-wellness-dashboard-page.php';
+
+		// Load Medical Vitals Dashboard page (separate from Health & Wellness).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-medical-vitals-dashboard-page.php';
 	}
 }
 

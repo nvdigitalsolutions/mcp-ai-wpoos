@@ -180,6 +180,23 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The contacts CCT registration payload must include a connection_id field.
+	 */
+	public function test_channel_contacts_cct_schema_has_connection_id_field() {
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Channel_Contacts_CCT' );
+		$method     = $reflection->getMethod( 'get_registration_request' );
+		$method->setAccessible( true );
+
+		$payload = $method->invoke( null );
+		$fields  = $payload['meta_fields'];
+		$names   = array_column( $fields, 'name' );
+
+		$this->assertContains( 'connection_id', $names, 'channel_contacts CCT schema must include a connection_id field' );
+	}
+
+	/**
 	 * Find_or_create() returns false when the table does not exist.
 	 */
 	public function test_channel_contacts_find_or_create_returns_false_without_table() {
@@ -198,11 +215,33 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Find_or_create() returns false without table even when connection_id is provided.
+	 */
+	public function test_channel_contacts_find_or_create_with_connection_id_returns_false_without_table() {
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$result = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+			'slack',
+			'U12345678',
+			array( 'connection_id' => 'conn_a' )
+		);
+		$this->assertFalse( $result );
+	}
+
+	/**
 	 * Is_human_takeover_active() returns false when table does not exist.
 	 */
 	public function test_channel_contacts_human_takeover_false_without_table() {
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
 		$result = WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', '15551234567' );
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Is_human_takeover_active() accepts a connection_id argument and returns false without table.
+	 */
+	public function test_channel_contacts_human_takeover_with_connection_id_false_without_table() {
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+		$result = WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', '987654321', 'conn_tg' );
 		$this->assertFalse( $result );
 	}
 
@@ -259,6 +298,67 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'raw_payload', $formatted );
 		$this->assertSame( 'tool output', $formatted['raw_payload']['agentic_tool_messages'][0]['content'] );
+	}
+
+	/**
+	 * Format_contact() must include connection_id in its return value.
+	 */
+	public function test_chat_channels_format_contact_includes_connection_id() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_contact' );
+		$method->setAccessible( true );
+
+		$row = array(
+			'_ID'                => 1,
+			'channel'            => 'slack',
+			'channel_contact_id' => 'U12345678',
+			'connection_id'      => 'conn_workspace_a',
+			'display_name'       => 'Test User',
+			'phone_number'       => '',
+			'email'              => '',
+			'tags'               => '[]',
+			'crm_status'         => 'new',
+			'notes'              => '',
+			'assigned_agent'     => '',
+			'human_takeover'     => 0,
+			'last_message_at'    => 1700000000,
+		);
+
+		$formatted = $method->invoke( $controller, $row );
+
+		$this->assertArrayHasKey( 'connection_id', $formatted, 'format_contact must include connection_id' );
+		$this->assertSame( 'conn_workspace_a', $formatted['connection_id'] );
+	}
+
+	/**
+	 * Format_contact() returns an empty string for connection_id when not set in the row.
+	 */
+	public function test_chat_channels_format_contact_connection_id_defaults_empty() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_contact' );
+		$method->setAccessible( true );
+
+		$row = array(
+			'_ID'                => 2,
+			'channel'            => 'whatsapp',
+			'channel_contact_id' => '+1234567890',
+			'display_name'       => 'Anon',
+			'tags'               => '[]',
+			'crm_status'         => 'new',
+			'human_takeover'     => 0,
+			'last_message_at'    => 0,
+		);
+
+		$formatted = $method->invoke( $controller, $row );
+
+		$this->assertArrayHasKey( 'connection_id', $formatted, 'connection_id key must always be present' );
+		$this->assertSame( '', $formatted['connection_id'], 'connection_id must default to empty string' );
 	}
 
 	/**

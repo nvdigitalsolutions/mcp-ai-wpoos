@@ -1,6 +1,6 @@
 {
 	"name": "mcp-ai-wpoos",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows",
 	"private": true,
 	"scripts": {
@@ -19,10 +19,12 @@
 		"start:workflow": "wp-scripts start src/workflow-builder/index.jsx --output-path=addons/pro/build/workflow-builder",
 		"build:tma-builder": "wp-scripts build --config webpack.config.tma-builder.js",
 		"start:tma-builder": "wp-scripts start --config webpack.config.tma-builder.js",
+		"build:tma-woo-shop": "wp-scripts build --config webpack.config.tma-woo-shop.js",
+		"start:tma-woo-shop": "wp-scripts start --config webpack.config.tma-woo-shop.js",
 		"cosmos:tma": "cosmos --config cosmos.config.json",
 		"cosmos:tma:export": "cosmos-export --config cosmos.config.json",
 		"build": "npm run build:css && npm run build:js && npm run build:js:pro",
-		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow && npm run build:tma-builder",
+		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow && npm run build:tma-builder && npm run build:tma-woo-shop",
 		"build:zip": "./bin/build-plugin-zip.sh",
 		"build:zip:base": "./bin/build-plugin-zip.sh --base",
 		"build:zip:pro": "./bin/build-plugin-zip.sh --pro",
@@ -88,6 +90,7 @@
 		"uglify-js": "^3.17.4"
 	},
 	"overrides": {
+		"yauzl": ">=3.2.1",
 		"tmp": ">=0.2.4",
 		"webpack-dev-server": ">=5.2.1",
 		"langsmith": ">=0.4.6",
@@ -95,7 +98,8 @@
 		"minimatch@^3": "3.1.5",
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
-		"serialize-javascript": ">=7.0.3"
+		"serialize-javascript": ">=7.0.3",
+		"undici": ">=7.24.0"
 	},
 	"engines": {
 		"node": ">=18.17.0",

@@ -238,7 +238,7 @@
 			if ( ! text ) { return; }
 
 			var $btn = $( '#cc-send-reply' ).prop( 'disabled', true );
-			apiFetch( '/reply', 'POST', { contact_id: state.activeContactId, message: text } )
+			apiFetch( '/reply', 'POST', { contact_id: state.activeContactId, message: text, connection_id: state.activeContact ? ( state.activeContact.connection_id || '' ) : '' } )
 				.then( function( data ) {
 					if ( data && data.success ) {
 						$( '#cc-reply-text' ).val( '' );

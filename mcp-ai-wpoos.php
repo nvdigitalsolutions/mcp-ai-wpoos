@@ -3,7 +3,7 @@
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Install the Pro add-on for Full Version (519 tools including WooCommerce, JetEngine CPT/Taxonomy AI integration, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
- * Version: 1.1.3
+ * Version: 1.1.4
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -41,7 +41,7 @@ if ( function_exists( 'wp_mcp_ai_core_loaded' ) ) {
  * These constants are needed throughout the plugin, including in error handlers.
  */
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.3' );
+	define( 'WP_MCP_AI_VERSION', '1.1.4' );
 }
 if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
 	define( 'WP_MCP_AI_FILE', __FILE__ );
@@ -523,6 +523,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
@@ -704,6 +705,7 @@ if ( is_admin() ) {
 	WP_MCP_AI_Admin_Scripts::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-dlq-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-crawl4ai-monitor.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
@@ -1042,6 +1044,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_crawl4ai_monitor;
 
 		/**
+		 * Admin Dead Letter Queue manager instance.
+		 *
+		 * @var WP_MCP_AI_Admin_DLQ_Manager
+		 */
+		public $admin_dlq_manager;
+
+		/**
 		 * Resource manager instance.
 		 *
 		 * @var WP_MCP_AI_Resource_Manager
@@ -1117,6 +1126,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( is_admin() ) {
 				$this->admin_cron_manager     = $container->get( 'admin.cron_manager' );
+				$this->admin_dlq_manager      = $container->get( 'admin.dlq_manager' );
 				$this->admin_token_manager    = $container->get( 'admin.token_manager' );
 				$this->admin_crawl4ai_monitor = $container->get( 'admin.crawl4ai_monitor' );
 			}
@@ -1130,6 +1140,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( is_admin() ) {
 				$GLOBALS['wp_mcp_ai_admin_cron_manager']     = $this->admin_cron_manager;
+				$GLOBALS['wp_mcp_ai_admin_dlq_manager']      = $this->admin_dlq_manager;
 				$GLOBALS['wp_mcp_ai_admin_token_manager']    = $this->admin_token_manager;
 				$GLOBALS['wp_mcp_ai_admin_crawl4ai_monitor'] = $this->admin_crawl4ai_monitor;
 			}
@@ -1883,6 +1894,12 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// Deferred to init hook to ensure the uploads directory is accessible.
 		// Skills that are already installed in uploads will be skipped.
 		set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
+
+		// Set a transient to redirect new users to the onboarding wizard on the next
+		// admin page load. Only triggers when the wizard has not been completed yet.
+		if ( ! get_option( 'wp_mcp_ai_onboarding_complete' ) ) {
+			set_transient( 'wp_mcp_ai_activation_redirect', true, 30 );
+		}
 
 		// Trigger optional components download (vectorizer & knowledge base).
 		// This runs in the background after activation to avoid blocking.

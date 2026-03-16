@@ -352,6 +352,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'icloud':
 					$api_key = isset( $_POST['icloud_api_key'] ) ? wp_unslash( $_POST['icloud_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'shopify':
+					$api_key    = isset( $_POST['shopify_access_token'] ) ? wp_unslash( $_POST['shopify_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access token must not be sanitized.
+					$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -449,6 +453,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// The gateway API URL is entered by the user (varies per gateway).
 				$url       = isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : $url;
 				$auth_type = 'none';
+			}
+
+			// For Shopify connections, build the store URL from the shop domain and use custom_header auth.
+			if ( 'shopify' === $connection_type ) {
+				$shop_domain = isset( $_POST['shopify_shop_domain'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_shop_domain'] ) ) : '';
+				// Strip scheme prefix and trailing slash if user included them.
+				$shop_domain = preg_replace( '#^https?://#i', '', $shop_domain );
+				$shop_domain = rtrim( $shop_domain, '/' );
+				// Append .myshopify.com if no dot is present (bare store name supplied).
+				if ( ! empty( $shop_domain ) && false === strpos( $shop_domain, '.' ) ) {
+					$shop_domain .= '.myshopify.com';
+				}
+				$url       = ! empty( $shop_domain ) ? 'https://' . $shop_domain : $url;
+				$auth_type = 'custom_header'; // Shopify uses X-Shopify-Access-Token header.
 			}
 
 			// For mesh peer connections, use custom_header auth with mesh API key
@@ -559,9 +577,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					? array_map( 'sanitize_text_field', array_map( 'wp_unslash', $_POST['telegram_command_descriptions'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
 					: array(),
 				// Mini App settings.
-				'enable_mini_app'         => ! empty( $_POST['telegram_enable_mini_app'] ),
-				'mini_app_assistant_id'   => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
-				'mini_app_template'       => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
+				'enable_mini_app'              => ! empty( $_POST['telegram_enable_mini_app'] ),
+				'mini_app_assistant_id'        => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
+				'mini_app_template'            => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
+				'mini_app_woo_source'          => ( isset( $_POST['telegram_mini_app_woo_source'] ) && 'remote' === $_POST['telegram_mini_app_woo_source'] ) ? 'remote' : 'local',
+				'mini_app_woo_connection_id'   => isset( $_POST['telegram_mini_app_woo_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_woo_connection_id'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -615,6 +635,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'onedrive_folder_path'   => isset( $_POST['onedrive_folder_path'] ) ? sanitize_text_field( wp_unslash( $_POST['onedrive_folder_path'] ) ) : '',
 				// iCloud per-service settings.
 				'icloud_default_folder_id' => isset( $_POST['icloud_default_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['icloud_default_folder_id'] ) ) : '',
+				// Shopify-specific fields.
+				'shopify_api_version' => 'shopify' === $connection_type && isset( $_POST['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $_POST['shopify_api_version'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['shopify_api_version'] ) )
+					: ( 'shopify' === $connection_type ? '2025-01' : '' ),
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -875,6 +899,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'apple_messages'     => __( 'Apple Messages for Business', 'mcp-ai-wpoos-pro' ),
 									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
 									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
+									'shopify'            => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
 									);
 
 								$type_colors = array(
@@ -900,6 +925,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'apple_messages'     => '#555555', // Apple dark grey
 									'office365'          => '#d83b01', // Microsoft Office orange
 									'icloud'             => '#3693f5', // iCloud blue
+									'shopify'            => '#96bf48', // Shopify green
 									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -1212,6 +1238,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="icloud" <?php selected( $connection_type, 'icloud' ); ?>>
 								<?php esc_html_e( 'iCloud Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
+							<option value="shopify" <?php selected( $connection_type, 'shopify' ); ?>>
+								<?php esc_html_e( 'Shopify (E-Commerce Platform)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'mcp-ai-wpoos-pro' ); ?>
@@ -1315,6 +1344,75 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Shopify -->
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_shop_domain"><?php esc_html_e( 'Shop Domain', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="shopify_shop_domain" id="shopify_shop_domain" class="regular-text"
+							value="<?php echo $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( preg_replace( '#^https?://#i', '', rtrim( $connection['url'], '/' ) ) ) : ''; ?>"
+							autocomplete="off" placeholder="mystore.myshopify.com">
+						<p class="description"><?php esc_html_e( 'Your Shopify store domain, e.g. mystore.myshopify.com. You can also enter just the store name and .myshopify.com will be appended automatically.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_access_token"><?php esc_html_e( 'Admin API Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="shopify_access_token" id="shopify_access_token" class="regular-text" value="" autocomplete="new-password" placeholder="shpat_...">
+						<?php if ( $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing Admin API access token. Generate this token in your Shopify Admin → Apps → Develop apps → API credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Shopify Admin API access token (shpat_…). Generated in Shopify Admin → Apps → Develop apps → API credentials. Sent as the X-Shopify-Access-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_storefront_token"><?php esc_html_e( 'Storefront API Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="shopify_storefront_token" id="shopify_storefront_token" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing Storefront API token, or clear it to remove.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional. Shopify Storefront API access token for customer-facing operations (reading published products without admin access).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_api_version"><?php esc_html_e( 'Admin API Version', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="shopify_api_version" id="shopify_api_version" class="regular-text"
+							value="<?php echo $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_version'] ) ? esc_attr( $connection['shopify_api_version'] ) : '2025-01'; ?>"
+							autocomplete="off" placeholder="2025-01">
+						<p class="description"><?php esc_html_e( 'Shopify Admin GraphQL API version in YYYY-MM format (e.g. 2025-01). Defaults to 2025-01. See Shopify API versioning docs for available versions.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Shopify Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
+							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to create a Shopify Admin API access token:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+								<li><?php esc_html_e( 'In your Shopify Admin, go to Settings → Apps and sales channels → Develop apps.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Create an app" and give it a name (e.g. NV oOS AI).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Under "API credentials", click "Configure Admin API scopes" and select the permissions you need (e.g. read_products, write_products, read_orders, read_customers).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Save" then "Install app" to generate the access token.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the Admin API access token (shpat_…) and paste it above.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
 					</td>
 				</tr>
 
@@ -2318,6 +2416,102 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
+
+				<?php
+				/*
+				 * WooCommerce Data Source row – visible only when an e-commerce Mini App
+				 * template (woo_shop or ecommerce) is selected for this connection.
+				 */
+				$tg_woo_source        = ( $is_edit && isset( $connection['mini_app_woo_source'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) )
+					? sanitize_key( $connection['mini_app_woo_source'] )
+					: 'local';
+				$tg_woo_connection_id = ( $is_edit && isset( $connection['mini_app_woo_connection_id'] ) )
+					? sanitize_key( $connection['mini_app_woo_connection_id'] )
+					: '';
+
+				// Gather all WordPress/WooCommerce remote connections for the dropdown.
+				$_woo_remote_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
+						if ( isset( $_rc['connection_type'] ) && 'wordpress' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+							$_woo_remote_connections[] = $_rc;
+						}
+					}
+				}
+				?>
+				<tr class="telegram-only-field tma-woo-source-row" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'WooCommerce Data Source', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<fieldset>
+							<label style="display:block;margin-bottom:8px;">
+								<input type="radio" name="telegram_mini_app_woo_source" id="tma-woo-source-local" value="local"
+									<?php checked( $tg_woo_source, 'local' ); ?>>
+								<?php esc_html_e( 'Local Store — use WooCommerce on this WordPress site', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<label style="display:block;margin-bottom:8px;">
+								<input type="radio" name="telegram_mini_app_woo_source" id="tma-woo-source-remote" value="remote"
+									<?php checked( $tg_woo_source, 'remote' ); ?>>
+								<?php esc_html_e( 'Remote Connection — use a configured WooCommerce remote site', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+							<div id="tma-woo-remote-wrap" style="margin-top:8px;padding-left:20px;<?php echo 'remote' === $tg_woo_source ? '' : 'display:none'; ?>">
+								<select name="telegram_mini_app_woo_connection_id" id="telegram_mini_app_woo_connection_id">
+									<option value=""><?php esc_html_e( '— Select a remote WooCommerce connection —', 'mcp-ai-wpoos-pro' ); ?></option>
+									<?php foreach ( $_woo_remote_connections as $_rc ) : ?>
+										<option value="<?php echo esc_attr( $_rc['id'] ); ?>" <?php selected( $tg_woo_connection_id, $_rc['id'] ); ?>>
+											<?php echo esc_html( ( $_rc['name'] ?? $_rc['id'] ) . ' (' . ( $_rc['url'] ?? '' ) . ')' ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<?php if ( empty( $_woo_remote_connections ) ) : ?>
+									<p class="description" style="color:#d63638;">
+										<?php
+										printf(
+											/* translators: %s: URL to remote sites admin page */
+											esc_html__( 'No WordPress remote connections found. %s first.', 'mcp-ai-wpoos-pro' ),
+											'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '">' . esc_html__( 'Add one in Remote Sites', 'mcp-ai-wpoos-pro' ) . '</a>'
+										);
+										?>
+									</p>
+								<?php endif; ?>
+							</div>
+						</fieldset>
+						<p class="description">
+							<?php esc_html_e( 'Choose where the WooCommerce Shop Mini App reads its product and order data from. "Local Store" uses WooCommerce installed on this site. "Remote Connection" lets you power the Mini App from a separate WooCommerce store configured in Remote Sites.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<script>
+				( function() {
+					/* Toggle the WooCommerce Data Source row when the template changes. */
+					var tplSel      = document.getElementById( 'telegram_mini_app_template' );
+					var wooRow      = document.querySelector( '.tma-woo-source-row' );
+					var remoteWrap  = document.getElementById( 'tma-woo-remote-wrap' );
+					var radioLocal  = document.getElementById( 'tma-woo-source-local' );
+					var radioRemote = document.getElementById( 'tma-woo-source-remote' );
+
+					var ecommerceTemplates = [ 'woo_shop', 'ecommerce' ];
+
+					function toggleWooRow() {
+						if ( ! tplSel || ! wooRow ) { return; }
+						var show = ecommerceTemplates.indexOf( tplSel.value ) !== -1;
+						wooRow.style.display = show ? '' : 'none';
+					}
+
+					function toggleRemoteWrap() {
+						if ( ! remoteWrap ) { return; }
+						remoteWrap.style.display = ( radioRemote && radioRemote.checked ) ? 'block' : 'none';
+					}
+
+					if ( tplSel ) {
+						tplSel.addEventListener( 'change', toggleWooRow );
+						toggleWooRow();
+					}
+					if ( radioLocal )  { radioLocal.addEventListener( 'change', toggleRemoteWrap ); }
+					if ( radioRemote ) { radioRemote.addEventListener( 'change', toggleRemoteWrap ); }
+				}() );
+				</script>
 
 				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Bot Creation Guide', 'mcp-ai-wpoos-pro' ); ?></th>
@@ -4875,6 +5069,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var appleMessagesFields = document.querySelectorAll('.apple_messages-only-field');
 			var office365Fields = document.querySelectorAll('.office365-only-field');
 			var icloudFields = document.querySelectorAll('.icloud-only-field');
+			var shopifyFields = document.querySelectorAll('.shopify-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -4946,6 +5141,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			icloudFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			shopifyFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -5159,6 +5357,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				authTypeSelect.value = 'none';
 				// Show/hide per-service settings based on checkbox state
 				toggleServiceSettings('icloud');
+			} else if (connectionType === 'shopify') {
+				shopifyFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Shopify URL is computed from the shop domain field — hide the generic URL input.
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'custom_header';
+				// Update the URL field to reflect the current shop domain value.
+				var shopDomainField = document.getElementById('shopify_shop_domain');
+				if (shopDomainField && shopDomainField.value) {
+					var domain = shopDomainField.value.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+					if (domain && domain.indexOf('.') === -1) {
+						domain += '.myshopify.com';
+					}
+					urlField.value = domain ? 'https://' + domain : '';
+				}
 			}
 		}
 
@@ -5219,6 +5435,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var urlField = document.getElementById('url');
 					if (urlField && urlField.readOnly) {
 						urlField.value = 'https://graph.facebook.com/' + this.value;
+					}
+				});
+			}
+
+			// Shopify shop domain input: update the (read-only) URL field in real time.
+			var shopifyDomainInput = document.getElementById('shopify_shop_domain');
+			if (shopifyDomainInput) {
+				shopifyDomainInput.addEventListener('input', function() {
+					var urlField = document.getElementById('url');
+					if (urlField && urlField.readOnly) {
+						var domain = this.value.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+						if (domain && domain.indexOf('.') === -1) {
+							domain += '.myshopify.com';
+						}
+						urlField.value = domain ? 'https://' + domain : '';
 					}
 				});
 			}

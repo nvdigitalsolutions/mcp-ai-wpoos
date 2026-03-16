@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin.
+AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base (165 tools) or Full Version (519 tools) via Pro add-on.
 
 == Description ==
 
@@ -269,6 +269,69 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.4 - March 2026 =
+
+**Security Hardening**
+
+* Upgraded AES encryption to AES-256-GCM for stronger encryption of stored credentials
+* Fixed finfo MIME detection to fail-closed (deny on detection failure rather than allow)
+* Fixed OCR error responses that could expose internal path/stack information
+* Fixed Discord webhook replay attack protection
+* Enforced HTTPS for all external webhook and remote connections
+* Fixed backup file path leak in file export handlers
+* Added ZIP bomb protection to file upload handlers
+
+**Chat Channels — Slack**
+
+* Fixed Slack bot not responding to channel @mentions
+* Slack auto-reply now uses mrkdwn formatting; channel settings surfaced on connection page
+* Enhanced Slack channel type handling per 2025 industry standards
+
+**Chat Channels — Google Chat**
+
+* Fixed Google Chat bot not responding: route conflict, OIDC bypass, DM initial message handling
+* Fixed Google Chat channel events not received when connection tests pass
+* Fixed Google Chat auto-reply for DMs/mentions and connection test when OIDC is disabled
+* Added Google Chat webhook diagnostic log to Settings page for easier connection troubleshooting
+
+**Chat Channels — Microsoft Teams**
+
+* Enhanced Teams webhook with cross-channel consistency improvements (Slack/Telegram parity)
+* Extended Teams to support multiple simultaneous connections with per-connection setup guide
+* Added Teams declarative agent manifest generation to Chat Channels admin page
+* Microsoft OAuth 2.0 one-click connect: Azure AD client ID/secret, auto-refresh token
+
+**Chat Channels — Telegram**
+
+* Added typing indicator and rate-limiting enforcement for Telegram chat channel
+* Dynamically integrate mcp-ai-slash-commands plugin into Telegram bot at runtime
+* Added /vectorstore to Telegram /start message and admin slash command reference table
+
+**Telegram Mini App**
+
+* TMA doctor tab now uses the assistant assigned to the connection (not a hardcoded default)
+* AI replies in TMA doctor and coach chat tabs rendered as formatted HTML via Markdown renderer
+* Vitals log import fallback improved for partial-row edge cases
+
+**AI Providers — Gemini**
+
+* Gemini embedding: added gemini-embedding-001 model, output_dimensionality parameter, 9 new task types, per-request model override in batch calls
+
+**Pro Toolkit**
+
+* Product actualization tool: AI-powered provider-agnostic product integration using Gemini (gemini-2.5-flash-image) or OpenAI (gpt-image-1) as default mode; composite mode retained as legacy fallback
+* Fixed JetEngine list_types returning null slugs/names when JetEngine returns incomplete type data
+* Fixed wp_tempnam() undefined function error in pro tools by requiring wp-admin/includes/file.php
+* Fixed consolidate & add page: singleton pattern, init registration, sanitize delegation
+* Fixed HTML-to-PDF tool: load wp-admin includes before calling media_handle_sideload
+* Fixed PDF generation: pdfkit, cheerio, docx, and exceljs now bundled into generate-*.bundle.js (no runtime node_modules needed)
+
+**WordPress.org Compliance**
+
+* Excluded .gitattributes hidden file from plugin distribution ZIPs
+* Included composer.json alongside vendor/ directory in distribution ZIPs (plugin check requirement)
+* Created languages/ directory so the Domain Path: /languages plugin header resolves correctly
 
 = 1.1.3 - March 2026 =
 

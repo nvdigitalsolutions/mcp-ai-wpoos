@@ -58,10 +58,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
-				'wp_ajax_wp_mcp_ai_test_tavily_connection'       => 'handle_test_tavily_connection',
-				'wp_ajax_wp_mcp_ai_test_anthropic_connection'    => 'handle_test_anthropic_connection',
-				'wp_ajax_wp_mcp_ai_test_exa_connection'          => 'handle_test_exa_connection',
-				'wp_ajax_wp_mcp_ai_test_perplexity_connection'   => 'handle_test_perplexity_connection',
+				'wp_ajax_wp_mcp_ai_test_tavily_connection' => 'handle_test_tavily_connection',
+				'wp_ajax_wp_mcp_ai_test_anthropic_connection' => 'handle_test_anthropic_connection',
+				'wp_ajax_wp_mcp_ai_test_exa_connection'    => 'handle_test_exa_connection',
+				'wp_ajax_wp_mcp_ai_test_perplexity_connection' => 'handle_test_perplexity_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
 				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
@@ -935,10 +935,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr         = WP_MCP_AI_Resource_Manager::instance();
-			$timeout              = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout              = max( 10, min( 30, $timeout ) );
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 10, min( 30, $timeout ) );
 
 			// Send a minimal chat completion to validate the key.
 			$response = wp_remote_post(
@@ -1110,9 +1110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					),
 					'body'    => wp_json_encode(
 						array(
-							'model'       => 'sonar',
-							'max_tokens'  => 5,
-							'messages'    => array(
+							'model'      => 'sonar',
+							'max_tokens' => 5,
+							'messages'   => array(
 								array(
 									'role'    => 'user',
 									'content' => 'Hi',
@@ -3608,11 +3608,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// install_bundled or force_install_bundled.
 			$force = ( 'force_install_bundled' === $action_type );
 
+			// Collect all bundled skill directories (base + pro) to process.
+			$bundled_dirs_to_process = array( $registry->get_bundled_skills_dir() );
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_bundled_dir = trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills';
+				if ( is_dir( $pro_bundled_dir ) ) {
+					$bundled_dirs_to_process[] = $pro_bundled_dir;
+				}
+			}
+
 			if ( $force ) {
 				// Remove existing installed bundled skills to force reinstall.
-				$bundled_dir      = $registry->get_bundled_skills_dir();
 				$uninstall_errors = array();
-				if ( is_dir( $bundled_dir ) ) {
+				foreach ( $bundled_dirs_to_process as $bundled_dir ) {
+					if ( ! is_dir( $bundled_dir ) ) {
+						continue;
+					}
 					$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 					if ( is_array( $dirs ) ) {
 						foreach ( $dirs as $dir ) {
@@ -3626,7 +3637,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
-			$result = $registry->install_bundled_skills();
+			// Install from all bundled directories, merging results.
+			$total_installed = 0;
+			$total_skipped   = 0;
+			$all_errors      = array();
+			foreach ( $bundled_dirs_to_process as $bundled_dir ) {
+				$dir_result       = $registry->install_bundled_skills_from_dir( $bundled_dir );
+				$total_installed += $dir_result['installed'];
+				$total_skipped   += $dir_result['skipped'];
+				$all_errors       = array_merge( $all_errors, $dir_result['errors'] );
+			}
+			$result = array(
+				'installed' => $total_installed,
+				'skipped'   => $total_skipped,
+				'errors'    => $all_errors,
+			);
 
 			$message = sprintf(
 				/* translators: 1: Number installed, 2: Number skipped */

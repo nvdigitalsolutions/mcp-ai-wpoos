@@ -99,6 +99,46 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Number of refills remaining (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
+				'rx_number'          => array(
+					'type'        => 'string',
+					'description' => __( 'Pharmacy prescription (Rx) number (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'ndc_code'           => array(
+					'type'        => 'string',
+					'description' => __( 'National Drug Code (NDC) (optional, e.g. "0069-0010-01")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'route'              => array(
+					'type'        => 'string',
+					'description' => __( 'Route of administration (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'oral', 'sublingual', 'topical', 'transdermal', 'injection', 'inhalation', 'ophthalmic', 'otic', 'nasal', 'rectal', 'vaginal', 'other', '' ),
+				),
+				'quantity'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Quantity dispensed (optional, e.g. 30)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+				),
+				'quantity_unit'      => array(
+					'type'        => 'string',
+					'description' => __( 'Unit for quantity (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'tablets', 'capsules', 'ml', 'mg', 'patches', 'drops', 'puffs', 'units', 'suppositories', 'other', '' ),
+				),
+				'indication'         => array(
+					'type'        => 'string',
+					'description' => __( 'Indication / reason for prescribing (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 500,
+				),
+				'pharmacy_name'      => array(
+					'type'        => 'string',
+					'description' => __( 'Dispensing pharmacy name (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 200,
+				),
+				'pharmacy_phone'     => array(
+					'type'        => 'string',
+					'description' => __( 'Dispensing pharmacy phone number (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
 			),
 			'required'             => array( 'member_id', 'medication_name', 'dosage', 'frequency' ),
 			'additionalProperties' => false,
@@ -197,6 +237,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		$status             = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
 		$notes              = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
 		$refills_remaining  = isset( $arguments['refills_remaining'] ) ? absint( $arguments['refills_remaining'] ) : 0;
+		$rx_number          = isset( $arguments['rx_number'] ) ? sanitize_text_field( $arguments['rx_number'] ) : '';
+		$ndc_code           = isset( $arguments['ndc_code'] ) ? sanitize_text_field( $arguments['ndc_code'] ) : '';
+		$route              = isset( $arguments['route'] ) ? sanitize_key( $arguments['route'] ) : '';
+		$quantity           = isset( $arguments['quantity'] ) ? absint( $arguments['quantity'] ) : 0;
+		$quantity_unit      = isset( $arguments['quantity_unit'] ) ? sanitize_key( $arguments['quantity_unit'] ) : '';
+		$indication         = isset( $arguments['indication'] ) ? sanitize_text_field( $arguments['indication'] ) : '';
+		$pharmacy_name      = isset( $arguments['pharmacy_name'] ) ? sanitize_text_field( $arguments['pharmacy_name'] ) : '';
+		$pharmacy_phone     = isset( $arguments['pharmacy_phone'] ) ? sanitize_text_field( $arguments['pharmacy_phone'] ) : '';
 
 		// Validate dates.
 		if ( $start_date && ! $this->validate_date( $start_date ) ) {
@@ -241,6 +289,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
+			update_post_meta( $prescription_id, '_prescription_rx_number', $rx_number );
+			update_post_meta( $prescription_id, '_prescription_ndc_code', $ndc_code );
+			update_post_meta( $prescription_id, '_prescription_route', $route );
+			update_post_meta( $prescription_id, '_prescription_quantity', $quantity );
+			update_post_meta( $prescription_id, '_prescription_quantity_unit', $quantity_unit );
+			update_post_meta( $prescription_id, '_prescription_indication', $indication );
+			update_post_meta( $prescription_id, '_prescription_pharmacy_name', $pharmacy_name );
+			update_post_meta( $prescription_id, '_prescription_pharmacy_phone', $pharmacy_phone );
 
 			$prescription = get_post( $prescription_id );
 
@@ -260,6 +316,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 					'status'             => $status,
 					'notes'              => $notes,
 					'refills_remaining'  => $refills_remaining,
+					'rx_number'          => $rx_number,
+					'ndc_code'           => $ndc_code,
+					'route'              => $route,
+					'quantity'           => $quantity,
+					'quantity_unit'      => $quantity_unit,
+					'indication'         => $indication,
+					'pharmacy_name'      => $pharmacy_name,
+					'pharmacy_phone'     => $pharmacy_phone,
 					'updated_at'         => $prescription->post_modified,
 				),
 				'updated'         => true,
@@ -300,6 +364,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
+			update_post_meta( $prescription_id, '_prescription_rx_number', $rx_number );
+			update_post_meta( $prescription_id, '_prescription_ndc_code', $ndc_code );
+			update_post_meta( $prescription_id, '_prescription_route', $route );
+			update_post_meta( $prescription_id, '_prescription_quantity', $quantity );
+			update_post_meta( $prescription_id, '_prescription_quantity_unit', $quantity_unit );
+			update_post_meta( $prescription_id, '_prescription_indication', $indication );
+			update_post_meta( $prescription_id, '_prescription_pharmacy_name', $pharmacy_name );
+			update_post_meta( $prescription_id, '_prescription_pharmacy_phone', $pharmacy_phone );
 
 			$prescription = get_post( $prescription_id );
 
@@ -319,6 +391,14 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 					'status'             => $status,
 					'notes'              => $notes,
 					'refills_remaining'  => $refills_remaining,
+					'rx_number'          => $rx_number,
+					'ndc_code'           => $ndc_code,
+					'route'              => $route,
+					'quantity'           => $quantity,
+					'quantity_unit'      => $quantity_unit,
+					'indication'         => $indication,
+					'pharmacy_name'      => $pharmacy_name,
+					'pharmacy_phone'     => $pharmacy_phone,
 					'created_at'         => $prescription->post_date,
 				),
 				'updated'         => false,

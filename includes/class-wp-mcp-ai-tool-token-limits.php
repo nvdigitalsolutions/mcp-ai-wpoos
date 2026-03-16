@@ -86,62 +86,62 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 */
 	protected static $tool_multipliers = array(
 		// Web crawling & scraping - external service costs.
-		'run_crawl4ai_job'                => 2.0,
-		'run_crawl4ai_job_validated'      => 2.0,
-		'scrape_product'                  => 2.0,
-		'scrape_product_validated'        => 2.0,
+		'run_crawl4ai_job'                  => 2.0,
+		'run_crawl4ai_job_validated'        => 2.0,
+		'scrape_product'                    => 2.0,
+		'scrape_product_validated'          => 2.0,
 		// Web search - external API costs (Tavily, Brave Search; approximate costs as of 2026-03).
-		'web_search'                      => 2.0,
-		'web_search_validated'            => 2.0,
+		'web_search'                        => 2.0,
+		'web_search_validated'              => 2.0,
 		// Web browser - loads and processes full web pages.
-		'web_browser'                     => 2.5,
+		'web_browser'                       => 2.5,
 		// Deep research - multi-step, multi-source research with several external lookups.
-		'deep_research'                   => 3.0,
+		'deep_research'                     => 3.0,
 		// Document processing.
-		'submit_document_prompt'          => 2.0,
+		'submit_document_prompt'            => 2.0,
 		// Embeddings & semantic search.
-		'create_text_embeddings'          => 1.5,
-		'batch_embed_content'             => 2.0,
-		'semantic_content_search'         => 1.5,
-		'search_content'                  => 1.5,
+		'create_text_embeddings'            => 1.5,
+		'batch_embed_content'               => 2.0,
+		'semantic_content_search'           => 1.5,
+		'search_content'                    => 1.5,
 		// Content search.
-		'search_content_validated'        => 1.5,
+		'search_content_validated'          => 1.5,
 		// Design Professional tools - higher multipliers for resource-intensive operations.
-		'generate_openai_image'           => 3.0,
-		'generate_openai_image_validated' => 3.0,
-		'generate_gemini_image'           => 3.0,
-		'generate_gemini_image_validated' => 3.0,
-		'cloudflareai_text_to_image'      => 2.5,
-		'edit_gemini_image'               => 2.5,
-		'edit_gemini_image_validated'     => 2.5,
-		'edit_openai_image'               => 2.5,
-		'create_image_variation'          => 2.0,
+		'generate_openai_image'             => 3.0,
+		'generate_openai_image_validated'   => 3.0,
+		'generate_gemini_image'             => 3.0,
+		'generate_gemini_image_validated'   => 3.0,
+		'cloudflareai_text_to_image'        => 2.5,
+		'edit_gemini_image'                 => 2.5,
+		'edit_gemini_image_validated'       => 2.5,
+		'edit_openai_image'                 => 2.5,
+		'create_image_variation'            => 2.0,
 		// Video generation (most compute-intensive).
-		'generate_veo_video'              => 5.0,
-		'generate_veo_video_validated'    => 5.0,
-		'generate_sora_video'             => 5.0,
-		'generate_sora_video_validated'   => 5.0,
+		'generate_veo_video'                => 5.0,
+		'generate_veo_video_validated'      => 5.0,
+		'generate_sora_video'               => 5.0,
+		'generate_sora_video_validated'     => 5.0,
 		// Video processing.
-		'check_video_status'              => 1.0,
-		'analyze_video'                   => 2.5,
-		'extract_video_frames'            => 2.0,
-		'transcode_video'                 => 3.0,
+		'check_video_status'                => 1.0,
+		'analyze_video'                     => 2.5,
+		'extract_video_frames'              => 2.0,
+		'transcode_video'                   => 3.0,
 		// Music generation.
-		'generate_music'                  => 3.5,
-		'generate_music_validated'        => 3.5,
-		'generate_jukebox_music'          => 3.5,
+		'generate_music'                    => 3.5,
+		'generate_music_validated'          => 3.5,
+		'generate_jukebox_music'            => 3.5,
 		// Image analysis.
-		'vision_object_localization'      => 2.0,
-		'vision_product_search'           => 2.0,
-		'analyze_image'                   => 2.0,
-		'extract_image_text'              => 1.5,
-		'generate_image_alt_text'         => 1.5,
+		'vision_object_localization'        => 2.0,
+		'vision_product_search'             => 2.0,
+		'analyze_image'                     => 2.0,
+		'extract_image_text'                => 1.5,
+		'generate_image_alt_text'           => 1.5,
 		'generate_image_alt_text_validated' => 1.5,
-		'generate_image_caption'          => 1.5,
-		'generate_image_caption_validated' => 1.5,
+		'generate_image_caption'            => 1.5,
+		'generate_image_caption_validated'  => 1.5,
 		// External API calls.
-		'run_openai_external_action'      => 2.0,
-		'generic_rest_api'                => 1.5,
+		'run_openai_external_action'        => 2.0,
+		'generic_rest_api'                  => 1.5,
 	);
 
 	/**
@@ -2406,16 +2406,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$tier_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				"SHOW INDEX FROM `{$wpdb->usermeta}` WHERE Key_name = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $wpdb->usermeta is an internal trusted property, not user input.
 				'idx_wp_mcp_ai_token_tier'
 			)
 		);
 
 		if ( ! $tier_index_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ALTER TABLE/ADD INDEX does not support placeholders; $wpdb->usermeta is an internal trusted property, not user input.
 			$wpdb->query(
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
-				"ALTER TABLE {$wpdb->usermeta}
+				"ALTER TABLE `{$wpdb->usermeta}`
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
 			);
 		}
@@ -2423,16 +2422,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$usage_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				"SHOW INDEX FROM `{$wpdb->usermeta}` WHERE Key_name = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $wpdb->usermeta is an internal trusted property, not user input.
 				'idx_wp_mcp_ai_usage'
 			)
 		);
 
 		if ( ! $usage_index_exists ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- ALTER TABLE/ADD INDEX does not support placeholders; $wpdb->usermeta is an internal trusted property, not user input.
 			$wpdb->query(
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
-				"ALTER TABLE {$wpdb->usermeta}
+				"ALTER TABLE `{$wpdb->usermeta}`
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"
 			);
 		}

@@ -621,6 +621,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// Remotion programmatic video creation tool (React/Node.js, always-on pro tool).
+			'WP_MCP_AI_Tool_Create_Remotion_Video'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.
@@ -864,17 +866,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
 				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-health-reminder.php',
 				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-track-vaccinations.php',
+				'WP_MCP_AI_Tool_Log_Health_Metrics'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-health-metrics.php',
 				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php',
 				'WP_MCP_AI_Tool_Import_Vitals'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-vitals.php',
 				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-fhir-data.php',
 				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
 				// Health Research: compile data from CCT, options, files, and vector store.
 				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-compile-health-research-data.php',
+				// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
+				'WP_MCP_AI_Tool_Guide_Health_Record_Creation' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-guide-health-record-creation.php',
+				'WP_MCP_AI_Tool_Parse_Health_Information'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-parse-health-information.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 
 			// Auto-include JetEngine CCT tool when health management is enabled and JetEngine is active.
-			// This allows the AI to create/update/delete vital_signs CCT items directly without using create_post.
+			// This allows the AI to create/update/delete vitals_log CCT items directly without using create_post.
 			if ( function_exists( 'jet_engine' ) && ! isset( $pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] ) ) {
 				$pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php';
 			}
@@ -891,6 +897,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			);
 			$pro_tools = array_merge( $pro_tools, $woo_tools );
 		}
+
+		// Add Shopify tools — always available when a Shopify connection is configured.
+		// The tools themselves validate the connection at execution time.
+		$shopify_tools = array(
+			'WP_MCP_AI_Pro_Tool_Shopify_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+		);
+		$pro_tools     = array_merge( $pro_tools, $shopify_tools );
 
 		// Add JetEngine tools if enabled.
 		if ( ! empty( $settings['enable_jetengine_tools'] ) ) {
@@ -1442,6 +1458,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'quickbooks_report'               => 'external-tools',
 			// iSAMS School Management System - Requires external API credentials.
 			'isams_query'                     => 'external-tools',
+			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
+			'shopify_products'                => 'external-tools',
+			'shopify_orders'                  => 'external-tools',
+			'shopify_customers'               => 'external-tools',
+			'shopify_inventory'               => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',
@@ -1715,6 +1736,9 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		WP_MCP_AI_Media_Template_Presets::seed_presets();
 	}
 
+	// Schedule installation of Pro bundled skills (Google Workspace CLI skills, etc.).
+	set_transient( 'wp_mcp_ai_pro_install_bundled_skills', true, HOUR_IN_SECONDS );
+
 	flush_rewrite_rules();
 }
 
@@ -1758,3 +1782,45 @@ if ( function_exists( 'register_activation_hook' ) && function_exists( 'register
 		register_deactivation_hook( WP_MCP_AI_PRO_FILE, 'wp_mcp_ai_pro_deactivate' );
 	}
 }
+
+/**
+ * Install Pro bundled skills on init if the activation transient is set.
+ *
+ * Copies pre-packaged SKILL.md files from the Pro addon's bundled-skills directory
+ * (Google Workspace CLI skills and other Pro-exclusive skills) to the uploads skill
+ * storage. Already-installed skills are skipped.
+ *
+ * @since 1.7.2
+ */
+add_action(
+	'init',
+	function () {
+		if ( ! get_transient( 'wp_mcp_ai_pro_install_bundled_skills' ) ) {
+			return;
+		}
+
+		delete_transient( 'wp_mcp_ai_pro_install_bundled_skills' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+			return;
+		}
+
+		$pro_bundled_dir = defined( 'WP_MCP_AI_PRO_PATH' )
+			? trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills'
+			: '';
+
+		if ( empty( $pro_bundled_dir ) || ! is_dir( $pro_bundled_dir ) ) {
+			return;
+		}
+
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+		$result   = $registry->install_bundled_skills_from_dir( $pro_bundled_dir );
+
+		// Log any errors for debugging.
+		if ( ! empty( $result['errors'] ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
+			error_log( 'WP_MCP_AI Pro: Bundled skills install errors: ' . implode( '; ', $result['errors'] ) );
+		}
+	},
+	100
+);

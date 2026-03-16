@@ -3,7 +3,7 @@
 This document provides a comprehensive list of all external services used by the Open Operator System (oOS) plugin, including their purpose, data transmission details, and links to Terms of Service and Privacy Policies.
 
 **Last Updated:** March 2026  
-**Plugin Version:** 1.1.3
+**Plugin Version:** 1.1.4
 
 ---
 

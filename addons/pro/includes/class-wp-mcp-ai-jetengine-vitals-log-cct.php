@@ -3,13 +3,30 @@
  * JetEngine Custom Content Type registration for the vitals log.
  *
  * Stores structured vital-sign log entries (blood pressure, heart rate,
- * temperature, weight/BMI, glucose, SpO2, respiratory rate, and kidney
- * indicators) as first-class CCT items when JetEngine is active.  This CCT is
- * the primary destination for compiled log data written by the log_vital_signs
- * tool; the older vital_signs CCT is retained for backward compatibility.
+ * temperature, weight/BMI, glucose, SpO2, respiratory rate, kidney
+ * indicators, CBC / anemia panel, and provenance / QA metadata) as
+ * first-class CCT items when JetEngine is active.  This CCT is the sole
+ * JetEngine destination for vital-sign data written by the log_vital_signs
+ * tool and the import_vitals tool.
  *
  * Each row represents a single measurement event linked to a health member,
  * with a precise logged_at timestamp in addition to the measurement date/time.
+ *
+ * Field groups:
+ *  A. Core identifiers / timing
+ *  B. Vital signs (BP, HR, SpO2, temp, weight, glucose, resp. rate)
+ *  C. Renal / metabolic chemistry (eGFR, creatinine, BUN, K+, Na+,
+ *     phosphorus, albumin)
+ *  D. CBC — main indices (hemoglobin, hematocrit, RBC, WBC, platelets,
+ *     MCV, MCH, MCHC, RDW)
+ *  E. CBC differential (neutrophils / lymphocytes / monocytes /
+ *     eosinophils / basophils — percent and absolute)
+ *  F. Provenance / QA (facility, document, test panel, review status,
+ *     abnormal flags, import batch)
+ *  G. Extended BMP / CMP electrolytes (chloride, CO2/bicarbonate,
+ *     calcium, magnesium)
+ *  H. Liver function tests / LFT (total bilirubin, AST, ALT,
+ *     total protein)
  *
  * @package WP_MCP_AI_Pro
  */
@@ -30,9 +47,6 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 
 	/**
 	 * Base ID for meta field identifiers (44000 range).
-	 *
-	 * Uses a distinct range from the legacy vital_signs CCT (43000) to avoid
-	 * any field-ID collisions inside JetEngine's internal registry.
 	 */
 	const FIELD_ID_BASE = 44000;
 
@@ -49,10 +63,33 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	const DEDUP_WINDOW_MINUTES = 60;
 
 	/**
+	 * Same-session merge window in minutes.
+	 *
+	 * Two timed readings are treated as belonging to the same session (and
+	 * therefore eligible for field-level merging) only when their
+	 * measurement_times differ by at most this many minutes.  Readings further
+	 * apart than this threshold are always stored as separate rows, even when
+	 * they share the same measurement_date.
+	 *
+	 * A value of 5 minutes prevents distinct ED or clinical readings taken at
+	 * e.g. 18:00, 18:20, and 19:00 from being collapsed into a single row,
+	 * while still allowing minor timing jitter within the same logging session.
+	 */
+	const SAME_SESSION_WINDOW_MINUTES = 5;
+
+	/**
 	 * Hook into JetEngine to provision the content type.
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		// Run after maybe_register_cct so the table is guaranteed to exist first.
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns' ), 101 );
+		// v2 migration: convert the new hemoglobin column to DECIMAL(10,4).
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_decimal_columns_v2' ), 102 );
+		// v3 migration: add CBC and provenance/QA columns.
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v3' ), 103 );
+		// v4 migration: add extended BMP/CMP electrolytes and liver function test columns.
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v4' ), 104 );
 	}
 
 	/**
@@ -121,7 +158,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		if ( self::table_exists() ) {
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->insert( self::get_table_name(), $record );
+			$wpdb->insert( self::get_table_name(), $record, self::build_row_format( $record ) );
 			return $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
@@ -161,6 +198,67 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
+	 * Find the best-matching vitals log row for a member, date, and optional time.
+	 *
+	 * Lookup strategy:
+	 *  - When $time is a non-empty HH:MM string the method returns the oldest
+	 *    existing row whose measurement_time is within {@see SAME_SESSION_WINDOW_MINUTES}
+	 *    minutes of $time, or null when no such row exists.  This means timed
+	 *    readings taken more than SAME_SESSION_WINDOW_MINUTES apart (e.g. ED
+	 *    vitals at 18:00, 18:20, and 19:00) are always treated as distinct rows.
+	 *  - When $time is empty the method returns the oldest existing row that also
+	 *    has an empty / null measurement_time.  This prevents untimed lab-result
+	 *    rows from merging into timed vital-sign rows that happen to share the
+	 *    same date.
+	 *
+	 * @param int    $member_id Member post ID.
+	 * @param string $date      Measurement date (YYYY-MM-DD).
+	 * @param string $time      Optional measurement time (HH:MM). Empty string to
+	 *                          match no-time rows exclusively.
+	 * @return object|null      Best-matching CCT row object, or null.
+	 */
+	public static function get_for_date_and_time( $member_id, $date, $time = '' ) {
+		$member_id = absint( $member_id );
+		$date      = sanitize_text_field( $date );
+
+		if ( ! $member_id || ! $date || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		if ( '' === trim( (string) $time ) ) {
+			// No time — match only rows that also have no measurement_time, so
+			// untimed partial readings (e.g. lab panels without a clock time)
+			// accumulate into their own no-time row and never overwrite timed
+			// vital-sign rows from the same day.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND (measurement_time = '' OR measurement_time IS NULL) ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+			return $row ? $row : null;
+		}
+
+		// Time provided — find the oldest row within SAME_SESSION_WINDOW_MINUTES.
+		$incoming_mins = self::time_to_minutes( $time );
+		if ( false === $incoming_mins ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s AND measurement_time != '' AND measurement_time IS NOT NULL ORDER BY _ID ASC", $member_id, $date ) );
+
+		$window = self::SAME_SESSION_WINDOW_MINUTES;
+		foreach ( $rows as $row ) {
+			$row_mins = self::time_to_minutes( $row->measurement_time );
+			if ( false !== $row_mins && abs( $row_mins - $incoming_mins ) <= $window ) {
+				return $row;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Update specific fields on an existing CCT row.
 	 *
 	 * @param int   $item_id CCT row primary key (_ID).
@@ -179,7 +277,9 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		$result = $wpdb->update(
 			self::get_table_name(),
 			$data,
-			array( '_ID' => $item_id )
+			array( '_ID' => $item_id ),
+			self::build_row_format( $data ),
+			array( '%d' )
 		);
 
 		return false !== $result;
@@ -188,24 +288,27 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	/**
 	 * Insert or consolidate a vitals log entry for the given member and date.
 	 *
-	 * When a record already exists for the same member + measurement_date the
-	 * incoming data is merged into that row:
+	 * Lookup strategy (time-aware):
+	 *  - When the incoming $data carries a non-empty measurement_time, this
+	 *    method searches only for an existing row at the same time (±
+	 *    {@see SAME_SESSION_WINDOW_MINUTES}).  Readings at different times (e.g.
+	 *    ED vitals at 18:00, 18:20, and 19:00) each produce a distinct row.
+	 *  - When $data has no measurement_time, this method searches only for an
+	 *    existing no-time row.  Untimed lab panels never overwrite timed rows.
+	 *
+	 * When a matching row is found:
 	 *  - Near-duplicate guard: if every numeric vital field in $data already
-	 *    matches the stored value (within float tolerance) AND the measurement
-	 *    times are within {@see DEDUP_WINDOW_MINUTES} of each other (or no time
-	 *    is present in either record), the write is skipped entirely and the
-	 *    existing row ID is returned immediately — preventing duplicate rows
-	 *    from the same lab printout being added multiple times.
+	 *    matches the stored value (within float tolerance), the write is skipped
+	 *    entirely and the existing row ID is returned — preventing the same lab
+	 *    printout from being imported twice.
 	 *  - Otherwise every non-empty field in $data overwrites its counterpart in
-	 *    the existing row, so partial readings from separate sessions accumulate
-	 *    into a single complete day-record.
-	 *  - The original `entry_id` and `logged_by` are always preserved (set on
-	 *    first write only).
-	 *  - `measurement_time` is preserved from the first write unless the
-	 *    existing value is empty.
+	 *    the existing row (partial-reading consolidation).
+	 *  - The original `entry_id` and `logged_by` are always preserved (first
+	 *    write only).
+	 *  - `measurement_time` is preserved from the first write unless empty.
 	 *  - `logged_at` is always refreshed to reflect the most-recent write.
 	 *
-	 * When no record exists a fresh row is created via {@see insert()}.
+	 * When no matching row is found, a fresh row is created via {@see insert()}.
 	 *
 	 * @param int   $member_id Member post ID.
 	 * @param array $data      Flat key/value pairs matching the CCT schema.
@@ -216,10 +319,16 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			? $data['measurement_date']
 			: current_time( 'Y-m-d' );
 
-		$existing = self::get_for_date( absint( $member_id ), $measurement_date );
+		$measurement_time = isset( $data['measurement_time'] )
+			? trim( (string) $data['measurement_time'] )
+			: '';
+
+		// Time-aware lookup: timed readings match only same-time rows;
+		// untimed readings match only no-time rows.
+		$existing = self::get_for_date_and_time( absint( $member_id ), $measurement_date, $measurement_time );
 
 		if ( $existing ) {
-			// Near-duplicate guard: same values within the same time window
+			// Near-duplicate guard: same values within the same session window
 			// means the same source data is being submitted again (e.g. the
 			// same lab printout scanned or pasted more than once).  Return the
 			// existing row silently — no DB write, no logged_at update.
@@ -265,6 +374,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	 */
 	public static function get_numeric_vital_fields() {
 		return array(
+			// Vital signs.
 			'bp_systolic',
 			'bp_diastolic',
 			'heart_rate',
@@ -274,6 +384,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'blood_glucose',
 			'oxygen_saturation',
 			'respiratory_rate',
+			// Renal / metabolic chemistry.
 			'egfr',
 			'creatinine',
 			'bun',
@@ -281,7 +392,194 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			'sodium',
 			'phosphorus',
 			'albumin',
+			// CBC — main indices.
+			'hemoglobin',
+			'hematocrit',
+			'rbc',
+			'wbc',
+			'platelets',
+			'mcv',
+			'mch',
+			'mchc',
+			'rdw',
+			// CBC differential — percent.
+			'neutrophils_percent',
+			'lymphocytes_percent',
+			'monocytes_percent',
+			'eosinophils_percent',
+			'basophils_percent',
+			// CBC differential — absolute counts.
+			'neutrophils_absolute',
+			'lymphocytes_absolute',
+			'monocytes_absolute',
+			'eosinophils_absolute',
+			'basophils_absolute',
+			// Extended BMP / CMP electrolytes.
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			// Liver function tests (LFT).
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
 		);
+	}
+
+	/**
+	 * Return the subset of numeric fields that require decimal (float) precision.
+	 *
+	 * JetEngine provisions `number` CCT fields as `bigint(20)` in MySQL.  For
+	 * fields where sub-integer precision is clinically significant (e.g.
+	 * creatinine = 1.44, potassium = 4.8) the MySQL columns must be
+	 * DECIMAL(10,4).  {@see maybe_migrate_decimal_columns()} converts existing
+	 * bigint columns to DECIMAL once on first activation.
+	 *
+	 * Integer vital-sign fields (blood pressure, heart rate, etc.) are NOT
+	 * included here — they remain as integer-typed columns.
+	 *
+	 * @return string[]
+	 */
+	public static function get_decimal_vital_fields() {
+		return array(
+			// Vital signs with sub-integer precision.
+			'temperature',
+			'weight',
+			'bmi',
+			// Renal / metabolic chemistry.
+			'egfr',
+			'creatinine',
+			'bun',
+			'potassium',
+			'sodium',
+			'phosphorus',
+			'albumin',
+			// CBC — main indices (decimal precision).
+			'hemoglobin',
+			'hematocrit',
+			'rbc',
+			'wbc',
+			'mcv',
+			'mch',
+			'mchc',
+			'rdw',
+			// CBC differential — percent.
+			'neutrophils_percent',
+			'lymphocytes_percent',
+			'monocytes_percent',
+			'eosinophils_percent',
+			'basophils_percent',
+			// CBC differential — absolute counts.
+			'neutrophils_absolute',
+			'lymphocytes_absolute',
+			'monocytes_absolute',
+			'eosinophils_absolute',
+			'basophils_absolute',
+			// Extended BMP / CMP electrolytes.
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			// Liver function tests (LFT).
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
+		);
+	}
+
+	/**
+	 * Build a $wpdb-compatible format array for a row array.
+	 *
+	 * Returns one format specifier per key in $row, in the same order:
+	 *  - `%d` for known integer vital-sign fields.
+	 *  - `%f` for fields listed in get_decimal_vital_fields().
+	 *  - `%s` for all other fields (text, date, status, etc.).
+	 *
+	 * Passing the result as the third argument to $wpdb->insert() / fourth
+	 * argument to $wpdb->update() prevents WordPress from defaulting every
+	 * value to `%s`, which causes MySQL to round decimal values to the nearest
+	 * integer when the underlying column is numeric.
+	 *
+	 * @param array $row Key/value pairs to be inserted or updated.
+	 * @return string[]  Indexed array of format specifiers.
+	 */
+	public static function build_row_format( array $row ) {
+		$integer_fields = array(
+			'member_id',
+			'bp_systolic',
+			'bp_diastolic',
+			'heart_rate',
+			'blood_glucose',
+			'oxygen_saturation',
+			'respiratory_rate',
+			'platelets',
+			'is_abnormal',
+		);
+		$decimal_fields = self::get_decimal_vital_fields();
+
+		$format = array();
+		foreach ( $row as $key => $val ) {
+			if ( in_array( $key, $integer_fields, true ) ) {
+				$format[] = '%d';
+			} elseif ( in_array( $key, $decimal_fields, true ) ) {
+				$format[] = '%f';
+			} else {
+				$format[] = '%s';
+			}
+		}
+		return $format;
+	}
+
+	/**
+	 * One-time migration: convert bigint columns to DECIMAL(10,4) for fields
+	 * that store clinically-significant decimal values.
+	 *
+	 * JetEngine creates `number` CCT fields as `bigint(20)` in MySQL.  Inserting
+	 * a float such as 1.44 into a bigint column causes MySQL to round it to 1,
+	 * silently discarding decimal precision for renal indicators like creatinine,
+	 * potassium, eGFR, and others.
+	 *
+	 * This method checks a wp_options flag; on first run it issues an
+	 * ALTER TABLE … MODIFY for each decimal field and records the flag so
+	 * subsequent requests skip the check entirely.  It is intentionally a no-op
+	 * when the vitals_log table does not yet exist.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_decimal_columns() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_decimal_migration_v1';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table          = self::get_table_name();
+		$allowed_fields = self::get_decimal_vital_fields();
+
+		foreach ( $allowed_fields as $field ) {
+			// Validate against the known whitelist before interpolating into SQL.
+			// get_decimal_vital_fields() is the authoritative source; the explicit
+			// in_array check here is a defence-in-depth guard.
+			if ( ! in_array( $field, $allowed_fields, true ) ) {
+				continue;
+			}
+			// ALTER TABLE … MODIFY is idempotent: if the column is already
+			// DECIMAL(10,4) MySQL accepts the statement without error.  A
+			// simultaneous request racing past the get_option() check would
+			// therefore run a harmless duplicate ALTER and then also record the
+			// flag — a benign double-write that MySQL and WordPress both handle
+			// safely.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+		}
+
+		update_option( $option_key, '1', false );
 	}
 
 	/**
@@ -437,6 +735,46 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
+	 * Retrieve a single vitals log row by its primary key.
+	 *
+	 * @param int $item_id CCT row primary key (_ID).
+	 * @return object|null CCT row object or null when not found.
+	 */
+	public static function get_by_id( $item_id ) {
+		$item_id = absint( $item_id );
+		if ( ! $item_id || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE _ID = %d LIMIT 1", $item_id ) );
+
+		return $row ? $row : null;
+	}
+
+	/**
+	 * Delete a single vitals log row by its primary key.
+	 *
+	 * @param int $item_id CCT row primary key (_ID).
+	 * @return bool True when the row was deleted, false otherwise.
+	 */
+	public static function delete( $item_id ) {
+		$item_id = absint( $item_id );
+		if ( ! $item_id || ! self::table_exists() ) {
+			return false;
+		}
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$result = $wpdb->delete( self::get_table_name(), array( '_ID' => $item_id ), array( '%d' ) );
+
+		return false !== $result && $result > 0;
+	}
+
+	/**
 	 * Retrieve the JetEngine item handler.
 	 *
 	 * @return object|null
@@ -478,6 +816,212 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 
 		$module->manager->data->set_request( self::get_registration_request() );
 		$module->manager->data->create_item( false );
+	}
+
+	/**
+	 * v2 migration: ensure the hemoglobin column is DECIMAL(10,4).
+	 *
+	 * Sites that ran the v1 migration before hemoglobin was added will have
+	 * hemoglobin created by JetEngine as bigint.  This one-time migration
+	 * converts it to DECIMAL so decimal precision is preserved.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_decimal_columns_v2() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_decimal_migration_v2';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Only the new hemoglobin field needs DECIMAL conversion in v2.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "ALTER TABLE `{$table}` MODIFY `hemoglobin` DECIMAL(10,4) NULL DEFAULT NULL" );
+
+		update_option( $option_key, '1', false );
+	}
+
+	/**
+	 * v3 migration: add CBC and provenance/QA columns introduced in this version.
+	 *
+	 * For each new column the method:
+	 *  - Checks whether the column already exists (fresh JetEngine installs
+	 *    will have it; older installs will not).
+	 *  - ADDs the column when missing, or MODIFYs the type when present (to
+	 *    ensure DECIMAL precision on JetEngine-created bigint columns).
+	 *
+	 * Runs once per site and records a wp_options flag to skip future requests.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_columns_v3() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_migration_v3';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Retrieve existing columns once to avoid redundant DESCRIBE queries.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+
+		// ── CBC decimal fields ──────────────────────────────────────────
+		$decimal_cbc = array(
+			'hematocrit',
+			'rbc',
+			'wbc',
+			'mcv',
+			'mch',
+			'mchc',
+			'rdw',
+			'neutrophils_percent',
+			'lymphocytes_percent',
+			'monocytes_percent',
+			'eosinophils_percent',
+			'basophils_percent',
+			'neutrophils_absolute',
+			'lymphocytes_absolute',
+			'monocytes_absolute',
+			'eosinophils_absolute',
+			'basophils_absolute',
+		);
+
+		// Authoritative whitelist — the explicit in_array check below is a
+		// defence-in-depth guard matching the pattern used in v1.  It ensures
+		// no arbitrary string can reach the interpolated ALTER TABLE statement
+		// even if the loop variable is ever changed by refactoring.
+		$allowed_decimal = $decimal_cbc;
+
+		foreach ( $decimal_cbc as $field ) {
+			if ( ! in_array( $field, $allowed_decimal, true ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $field, $existing_cols, true ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+			} else {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` MODIFY `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+			}
+		}
+
+		// ── Platelets — integer ─────────────────────────────────────────
+		if ( ! in_array( 'platelets', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `platelets` BIGINT(20) NULL DEFAULT NULL" );
+		}
+
+		// ── is_abnormal — boolean (TINYINT 0/1) ────────────────────────
+		if ( ! in_array( 'is_abnormal', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `is_abnormal` TINYINT(1) NULL DEFAULT NULL" );
+		}
+
+		// ── Text / provenance fields ────────────────────────────────────
+		$text_cols = array(
+			'facility_name',
+			'document_name',
+			'test_panel',
+			'document_date',
+			'collection_time',
+			'result_time',
+			'import_batch_id',
+			'abnormal_flags',
+			'review_notes',
+		);
+
+		// Same defence-in-depth guard as $allowed_decimal above.
+		$allowed_text = $text_cols;
+
+		foreach ( $text_cols as $field ) {
+			if ( ! in_array( $field, $allowed_text, true ) ) {
+				continue;
+			}
+			if ( ! in_array( $field, $existing_cols, true ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$field}` TEXT NULL DEFAULT NULL" );
+			}
+		}
+
+		// ── review_status — short enum-like value ───────────────────────
+		if ( ! in_array( 'review_status', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `review_status` VARCHAR(50) NULL DEFAULT NULL" );
+		}
+
+		update_option( $option_key, '1', false );
+	}
+
+	/**
+	 * v4 migration: add extended BMP/CMP electrolyte and liver function test columns.
+	 *
+	 * Adds the following new DECIMAL(10,4) columns:
+	 *  - chloride, co2, calcium, magnesium (BMP/CMP electrolytes)
+	 *  - bilirubin, ast, alt, total_protein (liver function / LFT)
+	 *
+	 * Runs once per site and records a wp_options flag to skip future requests.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_columns_v4() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_migration_v4';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Retrieve existing columns once to avoid redundant DESCRIBE queries.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+
+		// All new fields use DECIMAL(10,4) for sub-integer precision.
+		$new_decimal_fields = array(
+			'chloride',
+			'co2',
+			'calcium',
+			'magnesium',
+			'bilirubin',
+			'ast',
+			'alt',
+			'total_protein',
+		);
+
+		// Authoritative whitelist — defence-in-depth guard matching the pattern
+		// used in v1/v3.  Ensures no arbitrary string can reach the interpolated
+		// ALTER TABLE statement even if the loop variable is changed by refactoring.
+		$allowed_fields = $new_decimal_fields;
+
+		foreach ( $new_decimal_fields as $field ) {
+			if ( ! in_array( $field, $allowed_fields, true ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $field, $existing_cols, true ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
+			}
+		}
+
+		update_option( $option_key, '1', false );
 	}
 
 	/**
@@ -946,6 +1490,407 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				'width'       => '25%',
 				'default_val' => '',
 				'description' => __( 'Serum albumin in g/dL — nutritional/kidney health marker', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Hemoglobin ────────────────────────────────────────────────
+			array(
+				'id'          => $b + 35,
+				'title'       => __( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'hemoglobin',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Hemoglobin level in g/dL — red blood cell / anaemia indicator', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── CBC — main indices ─────────────────────────────────────────
+			array(
+				'id'          => $b + 36,
+				'title'       => __( 'Hematocrit (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'hematocrit',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Hematocrit — percentage of red blood cells in blood (%)', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 37,
+				'title'       => __( 'RBC (x10⁶/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'rbc',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Red blood cell count in x10⁶/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 38,
+				'title'       => __( 'WBC (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'wbc',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'White blood cell count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 39,
+				'title'       => __( 'Platelets (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'platelets',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Platelet count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 40,
+				'title'       => __( 'MCV (fL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'mcv',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Mean corpuscular volume in fL — red blood cell size indicator', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 41,
+				'title'       => __( 'MCH (pg)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'mch',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Mean corpuscular hemoglobin in pg', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 42,
+				'title'       => __( 'MCHC (g/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'mchc',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Mean corpuscular hemoglobin concentration in g/dL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 43,
+				'title'       => __( 'RDW (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'rdw',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Red cell distribution width in % — RBC size variation indicator', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── CBC differential — percent ─────────────────────────────────
+			array(
+				'id'          => $b + 44,
+				'title'       => __( 'Neutrophils (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'neutrophils_percent',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Neutrophils percentage of WBC differential', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 45,
+				'title'       => __( 'Lymphocytes (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'lymphocytes_percent',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Lymphocytes percentage of WBC differential', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 46,
+				'title'       => __( 'Monocytes (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'monocytes_percent',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Monocytes percentage of WBC differential', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 47,
+				'title'       => __( 'Eosinophils (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'eosinophils_percent',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Eosinophils percentage of WBC differential', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 48,
+				'title'       => __( 'Basophils (%)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'basophils_percent',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Basophils percentage of WBC differential', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── CBC differential — absolute counts ─────────────────────────
+			array(
+				'id'          => $b + 49,
+				'title'       => __( 'Neutrophils Abs (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'neutrophils_absolute',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Absolute neutrophil count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 50,
+				'title'       => __( 'Lymphocytes Abs (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'lymphocytes_absolute',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Absolute lymphocyte count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 51,
+				'title'       => __( 'Monocytes Abs (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'monocytes_absolute',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Absolute monocyte count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 52,
+				'title'       => __( 'Eosinophils Abs (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'eosinophils_absolute',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Absolute eosinophil count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 53,
+				'title'       => __( 'Basophils Abs (x10³/µL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'basophils_absolute',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '20%',
+				'default_val' => '',
+				'description' => __( 'Absolute basophil count in x10³/µL', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Provenance / QA ────────────────────────────────────────────
+			array(
+				'id'          => $b + 54,
+				'title'       => __( 'Facility Name', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'facility_name',
+				'type'        => 'text',
+				'search'      => true,
+				'width'       => '50%',
+				'default_val' => '',
+				'description' => __( 'Name of the facility or lab that performed the test', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 55,
+				'title'       => __( 'Document Name', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'document_name',
+				'type'        => 'text',
+				'search'      => false,
+				'width'       => '50%',
+				'default_val' => '',
+				'description' => __( 'Source document filename or reference (e.g. lab_report_2024-01-15.pdf)', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 56,
+				'title'       => __( 'Test Panel', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'test_panel',
+				'type'        => 'text',
+				'search'      => true,
+				'width'       => '33%',
+				'default_val' => '',
+				'description' => __( 'Panel name (e.g. CBC, CMP, BMP, Lipid, Renal)', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 57,
+				'title'       => __( 'Document Date', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'document_date',
+				'type'        => 'text',
+				'search'      => false,
+				'width'       => '33%',
+				'default_val' => '',
+				'description' => __( 'Date shown on the source document (YYYY-MM-DD) — may differ from measurement_date', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 58,
+				'title'       => __( 'Collection Time', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'collection_time',
+				'type'        => 'text',
+				'search'      => false,
+				'width'       => '33%',
+				'default_val' => '',
+				'description' => __( 'Specimen collection time (HH:MM)', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 59,
+				'title'       => __( 'Result Time', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'result_time',
+				'type'        => 'text',
+				'search'      => false,
+				'width'       => '33%',
+				'default_val' => '',
+				'description' => __( 'Time results were reported (HH:MM)', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 60,
+				'title'       => __( 'Import Batch ID', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'import_batch_id',
+				'type'        => 'text',
+				'search'      => true,
+				'width'       => '33%',
+				'default_val' => '',
+				'description' => __( 'Batch identifier for bulk imports — enables tracing a record back to its source import run', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 61,
+				'title'       => __( 'Review Status', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'review_status',
+				'type'        => 'select',
+				'search'      => true,
+				'width'       => '33%',
+				'default_val' => 'unreviewed',
+				'options'     => array(
+					array( 'key' => 'unreviewed',         'value' => __( 'Unreviewed', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'auto_imported',      'value' => __( 'Auto-imported', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'reviewed',           'value' => __( 'Reviewed', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'corrected',          'value' => __( 'Corrected', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'needs_manual_review', 'value' => __( 'Needs Manual Review', 'mcp-ai-wpoos-pro' ) ),
+				),
+				'description' => __( 'QA review status for this record', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 62,
+				'title'       => __( 'Review Notes', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'review_notes',
+				'type'        => 'textarea',
+				'search'      => false,
+				'width'       => '100%',
+				'default_val' => '',
+				'description' => __( 'Reviewer notes or audit trail for corrections made to this record', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 63,
+				'title'       => __( 'Is Abnormal', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'is_abnormal',
+				'type'        => 'number',
+				'search'      => true,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Set to 1 when any result in this record is flagged as abnormal by the lab', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 64,
+				'title'       => __( 'Abnormal Flags', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'abnormal_flags',
+				'type'        => 'text',
+				'search'      => false,
+				'width'       => '75%',
+				'default_val' => '',
+				'description' => __( 'Comma-separated list of field names flagged as abnormal (e.g. hemoglobin,wbc)', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Extended BMP / CMP electrolytes ───────────────────────────────
+			array(
+				'id'          => $b + 65,
+				'title'       => __( 'Chloride Cl- (mEq/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'chloride',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum chloride in mEq/L — BMP/CMP electrolyte panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 66,
+				'title'       => __( 'CO2 / Bicarbonate (mEq/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'co2',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum CO2/bicarbonate in mEq/L — BMP/CMP electrolyte panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 67,
+				'title'       => __( 'Calcium Ca2+ (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'calcium',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum calcium in mg/dL — BMP/CMP panel', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 68,
+				'title'       => __( 'Magnesium Mg2+ (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'magnesium',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Serum magnesium in mg/dL — electrolyte / metabolic panel', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// ── Liver function tests (LFT) ─────────────────────────────────────
+			array(
+				'id'          => $b + 69,
+				'title'       => __( 'Total Bilirubin (mg/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'bilirubin',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Total bilirubin in mg/dL — liver function / jaundice indicator', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 70,
+				'title'       => __( 'AST / SGOT (U/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'ast',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Aspartate aminotransferase (AST/SGOT) in U/L — liver health marker', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 71,
+				'title'       => __( 'ALT / SGPT (U/L)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'alt',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Alanine aminotransferase (ALT/SGPT) in U/L — liver health marker', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 72,
+				'title'       => __( 'Total Protein (g/dL)', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'total_protein',
+				'type'        => 'number',
+				'search'      => false,
+				'width'       => '25%',
+				'default_val' => '',
+				'description' => __( 'Total protein in g/dL — liver function and nutritional status marker', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}

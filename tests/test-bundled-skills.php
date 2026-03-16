@@ -75,7 +75,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 
 		$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 		$this->assertNotEmpty( $dirs );
-		$this->assertGreaterThanOrEqual( 16, count( $dirs ) );
+		$this->assertGreaterThanOrEqual( 23, count( $dirs ) );
 	}
 
 	/**
@@ -115,7 +115,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'skipped', $result );
 		$this->assertArrayHasKey( 'errors', $result );
 
-		$this->assertGreaterThanOrEqual( 16, $result['installed'] );
+		$this->assertGreaterThanOrEqual( 23, $result['installed'] );
 		$this->assertSame( 0, $result['skipped'] );
 		$this->assertEmpty( $result['errors'] );
 	}
@@ -128,7 +128,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$registry->install_bundled_skills();
 
 		$skills = $registry->get_all_skills();
-		$this->assertGreaterThanOrEqual( 16, count( $skills ) );
+		$this->assertGreaterThanOrEqual( 23, count( $skills ) );
 
 		// Check some known skill names.
 		$expected_skills = array(
@@ -139,6 +139,13 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 			'frontend-design',
 			'mcp-builder',
 			'skill-creator',
+			'browser-use',
+			'code-reviewer',
+			'remotion',
+			'valyu',
+			'planetscale',
+			'excalidraw-diagram',
+			'shannon',
 		);
 		foreach ( $expected_skills as $name ) {
 			$this->assertArrayHasKey( $name, $skills, "Skill '$name' not found in registry" );
@@ -153,7 +160,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 
 		// First install.
 		$first_result = $registry->install_bundled_skills();
-		$this->assertGreaterThanOrEqual( 16, $first_result['installed'] );
+		$this->assertGreaterThanOrEqual( 23, $first_result['installed'] );
 
 		// Reset in-memory cache but keep files on disk.
 		WP_MCP_AI_Skill_Registry::reset();
@@ -162,7 +169,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		// Second install should skip all.
 		$second_result = $registry->install_bundled_skills();
 		$this->assertSame( 0, $second_result['installed'] );
-		$this->assertGreaterThanOrEqual( 16, $second_result['skipped'] );
+		$this->assertGreaterThanOrEqual( 23, $second_result['skipped'] );
 	}
 
 	/**
@@ -180,6 +187,63 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$mcp = $registry->get_skill( 'mcp-builder' );
 		$this->assertNotNull( $mcp );
 		$this->assertStringContainsString( 'MCP', $mcp['description'] );
+
+		// Verify new skills from the 10 must-have list.
+		$browser = $registry->get_skill( 'browser-use' );
+		$this->assertNotNull( $browser, 'browser-use skill should be installed' );
+		$this->assertNotEmpty( $browser['instructions'] );
+
+		$reviewer = $registry->get_skill( 'code-reviewer' );
+		$this->assertNotNull( $reviewer, 'code-reviewer skill should be installed' );
+		$this->assertNotEmpty( $reviewer['instructions'] );
+
+		$shannon = $registry->get_skill( 'shannon' );
+		$this->assertNotNull( $shannon, 'shannon skill should be installed' );
+		$this->assertStringContainsString( 'authorization', strtolower( $shannon['instructions'] ) );
+	}
+
+	/**
+	 * Test install_bundled_skills_from_dir with a custom directory.
+	 */
+	public function test_install_bundled_skills_from_dir() {
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+
+		// Create a temporary skills directory with a test skill.
+		$tmp_dir   = sys_get_temp_dir() . '/wp-mcp-ai-test-from-dir-' . uniqid();
+		$skill_dir = $tmp_dir . '/test-extra-skill';
+		mkdir( $skill_dir, 0755, true );
+
+		$skill_md = "---\nname: test-extra-skill\ndescription: A temporary test skill for from-dir testing.\n---\n\n# Test Extra Skill\n\nInstructions here.";
+		file_put_contents( $skill_dir . '/SKILL.md', $skill_md );
+
+		// Install from the custom directory.
+		$result = $registry->install_bundled_skills_from_dir( $tmp_dir );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 1, $result['installed'] );
+		$this->assertSame( 0, $result['skipped'] );
+		$this->assertEmpty( $result['errors'] );
+
+		// Verify skill is accessible via registry.
+		$registry->load_skills( true );
+		$skill = $registry->get_skill( 'test-extra-skill' );
+		$this->assertNotNull( $skill, 'Extra skill should be discoverable after install' );
+
+		// Clean up temporary source directory.
+		$this->recursive_rmdir( $tmp_dir );
+	}
+
+	/**
+	 * Test install_bundled_skills_from_dir with non-existent directory.
+	 */
+	public function test_install_bundled_skills_from_dir_nonexistent() {
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+		$result   = $registry->install_bundled_skills_from_dir( '/nonexistent/path/that/does/not/exist' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 0, $result['installed'] );
+		$this->assertSame( 0, $result['skipped'] );
+		$this->assertNotEmpty( $result['errors'] );
 	}
 
 	/**

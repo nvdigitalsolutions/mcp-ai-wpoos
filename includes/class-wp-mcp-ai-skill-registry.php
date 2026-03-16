@@ -499,6 +499,31 @@ class WP_MCP_AI_Skill_Registry {
 			);
 		}
 
+		return $this->install_bundled_skills_from_dir( $bundled_dir );
+	}
+
+	/**
+	 * Install bundled skills from a specific directory.
+	 *
+	 * Copies SKILL.md files from the given directory to the uploads skill
+	 * storage. Skips skills that are already installed. This method allows
+	 * add-ons (e.g. the Pro addon) to bundle their own skills independently.
+	 *
+	 * @since 1.7.2
+	 * @param string $bundled_dir Absolute path to a directory containing skill subdirectories.
+	 * @return array Array with 'installed' and 'skipped' counts plus any 'errors'.
+	 */
+	public function install_bundled_skills_from_dir( $bundled_dir ) {
+		$bundled_dir = (string) $bundled_dir;
+
+		if ( empty( $bundled_dir ) || ! is_dir( $bundled_dir ) ) {
+			return array(
+				'installed' => 0,
+				'skipped'   => 0,
+				'errors'    => array( __( 'Bundled skills directory not found.', 'mcp-ai-wpoos' ) ),
+			);
+		}
+
 		$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 		if ( ! is_array( $dirs ) || empty( $dirs ) ) {
 			return array(

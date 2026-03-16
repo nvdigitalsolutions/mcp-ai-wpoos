@@ -87,6 +87,31 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
+				'chief_complaint'    => array(
+					'type'        => 'string',
+					'description' => __( 'Chief complaint or reason for the visit (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 1000,
+				),
+				'diagnosis'          => array(
+					'type'        => 'string',
+					'description' => __( 'Working or final diagnosis (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 500,
+				),
+				'duration_minutes'   => array(
+					'type'        => 'integer',
+					'description' => __( 'Duration of appointment in minutes (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'follow_up_date'     => array(
+					'type'        => 'string',
+					'description' => __( 'Recommended follow-up date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'copay_amount'       => array(
+					'type'        => 'string',
+					'description' => __( 'Copay amount paid (optional, e.g. "$25.00")', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
 			),
 			'required'             => array( 'member_id', 'title', 'datetime' ),
 			'additionalProperties' => false,
@@ -179,11 +204,16 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Sanitize optional fields.
-		$provider = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
-		$location = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
-		$type     = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
-		$status   = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'scheduled';
-		$notes    = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$provider        = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
+		$location        = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
+		$type            = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
+		$status          = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'scheduled';
+		$notes           = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$chief_complaint = isset( $arguments['chief_complaint'] ) ? sanitize_textarea_field( $arguments['chief_complaint'] ) : '';
+		$diagnosis       = isset( $arguments['diagnosis'] ) ? sanitize_textarea_field( $arguments['diagnosis'] ) : '';
+		$duration        = isset( $arguments['duration_minutes'] ) ? absint( $arguments['duration_minutes'] ) : 0;
+		$follow_up_date  = isset( $arguments['follow_up_date'] ) ? sanitize_text_field( $arguments['follow_up_date'] ) : '';
+		$copay_amount    = isset( $arguments['copay_amount'] ) ? sanitize_text_field( $arguments['copay_amount'] ) : '';
 
 		if ( $is_update ) {
 			// Update existing checkup.
@@ -216,6 +246,15 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				update_post_meta( $checkup_id, '_checkup_type', $type );
 			}
 
+			update_post_meta( $checkup_id, '_checkup_chief_complaint', $chief_complaint );
+			update_post_meta( $checkup_id, '_checkup_diagnosis', $diagnosis );
+			update_post_meta( $checkup_id, '_checkup_duration_minutes', $duration );
+			update_post_meta( $checkup_id, '_checkup_copay_amount', $copay_amount );
+
+			if ( $follow_up_date ) {
+				update_post_meta( $checkup_id, '_checkup_follow_up_date', $follow_up_date );
+			}
+
 			$checkup = get_post( $checkup_id );
 
 			return array(
@@ -223,16 +262,21 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'message'    => __( 'Checkup updated successfully.', 'mcp-ai-wpoos-pro' ),
 				'checkup_id' => $checkup_id,
 				'checkup'    => array(
-					'id'         => $checkup_id,
-					'member_id'  => $member_id,
-					'title'      => $title,
-					'datetime'   => $datetime,
-					'provider'   => $provider,
-					'location'   => $location,
-					'type'       => $type,
-					'status'     => $status,
-					'notes'      => $notes,
-					'updated_at' => $checkup->post_modified,
+					'id'              => $checkup_id,
+					'member_id'       => $member_id,
+					'title'           => $title,
+					'datetime'        => $datetime,
+					'provider'        => $provider,
+					'location'        => $location,
+					'type'            => $type,
+					'status'          => $status,
+					'notes'           => $notes,
+					'chief_complaint' => $chief_complaint,
+					'diagnosis'       => $diagnosis,
+					'duration_minutes' => $duration,
+					'follow_up_date'  => $follow_up_date,
+					'copay_amount'    => $copay_amount,
+					'updated_at'      => $checkup->post_modified,
 				),
 				'updated'    => true,
 			);
@@ -269,6 +313,15 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				update_post_meta( $checkup_id, '_checkup_type', $type );
 			}
 
+			update_post_meta( $checkup_id, '_checkup_chief_complaint', $chief_complaint );
+			update_post_meta( $checkup_id, '_checkup_diagnosis', $diagnosis );
+			update_post_meta( $checkup_id, '_checkup_duration_minutes', $duration );
+			update_post_meta( $checkup_id, '_checkup_copay_amount', $copay_amount );
+
+			if ( $follow_up_date ) {
+				update_post_meta( $checkup_id, '_checkup_follow_up_date', $follow_up_date );
+			}
+
 			$checkup = get_post( $checkup_id );
 
 			return array(
@@ -276,16 +329,21 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'message'    => __( 'Checkup created successfully.', 'mcp-ai-wpoos-pro' ),
 				'checkup_id' => $checkup_id,
 				'checkup'    => array(
-					'id'         => $checkup_id,
-					'member_id'  => $member_id,
-					'title'      => $title,
-					'datetime'   => $datetime,
-					'provider'   => $provider,
-					'location'   => $location,
-					'type'       => $type,
-					'status'     => $status,
-					'notes'      => $notes,
-					'created_at' => $checkup->post_date,
+					'id'               => $checkup_id,
+					'member_id'        => $member_id,
+					'title'            => $title,
+					'datetime'         => $datetime,
+					'provider'         => $provider,
+					'location'         => $location,
+					'type'             => $type,
+					'status'           => $status,
+					'notes'            => $notes,
+					'chief_complaint'  => $chief_complaint,
+					'diagnosis'        => $diagnosis,
+					'duration_minutes' => $duration,
+					'follow_up_date'   => $follow_up_date,
+					'copay_amount'     => $copay_amount,
+					'created_at'       => $checkup->post_date,
 				),
 				'updated'    => false,
 			);

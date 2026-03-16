@@ -364,7 +364,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'teams',
 				$user_id,
-				array( 'display_name' => '' !== $display_name ? $display_name : $user_id )
+				array( 'display_name' => '' !== $display_name ? $display_name : $user_id, 'connection_id' => $connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -798,7 +798,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'teams', $user_id );
+			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'teams', $user_id, array( 'connection_id' => $connection_id ) );
 			if ( $ms_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $ms_contact_row_id );
 			}

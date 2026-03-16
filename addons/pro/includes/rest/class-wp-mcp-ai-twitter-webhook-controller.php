@@ -442,7 +442,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'twitter',
 				$sender_id,
-				array( 'display_name' => $sender_id )
+				array( 'display_name' => $sender_id, 'connection_id' => $resolved_connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -688,7 +688,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'twitter', $sender_id );
+			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'twitter', $sender_id, array( 'connection_id' => $connection_id ) );
 			if ( $tw_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tw_contact_row_id );
 			}

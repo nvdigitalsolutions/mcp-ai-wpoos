@@ -2887,3 +2887,118 @@ No other changes. All 13 guidelines remain in ✅ status.
 ---
 
 *Last updated: March 13, 2026*
+
+---
+
+## Pass 16 — March 15, 2026 — Pre-Submission Base Plugin Code Review
+
+### Scope
+
+Complete code review of the base plugin against all WordPress.org plugin directory submission guidelines before first submission. Full 13-guideline sweep performed across all `includes/` PHP files, `readme.txt`, admin notice hooks, and direct SQL queries. Issues identified by automated analysis and manual audit.
+
+### Files Audited / Changed
+
+| File | Action |
+|---|---|
+| `readme.txt` | **FIXED** — Short description trimmed from 152 chars to 128 chars (WordPress.org limit: 150 chars) |
+| `includes/tools/class-wp-mcp-ai-tool-performance-optimizer-assistant.php` | **FIXED** — `clean_transients` DELETE and `count_transients` SELECT COUNT queries now use `$wpdb->prepare()` with LIKE pattern placeholders; `optimize_tables` OPTIMIZE TABLE phpcs:ignore expanded to include `PreparedSQL.NotPrepared` and `PreparedSQL.InterpolatedNotPrepared` |
+| `includes/class-wp-mcp-ai-token-db-optimizer.php` | **FIXED** — `SHOW INDEX FROM`, `ALTER TABLE ... ADD INDEX`, and `ALTER TABLE ... DROP INDEX` phpcs:ignore annotations expanded to include `PreparedSQL.NotPrepared` and `PreparedSQL.InterpolatedNotPrepared`; table names backtick-quoted for clarity |
+| `includes/class-wp-mcp-ai-tool-token-limits.php` | **FIXED** — `SHOW INDEX FROM {$wpdb->usermeta}` and `ALTER TABLE ... ADD INDEX` phpcs:ignore annotations expanded to include `PreparedSQL.NotPrepared` and `PreparedSQL.InterpolatedNotPrepared`; table names backtick-quoted |
+| `includes/class-wp-mcp-ai-model-pricing-checker.php` | **FIXED** — `show_price_change_notice()` now checks `get_current_screen()` and exits early if the screen ID does not contain `mcp-ai`; notice was previously shown on all WordPress admin pages |
+| `includes/admin/class-wp-mcp-ai-pro-license.php` | **FIXED** — `license_notices()` now checks `get_current_screen()` and exits early if the screen ID does not contain `mcp-ai`; license expiry and invalid-key notices were previously shown on all WordPress admin pages |
+| `includes/class-wp-mcp-ai-optional-components.php` | **FIXED** — `show_download_notice()` screen-ID guard tightened from `'mcp'` to `'mcp-ai'` to be consistent with the pattern used in `class-wp-mcp-ai-iso27001-badge.php` and to avoid false matches on unrelated admin pages |
+
+### Findings
+
+#### A. readme.txt Short Description Over 150 Characters (Guideline 2) — LOW — FIXED
+
+WordPress.org enforces a strict 150-character limit on the plugin short description (the single paragraph immediately after the header block in `readme.txt`).
+
+| Attribute | Value |
+|---|---|
+| **Before** | "AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin." |
+| **Character count (before)** | 152 |
+| **After** | "AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base (165 tools) or Full Version (519 tools) via Pro add-on." |
+| **Character count (after)** | 128 |
+
+The trimmed wording ("Base (165 tools)" and "via Pro add-on") preserves the full meaning while satisfying the character limit.
+
+#### B. SQL Queries Without `$wpdb->prepare()` or Full phpcs:ignore Coverage (Guideline 7) — MEDIUM — FIXED
+
+Three files contained raw `$wpdb->query()` or `$wpdb->get_var()` calls using string interpolation whose phpcs:ignore annotations did not cover the `WordPress.DB.PreparedSQL.NotPrepared` or `WordPress.DB.PreparedSQL.InterpolatedNotPrepared` sniffs. While none of these queries accept user input (all interpolated values are internal `$wpdb->*` table name properties or static literal strings), incomplete annotations leave them vulnerable to being flagged by the WordPress Plugin Check automated scanner.
+
+**`class-wp-mcp-ai-tool-performance-optimizer-assistant.php`**
+
+The `clean_transients` and `count_transients` methods deleted and counted WordPress transients using raw LIKE clauses. These were refactored to use `$wpdb->prepare()` with `%s` placeholders for the LIKE patterns:
+
+```php
+// Before
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_%' OR option_name LIKE '_site_transient_%'" );
+
+// After
+$wpdb->query(
+    $wpdb->prepare(
+        "DELETE FROM `{$wpdb->options}` WHERE option_name LIKE %s OR option_name LIKE %s",
+        '_transient_%',
+        '_site_transient_%'
+    )
+);
+```
+
+The `optimize_tables` `OPTIMIZE TABLE` query and the `SHOW INDEX`/`ALTER TABLE` DDL queries in `class-wp-mcp-ai-token-db-optimizer.php` and `class-wp-mcp-ai-tool-token-limits.php` cannot use `$wpdb->prepare()` (MySQL DDL statements do not support parameter placeholders). Their phpcs:ignore annotations were expanded to include the missing sniff identifiers and the rationale was updated to clarify that interpolated values are internal `$wpdb` properties, not user input.
+
+#### C. Admin Notices Displayed on All WordPress Admin Pages (Guideline — General UX / Intrusiveness) — MEDIUM — FIXED
+
+Three admin notices were registered on `admin_notices` without any screen restriction, meaning they appeared on every WordPress admin page (posts, media library, users, plugins, etc.) rather than being limited to NV oOS plugin pages.
+
+| Class | Method | Before | After |
+|---|---|---|---|
+| `WP_MCP_AI_Model_Pricing_Checker` | `show_price_change_notice()` | No screen check — shown on all admin pages | Exits early if `get_current_screen()->id` does not contain `'mcp-ai'` |
+| `WP_MCP_AI_Pro_License` | `license_notices()` | No screen check — shown on all admin pages | Exits early if `get_current_screen()->id` does not contain `'mcp-ai'` |
+| `WP_MCP_AI_Optional_Components` | `show_download_notice()` | Screen check used `strpos( $screen->id, 'mcp' )` — overly broad, could match unrelated pages | Tightened to `strpos( $screen->id, 'mcp-ai' )` — consistent with `class-wp-mcp-ai-iso27001-badge.php` |
+
+WordPress.org guidelines and best practices require that admin notices are shown only on relevant plugin pages unless the notice concerns a critical site-wide issue (e.g., a missing required extension). AI model pricing updates, Pro license expiry reminders, and optional component download status are plugin-specific and do not warrant site-wide display.
+
+#### D. All Other Guidelines — PASS (unchanged from Pass 15)
+
+| # | Guideline | Result |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ All base features fully accessible; no license gate |
+| 2 | readme.txt URLs valid | ✅ All 43 service entries (+2a) verified; short description now ≤ 150 chars |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.x; Chart.js 4.5.1 bundled locally; 0 advisories |
+| 4 | External services documented | ✅ All server-side HTTP calls accounted for; no new services introduced |
+| 5 | No saving data to plugin folder | ✅ All file writes target uploads/temp; no plugin-folder writes |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites have `sanitize_callback` |
+| 7 | Input sanitization / output escaping | ✅ SQL queries improved to use `$wpdb->prepare()`; phpcs:ignore annotations completed; all outputs escaped |
+| 8 | Prefixing | ✅ All global symbols use `wp_mcp_ai_` / `WP_MCP_AI_` prefix |
+| 9 | Privacy Policy | ✅ All 43 services (+2a) documented; no new external services |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions; all expanded annotations include `--` justification text |
+| 11 | `error_log()` gating | ✅ All instances are `WP_DEBUG`-gated or settings-gated |
+| 12 | Pro feature separation | ✅ `addons/` excluded via `.distignore`; no base-code `require` of `addons/` paths |
+| 13 | Security | ✅ Nonces, capabilities, sanitization, prepared queries, URL validation verified; admin notices scoped to plugin pages |
+
+### Updated Compliance Table
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ No paywall language; all base features accessible |
+| 2 | readme.txt URLs valid | ✅ All 43 service entries (+2a) verified; short description 128 chars (≤ 150 limit) |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.x; Chart.js 4.5.1 bundled locally; 0 advisories |
+| 4 | External services documented | ✅ All server-side HTTP calls accounted for |
+| 5 | No saving data to plugin folder | ✅ All file writes target uploads/temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites verified |
+| 7 | Input sanitization / output escaping | ✅ All inputs sanitized; SQL queries use `$wpdb->prepare()` or DDL-justified phpcs:ignore; all outputs escaped |
+| 8 | Prefixing | ✅ All global symbols use `wp_mcp_ai_` / `WP_MCP_AI_` prefix |
+| 9 | Privacy Policy | ✅ All 43 services (+2a) documented |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions; all annotations include `--` justification text |
+| 11 | `error_log()` gating | ✅ All instances are `WP_DEBUG`-gated or settings-gated |
+| 12 | Pro feature separation | ✅ `addons/` and Pro build configs excluded via `.distignore` |
+| 13 | Security | ✅ Nonces, capabilities, sanitization, prepared queries, URL validation, admin notice scoping verified |
+
+**Total documented services: 43** (+2a for Gemini Semantic Retrieval) — unchanged from Pass 15.
+
+**Base plugin compliance status: ✅ Fully compliant — March 15, 2026 (Pass 16)**
+
+---
+
+*Last updated: March 15, 2026*

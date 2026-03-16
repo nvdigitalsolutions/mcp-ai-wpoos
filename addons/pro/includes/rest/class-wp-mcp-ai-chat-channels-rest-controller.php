@@ -281,32 +281,53 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_conversations( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
-			return rest_ensure_response( array( 'items' => array(), 'total' => 0, 'page' => 1, 'per_page' => 25 ) );
+		$page       = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page   = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
+		$channel    = $request->get_param( 'channel' );
+		$crm_status = $request->get_param( 'status' );
+		$search     = $request->get_param( 'search' );
+
+		// CCT path (preferred when JetEngine table exists).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return $this->get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search );
 		}
 
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			return $this->get_conversations_from_cpt( $page, $per_page, $channel, $crm_status, $search );
+		}
+
+		return rest_ensure_response( array( 'items' => array(), 'total' => 0, 'page' => 1, 'per_page' => 25 ) );
+	}
+
+	/**
+	 * Fetch conversations from the CCT table.
+	 *
+	 * @param int    $page       Page number.
+	 * @param int    $per_page   Items per page.
+	 * @param string $channel    Optional channel filter.
+	 * @param string $crm_status Optional CRM status filter.
+	 * @param string $search     Optional search term.
+	 * @return WP_REST_Response
+	 */
+	protected function get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search ) {
 		global $wpdb;
-		$table    = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-		$page     = max( 1, (int) $request->get_param( 'page' ) );
-		$per_page = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
-		$offset   = ( $page - 1 ) * $per_page;
+		$table  = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		$offset = ( $page - 1 ) * $per_page;
 
 		$where  = array( 'cct_status = %s' );
 		$values = array( 'publish' );
 
-		$channel = $request->get_param( 'channel' );
 		if ( ! empty( $channel ) ) {
 			$where[]  = 'channel = %s';
 			$values[] = $channel;
 		}
 
-		$crm_status = $request->get_param( 'status' );
 		if ( ! empty( $crm_status ) ) {
 			$where[]  = 'crm_status = %s';
 			$values[] = $crm_status;
 		}
 
-		$search = $request->get_param( 'search' );
 		if ( ! empty( $search ) ) {
 			$where[]  = '(display_name LIKE %s OR channel_contact_id LIKE %s OR phone_number LIKE %s)';
 			$like     = '%' . $wpdb->esc_like( $search ) . '%';
@@ -331,14 +352,68 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			$items[] = $this->format_contact( $row );
 		}
 
-		return rest_ensure_response(
-			array(
-				'items'    => $items,
-				'total'    => $total,
-				'page'     => $page,
-				'per_page' => $per_page,
-			)
+		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
+	}
+
+	/**
+	 * Fetch conversations from the CPT store.
+	 *
+	 * @param int    $page       Page number.
+	 * @param int    $per_page   Items per page.
+	 * @param string $channel    Optional channel filter.
+	 * @param string $crm_status Optional CRM status filter.
+	 * @param string $search     Optional search term.
+	 * @return WP_REST_Response
+	 */
+	protected function get_conversations_from_cpt( $page, $per_page, $channel, $crm_status, $search ) {
+		$meta_query = array( 'relation' => 'AND' );
+
+		if ( ! empty( $channel ) ) {
+			$meta_query[] = array(
+				'key'     => '_channel',
+				'value'   => $channel,
+				'compare' => '=',
+			);
+		}
+
+		if ( ! empty( $crm_status ) ) {
+			$meta_query[] = array(
+				'key'     => '_crm_status',
+				'value'   => $crm_status,
+				'compare' => '=',
+			);
+		}
+
+		$args = array(
+			'post_type'      => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'meta_value_num',
+			'meta_key'       => '_last_message_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'order'          => 'DESC',
+			'no_found_rows'  => false,
 		);
+
+		if ( count( $meta_query ) > 1 ) {
+			$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		}
+
+		if ( ! empty( $search ) ) {
+			$args['s'] = $search;
+		}
+
+		$query = new WP_Query( $args );
+		$total = (int) $query->found_posts;
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$items[] = $this->format_contact( WP_MCP_AI_Channel_Contacts_CPT::post_to_row( $post ) );
+		}
+
+		wp_reset_postdata();
+
+		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
 	}
 
 	/**
@@ -348,71 +423,172 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_conversation_messages( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) || ! WP_MCP_AI_Channel_Messages_CCT::table_exists() ) {
-			return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
-			return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
-		}
-
-		global $wpdb;
-
-		$contact_id = absint( $request->get_param( 'contact_id' ) );
-		$page       = max( 1, (int) $request->get_param( 'page' ) );
-		$per_page   = min( 200, max( 1, (int) $request->get_param( 'per_page' ) ) );
-		$offset     = ( $page - 1 ) * $per_page;
+		$contact_id       = absint( $request->get_param( 'contact_id' ) );
+		$page             = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page         = min( 200, max( 1, (int) $request->get_param( 'per_page' ) ) );
 		$include_metadata = rest_sanitize_boolean( $request->get_param( 'include_metadata' ) );
 
-		// Resolve channel + contact ID from the contacts table.
-		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		// CCT path (preferred when JetEngine tables exist).
+		$cct_contacts_ok = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists();
+		$cct_messages_ok = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) && WP_MCP_AI_Channel_Messages_CCT::table_exists();
 
-		if ( empty( $contact ) ) {
-			return new WP_Error(
-				'rest_not_found',
-				__( 'Contact not found.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 404 )
-			);
+		if ( $cct_contacts_ok && $cct_messages_ok ) {
+			return $this->get_conversation_messages_from_cct( $contact_id, $page, $per_page, $include_metadata );
 		}
 
-		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) && class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			return $this->get_conversation_messages_from_cpt( $contact_id, $page, $per_page, $include_metadata );
+		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total = (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
-				$contact['channel'],
-				$contact['channel_contact_id']
-			)
-		);
+		return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
+	}
 
+	/**
+	 * Fetch conversation messages from the CCT table.
+	 *
+	 * @param int  $contact_id       CCT contact ID.
+	 * @param int  $page             Page number.
+	 * @param int  $per_page         Items per page.
+	 * @param bool $include_metadata Whether to include decoded raw payload.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	protected function get_conversation_messages_from_cct( $contact_id, $page, $per_page, $include_metadata ) {
+		global $wpdb;
+		$offset = ( $page - 1 ) * $per_page;
+
+		// Resolve channel + contact ID from the contacts CCT table.
+		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
-				$contact['channel'],
-				$contact['channel_contact_id'],
-				$per_page,
-				$offset
-			),
-			ARRAY_A
-		);
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id, connection_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+
+		if ( empty( $contact ) ) {
+			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		$messages_table        = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
+		$contact_connection_id = isset( $contact['connection_id'] ) ? $contact['connection_id'] : '';
+
+		if ( '' !== $contact_connection_id ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$contact_connection_id
+				)
+			);
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$contact_connection_id,
+					$per_page,
+					$offset
+				),
+				ARRAY_A
+			);
+		} else {
+			// Backward-compatible query for contacts without a stored connection_id.
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$total = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
+					$contact['channel'],
+					$contact['channel_contact_id']
+				)
+			);
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+					$contact['channel'],
+					$contact['channel_contact_id'],
+					$per_page,
+					$offset
+				),
+				ARRAY_A
+			);
+		}
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
 			$items[] = $this->format_message( $row, $include_metadata );
 		}
 
-		return rest_ensure_response(
+		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
+	}
+
+	/**
+	 * Fetch conversation messages from the CPT store.
+	 *
+	 * @param int  $contact_id       CPT contact post ID.
+	 * @param int  $page             Page number.
+	 * @param int  $per_page         Items per page.
+	 * @param bool $include_metadata Whether to include decoded raw payload.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	protected function get_conversation_messages_from_cpt( $contact_id, $page, $per_page, $include_metadata ) {
+		$contact_post = get_post( $contact_id );
+		if ( ! $contact_post || WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE !== $contact_post->post_type ) {
+			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		$channel            = (string) get_post_meta( $contact_id, '_channel', true );
+		$channel_contact_id = (string) get_post_meta( $contact_id, '_channel_contact_id', true );
+		$connection_id      = (string) get_post_meta( $contact_id, '_connection_id', true );
+
+		$meta_query = array(
+			'relation' => 'AND',
 			array(
-				'items'    => $items,
-				'total'    => $total,
-				'page'     => $page,
-				'per_page' => $per_page,
-			)
+				'key'     => '_channel',
+				'value'   => $channel,
+				'compare' => '=',
+			),
+			array(
+				'key'     => '_channel_contact_id',
+				'value'   => $channel_contact_id,
+				'compare' => '=',
+			),
 		);
+
+		if ( '' !== $connection_id ) {
+			$meta_query[] = array(
+				'key'     => '_connection_id',
+				'value'   => $connection_id,
+				'compare' => '=',
+			);
+		}
+
+		$args = array(
+			'post_type'      => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'meta_value_num',
+			'meta_key'       => '_message_timestamp', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'order'          => 'ASC',
+			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'no_found_rows'  => false,
+		);
+
+		$query = new WP_Query( $args );
+		$total = (int) $query->found_posts;
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$row     = WP_MCP_AI_Channel_Messages_CPT::post_to_row( $post, $include_metadata );
+			$items[] = $this->format_message( $row, $include_metadata );
+		}
+
+		wp_reset_postdata();
+
+		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
 	}
 
 	// =========================================================================
@@ -429,21 +605,42 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function send_reply( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+		$cct_available = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists();
+		$cpt_available = class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' );
+
+		if ( ! $cct_available && ! $cpt_available ) {
 			return new WP_Error( 'rest_unavailable', __( 'Contacts store not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
 		}
 
-		global $wpdb;
 		$contact_id    = absint( $request->get_param( 'contact_id' ) );
 		$message_text  = sanitize_textarea_field( $request->get_param( 'message' ) );
 		$connection_id = sanitize_text_field( (string) $request->get_param( 'connection_id' ) );
 
-		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		// Resolve contact row – try CCT first, then CPT.
+		$contact = null;
+
+		if ( $cct_available ) {
+			global $wpdb;
+			$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$contact = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		}
+
+		if ( empty( $contact ) && $cpt_available ) {
+			$contact_post = get_post( $contact_id );
+			if ( $contact_post && WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE === $contact_post->post_type ) {
+				$contact = WP_MCP_AI_Channel_Contacts_CPT::post_to_row( $contact_post );
+			}
+		}
 
 		if ( empty( $contact ) ) {
 			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		// When connection_id is not explicitly supplied by the client, resolve it
+		// from the contact record so replies always go via the correct connection.
+		if ( '' === $connection_id && ! empty( $contact['connection_id'] ) ) {
+			$connection_id = sanitize_text_field( $contact['connection_id'] );
 		}
 
 		$channel            = $contact['channel'];
@@ -483,9 +680,28 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			return $result;
 		}
 
-		// Record the outbound message.
+		// Record the outbound message – CCT::insert() already falls back to CPT internally.
 		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => $channel,
+					'channel_contact_id' => $channel_contact_id,
+					'contact_name'       => $contact['display_name'],
+					'direction'          => 'outbound',
+					'message_id'         => '',
+					'message_type'       => 'text',
+					'content'            => $message_text,
+					'raw_payload'        => array(),
+					'status'             => 'sent',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => '',
+					'timestamp'          => time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => '',
+				)
+			);
+		} elseif ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			WP_MCP_AI_Channel_Messages_CPT::insert(
 				array(
 					'channel'            => $channel,
 					'channel_contact_id' => $channel_contact_id,
@@ -506,7 +722,11 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Bump last_message_at on the contact.
-		WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_id );
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_id );
+		} elseif ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			WP_MCP_AI_Channel_Contacts_CPT::touch( $contact_id );
+		}
 
 		return rest_ensure_response(
 			array(
@@ -640,32 +860,55 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_contacts( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
-			return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
+		$page       = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page   = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
+		$channel    = $request->get_param( 'channel' );
+		$crm_status = $request->get_param( 'crm_status' );
+		$search     = $request->get_param( 'search' );
+		$tag        = $request->get_param( 'tag' );
+
+		// CCT path (preferred when JetEngine table exists).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return $this->get_contacts_from_cct( $page, $per_page, $channel, $crm_status, $search, $tag );
 		}
 
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			return $this->get_contacts_from_cpt( $page, $per_page, $channel, $crm_status, $search, $tag );
+		}
+
+		return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
+	}
+
+	/**
+	 * Fetch contacts from the CCT table.
+	 *
+	 * @param int    $page       Page number.
+	 * @param int    $per_page   Items per page.
+	 * @param string $channel    Optional channel filter.
+	 * @param string $crm_status Optional CRM status filter.
+	 * @param string $search     Optional search term.
+	 * @param string $tag        Optional tag filter.
+	 * @return WP_REST_Response
+	 */
+	protected function get_contacts_from_cct( $page, $per_page, $channel, $crm_status, $search, $tag ) {
 		global $wpdb;
-		$table    = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-		$page     = max( 1, (int) $request->get_param( 'page' ) );
-		$per_page = min( 100, max( 1, (int) $request->get_param( 'per_page' ) ) );
-		$offset   = ( $page - 1 ) * $per_page;
+		$table  = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		$offset = ( $page - 1 ) * $per_page;
 
 		$where  = array( 'cct_status = %s' );
 		$values = array( 'publish' );
 
-		$channel = $request->get_param( 'channel' );
 		if ( ! empty( $channel ) ) {
 			$where[]  = 'channel = %s';
 			$values[] = $channel;
 		}
 
-		$crm_status = $request->get_param( 'crm_status' );
 		if ( ! empty( $crm_status ) ) {
 			$where[]  = 'crm_status = %s';
 			$values[] = $crm_status;
 		}
 
-		$search = $request->get_param( 'search' );
 		if ( ! empty( $search ) ) {
 			$where[]  = '(display_name LIKE %s OR channel_contact_id LIKE %s OR phone_number LIKE %s OR email LIKE %s)';
 			$like     = '%' . $wpdb->esc_like( $search ) . '%';
@@ -675,7 +918,6 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			$values[] = $like;
 		}
 
-		$tag = $request->get_param( 'tag' );
 		if ( ! empty( $tag ) ) {
 			$where[]  = 'tags LIKE %s';
 			$values[] = '%' . $wpdb->esc_like( '"' . $tag . '"' ) . '%';
@@ -701,22 +943,99 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Fetch contacts from the CPT store.
+	 *
+	 * @param int    $page       Page number.
+	 * @param int    $per_page   Items per page.
+	 * @param string $channel    Optional channel filter.
+	 * @param string $crm_status Optional CRM status filter.
+	 * @param string $search     Optional search term.
+	 * @param string $tag        Optional tag filter (matched in JSON tags meta).
+	 * @return WP_REST_Response
+	 */
+	protected function get_contacts_from_cpt( $page, $per_page, $channel, $crm_status, $search, $tag ) {
+		$meta_query = array( 'relation' => 'AND' );
+
+		if ( ! empty( $channel ) ) {
+			$meta_query[] = array(
+				'key'     => '_channel',
+				'value'   => $channel,
+				'compare' => '=',
+			);
+		}
+
+		if ( ! empty( $crm_status ) ) {
+			$meta_query[] = array(
+				'key'     => '_crm_status',
+				'value'   => $crm_status,
+				'compare' => '=',
+			);
+		}
+
+		if ( ! empty( $tag ) ) {
+			// Match JSON-encoded tag string inside the _tags meta value.
+			$meta_query[] = array(
+				'key'     => '_tags',
+				'value'   => '"' . $tag . '"',
+				'compare' => 'LIKE',
+			);
+		}
+
+		$args = array(
+			'post_type'      => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'meta_value_num',
+			'meta_key'       => '_last_message_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'order'          => 'DESC',
+			'no_found_rows'  => false,
+		);
+
+		if ( count( $meta_query ) > 1 ) {
+			$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		}
+
+		if ( ! empty( $search ) ) {
+			$args['s'] = $search;
+		}
+
+		$query = new WP_Query( $args );
+		$total = (int) $query->found_posts;
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$items[] = $this->format_contact( WP_MCP_AI_Channel_Contacts_CPT::post_to_row( $post ) );
+		}
+
+		wp_reset_postdata();
+
+		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
+	}
+
+	/**
 	 * Add a tag to a contact.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function add_contact_tag( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			return new WP_Error( 'rest_unavailable', __( 'Contacts CCT not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
-		}
-
 		$id  = absint( $request->get_param( 'id' ) );
 		$tag = sanitize_text_field( $request->get_param( 'tag' ) );
 
-		WP_MCP_AI_Channel_Contacts_CCT::add_tag( $id, $tag );
+		// CCT path (preferred when class exists and table is available).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			WP_MCP_AI_Channel_Contacts_CCT::add_tag( $id, $tag );
+			return rest_ensure_response( array( 'success' => true ) );
+		}
 
-		return rest_ensure_response( array( 'success' => true ) );
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			WP_MCP_AI_Channel_Contacts_CPT::add_tag( $id, $tag );
+			return rest_ensure_response( array( 'success' => true ) );
+		}
+
+		return new WP_Error( 'rest_unavailable', __( 'Contacts store not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
 	}
 
 	/**
@@ -726,21 +1045,22 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function set_human_takeover( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			return new WP_Error( 'rest_unavailable', __( 'Contacts CCT not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
-		}
-
 		$id     = absint( $request->get_param( 'id' ) );
 		$enable = (bool) $request->get_param( 'enable' );
 
-		WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $id, $enable );
+		// CCT path (preferred when class exists and table is available).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $id, $enable );
+			return rest_ensure_response( array( 'success' => true, 'human_takeover' => $enable ) );
+		}
 
-		return rest_ensure_response(
-			array(
-				'success'        => true,
-				'human_takeover' => $enable,
-			)
-		);
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			WP_MCP_AI_Channel_Contacts_CPT::set_human_takeover( $id, $enable );
+			return rest_ensure_response( array( 'success' => true, 'human_takeover' => $enable ) );
+		}
+
+		return new WP_Error( 'rest_unavailable', __( 'Contacts store not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
 	}
 
 	/**
@@ -750,11 +1070,6 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_contact_status( $request ) {
-		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
-			return new WP_Error( 'rest_unavailable', __( 'Contacts CCT not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
-		}
-
-		global $wpdb;
 		$id     = absint( $request->get_param( 'id' ) );
 		$status = sanitize_key( $request->get_param( 'status' ) );
 
@@ -763,17 +1078,29 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'rest_invalid_param', __( 'Invalid CRM status.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
-		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wpdb->update(
-			$table,
-			array( 'crm_status' => $status ),
-			array( '_ID' => $id ),
-			array( '%s' ),
-			array( '%d' )
-		);
+		// CCT path (preferred when class exists and table is available).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			global $wpdb;
+			$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->update(
+				$table,
+				array( 'crm_status' => $status ),
+				array( '_ID' => $id ),
+				array( '%s' ),
+				array( '%d' )
+			);
 
-		return rest_ensure_response( array( 'success' => true, 'crm_status' => $status ) );
+			return rest_ensure_response( array( 'success' => true, 'crm_status' => $status ) );
+		}
+
+		// CPT fallback path.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			WP_MCP_AI_Channel_Contacts_CPT::set_crm_status( $id, $status );
+			return rest_ensure_response( array( 'success' => true, 'crm_status' => $status ) );
+		}
+
+		return new WP_Error( 'rest_unavailable', __( 'Contacts store not available.', 'mcp-ai-wpoos-pro' ), array( 'status' => 503 ) );
 	}
 
 	// =========================================================================
@@ -797,6 +1124,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'id'                 => isset( $row['_ID'] ) ? (int) $row['_ID'] : 0,
 			'channel'            => isset( $row['channel'] ) ? $row['channel'] : '',
 			'channel_contact_id' => isset( $row['channel_contact_id'] ) ? $row['channel_contact_id'] : '',
+			'connection_id'      => isset( $row['connection_id'] ) ? $row['connection_id'] : '',
 			'display_name'       => isset( $row['display_name'] ) ? $row['display_name'] : '',
 			'phone_number'       => isset( $row['phone_number'] ) ? $row['phone_number'] : '',
 			'email'              => isset( $row['email'] ) ? $row['email'] : '',

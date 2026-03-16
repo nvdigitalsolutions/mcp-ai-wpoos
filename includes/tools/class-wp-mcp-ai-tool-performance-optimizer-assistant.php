@@ -729,8 +729,14 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 
 		switch ( $task['name'] ) {
 			case 'clean_transients':
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-				$deleted = $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_%' OR option_name LIKE '_site_transient_%'" );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for bulk transient cleanup; no WordPress API supports deleting all transients at once.
+				$deleted = $wpdb->query( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is an internal wpdb property; LIKE patterns are static strings with no user input.
+					$wpdb->prepare(
+						"DELETE FROM `{$wpdb->options}` WHERE option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is an internal wpdb property, not user input.
+						'_transient_%',
+						'_site_transient_%'
+					)
+				);
 				return array(
 					'success' => true,
 					'savings' => sprintf(
@@ -741,8 +747,8 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 				);
 
 			case 'optimize_tables':
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-				$wpdb->query( 'OPTIMIZE TABLE ' . $wpdb->posts );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- OPTIMIZE TABLE does not support placeholders; $wpdb->posts is an internal trusted property, not user input.
+				$wpdb->query( 'OPTIMIZE TABLE `' . $wpdb->posts . '`' );
 				return array( 'success' => true );
 
 			default:
@@ -885,8 +891,14 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function count_transients() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-		$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '_transient_%' OR option_name LIKE '_site_transient_%'" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for bulk transient count; no WordPress API supports counting all transients.
+		$count = $wpdb->get_var( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is an internal wpdb property; LIKE patterns are static strings with no user input.
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM `{$wpdb->options}` WHERE option_name LIKE %s OR option_name LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is an internal wpdb property, not user input.
+				'_transient_%',
+				'_site_transient_%'
+			)
+		);
 
 		return intval( $count );
 	}

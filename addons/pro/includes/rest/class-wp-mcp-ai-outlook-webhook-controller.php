@@ -407,7 +407,7 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'outlook',
 				$sender_email,
-				array( 'display_name' => $sender_email )
+				array( 'display_name' => $sender_email, 'connection_id' => $connection_id )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -576,7 +576,7 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 
 			// Touch the contact record to update last_message_at.
 			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-				$ol_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'outlook', $sender_email );
+				$ol_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'outlook', $sender_email, array( 'connection_id' => $connection_id ) );
 				if ( $ol_contact_row_id ) {
 					WP_MCP_AI_Channel_Contacts_CCT::touch( $ol_contact_row_id );
 				}

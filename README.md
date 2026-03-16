@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.3  
-**Release Date:** 2026-03-03 (March 2026 — WordPress.org compliance audit complete, Telegram Mini App media tab extension badges)  
-**Latest Updates:** March 2026 - WordPress.org compliance 100% complete (output escaping audit, ABSPATH guards, menu position fix), Telegram Mini App media tab extension badges, Office 365 & iCloud Drive connection types, Discord/Telegram reactions, WhatsApp group routing  
+**Version:** 1.1.4  
+**Release Date:** 2026-03-15 (March 2026 — Security hardening, chat channel fixes, TMA improvements, PDF bundling, WordPress.org compliance fixes)  
+**Latest Updates:** March 2026 - Security hardening (AES-256-GCM, ZIP bomb, HTTPS enforcement), Slack/Google Chat/Teams/Telegram channel improvements, TMA Markdown rendering, Gemini embedding-001, AI-powered product actualization, WordPress.org plugin check compliance  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  

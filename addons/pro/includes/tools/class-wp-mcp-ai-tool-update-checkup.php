@@ -81,6 +81,31 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
+				'chief_complaint'  => array(
+					'type'        => 'string',
+					'description' => __( 'Chief complaint or reason for visit (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 1000,
+				),
+				'diagnosis'        => array(
+					'type'        => 'string',
+					'description' => __( 'Working or final diagnosis (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 500,
+				),
+				'duration_minutes' => array(
+					'type'        => 'integer',
+					'description' => __( 'Duration in minutes (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'follow_up_date'   => array(
+					'type'        => 'string',
+					'description' => __( 'Follow-up date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'copay_amount'     => array(
+					'type'        => 'string',
+					'description' => __( 'Copay paid (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
 			),
 			'required'             => array( 'checkup_id' ),
 			'additionalProperties' => false,
@@ -136,13 +161,18 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Sanitize optional fields.
-		$title    = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$datetime = isset( $arguments['datetime'] ) ? sanitize_text_field( $arguments['datetime'] ) : '';
-		$provider = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
-		$location = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
-		$type     = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
-		$status   = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : '';
-		$notes    = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$title           = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$datetime        = isset( $arguments['datetime'] ) ? sanitize_text_field( $arguments['datetime'] ) : '';
+		$provider        = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
+		$location        = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
+		$type            = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
+		$status          = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : '';
+		$notes           = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$chief_complaint = isset( $arguments['chief_complaint'] ) ? sanitize_textarea_field( $arguments['chief_complaint'] ) : '';
+		$diagnosis       = isset( $arguments['diagnosis'] ) ? sanitize_textarea_field( $arguments['diagnosis'] ) : '';
+		$duration        = isset( $arguments['duration_minutes'] ) ? absint( $arguments['duration_minutes'] ) : 0;
+		$follow_up_date  = isset( $arguments['follow_up_date'] ) ? sanitize_text_field( $arguments['follow_up_date'] ) : '';
+		$copay_amount    = isset( $arguments['copay_amount'] ) ? sanitize_text_field( $arguments['copay_amount'] ) : '';
 
 		// Validate datetime if provided.
 		if ( $datetime && ! $this->validate_datetime( $datetime ) ) {
@@ -191,18 +221,43 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			update_post_meta( $checkup_id, '_checkup_status', $status );
 		}
 
+		if ( $chief_complaint ) {
+			update_post_meta( $checkup_id, '_checkup_chief_complaint', $chief_complaint );
+		}
+
+		if ( $diagnosis ) {
+			update_post_meta( $checkup_id, '_checkup_diagnosis', $diagnosis );
+		}
+
+		if ( $duration ) {
+			update_post_meta( $checkup_id, '_checkup_duration_minutes', $duration );
+		}
+
+		if ( $follow_up_date ) {
+			update_post_meta( $checkup_id, '_checkup_follow_up_date', $follow_up_date );
+		}
+
+		if ( $copay_amount ) {
+			update_post_meta( $checkup_id, '_checkup_copay_amount', $copay_amount );
+		}
+
 		return array(
 			'success' => true,
 			'message' => __( 'Checkup updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'checkup' => array(
-				'id'         => $checkup_id,
-				'title'      => $title ?: get_post_field( 'post_title', $checkup_id ),
-				'datetime'   => $datetime ?: get_post_meta( $checkup_id, '_checkup_datetime', true ),
-				'provider'   => $provider ?: get_post_meta( $checkup_id, '_checkup_provider', true ),
-				'location'   => $location ?: get_post_meta( $checkup_id, '_checkup_location', true ),
-				'type'       => $type ?: get_post_meta( $checkup_id, '_checkup_type', true ),
-				'status'     => $status ?: get_post_meta( $checkup_id, '_checkup_status', true ),
-				'updated_at' => current_time( 'mysql' ),
+				'id'               => $checkup_id,
+				'title'            => $title ?: get_post_field( 'post_title', $checkup_id ),
+				'datetime'         => $datetime ?: get_post_meta( $checkup_id, '_checkup_datetime', true ),
+				'provider'         => $provider ?: get_post_meta( $checkup_id, '_checkup_provider', true ),
+				'location'         => $location ?: get_post_meta( $checkup_id, '_checkup_location', true ),
+				'type'             => $type ?: get_post_meta( $checkup_id, '_checkup_type', true ),
+				'status'           => $status ?: get_post_meta( $checkup_id, '_checkup_status', true ),
+				'chief_complaint'  => $chief_complaint ?: get_post_meta( $checkup_id, '_checkup_chief_complaint', true ),
+				'diagnosis'        => $diagnosis ?: get_post_meta( $checkup_id, '_checkup_diagnosis', true ),
+				'duration_minutes' => $duration ?: get_post_meta( $checkup_id, '_checkup_duration_minutes', true ),
+				'follow_up_date'   => $follow_up_date ?: get_post_meta( $checkup_id, '_checkup_follow_up_date', true ),
+				'copay_amount'     => $copay_amount ?: get_post_meta( $checkup_id, '_checkup_copay_amount', true ),
+				'updated_at'       => current_time( 'mysql' ),
 			),
 		);
 	}

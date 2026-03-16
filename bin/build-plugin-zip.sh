@@ -204,6 +204,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.gitattributes' \
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
@@ -233,7 +234,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
-        --exclude 'composer.json' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
@@ -460,6 +460,7 @@ if [ "$BUILD_PRO" = true ]; then
         rsync -av --quiet addons/pro/ "build/${PRO_SLUG}/" \
             --exclude '.git' \
             --exclude '.gitignore' \
+            --exclude '.gitattributes' \
             --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
@@ -662,6 +663,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.gitattributes' \
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
@@ -691,7 +693,6 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
-        --exclude 'composer.json' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
