@@ -400,6 +400,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
 
+		// Load Healthcare Imaging Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-imaging-toolkit-init.php';
+		}
+
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
 
@@ -894,9 +899,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			}
 		}
 
+		// Add Healthcare Imaging tools if enabled.
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			$imaging_tools = array(
+				'WP_MCP_AI_Tool_Manage_Imaging_Studies' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $imaging_tools );
+		}
+
 		// Add WooCommerce tools if enabled.
-		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {
-			$woo_tools = array(
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
@@ -1592,9 +1604,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_medication_schedule']   = 'wordpress-core';
 		}
 
+		// Add Healthcare Imaging tool mappings if enabled.
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			$pro_tools['manage_imaging_studies'] = 'wordpress-core';
+		}
+
 		// Add Document Generation Toolkit tool mappings if enabled.
-		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
-			$pro_tools['pro_pdf_document']   = 'external-tools';
+		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {			$pro_tools['pro_pdf_document']   = 'external-tools';
 			$pro_tools['pro_word_document']  = 'external-tools';
 			$pro_tools['pro_excel_document'] = 'external-tools';
 		}
