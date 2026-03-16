@@ -492,4 +492,268 @@ class Test_Vitals_Log_CCT_Upsert extends WP_UnitTestCase {
 		WP_MCP_AI_JetEngine_Vitals_Log_CCT::maybe_migrate_decimal_columns();
 		$this->assertTrue( true, 'maybe_migrate_decimal_columns() must not throw when the table is absent.' );
 	}
+
+	// =========================================================================
+	// Hemoglobin — LOINC_MAP coverage
+	// =========================================================================
+
+	/**
+	 * LOINC_MAP must contain the primary hemoglobin LOINC code 718-7.
+	 */
+	public function test_loinc_map_contains_hemoglobin_718_7() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$constant   = $reflection->getConstant( 'LOINC_MAP' );
+
+		$this->assertIsArray( $constant, 'LOINC_MAP must be an array.' );
+		$this->assertArrayHasKey( '718-7', $constant, 'LOINC_MAP must contain LOINC code 718-7 (hemoglobin).' );
+		$this->assertSame( 'hemoglobin', $constant['718-7'], 'LOINC code 718-7 must map to "hemoglobin".' );
+	}
+
+	/**
+	 * LOINC_MAP must contain the secondary hemoglobin LOINC code 59260-8.
+	 */
+	public function test_loinc_map_contains_hemoglobin_59260_8() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$constant   = $reflection->getConstant( 'LOINC_MAP' );
+
+		$this->assertArrayHasKey( '59260-8', $constant, 'LOINC_MAP must contain LOINC code 59260-8 (hemoglobin moles/vol).' );
+		$this->assertSame( 'hemoglobin', $constant['59260-8'], 'LOINC code 59260-8 must map to "hemoglobin".' );
+	}
+
+	/**
+	 * LOINC_MAP must contain CBC main-index codes for hematocrit, RBC, WBC,
+	 * platelets, MCV, MCH, MCHC, and RDW.
+	 */
+	public function test_loinc_map_contains_cbc_main_indices() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$constant   = $reflection->getConstant( 'LOINC_MAP' );
+
+		$expected = array(
+			'4544-3'  => 'hematocrit',
+			'788-0'   => 'rbc',
+			'6690-2'  => 'wbc',
+			'777-3'   => 'platelets',
+			'787-2'   => 'mcv',
+			'785-6'   => 'mch',
+			'786-4'   => 'mchc',
+			'21000-5' => 'rdw',
+		);
+
+		foreach ( $expected as $loinc => $field ) {
+			$this->assertArrayHasKey( $loinc, $constant, "LOINC_MAP must contain code {$loinc} ({$field})." );
+			$this->assertSame( $field, $constant[ $loinc ], "LOINC code {$loinc} must map to \"{$field}\"." );
+		}
+	}
+
+	// =========================================================================
+	// Hemoglobin — CSV_COLUMN_MAP coverage
+	// =========================================================================
+
+	/**
+	 * CSV_COLUMN_MAP must contain common hemoglobin column aliases.
+	 */
+	public function test_csv_column_map_contains_hemoglobin_aliases() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$constant   = $reflection->getConstant( 'CSV_COLUMN_MAP' );
+
+		$this->assertIsArray( $constant, 'CSV_COLUMN_MAP must be an array.' );
+
+		$aliases = array( 'hemoglobin', 'hgb', 'haemoglobin', 'hemoglobin (g/dl)', 'hgb (g/dl)' );
+		foreach ( $aliases as $alias ) {
+			$this->assertArrayHasKey( $alias, $constant, "CSV_COLUMN_MAP must contain alias \"{$alias}\" for hemoglobin." );
+			$this->assertSame( 'hemoglobin', $constant[ $alias ], "Alias \"{$alias}\" must map to \"hemoglobin\"." );
+		}
+	}
+
+	/**
+	 * CSV_COLUMN_MAP must contain aliases for the remaining CBC main indices.
+	 */
+	public function test_csv_column_map_contains_cbc_main_index_aliases() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$constant   = $reflection->getConstant( 'CSV_COLUMN_MAP' );
+
+		$spot_checks = array(
+			'hct'       => 'hematocrit',
+			'rbc'       => 'rbc',
+			'wbc'       => 'wbc',
+			'plt'       => 'platelets',
+			'mcv'       => 'mcv',
+			'mch'       => 'mch',
+			'mchc'      => 'mchc',
+			'rdw'       => 'rdw',
+		);
+
+		foreach ( $spot_checks as $alias => $field ) {
+			$this->assertArrayHasKey( $alias, $constant, "CSV_COLUMN_MAP must contain alias \"{$alias}\" for {$field}." );
+			$this->assertSame( $field, $constant[ $alias ], "Alias \"{$alias}\" must map to \"{$field}\"." );
+		}
+	}
+
+	// =========================================================================
+	// Hemoglobin — CSV parsing end-to-end
+	// =========================================================================
+
+	/**
+	 * parse_csv() must recognise a "hemoglobin" column header and populate
+	 * the hemoglobin field in the resulting row.
+	 */
+	public function test_parse_csv_parses_hemoglobin_column() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'parse_csv' );
+		$method->setAccessible( true );
+
+		$csv = "date,hemoglobin\n2026-03-01,13.5";
+
+		$result = $method->invoke( $tool, $csv );
+
+		$this->assertTrue( $result['success'], 'parse_csv() must succeed for valid CSV with hemoglobin column.' );
+		$this->assertCount( 1, $result['rows'], 'One data row must be parsed.' );
+		$this->assertArrayHasKey( 'hemoglobin', $result['rows'][0], 'hemoglobin key must appear in parsed row.' );
+		$this->assertSame( '13.5', $result['rows'][0]['hemoglobin'] );
+	}
+
+	/**
+	 * parse_csv() must recognise the "hgb" column alias for hemoglobin.
+	 */
+	public function test_parse_csv_parses_hgb_alias() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'parse_csv' );
+		$method->setAccessible( true );
+
+		$csv = "date,hgb\n2026-03-01,12.8";
+
+		$result = $method->invoke( $tool, $csv );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 1, $result['rows'] );
+		$this->assertArrayHasKey( 'hemoglobin', $result['rows'][0], '"hgb" CSV alias must map to "hemoglobin".' );
+		$this->assertSame( '12.8', $result['rows'][0]['hemoglobin'] );
+	}
+
+	// =========================================================================
+	// Hemoglobin — FHIR JSON parsing end-to-end
+	// =========================================================================
+
+	/**
+	 * parse_fhir_json() must map LOINC code 718-7 to the hemoglobin field.
+	 */
+	public function test_parse_fhir_json_maps_hemoglobin_loinc_718_7() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'parse_fhir_json' );
+		$method->setAccessible( true );
+
+		$fhir = json_encode( array(
+			'resourceType' => 'Bundle',
+			'entry'        => array(
+				array(
+					'resource' => array(
+						'resourceType'     => 'Observation',
+						'effectiveDateTime' => '2026-03-01T09:00:00Z',
+						'code'             => array(
+							'coding' => array(
+								array( 'system' => 'http://loinc.org', 'code' => '718-7' ),
+							),
+						),
+						'valueQuantity'    => array( 'value' => 13.5, 'unit' => 'g/dL' ),
+					),
+				),
+			),
+		) );
+
+		$result = $method->invoke( $tool, $fhir );
+
+		$this->assertTrue( $result['success'], 'parse_fhir_json() must succeed for valid FHIR Bundle.' );
+		$this->assertCount( 1, $result['rows'], 'One row must be parsed.' );
+		$this->assertArrayHasKey( 'hemoglobin', $result['rows'][0], 'LOINC 718-7 must populate the hemoglobin field.' );
+		$this->assertSame( 13.5, $result['rows'][0]['hemoglobin'] );
+	}
+
+	// =========================================================================
+	// Hemoglobin — JSON format parse_json_array end-to-end
+	// =========================================================================
+
+	/**
+	 * parse_json_array() must accept hemoglobin as a recognised numeric field
+	 * and include it in the output row.
+	 */
+	public function test_parse_json_array_accepts_hemoglobin_field() {
+		$tool = $this->get_import_vitals_tool();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'parse_json_array' );
+		$method->setAccessible( true );
+
+		$payload = json_encode( array(
+			array(
+				'measurement_date' => '2026-03-01',
+				'hemoglobin'       => 13.5,
+			),
+		) );
+
+		$result = $method->invoke( $tool, $payload );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertCount( 1, $result['rows'] );
+		$this->assertArrayHasKey( 'hemoglobin', $result['rows'][0], 'hemoglobin must be accepted as a numeric CCT field in JSON format.' );
+		$this->assertSame( 13.5, $result['rows'][0]['hemoglobin'] );
+	}
+
+	/**
+	 * get_numeric_vital_fields() must include hemoglobin so that all three
+	 * import paths (JSON, CSV, FHIR) treat it as a numeric vital.
+	 */
+	public function test_get_numeric_vital_fields_includes_hemoglobin() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$fields = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields();
+
+		$this->assertContains( 'hemoglobin', $fields, 'get_numeric_vital_fields() must include hemoglobin.' );
+	}
+
+	/**
+	 * get_decimal_vital_fields() must include hemoglobin so that g/dL values
+	 * are stored with decimal precision.
+	 */
+	public function test_get_decimal_vital_fields_includes_hemoglobin() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$fields = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_decimal_vital_fields();
+
+		$this->assertContains( 'hemoglobin', $fields, 'get_decimal_vital_fields() must include hemoglobin.' );
+	}
+
+	/**
+	 * build_row_format() must return "%f" for hemoglobin (decimal field).
+	 */
+	public function test_build_row_format_returns_float_for_hemoglobin() {
+		if ( ! $this->load_vitals_log_cct() ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$row    = array( 'hemoglobin' => 13.5 );
+		$format = WP_MCP_AI_JetEngine_Vitals_Log_CCT::build_row_format( $row );
+
+		$this->assertCount( 1, $format );
+		$this->assertSame( '%f', $format[0], 'build_row_format() must return "%f" for the hemoglobin field.' );
+	}
 }
