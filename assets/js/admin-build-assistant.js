@@ -489,7 +489,9 @@
 		 * @return {string} Session key.
 		 */
 		generateSessionKey: function() {
-			return 'build-' + Math.random().toString( 36 ).substring( 2, 15 ) + Math.random().toString( 36 ).substring( 2, 15 );
+			const array = new Uint8Array( 16 );
+			crypto.getRandomValues( array );
+			return 'build-' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 		},
 
 		/**

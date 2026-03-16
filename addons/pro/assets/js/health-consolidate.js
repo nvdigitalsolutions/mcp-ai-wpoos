@@ -8,6 +8,18 @@
 	'use strict';
 
 	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml( text ) {
+		const d = document.createElement( 'div' );
+		d.textContent = String( text );
+		return d.innerHTML;
+	}
+
+	/**
 	 * Initialize the health consolidate page.
 	 */
 	function initHealthConsolidate() {
@@ -454,8 +466,8 @@
 				// Update the guided form container with instructions.
 				guidedFormContainer.html(
 					'<div class="notice notice-success inline">' +
-					'<p><strong>' + wpMcpAiHealthConsolidate.strings.aiAssisting + '</strong></p>' +
-					'<p>The AI assistant below will guide you through creating a ' + recordTypeName + ' for ' + memberName + '.</p>' +
+					'<p><strong>' + escapeHtml( wpMcpAiHealthConsolidate.strings.aiAssisting ) + '</strong></p>' +
+					'<p>The AI assistant below will guide you through creating a ' + escapeHtml( recordTypeName ) + ' for ' + escapeHtml( memberName ) + '.</p>' +
 					'</div>'
 				).show();
 			} else {
@@ -463,7 +475,7 @@
 				const addUrl = getAddUrl( recordType );
 				guidedFormContainer.html(
 					'<div class="notice notice-warning inline">' +
-					'<p>AI assistant not available. <a href="' + addUrl + '" class="button">Create ' + recordTypeName + ' manually</a></p>' +
+					'<p>AI assistant not available. <a href="' + escapeHtml( addUrl ) + '" class="button">Create ' + escapeHtml( recordTypeName ) + ' manually</a></p>' +
 					'</div>'
 				).show();
 			}

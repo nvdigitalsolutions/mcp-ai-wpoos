@@ -46,12 +46,12 @@
 	// Build a channel badge element.
 	function channelBadge( slug ) {
 		var label = LABELS[ slug ] || slug;
-		return '<span class="cc-badge cc-badge--' + slug + '">' + escHtml( label ) + '</span>';
+		return '<span class="cc-badge cc-badge--' + escHtml( slug ) + '">' + escHtml( label ) + '</span>';
 	}
 
 	// Build a CRM status dot.
 	function statusDot( status ) {
-		return '<span class="cc-status-dot cc-status-dot--' + status + '" title="' + escHtml( status ) + '"></span>';
+		return '<span class="cc-status-dot cc-status-dot--' + escHtml( status ) + '" title="' + escHtml( status ) + '"></span>';
 	}
 
 	function escHtml( str ) {

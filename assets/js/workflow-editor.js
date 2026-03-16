@@ -8,6 +8,18 @@
 (function($) {
 	'use strict';
 
+	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml( text ) {
+		const d = document.createElement( 'div' );
+		d.textContent = String( text );
+		return d.innerHTML;
+	}
+
 	var WorkflowEditor = {
 		currentWorkflow: null,
 		steps: [],
@@ -111,13 +123,13 @@
 			// Workflow name
 			html += '<div class="form-row">';
 			html += '<label for="workflow-name">Workflow Name</label>';
-			html += '<input type="text" id="workflow-name" class="regular-text" value="' + (workflow ? workflow.name : '') + '" />';
+			html += '<input type="text" id="workflow-name" class="regular-text" value="' + (workflow ? escapeHtml( workflow.name ) : '') + '" />';
 			html += '</div>';
 
 			// Workflow description
 			html += '<div class="form-row">';
 			html += '<label for="workflow-description">Description</label>';
-			html += '<textarea id="workflow-description" class="large-text">' + (workflow ? workflow.description : '') + '</textarea>';
+			html += '<textarea id="workflow-description" class="large-text">' + (workflow ? escapeHtml( workflow.description ) : '') + '</textarea>';
 			html += '</div>';
 
 			// Workflow steps
@@ -158,9 +170,9 @@
 			
 			html += '<div class="mcp-ai-workflow-step-content">';
 			html += '<label>Command</label>';
-			html += '<input type="text" class="regular-text step-command" value="' + (step.command || '') + '" placeholder="/command-name" />';
+			html += '<input type="text" class="regular-text step-command" value="' + escapeHtml( step.command || '' ) + '" placeholder="/command-name" />';
 			html += '<label style="margin-top: 10px;">Parameters (JSON)</label>';
-			html += '<textarea class="large-text step-params" rows="3">' + (step.params ? JSON.stringify(step.params) : '{}') + '</textarea>';
+			html += '<textarea class="large-text step-params" rows="3">' + escapeHtml( step.params ? JSON.stringify(step.params) : '{}' ) + '</textarea>';
 			html += '</div>';
 			
 			html += '</div>';

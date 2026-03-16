@@ -405,13 +405,17 @@
 					} else {
 						// Fallback: Use the shortcode directly
 						const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
-						$chatWrapper.html('<div class="wp-mcp-ai-professional-selector__chat-placeholder">' + shortcode + '</div>');
+						const $placeholder = $('<div class="wp-mcp-ai-professional-selector__chat-placeholder"></div>');
+						$placeholder.text( shortcode );
+						$chatWrapper.empty().append( $placeholder );
 					}
 				},
 				error: function() {
 					// Fallback: Use the shortcode directly
 					const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
-					$chatWrapper.html('<div class="wp-mcp-ai-professional-selector__chat-placeholder">' + shortcode + '</div>');
+					const $placeholder = $('<div class="wp-mcp-ai-professional-selector__chat-placeholder"></div>');
+					$placeholder.text( shortcode );
+					$chatWrapper.empty().append( $placeholder );
 				}
 			});
 		},

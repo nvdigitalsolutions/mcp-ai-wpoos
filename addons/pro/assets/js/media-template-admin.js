@@ -10,6 +10,18 @@
 (function ($) {
 	'use strict';
 
+	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml( text ) {
+		const d = document.createElement( 'div' );
+		d.textContent = String( text );
+		return d.innerHTML;
+	}
+
 	const MediaTemplateAdmin = {
 		/**
 		 * Initialize the admin interface enhancements.
@@ -227,11 +239,15 @@
 			const exportKey = urlParams.get('export_key');
 
 			if (exportedCount && exportKey) {
+				const safeCount = parseInt( exportedCount, 10 );
+				const safeKey = encodeURIComponent( exportKey );
+				const safeNonce = encodeURIComponent( mcpAiMediaTemplate.nonce );
+				const safeAjaxUrl = escapeHtml( mcpAiMediaTemplate.ajaxUrl );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
-						<p><strong>Export Complete!</strong> ${exportedCount} template(s) exported.</p>
+						<p><strong>Export Complete!</strong> ${safeCount} template(s) exported.</p>
 						<p>
-							<a href="${mcpAiMediaTemplate.ajaxUrl}?action=mcp_ai_download_export&key=${exportKey}&_wpnonce=${mcpAiMediaTemplate.nonce}" 
+							<a href="${safeAjaxUrl}?action=mcp_ai_download_export&key=${safeKey}&_wpnonce=${safeNonce}" 
 							   class="template-export-link" download="media-templates-export.json">
 								<span class="dashicons dashicons-download"></span>
 								Download Export File
@@ -250,9 +266,10 @@
 			// Handle duplicated notice.
 			const duplicatedCount = urlParams.get('duplicated_templates');
 			if (duplicatedCount) {
+				const safeCount = parseInt( duplicatedCount, 10 );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
-						<p><strong>Templates Duplicated!</strong> ${duplicatedCount} template(s) duplicated successfully.</p>
+						<p><strong>Templates Duplicated!</strong> ${safeCount} template(s) duplicated successfully.</p>
 					</div>
 				`;
 
