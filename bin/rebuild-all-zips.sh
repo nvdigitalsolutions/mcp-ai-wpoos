@@ -56,9 +56,22 @@ echo "Rebuilding All Plugin ZIPs (v${VERSION})"
 echo "=========================================="
 echo ""
 
+# Step 0: Rebuild all CSS/JS assets (full build including workflow builder and TMA components)
+if [ -n "$SKIP_NPM_ARG" ]; then
+    echo "Step 0: Skipping CSS/JS rebuild (--skip-npm-build flag set — using pre-built assets)..."
+    echo "✅ Using pre-built frontend assets"
+else
+    echo "Step 0: Rebuilding all CSS/JS assets..."
+    npm ci --silent 2>/dev/null || npm install --silent
+    npm run build:full
+    echo "✅ All CSS/JS assets rebuilt"
+fi
+echo ""
+
 # Build all versions using the build-plugin-zip.sh script
 # Use --all flag for base, pro, combined, and also add --core-only
-"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG $SKIP_NPM_ARG
+# Always pass --skip-npm-build since we already ran the full build above
+"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG --skip-npm-build
 
 echo ""
 echo "=========================================="
