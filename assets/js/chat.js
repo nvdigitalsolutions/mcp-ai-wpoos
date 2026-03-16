@@ -4420,6 +4420,17 @@
             attachCopyButton(bubble, storedText);
         });
 
+        // Attach save buttons for assistant messages (mirrors system-message pattern below)
+        let assistantMsgIndex = 0;
+        Array.prototype.forEach.call(bubbles, function (bubble, domIndex) {
+            // Use the actual position in conversation if available, otherwise use DOM index
+            const conversationIndex = (state.conversation && Array.isArray(state.conversation))
+                ? findAssistantMessageIndex(state.conversation, assistantMsgIndex)
+                : domIndex;
+            attachSaveButton(bubble, state, conversationIndex);
+            assistantMsgIndex++;
+        });
+
         // Attach save buttons for system messages only
         const systemSelector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--system';
         const systemBubbles = state.messagesEl.querySelectorAll(systemSelector);
@@ -10293,20 +10304,6 @@
     }
 
     /**
-     * Legacy polling function - kept for compatibility
-     * Now just an alias to waitForAsyncToolResult
-     * 
-     * @deprecated Use waitForAsyncToolResult instead
-     * @param {Object} state Chat state object
-     * @param {string} jobId Job ID for the async tool execution
-     * @param {string} toolName Tool name for display purposes
-     * @return {Promise} Promise that resolves with the tool result
-     */
-    function waitForAsyncToolResultLegacy(state, jobId, toolName) {
-        return waitForAsyncToolResult(state, jobId, toolName);
-    }
-
-    /**
      * Attempt timeout recovery by making a final check for job completion.
      * 
      * When an async tool times out, the video/file may have actually been created
@@ -11593,9 +11590,6 @@
                 // Render assistant messages
                 // Use display metadata if available, otherwise build from content
                 let assistantPayload;
-                
-                // Check if this message has tool_calls (either in message or display metadata)
-                const hasToolCalls = message.tool_calls || (display && display.tool_calls);
                 
                 if (display) {
                     // Use saved display metadata for consistency
@@ -17735,204 +17729,6 @@
         }
         
         return result;
-    }
-
-    /**
-     * Dedicated function for saving chat posts with enhanced error handling.
-     * 
-     * @param {Object} state - Chat state object
-     * @param {Object} saveData - Data to save (title, content, post_type, etc.)
-     * @param {Object} options - Optional settings (retry, timeout, etc.)
-     * @return {Promise} Promise that resolves with save result
-     */
-    function saveChatPost(state, saveData, options) {
-        if (!state || !state.config || !state.config.toolsEndpoint) {
-            return Promise.reject(new Error('Tools endpoint not configured'));
-        }
-
-        if (!saveData || typeof saveData !== 'object') {
-            return Promise.reject(new Error('Invalid save data'));
-        }
-
-        if (!saveData.content && !saveData.post_id) {
-            return Promise.reject(new Error('Save data must include content or post_id'));
-        }
-
-        // Default options
-        const opts = options || {};
-        const maxRetries = opts.maxRetries || 1;
-        const retryDelay = opts.retryDelay || 1000;
-        const timeout = opts.timeout || 30000;
-
-        // Build the payload for save_post tool
-        const payload = {
-            assistant_id: state.config.assistantId,
-            tool: 'save_post',
-            arguments: {
-                title: saveData.title || '',
-                content: saveData.content || '',
-                post_type: saveData.post_type || 'post',
-                status: saveData.status || 'draft',
-            },
-        };
-
-        // Add optional fields
-        if (saveData.post_id) {
-            const postId = parseInt(saveData.post_id, 10);
-            if (isNaN(postId) || postId <= 0) {
-                return Promise.reject(new Error('Invalid post_id provided'));
-            }
-            payload.arguments.post_id = postId;
-        }
-        if (saveData.excerpt) {
-            payload.arguments.excerpt = saveData.excerpt;
-        }
-        if (saveData.slug) {
-            payload.arguments.slug = saveData.slug;
-        }
-
-        // Add session key if available
-        if (state.config.sessionKey) {
-            payload.session_key = state.config.sessionKey;
-        }
-
-        /**
-         * Internal function to attempt the save request.
-         * 
-         * @param {number} attempt - Current attempt number
-         * @return {Promise} Promise that resolves with response data
-         */
-        function attemptSave(attempt) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(function() {
-                controller.abort();
-            }, timeout);
-
-            return postJson(
-                state.config.toolsEndpoint,
-                payload,
-                buildJsonHeaders(state),
-                {
-                    timeout: timeout,
-                    signal: controller.signal,
-                    state: state
-                }
-            )
-                .then(function(response) {
-                    clearTimeout(timeoutId);
-                    
-                    // Clone response for error handling
-                    const responseClone = response.clone();
-                    
-                    return response.json()
-                        .catch(function(parseError) {
-                            // If JSON parsing fails, try to get text for debugging
-                            return responseClone.text().then(function(text) {
-                                throw new Error('Invalid JSON response: ' + text.substring(0, 100));
-                            }).catch(function() {
-                                throw parseError;
-                            });
-                        })
-                        .then(function(data) {
-                            if (!response.ok) {
-                                // Extract error message from response - prefer data.message, fallback to data.error
-                                const defaultMsg = 'Save failed with status ' + response.status;
-                                const errorMsg = data && data.message 
-                                    ? data.message 
-                                    : extractErrorMessage(data && data.error, defaultMsg);
-                                throw new Error(errorMsg);
-                            }
-                            
-                            // Validate response data structure
-                            if (!data || typeof data !== 'object') {
-                                throw new Error('Invalid response format from save endpoint');
-                            }
-                            
-                            return data;
-                        });
-                })
-                .catch(function(error) {
-                    clearTimeout(timeoutId);
-                    
-                    // Check if we should retry
-                    if (attempt < maxRetries && error.name !== 'AbortError') {
-                        // Wait before retrying
-                        return new Promise(function(resolve) {
-                            setTimeout(function() {
-                                resolve(attemptSave(attempt + 1));
-                            }, retryDelay);
-                        });
-                    }
-                    
-                    // Transform error for better user feedback
-                    if (error.name === 'AbortError') {
-                        throw new Error('Save request timed out after ' + (timeout / 1000) + ' seconds');
-                    }
-                    
-                    throw error;
-                });
-        }
-
-        return attemptSave(0);
-    }
-
-    /**
-     * Helper function to save post from chat message.
-     * This wraps saveChatPost with user-friendly feedback.
-     * 
-     * @param {Object} state - Chat state object
-     * @param {Object} saveData - Data to save
-     * @return {Promise} Promise that resolves with formatted result
-     */
-    function savePostFromChat(state, saveData) {
-        if (!state || !state.container) {
-            return Promise.reject(new Error('Invalid chat state'));
-        }
-
-        // Show saving status
-        setStatus(state.container, getString('savingPost', 'Saving post...'));
-
-        return saveChatPost(state, saveData, {
-            maxRetries: 2,
-            retryDelay: 1000,
-            timeout: 30000,
-        })
-            .then(function(result) {
-                clearStatus(state.container);
-                
-                // Format success message
-                let message = 'Post saved successfully';
-                if (result && result.post_id) {
-                    message += ' (ID: ' + result.post_id + ')';
-                }
-                if (result && result.edit_url) {
-                    message += '. <a href="' + escapeHtml(result.edit_url) + '" target="_blank">Edit post</a>';
-                }
-                
-                // Show success message in chat
-                if (state.messagesEl) {
-                    appendMessage(state.messagesEl, 'system', {
-                        text: message,
-                        attachments: [],
-                    }, false, { state: state });
-                }
-                
-                return result;
-            })
-            .catch(function(error) {
-                clearStatus(state.container);
-                
-                // Show error message
-                const errorMessage = error && error.message ? error.message : 'Failed to save post';
-                if (state.messagesEl) {
-                    appendMessage(state.messagesEl, 'system', {
-                        text: 'Error: ' + escapeHtml(errorMessage),
-                        attachments: [],
-                    }, false, { state: state });
-                }
-                
-                throw error;
-            });
     }
 
     /**
