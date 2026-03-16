@@ -46,18 +46,23 @@
 	// Build a channel badge element.
 	function channelBadge( slug ) {
 		var label = LABELS[ slug ] || slug;
-		return '<span class="cc-badge cc-badge--' + escHtml( slug ) + '">' + escHtml( label ) + '</span>';
+		return '<span class="cc-badge cc-badge--' + safeCssClass( slug ) + '">' + escHtml( label ) + '</span>';
 	}
 
 	// Build a CRM status dot.
 	function statusDot( status ) {
-		return '<span class="cc-status-dot cc-status-dot--' + escHtml( status ) + '" title="' + escHtml( status ) + '"></span>';
+		return '<span class="cc-status-dot cc-status-dot--' + safeCssClass( status ) + '" title="' + escHtml( status ) + '"></span>';
 	}
 
 	function escHtml( str ) {
 		var d = document.createElement( 'div' );
 		d.textContent = str;
 		return d.innerHTML.replace( /"/g, '&quot;' );
+	}
+
+	// Sanitize a value for use in a CSS class name (alphanumeric, hyphens, underscores only).
+	function safeCssClass( str ) {
+		return String( str ).replace( /[^a-zA-Z0-9_-]/g, '_' );
 	}
 
 	// =========================================================================
