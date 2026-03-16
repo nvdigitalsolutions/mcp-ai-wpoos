@@ -420,7 +420,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 					</div>
 
 					<!-- Quick Import Mode -->
-					<div id="workflow-bulk" class="workflow-content" style="display: none;">
+					<div id="workflow-bulk" class="workflow-content">
 						<div class="wp-mcp-ai-bulk-import-section">
 							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'mcp-ai-wpoos-pro' ); ?></h2>
 							<p class="description">
