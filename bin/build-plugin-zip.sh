@@ -159,7 +159,7 @@ if [ "$SKIP_NPM_BUILD" = true ]; then
 else
     echo "Step 1: Building frontend assets..."
     npm ci --silent 2>/dev/null || npm install --silent
-    npm run build
+    npm run build:full
     echo "✅ Frontend assets built"
 fi
 echo ""
