@@ -688,6 +688,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Code and development tools.
 			'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-wpcode-snippet.php',
 			'WP_MCP_AI_Pro_Tool_Generic_REST'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php',
+			// Toolkit CPT – generic CRUD/search for any pro toolkit Custom Post Type.
+			'WP_MCP_AI_Pro_Tool_CPT'                      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-cpt.php',
 			// GitHub tools.
 			'WP_MCP_AI_Pro_Tool_Github_Repository_Operations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-github-repository-operations.php',
 			'WP_MCP_AI_Pro_Tool_List_Github_Repositories' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-list-github-repositories.php',
@@ -1411,6 +1413,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
+			// Toolkit CPT - generic CRUD/search for pro toolkit Custom Post Types.
+			'toolkit_cpt'                     => 'wordpress-core',
 			// Elementor tools - Require Elementor plugin.
 			'elementor'                       => 'wordpress-plugins',
 			// Social media publishing tools - Require external API credentials.
