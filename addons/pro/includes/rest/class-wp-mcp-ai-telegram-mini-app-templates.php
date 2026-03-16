@@ -1705,6 +1705,12 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				/* Re-fetch members with fresh auth if the picker is still open */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){hwFetchMembers();}' .
+				/* Re-sync server health metrics now that auth is established.
+				 * hwSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)hwSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -2776,6 +2782,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				/* Re-fetch members with fresh auth if the picker is still open */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){mvFetchMembers();}' .
+				/* Re-sync server vitals now that auth is established.
+				 * mvSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)mvSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -3338,7 +3350,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
 				'var serverRows=d.result.history.map(function(row){' .
-					'return{ts:(row.measurement_date||"")+"T"+(row.measurement_time||"00:00")+":00.000Z",' .
+					/* Normalise measurement_time to HH:MM — the CCT column may
+					 * store HH:MM:SS when data was logged via the AI tool or
+					 * imported, which would produce the invalid ISO string
+					 * "2024-01-15T14:30:00:00.000Z".  Slicing to 5 chars
+					 * ensures the result is always a valid ISO 8601 timestamp. */
+					'return{ts:(row.measurement_date||"")+"T"+String(row.measurement_time||"00:00").slice(0,5)+":00.000Z",' .
 						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
 						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
 						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
