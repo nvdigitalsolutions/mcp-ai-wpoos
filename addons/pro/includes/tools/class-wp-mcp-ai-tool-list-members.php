@@ -148,6 +148,12 @@ class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'order'          => 'ASC',
 		);
 
+		// Subscribers (read-only capability) see only their own members.
+		// Users with edit_posts or higher (authors, editors, admins) see all members.
+		if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
+			$query_args['author'] = $current_user_id;
+		}
+
 		// Add search if provided.
 		if ( $search ) {
 			$query_args['s'] = $search;

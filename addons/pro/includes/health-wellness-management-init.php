@@ -119,12 +119,21 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_health_wellness_manageme
  * Returns the ID of the first published mcp_ai_member post whose author
  * matches the supplied user ID, or 0 when no match is found.
  *
+ * Users with edit_posts capability (authors, editors, admins) manage ALL
+ * members via the picker, so this function returns 0 for them to ensure the
+ * full member picker is shown rather than silently pre-selecting one member.
+ *
  * @param int $user_id WordPress user ID.
  * @return int Member post ID or 0.
  */
 function wp_mcp_ai_get_member_id_by_user_id( $user_id ) {
 	$user_id = absint( $user_id );
 	if ( ! $user_id ) {
+		return 0;
+	}
+
+	// Users above subscriber level should see all members via the picker.
+	if ( user_can( $user_id, 'edit_posts' ) ) {
 		return 0;
 	}
 
