@@ -2869,10 +2869,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					continue;
 				}
 
-				// Handle 'enum' field - ensure it's not recursively processed as a nested schema.
-				// Enum values should be preserved as-is (array of scalars).
+				// Handle 'enum' field - Gemini API requires all enum values to be strings (TYPE_STRING).
+				// Cast any non-string scalar values (e.g. integers like 0, 90, 180, 270) to strings.
 				if ( 'enum' === $key && is_array( $value ) ) {
-					$sanitized[ $key ] = $value;
+					$sanitized[ $key ] = array_map( 'strval', $value );
 					continue;
 				}
 
@@ -2958,6 +2958,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						'reason'        => $reason,
 					)
 				);
+			}
+
+			// Gemini API requires enum values to be TYPE_STRING. When a schema property
+			// declares a numeric type (integer/number) together with an enum, the type must
+			// be changed to 'string' so it matches the now-stringified enum values.
+			if ( isset( $sanitized['enum'] ) && isset( $sanitized['type'] ) && in_array( $sanitized['type'], array( 'integer', 'number' ), true ) ) {
+				$sanitized['type'] = 'string';
 			}
 
 			return $sanitized;
