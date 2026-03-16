@@ -84,6 +84,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		'create_health_reminder',
 		'log_health_metrics',
 		'generate_health_chart',
+		'analyze_loop_health',
 		// Data operations & interoperability.
 		'export_fhir_data',
 		'manage_care_plan',
@@ -157,6 +158,14 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
+
+		// Enqueue the shared research-page stylesheet so .wp-mcp-ai-research-chat is styled.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
 
 		// Enqueue consolidation page specific styles.
 		wp_enqueue_style(
@@ -351,7 +360,12 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 					<div class="wp-mcp-ai-workflow-selector">
 						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<div class="workflow-options">
-							<button type="button" class="workflow-option active" data-workflow="bulk">
+							<button type="button" class="workflow-option active" data-workflow="ai">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and manage records with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="bulk">
 								<span class="dashicons dashicons-upload"></span>
 								<strong><?php esc_html_e( 'Quick Import', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<p><?php esc_html_e( 'Dump everything - AI organizes it', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -374,8 +388,39 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						</div>
 					</div>
 
+					<!-- AI Research Mode (default) -->
+					<div id="workflow-ai" class="workflow-content active">
+						<div class="wp-mcp-ai-research-chat">
+							<?php if ( $assistant_id > 0 ) : ?>
+								<?php
+								// Render chat interface with all H&W tools, matching the quiz research page pattern.
+								// Tools cover the full USCDI data model: members, records, checkups,
+								// prescriptions, allergies, vital signs, immunizations, and more.
+								$hw_tools = self::CHAT_TOOLS;
+								echo do_shortcode(
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $hw_tools ) ) . '"]'
+								);
+								?>
+							<?php else : ?>
+								<div class="notice notice-error inline">
+									<p>
+										<?php
+										echo wp_kses_post(
+											sprintf(
+												/* translators: %s: Link to create assistant */
+												__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first to enable AI-guided record management.', 'mcp-ai-wpoos-pro' ),
+												admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+											)
+										);
+										?>
+									</p>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+
 					<!-- Quick Import Mode -->
-					<div id="workflow-bulk" class="workflow-content active">
+					<div id="workflow-bulk" class="workflow-content" style="display: none;">
 						<div class="wp-mcp-ai-bulk-import-section">
 							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'mcp-ai-wpoos-pro' ); ?></h2>
 							<p class="description">
@@ -752,77 +797,6 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						</div><!-- .wp-mcp-ai-vitals-section -->
 					</div><!-- #workflow-vitals -->
 
-					<hr class="wp-mcp-ai-section-divider">
-
-					<?php if ( $assistant_id > 0 ) : ?>
-						<div class="wp-mcp-ai-consolidate-ai-section">
-							<h2><?php esc_html_e( 'AI Assistant for Record Management', 'mcp-ai-wpoos-pro' ); ?></h2>
-							<p class="description">
-								<?php esc_html_e( 'Use the AI assistant below to help you create and manage health records. The AI can guide you through adding missing records, suggest necessary checkups, and help maintain complete health profiles.', 'mcp-ai-wpoos-pro' ); ?>
-							</p>
-							
-							<div class="wp-mcp-ai-document-capabilities">
-								<h3>
-									<span class="dashicons dashicons-media-document"></span>
-									<?php esc_html_e( 'Document Processing Capabilities', 'mcp-ai-wpoos-pro' ); ?>
-								</h3>
-								<div class="wp-mcp-ai-document-capabilities-grid">
-									<div>
-										<strong><?php esc_html_e( '📥 Extract & Import:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'Extract text from PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Import Excel data', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-									<div>
-										<strong><?php esc_html_e( '📄 Generate Documents:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'PDF health reports', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Word documents', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Excel spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-									<div>
-										<strong><?php esc_html_e( '🔧 Manage Files:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'Merge PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Add watermarks', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Generate invoices', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-								</div>
-								<p class="wp-mcp-ai-document-capabilities-examples">
-									<strong><?php esc_html_e( '💡 Example prompts:', 'mcp-ai-wpoos-pro' ); ?></strong><br>
-									<em>
-										<?php esc_html_e( '"Extract text from the uploaded lab report" • "Generate a health summary PDF for John Doe" • "Merge all medical documents into one PDF" • "Export medication list to Excel"', 'mcp-ai-wpoos-pro' ); ?>
-									</em>
-								</p>
-							</div>
-							
-							<div class="wp-mcp-ai-consolidate-chat">
-								<?php
-								// Render chat interface with comprehensive health management tools.
-								echo do_shortcode(
-									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', self::CHAT_TOOLS ) ) . '"]'
-								);
-								?>
-							</div>
-						</div>
-					<?php else : ?>
-						<div class="notice notice-error inline">
-							<p>
-								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to create assistant */
-										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first to enable AI-guided record management.', 'mcp-ai-wpoos-pro' ),
-										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
-									)
-								);
-								?>
-							</p>
-						</div>
-					<?php endif; ?>
 				</div>
 			</div>
 		</div>
