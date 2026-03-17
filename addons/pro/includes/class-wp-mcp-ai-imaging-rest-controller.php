@@ -588,14 +588,15 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Get or create the protected DICOM storage root directory.
 	 *
-	 * The directory is placed outside the public uploads folder to prevent
-	 * direct HTTP access.  An `.htaccess` and `index.php` guard are added.
+	 * The directory lives inside the WordPress uploads folder at
+	 * `{uploads}/mcp-ai-imaging/`.  An `.htaccess` and `index.php` guard are
+	 * added to prevent direct HTTP access to the stored DICOM files.
 	 *
-	 * @return string Absolute path to storage root.
+	 * @return string Absolute path to storage root (with trailing slash).
 	 */
 	private function get_storage_root() {
 		$upload_dir  = wp_upload_dir();
-		$storage_dir = trailingslashit( dirname( $upload_dir['basedir'] ) ) . 'mcp-ai-imaging';
+		$storage_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-imaging';
 
 		if ( ! is_dir( $storage_dir ) ) {
 			wp_mkdir_p( $storage_dir );

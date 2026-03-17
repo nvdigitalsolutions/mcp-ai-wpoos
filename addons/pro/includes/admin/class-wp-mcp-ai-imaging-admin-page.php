@@ -120,6 +120,23 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	}
 
 	/**
+	 * Return the absolute filesystem path to the DICOM storage root.
+	 *
+	 * Mirrors the logic used by WP_MCP_AI_Imaging_REST_Controller::get_storage_root()
+	 * so that the admin UI can display the correct path without requiring the
+	 * REST controller to be instantiated.
+	 *
+	 * Files are stored inside the WordPress uploads folder at:
+	 * `{uploads}/mcp-ai-imaging/`
+	 *
+	 * @return string Absolute path (no trailing slash).
+	 */
+	private static function get_storage_root_path() {
+		$upload_dir = wp_upload_dir();
+		return trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-imaging';
+	}
+
+	/**
 	 * Render the admin page HTML shell.
 	 *
 	 * The page shell intentionally contains no PHI – all data is fetched
@@ -129,6 +146,8 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		if ( ! current_user_can( 'view_medical_imaging' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		$storage_path = self::get_storage_root_path();
 		?>
 		<div class="wrap nv-imaging-wrap">
 			<h1 class="wp-heading-inline">
@@ -143,12 +162,55 @@ class WP_MCP_AI_Imaging_Admin_Page {
 
 			<hr class="wp-header-end">
 
+			<!-- DICOM storage location info box -->
+			<div class="notice notice-info inline nv-imaging-storage-notice" style="margin-top:1em;">
+				<p>
+					<strong><?php esc_html_e( 'DICOM Storage Location', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</p>
+				<p>
+					<?php esc_html_e( 'DICOM files are stored in a protected directory on the server that is not accessible directly over HTTP. Each study is placed in its own sub-folder named after its DICOM StudyInstanceUID.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<table class="widefat striped" style="max-width:700px;margin-bottom:.5em;">
+					<tbody>
+						<tr>
+							<th style="width:200px;"><?php esc_html_e( 'Storage directory', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code><?php echo esc_html( $storage_path ); ?></code></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Sub-folder per study', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code><?php echo esc_html( trailingslashit( $storage_path ) ); ?>{StudyInstanceUID}/</code></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'HTTP access', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><?php esc_html_e( 'Blocked via .htaccess — files are served only through signed REST API tokens.', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+				<p class="description">
+					<?php
+					printf(
+						/* translators: %s: REST API endpoint path */
+						esc_html__( 'To upload new studies use the "Upload Study" button above, or POST files to the REST endpoint: %s', 'mcp-ai-wpoos-pro' ),
+						'<code>' . esc_html( rest_url( 'mcp-ai/v1/imaging/upload' ) ) . '</code>'
+					);
+					?>
+				</p>
+			</div>
+
 			<!-- Upload panel (hidden by default) -->
 			<?php if ( current_user_can( 'upload_medical_imaging' ) ) : ?>
 			<div id="nv-imaging-upload-panel" class="nv-imaging-panel" style="display:none;">
 				<h2><?php esc_html_e( 'Upload DICOM Study', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Select one or more .dcm files from the same study/series. Files are stored in a protected directory outside the public web root.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Select one or more .dcm files from the same study/series. Files are stored in the uploads directory and protected from direct HTTP access via .htaccess rules.', 'mcp-ai-wpoos-pro' ); ?>
+					<br>
+					<?php
+					printf(
+						/* translators: %s: server filesystem path */
+						esc_html__( 'Server path: %s', 'mcp-ai-wpoos-pro' ),
+						'<code>' . esc_html( $storage_path ) . '</code>'
+					);
+					?>
 				</p>
 				<form id="nv-imaging-upload-form" enctype="multipart/form-data">
 					<input type="file" id="nv-imaging-file-input" name="dicom_files[]" accept=".dcm" multiple />
