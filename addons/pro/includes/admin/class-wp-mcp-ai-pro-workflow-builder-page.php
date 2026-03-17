@@ -108,7 +108,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Enqueue the React-based workflow builder.
-		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/workflow-builder.asset.php';
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			// Built assets are missing. Show an admin notice via render_page() — do NOT
@@ -131,7 +131,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		wp_enqueue_script(
 			'mcp-ai-pro-workflow-builder',
-			WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.js',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.js',
 			$asset['dependencies'],
 			$asset['version'],
 			true
@@ -139,7 +139,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		wp_enqueue_style(
 			'mcp-ai-pro-workflow-builder',
-			WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.css',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.css',
 			array(),
 			$asset['version']
 		);
@@ -147,11 +147,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
 		// by wp-scripts into a separate style-*.css file. Without this, the canvas
 		// area has no layout and nodes/edges do not render correctly.
-		$style_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/style-workflow-builder.css';
+		$style_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/style-workflow-builder.css';
 		if ( file_exists( $style_file ) ) {
 			wp_enqueue_style(
 				'mcp-ai-pro-workflow-builder-reactflow',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/style-workflow-builder.css',
+				WP_MCP_AI_PRO_URL . 'build/workflow-builder/style-workflow-builder.css',
 				array(),
 				$asset['version']
 			);
@@ -181,7 +181,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function render_page() {
-		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/workflow-builder.asset.php';
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			?>

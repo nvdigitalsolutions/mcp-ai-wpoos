@@ -325,7 +325,6 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	protected function render_configuration_form() {
 		?>
 		<div class="toolkit-card">
-			<h2><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( $this->option_name . '_group' );
