@@ -34,6 +34,28 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+	}
+
+	/**
+	 * Ensure the conversation_type column exists in the messages CCT table.
+	 */
+	public static function maybe_migrate_conversation_type() {
+		if ( get_option( 'wp_mcp_ai_channel_messages_migration_v1' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'conversation_type', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
+		}
+		update_option( 'wp_mcp_ai_channel_messages_migration_v1', true );
 	}
 
 	/**
@@ -110,6 +132,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			'cct_status'         => 'publish',
 			'reply_sent'         => ! empty( $data['reply_sent'] ) ? 1 : 0,
 			'assigned_agent'     => isset( $data['assigned_agent'] ) ? sanitize_text_field( $data['assigned_agent'] ) : '',
+			'conversation_type'  => isset( $data['conversation_type'] ) ? sanitize_key( $data['conversation_type'] ) : 'dm',
 		);
 
 		// Store Unix timestamp as integer.
@@ -548,6 +571,21 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => '',
 				'description' => __( 'Post ID of the AI assistant assigned to this conversation', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 15,
+				'title'       => __( 'Conversation Type', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'conversation_type',
+				'type'        => 'select',
+				'search'      => true,
+				'width'       => '100%',
+				'default_val' => 'dm',
+				'options'     => array(
+					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+				),
+				'description' => __( 'Whether this message is from a DM, channel, or group conversation', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

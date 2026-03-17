@@ -42,6 +42,28 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+	}
+
+	/**
+	 * Ensure the conversation_type column exists in the contacts CCT table.
+	 */
+	public static function maybe_migrate_conversation_type() {
+		if ( get_option( 'wp_mcp_ai_channel_contacts_migration_v1' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'conversation_type', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
+		}
+		update_option( 'wp_mcp_ai_channel_contacts_migration_v1', true );
 	}
 
 	/**
@@ -102,7 +124,8 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			return false;
 		}
 
-		$connection_id = isset( $extra['connection_id'] ) ? sanitize_text_field( $extra['connection_id'] ) : '';
+		$connection_id     = isset( $extra['connection_id'] ) ? sanitize_text_field( $extra['connection_id'] ) : '';
+		$conversation_type = isset( $extra['conversation_type'] ) ? sanitize_key( $extra['conversation_type'] ) : 'dm';
 
 		// Try to look up the existing contact directly in the CCT table.
 		if ( self::table_exists() ) {
@@ -148,6 +171,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			'channel'            => $channel,
 			'channel_contact_id' => $channel_contact_id,
 			'connection_id'      => $connection_id,
+			'conversation_type'  => $conversation_type,
 			'display_name'       => $display_name ? $display_name : $channel_contact_id,
 			'phone_number'       => $phone_number,
 			'email'              => $email,
@@ -642,6 +666,21 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'width'       => '100%',
 				'default_val' => '',
 				'description' => __( 'Plugin connection/account identifier this contact belongs to', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 14,
+				'title'       => __( 'Conversation Type', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'conversation_type',
+				'type'        => 'select',
+				'search'      => true,
+				'width'       => '100%',
+				'default_val' => 'dm',
+				'options'     => array(
+					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+				),
+				'description' => __( 'Whether this is a direct message, a channel (Slack/Teams/Discord), or a group chat', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

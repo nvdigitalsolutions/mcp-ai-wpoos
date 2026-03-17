@@ -49,6 +49,12 @@
 		return '<span class="cc-badge cc-badge--' + safeCssClass( slug ) + '">' + escHtml( label ) + '</span>';
 	}
 
+	function convTypeBadge( type ) {
+		var labelMap = { dm: I18N.convTypeDM || 'DM', channel: I18N.convTypeChannel || 'Channel', group: I18N.convTypeGroup || 'Group' };
+		var label = labelMap[ type ] || type;
+		return '<span class="cc-conv-type-badge cc-conv-type-badge--' + safeCssClass( type ) + '">' + escHtml( label ) + '</span>';
+	}
+
 	// Build a CRM status dot.
 	function statusDot( status ) {
 		return '<span class="cc-status-dot cc-status-dot--' + safeCssClass( status ) + '" title="' + escHtml( status ) + '"></span>';
@@ -75,6 +81,7 @@
 			channel       : ( document.getElementById( 'cc-active-channel' ) || {} ).value || '',
 			status        : '',
 			search        : '',
+			convType      : '',
 			activeContactId : null,
 			activeContact   : null,
 			msgPage       : 1,
@@ -88,6 +95,12 @@
 		$( '#cc-filter-status' ).on( 'change', function() {
 			state.status = this.value;
 			state.page   = 1;
+			loadConversations();
+		} );
+
+		$( '#cc-filter-conv-type' ).on( 'change', function() {
+			state.convType = this.value;
+			state.page     = 1;
 			loadConversations();
 		} );
 
@@ -126,9 +139,10 @@
 			$list.html( '<div class="cc-placeholder">' + escHtml( I18N.loading || 'Loading…' ) + '</div>' );
 
 			let qs = '?page=' + state.page + '&per_page=' + state.perPage;
-			if ( state.channel ) { qs += '&channel=' + encodeURIComponent( state.channel ); }
-			if ( state.status )  { qs += '&status=' + encodeURIComponent( state.status ); }
-			if ( state.search )  { qs += '&search=' + encodeURIComponent( state.search ); }
+			if ( state.channel )   { qs += '&channel=' + encodeURIComponent( state.channel ); }
+			if ( state.status )    { qs += '&status=' + encodeURIComponent( state.status ); }
+			if ( state.convType )  { qs += '&conversation_type=' + encodeURIComponent( state.convType ); }
+			if ( state.search )    { qs += '&search=' + encodeURIComponent( state.search ); }
 
 			apiFetch( '/conversations' + qs ).then( function( data ) {
 				if ( ! data || ! data.items || ! data.items.length ) {
@@ -155,6 +169,7 @@
 					+ '</div>'
 					+ '<div class="cc-conv-meta">'
 					+ channelBadge( c.channel )
+					+ convTypeBadge( c.conversation_type || 'dm' )
 					+ statusDot( c.crm_status )
 					+ takenOver
 					+ '</div>'

@@ -364,7 +364,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// ── Group / supergroup gate ──
 		// When in a group context, respect the connection's enable_groups setting.
-		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
+		$is_group     = in_array( $chat_type, array( 'group', 'supergroup' ), true );
+		$tg_conv_type = $is_group ? 'group' : 'dm';
 		if ( $is_group && empty( $connection['enable_groups'] ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'telegram_group_message_ignored',
@@ -409,9 +410,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			if ( $is_group ) {
 				$tg_contact_name = isset( $message['chat']['title'] ) ? sanitize_text_field( $message['chat']['title'] ) : $chat_id;
 				$tg_contact_extra = array(
-					'display_name' => $tg_contact_name,
-					'metadata'     => array( 'contact_type' => $chat_type ),
-					'connection_id' => $connection_id,
+					'display_name'      => $tg_contact_name,
+					'metadata'          => array( 'contact_type' => $chat_type ),
+					'connection_id'     => $connection_id,
+					'conversation_type' => $tg_conv_type,
 				);
 			} else {
 				$tg_contact_name = '';
@@ -419,9 +421,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					$tg_contact_name = trim( $message['from']['first_name'] . ' ' . ( isset( $message['from']['last_name'] ) ? $message['from']['last_name'] : '' ) );
 				}
 				$tg_contact_extra = array(
-					'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id,
-					'metadata'     => array( 'contact_type' => 'private' ),
-					'connection_id' => $connection_id,
+					'display_name'      => $tg_contact_name ? $tg_contact_name : $tg_contact_id,
+					'metadata'          => array( 'contact_type' => 'private' ),
+					'connection_id'     => $connection_id,
+					'conversation_type' => $tg_conv_type,
 				);
 			}
 
@@ -452,6 +455,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => isset( $message['date'] ) ? absint( $message['date'] ) : time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => ! empty( $assigned_assistant_ids ) ? (string) $assigned_assistant_ids[0] : '',
+					'conversation_type'  => $tg_conv_type,
 				)
 			);
 		}
@@ -613,6 +617,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$reply_to_message_id  = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
 		// retry_count incremented each time the job is rescheduled due to a 429.
 		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
+		$tg_conv_type         = in_array( $chat_type, array( 'group', 'supergroup' ), true ) ? 'group' : 'dm';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -1029,13 +1034,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => $tg_conv_type,
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $from_id, array( 'connection_id' => $connection_id ) );
+			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $from_id, array( 'connection_id' => $connection_id, 'conversation_type' => $tg_conv_type ) );
 			if ( $tg_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tg_contact_row_id );
 			}
@@ -3006,6 +3012,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'phone_number_id'    => $chat_id,
 					'timestamp'          => isset( $post['date'] ) ? absint( $post['date'] ) : time(),
 					'reply_sent'         => 0,
+					'conversation_type'  => 'channel',
 				)
 			);
 
@@ -3018,9 +3025,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'telegram',
 					$chat_id,
 					array(
-						'display_name'  => $channel_contact_name,
-						'metadata'      => array( 'contact_type' => 'channel' ),
-						'connection_id' => $connection_id,
+						'display_name'      => $channel_contact_name,
+						'metadata'          => array( 'contact_type' => 'channel' ),
+						'connection_id'     => $connection_id,
+						'conversation_type' => 'channel',
 					)
 				);
 				if ( $channel_contact_row ) {
