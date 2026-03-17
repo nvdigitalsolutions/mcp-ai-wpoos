@@ -61,7 +61,7 @@ function truthy(value) {
 }
 
 // src/version.ts
-var VERSION = "4.0.435";
+var VERSION = "4.0.436";
 
 // src/multiple-versions-warning.ts
 var checkMultipleRemotionVersions = () => {

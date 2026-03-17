@@ -185366,14 +185366,14 @@ var require_client_h2 = __commonJS({
         if (request.onHeaders(Number(statusCode), parseH2Headers(realHeaders), stream.resume.bind(stream), "") === false) {
           stream.pause();
         }
-      });
-      stream.on("data", (chunk) => {
-        if (request.aborted || request.completed) {
-          return;
-        }
-        if (request.onData(chunk) === false) {
-          stream.pause();
-        }
+        stream.on("data", (chunk) => {
+          if (request.aborted || request.completed) {
+            return;
+          }
+          if (request.onData(chunk) === false) {
+            stream.pause();
+          }
+        });
       });
       stream.once("end", () => {
         stream.removeAllListeners("data");
@@ -197995,9 +197995,11 @@ var require_fetch = __commonJS({
       function dispatch({ body }) {
         const url = requestCurrentURL(request);
         const agent = fetchParams.controller.dispatcher;
+        const path = url.pathname + url.search;
+        const hasTrailingQuestionMark = url.search.length === 0 && url.href[url.href.length - url.hash.length - 1] === "?";
         return new Promise((resolve, reject) => agent.dispatch(
           {
-            path: url.href.slice(url.origin.length, url.hash.length ? -url.hash.length : void 0),
+            path: hasTrailingQuestionMark ? `${path}?` : path,
             origin: url.origin,
             method: request.method,
             body: agent.isMockActive ? request.body && (request.body.source || request.body.stream) : body,
@@ -200111,25 +200113,21 @@ var require_permessage_deflate = __commonJS({
     var kBuffer = /* @__PURE__ */ Symbol("kBuffer");
     var kLength = /* @__PURE__ */ Symbol("kLength");
     var kDefaultMaxDecompressedSize = 4 * 1024 * 1024;
-    var _inflate, _options, _maxDecompressedSize, _aborted, _currentCallback;
+    var _inflate, _options, _aborted, _currentCallback;
     var PerMessageDeflate = class {
       /**
        * @param {Map<string, string>} extensions
-       * @param {{ maxDecompressedMessageSize?: number }} [options]
        */
-      constructor(extensions, options = {}) {
+      constructor(extensions) {
         /** @type {import('node:zlib').InflateRaw} */
         __privateAdd(this, _inflate);
         __privateAdd(this, _options, {});
-        /** @type {number} */
-        __privateAdd(this, _maxDecompressedSize);
         /** @type {boolean} */
         __privateAdd(this, _aborted, false);
         /** @type {Function|null} */
         __privateAdd(this, _currentCallback, null);
         __privateGet(this, _options).serverNoContextTakeover = extensions.has("server_no_context_takeover");
         __privateGet(this, _options).serverMaxWindowBits = extensions.get("server_max_window_bits");
-        __privateSet(this, _maxDecompressedSize, options.maxDecompressedMessageSize ?? kDefaultMaxDecompressedSize);
       }
       decompress(chunk, fin, callback) {
         if (__privateGet(this, _aborted)) {
@@ -200158,7 +200156,7 @@ var require_permessage_deflate = __commonJS({
               return;
             }
             __privateGet(this, _inflate)[kLength] += data.length;
-            if (__privateGet(this, _inflate)[kLength] > __privateGet(this, _maxDecompressedSize)) {
+            if (__privateGet(this, _inflate)[kLength] > kDefaultMaxDecompressedSize) {
               __privateSet(this, _aborted, true);
               __privateGet(this, _inflate).removeAllListeners();
               __privateGet(this, _inflate).destroy();
@@ -200196,7 +200194,6 @@ var require_permessage_deflate = __commonJS({
     };
     _inflate = new WeakMap();
     _options = new WeakMap();
-    _maxDecompressedSize = new WeakMap();
     _aborted = new WeakMap();
     _currentCallback = new WeakMap();
     module2.exports = { PerMessageDeflate };
@@ -200223,14 +200220,13 @@ var require_receiver = __commonJS({
     var { WebsocketFrameSend } = require_frame();
     var { PerMessageDeflate } = require_permessage_deflate();
     var { MessageSizeExceededError } = require_errors();
-    var _buffers, _fragmentsBytes, _byteOffset, _loop, _state, _info, _fragments, _extensions, _handler, _options;
+    var _buffers, _fragmentsBytes, _byteOffset, _loop, _state, _info, _fragments, _extensions, _handler;
     var ByteParser = class extends Writable {
       /**
        * @param {import('./websocket').Handler} handler
        * @param {Map<string, string>|null} extensions
-       * @param {{ maxDecompressedMessageSize?: number }} [options]
        */
-      constructor(handler, extensions, options = {}) {
+      constructor(handler, extensions) {
         super();
         __privateAdd(this, _buffers, []);
         __privateAdd(this, _fragmentsBytes, 0);
@@ -200243,13 +200239,10 @@ var require_receiver = __commonJS({
         __privateAdd(this, _extensions);
         /** @type {import('./websocket').Handler} */
         __privateAdd(this, _handler);
-        /** @type {{ maxDecompressedMessageSize?: number }} */
-        __privateAdd(this, _options);
         __privateSet(this, _handler, handler);
         __privateSet(this, _extensions, extensions == null ? /* @__PURE__ */ new Map() : extensions);
-        __privateSet(this, _options, options);
         if (__privateGet(this, _extensions).has("permessage-deflate")) {
-          __privateGet(this, _extensions).set("permessage-deflate", new PerMessageDeflate(extensions, options));
+          __privateGet(this, _extensions).set("permessage-deflate", new PerMessageDeflate(extensions));
         }
       }
       /**
@@ -200529,7 +200522,6 @@ var require_receiver = __commonJS({
     _fragments = new WeakMap();
     _extensions = new WeakMap();
     _handler = new WeakMap();
-    _options = new WeakMap();
     module2.exports = {
       ByteParser
     };
@@ -200657,7 +200649,7 @@ var require_websocket = __commonJS({
     var { SendQueue } = require_sender();
     var { WebsocketFrameSend } = require_frame();
     var { channels } = require_diagnostics();
-    var _events, _bufferedAmount, _protocol, _extensions, _sendQueue, _handler, _url, _binaryType, _parser, _options, _WebSocket_instances, onConnectionEstablished_fn, onMessage_fn, onParserDrain_fn, onSocketClose_fn;
+    var _events, _bufferedAmount, _protocol, _extensions, _sendQueue, _handler, _url, _binaryType, _parser, _WebSocket_instances, onConnectionEstablished_fn, onMessage_fn, onParserDrain_fn, onSocketClose_fn;
     var _WebSocket = class _WebSocket extends EventTarget {
       /**
        * @param {string} url
@@ -200722,8 +200714,6 @@ var require_websocket = __commonJS({
         __privateAdd(this, _binaryType);
         /** @type {import('./receiver').ByteParser} */
         __privateAdd(this, _parser);
-        /** @type {{ maxDecompressedMessageSize?: number }} */
-        __privateAdd(this, _options);
         webidl.util.markAsUncloneable(this);
         const prefix = "WebSocket constructor";
         webidl.argumentLengthCheck(arguments, 1, prefix);
@@ -200742,9 +200732,6 @@ var require_websocket = __commonJS({
           throw new DOMException("Invalid Sec-WebSocket-Protocol value", "SyntaxError");
         }
         __privateSet(this, _url, new URL(urlRecord.href));
-        __privateSet(this, _options, {
-          maxDecompressedMessageSize: options.maxDecompressedMessageSize
-        });
         const client = environmentSettingsObject.settingsObject;
         __privateGet(this, _handler).controller = establishWebSocketConnection(
           urlRecord,
@@ -200940,14 +200927,13 @@ var require_websocket = __commonJS({
     _url = new WeakMap();
     _binaryType = new WeakMap();
     _parser = new WeakMap();
-    _options = new WeakMap();
     _WebSocket_instances = new WeakSet();
     /**
      * @see https://websockets.spec.whatwg.org/#feedback-from-the-protocol
      */
     onConnectionEstablished_fn = function(response, parsedExtensions) {
       __privateGet(this, _handler).socket = response.socket;
-      const parser = new ByteParser(__privateGet(this, _handler), parsedExtensions, __privateGet(this, _options));
+      const parser = new ByteParser(__privateGet(this, _handler), parsedExtensions);
       parser.on("drain", () => __privateGet(this, _handler).onParserDrain());
       parser.on("error", (err) => __privateGet(this, _handler).onParserError(err));
       __privateSet(this, _parser, parser);
@@ -201098,19 +201084,6 @@ var require_websocket = __commonJS({
       {
         key: "headers",
         converter: webidl.nullableConverter(webidl.converters.HeadersInit)
-      },
-      {
-        key: "maxDecompressedMessageSize",
-        converter: webidl.nullableConverter((V) => {
-          V = webidl.converters["unsigned long long"](V);
-          if (V <= 0) {
-            throw webidl.errors.exception({
-              header: "WebSocket constructor",
-              message: "maxDecompressedMessageSize must be greater than 0"
-            });
-          }
-          return V;
-        })
       }
     ]);
     webidl.converters["DOMString or sequence<DOMString> or WebSocketInit"] = function(V) {

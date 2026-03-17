@@ -3,7 +3,7 @@
 		"url": "https://github.com/remotion-dev/remotion/tree/main/packages/bundler"
 	},
 	"name": "@remotion/bundler",
-	"version": "4.0.435",
+	"version": "4.0.436",
 	"description": "Bundle Remotion compositions using Webpack",
 	"main": "dist/index.js",
 	"sideEffects": false,
@@ -25,10 +25,10 @@
 		"css-loader": "5.2.7",
 		"esbuild": "0.25.0",
 		"react-refresh": "0.18.0",
-		"remotion": "4.0.435",
-		"@remotion/studio": "4.0.435",
-		"@remotion/studio-shared": "4.0.435",
-		"@remotion/media-parser": "4.0.435",
+		"remotion": "4.0.436",
+		"@remotion/studio": "4.0.436",
+		"@remotion/studio-shared": "4.0.436",
+		"@remotion/media-parser": "4.0.436",
 		"style-loader": "4.0.0",
 		"source-map": "0.7.3",
 		"webpack": "5.105.0"
@@ -40,7 +40,7 @@
 	"devDependencies": {
 		"react": "19.2.3",
 		"react-dom": "19.2.3",
-		"@remotion/eslint-config-internal": "4.0.435",
+		"@remotion/eslint-config-internal": "4.0.436",
 		"eslint": "9.19.0",
 		"@typescript/native-preview": "7.0.0-dev.20260217.1"
 	},
