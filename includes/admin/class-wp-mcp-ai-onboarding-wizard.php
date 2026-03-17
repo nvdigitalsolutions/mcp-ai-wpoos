@@ -408,11 +408,17 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 * Step 2: AI Provider connection.
 		 */
 		private function render_step_provider() {
-			$settings   = get_option( 'wp_mcp_ai_settings', array() );
-			$openai_key = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
-			$gemini_key = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
-			$ollama_url = ! empty( $settings['ollama_url'] ) ? esc_url( $settings['ollama_url'] ) : 'http://localhost:11434';
-			$nonce      = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+			$settings            = get_option( 'wp_mcp_ai_settings', array() );
+			$openai_key          = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
+			$anthropic_key       = ! empty( $settings['anthropic_api_key'] ) ? '••••••••••••••••' : '';
+			$gemini_key          = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
+			$huggingface_key     = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
+			$ollama_url          = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
+			$lm_studio_url       = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
+			$cloudflare_token    = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
+			$cloudflare_acct_id  = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
+			$test_nonce          = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$nonce               = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
 			?>
 			<div class="wp-mcp-ai-wizard-step-content">
 				<h2><?php esc_html_e( 'Connect Your AI Provider', 'mcp-ai-wpoos' ); ?></h2>
@@ -427,14 +433,26 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
 						OpenAI
 					</button>
+					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="anthropic">
+						🤖 Anthropic
+					</button>
 					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="gemini">
 						<img src="<?php echo esc_url( WP_MCP_AI_URL . 'assets/images/gemini-logo.svg' ); ?>"
 							onerror="this.style.display='none'"
 							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
 						Google Gemini
 					</button>
+					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="huggingface">
+						🤗 Hugging Face
+					</button>
 					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="ollama">
 						🦙 Ollama (Local)
+					</button>
+					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="lm_studio">
+						🖥️ LM Studio
+					</button>
+					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="cloudflare">
+						☁️ Cloudflare
 					</button>
 				</div>
 
@@ -455,7 +473,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 											class="regular-text"
 											value="<?php echo esc_attr( $openai_key ); ?>"
 											placeholder="sk-proj-…"
-											autocomplete="off">
+											autocomplete="new-password">
 									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_openai_key">
 										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
 									</button>
@@ -475,10 +493,53 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<button type="button"
 							class="button button-secondary wp-mcp-ai-wizard-test-btn"
 							data-provider="openai"
-							data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_test_connection' ) ); ?>">
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<span class="wp-mcp-ai-test-result" data-for="openai"></span>
+				</div>
+
+				<!-- Anthropic panel -->
+				<div class="wp-mcp-ai-provider-panel" data-panel="anthropic">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_anthropic_key">
+									<?php esc_html_e( 'Anthropic API Key', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<div style="display:flex;gap:8px;align-items:center;">
+									<input type="password"
+											id="wp_mcp_ai_anthropic_key"
+											name="wp_mcp_ai_anthropic_key"
+											class="regular-text"
+											value="<?php echo esc_attr( $anthropic_key ); ?>"
+											placeholder="sk-ant-…"
+											autocomplete="new-password">
+									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_anthropic_key">
+										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
+									</button>
+								</div>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: URL to Anthropic Console */
+										esc_html__( 'Get your API key from %s', 'mcp-ai-wpoos' ),
+										'<a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>'
+									);
+									?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<button type="button"
+							class="button button-secondary wp-mcp-ai-wizard-test-btn"
+							data-provider="anthropic"
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="wp-mcp-ai-test-result" data-for="anthropic"></span>
 				</div>
 
 				<!-- Gemini panel -->
@@ -498,7 +559,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 											class="regular-text"
 											value="<?php echo esc_attr( $gemini_key ); ?>"
 											placeholder="AIza…"
-											autocomplete="off">
+											autocomplete="new-password">
 									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_gemini_key">
 										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
 									</button>
@@ -518,10 +579,53 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<button type="button"
 							class="button button-secondary wp-mcp-ai-wizard-test-btn"
 							data-provider="gemini"
-							data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_test_connection' ) ); ?>">
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<span class="wp-mcp-ai-test-result" data-for="gemini"></span>
+				</div>
+
+				<!-- Hugging Face panel -->
+				<div class="wp-mcp-ai-provider-panel" data-panel="huggingface">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_huggingface_key">
+									<?php esc_html_e( 'Hugging Face API Token', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<div style="display:flex;gap:8px;align-items:center;">
+									<input type="password"
+											id="wp_mcp_ai_huggingface_key"
+											name="wp_mcp_ai_huggingface_key"
+											class="regular-text"
+											value="<?php echo esc_attr( $huggingface_key ); ?>"
+											placeholder="hf_…"
+											autocomplete="new-password">
+									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_huggingface_key">
+										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
+									</button>
+								</div>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: URL to Hugging Face settings/tokens page */
+										esc_html__( 'Get your API token from %s', 'mcp-ai-wpoos' ),
+										'<a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer">huggingface.co/settings/tokens</a>'
+									);
+									?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<button type="button"
+							class="button button-secondary wp-mcp-ai-wizard-test-btn"
+							data-provider="huggingface"
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="wp-mcp-ai-test-result" data-for="huggingface"></span>
 				</div>
 
 				<!-- Ollama panel -->
@@ -548,10 +652,102 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<button type="button"
 							class="button button-secondary wp-mcp-ai-wizard-test-btn"
 							data-provider="ollama"
-							data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_test_ollama_connection' ) ); ?>">
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<span class="wp-mcp-ai-test-result" data-for="ollama"></span>
+				</div>
+
+				<!-- LM Studio panel -->
+				<div class="wp-mcp-ai-provider-panel" data-panel="lm_studio">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_lm_studio_url">
+									<?php esc_html_e( 'LM Studio Endpoint URL', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<input type="url"
+										id="wp_mcp_ai_lm_studio_url"
+										name="wp_mcp_ai_lm_studio_url"
+										class="regular-text"
+										value="<?php echo esc_attr( $lm_studio_url ); ?>">
+								<p class="description">
+									<?php esc_html_e( 'The URL of your running LM Studio server. Default: http://localhost:1234', 'mcp-ai-wpoos' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<button type="button"
+							class="button button-secondary wp-mcp-ai-wizard-test-btn"
+							data-provider="lm_studio"
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="wp-mcp-ai-test-result" data-for="lm_studio"></span>
+				</div>
+
+				<!-- Cloudflare panel -->
+				<div class="wp-mcp-ai-provider-panel" data-panel="cloudflare">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_cloudflare_token">
+									<?php esc_html_e( 'Cloudflare API Token', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<div style="display:flex;gap:8px;align-items:center;">
+									<input type="password"
+											id="wp_mcp_ai_cloudflare_token"
+											name="wp_mcp_ai_cloudflare_token"
+											class="regular-text"
+											value="<?php echo esc_attr( $cloudflare_token ); ?>"
+											placeholder="<?php esc_attr_e( 'Bearer token…', 'mcp-ai-wpoos' ); ?>"
+											autocomplete="new-password">
+									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_cloudflare_token">
+										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
+									</button>
+								</div>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: URL to Cloudflare API tokens page */
+										esc_html__( 'Get your API token from %s', 'mcp-ai-wpoos' ),
+										'<a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer">Cloudflare Dashboard</a>'
+									);
+									?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_cloudflare_account_id">
+									<?php esc_html_e( 'Cloudflare Account ID', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<input type="text"
+										id="wp_mcp_ai_cloudflare_account_id"
+										name="wp_mcp_ai_cloudflare_account_id"
+										class="regular-text"
+										value="<?php echo esc_attr( $cloudflare_acct_id ); ?>"
+										placeholder="1234567890abcdef…"
+										autocomplete="off">
+								<p class="description">
+									<?php esc_html_e( 'Find your Account ID in the Cloudflare Dashboard under Workers & Pages.', 'mcp-ai-wpoos' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<button type="button"
+							class="button button-secondary wp-mcp-ai-wizard-test-btn"
+							data-provider="cloudflare"
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="wp-mcp-ai-test-result" data-for="cloudflare"></span>
 				</div>
 
 				<input type="hidden" id="wp_mcp_ai_wizard_nonce" value="<?php echo esc_attr( $nonce ); ?>">
@@ -593,15 +789,24 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					var $result  = $('[data-for="' + provider + '"]');
 					var $btn     = $(this);
 
-					var apiKey  = '';
+					var apiKey    = '';
 					var extraData = {};
 
 					if ('openai' === provider) {
 						apiKey = $('#wp_mcp_ai_openai_key').val();
+					} else if ('anthropic' === provider) {
+						apiKey = $('#wp_mcp_ai_anthropic_key').val();
 					} else if ('gemini' === provider) {
 						apiKey = $('#wp_mcp_ai_gemini_key').val();
+					} else if ('huggingface' === provider) {
+						apiKey = $('#wp_mcp_ai_huggingface_key').val();
 					} else if ('ollama' === provider) {
 						extraData.ollama_url = $('#wp_mcp_ai_ollama_url').val();
+					} else if ('lm_studio' === provider) {
+						extraData.lm_studio_url = $('#wp_mcp_ai_lm_studio_url').val();
+					} else if ('cloudflare' === provider) {
+						apiKey = $('#wp_mcp_ai_cloudflare_token').val();
+						extraData.cloudflare_account_id = $('#wp_mcp_ai_cloudflare_account_id').val();
 					}
 
 					$result.html('<span style="color:#888"><?php echo esc_js( __( 'Testing…', 'mcp-ai-wpoos' ) ); ?></span>');
@@ -616,14 +821,9 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						nonce:    $('#wp_mcp_ai_wizard_nonce').val(),
 						extra:    extraData
 					}).always(function(){
-						// Then test the connection using the existing provider test AJAX actions.
-						var testAction = 'wp_mcp_ai_test_connection';
-						if ('ollama' === provider) {
-							testAction = 'wp_mcp_ai_test_ollama_connection';
-						}
-
+						// Then test the connection using the provider diagnostics AJAX action.
 						$.post(ajaxurl, {
-							action:   testAction,
+							action:   'wp_mcp_ai_test_provider',
 							provider: provider,
 							nonce:    $btn.data('nonce')
 						}).done(function(resp){
@@ -755,8 +955,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			$settings    = get_option( 'wp_mcp_ai_settings', array() );
 			$has_openai  = ! empty( $settings['openai_api_key'] );
 			$has_gemini  = ! empty( $settings['gemini_api_key'] );
-			$has_ollama  = ! empty( $settings['ollama_url'] );
-			$has_api_key = $has_openai || $has_gemini || $has_ollama;
+			$has_ollama  = ! empty( $settings['ollama_endpoint_url'] );
+			$has_api_key = $has_openai || $has_gemini || $has_ollama
+				|| ! empty( $settings['anthropic_api_key'] )
+				|| ! empty( $settings['huggingface_api_key'] )
+				|| ! empty( $settings['lm_studio_endpoint_url'] )
+				|| ! empty( $settings['cloudflare_api_token'] );
 			?>
 			<div class="wp-mcp-ai-wizard-step-content wp-mcp-ai-wizard-finish">
 				<div class="wp-mcp-ai-wizard-hero">
@@ -864,6 +1068,19 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		}
 
 		/**
+		 * Check whether an API key value is the masked placeholder shown in the UI.
+		 *
+		 * Returns true for empty strings and the bullet-masked placeholder so we
+		 * never accidentally overwrite a real saved key with the display mask.
+		 *
+		 * @param string $value Value to test.
+		 * @return bool
+		 */
+		private function is_masked_key( $value ) {
+			return '' === $value || '••••••••••••••••' === $value;
+		}
+
+		/**
 		 * Save the provider API key from step 2.
 		 */
 		private function handle_save_provider_step() {
@@ -874,30 +1091,57 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
-			$valid_providers = array( 'openai', 'gemini', 'ollama' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 			if ( ! in_array( $provider, $valid_providers, true ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid provider.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Do not overwrite a real key if the user saw the masked placeholder.
-			if ( '' === $api_key || '••••••••••••••••' === $api_key ) {
-				wp_send_json_success( array( 'message' => __( 'No change to API key.', 'mcp-ai-wpoos' ) ) );
-			}
-
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
+			// Unslash the extra array once for use across all providers.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in ajax_save_step(); array values sanitized per-field below.
+			$extra_raw = isset( $_POST['extra'] ) && is_array( $_POST['extra'] ) ? wp_unslash( $_POST['extra'] ) : array();
+
 			if ( 'openai' === $provider ) {
-				$settings['openai_api_key'] = $api_key;
+				// Do not overwrite a real key if the user saw the masked placeholder.
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['openai_api_key'] = $api_key;
+				}
+			} elseif ( 'anthropic' === $provider ) {
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['anthropic_api_key'] = $api_key;
+				}
 			} elseif ( 'gemini' === $provider ) {
-				$settings['gemini_api_key'] = $api_key;
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['gemini_api_key'] = $api_key;
+				}
+			} elseif ( 'huggingface' === $provider ) {
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['huggingface_api_key'] = $api_key;
+					// Enable Hugging Face (disabled by default) when a key is provided.
+					$settings['enable_huggingface'] = true;
+				}
 			} elseif ( 'ollama' === $provider ) {
-				// For Ollama, save the URL rather than an API key.
-				// Unslash the extra array first, then apply esc_url_raw directly to the URL value.
-				// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in ajax_save_step(); array sanitized below with esc_url_raw.
-				$extra_raw  = isset( $_POST['extra'] ) && is_array( $_POST['extra'] ) ? wp_unslash( $_POST['extra'] ) : array();
-				$ollama_url = ! empty( $extra_raw['ollama_url'] ) ? esc_url_raw( wp_unslash( (string) $extra_raw['ollama_url'] ) ) : '';
+				// For Ollama, save the endpoint URL from the extra data.
+				$ollama_url = ! empty( $extra_raw['ollama_url'] ) ? esc_url_raw( (string) $extra_raw['ollama_url'] ) : '';
 				if ( $ollama_url ) {
-					$settings['ollama_url'] = $ollama_url;
+					$settings['ollama_endpoint_url'] = $ollama_url;
+				}
+			} elseif ( 'lm_studio' === $provider ) {
+				// For LM Studio, save the endpoint URL from the extra data.
+				$lm_studio_url = ! empty( $extra_raw['lm_studio_url'] ) ? esc_url_raw( (string) $extra_raw['lm_studio_url'] ) : '';
+				if ( $lm_studio_url ) {
+					$settings['lm_studio_endpoint_url'] = $lm_studio_url;
+				}
+			} elseif ( 'cloudflare' === $provider ) {
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['cloudflare_api_token'] = $api_key;
+				}
+				$cloudflare_account_id = ! empty( $extra_raw['cloudflare_account_id'] ) ? sanitize_text_field( (string) $extra_raw['cloudflare_account_id'] ) : '';
+				if ( $cloudflare_account_id ) {
+					$settings['cloudflare_account_id'] = $cloudflare_account_id;
+					// Enable Cloudflare (disabled by default) when credentials are configured.
+					$settings['enable_cloudflare'] = true;
 				}
 			}
 
@@ -1260,7 +1504,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			/* Provider tabs (step 2) */
 			.wp-mcp-ai-wizard-provider-tabs {
 				display: flex;
-				gap: 8px;
+				flex-wrap: wrap;
+				gap: 0;
 				margin-bottom: 20px;
 				border-bottom: 2px solid #e0e0e0;
 				padding-bottom: 0;
@@ -1268,13 +1513,14 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			.wp-mcp-ai-provider-tab {
 				background: none;
 				border: none;
-				padding: 8px 16px;
+				padding: 8px 12px;
 				cursor: pointer;
-				font-size: 0.95em;
+				font-size: 0.88em;
 				color: #50575e;
 				border-bottom: 3px solid transparent;
 				margin-bottom: -2px;
 				border-radius: 0;
+				white-space: nowrap;
 			}
 			.wp-mcp-ai-provider-tab:hover {
 				color: #2271b1;
