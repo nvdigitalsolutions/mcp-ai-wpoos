@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-again',
-        'version' => 'dev-copilot/run-rebuild-all-zips-script-again',
-        'reference' => 'daeff24b117804d135f69f1ceb0344d9548b7dec',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-another-one',
+        'version' => 'dev-copilot/run-rebuild-all-zips-script-another-one',
+        'reference' => 'f0049125634f66ccaefb1c41d0deefb9a0ab4b48',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-again',
-            'version' => 'dev-copilot/run-rebuild-all-zips-script-again',
-            'reference' => 'daeff24b117804d135f69f1ceb0344d9548b7dec',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-another-one',
+            'version' => 'dev-copilot/run-rebuild-all-zips-script-another-one',
+            'reference' => 'f0049125634f66ccaefb1c41d0deefb9a0ab4b48',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

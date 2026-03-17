@@ -59060,9 +59060,9 @@ var require_reader = __commonJS({
   }
 });
 
-// addons/pro/node_modules/rimraf/rimraf.js
+// addons/pro/node_modules/fstream/node_modules/rimraf/rimraf.js
 var require_rimraf = __commonJS({
-  "addons/pro/node_modules/rimraf/rimraf.js"(exports2, module2) {
+  "addons/pro/node_modules/fstream/node_modules/rimraf/rimraf.js"(exports2, module2) {
     module2.exports = rimraf;
     rimraf.sync = rimrafSync;
     var assert = require("assert");
