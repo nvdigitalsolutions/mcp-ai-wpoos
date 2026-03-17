@@ -414,6 +414,57 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Template customization: get, save, or reset per-template overrides.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/template/(?P<slug>[a-z0-9_-]+)/customize',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_get_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_save_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'handle_reset_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			)
+		);
+
 	}
 
 	// =========================================================================
@@ -684,6 +735,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				echo '<meta name="robots" content="noindex, nofollow">';
 				echo '<title>' . esc_html( $page_title ) . '</title>';
 				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>';
+
+				// Inject any admin-saved custom CSS overrides for this template.
+				$custom_css = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_custom_css( $active_template_slug );
+				if ( '' !== $custom_css ) {
+					echo '<style id="tma-custom-css">' . $custom_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized via wp_strip_all_tags on save
+				}
+
 				echo '</head>';
 				echo $body_html;
 				echo '</html>';
@@ -4894,6 +4952,133 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			array(
 				'success'  => true,
 				'template' => $slug,
+			)
+		);
+	}
+
+	/**
+	 * REST handler: GET /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Returns the full metadata for a single template including any saved
+	 * customizations.  Used by the React editor to pre-populate form fields.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_get_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response( $meta );
+	}
+
+	/**
+	 * REST handler: POST /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Saves per-template customizations (name, description, icon, accent_color,
+	 * custom_css).  Only whitelisted keys are accepted; values are sanitized by
+	 * the registry.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_save_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		$body = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = (array) $request->get_params();
+		}
+
+		// Remove slug from body to avoid confusion with URL param.
+		unset( $body['slug'] );
+
+		$saved = WP_MCP_AI_Telegram_Mini_App_Template_Registry::save_customizations( $slug, $body );
+
+		if ( ! $saved ) {
+			return new WP_Error(
+				'save_failed',
+				__( 'Could not save template customizations.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response(
+			array_merge(
+				$meta,
+				array( 'success' => true )
+			)
+		);
+	}
+
+	/**
+	 * REST handler: DELETE /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Resets all customizations for the given template to the built-in defaults
+	 * by removing the stored option.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_reset_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		WP_MCP_AI_Telegram_Mini_App_Template_Registry::reset_customizations( $slug );
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response(
+			array_merge(
+				$meta,
+				array( 'success' => true )
 			)
 		);
 	}

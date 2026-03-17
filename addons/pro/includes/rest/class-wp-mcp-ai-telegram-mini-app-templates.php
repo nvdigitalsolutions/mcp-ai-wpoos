@@ -110,6 +110,12 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	const OPTION_KEY = 'wp_mcp_ai_telegram_mini_app_template';
 
 	/**
+	 * Prefix for per-template customization option keys.
+	 * Full key: wp_mcp_ai_tma_custom_{slug}
+	 */
+	const CUSTOM_OPTION_PREFIX = 'wp_mcp_ai_tma_custom_';
+
+	/**
 	 * Registered templates indexed by slug.
 	 *
 	 * @var WP_MCP_AI_Telegram_Mini_App_Template_Base[]
@@ -210,25 +216,186 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	/**
 	 * Static proxy: return metadata arrays for all registered templates.
 	 *
-	 * Each item contains: slug, name, description, icon, accent_color, toolkit.
+	 * Each item contains: slug, name, description, icon, accent_color, toolkit,
+	 * has_customizations, custom_css.  When a template has saved customizations
+	 * the display fields (name, description, icon, accent_color) are merged so
+	 * the React picker always shows the user-edited values.
 	 *
 	 * @since 1.1.3
 	 *
-	 * @return array<int,array<string,string>>
+	 * @return array<int,array<string,mixed>>
 	 */
 	public static function get_all_meta() {
 		$meta = array();
 		foreach ( self::instance()->all() as $tpl ) {
+			$custom = self::get_customizations( $tpl->get_slug() );
 			$meta[] = array(
-				'slug'         => $tpl->get_slug(),
-				'name'         => $tpl->get_name(),
-				'description'  => $tpl->get_description(),
-				'icon'         => $tpl->get_icon(),
-				'accent_color' => $tpl->get_accent_color(),
-				'toolkit'      => $tpl->get_toolkit(),
+				'slug'                 => $tpl->get_slug(),
+				'name'                 => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+				'description'          => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+				'icon'                 => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+				'accent_color'         => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+				'toolkit'              => $tpl->get_toolkit(),
+				'has_customizations'   => ! empty( $custom ),
+				'custom_css'           => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+				// Base (original) values always available for the editor to show defaults.
+				'base_name'            => $tpl->get_name(),
+				'base_description'     => $tpl->get_description(),
+				'base_icon'            => $tpl->get_icon(),
+				'base_accent_color'    => $tpl->get_accent_color(),
 			);
 		}
 		return $meta;
+	}
+
+	/**
+	 * Return the full metadata for a single registered template, including any
+	 * saved customizations.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array|null   Metadata array or null if the slug is not registered.
+	 */
+	public static function get_meta( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$tpl  = self::get( $slug );
+		if ( ! $tpl ) {
+			return null;
+		}
+		$custom = self::get_customizations( $slug );
+		return array(
+			'slug'               => $tpl->get_slug(),
+			'name'               => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+			'description'        => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+			'icon'               => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+			'accent_color'       => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+			'toolkit'            => $tpl->get_toolkit(),
+			'has_customizations' => ! empty( $custom ),
+			'custom_css'         => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+			'base_name'          => $tpl->get_name(),
+			'base_description'   => $tpl->get_description(),
+			'base_icon'          => $tpl->get_icon(),
+			'base_accent_color'  => $tpl->get_accent_color(),
+		);
+	}
+
+	// ── Per-template customization helpers ──────────────────────────────────
+
+	/**
+	 * Return saved customizations for a template slug.
+	 *
+	 * Returns an associative array with keys: name, description, icon,
+	 * accent_color, custom_css.  Returns an empty array when no customizations
+	 * have been saved.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array
+	 */
+	public static function get_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$data = get_option( self::CUSTOM_OPTION_PREFIX . $slug, array() );
+		return is_array( $data ) ? $data : array();
+	}
+
+	/**
+	 * Save per-template customizations.
+	 *
+	 * Only the following keys are accepted; all values are sanitized.
+	 *   name         – display name shown in the picker card (≤ 120 chars)
+	 *   description  – short description shown below the name (≤ 500 chars)
+	 *   icon         – emoji / short string shown as the card icon (≤ 10 chars)
+	 *   accent_color – valid CSS colour value (≤ 30 chars)
+	 *   custom_css   – raw CSS injected into the rendered Mini App <head>
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @param  array  $data Associative array of fields to save.
+	 * @return bool         True on success.
+	 */
+	public static function save_customizations( $slug, array $data ) {
+		$slug = sanitize_key( (string) $slug );
+		if ( ! self::instance()->has( $slug ) ) {
+			return false;
+		}
+
+		$allowed = array( 'name', 'description', 'icon', 'accent_color', 'custom_css' );
+		$current = self::get_customizations( $slug );
+		$merged  = $current;
+
+		foreach ( $allowed as $key ) {
+			if ( ! array_key_exists( $key, $data ) ) {
+				continue;
+			}
+			switch ( $key ) {
+				case 'name':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 120 );
+					break;
+				case 'description':
+					$merged[ $key ] = substr( sanitize_textarea_field( (string) $data[ $key ] ), 0, 500 );
+					break;
+				case 'icon':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 10 );
+					break;
+				case 'accent_color':
+					// Allow only CSS-safe colour strings (hex, rgb/rgba, hsl/hsla, named colours).
+					// Pattern matches: #rgb, #rrggbb, #rrggbbaa, rgb(...), rgba(...), hsl(...), hsla(...), CSS named colours.
+					$color = sanitize_text_field( (string) $data[ $key ] );
+					if ( preg_match( '/^(#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6,8})|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+[\s,.\d]*\)|hsla?\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%[\s,.\d]*\)|[a-zA-Z]{2,30})$/', $color ) ) {
+						$merged[ $key ] = $color;
+					}
+					break;
+				case 'custom_css':
+					// Strip PHP/HTML tags and @import directives to prevent loading external
+					// stylesheets via the Mini App page (admins-only feature, but defence-in-depth).
+					$css = wp_strip_all_tags( (string) $data[ $key ] );
+					// Remove @import rules (case-insensitive, with optional whitespace).
+					$css = preg_replace( '/@import\s[^;]+;?/i', '', $css );
+					$merged[ $key ] = $css;
+					break;
+			}
+		}
+
+		// Remove empty strings to keep the stored value compact.
+		$merged = array_filter(
+			$merged,
+			function( $v ) {
+				return '' !== $v;
+			}
+		);
+
+		return update_option( self::CUSTOM_OPTION_PREFIX . $slug, $merged, false );
+	}
+
+	/**
+	 * Delete all customizations for a template slug, restoring defaults.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return bool         True if the option was successfully deleted or did not exist.
+	 */
+	public static function reset_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		return delete_option( self::CUSTOM_OPTION_PREFIX . $slug );
+	}
+
+	/**
+	 * Return any saved custom CSS for a template slug (empty string if none).
+	 *
+	 * Convenience helper used by the REST controller when rendering HTML.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return string
+	 */
+	public static function get_custom_css( $slug ) {
+		$custom = self::get_customizations( sanitize_key( (string) $slug ) );
+		return isset( $custom['custom_css'] ) ? $custom['custom_css'] : '';
 	}
 
 	/**
