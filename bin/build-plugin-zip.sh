@@ -160,6 +160,7 @@ else
     echo "Step 1: Building frontend assets..."
     npm ci --silent 2>/dev/null || npm install --silent
     npm run build
+    npm run build:tma-builder
     echo "✅ Frontend assets built"
 fi
 echo ""
