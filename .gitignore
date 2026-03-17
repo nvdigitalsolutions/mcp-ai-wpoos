@@ -190,6 +190,12 @@ addons/pro/assets/vendor/**/*.map
 # Exclude canvas native binaries (platform-specific, must be compiled via npm install)
 addons/pro/assets/vendor/canvas/build/
 
+# npm lock files – generated on install; committing them causes EACCES errors on
+# shared-hosting servers where the file is owned by a different OS user.
+# CI workflows use `npm install` (not `npm ci`) so no lockfile is required in VCS.
+package-lock.json
+addons/pro/package-lock.json
+
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html
