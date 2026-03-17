@@ -199,7 +199,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
@@ -662,7 +662,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
