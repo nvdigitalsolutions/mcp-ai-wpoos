@@ -3130,6 +3130,23 @@ When encountering problems, please:
 
 ### Common Issues
 
+#### npm EACCES Permission Error (package-lock.json)
+If you get `EACCES: permission denied, open '.../package-lock.json'` when running `npm install`:
+
+**This means you do NOT need to run `npm install`.**
+
+The plugin distributes pre-built minified assets (`.min.js`/`.min.css` files) so `npm install` is **never required** for production use. You only need npm if you are a developer modifying JavaScript source files.
+
+**Solutions:**
+- **If installing from ZIP**: Simply upload and activate the plugin. No npm commands needed.
+- **If cloning the repository for production use**: Activate the plugin as-is. The pre-built assets in the repository are ready for production.
+- **If you need to rebuild assets** (development only): Run npm on a development machine where you have write access, then deploy the built files.
+
+If you must run npm in a restricted directory (e.g., during CI or scripted deployments), use:
+```bash
+npm install --no-package-lock
+```
+
 #### npm/Composer Install Error After Cloning
 If you get `ENOENT: no such file or directory, uv_cwd` (npm) or `getcwd() failed` (composer) errors:
 
@@ -3150,35 +3167,44 @@ cd mcp-ai-wpoos
 # Verify you're in the right place
 pwd  # Should show the full plugins path
 
-# Install dependencies (autoloader optimization is configured by default)
-npm install && composer install --no-dev
+# NOTE: npm install is NOT required for production use.
+# Activate the plugin in WordPress admin - it is ready to use.
+# Only run composer if you need to update PHP dependencies (development only):
+# composer install --no-dev
 ```
 
 **For Local Development or VPS:**
 
 1. **Ensure you're in the correct directory** - Run `pwd` to verify you're in the `mcp-ai-wpoos` directory
-2. **Check package.json and composer.json exist** - Run `ls -la package.json composer.json` to confirm files are present
-3. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
-4. **Follow the correct workflow**:
+2. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
+3. **Production workflow** (no npm or composer needed):
    ```bash
    # Clone the repository
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+
+   # Copy to WordPress plugins directory
+   cp -r mcp-ai-wpoos /path/to/wordpress/wp-content/plugins/
+   # Plugin is ready to activate - no build step required.
+   ```
+
+4. **Development workflow** (only if you need to rebuild JS/CSS assets):
+   ```bash
+   # Clone the repository on your development machine (not the server)
+   git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
    cd mcp-ai-wpoos
-   
-   # Install dependencies BEFORE moving/copying (optimization is configured by default)
-   npm install
+
+   # Install dev dependencies and rebuild assets
+   npm install && npm run build
    composer install --no-dev
-   
-   # THEN copy to WordPress plugins directory
-   cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+
+   # Deploy built files to the server
    ```
 
 5. **Alternative: Clone directly into WordPress** - This avoids copy/move issues:
    ```bash
    cd /path/to/wordpress/wp-content/plugins/
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-   cd mcp-ai-wpoos
-   npm install && composer install --no-dev
+   # Activate the plugin - it is production-ready without any npm or composer commands.
    ```
 
 #### Chat Not Working

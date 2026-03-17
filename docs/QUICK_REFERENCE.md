@@ -62,36 +62,37 @@ This quick reference provides fast access to the most common tasks and commands 
 
 ### Developer Installation (GitHub Clone)
 
+> **Note:** The plugin is production-ready after cloning or installing from ZIP — no `npm install` or `composer install` is required for normal use. Built assets are already included. Only run the commands below if you need to **rebuild JavaScript/CSS assets** (development workflow).
+
 **For Cloudways (Recommended):**
 ```bash
 # SSH into your server and clone directly into plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Activate the plugin in WordPress admin — it is ready to use.
 ```
 
-**For Local/VPS:**
+**For Local/VPS (Development asset rebuild only):**
 ```bash
 # Option 1: Clone directly into WordPress (recommended)
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Activate the plugin — pre-built assets included, no npm needed.
 
-# Option 2: Clone, install, then copy
+# Option 2 (development): Clone, rebuild assets, then copy
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Only on a machine with proper write access and Node.js installed:
+npm install && npm run build
+composer install --no-dev
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 
 **⚠️ Important:** 
-- Always run `npm install` and `composer install` BEFORE moving/copying files
 - On Cloudways: Clone directly into the plugins directory to avoid errors
+- **Do NOT run `npm install` in a WordPress plugins directory on managed hosting** — npm will fail with `EACCES: permission denied` when trying to create `package-lock.json`. This is expected; the plugin does not need npm on the server.
+- If you must run npm in a restricted directory: use `npm install --no-package-lock`
 - **Note:** Autoloader optimization is configured by default in composer.json
-- If you get `ENOENT: uv_cwd` or `getcwd() failed` errors: EXIT your shell and start a NEW terminal session, then navigate to the plugin directory and run the install commands
-- Running npm/composer after moving files OR from an orphaned directory will fail
 
 ### First Chat (2 minutes)
 ```php
