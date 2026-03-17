@@ -94,26 +94,11 @@ jobs:
           npm ci
           echo "✅ Node dependencies installed"
 
-      - name: Build frontend assets
-        run: |
-          echo "🎨 Building CSS and JavaScript..."
-          npm run build
-          echo "✅ Frontend assets built"
-          
-          echo ""
-          echo "📱 Building TMA Template Builder React assets..."
-          npm run build:tma-builder
-          echo "✅ TMA Template Builder assets built"
-          
-          echo ""
-          echo "📊 Build output:"
-          find assets -name "*.min.css" -o -name "*.min.js" | sort
-
       - name: Build plugin distributions
         run: |
           echo "🔨 Building all 8 plugin ZIP files..."
           chmod +x bin/rebuild-all-zips.sh
-          ./bin/rebuild-all-zips.sh --skip-npm-build
+          ./bin/rebuild-all-zips.sh
           
           echo ""
           echo "📦 All plugin distributions (8 total):"
