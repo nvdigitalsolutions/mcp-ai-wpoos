@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-please-work',
-        'version' => 'dev-copilot/run-rebuild-all-zips-script-please-work',
-        'reference' => '647a8b395d6cf96d0afa235c2ca070e3d0b34810',
+        'pretty_version' => 'dev-copilot/fix-npm-eacces-error',
+        'version' => 'dev-copilot/fix-npm-eacces-error',
+        'reference' => '00122ecc9aec6e25c89f7c5669561e0911152d31',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-please-work',
-            'version' => 'dev-copilot/run-rebuild-all-zips-script-please-work',
-            'reference' => '647a8b395d6cf96d0afa235c2ca070e3d0b34810',
+            'pretty_version' => 'dev-copilot/fix-npm-eacces-error',
+            'version' => 'dev-copilot/fix-npm-eacces-error',
+            'reference' => '00122ecc9aec6e25c89f7c5669561e0911152d31',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
