@@ -35,6 +35,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 		// Add AJAX handler for package testing.
 		add_action( 'wp_ajax_wp_mcp_ai_test_pro_package', array( $this, 'ajax_test_package' ) );
+
+		// Add AJAX handler for server-side canvas installation.
+		add_action( 'wp_ajax_wp_mcp_ai_install_canvas', array( $this, 'ajax_install_canvas' ) );
 	}
 
 	/**
@@ -137,11 +140,12 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
-					<th style="width: 25%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 15%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 15%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 35%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 22%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 13%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 13%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 32%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
 					<th style="width: 10%;"><?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Install', 'mcp-ai-wpoos-pro' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -195,6 +199,21 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 									<?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>
 								</button>
 								<div class="test-result" style="display: none; margin-top: 5px; font-size: 11px;"></div>
+							<?php else : ?>
+								<span style="color: #999; font-size: 11px;">—</span>
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php if ( 'canvas' === $package['name'] && ! $status['available'] ) : ?>
+								<button
+									type="button"
+									class="button button-small button-primary wp-mcp-ai-install-canvas"
+									data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_install_canvas' ) ); ?>"
+								>
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Install', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<div class="install-result" style="display: none; margin-top: 5px; font-size: 11px;"></div>
 							<?php else : ?>
 								<span style="color: #999; font-size: 11px;">—</span>
 							<?php endif; ?>
@@ -272,6 +291,50 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				});
 			});
 		});
+
+		// Install canvas handler.
+		$('.wp-mcp-ai-install-canvas').on('click', function(e) {
+			e.preventDefault();
+			var $button = $(this);
+			var $result = $button.siblings('.install-result');
+			var nonce = $button.data('nonce');
+
+			if (!confirm('This will run "npm install canvas" on your server. Canvas requires system build tools (gcc, make, cairo, pango, libjpeg, etc.) and compilation may take several minutes. Continue?')) {
+				return;
+			}
+
+			// Disable button and show loading state.
+			$button.prop('disabled', true);
+			$button.find('.dashicons').removeClass('dashicons-download').addClass('dashicons-update').css('animation', 'rotation 2s infinite linear');
+			$result.html('<span style="color: #666;">Installing… this may take a few minutes.</span>').show();
+
+			// Make AJAX request with extended timeout (5 minutes).
+			$.ajax({
+				url: ajaxurl,
+				type: 'POST',
+				timeout: 300000,
+				data: {
+					action: 'wp_mcp_ai_install_canvas',
+					nonce: nonce
+				},
+				success: function(response) {
+					if (response.success) {
+						$result.html('<span style="color: green;">✓ ' + response.data.message + '</span>').show();
+						// Reload to reflect the new installation status.
+						setTimeout(function() { location.reload(); }, 2500);
+					} else {
+						$result.html('<span style="color: red;">✗ ' + response.data.message + '</span>').show();
+						$button.prop('disabled', false);
+						$button.find('.dashicons').removeClass('dashicons-update').addClass('dashicons-download').css('animation', '');
+					}
+				},
+				error: function() {
+					$result.html('<span style="color: red;">✗ Installation failed – network error or timeout.</span>').show();
+					$button.prop('disabled', false);
+					$button.find('.dashicons').removeClass('dashicons-update').addClass('dashicons-download').css('animation', '');
+				}
+			});
+		});
 		</script>
 		<style>
 		@keyframes rotation {
@@ -304,7 +367,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
 				'testable'     => true,
-				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+				'install_hint' => __( 'Requires system build tools and libraries (gcc, cairo, pango, libjpeg). Use the Install button to compile on this server.', 'mcp-ai-wpoos-pro' ),
 			),
 
 			// Document Generation.
@@ -525,6 +588,116 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			<?php endforeach; ?>
 		</nav>
 		<?php
+	}
+
+	/**
+	 * AJAX handler for server-side canvas installation.
+	 *
+	 * Runs `npm install canvas` in the pro addon directory so that the native
+	 * Node.js addon is compiled against the actual server's libraries.
+	 */
+	public function ajax_install_canvas() {
+		// Verify nonce.
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wp_mcp_ai_install_canvas' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Require administrator-level access.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Locate npm.
+		$npm_path = $this->get_npm_path();
+		if ( ! $npm_path ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'npm is not available on this server. Please install Node.js (v18.17.0+) and ensure npm is in the system PATH.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Determine working directory (pro addon root where package.json lives).
+		$working_dir = rtrim( WP_MCP_AI_PRO_PATH, DIRECTORY_SEPARATOR );
+
+		// Run npm install canvas using the Process Service when available.
+		if ( class_exists( 'WP_MCP_AI\\Services\\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			$result          = $process_service->run_silent(
+				array( $npm_path, 'install', 'canvas', '--legacy-peer-deps' ),
+				array(
+					'timeout' => 300, // 5 minutes – compilation can be slow.
+					'cwd'     => $working_dir,
+				)
+			);
+		} else {
+			// Fallback: exec() when the Process Service is unavailable.
+			$output    = array();
+			$exit_code = null;
+			$command   = escapeshellcmd( $npm_path ) . ' install canvas --legacy-peer-deps 2>&1';
+			chdir( $working_dir ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_chdir
+			@exec( $command, $output, $exit_code ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+			$result = array(
+				'output'    => implode( "\n", $output ),
+				'error'     => '',
+				'exit_code' => $exit_code,
+				'success'   => 0 === $exit_code,
+			);
+		}
+
+		if ( ! empty( $result['success'] ) ) {
+			wp_send_json_success(
+				array(
+					'message' => __( 'Canvas installed successfully. The page will reload to show the updated status.', 'mcp-ai-wpoos-pro' ),
+					'output'  => sanitize_textarea_field( $result['output'] ),
+				)
+			);
+		} else {
+			$raw_error = ! empty( $result['error'] ) ? $result['error'] : $result['output'];
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: npm error output */
+						__( 'Canvas installation failed: %s', 'mcp-ai-wpoos-pro' ),
+						wp_strip_all_tags( $raw_error )
+					),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Locate the npm executable on the server.
+	 *
+	 * Tries the Process Service first, then falls back to common install paths.
+	 *
+	 * @return string|false Full path to npm, or false if not found.
+	 */
+	protected function get_npm_path() {
+		// Try Process Service (honours PATH correctly).
+		if ( class_exists( 'WP_MCP_AI\\Services\\WP_MCP_AI_Process_Service' ) ) {
+			$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+			$path            = $process_service->get_command_path( 'npm' );
+			if ( $path ) {
+				return $path;
+			}
+		}
+
+		// Fallback to well-known locations.
+		$candidates = array(
+			'/usr/bin/npm',
+			'/usr/local/bin/npm',
+			'/opt/homebrew/bin/npm',
+		);
+
+		foreach ( $candidates as $candidate ) {
+			if ( is_executable( $candidate ) ) {
+				return $candidate;
+			}
+		}
+
+		return false;
 	}
 
 	/**
