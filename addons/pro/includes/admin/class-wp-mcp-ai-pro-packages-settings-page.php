@@ -633,11 +633,20 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			);
 		} else {
 			// Fallback: exec() when the Process Service is unavailable.
-			$output    = array();
-			$exit_code = null;
-			$command   = escapeshellcmd( $npm_path ) . ' install canvas --legacy-peer-deps 2>&1';
+			$original_dir = getcwd();
+			$output       = array();
+			$exit_code    = null;
+			$command      = sprintf(
+				'%s install %s %s 2>&1',
+				escapeshellarg( $npm_path ),
+				escapeshellarg( 'canvas' ),
+				escapeshellarg( '--legacy-peer-deps' )
+			);
 			chdir( $working_dir ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_chdir
 			@exec( $command, $output, $exit_code ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+			if ( $original_dir ) {
+				chdir( $original_dir ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_chdir
+			}
 			$result = array(
 				'output'    => implode( "\n", $output ),
 				'error'     => '',
@@ -654,13 +663,18 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				)
 			);
 		} else {
-			$raw_error = ! empty( $result['error'] ) ? $result['error'] : $result['output'];
+			$raw_error     = ! empty( $result['error'] ) ? $result['error'] : $result['output'];
+			$clean_error   = wp_strip_all_tags( $raw_error );
+			// Truncate to keep the message administrator-friendly.
+			if ( strlen( $clean_error ) > 300 ) {
+				$clean_error = substr( $clean_error, 0, 300 ) . '…';
+			}
 			wp_send_json_error(
 				array(
 					'message' => sprintf(
 						/* translators: %s: npm error output */
 						__( 'Canvas installation failed: %s', 'mcp-ai-wpoos-pro' ),
-						wp_strip_all_tags( $raw_error )
+						$clean_error
 					),
 				)
 			);
