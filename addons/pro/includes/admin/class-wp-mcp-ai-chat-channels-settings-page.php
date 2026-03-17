@@ -285,6 +285,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					data-save-url="<?php echo esc_url( $save_url ); ?>"
 					data-active-template="<?php echo esc_attr( $active_slug ); ?>"
 					data-preview-base-url="<?php echo esc_url( $preview_url ); ?>"
+					data-customize-url="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-mini-app/template' ) ); ?>"
 				></div>
 
 				<?php /* Static no-JS fallback: hidden when React renders, used for non-JS saves. */ ?>
