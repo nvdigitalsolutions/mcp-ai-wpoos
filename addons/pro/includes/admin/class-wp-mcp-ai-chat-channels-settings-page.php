@@ -577,60 +577,6 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_twitter_config(); ?>
 			<?php $this->render_icloud_config(); ?>
 			<?php $this->render_google_chat_config(); ?>
-
-			<h2 style="margin-top: 40px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<select name="default_assistant" class="regular-text">
-							<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
-							<?php
-							$assistants = get_posts(
-								array(
-									'post_type'      => 'mcp_ai_assistant',
-									'posts_per_page' => -1,
-									'post_status'    => 'publish',
-								)
-							);
-							foreach ( $assistants as $assistant ) :
-								?>
-								<option value="<?php echo esc_attr( $assistant->ID ); ?>">
-									<?php echo esc_html( $assistant->post_title ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_logging" value="1" />
-							<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_rate_limiting" value="1" checked />
-							<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="verify_webhook_signatures" value="1" checked />
-							<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-			</table>
 		</div>
 
 		<style>
