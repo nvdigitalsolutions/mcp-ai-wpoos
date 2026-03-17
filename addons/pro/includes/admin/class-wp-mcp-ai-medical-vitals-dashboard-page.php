@@ -295,87 +295,87 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 					<div class="hw-dash-charts-row">
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bp" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bp" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hr" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hr" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'SpO₂ (%)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-spo2" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-spo2" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-temp" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-temp" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-glucose" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-glucose" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'eGFR (mL/min/1.73m²)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-egfr" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-egfr" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-creatinine" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-creatinine" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'BUN (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bun" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bun" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Potassium / Sodium (mEq/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-electrolytes" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-electrolytes" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-phosphorus" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-phosphorus" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-albumin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-albumin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hemoglobin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hemoglobin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'WBC (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-wbc" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-wbc" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hematocrit (%)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hematocrit" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hematocrit" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Platelets (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-platelets" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-platelets" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Chloride / CO2 (mEq/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-electrolytes-ext" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-electrolytes-ext" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Calcium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-calcium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-calcium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Magnesium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-magnesium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-magnesium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'AST / ALT (U/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-liver" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-liver" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Bilirubin (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bilirubin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bilirubin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Protein (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-total-protein" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-total-protein" height="120"></canvas></div>
 						</div>
 					</div>
 
@@ -493,9 +493,9 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .hw-dash-kpi-sub.status-warning{color:#e65100;}
 .hw-dash-kpi-sub.status-alert{color:#c62828;}
 .hw-dash-charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-card canvas{height:240px;}}
+@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-wrap{height:240px;}}
 .hw-dash-chart-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px;}
-.hw-dash-chart-card canvas{display:block;height:160px;}
+.hw-dash-chart-wrap{position:relative;height:160px;}
 .hw-dash-chart-title{font-size:13px;font-weight:600;margin:0 0 10px;color:#1e1e1e;}
 .hw-dash-table-wrap{margin-bottom:20px;}
 .hw-dash-table-title{font-size:14px;font-weight:600;margin:0 0 8px;}
