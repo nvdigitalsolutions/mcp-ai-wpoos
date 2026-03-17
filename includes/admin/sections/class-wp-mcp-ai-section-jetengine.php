@@ -286,7 +286,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		private function get_jetengine_cpts() {
 			// Use compatibility layer for version-safe access.
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
-				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				$compat_file = defined( 'WP_MCP_AI_PRO_PATH' )
+					? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php'
+					: WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
 				if ( file_exists( $compat_file ) ) {
 					require_once $compat_file;
 				} else {
@@ -306,7 +308,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		private function get_jetengine_taxonomies() {
 			// Use compatibility layer for version-safe access.
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
-				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				$compat_file = defined( 'WP_MCP_AI_PRO_PATH' )
+					? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php'
+					: WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
 				if ( file_exists( $compat_file ) ) {
 					require_once $compat_file;
 				} else {

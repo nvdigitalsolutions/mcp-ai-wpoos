@@ -140,7 +140,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 		wp_enqueue_script(
 			'mcp-ai-tma-template-builder',
-			WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.js',
+			WP_MCP_AI_PRO_URL . 'build/tma-template-builder/tma-template-builder.js',
 			$asset['dependencies'],
 			$asset['version'],
 			true
@@ -148,7 +148,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 		wp_enqueue_style(
 			'mcp-ai-tma-template-builder',
-			WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.css',
+			WP_MCP_AI_PRO_URL . 'build/tma-template-builder/tma-template-builder.css',
 			array(),
 			$asset['version']
 		);
