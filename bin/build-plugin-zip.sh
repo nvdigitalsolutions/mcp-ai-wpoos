@@ -474,6 +474,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'assets/examples' \
             --exclude 'composer.lock' \
             --exclude 'package-lock.json' \
+            --exclude 'package.json' \
             --exclude '*.js.map' \
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
