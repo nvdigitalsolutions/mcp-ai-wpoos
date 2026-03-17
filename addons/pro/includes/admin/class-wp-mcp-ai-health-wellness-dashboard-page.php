@@ -412,27 +412,27 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 					<div class="hw-dash-charts-row">
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Steps — daily trend', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-steps" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-steps" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Water — daily glasses', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-water" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-water" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Sleep — daily hours', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-sleep" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-sleep" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Calories — daily kcal', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-calories" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-calories" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Sodium — daily mg (goal ≤2,300)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-sodium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-sodium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Mood — daily rating (1–5)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-mood" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-mood" height="120"></canvas></div>
 						</div>
 					</div>
 
@@ -504,9 +504,9 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 .hw-dash-kpi-sub.status-warning{color:#e65100;}
 .hw-dash-kpi-sub.status-alert{color:#c62828;}
 .hw-dash-charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-card canvas{height:240px;}}
+@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-wrap{height:240px;}}
 .hw-dash-chart-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px;}
-.hw-dash-chart-card canvas{display:block;height:160px;}
+.hw-dash-chart-wrap{position:relative;height:160px;}
 .hw-dash-chart-title{font-size:13px;font-weight:600;margin:0 0 10px;color:#1e1e1e;}
 .hw-dash-table-wrap{margin-bottom:20px;}
 .hw-dash-table-title{font-size:14px;font-weight:600;margin:0 0 8px;}
