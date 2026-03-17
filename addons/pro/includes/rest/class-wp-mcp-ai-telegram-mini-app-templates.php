@@ -1763,7 +1763,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'function hwShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			'hwFetchMembers();' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * hwInitSession().  Calling hwFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; hwInitSession() will call
+			 * hwFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'hwFetchMembers();' .
+			'}' .
 		'}' .
 
 		'function hwHideMemberPicker(){' .
@@ -2846,7 +2856,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'function mvShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			'mvFetchMembers();' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * mvInitSession().  Calling mvFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; mvInitSession() will call
+			 * mvFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'mvFetchMembers();' .
+			'}' .
 		'}' .
 
 		'function mvHideMemberPicker(){' .
