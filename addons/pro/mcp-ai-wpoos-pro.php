@@ -1609,11 +1609,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['create_health_reminder']      = 'wordpress-core';
 			$pro_tools['track_vaccinations']          = 'wordpress-core';
 			$pro_tools['log_health_metrics']          = 'wordpress-core';
-			// Vital Signs — CCT storage (JetEngine) with options-based fallback.
-			$pro_tools['log_vital_signs']             = 'wordpress-core';
-			$pro_tools['import_vitals']               = 'wordpress-core';
-			$pro_tools['export_fhir_data']            = 'wordpress-core';
-			$pro_tools['manage_care_plan']            = 'wordpress-core';
+			// Vital Signs — write to vitals_log CCT (JetEngine) with options-based fallback.
+			$pro_tools['log_vital_signs'] = 'wordpress-core';
+			$pro_tools['import_vitals']   = 'wordpress-core';
+			// FHIR Export — reads vitals_log CCT + all health CPTs to produce a FHIR bundle.
+			$pro_tools['export_fhir_data'] = 'wordpress-core';
+			// Care Plan — CPT-backed (mcp_ai_member post meta).
+			$pro_tools['manage_care_plan'] = 'wordpress-core';
 			// AI-Assisted Health Data Entry & Research (CPT-backed).
 			$pro_tools['compile_health_research_data'] = 'wordpress-core';
 			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
