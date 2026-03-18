@@ -904,7 +904,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Healthcare Imaging tools if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
 			$imaging_tools = array(
-				'WP_MCP_AI_Tool_Manage_Imaging_Studies' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+				'WP_MCP_AI_Tool_Manage_Imaging_Studies'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+				'WP_MCP_AI_Tool_Interpret_Imaging_Study'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-interpret-imaging-study.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $imaging_tools );
 		}
@@ -1608,7 +1609,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 
 		// Add Healthcare Imaging tool mappings if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
-			$pro_tools['manage_imaging_studies'] = 'wordpress-core';
+			$pro_tools['manage_imaging_studies']   = 'wordpress-core';
+			$pro_tools['interpret_imaging_study']  = 'wordpress-core';
 		}
 
 		// Add Document Generation Toolkit tool mappings if enabled.

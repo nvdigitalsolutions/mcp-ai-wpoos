@@ -58,6 +58,9 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Manage_Imaging_Studies' ) ) {
 			require_once $base . 'tools/class-wp-mcp-ai-tool-manage-imaging-studies.php';
 		}
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Interpret_Imaging_Study' ) ) {
+			require_once $base . 'tools/class-wp-mcp-ai-tool-interpret-imaging-study.php';
+		}
 
 		// Register CPT.
 		do_action( 'init' );
@@ -406,5 +409,118 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		$flags = $tool->get_capability_flags();
 		$this->assertContains( 'pro', $flags );
 		$this->assertContains( 'pii-data', $flags );
+	}
+
+	// =========================================================================
+	// interpret_imaging_study tool
+	// =========================================================================
+
+	/**
+	 * interpret_imaging_study tool slug should be 'interpret_imaging_study'.
+	 */
+	public function test_interpret_tool_slug() {
+		$tool = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$this->assertEquals( 'interpret_imaging_study', $tool->get_slug() );
+	}
+
+	/**
+	 * interpret_imaging_study requires view_medical_imaging capability.
+	 */
+	public function test_interpret_tool_requires_capability() {
+		$subscriber = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber );
+
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute( array( 'study_uid' => '1.2.3' ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'imaging_forbidden', $result->get_error_code() );
+
+		wp_set_current_user( $this->admin_user );
+	}
+
+	/**
+	 * interpret_imaging_study returns error when study_uid is omitted.
+	 */
+	public function test_interpret_tool_requires_study_uid() {
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute( array() );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'imaging_missing_uid', $result->get_error_code() );
+	}
+
+	/**
+	 * interpret_imaging_study returns not-found for an unknown study UID.
+	 */
+	public function test_interpret_tool_returns_error_for_unknown_study() {
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute( array( 'study_uid' => 'NONEXISTENT.UID.9999' ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'imaging_not_found', $result->get_error_code() );
+	}
+
+	/**
+	 * interpret_imaging_study returns no-provider error when no AI keys are configured.
+	 */
+	public function test_interpret_tool_returns_error_without_ai_provider() {
+		$uid = '1.2.3.interpret.test';
+		WP_MCP_AI_Imaging_Study_CPT::create(
+			array(
+				'study_instance_uid' => $uid,
+				'modality'           => 'CT',
+				'study_date'         => '20240601',
+			)
+		);
+
+		// Ensure no AI keys are configured.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$orig_openai    = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		$orig_gemini    = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		$orig_anthropic = isset( $settings['anthropic_api_key'] ) ? $settings['anthropic_api_key'] : '';
+
+		$settings['openai_api_key']    = '';
+		$settings['gemini_api_key']    = '';
+		$settings['anthropic_api_key'] = '';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute( array( 'study_uid' => $uid ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'imaging_no_provider', $result->get_error_code() );
+
+		// Restore settings.
+		$settings['openai_api_key']    = $orig_openai;
+		$settings['gemini_api_key']    = $orig_gemini;
+		$settings['anthropic_api_key'] = $orig_anthropic;
+		update_option( 'wp_mcp_ai_settings', $settings );
+	}
+
+	/**
+	 * interpret_imaging_study parameter schema has the expected required fields.
+	 */
+	public function test_interpret_tool_parameter_schema() {
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertIsArray( $schema );
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'study_uid', $schema['properties'] );
+		$this->assertArrayHasKey( 'focus', $schema['properties'] );
+		$this->assertArrayHasKey( 'include_pixel_preview', $schema['properties'] );
+		$this->assertContains( 'study_uid', $schema['required'] );
+	}
+
+	/**
+	 * interpret_imaging_study capability flags include expected values.
+	 */
+	public function test_interpret_tool_capability_flags() {
+		$tool  = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$flags = $tool->get_capability_flags();
+		$this->assertContains( 'pro', $flags );
+		$this->assertContains( 'pii-data', $flags );
+		$this->assertContains( 'requires-credentials', $flags );
 	}
 }
