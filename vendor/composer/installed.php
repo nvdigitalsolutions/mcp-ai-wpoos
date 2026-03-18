@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-max-memory-file-size',
-        'version' => 'dev-copilot/fix-max-memory-file-size',
-        'reference' => '67b68795acc2ce4ca7059838bc0c0a2ae09bed62',
+        'pretty_version' => 'dev-copilot/rebuild-all-js-css-zips',
+        'version' => 'dev-copilot/rebuild-all-js-css-zips',
+        'reference' => 'e883a353eb211214f4d7eaacf597cc05d92a4d89',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-max-memory-file-size',
-            'version' => 'dev-copilot/fix-max-memory-file-size',
-            'reference' => '67b68795acc2ce4ca7059838bc0c0a2ae09bed62',
+            'pretty_version' => 'dev-copilot/rebuild-all-js-css-zips',
+            'version' => 'dev-copilot/rebuild-all-js-css-zips',
+            'reference' => 'e883a353eb211214f4d7eaacf597cc05d92a4d89',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
