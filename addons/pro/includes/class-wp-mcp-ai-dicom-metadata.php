@@ -177,9 +177,12 @@ class WP_MCP_AI_DICOM_Metadata {
 				$length = current( unpack( 'V', $len_raw ) );
 			}
 
-			// Undefined length (0xFFFFFFFF) — skip this element for now.
+			// Undefined length (0xFFFFFFFF) — skip element and continue parsing.
 			if ( 0xFFFFFFFF === $length ) {
-				break;
+				if ( ! self::skip_sequence( $fh, $explicit, $big_endian, 0 ) ) {
+					break; // Bail out if the delimiter cannot be found.
+				}
+				continue;
 			}
 
 			// Read value.
@@ -237,6 +240,226 @@ class WP_MCP_AI_DICOM_Metadata {
 		}
 
 		return sanitize_text_field( $clean );
+	}
+
+	/**
+	 * Skip an undefined-length DICOM sequence (SQ) or encapsulated data element.
+	 *
+	 * Both SQ sequences and encapsulated pixel data (OB/OW/UN) with undefined
+	 * length are terminated by a Sequence Delimitation Item (FFFE,E0DD).
+	 * This method reads forward until that delimiter is found, recursively
+	 * handling any nested undefined-length sequences and items along the way.
+	 *
+	 * @param resource $fh         Open file handle, positioned just after the length field.
+	 * @param bool     $explicit   True if the transfer syntax uses explicit VR.
+	 * @param bool     $big_endian True if the transfer syntax uses Big Endian byte order.
+	 * @param int      $depth      Internal recursion depth guard (max 32).
+	 * @return bool True if the Sequence Delimitation Item was consumed, false on error or EOF.
+	 */
+	private static function skip_sequence( $fh, $explicit, $big_endian, $depth = 0 ) {
+		if ( $depth > 32 ) {
+			return false;
+		}
+
+		$unpack_u16 = $big_endian ? 'n' : 'v';
+		$unpack_u32 = $big_endian ? 'N' : 'V';
+		$max_items  = 65536;
+		$count      = 0;
+
+		while ( $count++ < $max_items ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			$grp_raw = fread( $fh, 2 );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			$elm_raw = fread( $fh, 2 );
+
+			if ( false === $grp_raw || false === $elm_raw || strlen( $grp_raw ) < 2 || strlen( $elm_raw ) < 2 ) {
+				return false;
+			}
+
+			$grp = current( unpack( $unpack_u16, $grp_raw ) );
+			$elm = current( unpack( $unpack_u16, $elm_raw ) );
+
+			// FFFE,E0DD = Sequence Delimitation Item — this sequence ends here.
+			if ( 0xFFFE === $grp && 0xE0DD === $elm ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				fread( $fh, 4 ); // Consume the 4-byte length field (always 0x00000000).
+				return true;
+			}
+
+			// FFFE,E00D = Item Delimitation Item (ends an undefined-length item).
+			if ( 0xFFFE === $grp && 0xE00D === $elm ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				fread( $fh, 4 ); // Consume the 4-byte length field.
+				continue;
+			}
+
+			// FFFE,E000 = Item start.
+			if ( 0xFFFE === $grp && 0xE000 === $elm ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				$len_raw = fread( $fh, 4 );
+				if ( false === $len_raw || strlen( $len_raw ) < 4 ) {
+					return false;
+				}
+				$length = current( unpack( $unpack_u32, $len_raw ) );
+				if ( 0xFFFFFFFF === $length ) {
+					// Undefined-length item: skip to its Item Delimitation Item (FFFE,E00D).
+					if ( ! self::skip_item( $fh, $explicit, $big_endian, $depth + 1 ) ) {
+						return false;
+					}
+				} elseif ( $length > 0 ) {
+					// Defined-length item: seek past its contents.
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fseek
+					fseek( $fh, $length, SEEK_CUR );
+				}
+				continue;
+			}
+
+			// Regular data element: read VR (explicit) or infer implicit, then skip value.
+			$length = 0;
+			if ( $explicit ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				$vr_raw = fread( $fh, 2 );
+				if ( false === $vr_raw || strlen( $vr_raw ) < 2 ) {
+					return false;
+				}
+				$vr = $vr_raw;
+				if ( in_array( $vr, array( 'OB', 'OW', 'OF', 'SQ', 'UC', 'UR', 'UT', 'UN' ), true ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					fread( $fh, 2 ); // Reserved bytes.
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					$len_raw = fread( $fh, 4 );
+					if ( false === $len_raw || strlen( $len_raw ) < 4 ) {
+						return false;
+					}
+					$length = current( unpack( $unpack_u32, $len_raw ) );
+				} else {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					$len_raw = fread( $fh, 2 );
+					if ( false === $len_raw || strlen( $len_raw ) < 2 ) {
+						return false;
+					}
+					$length = current( unpack( $big_endian ? 'n' : 'v', $len_raw ) );
+				}
+			} else {
+				// Implicit VR: 4-byte length only.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				$len_raw = fread( $fh, 4 );
+				if ( false === $len_raw || strlen( $len_raw ) < 4 ) {
+					return false;
+				}
+				$length = current( unpack( $unpack_u32, $len_raw ) );
+			}
+
+			if ( 0xFFFFFFFF === $length ) {
+				// Nested undefined-length element (e.g., SQ within an item).
+				if ( ! self::skip_sequence( $fh, $explicit, $big_endian, $depth + 1 ) ) {
+					return false;
+				}
+			} elseif ( $length > 0 ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fseek
+				fseek( $fh, $length, SEEK_CUR );
+			}
+		}
+
+		return false; // Max items exceeded without finding delimiter.
+	}
+
+	/**
+	 * Skip the data elements of an undefined-length DICOM item.
+	 *
+	 * Items within sequences may carry undefined length; they are terminated by
+	 * an Item Delimitation Item (FFFE,E00D).
+	 *
+	 * @param resource $fh         Open file handle.
+	 * @param bool     $explicit   True if the transfer syntax uses explicit VR.
+	 * @param bool     $big_endian True if the transfer syntax uses Big Endian byte order.
+	 * @param int      $depth      Internal recursion depth guard.
+	 * @return bool True if the Item Delimitation Item was consumed, false on error or EOF.
+	 */
+	private static function skip_item( $fh, $explicit, $big_endian, $depth ) {
+		if ( $depth > 32 ) {
+			return false;
+		}
+
+		$unpack_u16 = $big_endian ? 'n' : 'v';
+		$unpack_u32 = $big_endian ? 'N' : 'V';
+		$max_elems  = 65536;
+		$count      = 0;
+
+		while ( $count++ < $max_elems ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			$grp_raw = fread( $fh, 2 );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			$elm_raw = fread( $fh, 2 );
+
+			if ( false === $grp_raw || false === $elm_raw || strlen( $grp_raw ) < 2 || strlen( $elm_raw ) < 2 ) {
+				return false;
+			}
+
+			$grp = current( unpack( $unpack_u16, $grp_raw ) );
+			$elm = current( unpack( $unpack_u16, $elm_raw ) );
+
+			// FFFE,E00D = Item Delimitation Item — this item ends here.
+			if ( 0xFFFE === $grp && 0xE00D === $elm ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				fread( $fh, 4 ); // Consume 4-byte length (always 0x00000000).
+				return true;
+			}
+
+			// FFFE,E0DD = Sequence Delimitation Item (unexpected inside an item, but handle gracefully).
+			if ( 0xFFFE === $grp && 0xE0DD === $elm ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				fread( $fh, 4 );
+				return true;
+			}
+
+			// Regular data element within the item.
+			$length = 0;
+			if ( $explicit ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				$vr_raw = fread( $fh, 2 );
+				if ( false === $vr_raw || strlen( $vr_raw ) < 2 ) {
+					return false;
+				}
+				$vr = $vr_raw;
+				if ( in_array( $vr, array( 'OB', 'OW', 'OF', 'SQ', 'UC', 'UR', 'UT', 'UN' ), true ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					fread( $fh, 2 ); // Reserved bytes.
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					$len_raw = fread( $fh, 4 );
+					if ( false === $len_raw || strlen( $len_raw ) < 4 ) {
+						return false;
+					}
+					$length = current( unpack( $unpack_u32, $len_raw ) );
+				} else {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+					$len_raw = fread( $fh, 2 );
+					if ( false === $len_raw || strlen( $len_raw ) < 2 ) {
+						return false;
+					}
+					$length = current( unpack( $big_endian ? 'n' : 'v', $len_raw ) );
+				}
+			} else {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				$len_raw = fread( $fh, 4 );
+				if ( false === $len_raw || strlen( $len_raw ) < 4 ) {
+					return false;
+				}
+				$length = current( unpack( $unpack_u32, $len_raw ) );
+			}
+
+			if ( 0xFFFFFFFF === $length ) {
+				// Nested undefined-length element (e.g., nested SQ inside this item).
+				if ( ! self::skip_sequence( $fh, $explicit, $big_endian, $depth + 1 ) ) {
+					return false;
+				}
+			} elseif ( $length > 0 ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fseek
+				fseek( $fh, $length, SEEK_CUR );
+			}
+		}
+
+		return false; // Max elements exceeded without finding item delimiter.
 	}
 
 	/**
