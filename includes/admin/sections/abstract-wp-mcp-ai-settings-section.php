@@ -636,6 +636,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								value="<?php echo esc_attr( $value ); ?>"
 								class="regular-text"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( 'number' === $type && isset( $field['min'] ) ) : ?>
+									min="<?php echo esc_attr( $field['min'] ); ?>"
+								<?php endif; ?>
+								<?php if ( 'number' === $type && isset( $field['max'] ) ) : ?>
+									max="<?php echo esc_attr( $field['max'] ); ?>"
+								<?php endif; ?>
+								<?php if ( 'number' === $type && isset( $field['step'] ) ) : ?>
+									step="<?php echo esc_attr( $field['step'] ); ?>"
+								<?php endif; ?>
 								<?php if ( ! empty( $autocomplete ) ) : ?>
 									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
 								<?php endif; ?>
