@@ -13,7 +13,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 1. 📝 Media Toolkit
 
 **Setting**: `enable_media_toolkit`  
-**Tools**: 15+ tools  
+**Tools**: 7 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -22,6 +22,16 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Media collection organization
 - Automated media workflows
 - Template presets library
+- Sharp image optimization (NPM-powered)
+
+**Tools Provided**:
+- `list_media_templates` - List available media templates
+- `apply_media_template` - Apply a template to media items
+- `create_media_template` - Create new media templates
+- `create_media_collection` - Group media items into collections
+- `process_collection` - Process a collection of media items
+- `apply_collection_template` - Apply a template to a collection
+- `optimize_image_sharp` - Optimize images using Sharp library
 
 **Use Cases**:
 - Content marketing teams
@@ -36,7 +46,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 2. 📄 Document Generation Toolkit
 
 **Setting**: `enable_document_generation_toolkit`  
-**Tools**: 10+ tools  
+**Tools**: 15 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -45,7 +55,28 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Excel spreadsheet generation
 - HTML to PDF conversion
 - Template-based documents
+- PDF text extraction and OCR
+- PDF merging and watermarking
+- Invoice PDF generation
+- Excel data import/export
 - Custom styling and branding
+
+**Tools Provided**:
+- `pro_pdf_document` - Advanced PDF generation with full styling
+- `pro_word_document` - Advanced Word document generation
+- `pro_excel_document` - Advanced Excel spreadsheet generation
+- `generate_pdf` - Simplified PDF generation
+- `generate_word` - Simplified Word document generation
+- `generate_excel` - Simplified Excel generation
+- `extract_pdf_text` - Extract text content from PDFs
+- `ocr_pdf_text` - OCR text extraction from scanned PDFs
+- `pro_document_ocr` - Advanced OCR document processing
+- `html_to_pdf` - Convert HTML content to PDF
+- `merge_pdfs` - Merge multiple PDF files into one
+- `add_watermark_to_pdf` - Add watermarks to PDF files
+- `generate_invoice_pdf` - Generate professional invoice PDFs
+- `excel_data_import` - Import data from Excel files
+- `excel_data_export` - Export data to Excel format
 
 **Use Cases**:
 - Report generation
@@ -88,7 +119,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - `update_event` - Modify event details
 - `list_events` - View calendar events
 - `delete_event` - Cancel events
-- `get_project_status` - Project health reports
+- `get_calendar_view` - Get calendar view of events
 
 **Use Cases**:
 - Software development teams
@@ -103,7 +134,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 4. 📍 Places Management
 
 **Setting**: `enable_places_management`  
-**Tools**: 6+ tools  
+**Tools**: 8 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -119,8 +150,10 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - `update_place` - Modify place details
 - `list_places` - Browse locations
 - `delete_place` - Remove places
-- `search_places_radius` - Geographic search
-- `geocode_address` - Convert addresses to coordinates
+- `get_place` - Get place details
+- `search_and_save_places` - Search and save places from external sources
+- `research_place` - AI-powered research on a place
+- `analyze_geospatial` - Turf.js geospatial analysis (distance, buffers, intersections)
 
 **Use Cases**:
 - Travel and tourism sites
@@ -141,7 +174,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 5. 🏫 ECA Pro Toolkit
 
 **Setting**: `enable_eca_management`  
-**Tools**: 5+ tools  
+**Tools**: 14 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -155,9 +188,18 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 **Tools Provided**:
 - `create_eca` - Create activities/clubs
 - `update_eca` - Modify ECA details
+- `get_eca` - Get ECA details
 - `list_ecas` - View all activities
-- `enroll_student` - Register students
-- `sync_isams_ecas` - Sync with iSAMS
+- `delete_eca` - Remove ECA records
+- `create_student` - Add student records
+- `update_student` - Modify student details
+- `get_student` - Get student details
+- `list_students` - Browse students
+- `delete_student` - Remove student records
+- `enroll_student_eca` - Enroll a student in an ECA
+- `sync_students_from_isams` - Sync students from iSAMS
+- `sync_ecas_from_isams` - Sync ECAs from iSAMS
+- `research_eca` - AI-powered research on an ECA
 
 **Use Cases**:
 - Schools and universities
@@ -172,7 +214,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 6. 🏥 Health & Wellness Pro Toolkit
 
 **Setting**: `enable_health_wellness_management`  
-**Tools**: 30+ tools  
+**Tools**: 48 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -255,7 +297,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 8. 🖥️ AI CPT Management
 
 **Setting**: `enable_ai_cpt_management`  
-**Tools**: Integration metabox  
+**Tools**: 2 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -263,8 +305,11 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Integration with WordPress admin
 - Direct content creation/editing
 - Custom post type support
-- Product management (WooCommerce)
-- Term and taxonomy management
+- AI-powered research and analysis
+
+**Tools Provided**:
+- `research_post` - AI-powered research on a post, fetches and analyzes content
+- `research_page` - AI-powered research on a page, fetches and analyzes content
 
 **Supported Post Types**:
 - Posts
@@ -476,7 +521,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 ### 14. 💰 Financial Planning Toolkit
 
-**Setting**: `enable_financial_planning_toolkit`  
+**Setting**: `enable_financial_planner_toolkit`  
 **Tools**: 24 professional tools  
 **Status**: Pro addon required (✅ Fully Implemented)
 
@@ -714,7 +759,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 ### 19. 📊 Analytics Toolkit
 
-**Setting**: `enable_analytics_toolkit`  
+**Setting**: `enable_advanced_analytics_toolkit`  
 **Tools**: 12 professional tools  
 **Status**: Pro addon required (✅ Fully Implemented)
 
@@ -758,7 +803,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 20. 🤝 CRM Toolkit
 
 **Setting**: `enable_crm_toolkit`  
-**Tools**: 6 tools  
+**Tools**: 7 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -1063,26 +1108,26 @@ Toolkits that create custom post types:
 
 | Toolkit | Tools | Memory | Dependencies | Use Case |
 |---------|-------|--------|--------------|----------|
-| Media | 15+ | 5-10MB | None | Marketing |
-| Documents | 10+ | 50MB | Node.js | Reports |
+| Media | 7 | 5-10MB | None | Marketing |
+| Documents | 15 | 50MB | Node.js | Reports |
 | Projects | 13 | 3-5MB | Optional: JetEngine | Teams |
-| Places | 6+ | 2-3MB | Google Maps API | Location |
-| ECA | 5+ | 2-3MB | Optional: iSAMS | Schools |
-| Health | 30+ | 5-8MB | None | Healthcare |
+| Places | 8 | 2-3MB | Optional: Google Maps | Location |
+| ECA | 14 | 2-3MB | Optional: iSAMS | Schools |
+| Health | 48 | 5-8MB | None | Healthcare |
 | Cloudways | 58+ | 10-15MB | Cloudways account | Hosting |
-| AI CPT | Metabox | 2-3MB | None | Content |
+| AI CPT | 2 | 2-3MB | None | Content |
 | AI Tool Builder | 10 | 5-8MB | None | Development |
 | Architectural Design | 16 | 8-12MB | Vision AI, OpenAI | Architecture |
 | Calendar Booking | 15 | 4-6MB | Optional: Google/Outlook | Appointments |
 | DJ Management | 18 | 6-9MB | None | DJ Business |
 | E-commerce | 20 | 8-12MB | WooCommerce | Online Stores |
-| Financial Planning | 24 | 7-10MB | None | Finance |
+| Financial Planner | 24 | 7-10MB | None | Finance |
 | Image Production | 15 | 10-15MB | OpenAI, Stability AI | Images |
 | Social Media | 15 | 6-9MB | Platform APIs | Social |
 | Multilingual | 10 | 4-6MB | Translation APIs | Translation |
 | Video Production | 12 | 15-20MB | FFmpeg | Video |
 | Analytics | 12 | 5-8MB | Optional: GA4 | Analytics |
-| CRM | 6 | 1-2MB | None | Contacts, Companies |
+| CRM | 7 | 1-2MB | None | Contacts, Companies |
 
 ---
 
