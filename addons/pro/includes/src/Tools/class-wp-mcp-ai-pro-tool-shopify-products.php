@@ -125,7 +125,12 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( WP_MCP_AI_Tool_Capability_Flags_Interface::FLAG_EXTERNAL_API );
+		return array(
+			'pro',                  // Pro tier tool.
+			'external-api',         // Makes external API calls to Shopify.
+			'requires-credentials', // Requires Shopify API credentials.
+			'requires-capability',  // Requires WordPress user capabilities.
+		);
 	}
 
 	/**
