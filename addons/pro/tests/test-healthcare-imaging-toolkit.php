@@ -124,6 +124,100 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}
 
+	/**
+	 * extract() should correctly read UIDs that appear after an undefined-length
+	 * SQ sequence element in the DICOM dataset.
+	 *
+	 * This is a regression test for the bug where the parser issued `break` on
+	 * length=0xFFFFFFFF, stopping before finding StudyInstanceUID /
+	 * SOPInstanceUID when an SQ sequence preceded them in tag order.
+	 */
+	public function test_dicom_extract_reads_uids_after_undefined_length_sequence() {
+		// Build a minimal synthetic DICOM file (Explicit Little Endian).
+		//
+		// Layout:
+		//   132-byte preamble+magic
+		//   (0002,0010) TransferSyntaxUID = "1.2.840.10008.1.2.1" (Explicit LE)
+		//   (0008,0018) SOPInstanceUID    = "1.2.3.4.5.sop.test"
+		//   (0008,1110) SQ undefined length — the undefined-length element under test
+		//       FFFE,E0DD (empty sequence body, immediately terminated)
+		//   (0020,000D) StudyInstanceUID  = "1.2.3.4.5.study.test"
+
+		// Preamble: 128 zero bytes + 'DICM'.
+		$dcm = str_repeat( "\x00", 128 ) . 'DICM';
+
+		// (0002,0010) TransferSyntaxUID – UI VR, 2-byte length.
+		// "1.2.840.10008.1.2.1" is 19 chars; pad to 20 (even) with \x00.
+		$ts_uid = "1.2.840.10008.1.2.1\x00";
+		$dcm   .= pack( 'vv', 0x0002, 0x0010 ) . 'UI' . pack( 'v', strlen( $ts_uid ) ) . $ts_uid;
+
+		// (0008,0018) SOPInstanceUID – UI VR, 2-byte length.
+		// "1.2.3.4.5.sop.test" is 18 chars (even).
+		$sop_uid = '1.2.3.4.5.sop.test';
+		$dcm    .= pack( 'vv', 0x0008, 0x0018 ) . 'UI' . pack( 'v', strlen( $sop_uid ) ) . $sop_uid;
+
+		// (0008,1110) ReferencedStudySequence – SQ VR, undefined length (FFFFFFFF).
+		// Tag | 'SQ' | 2 reserved bytes | length = 0xFFFFFFFF.
+		$dcm .= pack( 'vv', 0x0008, 0x1110 ) . 'SQ' . "\x00\x00" . pack( 'V', 0xFFFFFFFF );
+		// Empty sequence body terminated immediately by Sequence Delimitation Item.
+		// FFFE,E0DD | length = 0x00000000.
+		$dcm .= pack( 'vv', 0xFFFE, 0xE0DD ) . pack( 'V', 0x00000000 );
+
+		// (0020,000D) StudyInstanceUID – UI VR, 2-byte length.
+		// "1.2.3.4.5.study.test" is 20 chars (even).
+		$study_uid = '1.2.3.4.5.study.test';
+		$dcm      .= pack( 'vv', 0x0020, 0x000D ) . 'UI' . pack( 'v', strlen( $study_uid ) ) . $study_uid;
+
+		$tmp = wp_tempnam( 'test.dcm' );
+		file_put_contents( $tmp, $dcm );
+
+		$meta = WP_MCP_AI_DICOM_Metadata::extract( $tmp );
+		unlink( $tmp );
+
+		$this->assertIsArray( $meta, 'extract() should return an array for a valid DICOM file.' );
+		$this->assertArrayHasKey( 'study_instance_uid', $meta );
+		$this->assertArrayHasKey( 'sop_instance_uid', $meta );
+		$this->assertEquals( '1.2.3.4.5.study.test', $meta['study_instance_uid'] );
+		$this->assertEquals( '1.2.3.4.5.sop.test', $meta['sop_instance_uid'] );
+	}
+
+	/**
+	 * extract() should read UIDs even when the undefined-length SQ contains
+	 * a defined-length item before the sequence delimiter.
+	 */
+	public function test_dicom_extract_reads_uids_after_sequence_with_items() {
+		// Same layout as above, but the SQ has one defined-length item inside.
+		$dcm = str_repeat( "\x00", 128 ) . 'DICM';
+
+		$ts_uid = "1.2.840.10008.1.2.1\x00";
+		$dcm   .= pack( 'vv', 0x0002, 0x0010 ) . 'UI' . pack( 'v', strlen( $ts_uid ) ) . $ts_uid;
+
+		$sop_uid = '1.2.3.4.5.sop.test';
+		$dcm    .= pack( 'vv', 0x0008, 0x0018 ) . 'UI' . pack( 'v', strlen( $sop_uid ) ) . $sop_uid;
+
+		// (0008,1115) ReferencedSeriesSequence – SQ undefined length.
+		$dcm .= pack( 'vv', 0x0008, 0x1115 ) . 'SQ' . "\x00\x00" . pack( 'V', 0xFFFFFFFF );
+		// Item: FFFE,E000 with a defined length of 10 bytes of dummy data.
+		$item_data = str_repeat( "\x00", 10 );
+		$dcm .= pack( 'vv', 0xFFFE, 0xE000 ) . pack( 'V', strlen( $item_data ) ) . $item_data;
+		// Sequence Delimitation Item.
+		$dcm .= pack( 'vv', 0xFFFE, 0xE0DD ) . pack( 'V', 0x00000000 );
+
+		// (0020,000D) StudyInstanceUID.
+		$study_uid = '1.2.3.4.5.study.test';
+		$dcm      .= pack( 'vv', 0x0020, 0x000D ) . 'UI' . pack( 'v', strlen( $study_uid ) ) . $study_uid;
+
+		$tmp = wp_tempnam( 'test.dcm' );
+		file_put_contents( $tmp, $dcm );
+
+		$meta = WP_MCP_AI_DICOM_Metadata::extract( $tmp );
+		unlink( $tmp );
+
+		$this->assertIsArray( $meta );
+		$this->assertEquals( '1.2.3.4.5.study.test', $meta['study_instance_uid'] );
+		$this->assertEquals( '1.2.3.4.5.sop.test', $meta['sop_instance_uid'] );
+	}
+
 	// =========================================================================
 	// Capabilities
 	// =========================================================================

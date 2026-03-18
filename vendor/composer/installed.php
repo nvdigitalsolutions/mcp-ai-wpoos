@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-js-css-zips',
-        'version' => 'dev-copilot/rebuild-all-js-css-zips',
-        'reference' => 'e883a353eb211214f4d7eaacf597cc05d92a4d89',
+        'pretty_version' => 'dev-copilot/fix-dicom-upload-error',
+        'version' => 'dev-copilot/fix-dicom-upload-error',
+        'reference' => '6ba1a25187d20d97a593c43627f39830b6151398',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-js-css-zips',
-            'version' => 'dev-copilot/rebuild-all-js-css-zips',
-            'reference' => 'e883a353eb211214f4d7eaacf597cc05d92a4d89',
+            'pretty_version' => 'dev-copilot/fix-dicom-upload-error',
+            'version' => 'dev-copilot/fix-dicom-upload-error',
+            'reference' => '6ba1a25187d20d97a593c43627f39830b6151398',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
