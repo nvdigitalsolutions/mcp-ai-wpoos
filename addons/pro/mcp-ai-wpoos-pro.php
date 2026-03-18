@@ -1509,6 +1509,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_quiz_analytics']   = 'wordpress-core';
 		}
 
+		// Add CRM Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
+			// CRM core CRUD tools.
+			$pro_tools['manage_crm_contact'] = 'wordpress-core';
+			$pro_tools['create_company']     = 'wordpress-core';
+			$pro_tools['get_companies']      = 'wordpress-core';
+			$pro_tools['research_company']   = 'wordpress-core';
+			// CRM Email Search tools.
+			$pro_tools['crm_email_search_leads']           = 'wordpress-core';
+			$pro_tools['crm_email_search_correspondence']  = 'wordpress-core';
+			$pro_tools['crm_email_search_accounting']      = 'wordpress-core';
+		}
+
 		// Add Fantasy Football tool mappings if enabled.
 		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
 			$pro_tools['yahoo_ff_auth']              = 'external-tools';
