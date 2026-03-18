@@ -758,24 +758,34 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 20. 🤝 CRM Toolkit
 
 **Setting**: `enable_crm_toolkit`  
-**Tools**: 1 tool (Basic implementation)  
+**Tools**: 6 tools  
 **Status**: Pro addon required
 
 **Features**:
-- Contact management with CRUD operations
-- Basic CRM functionality
-- Contact data storage
+- Contact management with full CRUD operations (create, read, update, delete, list, search)
+- Company records with industry, size, location, and target status
+- AI-powered company research using web search
+- Email-based lead search with scoring, MQL staging, and WP Cron scheduling
+- Email-based correspondence search with response-time analytics and routing suggestions
+- Email-based accounting search with invoice/payment tracking and QuickBooks/Xero integration hints
+- Cached results (WP_MCP_AI_Cache_Helper) with scheduled auto-refresh via WP Cron
 
-**Tool Provided**:
-- `manage_crm_contact` - Create, read, update, delete CRM contacts
+**Tools Provided**:
+- `manage_crm_contact` - Create, read, update, delete, list, and search CRM contacts (supports CCT/CPT storage)
+- `create_company` - Create company records with industry, size, location, and target status
+- `get_companies` - List and search companies by industry, size, target status, or location
+- `research_company` - AI-powered company research using web search for industry insights and target fit
+- `crm_email_search_leads` - Search new leads by email criteria with lead scoring, MQL staging, and scheduling
+- `crm_email_search_correspondence` - Search customer correspondence with response-time analytics and routing
+- `crm_email_search_accounting` - Search accounting emails (invoices, payments, quotes) with billing status and fiscal filtering
 
 **Use Cases**:
-- Basic contact management
-- Lead tracking
-- Customer database
-- Foundation for CRM integration
-
-**Status**: This is a minimal toolkit that may be expanded in future releases.
+- Lead tracking and qualification pipeline
+- Customer database management
+- Automated lead discovery and scoring
+- Accounts receivable and invoice follow-up
+- Customer support correspondence management
+- Company prospecting and target analysis
 
 **Documentation**: See `addons/pro/includes/tools/crm/`
 
@@ -1072,7 +1082,7 @@ Toolkits that create custom post types:
 | Multilingual | 10 | 4-6MB | Translation APIs | Translation |
 | Video Production | 12 | 15-20MB | FFmpeg | Video |
 | Analytics | 12 | 5-8MB | Optional: GA4 | Analytics |
-| CRM | 1 | 1-2MB | None | Contacts |
+| CRM | 6 | 1-2MB | None | Contacts, Companies |
 
 ---
 
