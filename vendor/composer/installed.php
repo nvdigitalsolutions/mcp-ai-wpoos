@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-prescription-tools-cpt-support',
-        'version' => 'dev-copilot/update-prescription-tools-cpt-support',
-        'reference' => 'a63dbbad1be9e1b2fd752baf3bc00a7b67b7e8ee',
+        'pretty_version' => 'dev-copilot/fix-max-memory-file-size',
+        'version' => 'dev-copilot/fix-max-memory-file-size',
+        'reference' => '67b68795acc2ce4ca7059838bc0c0a2ae09bed62',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-prescription-tools-cpt-support',
-            'version' => 'dev-copilot/update-prescription-tools-cpt-support',
-            'reference' => 'a63dbbad1be9e1b2fd752baf3bc00a7b67b7e8ee',
+            'pretty_version' => 'dev-copilot/fix-max-memory-file-size',
+            'version' => 'dev-copilot/fix-max-memory-file-size',
+            'reference' => '67b68795acc2ce4ca7059838bc0c0a2ae09bed62',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
