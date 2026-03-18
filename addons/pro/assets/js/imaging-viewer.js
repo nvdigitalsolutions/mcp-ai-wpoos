@@ -446,12 +446,26 @@
 						} );
 					} )
 					.then( function ( result ) {
-						if ( result.ok ) {
-							showUploadStatus( i18n.uploadSuccess || 'Uploaded.', false );
+						if ( result.ok && result.data && result.data.study_id ) {
+							// Check for per-file errors (partial success).
+							var files = Array.isArray( result.data.files ) ? result.data.files : [];
+							var failedFiles = files.filter( function ( file ) { return file.error; } );
+
+							if ( failedFiles.length > 0 ) {
+								var partialMsg = ( i18n.uploadPartialSuccess || '%1$d of %2$d file(s) could not be processed.' )
+									.replace( '%1$d', String( failedFiles.length ) )
+									.replace( '%2$d', String( files.length ) );
+								showUploadStatus( partialMsg, false );
+							} else {
+								showUploadStatus( i18n.uploadSuccess || 'Uploaded.', false );
+							}
 							uploadPanel.style.display = 'none';
 							loadStudyList();
 						} else {
-							showUploadStatus( ( result.data && result.data.message ) ? result.data.message : ( i18n.uploadError || 'Upload failed.' ), true );
+							var errMsg = ( result.data && result.data.message )
+								? result.data.message
+								: ( i18n.uploadError || 'Upload failed.' );
+							showUploadStatus( errMsg, true );
 						}
 					} )
 					.catch( function () {
