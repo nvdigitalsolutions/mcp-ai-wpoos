@@ -100,8 +100,9 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'i18n'           => array(
 					'loadingStudy'    => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
 					'noStudies'       => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
-					'uploadSuccess'   => __( 'Study uploaded successfully.', 'mcp-ai-wpoos-pro' ),
-					'uploadError'     => __( 'Upload failed. Please ensure you are uploading valid DICOM (.dcm) files.', 'mcp-ai-wpoos-pro' ),
+					'uploadSuccess'        => __( 'Study uploaded successfully.', 'mcp-ai-wpoos-pro' ),
+					'uploadPartialSuccess' => __( 'Study uploaded, but %1$d of %2$d file(s) could not be processed.', 'mcp-ai-wpoos-pro' ),
+					'uploadError'          => __( 'Upload failed. Please ensure you are uploading valid DICOM (.dcm) files.', 'mcp-ai-wpoos-pro' ),
 					'viewerError'     => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
 					'noInstances'     => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
 					'confirmDelete'   => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),

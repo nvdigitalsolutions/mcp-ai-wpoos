@@ -433,7 +433,29 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			$results[]     = array( 'success' => true, 'file' => sanitize_text_field( $file['name'] ), 'instance_uid' => $result['instance_uid'] );
 		}
 
-		$study_uid = $study_post_id ? get_post_meta( $study_post_id, '_imaging_study_instance_uid', true ) : '';
+		// If no files were stored successfully, return a descriptive error instead of a
+		// misleading 201.  This prevents the viewer from showing "uploaded successfully"
+		// when nothing was actually persisted to disk.
+		if ( null === $study_post_id ) {
+			$file_errors = array();
+			foreach ( $results as $r ) {
+				if ( isset( $r['error'] ) && '' !== $r['error'] ) {
+					$file_errors[] = $r['error'];
+				}
+			}
+
+			$detail = ! empty( $file_errors )
+				? implode( ' ', array_unique( $file_errors ) )
+				: __( 'No valid DICOM files could be processed. Please ensure your files are valid DICOM (.dcm) format.', 'mcp-ai-wpoos-pro' );
+
+			return new WP_Error(
+				'imaging_no_valid_files',
+				$detail,
+				array( 'status' => 422 )
+			);
+		}
+
+		$study_uid = get_post_meta( $study_post_id, '_imaging_study_instance_uid', true );
 
 		WP_MCP_AI_Imaging_Audit_Log::log(
 			'study_uploaded',
