@@ -1604,6 +1604,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Specialized Health & Wellness Tools.
 			$pro_tools['get_member_health_summary'] = 'wordpress-core';
 			$pro_tools['get_medication_schedule']   = 'wordpress-core';
+			$pro_tools['research_policy']           = 'wordpress-core';
+			// Chart.js data visualization tool.
+			$pro_tools['generate_health_chart'] = 'wordpress-core';
+			// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
+			$pro_tools['create_health_reminder'] = 'wordpress-core';
+			$pro_tools['track_vaccinations']     = 'wordpress-core';
+			$pro_tools['log_health_metrics']     = 'wordpress-core';
+			$pro_tools['log_vital_signs']        = 'wordpress-core';
+			$pro_tools['import_vitals']          = 'wordpress-core';
+			$pro_tools['export_fhir_data']       = 'wordpress-core';
+			$pro_tools['manage_care_plan']       = 'wordpress-core';
+			// Health Research: compile data from CCT, options, files, and vector store.
+			$pro_tools['compile_health_research_data'] = 'wordpress-core';
+			// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
+			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
+			$pro_tools['parse_health_information']     = 'wordpress-core';
 		}
 
 		// Add Healthcare Imaging tool mappings if enabled.
