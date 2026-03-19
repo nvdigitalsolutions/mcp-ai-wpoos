@@ -241,19 +241,22 @@ class WP_MCP_AI_Imaging_Admin_Page {
 
 			<!-- Main panel with tabs -->
 			<div id="nv-imaging-main-panel" class="nv-imaging-panel">
-				<nav class="nv-imaging-tab-nav" role="tablist">
-					<button role="tab" class="nv-imaging-tab-btn nv-imaging-tab-active" data-tab="studies" id="nv-tab-studies">
+				<nav class="nv-imaging-tab-nav nav-tab-wrapper wp-clearfix" role="tablist">
+					<a href="#" role="tab" class="nav-tab nav-tab-active" data-tab="studies" id="nv-tab-studies">
 						<?php esc_html_e( 'Studies', 'mcp-ai-wpoos-pro' ); ?>
-					</button>
-					<button role="tab" class="nv-imaging-tab-btn" data-tab="tools" id="nv-tab-tools">
+					</a>
+					<a href="#" role="tab" class="nav-tab" data-tab="tools" id="nv-tab-tools">
 						<?php esc_html_e( 'AI Tools', 'mcp-ai-wpoos-pro' ); ?>
-					</button>
-					<button role="tab" class="nv-imaging-tab-btn" data-tab="audit" id="nv-tab-audit">
+					</a>
+					<a href="#" role="tab" class="nav-tab" data-tab="audit" id="nv-tab-audit">
 						<?php esc_html_e( 'Audit Log', 'mcp-ai-wpoos-pro' ); ?>
-					</button>
-					<button role="tab" class="nv-imaging-tab-btn" data-tab="docs" id="nv-tab-docs">
+					</a>
+					<a href="#" role="tab" class="nav-tab" data-tab="docs" id="nv-tab-docs">
 						<?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?>
-					</button>
+					</a>
+					<a href="#" role="tab" class="nav-tab" data-tab="debug" id="nv-tab-debug">
+						<?php esc_html_e( 'Debug', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
 				</nav>
 
 				<!-- Studies tab -->
@@ -500,6 +503,11 @@ class WP_MCP_AI_Imaging_Admin_Page {
 
 					</div><!-- .nv-imaging-docs-grid -->
 				</div><!-- #nv-imaging-tab-docs -->
+
+				<!-- Debug tab -->
+				<div id="nv-imaging-tab-debug" role="tabpanel" style="display:none;">
+					<?php self::render_debug_tab( $storage_path ); ?>
+				</div><!-- #nv-imaging-tab-debug -->
 			</div>
 
 			<!-- Viewer panel -->
@@ -537,6 +545,246 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				</div>
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Debug tab content.
+	 *
+	 * Shows PHP-side diagnostic information: storage path, capabilities,
+	 * plugin settings, module class availability, audit log stats, and
+	 * environment details.  Visible only to users with manage_medical_imaging.
+	 *
+	 * @param string $storage_path Absolute path to the DICOM storage root.
+	 */
+	private static function render_debug_tab( $storage_path ) {
+		if ( ! current_user_can( 'manage_medical_imaging' ) ) {
+			?>
+			<p class="description">
+				<?php esc_html_e( 'Debug information is only available to users with the manage_medical_imaging capability.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			<?php
+			return;
+		}
+
+		$settings         = get_option( 'wp_mcp_ai_settings', array() );
+		$imaging_enabled  = ! empty( $settings['enable_healthcare_imaging'] );
+		$storage_exists   = is_dir( $storage_path );
+		$storage_writable = $storage_exists && is_writable( $storage_path );
+
+		// Fetch the full audit buffer once to derive both the recent preview and the total count.
+		$all_audit_entries = class_exists( 'WP_MCP_AI_Imaging_Audit_Log' )
+			? get_option( WP_MCP_AI_Imaging_Audit_Log::OPTION_KEY, array() )
+			: array();
+		$audit_total   = count( $all_audit_entries );
+		$audit_entries = array_slice( array_reverse( array_values( $all_audit_entries ) ), 0, 10 );
+
+		$classes_to_check = array(
+			'WP_MCP_AI_Imaging_Admin_Page'       => __( 'Admin Page', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_REST_Controller'  => __( 'REST Controller', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Study_CPT'        => __( 'Study CPT', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Audit_Log'        => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Capabilities'     => __( 'Capabilities Helper', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$caps_to_check = array(
+			'view_medical_imaging'   => __( 'View studies', 'mcp-ai-wpoos-pro' ),
+			'upload_medical_imaging' => __( 'Upload studies', 'mcp-ai-wpoos-pro' ),
+			'manage_medical_imaging' => __( 'Manage / delete studies', 'mcp-ai-wpoos-pro' ),
+		);
+		?>
+		<div class="nv-imaging-debug-grid">
+
+			<!-- Module & Settings -->
+			<div class="nv-imaging-debug-card">
+				<h3><?php esc_html_e( 'Module &amp; Settings', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat striped">
+					<tbody>
+						<tr>
+							<th><?php esc_html_e( 'Healthcare Imaging enabled', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<?php if ( $imaging_enabled ) : ?>
+									<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php else : ?>
+									<span class="nv-imaging-debug-warn">&#10007; <?php esc_html_e( 'No — enable in NV oOS → Settings', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'DICOM storage path', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code><?php echo esc_html( $storage_path ); ?></code></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Storage directory exists', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<?php if ( $storage_exists ) : ?>
+									<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php else : ?>
+									<span class="nv-imaging-debug-warn">&#10007; <?php esc_html_e( 'No — created on first upload', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Storage directory writable', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<?php if ( $storage_writable ) : ?>
+									<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php elseif ( $storage_exists ) : ?>
+									<span class="nv-imaging-debug-error">&#10007; <?php esc_html_e( 'No — check server file permissions', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php else : ?>
+									<span class="nv-imaging-debug-warn"><?php esc_html_e( 'N/A (directory not yet created)', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'REST base URL', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code><?php echo esc_html( rest_url( 'mcp-ai/v1/imaging' ) ); ?></code></td>
+						</tr>
+					</tbody>
+				</table>
+			</div><!-- .nv-imaging-debug-card -->
+
+			<!-- Current-user capabilities -->
+			<div class="nv-imaging-debug-card">
+				<h3><?php esc_html_e( 'Current User Capabilities', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Capability', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Granted', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $caps_to_check as $cap => $label ) : ?>
+							<tr>
+								<td>
+									<code><?php echo esc_html( $cap ); ?></code>
+									<span class="description">(<?php echo esc_html( $label ); ?>)</span>
+								</td>
+								<td>
+									<?php if ( current_user_can( $cap ) ) : ?>
+										<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php else : ?>
+										<span class="nv-imaging-debug-warn">&#10007; <?php esc_html_e( 'No', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div><!-- .nv-imaging-debug-card -->
+
+			<!-- PHP classes loaded -->
+			<div class="nv-imaging-debug-card">
+				<h3><?php esc_html_e( 'Module Classes', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Class', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Loaded', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $classes_to_check as $class => $label ) : ?>
+							<tr>
+								<td>
+									<code><?php echo esc_html( $class ); ?></code>
+									<span class="description">(<?php echo esc_html( $label ); ?>)</span>
+								</td>
+								<td>
+									<?php if ( class_exists( $class ) ) : ?>
+										<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php else : ?>
+										<span class="nv-imaging-debug-error">&#10007; <?php esc_html_e( 'No', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div><!-- .nv-imaging-debug-card -->
+
+			<!-- Audit log summary -->
+			<div class="nv-imaging-debug-card">
+				<h3><?php esc_html_e( 'Audit Log', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<?php
+					printf(
+						/* translators: %d: number of audit log entries */
+						esc_html__( 'Total entries stored: %d', 'mcp-ai-wpoos-pro' ),
+						absint( $audit_total )
+					);
+					?>
+				</p>
+				<?php if ( ! empty( $audit_entries ) ) : ?>
+					<table class="widefat striped nv-imaging-docs-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Timestamp', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Event', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'User ID', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $audit_entries as $entry ) : ?>
+								<tr>
+									<td><code><?php echo esc_html( $entry['timestamp'] ?? '' ); ?></code></td>
+									<td><?php echo esc_html( $entry['event'] ?? '' ); ?></td>
+									<td><?php echo esc_html( $entry['user_id'] ?? '' ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'No audit events recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php endif; ?>
+			</div><!-- .nv-imaging-debug-card -->
+
+			<!-- Environment -->
+			<div class="nv-imaging-debug-card nv-imaging-debug-card--wide">
+				<h3><?php esc_html_e( 'Environment', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="widefat striped">
+					<tbody>
+						<tr>
+							<th><?php esc_html_e( 'PHP version', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><?php echo esc_html( PHP_VERSION ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'WordPress version', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><?php echo esc_html( get_bloginfo( 'version' ) ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'NV oOS Pro version', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><?php echo esc_html( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : __( 'N/A', 'mcp-ai-wpoos-pro' ) ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'WP_DEBUG', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><?php echo defined( 'WP_DEBUG' ) && WP_DEBUG ? esc_html__( 'Enabled', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'GD extension (pixel preview)', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<?php if ( extension_loaded( 'gd' ) ) : ?>
+									<span class="nv-imaging-debug-ok">&#10003; <?php esc_html_e( 'Available', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php else : ?>
+									<span class="nv-imaging-debug-warn">&#10007; <?php esc_html_e( 'Not available — pixel preview disabled', 'mcp-ai-wpoos-pro' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'WP uploads base dir', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<?php
+								$upload_dir = wp_upload_dir();
+								echo esc_html( $upload_dir['basedir'] );
+								?>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div><!-- .nv-imaging-debug-card -->
+
+		</div><!-- .nv-imaging-debug-grid -->
 		<?php
 	}
 }
