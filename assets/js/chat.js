@@ -13398,8 +13398,34 @@
                             capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
                         });
                         const assistantMessage = createConversationMessage('assistant', finalContent, displayMetadata);
-                        state.conversation.push(assistantMessage);
-                        
+
+                        // Add agentic intermediate messages (assistant with tool_calls) FIRST,
+                        // then tool_results, then the final assistant — this is the ordering
+                        // Anthropic requires: assistant(tool_use) → tool_result → final_assistant.
+                        // Without the intermediates before tool_results, Anthropic throws
+                        // "unexpected tool_use_id found in tool_result blocks".
+                        const streamingAgenticMessages = (streamResult.finalData && Array.isArray(streamResult.finalData.agentic_tool_messages))
+                            ? streamResult.finalData.agentic_tool_messages : [];
+
+                        streamingAgenticMessages.forEach(function(agenticMessage) {
+                            if (agenticMessage && agenticMessage.role === 'assistant') {
+                                const formattedMessage = {
+                                    role: 'assistant',
+                                    content: agenticMessage.content || null,
+                                    display: {
+                                        bubbleType: 'assistant',
+                                        text: agenticMessage.content || '',
+                                        attachments: []
+                                    }
+                                };
+                                if (agenticMessage.tool_calls && Array.isArray(agenticMessage.tool_calls)) {
+                                    formattedMessage.tool_calls = agenticMessage.tool_calls;
+                                    formattedMessage.display.tool_calls = agenticMessage.tool_calls;
+                                }
+                                state.conversation.push(formattedMessage);
+                            }
+                        });
+
                         // Process tool_results if present (add them to conversation)
                         if (streamResult.finalData && streamResult.finalData.tool_results) {
                             streamResult.finalData.tool_results.forEach(function(toolResult) {
@@ -13428,6 +13454,9 @@
                                 }
                             });
                         }
+
+                        // Push final assistant message AFTER agentic intermediates and tool_results.
+                        state.conversation.push(assistantMessage);
                         
                         // Save and finalize
                         saveConversationToStorage(state);
@@ -15839,6 +15868,16 @@
         } else {
             // No tool results - clear status as before
             setStatus(state.container, '');
+        }
+
+        // Deferred push: if the final assistant message was held back so that agentic
+        // intermediates and tool_results could be added first, push it now.
+        // This guarantees the correct ordering for Anthropic and other providers:
+        //   assistant(tool_use) → tool_result → final_assistant
+        if (hasDeferredMessages && state.conversation.indexOf(assistantMessage) === -1) {
+            if (assistantMessage.content || assistantMessage.tool_calls) {
+                state.conversation.push(assistantMessage);
+            }
         }
 
         // SYSTEMATIC VALIDATION: Ensure final assistant/tool messages persist

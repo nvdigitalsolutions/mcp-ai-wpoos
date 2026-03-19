@@ -258,12 +258,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-sonnet-4-5',
-					'name'           => __( 'Claude 4 Sonnet', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 4.5', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-sonnet-4-6',
+					'name'           => __( 'Claude Sonnet 4.6 (latest)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
 					'id'             => 'claude-opus-4-5',
-					'name'           => __( 'Claude 4 Opus', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Opus 4.5', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 			);
@@ -488,6 +493,20 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 						'content'     => $result_content,
 					);
 
+					// Detect failed tool executions and mark with is_error so Claude can
+					// respond appropriately (e.g. retry, fallback, or explain the failure).
+					// Check explicit flag first, then fall back to JSON-content inspection.
+					$is_tool_error = ! empty( $message['is_error'] );
+					if ( ! $is_tool_error && is_string( $result_content ) ) {
+						$decoded_result = json_decode( $result_content, true );
+						if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_result ) ) {
+							$is_tool_error = ! empty( $decoded_result['error'] ) || ! empty( $decoded_result['error_code'] );
+						}
+					}
+					if ( $is_tool_error ) {
+						$tool_result_block['is_error'] = true;
+					}
+
 					// Append to the previous user message if it is already a tool-result
 					// user message (i.e. consecutive tool results from the same turn).
 					$last_idx = count( $anthropic_messages ) - 1;
@@ -562,10 +581,26 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 						continue;
 					}
 
-					$anthropic_messages[] = array(
-						'role'    => 'assistant',
-						'content' => $assistant_content,
-					);
+					// Anthropic forbids consecutive messages with the same role.
+					// Merge consecutive assistant messages to avoid API validation errors.
+					// This can occur when conversation history stores an intermediate assistant
+					// message (from the agentic loop) followed by the final assistant message.
+					$last_idx = count( $anthropic_messages ) - 1;
+					if (
+						$last_idx >= 0
+						&& 'assistant' === $anthropic_messages[ $last_idx ]['role']
+						&& is_array( $anthropic_messages[ $last_idx ]['content'] )
+					) {
+						$anthropic_messages[ $last_idx ]['content'] = array_merge(
+							$anthropic_messages[ $last_idx ]['content'],
+							$assistant_content
+						);
+					} else {
+						$anthropic_messages[] = array(
+							'role'    => 'assistant',
+							'content' => $assistant_content,
+						);
+					}
 					continue;
 				}
 
@@ -690,6 +725,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				$tools = $this->translate_tools_for_anthropic( $options['tools'] );
 				if ( ! empty( $tools ) ) {
+					// When prompt caching is enabled, mark the last tool definition with
+					// cache_control so Anthropic can cache the entire tool block (saves
+					// tokens on subsequent turns that use the same tool set).
+					if ( ! empty( $options['cache_system_prompt'] ) ) {
+						$last_tool_idx = count( $tools ) - 1;
+						$tools[ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
+					}
 					$payload['tools'] = $tools;
 				}
 			}
@@ -1200,6 +1242,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			// on older (claude-3-haiku, claude-3-sonnet) models.
 			if ( ! empty( $options['cache_system_prompt'] ) ) {
 				$betas[] = 'prompt-caching-2024-07-31';
+			}
+
+			// Token-efficient tools reduces the overhead tokens used by tool definitions,
+			// which can cut input costs by up to 40% when many tools are attached.
+			// Supported on Claude 3.5 Sonnet and later models.
+			if ( ! empty( $payload['tools'] ) ) {
+				$betas[] = 'token-efficient-tools-2025-02-19';
 			}
 
 			// Extended thinking requires the interleaved-thinking beta for models that
