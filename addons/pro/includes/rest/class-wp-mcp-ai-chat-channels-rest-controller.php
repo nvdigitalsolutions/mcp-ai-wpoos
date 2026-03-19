@@ -477,59 +477,34 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
 		}
 
-		$messages_table        = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
-		$contact_connection_id = isset( $contact['connection_id'] ) ? $contact['connection_id'] : '';
+		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
 
-		if ( '' !== $contact_connection_id ) {
-			// Use OR to match both correctly-stored connection_id values and legacy
-			// inbound messages stored with connection_id = '' before the WhatsApp fix.
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total = (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = %s)",
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$contact_connection_id,
-					''
-				)
-			);
+		// Query all messages for this channel + contact regardless of which
+		// connection_id they were stored under. The contact is already uniquely
+		// identified by its CCT _ID; filtering further by connection_id would
+		// exclude messages stored under a legacy or different connection identifier
+		// (e.g. after a connection key rename), resulting in the inbox showing
+		// fewer messages than the CCT actually contains.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
+				$contact['channel'],
+				$contact['channel_contact_id']
+			)
+		);
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND (connection_id = %s OR connection_id = %s) ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$contact_connection_id,
-					'',
-					$per_page,
-					$offset
-				),
-				ARRAY_A
-			);
-		} else {
-			// Backward-compatible query for contacts without a stored connection_id.
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total = (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
-					$contact['channel'],
-					$contact['channel_contact_id']
-				)
-			);
-
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$per_page,
-					$offset
-				),
-				ARRAY_A
-			);
-		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+				$contact['channel'],
+				$contact['channel_contact_id'],
+				$per_page,
+				$offset
+			),
+			ARRAY_A
+		);
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
