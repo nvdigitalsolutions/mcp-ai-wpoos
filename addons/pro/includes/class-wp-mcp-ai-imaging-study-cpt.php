@@ -213,21 +213,78 @@ class WP_MCP_AI_Imaging_Study_CPT {
 	/**
 	 * Get all studies (for admin listing).
 	 *
-	 * @param int $per_page Results per page.
-	 * @param int $page     Page number (1-based).
+	 * @param int   $per_page Results per page.
+	 * @param int   $page     Page number (1-based).
+	 * @param array $filters  Optional filter criteria:
+	 *                        - modality   (string) Filter by _imaging_modality meta value.
+	 *                        - date_from  (string) YYYY-MM-DD lower bound on _imaging_study_date.
+	 *                        - date_to    (string) YYYY-MM-DD upper bound on _imaging_study_date.
+	 *                        - search     (string) LIKE match against _imaging_study_instance_uid.
 	 * @return array {posts, total}
 	 */
-	public static function get_all( $per_page = 20, $page = 1 ) {
-		$query = new WP_Query(
-			array(
-				'post_type'      => self::POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => absint( $per_page ),
-				'paged'          => absint( $page ),
-				'orderby'        => 'date',
-				'order'          => 'DESC',
-			)
+	public static function get_all( $per_page = 20, $page = 1, $filters = array() ) {
+		$args = array(
+			'post_type'      => self::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => absint( $per_page ),
+			'paged'          => absint( $page ),
+			'orderby'        => 'date',
+			'order'          => 'DESC',
 		);
+
+		$meta_query = array();
+
+		if ( ! empty( $filters['modality'] ) ) {
+			$meta_query[] = array(
+				'key'   => '_imaging_modality',
+				'value' => sanitize_text_field( $filters['modality'] ),
+			);
+		}
+
+		if ( ! empty( $filters['date_from'] ) || ! empty( $filters['date_to'] ) ) {
+			// _imaging_study_date is stored as YYYYMMDD; convert from YYYY-MM-DD input.
+			$date_clause = array(
+				'key'  => '_imaging_study_date',
+				'type' => 'CHAR',
+			);
+			$date_from = ! empty( $filters['date_from'] )
+				? str_replace( '-', '', sanitize_text_field( $filters['date_from'] ) )
+				: '';
+			$date_to   = ! empty( $filters['date_to'] )
+				? str_replace( '-', '', sanitize_text_field( $filters['date_to'] ) )
+				: '';
+
+			if ( $date_from && $date_to ) {
+				$date_clause['compare'] = 'BETWEEN';
+				$date_clause['value']   = array( $date_from, $date_to );
+			} elseif ( $date_from ) {
+				$date_clause['compare'] = '>=';
+				$date_clause['value']   = $date_from;
+			} else {
+				$date_clause['compare'] = '<=';
+				$date_clause['value']   = $date_to;
+			}
+
+			$meta_query[] = $date_clause;
+		}
+
+		if ( ! empty( $filters['search'] ) ) {
+			$meta_query[] = array(
+				'key'     => '_imaging_study_instance_uid',
+				'value'   => sanitize_text_field( $filters['search'] ),
+				'compare' => 'LIKE',
+			);
+		}
+
+		if ( ! empty( $meta_query ) ) {
+			if ( count( $meta_query ) > 1 ) {
+				$meta_query['relation'] = 'AND';
+			}
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			$args['meta_query'] = $meta_query;
+		}
+
+		$query = new WP_Query( $args );
 
 		return array(
 			'posts' => $query->posts,

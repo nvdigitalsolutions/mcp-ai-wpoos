@@ -97,6 +97,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'canUpload'      => current_user_can( 'upload_medical_imaging' ) ? 'yes' : 'no',
 				'canManage'      => current_user_can( 'manage_medical_imaging' ) ? 'yes' : 'no',
+				'statsUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
 				'i18n'           => array(
 					'loadingStudy'    => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
 					'noStudies'       => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
@@ -163,7 +164,11 @@ class WP_MCP_AI_Imaging_Admin_Page {
 
 			<hr class="wp-header-end">
 
-			<!-- DICOM storage location info box -->
+			<!-- Stats bar — populated by JS -->
+			<div id="nv-imaging-stats-bar" class="nv-imaging-stats-bar"></div>
+
+			<!-- DICOM storage location info box (managers only) -->
+			<?php if ( current_user_can( 'manage_medical_imaging' ) ) : ?>
 			<div class="notice notice-info inline nv-imaging-storage-notice" style="margin-top:1em;">
 				<p>
 					<strong><?php esc_html_e( 'DICOM Storage Location', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -197,6 +202,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					?>
 				</p>
 			</div>
+			<?php endif; ?>
 
 			<!-- Upload panel (hidden by default) -->
 			<?php if ( current_user_can( 'upload_medical_imaging' ) ) : ?>
@@ -228,13 +234,68 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			</div>
 			<?php endif; ?>
 
-			<!-- Study browser -->
-			<div id="nv-imaging-study-browser" class="nv-imaging-panel">
-				<div id="nv-imaging-loading" class="nv-imaging-loading">
-					<span class="spinner is-active"></span>
-					<?php esc_html_e( 'Loading studies…', 'mcp-ai-wpoos-pro' ); ?>
+			<!-- Main panel with tabs -->
+			<div id="nv-imaging-main-panel" class="nv-imaging-panel">
+				<nav class="nv-imaging-tab-nav" role="tablist">
+					<button role="tab" class="nv-imaging-tab-btn nv-imaging-tab-active" data-tab="studies" id="nv-tab-studies">
+						<?php esc_html_e( 'Studies', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+					<button role="tab" class="nv-imaging-tab-btn" data-tab="audit" id="nv-tab-audit">
+						<?php esc_html_e( 'Audit Log', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</nav>
+
+				<!-- Studies tab -->
+				<div id="nv-imaging-tab-studies" role="tabpanel">
+					<!-- Filter bar -->
+					<div class="nv-imaging-filter-bar" id="nv-imaging-filter-bar">
+						<input type="search" id="nv-imaging-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search Study UID…', 'mcp-ai-wpoos-pro' ); ?>" />
+						<select id="nv-imaging-filter-modality">
+							<option value=""><?php esc_html_e( 'All Modalities', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="CT">CT</option>
+							<option value="MR">MR</option>
+							<option value="PT">PT</option>
+							<option value="US">US</option>
+							<option value="DX"><?php esc_html_e( 'DX (X-Ray)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="CR">CR</option>
+							<option value="MG">MG</option>
+							<option value="NM">NM</option>
+							<option value="RF">RF</option>
+							<option value="XA">XA</option>
+						</select>
+						<label>
+							<?php esc_html_e( 'From:', 'mcp-ai-wpoos-pro' ); ?>
+							<input type="date" id="nv-imaging-date-from" />
+						</label>
+						<label>
+							<?php esc_html_e( 'To:', 'mcp-ai-wpoos-pro' ); ?>
+							<input type="date" id="nv-imaging-date-to" />
+						</label>
+						<button type="button" class="button button-primary" id="nv-imaging-filter-apply">
+							<?php esc_html_e( 'Filter', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<button type="button" class="button" id="nv-imaging-filter-clear">
+							<?php esc_html_e( 'Clear', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+					<!-- Study browser -->
+					<div id="nv-imaging-study-browser">
+						<div id="nv-imaging-loading" class="nv-imaging-loading">
+							<span class="spinner is-active"></span>
+							<?php esc_html_e( 'Loading studies…', 'mcp-ai-wpoos-pro' ); ?>
+						</div>
+						<div id="nv-imaging-study-list" style="display:none;"></div>
+					</div>
 				</div>
-				<div id="nv-imaging-study-list" style="display:none;"></div>
+
+				<!-- Audit log tab -->
+				<div id="nv-imaging-tab-audit" role="tabpanel" style="display:none;">
+					<div id="nv-imaging-audit-loading" class="nv-imaging-loading" style="display:none;">
+						<span class="spinner is-active"></span>
+						<?php esc_html_e( 'Loading audit log…', 'mcp-ai-wpoos-pro' ); ?>
+					</div>
+					<div id="nv-imaging-audit-list"></div>
+				</div>
 			</div>
 
 			<!-- Viewer panel -->
@@ -246,6 +307,13 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					<span id="nv-imaging-study-label" class="nv-imaging-study-label"></span>
 					<span class="nv-imaging-toolbar-spacer"></span>
 					<div id="nv-imaging-wl-toolbar" class="nv-imaging-wl-toolbar" aria-label="<?php esc_attr_e( 'Window/Level controls', 'mcp-ai-wpoos-pro' ); ?>"></div>
+					<div id="nv-imaging-tool-btns" class="nv-imaging-tool-btns">
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-fliph" title="<?php esc_attr_e( 'Flip Horizontal', 'mcp-ai-wpoos-pro' ); ?>">&#x21D4;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-flipv" title="<?php esc_attr_e( 'Flip Vertical', 'mcp-ai-wpoos-pro' ); ?>">&#x21D5;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-rotate-cw" title="<?php esc_attr_e( 'Rotate 90° CW', 'mcp-ai-wpoos-pro' ); ?>">&#x21BB;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-rotate-ccw" title="<?php esc_attr_e( 'Rotate 90° CCW', 'mcp-ai-wpoos-pro' ); ?>">&#x21BA;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-screenshot" title="<?php esc_attr_e( 'Export Viewport as PNG', 'mcp-ai-wpoos-pro' ); ?>">&#x1F4F7;</button>
+					</div>
 				</div>
 
 				<div class="nv-imaging-viewer-layout">

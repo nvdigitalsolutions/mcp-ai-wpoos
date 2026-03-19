@@ -66,6 +66,18 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/stats',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_stats' ),
+					'permission_callback' => array( $this, 'can_view_imaging' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/studies',
 			array(
 				array(
@@ -80,6 +92,22 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 						'page'     => array(
 							'default'           => 1,
 							'sanitize_callback' => 'absint',
+						),
+						'modality'  => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'date_from' => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'date_to'   => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'search'    => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -263,7 +291,14 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$per_page = $request->get_param( 'per_page' );
 		$page     = $request->get_param( 'page' );
 
-		$result = WP_MCP_AI_Imaging_Study_CPT::get_all( $per_page, $page );
+		$filters = array(
+			'modality'  => $request->get_param( 'modality' ),
+			'date_from' => $request->get_param( 'date_from' ),
+			'date_to'   => $request->get_param( 'date_to' ),
+			'search'    => $request->get_param( 'search' ),
+		);
+
+		$result = WP_MCP_AI_Imaging_Study_CPT::get_all( $per_page, $page, $filters );
 
 		$studies = array();
 		foreach ( $result['posts'] as $post ) {
@@ -277,6 +312,95 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				'studies' => $studies,
 				'total'   => $result['total'],
 				'page'    => $page,
+			),
+			200
+		);
+	}
+
+	/**
+	 * GET /imaging/stats – return aggregate statistics.
+	 *
+	 * Returns total study count, counts grouped by modality, total DICOM storage
+	 * size, and the 5 most-recent studies.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public function get_stats( WP_REST_Request $request ) {
+		// Total study count.
+		$count_query = new WP_Query(
+			array(
+				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+		$total_studies = $count_query->found_posts;
+
+		// Group by modality.
+		$modality_posts = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		$modality_counts = array();
+		foreach ( $modality_posts as $pid ) {
+			$mod = get_post_meta( $pid, '_imaging_modality', true );
+			if ( '' === $mod || false === $mod ) {
+				$mod = 'Unknown';
+			}
+			if ( ! isset( $modality_counts[ $mod ] ) ) {
+				$modality_counts[ $mod ] = 0;
+			}
+			++$modality_counts[ $mod ];
+		}
+
+		$by_modality = array();
+		foreach ( $modality_counts as $mod => $cnt ) {
+			$by_modality[] = array(
+				'modality' => $mod,
+				'count'    => $cnt,
+			);
+		}
+
+		// Total storage size (recursive scan of the storage root).
+		$storage_bytes = 0;
+		$storage_root  = $this->get_storage_root();
+		if ( is_dir( $storage_root ) ) {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $storage_root, RecursiveDirectoryIterator::SKIP_DOTS )
+			);
+			foreach ( $iterator as $file ) {
+				if ( ! $file->isFile() ) {
+					continue;
+				}
+				$basename = $file->getFilename();
+				// Skip the access-guard files.
+				if ( '.htaccess' === $basename || 'index.php' === $basename ) {
+					continue;
+				}
+				$storage_bytes += $file->getSize();
+			}
+		}
+
+		// Recent 5 studies.
+		$recent_result  = WP_MCP_AI_Imaging_Study_CPT::get_all( 5, 1 );
+		$recent_studies = array();
+		foreach ( $recent_result['posts'] as $post ) {
+			$recent_studies[] = $this->format_study( $post );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'total_studies'  => $total_studies,
+				'by_modality'    => $by_modality,
+				'storage_bytes'  => $storage_bytes,
+				'recent_studies' => $recent_studies,
 			),
 			200
 		);

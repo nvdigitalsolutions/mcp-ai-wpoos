@@ -55,11 +55,20 @@
 	var metadataList = document.getElementById( 'nv-imaging-metadata-list' );
 	var viewport = document.getElementById( 'nv-imaging-viewport' );
 
+	// Audit log loaded flag.
+	var auditLoaded = false;
+
 	// State.
 	var csInitialized = false;
 	var renderingEngine = null;
 	var toolGroup = null;
 	var activeModality = '';
+
+	// Filter state.
+	var filterModality = '';
+	var filterDateFrom = '';
+	var filterDateTo   = '';
+	var filterSearch   = '';
 
 	// =========================================================================
 	// Utility helpers
@@ -111,6 +120,138 @@
 	}
 
 	// =========================================================================
+	// Stats bar
+	// =========================================================================
+
+	/**
+	 * Format a byte count into a human-readable string.
+	 *
+	 * @param {number} bytes Raw byte count.
+	 * @returns {string}
+	 */
+	function formatBytes( bytes ) {
+		if ( bytes < 1024 ) { return bytes + ' B'; }
+		if ( bytes < 1048576 ) { return ( bytes / 1024 ).toFixed( 1 ) + ' KB'; }
+		if ( bytes < 1073741824 ) { return ( bytes / 1048576 ).toFixed( 1 ) + ' MB'; }
+		return ( bytes / 1073741824 ).toFixed( 2 ) + ' GB';
+	}
+
+	/**
+	 * Render the stats bar from an API response.
+	 *
+	 * @param {object} stats Stats object from GET /imaging/stats.
+	 */
+	function renderStatsBar( stats ) {
+		var bar = document.getElementById( 'nv-imaging-stats-bar' );
+		if ( ! bar ) {
+			return;
+		}
+		var byMod = ( stats.by_modality || [] ).map( function ( m ) {
+			return escHtml( m.modality || '?' ) + ': <strong>' + escHtml( m.count ) + '</strong>';
+		} ).join( ' &nbsp;·&nbsp; ' );
+
+		var storageStr = stats.storage_bytes > 0 ? formatBytes( stats.storage_bytes ) : '—';
+
+		bar.innerHTML =
+			'<span class="nv-imaging-stat"><strong>' + escHtml( stats.total_studies ) + '</strong> Studies</span>' +
+			( byMod ? '<span class="nv-imaging-stat-sep">|</span><span class="nv-imaging-stat">' + byMod + '</span>' : '' ) +
+			'<span class="nv-imaging-stat-sep">|</span>' +
+			'<span class="nv-imaging-stat">Storage: <strong>' + storageStr + '</strong></span>';
+	}
+
+	/**
+	 * Fetch stats from the REST API and populate the stats bar.
+	 */
+	function loadStats() {
+		if ( ! cfg.statsUrl ) {
+			return;
+		}
+		apiFetch( cfg.statsUrl )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( stats ) { renderStatsBar( stats ); } )
+			.catch( function () {} );
+	}
+
+	// =========================================================================
+	// Tab navigation
+	// =========================================================================
+
+	/**
+	 * Wire up the Studies / Audit Log tab buttons.
+	 */
+	function initTabs() {
+		var tabBtns = document.querySelectorAll( '.nv-imaging-tab-btn' );
+		tabBtns.forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				tabBtns.forEach( function ( b ) { b.classList.remove( 'nv-imaging-tab-active' ); } );
+				btn.classList.add( 'nv-imaging-tab-active' );
+				var tab = btn.dataset.tab;
+				var studiesPanel = document.getElementById( 'nv-imaging-tab-studies' );
+				var auditPanel   = document.getElementById( 'nv-imaging-tab-audit' );
+				if ( studiesPanel ) { studiesPanel.style.display = ( tab === 'studies' ) ? '' : 'none'; }
+				if ( auditPanel )   { auditPanel.style.display   = ( tab === 'audit' )   ? '' : 'none'; }
+				if ( tab === 'audit' ) { loadAuditLog(); }
+			} );
+		} );
+	}
+
+	// =========================================================================
+	// Filter bar
+	// =========================================================================
+
+	/**
+	 * Build the studies API URL with current filter state.
+	 *
+	 * @returns {string}
+	 */
+	function buildStudiesUrl() {
+		var url = restBase + '/studies?per_page=100';
+		if ( filterModality ) { url += '&modality='  + encodeURIComponent( filterModality ); }
+		if ( filterDateFrom ) { url += '&date_from=' + encodeURIComponent( filterDateFrom ); }
+		if ( filterDateTo )   { url += '&date_to='   + encodeURIComponent( filterDateTo ); }
+		if ( filterSearch )   { url += '&search='    + encodeURIComponent( filterSearch ); }
+		return url;
+	}
+
+	/**
+	 * Wire up the filter bar controls.
+	 */
+	function initFilters() {
+		var applyBtn = document.getElementById( 'nv-imaging-filter-apply' );
+		var clearBtn = document.getElementById( 'nv-imaging-filter-clear' );
+
+		if ( applyBtn ) {
+			applyBtn.addEventListener( 'click', function () {
+				filterModality = ( document.getElementById( 'nv-imaging-filter-modality' ) || {} ).value || '';
+				filterDateFrom = ( document.getElementById( 'nv-imaging-date-from' ) || {} ).value || '';
+				filterDateTo   = ( document.getElementById( 'nv-imaging-date-to' ) || {} ).value || '';
+				filterSearch   = ( document.getElementById( 'nv-imaging-search' ) || {} ).value || '';
+				loadStudyList();
+			} );
+		}
+
+		if ( clearBtn ) {
+			clearBtn.addEventListener( 'click', function () {
+				filterModality = filterDateFrom = filterDateTo = filterSearch = '';
+				[ 'nv-imaging-filter-modality', 'nv-imaging-date-from', 'nv-imaging-date-to', 'nv-imaging-search' ]
+					.forEach( function ( id ) {
+						var el = document.getElementById( id );
+						if ( el ) { el.value = ''; }
+					} );
+				loadStudyList();
+			} );
+		}
+
+		// Allow pressing Enter in the search box to trigger the filter.
+		var searchEl = document.getElementById( 'nv-imaging-search' );
+		if ( searchEl ) {
+			searchEl.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' && applyBtn ) { applyBtn.click(); }
+			} );
+		}
+	}
+
+	// =========================================================================
 	// Study browser
 	// =========================================================================
 
@@ -125,7 +266,7 @@
 			studyListEl.style.display = 'none';
 		}
 
-		apiFetch( restBase + '/studies?per_page=100' )
+		apiFetch( buildStudiesUrl() )
 			.then( function ( res ) {
 				if ( ! res.ok ) {
 					throw new Error( 'Failed to load studies (HTTP ' + res.status + ')' );
@@ -140,6 +281,64 @@
 					loadingEl.textContent = err.message;
 				}
 			} );
+	}
+
+	// =========================================================================
+	// Audit log
+	// =========================================================================
+
+	/**
+	 * Fetch and render the audit log (lazy-loaded once).
+	 */
+	function loadAuditLog() {
+		if ( auditLoaded ) {
+			return;
+		}
+		var listEl = document.getElementById( 'nv-imaging-audit-list' );
+		var loadEl = document.getElementById( 'nv-imaging-audit-loading' );
+		if ( loadEl ) { loadEl.style.display = ''; }
+
+		apiFetch( restBase + '/audit?limit=100' )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( data ) {
+				auditLoaded = true;
+				if ( loadEl ) { loadEl.style.display = 'none'; }
+				renderAuditLog( data.entries || [], listEl );
+			} )
+			.catch( function ( err ) {
+				if ( loadEl ) { loadEl.style.display = 'none'; }
+				if ( listEl ) {
+					listEl.innerHTML = '<p class="nv-imaging-error">' + escHtml( err.message ) + '</p>';
+				}
+			} );
+	}
+
+	/**
+	 * Render the audit log entries into a table.
+	 *
+	 * @param {Array}       entries Audit log entries.
+	 * @param {HTMLElement} listEl  Container element.
+	 */
+	function renderAuditLog( entries, listEl ) {
+		if ( ! listEl ) {
+			return;
+		}
+		if ( ! entries.length ) {
+			listEl.innerHTML = '<p class="nv-imaging-empty">No audit events recorded.</p>';
+			return;
+		}
+		var html = '<table class="wp-list-table widefat fixed striped nv-imaging-table">';
+		html += '<thead><tr><th>Time</th><th>Action</th><th>Study</th><th>User</th></tr></thead><tbody>';
+		entries.forEach( function ( e ) {
+			html += '<tr>';
+			html += '<td>' + escHtml( e.timestamp || '' ) + '</td>';
+			html += '<td>' + escHtml( e.action || '' ) + '</td>';
+			html += '<td class="nv-imaging-uid">' + escHtml( e.study_id || '' ) + '</td>';
+			html += '<td>' + escHtml( e.user_id || '' ) + '</td>';
+			html += '</tr>';
+		} );
+		html += '</tbody></table>';
+		listEl.innerHTML = html;
 	}
 
 	/**
@@ -247,9 +446,9 @@
 	 * @param {string} studyUid DICOM StudyInstanceUID.
 	 */
 	function openStudy( studyUid ) {
-
-		if ( studyBrowser ) {
-			studyBrowser.style.display = 'none';
+		var mainPanel = document.getElementById( 'nv-imaging-main-panel' );
+		if ( mainPanel ) {
+			mainPanel.style.display = 'none';
 		}
 		if ( viewerPanel ) {
 			viewerPanel.style.display = '';
@@ -595,6 +794,12 @@
 		// Populate W/L toolbar now that we have the viewport instance.
 		initWLToolbar( vp );
 
+		// Extra toolbar actions (flip, rotate, screenshot).
+		initExtraTools( vp );
+
+		// Keyboard shortcuts for the viewer.
+		initKeyboardShortcuts( vp );
+
 		// Set up tools.
 		var toolGroupId = 'nvToolGroup';
 
@@ -628,6 +833,118 @@
 		} );
 		toolGroup.setToolActive( csTools.ZoomTool.toolName, {
 			bindings: [ { mouseButton: 3 } ],
+		} );
+	}
+
+	// =========================================================================
+	// Extra viewer tools
+	// =========================================================================
+
+	/**
+	 * Normalize a rotation angle to [0, 360) degrees.
+	 *
+	 * @param {number} current Current rotation in degrees.
+	 * @param {number} delta   Degrees to add (positive = CW, negative = CCW).
+	 * @returns {number}
+	 */
+	function normalizeRotation( current, delta ) {
+		return ( ( current + delta ) % 360 + 360 ) % 360;
+	}
+
+	/**
+	 * Wire up the extra toolbar buttons (flip H/V, rotate, screenshot).
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initExtraTools( vp ) {
+		var btnFlipH = document.getElementById( 'nv-imaging-btn-fliph' );
+		var btnFlipV = document.getElementById( 'nv-imaging-btn-flipv' );
+		var btnRotCW = document.getElementById( 'nv-imaging-btn-rotate-cw' );
+		var btnRotCCW = document.getElementById( 'nv-imaging-btn-rotate-ccw' );
+		var btnShot  = document.getElementById( 'nv-imaging-btn-screenshot' );
+
+		if ( btnFlipH ) {
+			btnFlipH.onclick = function () {
+				try {
+					var p = vp.getCamera();
+					vp.setCamera( Object.assign( {}, p, { flipHorizontal: ! p.flipHorizontal } ) );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnFlipV ) {
+			btnFlipV.onclick = function () {
+				try {
+					var p = vp.getCamera();
+					vp.setCamera( Object.assign( {}, p, { flipVertical: ! p.flipVertical } ) );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnRotCW ) {
+			btnRotCW.onclick = function () {
+				try {
+					vp.setProperties( { rotation: normalizeRotation( vp.getProperties().rotation || 0, 90 ) } );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnRotCCW ) {
+			btnRotCCW.onclick = function () {
+				try {
+					vp.setProperties( { rotation: normalizeRotation( vp.getProperties().rotation || 0, -90 ) } );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnShot ) {
+			btnShot.onclick = function () {
+				try {
+					var canvas = document.querySelector( '#nv-cs3d-el canvas' );
+					if ( canvas ) {
+						var link = document.createElement( 'a' );
+						link.download = 'dicom-view.png';
+						link.href = canvas.toDataURL( 'image/png' );
+						link.click();
+					}
+				} catch ( _e ) {}
+			};
+		}
+	}
+
+	/**
+	 * Register keyboard shortcuts for the viewer.
+	 *
+	 * Arrow keys scroll through stack frames; R resets; I inverts.
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initKeyboardShortcuts( vp ) {
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( ! viewerPanel || viewerPanel.style.display === 'none' ) { return; }
+			if ( e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' ) { return; }
+			switch ( e.key ) {
+				case 'ArrowLeft':
+				case 'ArrowUp':
+					try { vp.scroll( -1 ); vp.render(); } catch ( _e ) {}
+					break;
+				case 'ArrowRight':
+				case 'ArrowDown':
+					try { vp.scroll( 1 ); vp.render(); } catch ( _e ) {}
+					break;
+				case 'r':
+				case 'R':
+					try { vp.resetProperties(); vp.resetCamera(); vp.render(); } catch ( _e ) {}
+					break;
+				case 'i':
+				case 'I':
+					try {
+						var p = vp.getProperties();
+						vp.setProperties( { invert: ! p.invert } );
+						vp.render();
+					} catch ( _e ) {}
+					break;
+			}
 		} );
 	}
 
@@ -714,8 +1031,9 @@
 				if ( viewerPanel ) {
 					viewerPanel.style.display = 'none';
 				}
-				if ( studyBrowser ) {
-					studyBrowser.style.display = '';
+				var mainPanel = document.getElementById( 'nv-imaging-main-panel' );
+				if ( mainPanel ) {
+					mainPanel.style.display = '';
 				}
 			} );
 		}
@@ -728,6 +1046,9 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 		initNavigation();
 		initUpload();
+		initTabs();
+		initFilters();
 		loadStudyList();
+		loadStats();
 	} );
 } )();
