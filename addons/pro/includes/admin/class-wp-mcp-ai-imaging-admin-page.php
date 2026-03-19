@@ -66,6 +66,50 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	}
 
 	/**
+	 * Valid tab slugs for the imaging viewer page.
+	 *
+	 * @var string[]
+	 */
+	private static $valid_tabs = array( 'studies', 'tools', 'audit', 'docs', 'debug' );
+
+	/**
+	 * esm.sh CDN base URL for @cornerstonejs/core v1.
+	 *
+	 * Used both in the importmap bare-specifier entry and in the JS dynamic
+	 * import.  Having a single constant makes version bumps easier.
+	 *
+	 * @var string
+	 */
+	const CORNERSTONE_CORE_CDN = 'https://esm.sh/@cornerstonejs/core@1';
+
+	/**
+	 * esm.sh CDN URL for dicom-parser (peer dep of dicom-image-loader).
+	 *
+	 * @var string
+	 */
+	const DICOM_PARSER_CDN = 'https://esm.sh/dicom-parser';
+
+	/**
+	 * esm.sh CDN URL for the broken xmlbuilder2 ES-2022 build.
+	 *
+	 * This is the URL that @cornerstonejs/dicom-image-loader resolves at
+	 * runtime, and which only has a default export (no named 'create').
+	 *
+	 * @var string
+	 */
+	const XMLBUILDER2_ESM_SH_BROKEN = 'https://esm.sh/xmlbuilder2@3.0.2/es2022/xmlbuilder2.mjs';
+
+	/**
+	 * esm.sh CDN URL for the xmlbuilder2 CJS entry point.
+	 *
+	 * When esm.sh serves a CJS file it re-exports all named exports, so
+	 * `import { create } from 'xmlbuilder2'` works correctly from here.
+	 *
+	 * @var string
+	 */
+	const XMLBUILDER2_ESM_SH_CJS = 'https://esm.sh/xmlbuilder2@3.0.2/lib/index.js';
+
+	/**
 	 * Enqueue viewer assets when we are on the imaging page.
 	 *
 	 * @param string $hook Current admin page hook suffix.
@@ -75,52 +119,101 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
+		// Inject an ES module importmap that:
+		//  1. Fixes the xmlbuilder2 CDN error (@cornerstonejs/dicom-image-loader
+		//     pulls in dcmjs → xmlbuilder2; the esm.sh ES-2022 build only has a
+		//     default export, so we redirect to the CJS build that has all named
+		//     exports).
+		//  2. Adds bare-specifier entries for @cornerstonejs/core and dicom-parser.
+		//     The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
+		//     and `?external=…,dicom-parser` so that esm.sh emits those packages
+		//     as bare specifiers rather than bundling them.  The importmap then
+		//     resolves those bare specifiers back to the same URLs that our own
+		//     direct import() calls use, guaranteeing all three packages share a
+		//     SINGLE module instance.  Without this the wadouri image-loader is
+		//     registered on a private internal copy of the core and the canvas
+		//     stays solid black.
+		add_action(
+			'admin_head',
+			function () {
+				// All values are plugin-level constants, not user input.
+				// esc_url_raw() validates that each string is a proper URL.
+				$importmap = array(
+					'imports' => array(
+						// Bare specifiers – resolved by the browser when the
+						// ?external= packages emit bare import statements.
+						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
+						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
+
+						// URL-to-URL remap for the xmlbuilder2 CJS fix.
+						esc_url_raw( self::XMLBUILDER2_ESM_SH_BROKEN ) => esc_url_raw( self::XMLBUILDER2_ESM_SH_CJS ),
+					),
+				);
+
+				// Output a bare <script type="importmap"> block.  The content is
+				// pure JSON produced by wp_json_encode() (which escapes all
+				// special characters).  wp_kses_post() cannot be used here because
+				// it strips <script> tags; the JSON value is already safe.
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo '<script type="importmap">' . wp_json_encode( $importmap ) . '</script>' . "\n";
+			}
+		);
+
 		// Enqueue the Cornerstone3D imaging viewer bundle.
 		// The bundle is loaded from a CDN; see imaging-viewer.js for the
 		// importmap / CDN URL strategy.  A local build path is preferred
 		// when the npm package has been compiled into the pro build directory.
-		$viewer_js = WP_MCP_AI_PRO_URL . 'assets/js/imaging-viewer.js';
-
 		wp_enqueue_script(
 			'wp-mcp-ai-imaging-viewer',
-			$viewer_js,
+			esc_url( WP_MCP_AI_PRO_URL . 'assets/js/imaging-viewer.js' ),
 			array(),
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
 
+		// Resolve the active tab (validated against whitelist) so the JS can
+		// initialise the correct panel without relying on URL parsing in the
+		// browser.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query param.
+		$active_tab_for_js = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'studies';
+		if ( ! in_array( $active_tab_for_js, self::$valid_tabs, true ) ) {
+			$active_tab_for_js = 'studies';
+		}
+
 		wp_localize_script(
 			'wp-mcp-ai-imaging-viewer',
 			'wpMcpAiImaging',
 			array(
-				'restBase'       => esc_url_raw( rest_url( 'mcp-ai/v1/imaging' ) ),
-				'nonce'          => wp_create_nonce( 'wp_rest' ),
-				'canUpload'      => current_user_can( 'upload_medical_imaging' ) ? 'yes' : 'no',
-				'canManage'      => current_user_can( 'manage_medical_imaging' ) ? 'yes' : 'no',
-				'statsUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
-				'interpretUrl'   => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
-				'i18n'           => array(
-					'loadingStudy'    => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
-					'noStudies'       => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
+				'restBase'     => esc_url_raw( rest_url( 'mcp-ai/v1/imaging' ) ),
+				'nonce'        => wp_create_nonce( 'wp_rest' ),
+				'canUpload'    => current_user_can( 'upload_medical_imaging' ) ? 'yes' : 'no',
+				'canManage'    => current_user_can( 'manage_medical_imaging' ) ? 'yes' : 'no',
+				'statsUrl'     => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
+				'interpretUrl' => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
+				// The server-validated initial tab so JS never has to parse the
+				// raw URL itself (avoids open-redirect-class issues).
+				'activeTab'    => $active_tab_for_js,
+				'i18n'         => array(
+					'loadingStudy'         => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
+					'noStudies'            => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
 					'uploadSuccess'        => __( 'Study uploaded successfully.', 'mcp-ai-wpoos-pro' ),
 					'uploadPartialSuccess' => __( 'Study uploaded, but %1$d of %2$d file(s) could not be processed.', 'mcp-ai-wpoos-pro' ),
 					'uploadError'          => __( 'Upload failed. Please ensure you are uploading valid DICOM (.dcm) files.', 'mcp-ai-wpoos-pro' ),
-					'viewerError'     => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
-					'noInstances'     => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
-					'confirmDelete'   => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),
-					'interpretRun'    => __( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ),
-					'interpreting'    => __( 'Analysing…', 'mcp-ai-wpoos-pro' ),
-					'interpretError'  => __( 'AI interpretation failed.', 'mcp-ai-wpoos-pro' ),
-					'noStudySelected' => __( 'Enter a Study UID to analyse.', 'mcp-ai-wpoos-pro' ),
+					'viewerError'          => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
+					'noInstances'          => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
+					'confirmDelete'        => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),
+					'interpretRun'         => __( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ),
+					'interpreting'         => __( 'Analysing…', 'mcp-ai-wpoos-pro' ),
+					'interpretError'       => __( 'AI interpretation failed.', 'mcp-ai-wpoos-pro' ),
+					'noStudySelected'      => __( 'Enter a Study UID to analyse.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
 
 		// Enqueue viewer stylesheet.
-		$viewer_css = WP_MCP_AI_PRO_URL . 'assets/css/imaging-viewer.css';
 		wp_enqueue_style(
 			'wp-mcp-ai-imaging-viewer',
-			$viewer_css,
+			esc_url( WP_MCP_AI_PRO_URL . 'assets/css/imaging-viewer.css' ),
 			array( 'wp-admin' ),
 			WP_MCP_AI_PRO_VERSION
 		);
@@ -155,6 +248,26 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		}
 
 		$storage_path = self::get_storage_root_path();
+
+		// Resolve the active tab from the URL (defaults to 'studies').
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only, no state change.
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'studies';
+		if ( ! in_array( $active_tab, self::$valid_tabs, true ) ) {
+			$active_tab = 'studies';
+		}
+
+		// Build the base page URL used in tab link hrefs.
+		// Use add_query_arg() so WordPress handles the URL assembly consistently.
+		$base_url = add_query_arg( 'page', self::PAGE_SLUG, admin_url( self::PARENT_SLUG ) );
+
+		// Tab definitions: slug => label.
+		$tabs = array(
+			'studies' => __( 'Studies', 'mcp-ai-wpoos-pro' ),
+			'tools'   => __( 'AI Tools', 'mcp-ai-wpoos-pro' ),
+			'audit'   => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
+			'docs'    => __( 'Documentation', 'mcp-ai-wpoos-pro' ),
+			'debug'   => __( 'Debug', 'mcp-ai-wpoos-pro' ),
+		);
 		?>
 		<div class="wrap nv-imaging-wrap">
 			<h1 class="wp-heading-inline">
@@ -242,25 +355,21 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			<!-- Main panel with tabs -->
 			<div id="nv-imaging-main-panel" class="nv-imaging-panel">
 				<nav class="nv-imaging-tab-nav nav-tab-wrapper wp-clearfix" role="tablist">
-					<a href="#" role="tab" class="nav-tab nav-tab-active" data-tab="studies" id="nv-tab-studies">
-						<?php esc_html_e( 'Studies', 'mcp-ai-wpoos-pro' ); ?>
+					<?php foreach ( $tabs as $tab_slug => $tab_label ) : ?>
+					<a
+						href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, $base_url ) ); ?>"
+						role="tab"
+						class="nav-tab<?php echo $active_tab === $tab_slug ? ' nav-tab-active' : ''; ?>"
+						data-tab="<?php echo esc_attr( $tab_slug ); ?>"
+						id="<?php echo esc_attr( 'nv-tab-' . $tab_slug ); ?>"
+					>
+						<?php echo esc_html( $tab_label ); ?>
 					</a>
-					<a href="#" role="tab" class="nav-tab" data-tab="tools" id="nv-tab-tools">
-						<?php esc_html_e( 'AI Tools', 'mcp-ai-wpoos-pro' ); ?>
-					</a>
-					<a href="#" role="tab" class="nav-tab" data-tab="audit" id="nv-tab-audit">
-						<?php esc_html_e( 'Audit Log', 'mcp-ai-wpoos-pro' ); ?>
-					</a>
-					<a href="#" role="tab" class="nav-tab" data-tab="docs" id="nv-tab-docs">
-						<?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?>
-					</a>
-					<a href="#" role="tab" class="nav-tab" data-tab="debug" id="nv-tab-debug">
-						<?php esc_html_e( 'Debug', 'mcp-ai-wpoos-pro' ); ?>
-					</a>
+					<?php endforeach; ?>
 				</nav>
 
 				<!-- Studies tab -->
-				<div id="nv-imaging-tab-studies" role="tabpanel">
+				<div id="nv-imaging-tab-studies" role="tabpanel"<?php echo 'studies' !== $active_tab ? ' style="display:none;"' : ''; ?>>
 					<!-- Filter bar -->
 					<div class="nv-imaging-filter-bar" id="nv-imaging-filter-bar">
 						<input type="search" id="nv-imaging-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search Study UID…', 'mcp-ai-wpoos-pro' ); ?>" />
@@ -303,7 +412,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				</div>
 
 				<!-- AI Tools tab -->
-				<div id="nv-imaging-tab-tools" role="tabpanel" style="display:none;">
+				<div id="nv-imaging-tab-tools" role="tabpanel"<?php echo 'tools' !== $active_tab ? ' style="display:none;"' : ''; ?>>
 					<div class="nv-imaging-tools-grid">
 
 						<!-- AI Study Interpretation card -->
@@ -366,7 +475,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				</div><!-- #nv-imaging-tab-tools -->
 
 				<!-- Audit log tab -->
-				<div id="nv-imaging-tab-audit" role="tabpanel" style="display:none;">
+				<div id="nv-imaging-tab-audit" role="tabpanel"<?php echo 'audit' !== $active_tab ? ' style="display:none;"' : ''; ?>>
 					<div id="nv-imaging-audit-loading" class="nv-imaging-loading" style="display:none;">
 						<span class="spinner is-active"></span>
 						<?php esc_html_e( 'Loading audit log…', 'mcp-ai-wpoos-pro' ); ?>
@@ -375,7 +484,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				</div>
 
 				<!-- Documentation tab -->
-				<div id="nv-imaging-tab-docs" role="tabpanel" style="display:none;">
+				<div id="nv-imaging-tab-docs" role="tabpanel"<?php echo 'docs' !== $active_tab ? ' style="display:none;"' : ''; ?>>
 					<div class="nv-imaging-docs-grid">
 
 						<!-- Quick Start -->
@@ -505,7 +614,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				</div><!-- #nv-imaging-tab-docs -->
 
 				<!-- Debug tab -->
-				<div id="nv-imaging-tab-debug" role="tabpanel" style="display:none;">
+				<div id="nv-imaging-tab-debug" role="tabpanel"<?php echo 'debug' !== $active_tab ? ' style="display:none;"' : ''; ?>>
 					<?php self::render_debug_tab( $storage_path ); ?>
 				</div><!-- #nv-imaging-tab-debug -->
 			</div>

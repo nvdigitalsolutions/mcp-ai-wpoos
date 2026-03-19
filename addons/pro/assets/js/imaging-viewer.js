@@ -176,7 +176,15 @@
 	// =========================================================================
 
 	/**
-	 * Wire up the Studies / Audit Log tab buttons.
+	 * Wire up the tab buttons and initialise the correct active panel.
+	 *
+	 * On click we prevent the default navigation, update the browser URL via
+	 * history.replaceState (so the tab is bookmarkable / shareable without
+	 * triggering a full page reload), and show only the matching panel.
+	 *
+	 * The initial active tab is supplied by PHP through wpMcpAiImaging.activeTab
+	 * (already validated against the whitelist server-side) so that the JS view
+	 * stays in sync with what PHP rendered on page load.
 	 */
 	function initTabs() {
 		var tabLinks = document.querySelectorAll( '.nv-imaging-tab-nav .nav-tab' );
@@ -188,23 +196,67 @@
 			{ id: 'nv-imaging-tab-debug',   key: 'debug' },
 		];
 
+		/**
+		 * Activate a tab: update active class on links, show/hide panels,
+		 * update the browser URL, and trigger lazy-loads where needed.
+		 *
+		 * @param {string} tab Tab key to activate (e.g. 'studies').
+		 */
+		function activateTab( tab ) {
+			// Sync active class on all tab links.
+			tabLinks.forEach( function ( l ) {
+				if ( l.dataset.tab === tab ) {
+					l.classList.add( 'nav-tab-active' );
+				} else {
+					l.classList.remove( 'nav-tab-active' );
+				}
+			} );
+
+			// Show only the matching panel; hide all others.
+			allTabPanels.forEach( function ( panel ) {
+				var el = document.getElementById( panel.id );
+				if ( el ) {
+					el.style.display = ( panel.key === tab ) ? '' : 'none';
+				}
+			} );
+
+			// Lazy-load the audit log the first time it becomes visible.
+			if ( tab === 'audit' ) {
+				loadAuditLog();
+			}
+		}
+
+		// Wire up click handlers — intercept navigation, update URL instead.
 		tabLinks.forEach( function ( link ) {
 			link.addEventListener( 'click', function ( e ) {
 				e.preventDefault();
-				tabLinks.forEach( function ( l ) { l.classList.remove( 'nav-tab-active' ); } );
-				link.classList.add( 'nav-tab-active' );
 				var tab = link.dataset.tab;
 
-				// Show only the matching panel.
-				allTabPanels.forEach( function ( panel ) {
-					var el = document.getElementById( panel.id );
-					if ( el ) { el.style.display = ( panel.key === tab ) ? '' : 'none'; }
-				} );
+				// Update the browser URL without reloading the page so that
+				// the tab link is bookmarkable and the browser back/forward
+				// buttons work as expected.
+				if ( typeof URL === 'function' ) {
+					try {
+						var url = new URL( window.location.href );
+						url.searchParams.set( 'tab', tab );
+						history.replaceState( null, '', url.toString() );
+					} catch ( urlErr ) {
+						// URL update failed — tab switching still works.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: could not update URL for tab "' + tab + '"', urlErr );
+					}
+				}
 
-				// Lazy-load on demand.
-				if ( tab === 'audit' ) { loadAuditLog(); }
+				activateTab( tab );
 			} );
 		} );
+
+		// Activate the initial tab using the server-validated value supplied by
+		// PHP.  This keeps JS in sync with what PHP already rendered (correct
+		// panel visible, correct nav-tab-active class) without the browser
+		// needing to re-parse the URL.
+		var initialTab = ( cfg.activeTab && cfg.activeTab.length ) ? cfg.activeTab : 'studies';
+		activateTab( initialTab );
 	}
 
 	// =========================================================================
@@ -644,7 +696,10 @@
 			} )
 			.catch( function ( err ) {
 				if ( viewport ) {
-					viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( err.message ) + '</p>';
+					const msg = err && err.message ? err.message : String( err );
+					viewport.innerHTML =
+						'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+						escHtml( msg ) + '</p>';
 				}
 			} );
 	}
@@ -723,16 +778,29 @@
 		//   npx esbuild assets/js/imaging-viewer.js --bundle --outfile=assets/js/imaging-viewer.min.js
 		// The CDN fallback (esm.sh) is used when a local bundle is not available.
 		// For HIPAA-compliant air-gapped deployments, always use the local bundle.
+		//
+		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
+		// packages into the generated module, leaving them as bare ES specifiers.
+		// Combined with the importmap (injected by PHP in admin_head), this ensures
+		// all three packages share a SINGLE @cornerstonejs/core module instance.
+		// Without this, each package may load its own private copy of the core,
+		// the wadouri image-loader never gets registered in our RenderingEngine,
+		// and the canvas stays solid black with no error.
 		Promise.all( [
 			import( 'https://esm.sh/@cornerstonejs/core@1' ),
-			import( 'https://esm.sh/@cornerstonejs/tools@1' ),
-			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1' ),
+			import( 'https://esm.sh/@cornerstonejs/tools@1?external=@cornerstonejs/core' ),
+			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1?external=@cornerstonejs/core,dicom-parser' ),
 		] )
 			.then( function ( modules ) {
 				return bootCornerstone( modules[ 0 ], modules[ 1 ], modules[ 2 ], imageIds );
 			} )
 			.catch( function ( err ) {
-				viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( 'Viewer error: ' + err.message ) + '</p>';
+				// Show the error with a light background so it is readable even
+				// when the viewport-wrap has a dark background.
+				const msg = err && err.message ? err.message : String( err );
+				viewport.innerHTML =
+					'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+					escHtml( 'Viewer error: ' + msg ) + '</p>';
 			} );
 	}
 
@@ -869,15 +937,19 @@
 			// CRITICAL (fix for black images): Connect the DICOM image loader to
 			// Cornerstone core BEFORE calling init().  Without this link the wadouri
 			// image-loader is never registered and every canvas stays black.
+			// (No-op for newer loader versions that import cornerstone directly, but
+			// harmless and required by some 1.x CDN builds.)
 			if ( csDicomImageLoader.external ) {
 				csDicomImageLoader.external.cornerstone = csCore;
 			}
 
 			// Configure authentication headers sent with every XHR-based DICOM fetch.
 			// `beforeSend` is the standard hook in @cornerstonejs/dicom-image-loader v1.
+			// NOTE: beforeSend only fires in the main thread.  We therefore set
+			// maxWebWorkers: 0 below so that all loading stays on the main thread
+			// and the X-WP-Nonce header is always injected correctly.
 			if ( csDicomImageLoader.configure ) {
 				csDicomImageLoader.configure( {
-					useWebWorkers: false,
 					beforeSend: function ( xhr ) {
 						xhr.setRequestHeader( 'X-WP-Nonce', nonce );
 					},
@@ -888,8 +960,11 @@
 			await csTools.init();
 
 			// Call the loader's own init AFTER external.cornerstone is set.
+			// maxWebWorkers: 0 keeps decoding on the main thread so that the
+			// beforeSend authentication hook above is always applied (web workers
+			// cannot inherit the main-thread beforeSend callback).
 			if ( csDicomImageLoader.init ) {
-				csDicomImageLoader.init( { maxWebWorkers: 1 } );
+				csDicomImageLoader.init( { maxWebWorkers: 0 } );
 			}
 
 			csInitialized = true;
@@ -939,11 +1014,34 @@
 								vp.setProperties( { voiRange: { lower: lo, upper: hi } } );
 								vp.render();
 							}
+						} else {
+							// No pixel range in event detail (varies by Cornerstone version).
+							// Fall back to resetProperties() which auto-computes VOI from
+							// the actual pixel data when no DICOM Window/Level tags exist.
+							vp.resetProperties();
+							vp.render();
 						}
 					} catch ( _e ) {}
 				},
 				{ once: true }
 			);
+		}
+
+		// Surface DICOM image-load failures so the user sees a message instead of
+		// a silent black canvas.  The event name varies slightly across versions.
+		var loadFailEvent = csCore.Enums && csCore.Enums.Events && (
+			csCore.Enums.Events.IMAGE_LOAD_ERROR ||
+			csCore.Enums.Events.IMAGELOADFAILED
+		);
+		if ( loadFailEvent ) {
+			element.addEventListener( loadFailEvent, function ( evt ) {
+				var msg = ( evt.detail && evt.detail.error && evt.detail.error.message )
+					? evt.detail.error.message
+					: 'DICOM load failed';
+				if ( viewport ) {
+					viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( i18n.viewerError + ': ' + msg ) + '</p>';
+				}
+			} );
 		}
 
 		vp.render();
