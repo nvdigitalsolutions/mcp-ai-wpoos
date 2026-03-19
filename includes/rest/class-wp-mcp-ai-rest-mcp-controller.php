@@ -194,7 +194,6 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'minimum'           => -1,
 							'maximum'           => 100,
-							'sanitize_callback' => 'intval',
 						),
 						'page'     => array(
 							'description'       => __( 'Page of results to return when per_page is a positive integer. Defaults to 1.', 'mcp-ai-wpoos' ),
@@ -213,13 +212,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'permission_callback' => array( $this, 'permissions_check_assistant_create' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistant_create' ),
 					'args'                => array(
 						'title'         => array(
-							'description'       => __( 'The title for the assistant.', 'mcp-ai-wpoos' ),
+							'description'       => __( 'The title for the assistant. When omitted the request acts as a connectivity check and returns the directory listing.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'description'   => array(
@@ -292,6 +291,21 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'absint',
 						),
 					),
+				),
+			),
+			true
+		);
+
+		// /sse - Dedicated Server-Sent Events endpoint for MCP clients that expect
+		// a separate /sse handshake URL (e.g. Claude Desktop, LM Studio).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/sse',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
 				),
 			),
 			true

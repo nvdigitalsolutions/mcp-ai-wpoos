@@ -1363,7 +1363,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 */
 			$response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
 
-			if ( $this->request_wants_event_stream( $request ) ) {
+			if ( $this->request_wants_event_stream( $request ) || $this->request_accept_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $response_data, 'directory' );
 			}
 
@@ -1874,12 +1874,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools         = $request->get_param( 'tools' );
 			$status        = $request->get_param( 'status' );
 
-			// Title is required.
+			// Title is required for actual creation; when absent treat as a
+			// connectivity check and return the directory listing instead.
 			if ( empty( $title ) ) {
+				return $this->handle_assistants_index( $request );
+			}
+
+			// When actually creating, verify that REST assistant creation is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
 				return new WP_Error(
-					'rest_missing_title',
-					__( 'Title is required to create an assistant.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
+					'rest_assistant_create_disabled',
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
 				);
 			}
 
@@ -3903,6 +3910,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function request_wants_event_stream( WP_REST_Request $request ) {
 			return $this->sse_handler->request_wants_event_stream( $request );
+		}
+
+		/**
+		 * Check whether the request's Accept header prefers an event-stream response.
+		 *
+		 * Unlike request_wants_event_stream(), this only inspects the HTTP Accept
+		 * header and is used exclusively for the assistant directory endpoint so
+		 * that browser-based MCP clients using "Accept: text/event-stream" get a
+		 * proper SSE response. The generic /mcp endpoint deliberately ignores the
+		 * Accept header (see WP_MCP_AI_SSE_Handler::request_wants_event_stream).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return bool
+		 */
+		protected function request_accept_wants_event_stream( WP_REST_Request $request ) {
+			$accept = $request->get_header( 'Accept' );
+
+			if ( ! $accept ) {
+				return false;
+			}
+
+			foreach ( preg_split( '/\s*,\s*/', $accept ) as $token ) {
+				$parts      = explode( ';', $token );
+				$media_type = trim( $parts[0] );
+
+				if ( 'text/event-stream' === $media_type ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		/**
