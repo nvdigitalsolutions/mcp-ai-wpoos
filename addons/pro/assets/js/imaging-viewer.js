@@ -6,20 +6,15 @@
  *
  * Architecture:
  *  - All data fetched via WP REST API (signed nonce auth).
- *  - Cornerstone3D loaded from CDN via ES module import (see importmap below).
+ *  - Cornerstone3D loaded from esm.sh CDN via dynamic ES module import.
+ *  - Versions are pinned in this file and in class-wp-mcp-ai-imaging-admin-page.php.
  *  - No PHI is written to the DOM; study labels use de-identified IDs.
  *
- * Build note:
- *  This file is intentionally written as a plain ES2017+ module so it can be
- *  included directly (browsers supporting importmaps) or bundled with esbuild.
- *  To build the production bundle:
- *    npx esbuild assets/js/imaging-viewer.js --bundle --outfile=assets/js/imaging-viewer.min.js
- *
  * CDN strategy:
- *  Cornerstone3D packages are loaded from esm.sh (a production-grade CDN for
- *  ES modules).  This avoids needing to commit large vendor bundles to the repo.
- *  For air-gapped deployments, run `npm install @cornerstonejs/core @cornerstonejs/tools
- *  @cornerstonejs/dicom-image-loader` and update the importmap to local paths.
+ *  Three packages are loaded from esm.sh with `?external=` so that the CDN
+ *  emits bare specifiers for shared dependencies.  An importmap (injected by
+ *  PHP in admin_head) maps those bare specifiers back to the same pinned URLs,
+ *  ensuring all three packages share a single @cornerstonejs/core instance.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -696,7 +691,7 @@
 			} )
 			.catch( function ( err ) {
 				if ( viewport ) {
-					const msg = err && err.message ? err.message : String( err );
+					var msg = err && err.message ? err.message : String( err );
 					viewport.innerHTML =
 						'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
 						escHtml( msg ) + '</p>';
@@ -772,12 +767,7 @@
 			viewport.appendChild( overlay );
 		}
 
-		// Dynamically import Cornerstone3D packages.
-		// Production deployments should bundle these locally via:
-		//   npm install @cornerstonejs/core @cornerstonejs/tools @cornerstonejs/dicom-image-loader
-		//   npx esbuild assets/js/imaging-viewer.js --bundle --outfile=assets/js/imaging-viewer.min.js
-		// The CDN fallback (esm.sh) is used when a local bundle is not available.
-		// For HIPAA-compliant air-gapped deployments, always use the local bundle.
+		// Dynamically import Cornerstone3D packages from pinned CDN versions.
 		//
 		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
 		// packages into the generated module, leaving them as bare ES specifiers.
@@ -786,10 +776,13 @@
 		// Without this, each package may load its own private copy of the core,
 		// the wadouri image-loader never gets registered in our RenderingEngine,
 		// and the canvas stays solid black with no error.
+		//
+		// NOTE: Versions are pinned here and in class-wp-mcp-ai-imaging-admin-page.php.
+		// Both must be updated together when upgrading Cornerstone3D.
 		Promise.all( [
-			import( 'https://esm.sh/@cornerstonejs/core@1' ),
-			import( 'https://esm.sh/@cornerstonejs/tools@1?external=@cornerstonejs/core' ),
-			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1?external=@cornerstonejs/core,dicom-parser' ),
+			import( 'https://esm.sh/@cornerstonejs/core@1.86.1' ),
+			import( 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core' ),
+			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser' ),
 		] )
 			.then( function ( modules ) {
 				return bootCornerstone( modules[ 0 ], modules[ 1 ], modules[ 2 ], imageIds );
@@ -797,7 +790,7 @@
 			.catch( function ( err ) {
 				// Show the error with a light background so it is readable even
 				// when the viewport-wrap has a dark background.
-				const msg = err && err.message ? err.message : String( err );
+				var msg = err && err.message ? err.message : String( err );
 				viewport.innerHTML =
 					'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
 					escHtml( 'Viewer error: ' + msg ) + '</p>';

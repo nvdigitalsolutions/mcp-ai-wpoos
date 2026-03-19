@@ -73,41 +73,39 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	private static $valid_tabs = array( 'studies', 'tools', 'audit', 'docs', 'debug' );
 
 	/**
-	 * esm.sh CDN base URL for @cornerstonejs/core v1.
+	 * Pinned esm.sh CDN URL for @cornerstonejs/core.
 	 *
 	 * Used both in the importmap bare-specifier entry and in the JS dynamic
-	 * import.  Having a single constant makes version bumps easier.
+	 * import.  Pinning to a specific patch version avoids unexpected breakage
+	 * from CDN updates.
 	 *
 	 * @var string
 	 */
-	const CORNERSTONE_CORE_CDN = 'https://esm.sh/@cornerstonejs/core@1';
+	const CORNERSTONE_CORE_CDN = 'https://esm.sh/@cornerstonejs/core@1.86.1';
 
 	/**
-	 * esm.sh CDN URL for dicom-parser (peer dep of dicom-image-loader).
+	 * Pinned esm.sh CDN URL for dicom-parser (peer dep of dicom-image-loader).
 	 *
 	 * @var string
 	 */
-	const DICOM_PARSER_CDN = 'https://esm.sh/dicom-parser';
+	const DICOM_PARSER_CDN = 'https://esm.sh/dicom-parser@1.8.21';
 
 	/**
-	 * esm.sh CDN URL for the broken xmlbuilder2 ES-2022 build.
-	 *
-	 * This is the URL that @cornerstonejs/dicom-image-loader resolves at
-	 * runtime, and which only has a default export (no named 'create').
+	 * Pinned esm.sh CDN URL for @cornerstonejs/tools.
 	 *
 	 * @var string
 	 */
-	const XMLBUILDER2_ESM_SH_BROKEN = 'https://esm.sh/xmlbuilder2@3.0.2/es2022/xmlbuilder2.mjs';
+	const CORNERSTONE_TOOLS_CDN = 'https://esm.sh/@cornerstonejs/tools@1.86.1';
 
 	/**
-	 * esm.sh CDN URL for the xmlbuilder2 CJS entry point.
+	 * Pinned esm.sh CDN URL for @cornerstonejs/dicom-image-loader.
 	 *
-	 * When esm.sh serves a CJS file it re-exports all named exports, so
-	 * `import { create } from 'xmlbuilder2'` works correctly from here.
+	 * v1.86.x no longer depends on dcmjs/xmlbuilder2, so no importmap remap
+	 * for those packages is needed.
 	 *
 	 * @var string
 	 */
-	const XMLBUILDER2_ESM_SH_CJS = 'https://esm.sh/xmlbuilder2@3.0.2/lib/index.js';
+	const CORNERSTONE_DICOM_LOADER_CDN = 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0';
 
 	/**
 	 * Enqueue viewer assets when we are on the imaging page.
@@ -119,50 +117,28 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
-		// Inject an ES module importmap that:
-		//  1. Fixes the xmlbuilder2 CDN error (@cornerstonejs/dicom-image-loader
-		//     pulls in dcmjs → xmlbuilder2; the esm.sh ES-2022 build only has a
-		//     default export, so we redirect to the CJS build that has all named
-		//     exports).
-		//  2. Adds bare-specifier entries for @cornerstonejs/core and dicom-parser.
-		//     The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
-		//     and `?external=…,dicom-parser` so that esm.sh emits those packages
-		//     as bare specifiers rather than bundling them.  The importmap then
-		//     resolves those bare specifiers back to the same URLs that our own
-		//     direct import() calls use, guaranteeing all three packages share a
-		//     SINGLE module instance.  Without this the wadouri image-loader is
-		//     registered on a private internal copy of the core and the canvas
-		//     stays solid black.
+		// Inject an ES module importmap.
+		// The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
+		// and `?external=…,dicom-parser` so that esm.sh emits those packages as
+		// bare specifiers rather than bundling them.  The importmap resolves those
+		// bare specifiers back to the same pinned URLs our direct import() calls
+		// use, guaranteeing all three packages share a SINGLE module instance.
+		// Without this, the wadouri image-loader is registered on a private
+		// internal copy of the core and the canvas stays solid black.
 		add_action(
 			'admin_head',
 			function () {
-				// All values are plugin-level constants, not user input.
-				// esc_url_raw() validates that each string is a proper URL.
 				$importmap = array(
 					'imports' => array(
-						// Bare specifiers – resolved by the browser when the
-						// ?external= packages emit bare import statements.
 						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
 						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
-
-						// URL-to-URL remap for the xmlbuilder2 CJS fix.
-						esc_url_raw( self::XMLBUILDER2_ESM_SH_BROKEN ) => esc_url_raw( self::XMLBUILDER2_ESM_SH_CJS ),
 					),
 				);
-
-				// Output a bare <script type="importmap"> block.  The content is
-				// pure JSON produced by wp_json_encode() (which escapes all
-				// special characters).  wp_kses_post() cannot be used here because
-				// it strips <script> tags; the JSON value is already safe.
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo '<script type="importmap">' . wp_json_encode( $importmap ) . '</script>' . "\n";
 			}
 		);
 
-		// Enqueue the Cornerstone3D imaging viewer bundle.
-		// The bundle is loaded from a CDN; see imaging-viewer.js for the
-		// importmap / CDN URL strategy.  A local build path is preferred
-		// when the npm package has been compiled into the pro build directory.
 		wp_enqueue_script(
 			'wp-mcp-ai-imaging-viewer',
 			esc_url( WP_MCP_AI_PRO_URL . 'assets/js/imaging-viewer.js' ),
@@ -172,8 +148,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		);
 
 		// Resolve the active tab (validated against whitelist) so the JS can
-		// initialise the correct panel without relying on URL parsing in the
-		// browser.
+		// initialise the correct panel without relying on URL parsing in the browser.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query param.
 		$active_tab_for_js = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'studies';
 		if ( ! in_array( $active_tab_for_js, self::$valid_tabs, true ) ) {
@@ -190,8 +165,6 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'canManage'    => current_user_can( 'manage_medical_imaging' ) ? 'yes' : 'no',
 				'statsUrl'     => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
 				'interpretUrl' => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
-				// The server-validated initial tab so JS never has to parse the
-				// raw URL itself (avoids open-redirect-class issues).
 				'activeTab'    => $active_tab_for_js,
 				'i18n'         => array(
 					'loadingStudy'         => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
@@ -210,7 +183,6 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			)
 		);
 
-		// Enqueue viewer stylesheet.
 		wp_enqueue_style(
 			'wp-mcp-ai-imaging-viewer',
 			esc_url( WP_MCP_AI_PRO_URL . 'assets/css/imaging-viewer.css' ),
