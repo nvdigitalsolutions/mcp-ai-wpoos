@@ -572,7 +572,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 								'type'  => 'tool_use',
 								'id'    => isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : 'toolu_' . wp_generate_password( 16, false ),
 								'name'  => sanitize_text_field( $tool_call['function']['name'] ),
-								'input' => $args,
+								'input' => (object) $args,
 							);
 						}
 					}
