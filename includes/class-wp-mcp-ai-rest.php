@@ -1138,102 +1138,175 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $scoped_assistant;
 			}
 
-			$posts = array();
+			// Parse pagination parameters; -1 (or null) means return all (default).
+			$per_page = $request->get_param( 'per_page' );
+			$per_page = ( null !== $per_page ) ? intval( $per_page ) : -1;
+			$page     = max( 1, absint( (int) $request->get_param( 'page' ) ?: 1 ) );
+
+			$total_assistants = 0;
+			$total_pages      = 1;
+			$assistants       = array();
 
 			if ( $scoped_assistant ) {
+				// Token-scoped: single assistant, skip caching.
 				$assistant_post = $this->validate_assistant_access( $scoped_assistant );
 
 				if ( is_wp_error( $assistant_post ) ) {
 					return $assistant_post;
 				}
 
-				$posts = array( $assistant_post );
+				$summary          = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+				$assistants       = array( $summary );
+				$total_assistants = 1;
+				$total_pages      = 1;
 			} else {
-				$query_args = array(
-					'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-					'post_status'    => array( 'publish' ),
-					'posts_per_page' => -1,
-					'orderby'        => 'title',
-					'order'          => 'ASC',
+				// Build cache key from query parameters (not _fields — filtered after cache retrieval).
+				$cache_params = array_filter(
+					array(
+						'search'   => $request->get_param( 'search' ),
+						'include'  => $request->get_param( 'include' ),
+						'per_page' => ( $per_page > 0 ) ? $per_page : null,
+						'page'     => ( $per_page > 0 && $page > 1 ) ? $page : null,
+					),
+					static function ( $v ) {
+						return null !== $v;
+					}
 				);
 
-				$search = $request->get_param( 'search' );
-				if ( is_string( $search ) && '' !== $search ) {
-					$query_args['s'] = sanitize_text_field( $search );
-				}
+				$cached_data = WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
 
-				$include = $request->get_param( 'include' );
-				if ( ! empty( $include ) ) {
-					$include_ids = array();
+				if ( false !== $cached_data && is_array( $cached_data ) ) {
+					// Serve from cache.
+					$assistants       = $cached_data['assistants'];
+					$total_assistants = $cached_data['total'];
+					$total_pages      = $cached_data['total_pages'];
+				} else {
+					// Build the WP_Query arguments.
+					$query_args = array(
+						'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+						'post_status' => array( 'publish' ),
+						'orderby'     => 'title',
+						'order'       => 'ASC',
+					);
 
-					if ( is_string( $include ) ) {
-						$include = explode( ',', $include );
+					if ( $per_page > 0 ) {
+						$query_args['posts_per_page'] = $per_page;
+						$query_args['paged']          = $page;
+					} else {
+						$query_args['posts_per_page'] = -1;
+						$query_args['no_found_rows']  = true; // Skip COUNT query for unlimited requests.
 					}
 
-					foreach ( (array) $include as $candidate ) {
-						$candidate = absint( $candidate );
+					$search = $request->get_param( 'search' );
+					if ( is_string( $search ) && '' !== $search ) {
+						$query_args['s'] = sanitize_text_field( $search );
+					}
 
-						if ( $candidate ) {
-							$include_ids[] = $candidate;
+					$include = $request->get_param( 'include' );
+					if ( ! empty( $include ) ) {
+						$include_ids = array();
+
+						if ( is_string( $include ) ) {
+							$include = explode( ',', $include );
+						}
+
+						foreach ( (array) $include as $candidate ) {
+							$candidate = absint( $candidate );
+
+							if ( $candidate ) {
+								$include_ids[] = $candidate;
+							}
+						}
+
+						if ( ! empty( $include_ids ) ) {
+							$query_args['post__in'] = $include_ids;
+							$query_args['orderby']  = 'post__in';
 						}
 					}
 
-					if ( ! empty( $include_ids ) ) {
-						$query_args['post__in'] = $include_ids;
-						$query_args['orderby']  = 'post__in';
+					/**
+					 * Allow developers to adjust the assistant directory query.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param array           $query_args   WP_Query arguments.
+					 * @param WP_REST_Request $request      Current REST request.
+					 * @param array           $auth_context Authentication context for the caller.
+					 */
+					$query_args = apply_filters( 'wp_mcp_ai_rest_assistant_query_args', $query_args, $request, $auth_context );
+
+					$query = new WP_Query( $query_args );
+					$posts = $query->posts;
+
+					if ( ! is_array( $posts ) ) {
+						$posts = array();
 					}
+
+					$filtered = array();
+					foreach ( $posts as $post ) {
+						if ( ! $post instanceof WP_Post ) {
+							$post = get_post( $post );
+						}
+
+						if ( ! $post instanceof WP_Post ) {
+							continue;
+						}
+
+						$accessible = $this->validate_assistant_access( $post->ID );
+
+						if ( $accessible instanceof WP_Post ) {
+							$filtered[] = $accessible;
+						}
+					}
+
+					foreach ( $filtered as $assistant_post ) {
+						$summary      = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+						$assistants[] = $summary;
+					}
+
+					$assistants = array_values( $assistants );
+
+					// Compute totals.
+					if ( $per_page > 0 ) {
+						$total_assistants = absint( $query->found_posts );
+						$total_pages      = (int) ceil( $total_assistants / $per_page );
+					} else {
+						$total_assistants = count( $assistants );
+						$total_pages      = 1;
+					}
+
+					// Cache the unscoped list for future requests.
+					WP_MCP_AI_REST_Cache::set_response(
+						'assistants',
+						$cache_params,
+						array(
+							'assistants'  => $assistants,
+							'total'       => $total_assistants,
+							'total_pages' => $total_pages,
+						),
+						WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
+					);
 				}
-
-				/**
-				 * Allow developers to adjust the assistant directory query.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param array           $query_args   WP_Query arguments.
-				 * @param WP_REST_Request $request      Current REST request.
-				 * @param array           $auth_context Authentication context for the caller.
-				 */
-				$query_args = apply_filters( 'wp_mcp_ai_rest_assistant_query_args', $query_args, $request, $auth_context );
-
-				$query = new WP_Query( $query_args );
-				$posts = $query->posts;
-
-				if ( ! is_array( $posts ) ) {
-					$posts = array();
-				}
-
-				$filtered = array();
-				foreach ( $posts as $post ) {
-					if ( ! $post instanceof WP_Post ) {
-						$post = get_post( $post );
-					}
-
-					if ( ! $post instanceof WP_Post ) {
-						continue;
-					}
-
-					$accessible = $this->validate_assistant_access( $post->ID );
-
-					if ( $accessible instanceof WP_Post ) {
-						$filtered[] = $accessible;
-					}
-				}
-
-				$posts = $filtered;
 			}
 
-			$assistants = array();
-
-			foreach ( $posts as $assistant_post ) {
-				if ( ! $assistant_post instanceof WP_Post ) {
-					continue;
+			// Apply _fields filtering to each assistant summary.
+			$fields_param = $request->get_param( '_fields' );
+			if ( $fields_param && is_string( $fields_param ) ) {
+				$allowed_fields = wp_parse_list( $fields_param );
+				if ( ! empty( $allowed_fields ) ) {
+					// Always include 'id' per REST API convention.
+					if ( ! in_array( 'id', $allowed_fields, true ) ) {
+						$allowed_fields[] = 'id';
+					}
+					$allowed_map = array_flip( $allowed_fields );
+					$assistants  = array_map(
+						static function ( $assistant ) use ( $allowed_map ) {
+							return array_intersect_key( $assistant, $allowed_map );
+						},
+						$assistants
+					);
 				}
-
-				$summary      = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
-				$assistants[] = $summary;
 			}
-
-			$assistants = array_values( $assistants );
 
 			$directory_default = $scoped_assistant ? $scoped_assistant : $default_assistant;
 			if ( ! $directory_default && ! empty( $assistants ) ) {
@@ -1290,11 +1363,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 */
 			$response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
 
-			if ( $this->request_wants_event_stream( $request ) ) {
+			if ( $this->request_wants_event_stream( $request ) || $this->request_accept_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $response_data, 'directory' );
 			}
 
-			return new WP_REST_Response( $response_data, 200 );
+			$response = new WP_REST_Response( $response_data, 200 );
+			$response->header( 'X-WP-Total', $total_assistants );
+			$response->header( 'X-WP-TotalPages', $total_pages );
+
+			return $response;
 		}
 
 		/**
@@ -1797,12 +1874,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools         = $request->get_param( 'tools' );
 			$status        = $request->get_param( 'status' );
 
-			// Title is required.
+			// Title is required for actual creation; when absent treat as a
+			// connectivity check and return the directory listing instead.
 			if ( empty( $title ) ) {
+				return $this->handle_assistants_index( $request );
+			}
+
+			// When actually creating, verify that REST assistant creation is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
 				return new WP_Error(
-					'rest_missing_title',
-					__( 'Title is required to create an assistant.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
+					'rest_assistant_create_disabled',
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
 				);
 			}
 
@@ -3838,6 +3922,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Check whether the request's Accept header prefers an event-stream response.
+		 *
+		 * Unlike request_wants_event_stream(), this only inspects the HTTP Accept
+		 * header and is used exclusively for the assistant directory endpoint so
+		 * that browser-based MCP clients using "Accept: text/event-stream" get a
+		 * proper SSE response. The generic /mcp endpoint deliberately ignores the
+		 * Accept header (see WP_MCP_AI_SSE_Handler::request_wants_event_stream).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return bool
+		 */
+		protected function request_accept_wants_event_stream( WP_REST_Request $request ) {
+			$accept = $request->get_header( 'Accept' );
+
+			if ( ! $accept ) {
+				return false;
+			}
+
+			foreach ( preg_split( '/\s*,\s*/', $accept ) as $token ) {
+				$parts      = explode( ';', $token );
+				$media_type = trim( $parts[0] );
+
+				if ( 'text/event-stream' === $media_type ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Stream the provided payload as an event stream response.
 		 *
 		 * Delegates to SSE handler.
@@ -4247,77 +4362,115 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			if ( ! $assistant_id ) {
-				// Return all tools if no assistant specified.
-				$tools = $this->registry->get_tools();
-			} else {
-				// Get tools allowed for this assistant.
-				$assistant_post = $this->validate_assistant_access( $assistant_id );
-
-				if ( is_wp_error( $assistant_post ) ) {
-					return $assistant_post;
+			// Try to serve from cache (keyed on assistant_id).
+			$cache_params = array_filter(
+				array( 'assistant_id' => $assistant_id ?: null ),
+				static function ( $v ) {
+					return null !== $v;
 				}
+			);
 
-				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-				$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			$cached_tools = WP_MCP_AI_REST_Cache::get_response( 'tools', $cache_params );
 
-				$tools = array();
-				foreach ( $allowed_tools as $tool_slug ) {
-					$tool = $this->registry->get_tool( $tool_slug );
-					if ( $tool ) {
-						$tools[] = $tool;
+			if ( false !== $cached_tools && is_array( $cached_tools ) ) {
+				$tools_list = $cached_tools;
+			} else {
+				if ( ! $assistant_id ) {
+					// Return all tools if no assistant specified.
+					$tools = $this->registry->get_tools();
+				} else {
+					// Get tools allowed for this assistant.
+					$assistant_post = $this->validate_assistant_access( $assistant_id );
+
+					if ( is_wp_error( $assistant_post ) ) {
+						return $assistant_post;
+					}
+
+					$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+					$tools = array();
+					foreach ( $allowed_tools as $tool_slug ) {
+						$tool = $this->registry->get_tool( $tool_slug );
+						if ( $tool ) {
+							$tools[] = $tool;
+						}
 					}
 				}
-			}
 
-			// Convert tools to a simple array format.
-			$tools_list = array();
-			foreach ( $tools as $tool ) {
-				try {
-					$schema = $tool->get_parameters_schema();
+				// Convert tools to a simple array format.
+				$tools_list = array();
+				foreach ( $tools as $tool ) {
+					try {
+						$schema = $tool->get_parameters_schema();
 
-					// Validate that the schema is a valid array.
-					if ( ! is_array( $schema ) ) {
+						// Validate that the schema is a valid array.
+						if ( ! is_array( $schema ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'error',
+								'Tool returned invalid schema',
+								array(
+									'tool_slug'   => $tool->get_slug(),
+									'schema_type' => gettype( $schema ),
+								)
+							);
+							continue;
+						}
+
+						$tools_list[] = array(
+							'name'        => $tool->get_slug(),
+							'description' => $tool->get_description(),
+							'inputSchema' => $schema,
+						);
+					} catch ( Exception $e ) {
+						// Log the error and skip this tool.
 						WP_MCP_AI_Logger::log_event(
 							'error',
-							'Tool returned invalid schema',
+							'Tool schema generation failed',
 							array(
-								'tool_slug'   => $tool->get_slug(),
-								'schema_type' => gettype( $schema ),
+								'tool_slug' => $tool->get_slug(),
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						continue;
+					} catch ( Error $e ) {
+						// Catch PHP 7+ errors as well.
+						WP_MCP_AI_Logger::log_event(
+							'error',
+							'Tool schema generation failed with PHP Error',
+							array(
+								'tool_slug' => $tool->get_slug(),
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
 							)
 						);
 						continue;
 					}
+				}
 
-					$tools_list[] = array(
-						'name'        => $tool->get_slug(),
-						'description' => $tool->get_description(),
-						'inputSchema' => $schema,
+				// Cache the full tools list; _fields filtering is applied after retrieval.
+				WP_MCP_AI_REST_Cache::set_response( 'tools', $cache_params, $tools_list );
+			}
+
+			// Apply _fields filtering to reduce response payload when requested.
+			$fields_param = $request->get_param( '_fields' );
+			if ( $fields_param && is_string( $fields_param ) ) {
+				$allowed_fields = wp_parse_list( $fields_param );
+				// Valid tool fields: name, description, inputSchema. 'name' is always included.
+				$valid_fields = array( 'name', 'description', 'inputSchema' );
+				$allowed_fields = array_intersect( $allowed_fields, $valid_fields );
+				if ( ! empty( $allowed_fields ) ) {
+					if ( ! in_array( 'name', $allowed_fields, true ) ) {
+						$allowed_fields[] = 'name';
+					}
+					$allowed_map = array_flip( $allowed_fields );
+					$tools_list  = array_map(
+						static function ( $tool ) use ( $allowed_map ) {
+							return array_intersect_key( $tool, $allowed_map );
+						},
+						$tools_list
 					);
-				} catch ( Exception $e ) {
-					// Log the error and skip this tool.
-					WP_MCP_AI_Logger::log_event(
-						'error',
-						'Tool schema generation failed',
-						array(
-							'tool_slug' => $tool->get_slug(),
-							'error'     => $e->getMessage(),
-							'trace'     => $e->getTraceAsString(),
-						)
-					);
-					continue;
-				} catch ( Error $e ) {
-					// Catch PHP 7+ errors as well.
-					WP_MCP_AI_Logger::log_event(
-						'error',
-						'Tool schema generation failed with PHP Error',
-						array(
-							'tool_slug' => $tool->get_slug(),
-							'error'     => $e->getMessage(),
-							'trace'     => $e->getTraceAsString(),
-						)
-					);
-					continue;
 				}
 			}
 

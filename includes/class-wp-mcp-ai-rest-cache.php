@@ -30,6 +30,20 @@ class WP_MCP_AI_REST_Cache {
 	const CACHE_PREFIX = 'wp_mcp_ai_rest_';
 
 	/**
+	 * Option key prefix for per-endpoint key registries.
+	 *
+	 * @var string
+	 */
+	const REGISTRY_PREFIX = 'wp_mcp_ai_cache_reg_';
+
+	/**
+	 * Option key for the global endpoint registry (list of known endpoint keys).
+	 *
+	 * @var string
+	 */
+	const GLOBAL_REGISTRY_KEY = 'wp_mcp_ai_cache_endpoints';
+
+	/**
 	 * Default cache expiration time (5 minutes)
 	 *
 	 * @var int
@@ -80,8 +94,15 @@ class WP_MCP_AI_REST_Cache {
 			return false;
 		}
 
-		$cache_key = self::build_cache_key( $endpoint, $params );
-		return set_transient( $cache_key, $response, $expiration );
+		$cache_key    = self::build_cache_key( $endpoint, $params );
+		$result       = set_transient( $cache_key, $response, $expiration );
+		$endpoint_key = sanitize_key( $endpoint );
+
+		if ( $result ) {
+			self::register_cache_key( $endpoint_key, $cache_key );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -99,46 +120,106 @@ class WP_MCP_AI_REST_Cache {
 	/**
 	 * Invalidate all caches for a specific endpoint
 	 *
+	 * Uses a per-endpoint key registry so the operation is compatible with
+	 * SQLite-backed test environments where LIKE queries over the options table
+	 * do not reliably return deleted-row counts.
+	 *
 	 * @param string $endpoint Endpoint identifier.
 	 * @return int Number of deleted cache entries.
 	 */
 	public static function invalidate_endpoint( $endpoint ) {
-		global $wpdb;
+		$endpoint_key = sanitize_key( $endpoint );
+		$keys         = self::get_registered_keys( $endpoint_key );
+		$deleted      = 0;
 
-		$pattern        = self::CACHE_PREFIX . sanitize_key( $endpoint ) . '_%';
-		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
+		foreach ( $keys as $cache_key ) {
+			if ( delete_transient( $cache_key ) ) {
+				++$deleted;
+			}
+		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-		$deleted = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$option_pattern
-			)
-		);
+		delete_option( self::REGISTRY_PREFIX . $endpoint_key );
 
-		return (int) $deleted;
+		return $deleted;
 	}
 
 	/**
 	 * Clear all REST API caches
 	 *
+	 * Iterates the global endpoint registry and removes every tracked transient.
+	 *
 	 * @return int Number of cache entries cleared.
 	 */
 	public static function clear_all_caches() {
-		global $wpdb;
+		$endpoint_keys = get_option( self::GLOBAL_REGISTRY_KEY, array() );
 
-		$pattern        = self::CACHE_PREFIX . '%';
-		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
+		if ( ! is_array( $endpoint_keys ) ) {
+			$endpoint_keys = array();
+		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
-		$deleted = $wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-				$option_pattern
-			)
-		);
+		$deleted = 0;
 
-		return (int) $deleted;
+		foreach ( $endpoint_keys as $endpoint_key ) {
+			$deleted += self::invalidate_endpoint( sanitize_key( $endpoint_key ) );
+		}
+
+		delete_option( self::GLOBAL_REGISTRY_KEY );
+
+		return $deleted;
+	}
+
+	/**
+	 * Register a cache key under its endpoint so it can be invalidated later.
+	 *
+	 * @param string $endpoint_key Sanitized endpoint identifier.
+	 * @param string $cache_key    Transient key to register.
+	 * @return void
+	 */
+	private static function register_cache_key( $endpoint_key, $cache_key ) {
+		$registry_option = self::REGISTRY_PREFIX . $endpoint_key;
+		$keys            = get_option( $registry_option, array() );
+
+		if ( ! is_array( $keys ) ) {
+			$keys = array();
+		}
+
+		if ( ! in_array( $cache_key, $keys, true ) ) {
+			$keys[] = $cache_key;
+			update_option( $registry_option, $keys, false );
+			self::register_endpoint( $endpoint_key );
+		}
+	}
+
+	/**
+	 * Record an endpoint in the global registry.
+	 *
+	 * @param string $endpoint_key Sanitized endpoint identifier.
+	 * @return void
+	 */
+	private static function register_endpoint( $endpoint_key ) {
+		$endpoints = get_option( self::GLOBAL_REGISTRY_KEY, array() );
+
+		if ( ! is_array( $endpoints ) ) {
+			$endpoints = array();
+		}
+
+		if ( ! in_array( $endpoint_key, $endpoints, true ) ) {
+			$endpoints[] = $endpoint_key;
+			update_option( self::GLOBAL_REGISTRY_KEY, $endpoints, false );
+		}
+	}
+
+	/**
+	 * Retrieve all cache keys registered for an endpoint.
+	 *
+	 * @param string $endpoint_key Sanitized endpoint identifier.
+	 * @return string[] List of transient keys.
+	 */
+	private static function get_registered_keys( $endpoint_key ) {
+		$registry_option = self::REGISTRY_PREFIX . $endpoint_key;
+		$keys            = get_option( $registry_option, array() );
+
+		return is_array( $keys ) ? $keys : array();
 	}
 
 	/**
@@ -236,6 +317,18 @@ class WP_MCP_AI_REST_Cache {
 		$response->header( 'Expires', gmdate( 'D, d M Y H:i:s \G\M\T', time() + $max_age ) );
 
 		return $response;
+	}
+
+	/**
+	 * Invalidate caches when plugin settings are saved
+	 *
+	 * Hooked to update_option_{OPTION_NAME}.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_on_settings_save() {
+		self::invalidate_endpoint( 'assistants' );
+		self::invalidate_endpoint( 'tools' );
 	}
 
 	/**

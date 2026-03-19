@@ -196,6 +196,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 						),
+						'_fields'      => array(
+							'description'       => __( 'Comma-separated list of tool fields to include in each item (name, description, inputSchema). Defaults to all fields.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 					),
 				),
 				array(

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/review-document-for-plugin-application',
+        'version' => 'dev-copilot/review-document-for-plugin-application',
+        'reference' => '66ca4590fdb7f733a83ab3a3dd16c969410a8eaa',
         'pretty_version' => 'dev-copilot/fix-chat-client-tool-use-error',
         'version' => 'dev-copilot/fix-chat-client-tool-use-error',
         'reference' => '2be2b7442d0929c53befbc1318b580992c78bb8b',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/review-document-for-plugin-application',
+            'version' => 'dev-copilot/review-document-for-plugin-application',
+            'reference' => '66ca4590fdb7f733a83ab3a3dd16c969410a8eaa',
             'pretty_version' => 'dev-copilot/fix-chat-client-tool-use-error',
             'version' => 'dev-copilot/fix-chat-client-tool-use-error',
             'reference' => '2be2b7442d0929c53befbc1318b580992c78bb8b',
