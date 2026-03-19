@@ -97,6 +97,8 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'canUpload'      => current_user_can( 'upload_medical_imaging' ) ? 'yes' : 'no',
 				'canManage'      => current_user_can( 'manage_medical_imaging' ) ? 'yes' : 'no',
+				'statsUrl'       => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
+				'interpretUrl'   => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
 				'i18n'           => array(
 					'loadingStudy'    => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
 					'noStudies'       => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
@@ -106,6 +108,10 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					'viewerError'     => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
 					'noInstances'     => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
 					'confirmDelete'   => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),
+					'interpretRun'    => __( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ),
+					'interpreting'    => __( 'Analysing…', 'mcp-ai-wpoos-pro' ),
+					'interpretError'  => __( 'AI interpretation failed.', 'mcp-ai-wpoos-pro' ),
+					'noStudySelected' => __( 'Enter a Study UID to analyse.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -163,7 +169,11 @@ class WP_MCP_AI_Imaging_Admin_Page {
 
 			<hr class="wp-header-end">
 
-			<!-- DICOM storage location info box -->
+			<!-- Stats bar — populated by JS -->
+			<div id="nv-imaging-stats-bar" class="nv-imaging-stats-bar"></div>
+
+			<!-- DICOM storage location info box (managers only) -->
+			<?php if ( current_user_can( 'manage_medical_imaging' ) ) : ?>
 			<div class="notice notice-info inline nv-imaging-storage-notice" style="margin-top:1em;">
 				<p>
 					<strong><?php esc_html_e( 'DICOM Storage Location', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -197,6 +207,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					?>
 				</p>
 			</div>
+			<?php endif; ?>
 
 			<!-- Upload panel (hidden by default) -->
 			<?php if ( current_user_can( 'upload_medical_imaging' ) ) : ?>
@@ -228,13 +239,267 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			</div>
 			<?php endif; ?>
 
-			<!-- Study browser -->
-			<div id="nv-imaging-study-browser" class="nv-imaging-panel">
-				<div id="nv-imaging-loading" class="nv-imaging-loading">
-					<span class="spinner is-active"></span>
-					<?php esc_html_e( 'Loading studies…', 'mcp-ai-wpoos-pro' ); ?>
+			<!-- Main panel with tabs -->
+			<div id="nv-imaging-main-panel" class="nv-imaging-panel">
+				<nav class="nv-imaging-tab-nav" role="tablist">
+					<button role="tab" class="nv-imaging-tab-btn nv-imaging-tab-active" data-tab="studies" id="nv-tab-studies">
+						<?php esc_html_e( 'Studies', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+					<button role="tab" class="nv-imaging-tab-btn" data-tab="tools" id="nv-tab-tools">
+						<?php esc_html_e( 'AI Tools', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+					<button role="tab" class="nv-imaging-tab-btn" data-tab="audit" id="nv-tab-audit">
+						<?php esc_html_e( 'Audit Log', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+					<button role="tab" class="nv-imaging-tab-btn" data-tab="docs" id="nv-tab-docs">
+						<?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</nav>
+
+				<!-- Studies tab -->
+				<div id="nv-imaging-tab-studies" role="tabpanel">
+					<!-- Filter bar -->
+					<div class="nv-imaging-filter-bar" id="nv-imaging-filter-bar">
+						<input type="search" id="nv-imaging-search" class="regular-text" placeholder="<?php esc_attr_e( 'Search Study UID…', 'mcp-ai-wpoos-pro' ); ?>" />
+						<select id="nv-imaging-filter-modality">
+							<option value=""><?php esc_html_e( 'All Modalities', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="CT">CT</option>
+							<option value="MR">MR</option>
+							<option value="PT">PT</option>
+							<option value="US">US</option>
+							<option value="DX"><?php esc_html_e( 'DX (X-Ray)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="CR">CR</option>
+							<option value="MG">MG</option>
+							<option value="NM">NM</option>
+							<option value="RF">RF</option>
+							<option value="XA">XA</option>
+						</select>
+						<label>
+							<?php esc_html_e( 'From:', 'mcp-ai-wpoos-pro' ); ?>
+							<input type="date" id="nv-imaging-date-from" />
+						</label>
+						<label>
+							<?php esc_html_e( 'To:', 'mcp-ai-wpoos-pro' ); ?>
+							<input type="date" id="nv-imaging-date-to" />
+						</label>
+						<button type="button" class="button button-primary" id="nv-imaging-filter-apply">
+							<?php esc_html_e( 'Filter', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<button type="button" class="button" id="nv-imaging-filter-clear">
+							<?php esc_html_e( 'Clear', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+					<!-- Study browser -->
+					<div id="nv-imaging-study-browser">
+						<div id="nv-imaging-loading" class="nv-imaging-loading">
+							<span class="spinner is-active"></span>
+							<?php esc_html_e( 'Loading studies…', 'mcp-ai-wpoos-pro' ); ?>
+						</div>
+						<div id="nv-imaging-study-list" style="display:none;"></div>
+					</div>
 				</div>
-				<div id="nv-imaging-study-list" style="display:none;"></div>
+
+				<!-- AI Tools tab -->
+				<div id="nv-imaging-tab-tools" role="tabpanel" style="display:none;">
+					<div class="nv-imaging-tools-grid">
+
+						<!-- AI Study Interpretation card -->
+						<div class="nv-imaging-tool-card">
+							<h3><?php esc_html_e( 'AI Study Interpretation', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<p class="description">
+								<?php esc_html_e( 'Uses the configured AI provider (OpenAI / Gemini) to analyse a study\'s metadata and return clinical observations. Open a study first, or paste its Study UID below.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<table class="form-table nv-imaging-tool-form-table">
+								<tr>
+									<th scope="row"><label for="nv-imaging-interpret-uid"><?php esc_html_e( 'Study UID', 'mcp-ai-wpoos-pro' ); ?></label></th>
+									<td><input type="text" id="nv-imaging-interpret-uid" class="large-text" placeholder="<?php esc_attr_e( '1.2.840…', 'mcp-ai-wpoos-pro' ); ?>" /></td>
+								</tr>
+								<tr>
+									<th scope="row"><label for="nv-imaging-interpret-focus"><?php esc_html_e( 'Analysis Focus', 'mcp-ai-wpoos-pro' ); ?></label></th>
+									<td>
+										<select id="nv-imaging-interpret-focus">
+											<option value="full"><?php esc_html_e( 'Full Analysis', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="quality"><?php esc_html_e( 'Image Quality', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="completeness"><?php esc_html_e( 'Study Completeness', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="workflow"><?php esc_html_e( 'Workflow &amp; Next Steps', 'mcp-ai-wpoos-pro' ); ?></option>
+										</select>
+										<p class="description"><?php esc_html_e( 'Choose what the AI should focus its analysis on.', 'mcp-ai-wpoos-pro' ); ?></p>
+									</td>
+								</tr>
+							</table>
+							<p>
+								<button type="button" class="button button-primary" id="nv-imaging-interpret-run">
+									<?php esc_html_e( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</p>
+							<div id="nv-imaging-interpret-result" class="nv-imaging-interpret-result" style="display:none;" aria-live="polite"></div>
+						</div>
+
+						<!-- Available tools reference card -->
+						<div class="nv-imaging-tool-card">
+							<h3><?php esc_html_e( 'Available AI Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<ul class="nv-imaging-tools-list">
+								<li>
+									<strong>interpret_imaging_study</strong>
+									<p class="description"><?php esc_html_e( 'Analyses a DICOM study\'s metadata via AI. Supports focus: quality / completeness / workflow / full. Optional pixel preview sends a 512px PNG of the first frame to a vision model.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</li>
+								<li>
+									<strong>manage_imaging_studies</strong>
+									<p class="description"><?php esc_html_e( 'Lists studies, retrieves details, summarises findings, and reads the audit log. Accessible from any NV oOS AI assistant that has the view_medical_imaging capability.', 'mcp-ai-wpoos-pro' ); ?></p>
+								</li>
+							</ul>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: REST API endpoint */
+									esc_html__( 'Tools can also be invoked programmatically via the AI assistant REST endpoint: %s', 'mcp-ai-wpoos-pro' ),
+									'<code>' . esc_html( rest_url( 'mcp-ai/v1/chat' ) ) . '</code>'
+								);
+								?>
+							</p>
+						</div>
+
+					</div><!-- .nv-imaging-tools-grid -->
+				</div><!-- #nv-imaging-tab-tools -->
+
+				<!-- Audit log tab -->
+				<div id="nv-imaging-tab-audit" role="tabpanel" style="display:none;">
+					<div id="nv-imaging-audit-loading" class="nv-imaging-loading" style="display:none;">
+						<span class="spinner is-active"></span>
+						<?php esc_html_e( 'Loading audit log…', 'mcp-ai-wpoos-pro' ); ?>
+					</div>
+					<div id="nv-imaging-audit-list"></div>
+				</div>
+
+				<!-- Documentation tab -->
+				<div id="nv-imaging-tab-docs" role="tabpanel" style="display:none;">
+					<div class="nv-imaging-docs-grid">
+
+						<!-- Quick Start -->
+						<div class="nv-imaging-docs-card">
+							<h3><?php esc_html_e( 'Quick Start', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<ol>
+								<li><?php esc_html_e( 'Click "Upload Study" and select one or more .dcm DICOM files.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'The study appears in the Studies table. Click "View" to open the Cornerstone3D viewer.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Select a series in the left sidebar. Use the W/L toolbar to adjust brightness/contrast.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Left-click drag = Window/Level. Right-click drag = Pan. Mouse wheel = scroll slices.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to AI Tools tab → Run AI Analysis to get an instant AI interpretation.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+
+						<!-- Keyboard shortcuts -->
+						<div class="nv-imaging-docs-card">
+							<h3><?php esc_html_e( 'Viewer Keyboard Shortcuts', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<table class="widefat striped nv-imaging-docs-table">
+								<thead><tr><th><?php esc_html_e( 'Key', 'mcp-ai-wpoos-pro' ); ?></th><th><?php esc_html_e( 'Action', 'mcp-ai-wpoos-pro' ); ?></th></tr></thead>
+								<tbody>
+									<tr><td><kbd>↑</kbd> / <kbd>←</kbd></td><td><?php esc_html_e( 'Previous slice / frame', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><kbd>↓</kbd> / <kbd>→</kbd></td><td><?php esc_html_e( 'Next slice / frame', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><kbd>R</kbd></td><td><?php esc_html_e( 'Reset W/L and camera', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><kbd>I</kbd></td><td><?php esc_html_e( 'Invert image', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><?php esc_html_e( 'Left drag', 'mcp-ai-wpoos-pro' ); ?></td><td><?php esc_html_e( 'Adjust Window / Level', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><?php esc_html_e( 'Right drag', 'mcp-ai-wpoos-pro' ); ?></td><td><?php esc_html_e( 'Pan image', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><?php esc_html_e( 'Scroll wheel', 'mcp-ai-wpoos-pro' ); ?></td><td><?php esc_html_e( 'Scroll through slices', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><?php esc_html_e( 'Middle drag', 'mcp-ai-wpoos-pro' ); ?></td><td><?php esc_html_e( 'Zoom in / out', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- W/L Clinical Presets -->
+						<div class="nv-imaging-docs-card">
+							<h3><?php esc_html_e( 'Window / Level Clinical Presets', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<p class="description"><?php esc_html_e( 'These industry-standard presets are available in the viewer toolbar for CT, MR, and PET.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<table class="widefat striped nv-imaging-docs-table">
+								<thead><tr><th><?php esc_html_e( 'Modality', 'mcp-ai-wpoos-pro' ); ?></th><th><?php esc_html_e( 'Preset', 'mcp-ai-wpoos-pro' ); ?></th><th>WW</th><th>WL</th></tr></thead>
+								<tbody>
+									<tr><td>CT</td><td><?php esc_html_e( 'Soft Tissue', 'mcp-ai-wpoos-pro' ); ?></td><td>350</td><td>40</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Lung', 'mcp-ai-wpoos-pro' ); ?></td><td>1500</td><td>-600</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Brain', 'mcp-ai-wpoos-pro' ); ?></td><td>80</td><td>40</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Bone', 'mcp-ai-wpoos-pro' ); ?></td><td>2000</td><td>400</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Abdomen', 'mcp-ai-wpoos-pro' ); ?></td><td>400</td><td>50</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Liver', 'mcp-ai-wpoos-pro' ); ?></td><td>150</td><td>80</td></tr>
+									<tr><td>CT</td><td><?php esc_html_e( 'Mediastinum', 'mcp-ai-wpoos-pro' ); ?></td><td>350</td><td>50</td></tr>
+									<tr><td>MR</td><td><?php esc_html_e( 'Brain', 'mcp-ai-wpoos-pro' ); ?></td><td>1000</td><td>500</td></tr>
+									<tr><td>MR</td><td><?php esc_html_e( 'Spine', 'mcp-ai-wpoos-pro' ); ?></td><td>1200</td><td>600</td></tr>
+									<tr><td>MR</td><td><?php esc_html_e( 'Soft Tissue', 'mcp-ai-wpoos-pro' ); ?></td><td>500</td><td>250</td></tr>
+									<tr><td>PT</td><td>SUV Max</td><td>5</td><td>2.5</td></tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- Modality Reference -->
+						<div class="nv-imaging-docs-card">
+							<h3><?php esc_html_e( 'DICOM Modality Abbreviations', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<table class="widefat striped nv-imaging-docs-table">
+								<thead><tr><th><?php esc_html_e( 'Code', 'mcp-ai-wpoos-pro' ); ?></th><th><?php esc_html_e( 'Modality', 'mcp-ai-wpoos-pro' ); ?></th></tr></thead>
+								<tbody>
+									<tr><td>CT</td><td><?php esc_html_e( 'Computed Tomography', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>MR</td><td><?php esc_html_e( 'Magnetic Resonance Imaging', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>PT</td><td><?php esc_html_e( 'Positron Emission Tomography (PET)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>US</td><td><?php esc_html_e( 'Ultrasound', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>DX</td><td><?php esc_html_e( 'Digital X-Ray', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>CR</td><td><?php esc_html_e( 'Computed Radiography', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>MG</td><td><?php esc_html_e( 'Mammography', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>NM</td><td><?php esc_html_e( 'Nuclear Medicine', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>RF</td><td><?php esc_html_e( 'Fluoroscopy / Radiofluoroscopy', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>XA</td><td><?php esc_html_e( 'X-Ray Angiography', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>ECG</td><td><?php esc_html_e( 'Electrocardiography', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td>OT</td><td><?php esc_html_e( 'Other (miscellaneous)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- REST API Reference -->
+						<div class="nv-imaging-docs-card nv-imaging-docs-card--wide">
+							<h3><?php esc_html_e( 'REST API Reference', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: REST base URL */
+									esc_html__( 'All endpoints are under %s and require the WP REST nonce header %s.', 'mcp-ai-wpoos-pro' ),
+									'<code>' . esc_html( rest_url( 'mcp-ai/v1/imaging' ) ) . '</code>',
+									'<code>X-WP-Nonce: &lt;nonce&gt;</code>'
+								);
+								?>
+							</p>
+							<table class="widefat striped nv-imaging-docs-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Method', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Endpoint', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Capability', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr><td><code>GET</code></td><td><code>/studies</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'List all studies. Supports: per_page, page, modality, date_from, date_to, search.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>GET</code></td><td><code>/studies/{uid}</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'Get a single study by StudyInstanceUID.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>GET</code></td><td><code>/studies/{uid}/manifest</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'Get Cornerstone3D-compatible manifest with signed imageIds.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>DELETE</code></td><td><code>/studies/{uid}</code></td><td><code>manage_medical_imaging</code></td><td><?php esc_html_e( 'Hard-delete study post and DICOM files from disk.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>POST</code></td><td><code>/upload</code></td><td><code>upload_medical_imaging</code></td><td><?php esc_html_e( 'Upload one or more .dcm files (multipart/form-data, dicom_files[]).', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>GET</code></td><td><code>/instances/{uid}/file</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'Stream raw DICOM bytes. Requires signed ?token= query param.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>GET</code></td><td><code>/stats</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'Summary: total_studies, by_modality[], storage_bytes, recent_studies[].', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>POST</code></td><td><code>/interpret</code></td><td><code>view_medical_imaging</code></td><td><?php esc_html_e( 'AI interpretation. Body: {study_uid, focus: full|quality|completeness|workflow}.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+									<tr><td><code>GET</code></td><td><code>/audit</code></td><td><code>manage_medical_imaging</code></td><td><?php esc_html_e( 'Recent audit events. Supports: limit, study_id.', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								</tbody>
+							</table>
+						</div>
+
+						<!-- HIPAA / Privacy Notes -->
+						<div class="nv-imaging-docs-card nv-imaging-docs-card--wide">
+							<h3><?php esc_html_e( 'Privacy &amp; HIPAA Notes', 'mcp-ai-wpoos-pro' ); ?></h3>
+							<ul>
+								<li><?php esc_html_e( 'DICOM files are stored in a protected server directory. Direct HTTP access is blocked by an .htaccess "Deny from all" rule.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Individual files are served only through short-lived signed tokens (WP nonces) via the REST API — no file URL is ever exposed in the HTML.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'No PHI is written to the WordPress database or admin UI. Study metadata is de-identified (UIDs only); patient names and birth dates are never stored.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Every study view, upload, delete, and AI interpretation is recorded in the Audit Log with timestamp and user ID.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Study deletion is a hard-delete (no trash) — DICOM files are physically removed from disk. Ensure your backup policy covers the DICOM storage directory.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'When using AI Interpretation the study UID and metadata summary are sent to the configured AI provider (OpenAI / Gemini). Do not enable this feature for studies containing identifiable patient data unless you have a BAA with that provider.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ul>
+						</div>
+
+					</div><!-- .nv-imaging-docs-grid -->
+				</div><!-- #nv-imaging-tab-docs -->
 			</div>
 
 			<!-- Viewer panel -->
@@ -244,6 +509,15 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						&larr; <?php esc_html_e( 'Back to Studies', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<span id="nv-imaging-study-label" class="nv-imaging-study-label"></span>
+					<span class="nv-imaging-toolbar-spacer"></span>
+					<div id="nv-imaging-wl-toolbar" class="nv-imaging-wl-toolbar" aria-label="<?php esc_attr_e( 'Window/Level controls', 'mcp-ai-wpoos-pro' ); ?>"></div>
+					<div id="nv-imaging-tool-btns" class="nv-imaging-tool-btns">
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-fliph" title="<?php esc_attr_e( 'Flip Horizontal', 'mcp-ai-wpoos-pro' ); ?>">&#x21D4;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-flipv" title="<?php esc_attr_e( 'Flip Vertical', 'mcp-ai-wpoos-pro' ); ?>">&#x21D5;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-rotate-cw" title="<?php esc_attr_e( 'Rotate 90° CW', 'mcp-ai-wpoos-pro' ); ?>">&#x21BB;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-rotate-ccw" title="<?php esc_attr_e( 'Rotate 90° CCW', 'mcp-ai-wpoos-pro' ); ?>">&#x21BA;</button>
+						<button type="button" class="button nv-imaging-tool-btn" id="nv-imaging-btn-screenshot" title="<?php esc_attr_e( 'Export Viewport as PNG', 'mcp-ai-wpoos-pro' ); ?>">&#x1F4F7;</button>
+					</div>
 				</div>
 
 				<div class="nv-imaging-viewer-layout">

@@ -35,6 +35,7 @@
 	var restBase = cfg.restBase || '';
 	var nonce = cfg.nonce || '';
 	var i18n = cfg.i18n || {};
+	var canManage = cfg.canManage === 'yes';
 
 	// Panels.
 	var uploadBtn = document.getElementById( 'nv-imaging-upload-btn' );
@@ -43,7 +44,6 @@
 	var uploadStatus = document.getElementById( 'nv-imaging-upload-status' );
 	var uploadCancelBtn = document.getElementById( 'nv-imaging-upload-cancel' );
 
-	var studyBrowser = document.getElementById( 'nv-imaging-study-browser' );
 	var loadingEl = document.getElementById( 'nv-imaging-loading' );
 	var studyListEl = document.getElementById( 'nv-imaging-study-list' );
 
@@ -54,11 +54,20 @@
 	var metadataList = document.getElementById( 'nv-imaging-metadata-list' );
 	var viewport = document.getElementById( 'nv-imaging-viewport' );
 
+	// Audit log loaded flag.
+	var auditLoaded = false;
+
 	// State.
-	var currentStudy = null;
 	var csInitialized = false;
 	var renderingEngine = null;
 	var toolGroup = null;
+	var activeModality = '';
+
+	// Filter state.
+	var filterModality = '';
+	var filterDateFrom = '';
+	var filterDateTo   = '';
+	var filterSearch   = '';
 
 	// =========================================================================
 	// Utility helpers
@@ -110,6 +119,149 @@
 	}
 
 	// =========================================================================
+	// Stats bar
+	// =========================================================================
+
+	/**
+	 * Format a byte count into a human-readable string.
+	 *
+	 * @param {number} bytes Raw byte count.
+	 * @returns {string}
+	 */
+	function formatBytes( bytes ) {
+		if ( bytes < 1024 ) { return bytes + ' B'; }
+		if ( bytes < 1048576 ) { return ( bytes / 1024 ).toFixed( 1 ) + ' KB'; }
+		if ( bytes < 1073741824 ) { return ( bytes / 1048576 ).toFixed( 1 ) + ' MB'; }
+		return ( bytes / 1073741824 ).toFixed( 2 ) + ' GB';
+	}
+
+	/**
+	 * Render the stats bar from an API response.
+	 *
+	 * @param {object} stats Stats object from GET /imaging/stats.
+	 */
+	function renderStatsBar( stats ) {
+		var bar = document.getElementById( 'nv-imaging-stats-bar' );
+		if ( ! bar ) {
+			return;
+		}
+		var byMod = ( stats.by_modality || [] ).map( function ( m ) {
+			return escHtml( m.modality || '?' ) + ': <strong>' + escHtml( m.count ) + '</strong>';
+		} ).join( ' &nbsp;·&nbsp; ' );
+
+		var storageStr = stats.storage_bytes > 0 ? formatBytes( stats.storage_bytes ) : '—';
+
+		bar.innerHTML =
+			'<span class="nv-imaging-stat"><strong>' + escHtml( stats.total_studies ) + '</strong> Studies</span>' +
+			( byMod ? '<span class="nv-imaging-stat-sep">|</span><span class="nv-imaging-stat">' + byMod + '</span>' : '' ) +
+			'<span class="nv-imaging-stat-sep">|</span>' +
+			'<span class="nv-imaging-stat">Storage: <strong>' + storageStr + '</strong></span>';
+	}
+
+	/**
+	 * Fetch stats from the REST API and populate the stats bar.
+	 */
+	function loadStats() {
+		if ( ! cfg.statsUrl ) {
+			return;
+		}
+		apiFetch( cfg.statsUrl )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( stats ) { renderStatsBar( stats ); } )
+			.catch( function () {} );
+	}
+
+	// =========================================================================
+	// Tab navigation
+	// =========================================================================
+
+	/**
+	 * Wire up the Studies / Audit Log tab buttons.
+	 */
+	function initTabs() {
+		var tabBtns = document.querySelectorAll( '.nv-imaging-tab-btn' );
+		var allTabPanels = [
+			{ id: 'nv-imaging-tab-studies', key: 'studies' },
+			{ id: 'nv-imaging-tab-tools',   key: 'tools' },
+			{ id: 'nv-imaging-tab-audit',   key: 'audit' },
+			{ id: 'nv-imaging-tab-docs',    key: 'docs' },
+		];
+
+		tabBtns.forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				tabBtns.forEach( function ( b ) { b.classList.remove( 'nv-imaging-tab-active' ); } );
+				btn.classList.add( 'nv-imaging-tab-active' );
+				var tab = btn.dataset.tab;
+
+				// Show only the matching panel.
+				allTabPanels.forEach( function ( panel ) {
+					var el = document.getElementById( panel.id );
+					if ( el ) { el.style.display = ( panel.key === tab ) ? '' : 'none'; }
+				} );
+
+				// Lazy-load on demand.
+				if ( tab === 'audit' ) { loadAuditLog(); }
+			} );
+		} );
+	}
+
+	// =========================================================================
+	// Filter bar
+	// =========================================================================
+
+	/**
+	 * Build the studies API URL with current filter state.
+	 *
+	 * @returns {string}
+	 */
+	function buildStudiesUrl() {
+		var url = restBase + '/studies?per_page=100';
+		if ( filterModality ) { url += '&modality='  + encodeURIComponent( filterModality ); }
+		if ( filterDateFrom ) { url += '&date_from=' + encodeURIComponent( filterDateFrom ); }
+		if ( filterDateTo )   { url += '&date_to='   + encodeURIComponent( filterDateTo ); }
+		if ( filterSearch )   { url += '&search='    + encodeURIComponent( filterSearch ); }
+		return url;
+	}
+
+	/**
+	 * Wire up the filter bar controls.
+	 */
+	function initFilters() {
+		var applyBtn = document.getElementById( 'nv-imaging-filter-apply' );
+		var clearBtn = document.getElementById( 'nv-imaging-filter-clear' );
+
+		if ( applyBtn ) {
+			applyBtn.addEventListener( 'click', function () {
+				filterModality = ( document.getElementById( 'nv-imaging-filter-modality' ) || {} ).value || '';
+				filterDateFrom = ( document.getElementById( 'nv-imaging-date-from' ) || {} ).value || '';
+				filterDateTo   = ( document.getElementById( 'nv-imaging-date-to' ) || {} ).value || '';
+				filterSearch   = ( document.getElementById( 'nv-imaging-search' ) || {} ).value || '';
+				loadStudyList();
+			} );
+		}
+
+		if ( clearBtn ) {
+			clearBtn.addEventListener( 'click', function () {
+				filterModality = filterDateFrom = filterDateTo = filterSearch = '';
+				[ 'nv-imaging-filter-modality', 'nv-imaging-date-from', 'nv-imaging-date-to', 'nv-imaging-search' ]
+					.forEach( function ( id ) {
+						var el = document.getElementById( id );
+						if ( el ) { el.value = ''; }
+					} );
+				loadStudyList();
+			} );
+		}
+
+		// Allow pressing Enter in the search box to trigger the filter.
+		var searchEl = document.getElementById( 'nv-imaging-search' );
+		if ( searchEl ) {
+			searchEl.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' && applyBtn ) { applyBtn.click(); }
+			} );
+		}
+	}
+
+	// =========================================================================
 	// Study browser
 	// =========================================================================
 
@@ -124,7 +276,7 @@
 			studyListEl.style.display = 'none';
 		}
 
-		apiFetch( restBase + '/studies?per_page=50' )
+		apiFetch( buildStudiesUrl() )
 			.then( function ( res ) {
 				if ( ! res.ok ) {
 					throw new Error( 'Failed to load studies (HTTP ' + res.status + ')' );
@@ -139,6 +291,166 @@
 					loadingEl.textContent = err.message;
 				}
 			} );
+	}
+
+	// =========================================================================
+	// Audit log
+	// =========================================================================
+
+	/**
+	 * Fetch and render the audit log (lazy-loaded once).
+	 */
+	function loadAuditLog() {
+		if ( auditLoaded ) {
+			return;
+		}
+		var listEl = document.getElementById( 'nv-imaging-audit-list' );
+		var loadEl = document.getElementById( 'nv-imaging-audit-loading' );
+		if ( loadEl ) { loadEl.style.display = ''; }
+
+		apiFetch( restBase + '/audit?limit=100' )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( data ) {
+				auditLoaded = true;
+				if ( loadEl ) { loadEl.style.display = 'none'; }
+				renderAuditLog( data.entries || [], listEl );
+			} )
+			.catch( function ( err ) {
+				if ( loadEl ) { loadEl.style.display = 'none'; }
+				if ( listEl ) {
+					listEl.innerHTML = '<p class="nv-imaging-error">' + escHtml( err.message ) + '</p>';
+				}
+			} );
+	}
+
+	/**
+	 * Render the audit log entries into a table.
+	 *
+	 * @param {Array}       entries Audit log entries.
+	 * @param {HTMLElement} listEl  Container element.
+	 */
+	function renderAuditLog( entries, listEl ) {
+		if ( ! listEl ) {
+			return;
+		}
+		if ( ! entries.length ) {
+			listEl.innerHTML = '<p class="nv-imaging-empty">No audit events recorded.</p>';
+			return;
+		}
+		var html = '<table class="wp-list-table widefat fixed striped nv-imaging-table">';
+		html += '<thead><tr><th>Time</th><th>Action</th><th>Study</th><th>User</th></tr></thead><tbody>';
+		entries.forEach( function ( e ) {
+			html += '<tr>';
+			html += '<td>' + escHtml( e.timestamp || '' ) + '</td>';
+			html += '<td>' + escHtml( e.action || '' ) + '</td>';
+			html += '<td class="nv-imaging-uid">' + escHtml( e.study_id || '' ) + '</td>';
+			html += '<td>' + escHtml( e.user_id || '' ) + '</td>';
+			html += '</tr>';
+		} );
+		html += '</tbody></table>';
+		listEl.innerHTML = html;
+	}
+
+	// =========================================================================
+	// AI Tools tab
+	// =========================================================================
+
+	/** Currently-viewed study UID (set when viewer opens, cleared on back). */
+	var activeStudyUid = '';
+
+	/**
+	 * Wire up the AI Interpretation form on the Tools tab.
+	 */
+	function initToolsTab() {
+		var runBtn   = document.getElementById( 'nv-imaging-interpret-run' );
+		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
+		var focusSel = document.getElementById( 'nv-imaging-interpret-focus' );
+		var resultEl = document.getElementById( 'nv-imaging-interpret-result' );
+
+		if ( ! runBtn ) {
+			return;
+		}
+
+		runBtn.addEventListener( 'click', function () {
+			var studyUid = uidInput ? uidInput.value.trim() : '';
+			var focus    = focusSel ? focusSel.value : 'full';
+
+			if ( ! studyUid ) {
+				if ( resultEl ) {
+					resultEl.style.display = '';
+					resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+					resultEl.textContent = i18n.noStudySelected || 'Enter a Study UID to analyse.';
+				}
+				return;
+			}
+
+			runBtn.disabled = true;
+			runBtn.textContent = i18n.interpreting || 'Analysing…';
+			if ( resultEl ) {
+				resultEl.style.display = '';
+				resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-loading';
+				resultEl.textContent = i18n.interpreting || 'Analysing…';
+			}
+
+			apiFetch(
+				cfg.interpretUrl || ( restBase + '/interpret' ),
+				{
+					method: 'POST',
+					body: JSON.stringify( { study_uid: studyUid, focus: focus } ),
+				}
+			)
+				.then( function ( res ) {
+					return res.json().then( function ( data ) {
+						return { ok: res.ok, data: data };
+					} );
+				} )
+				.then( function ( result ) {
+					runBtn.disabled = false;
+					runBtn.textContent = i18n.interpretRun || 'Run AI Analysis';
+
+					if ( result.ok && result.data && result.data.interpretation ) {
+						if ( resultEl ) {
+							resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-output';
+							// Render newlines as paragraphs for readability.
+							var lines = String( result.data.interpretation ).split( '\n' );
+							resultEl.innerHTML = lines.map( function ( l ) {
+								return l.trim() ? '<p>' + escHtml( l ) + '</p>' : '';
+							} ).join( '' );
+						}
+					} else {
+						var errMsg = ( result.data && result.data.message )
+							? result.data.message
+							: ( i18n.interpretError || 'AI interpretation failed.' );
+						if ( resultEl ) {
+							resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+							resultEl.textContent = errMsg;
+						}
+					}
+				} )
+				.catch( function () {
+					runBtn.disabled = false;
+					runBtn.textContent = i18n.interpretRun || 'Run AI Analysis';
+					if ( resultEl ) {
+						resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+						resultEl.textContent = i18n.interpretError || 'AI interpretation failed.';
+					}
+				} );
+		} );
+	}
+
+	/**
+	 * Pre-fill the Tools tab UID input with the currently-viewed study.
+	 *
+	 * Called whenever the viewer opens a study.
+	 *
+	 * @param {string} uid DICOM StudyInstanceUID.
+	 */
+	function setActiveStudyUid( uid ) {
+		activeStudyUid = uid || '';
+		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
+		if ( uidInput && activeStudyUid ) {
+			uidInput.value = activeStudyUid;
+		}
 	}
 
 	/**
@@ -179,7 +491,12 @@
 			html += '<td>' + escHtml( s.series_count ) + '</td>';
 			html += '<td>' + escHtml( s.instance_count ) + '</td>';
 			html += '<td>' + escHtml( s.status ) + '</td>';
-			html += '<td><button type="button" class="button nv-imaging-view-btn" data-uid="' + escHtml( s.study_uid ) + '">View</button></td>';
+			html += '<td class="nv-imaging-actions-cell">';
+			html += '<button type="button" class="button nv-imaging-view-btn" data-uid="' + escHtml( s.study_uid ) + '">View</button>';
+			if ( canManage ) {
+				html += ' <button type="button" class="button nv-imaging-delete-btn" data-uid="' + escHtml( s.study_uid ) + '">Delete</button>';
+			}
+			html += '</td>';
 			html += '</tr>';
 		} );
 
@@ -188,11 +505,99 @@
 		studyListEl.style.display = '';
 
 		// Bind view buttons.
-		var btns = studyListEl.querySelectorAll( '.nv-imaging-view-btn' );
-		btns.forEach( function ( btn ) {
+		studyListEl.querySelectorAll( '.nv-imaging-view-btn' ).forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
 				openStudy( btn.dataset.uid );
 			} );
+		} );
+
+		// Bind delete buttons.
+		studyListEl.querySelectorAll( '.nv-imaging-delete-btn' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				deleteStudy( btn.dataset.uid, btn );
+			} );
+		} );
+	}
+
+	/**
+	 * Delete a study with inline row-level confirmation (accessible alternative
+	 * to window.confirm / window.alert).
+	 *
+	 * When the user clicks the Delete button a confirmation message is injected
+	 * directly into the table row.  Confirming triggers the REST delete and
+	 * refreshes the study list; cancelling removes the inline prompt.
+	 *
+	 * @param {string}      studyUid  DICOM StudyInstanceUID.
+	 * @param {HTMLElement} sourceBtn The delete button that was clicked.
+	 */
+	function deleteStudy( studyUid, sourceBtn ) {
+		// If a confirm row already exists for this study, remove it (toggle off).
+		var existingConfirm = document.getElementById( 'nv-del-confirm-' + CSS.escape( studyUid ) );
+		if ( existingConfirm ) {
+			existingConfirm.remove();
+			return;
+		}
+
+		// Build an accessible inline confirmation row beneath the study row.
+		var sourceRow = sourceBtn ? sourceBtn.closest( 'tr' ) : null;
+		var confirmRow = document.createElement( 'tr' );
+		confirmRow.id = 'nv-del-confirm-' + CSS.escape( studyUid );
+		confirmRow.className = 'nv-imaging-confirm-row';
+		var colCount = sourceRow ? sourceRow.children.length : 7;
+		confirmRow.innerHTML =
+			'<td colspan="' + colCount + '" class="nv-imaging-confirm-cell" role="alert" aria-live="assertive">' +
+			'<span class="nv-imaging-confirm-msg">' +
+			escHtml( i18n.confirmDelete || 'Delete this study? All DICOM files will be permanently removed.' ) +
+			'</span> ' +
+			'<button type="button" class="button button-link-delete nv-imaging-confirm-yes">Yes, delete</button> ' +
+			'<button type="button" class="button nv-imaging-confirm-no">Cancel</button>' +
+			'<span class="nv-imaging-confirm-status" aria-live="polite"></span>' +
+			'</td>';
+
+		if ( sourceRow && sourceRow.parentNode ) {
+			sourceRow.parentNode.insertBefore( confirmRow, sourceRow.nextSibling );
+		} else {
+			// Fallback: append to study list container.
+			if ( studyListEl ) { studyListEl.appendChild( confirmRow ); }
+		}
+
+		// Cancel button.
+		confirmRow.querySelector( '.nv-imaging-confirm-no' ).addEventListener( 'click', function () {
+			confirmRow.remove();
+		} );
+
+		// Confirm button.
+		confirmRow.querySelector( '.nv-imaging-confirm-yes' ).addEventListener( 'click', function () {
+			var statusEl = confirmRow.querySelector( '.nv-imaging-confirm-status' );
+			var yesBtn   = confirmRow.querySelector( '.nv-imaging-confirm-yes' );
+			var noBtn    = confirmRow.querySelector( '.nv-imaging-confirm-no' );
+			yesBtn.disabled = true;
+			noBtn.disabled  = true;
+			if ( statusEl ) { statusEl.textContent = 'Deleting…'; }
+
+			apiFetch(
+				restBase + '/studies/' + encodeURIComponent( studyUid ),
+				{
+					method: 'DELETE',
+					headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+				}
+			)
+				.then( function ( res ) {
+					if ( ! res.ok ) {
+						throw new Error( 'Delete failed (HTTP ' + res.status + ')' );
+					}
+					confirmRow.remove();
+					loadStudyList();
+					loadStats();
+				} )
+				.catch( function ( err ) {
+					yesBtn.disabled = false;
+					noBtn.disabled  = false;
+					if ( statusEl ) {
+						statusEl.className = 'nv-imaging-confirm-status nv-imaging-confirm-status--error';
+						statusEl.textContent = err.message;
+					}
+				} );
 		} );
 	}
 
@@ -206,10 +611,9 @@
 	 * @param {string} studyUid DICOM StudyInstanceUID.
 	 */
 	function openStudy( studyUid ) {
-		currentStudy = studyUid;
-
-		if ( studyBrowser ) {
-			studyBrowser.style.display = 'none';
+		var mainPanel = document.getElementById( 'nv-imaging-main-panel' );
+		if ( mainPanel ) {
+			mainPanel.style.display = 'none';
 		}
 		if ( viewerPanel ) {
 			viewerPanel.style.display = '';
@@ -217,6 +621,9 @@
 		if ( studyLabel ) {
 			studyLabel.textContent = studyUid;
 		}
+
+		// Pre-fill the AI Tools tab UID input.
+		setActiveStudyUid( studyUid );
 
 		// Fetch manifest then boot Cornerstone.
 		apiFetch( restBase + '/studies/' + encodeURIComponent( studyUid ) + '/manifest' )
@@ -229,6 +636,7 @@
 			.then( function ( manifest ) {
 				renderSeriesSidebar( manifest );
 				if ( manifest.series && manifest.series.length ) {
+					activeModality = manifest.modality || '';
 					loadSeriesInViewer( manifest.series[ 0 ] );
 				}
 			} )
@@ -252,12 +660,14 @@
 		( manifest.series || [] ).forEach( function ( s, idx ) {
 			var li = document.createElement( 'li' );
 			li.className = 'nv-imaging-series-item' + ( 0 === idx ? ' nv-imaging-series-active' : '' );
-			li.textContent = ( s.modality || 'Series' ) + ' (' + ( s.instances ? s.instances.length : 0 ) + ' images)';
+			var count = s.instances ? s.instances.length : 0;
+			li.textContent = ( s.modality || s.seriesDescription || 'Series ' + ( idx + 1 ) ) + ' — ' + count + ' image' + ( 1 === count ? '' : 's' );
 			li.addEventListener( 'click', function () {
 				document.querySelectorAll( '.nv-imaging-series-item' ).forEach( function ( el ) {
 					el.classList.remove( 'nv-imaging-series-active' );
 				} );
 				li.classList.add( 'nv-imaging-series-active' );
+				activeModality = s.modality || manifest.modality || '';
 				loadSeriesInViewer( s );
 			} );
 			seriesList.appendChild( li );
@@ -296,6 +706,15 @@
 
 		viewport.innerHTML = '<div class="nv-imaging-cs3d-el" id="nv-cs3d-el" style="width:100%;height:70vh;background:#000;"></div>';
 
+		// Show instance count overlay.
+		if ( imageIds.length > 1 ) {
+			var overlay = document.createElement( 'div' );
+			overlay.id = 'nv-imaging-instance-overlay';
+			overlay.className = 'nv-imaging-instance-overlay';
+			overlay.textContent = '1 / ' + imageIds.length;
+			viewport.appendChild( overlay );
+		}
+
 		// Dynamically import Cornerstone3D packages.
 		// Production deployments should bundle these locally via:
 		//   npm install @cornerstonejs/core @cornerstonejs/tools @cornerstonejs/dicom-image-loader
@@ -316,7 +735,120 @@
 	}
 
 	/**
+	 * Return W/L preset values keyed by modality (industry-standard clinical presets).
+	 *
+	 * @returns {object}
+	 */
+	function getWLPresets() {
+		return {
+			CT: [
+				{ label: 'Soft Tissue', ww: 350, wl: 40 },
+				{ label: 'Lung',        ww: 1500, wl: -600 },
+				{ label: 'Brain',       ww: 80,   wl: 40 },
+				{ label: 'Bone',        ww: 2000, wl: 400 },
+				{ label: 'Abdomen',     ww: 400,  wl: 50 },
+				{ label: 'Liver',       ww: 150,  wl: 80 },
+				{ label: 'Mediastinum', ww: 350,  wl: 50 },
+			],
+			MR: [
+				{ label: 'Brain',       ww: 1000, wl: 500 },
+				{ label: 'Spine',       ww: 1200, wl: 600 },
+				{ label: 'Soft Tissue', ww: 500,  wl: 250 },
+			],
+			PT: [
+				{ label: 'SUV Max',     ww: 5,    wl: 2.5 },
+			],
+		};
+	}
+
+	/**
+	 * Render the W/L toolbar inside the viewer panel.
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initWLToolbar( vp ) {
+		var toolbar = document.getElementById( 'nv-imaging-wl-toolbar' );
+		if ( ! toolbar ) {
+			return;
+		}
+
+		toolbar.innerHTML = '';
+
+		// Reset W/L button.
+		var resetBtn = document.createElement( 'button' );
+		resetBtn.type = 'button';
+		resetBtn.className = 'button nv-imaging-wl-btn';
+		resetBtn.textContent = 'Reset W/L';
+		resetBtn.addEventListener( 'click', function () {
+			try {
+				vp.resetProperties();
+				vp.render();
+			} catch ( _e ) {}
+		} );
+		toolbar.appendChild( resetBtn );
+
+		// Invert button.
+		var invertBtn = document.createElement( 'button' );
+		invertBtn.type = 'button';
+		invertBtn.className = 'button nv-imaging-wl-btn';
+		invertBtn.textContent = 'Invert';
+		invertBtn.addEventListener( 'click', function () {
+			try {
+				var props = vp.getProperties();
+				var inverted = ! ( props && props.invert );
+				vp.setProperties( { invert: inverted } );
+				vp.render();
+			} catch ( _e ) {}
+		} );
+		toolbar.appendChild( invertBtn );
+
+		// Modality-specific presets.
+		var modality = ( activeModality || '' ).toUpperCase();
+		var presets = getWLPresets()[ modality ] || [];
+		if ( presets.length ) {
+			var sep = document.createElement( 'span' );
+			sep.className = 'nv-imaging-wl-sep';
+			sep.textContent = '|';
+			toolbar.appendChild( sep );
+
+			var label = document.createElement( 'span' );
+			label.className = 'nv-imaging-wl-label';
+			label.textContent = modality + ' presets:';
+			toolbar.appendChild( label );
+
+			presets.forEach( function ( preset ) {
+				var btn = document.createElement( 'button' );
+				btn.type = 'button';
+				btn.className = 'button nv-imaging-wl-btn nv-imaging-wl-preset';
+				btn.textContent = preset.label;
+				btn.title = 'WW ' + preset.ww + ' / WL ' + preset.wl;
+				btn.addEventListener( 'click', function () {
+					try {
+						vp.setProperties( {
+							voiRange: {
+								lower: preset.wl - preset.ww / 2,
+								upper: preset.wl + preset.ww / 2,
+							},
+						} );
+						vp.render();
+					} catch ( _e ) {}
+				} );
+				toolbar.appendChild( btn );
+			} );
+		}
+	}
+
+	/**
 	 * Initialise Cornerstone3D and render the image stack.
+	 *
+	 * Key fixes applied here (industry best practices):
+	 *  1. `csDicomImageLoader.external.cornerstone = csCore` — connects the loader
+	 *     to Cornerstone so it can register the wadouri image-loader and decode
+	 *     pixel data.  Without this the canvas renders as solid black.
+	 *  2. `configure({ beforeSend })` — injects the WP nonce header so the REST
+	 *     endpoint can authenticate the per-instance file fetch.
+	 *  3. After `setStack`, listen for IMAGE_RENDERED and auto-compute VOI range
+	 *     from pixel data when DICOM metadata does not carry WindowCenter/Width.
 	 *
 	 * @param {object} csCore             @cornerstonejs/core module.
 	 * @param {object} csTools            @cornerstonejs/tools module.
@@ -332,10 +864,28 @@
 
 		// One-time global init.
 		if ( ! csInitialized ) {
+			// CRITICAL (fix for black images): Connect the DICOM image loader to
+			// Cornerstone core BEFORE calling init().  Without this link the wadouri
+			// image-loader is never registered and every canvas stays black.
+			if ( csDicomImageLoader.external ) {
+				csDicomImageLoader.external.cornerstone = csCore;
+			}
+
+			// Configure authentication headers sent with every XHR-based DICOM fetch.
+			// `beforeSend` is the standard hook in @cornerstonejs/dicom-image-loader v1.
+			if ( csDicomImageLoader.configure ) {
+				csDicomImageLoader.configure( {
+					useWebWorkers: false,
+					beforeSend: function ( xhr ) {
+						xhr.setRequestHeader( 'X-WP-Nonce', nonce );
+					},
+				} );
+			}
+
 			await csCore.init();
 			await csTools.init();
 
-			// Configure DICOM image loader to use our REST endpoint.
+			// Call the loader's own init AFTER external.cornerstone is set.
 			if ( csDicomImageLoader.init ) {
 				csDicomImageLoader.init( { maxWebWorkers: 1 } );
 			}
@@ -363,8 +913,60 @@
 		} );
 
 		var vp = renderingEngine.getViewport( viewportId );
+
 		await vp.setStack( imageIds, 0 );
+
+		// Auto-compute window/level on first render.
+		// DICOM files without WindowCenter/Width metadata tags display as black
+		// without this step.  We listen for the IMAGE_RENDERED event once and
+		// compute the VOI range from the actual pixel value range if none was
+		// set by the metadata.
+		if ( csCore.Enums && csCore.Enums.Events && csCore.Enums.Events.IMAGE_RENDERED ) {
+			element.addEventListener(
+				csCore.Enums.Events.IMAGE_RENDERED,
+				function onFirstRender( evt ) {
+					element.removeEventListener( csCore.Enums.Events.IMAGE_RENDERED, onFirstRender );
+					try {
+						var imgEvt = evt.detail && evt.detail.image;
+						if ( imgEvt &&
+							typeof imgEvt.minPixelValue !== 'undefined' &&
+							typeof imgEvt.maxPixelValue !== 'undefined' ) {
+							var lo = imgEvt.minPixelValue;
+							var hi = imgEvt.maxPixelValue;
+							if ( hi > lo ) {
+								vp.setProperties( { voiRange: { lower: lo, upper: hi } } );
+								vp.render();
+							}
+						}
+					} catch ( _e ) {}
+				},
+				{ once: true }
+			);
+		}
+
 		vp.render();
+
+		// Update instance overlay when the stack image index changes.
+		if ( csCore.Enums && csCore.Enums.Events && csCore.Enums.Events.STACK_NEW_IMAGE ) {
+			element.addEventListener( csCore.Enums.Events.STACK_NEW_IMAGE, function ( evt ) {
+				var overlay = document.getElementById( 'nv-imaging-instance-overlay' );
+				if ( overlay ) {
+					var idx = ( evt.detail && typeof evt.detail.imageIdIndex !== 'undefined' )
+						? evt.detail.imageIdIndex + 1
+						: '';
+					overlay.textContent = idx + ' / ' + imageIds.length;
+				}
+			} );
+		}
+
+		// Populate W/L toolbar now that we have the viewport instance.
+		initWLToolbar( vp );
+
+		// Extra toolbar actions (flip, rotate, screenshot).
+		initExtraTools( vp );
+
+		// Keyboard shortcuts for the viewer.
+		initKeyboardShortcuts( vp );
 
 		// Set up tools.
 		var toolGroupId = 'nvToolGroup';
@@ -399,6 +1001,118 @@
 		} );
 		toolGroup.setToolActive( csTools.ZoomTool.toolName, {
 			bindings: [ { mouseButton: 3 } ],
+		} );
+	}
+
+	// =========================================================================
+	// Extra viewer tools
+	// =========================================================================
+
+	/**
+	 * Normalize a rotation angle to [0, 360) degrees.
+	 *
+	 * @param {number} current Current rotation in degrees.
+	 * @param {number} delta   Degrees to add (positive = CW, negative = CCW).
+	 * @returns {number}
+	 */
+	function normalizeRotation( current, delta ) {
+		return ( ( current + delta ) % 360 + 360 ) % 360;
+	}
+
+	/**
+	 * Wire up the extra toolbar buttons (flip H/V, rotate, screenshot).
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initExtraTools( vp ) {
+		var btnFlipH = document.getElementById( 'nv-imaging-btn-fliph' );
+		var btnFlipV = document.getElementById( 'nv-imaging-btn-flipv' );
+		var btnRotCW = document.getElementById( 'nv-imaging-btn-rotate-cw' );
+		var btnRotCCW = document.getElementById( 'nv-imaging-btn-rotate-ccw' );
+		var btnShot  = document.getElementById( 'nv-imaging-btn-screenshot' );
+
+		if ( btnFlipH ) {
+			btnFlipH.onclick = function () {
+				try {
+					var p = vp.getCamera();
+					vp.setCamera( Object.assign( {}, p, { flipHorizontal: ! p.flipHorizontal } ) );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnFlipV ) {
+			btnFlipV.onclick = function () {
+				try {
+					var p = vp.getCamera();
+					vp.setCamera( Object.assign( {}, p, { flipVertical: ! p.flipVertical } ) );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnRotCW ) {
+			btnRotCW.onclick = function () {
+				try {
+					vp.setProperties( { rotation: normalizeRotation( vp.getProperties().rotation || 0, 90 ) } );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnRotCCW ) {
+			btnRotCCW.onclick = function () {
+				try {
+					vp.setProperties( { rotation: normalizeRotation( vp.getProperties().rotation || 0, -90 ) } );
+					vp.render();
+				} catch ( _e ) {}
+			};
+		}
+		if ( btnShot ) {
+			btnShot.onclick = function () {
+				try {
+					var canvas = document.querySelector( '#nv-cs3d-el canvas' );
+					if ( canvas ) {
+						var link = document.createElement( 'a' );
+						link.download = 'dicom-view.png';
+						link.href = canvas.toDataURL( 'image/png' );
+						link.click();
+					}
+				} catch ( _e ) {}
+			};
+		}
+	}
+
+	/**
+	 * Register keyboard shortcuts for the viewer.
+	 *
+	 * Arrow keys scroll through stack frames; R resets; I inverts.
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initKeyboardShortcuts( vp ) {
+		document.addEventListener( 'keydown', function ( e ) {
+			if ( ! viewerPanel || viewerPanel.style.display === 'none' ) { return; }
+			if ( e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' ) { return; }
+			switch ( e.key ) {
+				case 'ArrowLeft':
+				case 'ArrowUp':
+					try { vp.scroll( -1 ); vp.render(); } catch ( _e ) {}
+					break;
+				case 'ArrowRight':
+				case 'ArrowDown':
+					try { vp.scroll( 1 ); vp.render(); } catch ( _e ) {}
+					break;
+				case 'r':
+				case 'R':
+					try { vp.resetProperties(); vp.resetCamera(); vp.render(); } catch ( _e ) {}
+					break;
+				case 'i':
+				case 'I':
+					try {
+						var p = vp.getProperties();
+						vp.setProperties( { invert: ! p.invert } );
+						vp.render();
+					} catch ( _e ) {}
+					break;
+			}
 		} );
 	}
 
@@ -485,10 +1199,10 @@
 				if ( viewerPanel ) {
 					viewerPanel.style.display = 'none';
 				}
-				if ( studyBrowser ) {
-					studyBrowser.style.display = '';
+				var mainPanel = document.getElementById( 'nv-imaging-main-panel' );
+				if ( mainPanel ) {
+					mainPanel.style.display = '';
 				}
-				currentStudy = null;
 			} );
 		}
 	}
@@ -500,6 +1214,10 @@
 	document.addEventListener( 'DOMContentLoaded', function () {
 		initNavigation();
 		initUpload();
+		initTabs();
+		initFilters();
+		initToolsTab();
 		loadStudyList();
+		loadStats();
 	} );
 } )();

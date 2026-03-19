@@ -66,6 +66,18 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/stats',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_stats' ),
+					'permission_callback' => array( $this, 'can_view_imaging' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/studies',
 			array(
 				array(
@@ -80,6 +92,22 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 						'page'     => array(
 							'default'           => 1,
 							'sanitize_callback' => 'absint',
+						),
+						'modality'  => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'date_from' => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'date_to'   => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'search'    => array(
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -124,6 +152,31 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/interpret',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'interpret_study' ),
+					'permission_callback' => array( $this, 'can_view_imaging' ),
+					'args'                => array(
+						'study_uid' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'focus'     => array(
+							'default'           => 'full',
+							'sanitize_callback' => 'sanitize_key',
+							'validate_callback' => function ( $value ) {
+								return in_array( $value, array( 'quality', 'completeness', 'workflow', 'full' ), true );
+							},
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/instances/(?P<instanceId>[a-zA-Z0-9.\-_]+)/file',
 			array(
 				array(
@@ -152,6 +205,24 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'upload_study' ),
 					'permission_callback' => array( $this, 'can_upload_imaging' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/studies/(?P<studyId>[a-zA-Z0-9.\-_]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_study' ),
+					'permission_callback' => array( $this, 'can_manage_imaging' ),
+					'args'                => array(
+						'studyId' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
 				),
 			)
 		);
@@ -245,7 +316,14 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$per_page = $request->get_param( 'per_page' );
 		$page     = $request->get_param( 'page' );
 
-		$result = WP_MCP_AI_Imaging_Study_CPT::get_all( $per_page, $page );
+		$filters = array(
+			'modality'  => $request->get_param( 'modality' ),
+			'date_from' => $request->get_param( 'date_from' ),
+			'date_to'   => $request->get_param( 'date_to' ),
+			'search'    => $request->get_param( 'search' ),
+		);
+
+		$result = WP_MCP_AI_Imaging_Study_CPT::get_all( $per_page, $page, $filters );
 
 		$studies = array();
 		foreach ( $result['posts'] as $post ) {
@@ -259,6 +337,95 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				'studies' => $studies,
 				'total'   => $result['total'],
 				'page'    => $page,
+			),
+			200
+		);
+	}
+
+	/**
+	 * GET /imaging/stats – return aggregate statistics.
+	 *
+	 * Returns total study count, counts grouped by modality, total DICOM storage
+	 * size, and the 5 most-recent studies.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response
+	 */
+	public function get_stats( WP_REST_Request $request ) {
+		// Total study count.
+		$count_query = new WP_Query(
+			array(
+				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
+		$total_studies = $count_query->found_posts;
+
+		// Group by modality.
+		$modality_posts = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		$modality_counts = array();
+		foreach ( $modality_posts as $pid ) {
+			$mod = get_post_meta( $pid, '_imaging_modality', true );
+			if ( '' === $mod || false === $mod ) {
+				$mod = 'Unknown';
+			}
+			if ( ! isset( $modality_counts[ $mod ] ) ) {
+				$modality_counts[ $mod ] = 0;
+			}
+			++$modality_counts[ $mod ];
+		}
+
+		$by_modality = array();
+		foreach ( $modality_counts as $mod => $cnt ) {
+			$by_modality[] = array(
+				'modality' => $mod,
+				'count'    => $cnt,
+			);
+		}
+
+		// Total storage size (recursive scan of the storage root).
+		$storage_bytes = 0;
+		$storage_root  = $this->get_storage_root();
+		if ( is_dir( $storage_root ) ) {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $storage_root, RecursiveDirectoryIterator::SKIP_DOTS )
+			);
+			foreach ( $iterator as $file ) {
+				if ( ! $file->isFile() ) {
+					continue;
+				}
+				$basename = $file->getFilename();
+				// Skip the access-guard files.
+				if ( '.htaccess' === $basename || 'index.php' === $basename ) {
+					continue;
+				}
+				$storage_bytes += $file->getSize();
+			}
+		}
+
+		// Recent 5 studies.
+		$recent_result  = WP_MCP_AI_Imaging_Study_CPT::get_all( 5, 1 );
+		$recent_studies = array();
+		foreach ( $recent_result['posts'] as $post ) {
+			$recent_studies[] = $this->format_study( $post );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'total_studies'  => $total_studies,
+				'by_modality'    => $by_modality,
+				'storage_bytes'  => $storage_bytes,
+				'recent_studies' => $recent_studies,
 			),
 			200
 		);
@@ -424,7 +591,7 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$study_post_id  = null;
 
 		foreach ( $uploaded_files as $file ) {
-			$result = $this->process_uploaded_file( $file, $storage_root, $study_post_id );
+			$result = $this->process_uploaded_file( $file, $storage_root );
 			if ( is_wp_error( $result ) ) {
 				$results[] = array( 'error' => $result->get_error_message(), 'file' => sanitize_text_field( $file['name'] ) );
 				continue;
@@ -490,6 +657,139 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$entries = WP_MCP_AI_Imaging_Audit_Log::get_recent( $limit, $study_id );
 
 		return new WP_REST_Response( array( 'entries' => $entries ), 200 );
+	}
+
+	/**
+	 * POST /imaging/interpret – run AI interpretation on a study.
+	 *
+	 * Delegates to WP_MCP_AI_Tool_Interpret_Imaging_Study when available.
+	 * Returns a 503 if the pro tool class has not been loaded.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function interpret_study( WP_REST_Request $request ) {
+		$study_uid = $request->get_param( 'study_uid' );
+		$focus     = $request->get_param( 'focus' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Interpret_Imaging_Study' ) ) {
+			return new WP_Error(
+				'imaging_tool_unavailable',
+				__( 'The AI interpretation tool is not available. Ensure the pro toolkit is fully loaded and an AI provider (OpenAI / Gemini) is configured in Settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute(
+			array(
+				'study_uid' => $study_uid,
+				'focus'     => $focus,
+			),
+			array()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_interpreted',
+			array(
+				'study_id' => $study_uid,
+				'focus'    => $focus,
+				'user_id'  => get_current_user_id(),
+			)
+		);
+
+		// Tool returns an array with a 'result' or 'output' key depending on version.
+		$output = '';
+		if ( is_array( $result ) ) {
+			$output = isset( $result['result'] ) ? $result['result']
+				: ( isset( $result['output'] ) ? $result['output']
+				: ( isset( $result['content'] ) ? $result['content']
+				: wp_json_encode( $result ) ) );
+		} elseif ( is_string( $result ) ) {
+			$output = $result;
+		}
+
+		return new WP_REST_Response(
+			array(
+				'study_uid'      => $study_uid,
+				'focus'          => $focus,
+				'interpretation' => $output,
+			),
+			200
+		);
+	}
+
+	/**
+	 * DELETE /imaging/studies/{studyId} – permanently delete a study.
+	 *
+	 * Removes the CPT post AND all DICOM files stored on disk for the study.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_study( WP_REST_Request $request ) {
+		$study_uid = $request->get_param( 'studyId' );
+		$post      = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
+
+		if ( ! $post ) {
+			return new WP_Error( 'imaging_not_found', __( 'Study not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		// Remove all DICOM files stored in the study directory.
+		$storage_path = get_post_meta( $post->ID, '_imaging_storage_path', true );
+		if ( $storage_path && is_dir( $storage_path ) && $this->is_path_within_storage( $storage_path ) ) {
+			$files = glob( trailingslashit( $storage_path ) . '*.dcm' );
+			if ( is_array( $files ) ) {
+				foreach ( $files as $file ) {
+					if ( is_file( $file ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+						if ( ! unlink( $file ) ) {
+							WP_MCP_AI_Imaging_Audit_Log::log(
+								'study_delete_file_failed',
+								array(
+									'study_id' => $study_uid,
+									'file'     => basename( $file ),
+									'user_id'  => get_current_user_id(),
+								)
+							);
+						}
+					}
+				}
+			}
+			// Remove the study directory only if it is now empty.
+			if ( ! @rmdir( $storage_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+				// Directory not empty or not writable — log for compliance audit but don't
+				// block the delete (the CPT post will still be removed).
+				WP_MCP_AI_Imaging_Audit_Log::log(
+					'study_delete_dir_failed',
+					array(
+						'study_id' => $study_uid,
+						'path'     => basename( $storage_path ),
+						'user_id'  => get_current_user_id(),
+					)
+				);
+			}
+		}
+
+		// Delete the CPT post (bypass trash — PHI data should be hard-deleted).
+		$deleted = wp_delete_post( $post->ID, true );
+		if ( ! $deleted ) {
+			return new WP_Error( 'imaging_delete_failed', __( 'Failed to delete study.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
+		}
+
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_deleted',
+			array(
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
+
+		return new WP_REST_Response( array( 'deleted' => true, 'study_id' => $study_uid ), 200 );
 	}
 
 	// =========================================================================
@@ -636,12 +936,15 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Process a single uploaded DICOM file.
 	 *
+	 * Each file is indexed independently by its DICOM StudyInstanceUID.  This
+	 * allows a single multipart upload to contain files from more than one study
+	 * (e.g. when the user selects all .dcm files on their desktop at once).
+	 *
 	 * @param array  $file          Entry from normalized $_FILES array.
 	 * @param string $storage_root  Protected storage root path.
-	 * @param int|null $study_post_id Existing study post ID (or null for first file).
 	 * @return array|WP_Error {study_post_id, instance_uid} or WP_Error.
 	 */
-	private function process_uploaded_file( array $file, $storage_root, $study_post_id ) {
+	private function process_uploaded_file( array $file, $storage_root ) {
 		// Check for upload errors.
 		if ( UPLOAD_ERR_OK !== $file['error'] ) {
 			return new WP_Error( 'imaging_upload_error', __( 'File upload error.', 'mcp-ai-wpoos-pro' ) );
@@ -683,25 +986,24 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'imaging_move_failed', __( 'Failed to store DICOM file.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create or retrieve the study post.
-		if ( null === $study_post_id ) {
-			$existing = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
-			if ( $existing ) {
-				$study_post_id = $existing->ID;
-			} else {
-				$study_post_id = WP_MCP_AI_Imaging_Study_CPT::create(
-					array(
-						'study_instance_uid' => $study_uid,
-						'patient_id'         => isset( $meta['patient_id'] ) ? $meta['patient_id'] : '',
-						'modality'           => $modality,
-						'study_date'         => isset( $meta['study_date'] ) ? $meta['study_date'] : '',
-						'study_description'  => isset( $meta['series_description'] ) ? $meta['series_description'] : '',
-						'storage_path'       => $study_dir,
-					)
-				);
-				if ( is_wp_error( $study_post_id ) ) {
-					return $study_post_id;
-				}
+		// Create or retrieve the study post, always by StudyInstanceUID.
+		// This allows a single upload batch to contain files from multiple studies.
+		$existing = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
+		if ( $existing ) {
+			$study_post_id = $existing->ID;
+		} else {
+			$study_post_id = WP_MCP_AI_Imaging_Study_CPT::create(
+				array(
+					'study_instance_uid' => $study_uid,
+					'patient_id'         => isset( $meta['patient_id'] ) ? $meta['patient_id'] : '',
+					'modality'           => $modality,
+					'study_date'         => isset( $meta['study_date'] ) ? $meta['study_date'] : '',
+					'study_description'  => isset( $meta['series_description'] ) ? $meta['series_description'] : '',
+					'storage_path'       => $study_dir,
+				)
+			);
+			if ( is_wp_error( $study_post_id ) ) {
+				return $study_post_id;
 			}
 		}
 

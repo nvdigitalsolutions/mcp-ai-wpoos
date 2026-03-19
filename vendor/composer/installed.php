@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-dicom-upload-error',
-        'version' => 'dev-copilot/fix-dicom-upload-error',
-        'reference' => '6ba1a25187d20d97a593c43627f39830b6151398',
+        'pretty_version' => 'dev-copilot/fix-black-image-issue',
+        'version' => 'dev-copilot/fix-black-image-issue',
+        'reference' => '8591604d5810da8f891631333944a6cd5ece27cb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-dicom-upload-error',
-            'version' => 'dev-copilot/fix-dicom-upload-error',
-            'reference' => '6ba1a25187d20d97a593c43627f39830b6151398',
+            'pretty_version' => 'dev-copilot/fix-black-image-issue',
+            'version' => 'dev-copilot/fix-black-image-issue',
+            'reference' => '8591604d5810da8f891631333944a6cd5ece27cb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -593,6 +593,80 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
+	 * get_all() should return all studies ordered by date DESC.
+	 *
+	 * This validates that the study browser shows every uploaded study, not just
+	 * the most recent one.
+	 */
+	public function test_study_cpt_get_all_returns_multiple_studies() {
+		// Create two studies with different UIDs (simulates two separate uploads).
+		WP_MCP_AI_Imaging_Study_CPT::create(
+			array(
+				'study_instance_uid' => '1.2.3.4.5.study_alpha',
+				'modality'           => 'CT',
+				'study_date'         => '20240101',
+			)
+		);
+
+		WP_MCP_AI_Imaging_Study_CPT::create(
+			array(
+				'study_instance_uid' => '1.2.3.4.5.study_beta',
+				'modality'           => 'MR',
+				'study_date'         => '20240201',
+			)
+		);
+
+		$result = WP_MCP_AI_Imaging_Study_CPT::get_all( 50, 1 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'posts', $result );
+		$this->assertArrayHasKey( 'total', $result );
+		$this->assertGreaterThanOrEqual( 2, $result['total'] );
+
+		// Confirm both UIDs are present in the returned posts.
+		$uids = array_map(
+			function ( $p ) {
+				return get_post_meta( $p->ID, '_imaging_study_instance_uid', true );
+			},
+			$result['posts']
+		);
+
+		$this->assertContains( '1.2.3.4.5.study_alpha', $uids );
+		$this->assertContains( '1.2.3.4.5.study_beta', $uids );
+	}
+
+	/**
+	 * get_by_uid should retrieve the correct study when two studies exist.
+	 *
+	 * Verifies study lookup works even when multiple studies share the same
+	 * post type (guards against the upload batch routing bug).
+	 */
+	public function test_study_cpt_get_by_uid_with_multiple_studies() {
+		WP_MCP_AI_Imaging_Study_CPT::create(
+			array(
+				'study_instance_uid' => '2.16.840.1.study_x',
+				'modality'           => 'CT',
+			)
+		);
+
+		WP_MCP_AI_Imaging_Study_CPT::create(
+			array(
+				'study_instance_uid' => '2.16.840.1.study_y',
+				'modality'           => 'PT',
+			)
+		);
+
+		$post_x = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( '2.16.840.1.study_x' );
+		$post_y = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( '2.16.840.1.study_y' );
+
+		$this->assertInstanceOf( 'WP_Post', $post_x );
+		$this->assertInstanceOf( 'WP_Post', $post_y );
+		$this->assertNotEquals( $post_x->ID, $post_y->ID );
+		$this->assertEquals( 'CT', get_post_meta( $post_x->ID, '_imaging_modality', true ) );
+		$this->assertEquals( 'PT', get_post_meta( $post_y->ID, '_imaging_modality', true ) );
+	}
+
+	/**
 	 * interpret_imaging_study parameter schema has the expected required fields.
 	 */
 	public function test_interpret_tool_parameter_schema() {
