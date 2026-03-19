@@ -178,6 +178,10 @@ composer.phar
 # Keep the TMA standalone markdown renderer which is served directly to Telegram WebView.
 !addons/pro/assets/js/tma-markdown.min.js
 
+# Keep Pro addon compiled CSS assets (generated from source CSS by cleancss build).
+!addons/pro/assets/css/*.min.css
+!addons/pro/assets/css/*.min.css.map
+
 # Keep vendor production files (pre-built from npm packages)
 !addons/pro/assets/vendor/**/*.min.js
 !addons/pro/assets/vendor/**/*.min.css

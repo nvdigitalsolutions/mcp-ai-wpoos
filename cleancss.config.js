@@ -66,12 +66,14 @@ const baseCssFiles = [
 
 // Pro addon CSS files (addons/pro/assets/css/)
 const proCssFiles = [
+	'addons/pro/assets/css/admin-health-wellness-management.css',
 	'addons/pro/assets/css/admin-pm-ai-assistant.css',
 	'addons/pro/assets/css/admin-project-management.css',
 	'addons/pro/assets/css/admin-webchat.css',
 	'addons/pro/assets/css/chat-channels-inbox.css',
 	'addons/pro/assets/css/cpt-assistant.css',
 	'addons/pro/assets/css/health-consolidate.css',
+	'addons/pro/assets/css/imaging-viewer.css',
 	'addons/pro/assets/css/media-template-admin.css',
 	'addons/pro/assets/css/orchestration-dashboard.css',
 	'addons/pro/assets/css/password-vault-admin.css',
@@ -79,6 +81,7 @@ const proCssFiles = [
 	'addons/pro/assets/css/quiz-admin.css',
 	'addons/pro/assets/css/remote-sites-admin.css',
 	'addons/pro/assets/css/research-page.css',
+	'addons/pro/assets/css/skill-manager-admin.css',
 ];
 
 const cleancss = new CleanCSS( { sourceMap: true, returnPromise: true } );
