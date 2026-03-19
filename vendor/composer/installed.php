@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-js-css-issues-tabs',
-        'version' => 'dev-copilot/fix-js-css-issues-tabs',
-        'reference' => 'f2fa64e4ad4bc7a3f40d13d6db57aefd626da039',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
+        'version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
+        'reference' => 'ebf7b3c155e9792d480ba9cd828c40f098ffbad7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-js-css-issues-tabs',
-            'version' => 'dev-copilot/fix-js-css-issues-tabs',
-            'reference' => 'f2fa64e4ad4bc7a3f40d13d6db57aefd626da039',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
+            'version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
+            'reference' => 'ebf7b3c155e9792d480ba9cd828c40f098ffbad7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
