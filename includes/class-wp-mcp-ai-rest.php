@@ -3008,8 +3008,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			$iteration            = 0;
-			$tool_result_messages = array();
+			$iteration             = 0;
+			$tool_result_messages  = array();
+			$agentic_tool_messages = array();
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3183,7 +3184,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Add assistant message with tool_calls to conversation.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
-					$messages[] = $assistant_message;
+					$messages[]              = $assistant_message;
+					$agentic_tool_messages[] = $assistant_message;
 				}
 
 				// Execute each tool and stream results.
@@ -3743,6 +3745,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'has_text_content'  => ! empty( $response['choices'][0]['message']['content'] ) || ! empty( $response['content'] ),
 					)
 				);
+			}
+
+			// Include intermediate assistant messages with tool_calls so the client can
+			// reconstruct the correct conversation order (assistant+tool_use → tool_result →
+			// final assistant) required by Anthropic and other providers.
+			if ( ! empty( $agentic_tool_messages ) ) {
+				$payload['agentic_tool_messages'] = $agentic_tool_messages;
 			}
 
 			// Normalize payload to ensure all data is JSON-serializable.

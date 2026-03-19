@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
-        'version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
-        'reference' => 'ebf7b3c155e9792d480ba9cd828c40f098ffbad7',
+        'pretty_version' => 'dev-copilot/fix-chat-client-tool-use-error',
+        'version' => 'dev-copilot/fix-chat-client-tool-use-error',
+        'reference' => '2be2b7442d0929c53befbc1318b580992c78bb8b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
-            'version' => 'dev-copilot/run-rebuild-all-zips-with-npm-build',
-            'reference' => 'ebf7b3c155e9792d480ba9cd828c40f098ffbad7',
+            'pretty_version' => 'dev-copilot/fix-chat-client-tool-use-error',
+            'version' => 'dev-copilot/fix-chat-client-tool-use-error',
+            'reference' => '2be2b7442d0929c53befbc1318b580992c78bb8b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
