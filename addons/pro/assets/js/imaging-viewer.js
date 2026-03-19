@@ -176,7 +176,15 @@
 	// =========================================================================
 
 	/**
-	 * Wire up the Studies / Audit Log tab buttons.
+	 * Wire up the tab buttons and initialise the correct active panel.
+	 *
+	 * On click we prevent the default navigation, update the browser URL via
+	 * history.replaceState (so the tab is bookmarkable / shareable without
+	 * triggering a full page reload), and show only the matching panel.
+	 *
+	 * The initial active tab is supplied by PHP through wpMcpAiImaging.activeTab
+	 * (already validated against the whitelist server-side) so that the JS view
+	 * stays in sync with what PHP rendered on page load.
 	 */
 	function initTabs() {
 		var tabLinks = document.querySelectorAll( '.nv-imaging-tab-nav .nav-tab' );
@@ -188,23 +196,67 @@
 			{ id: 'nv-imaging-tab-debug',   key: 'debug' },
 		];
 
+		/**
+		 * Activate a tab: update active class on links, show/hide panels,
+		 * update the browser URL, and trigger lazy-loads where needed.
+		 *
+		 * @param {string} tab Tab key to activate (e.g. 'studies').
+		 */
+		function activateTab( tab ) {
+			// Sync active class on all tab links.
+			tabLinks.forEach( function ( l ) {
+				if ( l.dataset.tab === tab ) {
+					l.classList.add( 'nav-tab-active' );
+				} else {
+					l.classList.remove( 'nav-tab-active' );
+				}
+			} );
+
+			// Show only the matching panel; hide all others.
+			allTabPanels.forEach( function ( panel ) {
+				var el = document.getElementById( panel.id );
+				if ( el ) {
+					el.style.display = ( panel.key === tab ) ? '' : 'none';
+				}
+			} );
+
+			// Lazy-load the audit log the first time it becomes visible.
+			if ( tab === 'audit' ) {
+				loadAuditLog();
+			}
+		}
+
+		// Wire up click handlers — intercept navigation, update URL instead.
 		tabLinks.forEach( function ( link ) {
 			link.addEventListener( 'click', function ( e ) {
 				e.preventDefault();
-				tabLinks.forEach( function ( l ) { l.classList.remove( 'nav-tab-active' ); } );
-				link.classList.add( 'nav-tab-active' );
 				var tab = link.dataset.tab;
 
-				// Show only the matching panel.
-				allTabPanels.forEach( function ( panel ) {
-					var el = document.getElementById( panel.id );
-					if ( el ) { el.style.display = ( panel.key === tab ) ? '' : 'none'; }
-				} );
+				// Update the browser URL without reloading the page so that
+				// the tab link is bookmarkable and the browser back/forward
+				// buttons work as expected.
+				if ( typeof URL === 'function' ) {
+					try {
+						var url = new URL( window.location.href );
+						url.searchParams.set( 'tab', tab );
+						history.replaceState( null, '', url.toString() );
+					} catch ( urlErr ) {
+						// URL update failed — tab switching still works.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: could not update URL for tab "' + tab + '"', urlErr );
+					}
+				}
 
-				// Lazy-load on demand.
-				if ( tab === 'audit' ) { loadAuditLog(); }
+				activateTab( tab );
 			} );
 		} );
+
+		// Activate the initial tab using the server-validated value supplied by
+		// PHP.  This keeps JS in sync with what PHP already rendered (correct
+		// panel visible, correct nav-tab-active class) without the browser
+		// needing to re-parse the URL.
+		var initialTab = ( cfg.activeTab && cfg.activeTab.length ) ? cfg.activeTab : 'studies';
+		activateTab( initialTab );
 	}
 
 	// =========================================================================
