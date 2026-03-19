@@ -1721,7 +1721,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.executive-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 					gap: 20px;
 					margin: 30px 0;
 				}
