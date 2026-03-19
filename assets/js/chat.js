@@ -15111,6 +15111,23 @@
             }
         }
 
+        // Resolve agentic_tool_messages from either SSE top-level or non-SSE data.data location.
+        // SSE path (after PHP fix): data.agentic_tool_messages
+        // Non-SSE path: data.data.agentic_tool_messages
+        const agenticMessages = (data && Array.isArray(data.agentic_tool_messages) && data.agentic_tool_messages.length > 0)
+            ? data.agentic_tool_messages
+            : (data && data.data && Array.isArray(data.data.agentic_tool_messages) && data.data.agentic_tool_messages.length > 0)
+                ? data.data.agentic_tool_messages
+                : [];
+
+        // When there are agentic intermediates or tool_results, the final assistant message must be
+        // pushed AFTER them so that Anthropic (and other providers) receive the correct ordering:
+        //   assistant(tool_use) → tool_result → final_assistant
+        // Without this, Anthropic throws "unexpected tool_use_id" because tool_result blocks
+        // appear in the conversation without a preceding assistant message containing tool_use blocks.
+        const hasDeferredMessages = agenticMessages.length > 0 ||
+            (data && Array.isArray(data.tool_results) && data.tool_results.length > 0);
+
         // OpenAI requires assistant messages with tool_calls to have valid content.
         // Empty string causes "Invalid parameter(s): messages" errors.
         // Use null for messages with tool_calls but no text content.
@@ -15124,14 +15141,18 @@
                 // OpenAI accepts null but not empty string for content when tool_calls present
                 assistantMessage.content = null;
             }
-            state.conversation.push(assistantMessage);
+            // Only push immediately when there are no agentic intermediates or tool_results.
+            // Otherwise defer the push until after those messages to maintain correct ordering.
+            if (!hasDeferredMessages) {
+                state.conversation.push(assistantMessage);
+            }
         }
 
         // Add intermediate assistant messages with tool_calls from agentic loop to conversation.
         // These messages capture the AI's reasoning and tool invocations during multi-step workflows.
         // They must be added before tool_results to maintain correct message ordering for API compatibility.
-        if (data && Array.isArray(data.agentic_tool_messages) && data.agentic_tool_messages.length > 0) {
-            data.agentic_tool_messages.forEach(function (agenticMessage) {
+        if (agenticMessages.length > 0) {
+            agenticMessages.forEach(function (agenticMessage) {
                 if (agenticMessage && agenticMessage.role === 'assistant') {
                     // Create a properly formatted assistant message for conversation state
                     const formattedMessage = {
