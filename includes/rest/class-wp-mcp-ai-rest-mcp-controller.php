@@ -174,19 +174,40 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistants_index' ),
 					'args'                => array(
-						'search'  => array(
+						'search'   => array(
 							'description'       => __( 'Search term to filter assistants by title or content.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'include' => array(
+						'include'  => array(
 							'description' => __( 'Limit results to specific assistant IDs.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'required'    => false,
 							'items'       => array(
 								'type' => 'integer',
 							),
+						),
+						'per_page' => array(
+							'description'       => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'minimum'           => -1,
+							'maximum'           => 100,
+							'sanitize_callback' => 'intval',
+						),
+						'page'     => array(
+							'description'       => __( 'Page of results to return when per_page is a positive integer. Defaults to 1.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'minimum'           => 1,
+							'sanitize_callback' => 'absint',
+						),
+						'_fields'  => array(
+							'description'       => __( 'Comma-separated list of assistant fields to include in each item. Always includes id.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),

@@ -239,6 +239,18 @@ class WP_MCP_AI_REST_Cache {
 	}
 
 	/**
+	 * Invalidate caches when plugin settings are saved
+	 *
+	 * Hooked to update_option_{OPTION_NAME}.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_on_settings_save() {
+		self::invalidate_endpoint( 'assistants' );
+		self::invalidate_endpoint( 'tools' );
+	}
+
+	/**
 	 * Invalidate caches when assistant is saved
 	 *
 	 * Hooked to save_post_mcp_ai_assistant.

@@ -2336,6 +2336,7 @@ function wp_mcp_ai_setup_cache_invalidation_hooks() {
 		add_action( 'save_post_mcp_ai_assistant', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_save' ), 10, 1 );
 		add_action( 'delete_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
 		add_action( 'wp_trash_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
+		add_action( 'update_option_' . WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_settings_save' ) );
 	}
 }
 
