@@ -158,6 +158,24 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/studies/(?P<studyId>[a-zA-Z0-9.\-_]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_study' ),
+					'permission_callback' => array( $this, 'can_manage_imaging' ),
+					'args'                => array(
+						'studyId' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/audit',
 			array(
 				array(
@@ -424,7 +442,7 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$study_post_id  = null;
 
 		foreach ( $uploaded_files as $file ) {
-			$result = $this->process_uploaded_file( $file, $storage_root, $study_post_id );
+			$result = $this->process_uploaded_file( $file, $storage_root );
 			if ( is_wp_error( $result ) ) {
 				$results[] = array( 'error' => $result->get_error_message(), 'file' => sanitize_text_field( $file['name'] ) );
 				continue;
@@ -490,6 +508,55 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$entries = WP_MCP_AI_Imaging_Audit_Log::get_recent( $limit, $study_id );
 
 		return new WP_REST_Response( array( 'entries' => $entries ), 200 );
+	}
+
+	/**
+	 * DELETE /imaging/studies/{studyId} – permanently delete a study.
+	 *
+	 * Removes the CPT post AND all DICOM files stored on disk for the study.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_study( WP_REST_Request $request ) {
+		$study_uid = $request->get_param( 'studyId' );
+		$post      = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
+
+		if ( ! $post ) {
+			return new WP_Error( 'imaging_not_found', __( 'Study not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		// Remove all DICOM files stored in the study directory.
+		$storage_path = get_post_meta( $post->ID, '_imaging_storage_path', true );
+		if ( $storage_path && is_dir( $storage_path ) && $this->is_path_within_storage( $storage_path ) ) {
+			$files = glob( trailingslashit( $storage_path ) . '*.dcm' );
+			if ( is_array( $files ) ) {
+				foreach ( $files as $file ) {
+					if ( is_file( $file ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+						@unlink( $file ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+					}
+				}
+			}
+			// Remove the study directory only if it is now empty.
+			@rmdir( $storage_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+		}
+
+		// Delete the CPT post (bypass trash — PHI data should be hard-deleted).
+		$deleted = wp_delete_post( $post->ID, true );
+		if ( ! $deleted ) {
+			return new WP_Error( 'imaging_delete_failed', __( 'Failed to delete study.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
+		}
+
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_deleted',
+			array(
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
+
+		return new WP_REST_Response( array( 'deleted' => true, 'study_id' => $study_uid ), 200 );
 	}
 
 	// =========================================================================
@@ -636,12 +703,15 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Process a single uploaded DICOM file.
 	 *
+	 * Each file is indexed independently by its DICOM StudyInstanceUID.  This
+	 * allows a single multipart upload to contain files from more than one study
+	 * (e.g. when the user selects all .dcm files on their desktop at once).
+	 *
 	 * @param array  $file          Entry from normalized $_FILES array.
 	 * @param string $storage_root  Protected storage root path.
-	 * @param int|null $study_post_id Existing study post ID (or null for first file).
 	 * @return array|WP_Error {study_post_id, instance_uid} or WP_Error.
 	 */
-	private function process_uploaded_file( array $file, $storage_root, $study_post_id ) {
+	private function process_uploaded_file( array $file, $storage_root ) {
 		// Check for upload errors.
 		if ( UPLOAD_ERR_OK !== $file['error'] ) {
 			return new WP_Error( 'imaging_upload_error', __( 'File upload error.', 'mcp-ai-wpoos-pro' ) );
@@ -683,25 +753,24 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'imaging_move_failed', __( 'Failed to store DICOM file.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create or retrieve the study post.
-		if ( null === $study_post_id ) {
-			$existing = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
-			if ( $existing ) {
-				$study_post_id = $existing->ID;
-			} else {
-				$study_post_id = WP_MCP_AI_Imaging_Study_CPT::create(
-					array(
-						'study_instance_uid' => $study_uid,
-						'patient_id'         => isset( $meta['patient_id'] ) ? $meta['patient_id'] : '',
-						'modality'           => $modality,
-						'study_date'         => isset( $meta['study_date'] ) ? $meta['study_date'] : '',
-						'study_description'  => isset( $meta['series_description'] ) ? $meta['series_description'] : '',
-						'storage_path'       => $study_dir,
-					)
-				);
-				if ( is_wp_error( $study_post_id ) ) {
-					return $study_post_id;
-				}
+		// Create or retrieve the study post, always by StudyInstanceUID.
+		// This allows a single upload batch to contain files from multiple studies.
+		$existing = WP_MCP_AI_Imaging_Study_CPT::get_by_uid( $study_uid );
+		if ( $existing ) {
+			$study_post_id = $existing->ID;
+		} else {
+			$study_post_id = WP_MCP_AI_Imaging_Study_CPT::create(
+				array(
+					'study_instance_uid' => $study_uid,
+					'patient_id'         => isset( $meta['patient_id'] ) ? $meta['patient_id'] : '',
+					'modality'           => $modality,
+					'study_date'         => isset( $meta['study_date'] ) ? $meta['study_date'] : '',
+					'study_description'  => isset( $meta['series_description'] ) ? $meta['series_description'] : '',
+					'storage_path'       => $study_dir,
+				)
+			);
+			if ( is_wp_error( $study_post_id ) ) {
+				return $study_post_id;
 			}
 		}
 

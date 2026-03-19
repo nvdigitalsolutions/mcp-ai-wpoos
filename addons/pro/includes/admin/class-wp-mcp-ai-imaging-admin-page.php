@@ -244,6 +244,8 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						&larr; <?php esc_html_e( 'Back to Studies', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<span id="nv-imaging-study-label" class="nv-imaging-study-label"></span>
+					<span class="nv-imaging-toolbar-spacer"></span>
+					<div id="nv-imaging-wl-toolbar" class="nv-imaging-wl-toolbar" aria-label="<?php esc_attr_e( 'Window/Level controls', 'mcp-ai-wpoos-pro' ); ?>"></div>
 				</div>
 
 				<div class="nv-imaging-viewer-layout">

@@ -35,6 +35,7 @@
 	var restBase = cfg.restBase || '';
 	var nonce = cfg.nonce || '';
 	var i18n = cfg.i18n || {};
+	var canManage = cfg.canManage === 'yes';
 
 	// Panels.
 	var uploadBtn = document.getElementById( 'nv-imaging-upload-btn' );
@@ -55,10 +56,10 @@
 	var viewport = document.getElementById( 'nv-imaging-viewport' );
 
 	// State.
-	var currentStudy = null;
 	var csInitialized = false;
 	var renderingEngine = null;
 	var toolGroup = null;
+	var activeModality = '';
 
 	// =========================================================================
 	// Utility helpers
@@ -124,7 +125,7 @@
 			studyListEl.style.display = 'none';
 		}
 
-		apiFetch( restBase + '/studies?per_page=50' )
+		apiFetch( restBase + '/studies?per_page=100' )
 			.then( function ( res ) {
 				if ( ! res.ok ) {
 					throw new Error( 'Failed to load studies (HTTP ' + res.status + ')' );
@@ -179,7 +180,12 @@
 			html += '<td>' + escHtml( s.series_count ) + '</td>';
 			html += '<td>' + escHtml( s.instance_count ) + '</td>';
 			html += '<td>' + escHtml( s.status ) + '</td>';
-			html += '<td><button type="button" class="button nv-imaging-view-btn" data-uid="' + escHtml( s.study_uid ) + '">View</button></td>';
+			html += '<td class="nv-imaging-actions-cell">';
+			html += '<button type="button" class="button nv-imaging-view-btn" data-uid="' + escHtml( s.study_uid ) + '">View</button>';
+			if ( canManage ) {
+				html += ' <button type="button" class="button nv-imaging-delete-btn" data-uid="' + escHtml( s.study_uid ) + '">Delete</button>';
+			}
+			html += '</td>';
 			html += '</tr>';
 		} );
 
@@ -188,12 +194,47 @@
 		studyListEl.style.display = '';
 
 		// Bind view buttons.
-		var btns = studyListEl.querySelectorAll( '.nv-imaging-view-btn' );
-		btns.forEach( function ( btn ) {
+		studyListEl.querySelectorAll( '.nv-imaging-view-btn' ).forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
 				openStudy( btn.dataset.uid );
 			} );
 		} );
+
+		// Bind delete buttons.
+		studyListEl.querySelectorAll( '.nv-imaging-delete-btn' ).forEach( function ( btn ) {
+			btn.addEventListener( 'click', function () {
+				deleteStudy( btn.dataset.uid );
+			} );
+		} );
+	}
+
+	/**
+	 * Delete a study after confirmation.
+	 *
+	 * @param {string} studyUid DICOM StudyInstanceUID.
+	 */
+	function deleteStudy( studyUid ) {
+		// eslint-disable-next-line no-alert
+		if ( ! window.confirm( i18n.confirmDelete || 'Are you sure you want to delete this study? This action cannot be undone.' ) ) {
+			return;
+		}
+		apiFetch(
+			restBase + '/studies/' + encodeURIComponent( studyUid ),
+			{
+				method: 'DELETE',
+				headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+			}
+		)
+			.then( function ( res ) {
+				if ( ! res.ok ) {
+					throw new Error( 'Delete failed (HTTP ' + res.status + ')' );
+				}
+				loadStudyList();
+			} )
+			.catch( function ( err ) {
+				// eslint-disable-next-line no-alert
+				window.alert( err.message );
+			} );
 	}
 
 	// =========================================================================
@@ -206,7 +247,6 @@
 	 * @param {string} studyUid DICOM StudyInstanceUID.
 	 */
 	function openStudy( studyUid ) {
-		currentStudy = studyUid;
 
 		if ( studyBrowser ) {
 			studyBrowser.style.display = 'none';
@@ -229,6 +269,7 @@
 			.then( function ( manifest ) {
 				renderSeriesSidebar( manifest );
 				if ( manifest.series && manifest.series.length ) {
+					activeModality = manifest.modality || '';
 					loadSeriesInViewer( manifest.series[ 0 ] );
 				}
 			} )
@@ -252,12 +293,14 @@
 		( manifest.series || [] ).forEach( function ( s, idx ) {
 			var li = document.createElement( 'li' );
 			li.className = 'nv-imaging-series-item' + ( 0 === idx ? ' nv-imaging-series-active' : '' );
-			li.textContent = ( s.modality || 'Series' ) + ' (' + ( s.instances ? s.instances.length : 0 ) + ' images)';
+			var count = s.instances ? s.instances.length : 0;
+			li.textContent = ( s.modality || s.seriesDescription || 'Series ' + ( idx + 1 ) ) + ' — ' + count + ' image' + ( 1 === count ? '' : 's' );
 			li.addEventListener( 'click', function () {
 				document.querySelectorAll( '.nv-imaging-series-item' ).forEach( function ( el ) {
 					el.classList.remove( 'nv-imaging-series-active' );
 				} );
 				li.classList.add( 'nv-imaging-series-active' );
+				activeModality = s.modality || manifest.modality || '';
 				loadSeriesInViewer( s );
 			} );
 			seriesList.appendChild( li );
@@ -296,6 +339,15 @@
 
 		viewport.innerHTML = '<div class="nv-imaging-cs3d-el" id="nv-cs3d-el" style="width:100%;height:70vh;background:#000;"></div>';
 
+		// Show instance count overlay.
+		if ( imageIds.length > 1 ) {
+			var overlay = document.createElement( 'div' );
+			overlay.id = 'nv-imaging-instance-overlay';
+			overlay.className = 'nv-imaging-instance-overlay';
+			overlay.textContent = '1 / ' + imageIds.length;
+			viewport.appendChild( overlay );
+		}
+
 		// Dynamically import Cornerstone3D packages.
 		// Production deployments should bundle these locally via:
 		//   npm install @cornerstonejs/core @cornerstonejs/tools @cornerstonejs/dicom-image-loader
@@ -316,7 +368,120 @@
 	}
 
 	/**
+	 * Return W/L preset values keyed by modality (industry-standard clinical presets).
+	 *
+	 * @returns {object}
+	 */
+	function getWLPresets() {
+		return {
+			CT: [
+				{ label: 'Soft Tissue', ww: 350, wl: 40 },
+				{ label: 'Lung',        ww: 1500, wl: -600 },
+				{ label: 'Brain',       ww: 80,   wl: 40 },
+				{ label: 'Bone',        ww: 2000, wl: 400 },
+				{ label: 'Abdomen',     ww: 400,  wl: 50 },
+				{ label: 'Liver',       ww: 150,  wl: 80 },
+				{ label: 'Mediastinum', ww: 350,  wl: 50 },
+			],
+			MR: [
+				{ label: 'Brain',       ww: 1000, wl: 500 },
+				{ label: 'Spine',       ww: 1200, wl: 600 },
+				{ label: 'Soft Tissue', ww: 500,  wl: 250 },
+			],
+			PT: [
+				{ label: 'SUV Max',     ww: 5,    wl: 2.5 },
+			],
+		};
+	}
+
+	/**
+	 * Render the W/L toolbar inside the viewer panel.
+	 *
+	 * @param {object} vp Cornerstone3D Stack Viewport instance.
+	 */
+	function initWLToolbar( vp ) {
+		var toolbar = document.getElementById( 'nv-imaging-wl-toolbar' );
+		if ( ! toolbar ) {
+			return;
+		}
+
+		toolbar.innerHTML = '';
+
+		// Reset W/L button.
+		var resetBtn = document.createElement( 'button' );
+		resetBtn.type = 'button';
+		resetBtn.className = 'button nv-imaging-wl-btn';
+		resetBtn.textContent = 'Reset W/L';
+		resetBtn.addEventListener( 'click', function () {
+			try {
+				vp.resetProperties();
+				vp.render();
+			} catch ( _e ) {}
+		} );
+		toolbar.appendChild( resetBtn );
+
+		// Invert button.
+		var invertBtn = document.createElement( 'button' );
+		invertBtn.type = 'button';
+		invertBtn.className = 'button nv-imaging-wl-btn';
+		invertBtn.textContent = 'Invert';
+		invertBtn.addEventListener( 'click', function () {
+			try {
+				var props = vp.getProperties();
+				var inverted = ! ( props && props.invert );
+				vp.setProperties( { invert: inverted } );
+				vp.render();
+			} catch ( _e ) {}
+		} );
+		toolbar.appendChild( invertBtn );
+
+		// Modality-specific presets.
+		var modality = ( activeModality || '' ).toUpperCase();
+		var presets = getWLPresets()[ modality ] || [];
+		if ( presets.length ) {
+			var sep = document.createElement( 'span' );
+			sep.className = 'nv-imaging-wl-sep';
+			sep.textContent = '|';
+			toolbar.appendChild( sep );
+
+			var label = document.createElement( 'span' );
+			label.className = 'nv-imaging-wl-label';
+			label.textContent = modality + ' presets:';
+			toolbar.appendChild( label );
+
+			presets.forEach( function ( preset ) {
+				var btn = document.createElement( 'button' );
+				btn.type = 'button';
+				btn.className = 'button nv-imaging-wl-btn nv-imaging-wl-preset';
+				btn.textContent = preset.label;
+				btn.title = 'WW ' + preset.ww + ' / WL ' + preset.wl;
+				btn.addEventListener( 'click', function () {
+					try {
+						vp.setProperties( {
+							voiRange: {
+								lower: preset.wl - preset.ww / 2,
+								upper: preset.wl + preset.ww / 2,
+							},
+						} );
+						vp.render();
+					} catch ( _e ) {}
+				} );
+				toolbar.appendChild( btn );
+			} );
+		}
+	}
+
+	/**
 	 * Initialise Cornerstone3D and render the image stack.
+	 *
+	 * Key fixes applied here (industry best practices):
+	 *  1. `csDicomImageLoader.external.cornerstone = csCore` — connects the loader
+	 *     to Cornerstone so it can register the wadouri image-loader and decode
+	 *     pixel data.  Without this the canvas renders as solid black.
+	 *  2. `configure({ beforeSend })` — injects the WP nonce header so the REST
+	 *     endpoint can authenticate the per-instance file fetch.
+	 *  3. After `setStack`, listen for IMAGE_RENDERED and auto-compute VOI range
+	 *     from pixel data when DICOM metadata does not carry WindowCenter/Width.
 	 *
 	 * @param {object} csCore             @cornerstonejs/core module.
 	 * @param {object} csTools            @cornerstonejs/tools module.
@@ -332,10 +497,28 @@
 
 		// One-time global init.
 		if ( ! csInitialized ) {
+			// CRITICAL (fix for black images): Connect the DICOM image loader to
+			// Cornerstone core BEFORE calling init().  Without this link the wadouri
+			// image-loader is never registered and every canvas stays black.
+			if ( csDicomImageLoader.external ) {
+				csDicomImageLoader.external.cornerstone = csCore;
+			}
+
+			// Configure authentication headers sent with every XHR-based DICOM fetch.
+			// `beforeSend` is the standard hook in @cornerstonejs/dicom-image-loader v1.
+			if ( csDicomImageLoader.configure ) {
+				csDicomImageLoader.configure( {
+					useWebWorkers: false,
+					beforeSend: function ( xhr ) {
+						xhr.setRequestHeader( 'X-WP-Nonce', nonce );
+					},
+				} );
+			}
+
 			await csCore.init();
 			await csTools.init();
 
-			// Configure DICOM image loader to use our REST endpoint.
+			// Call the loader's own init AFTER external.cornerstone is set.
 			if ( csDicomImageLoader.init ) {
 				csDicomImageLoader.init( { maxWebWorkers: 1 } );
 			}
@@ -363,8 +546,54 @@
 		} );
 
 		var vp = renderingEngine.getViewport( viewportId );
+
 		await vp.setStack( imageIds, 0 );
+
+		// Auto-compute window/level on first render.
+		// DICOM files without WindowCenter/Width metadata tags display as black
+		// without this step.  We listen for the IMAGE_RENDERED event once and
+		// compute the VOI range from the actual pixel value range if none was
+		// set by the metadata.
+		if ( csCore.Enums && csCore.Enums.Events && csCore.Enums.Events.IMAGE_RENDERED ) {
+			element.addEventListener(
+				csCore.Enums.Events.IMAGE_RENDERED,
+				function onFirstRender( evt ) {
+					element.removeEventListener( csCore.Enums.Events.IMAGE_RENDERED, onFirstRender );
+					try {
+						var imgEvt = evt.detail && evt.detail.image;
+						if ( imgEvt &&
+							typeof imgEvt.minPixelValue !== 'undefined' &&
+							typeof imgEvt.maxPixelValue !== 'undefined' ) {
+							var lo = imgEvt.minPixelValue;
+							var hi = imgEvt.maxPixelValue;
+							if ( hi > lo ) {
+								vp.setProperties( { voiRange: { lower: lo, upper: hi } } );
+								vp.render();
+							}
+						}
+					} catch ( _e ) {}
+				},
+				{ once: true }
+			);
+		}
+
 		vp.render();
+
+		// Update instance overlay when the stack image index changes.
+		if ( csCore.Enums && csCore.Enums.Events && csCore.Enums.Events.STACK_NEW_IMAGE ) {
+			element.addEventListener( csCore.Enums.Events.STACK_NEW_IMAGE, function ( evt ) {
+				var overlay = document.getElementById( 'nv-imaging-instance-overlay' );
+				if ( overlay ) {
+					var idx = ( evt.detail && typeof evt.detail.imageIdIndex !== 'undefined' )
+						? evt.detail.imageIdIndex + 1
+						: '';
+					overlay.textContent = idx + ' / ' + imageIds.length;
+				}
+			} );
+		}
+
+		// Populate W/L toolbar now that we have the viewport instance.
+		initWLToolbar( vp );
 
 		// Set up tools.
 		var toolGroupId = 'nvToolGroup';
@@ -488,7 +717,6 @@
 				if ( studyBrowser ) {
 					studyBrowser.style.display = '';
 				}
-				currentStudy = null;
 			} );
 		}
 	}
