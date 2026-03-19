@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-black-image-issue',
-        'version' => 'dev-copilot/fix-black-image-issue',
-        'reference' => '8591604d5810da8f891631333944a6cd5ece27cb',
+        'pretty_version' => 'dev-copilot/fix-js-css-issues-tabs',
+        'version' => 'dev-copilot/fix-js-css-issues-tabs',
+        'reference' => 'f2fa64e4ad4bc7a3f40d13d6db57aefd626da039',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-black-image-issue',
-            'version' => 'dev-copilot/fix-black-image-issue',
-            'reference' => '8591604d5810da8f891631333944a6cd5ece27cb',
+            'pretty_version' => 'dev-copilot/fix-js-css-issues-tabs',
+            'version' => 'dev-copilot/fix-js-css-issues-tabs',
+            'reference' => 'f2fa64e4ad4bc7a3f40d13d6db57aefd626da039',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -179,19 +179,21 @@
 	 * Wire up the Studies / Audit Log tab buttons.
 	 */
 	function initTabs() {
-		var tabBtns = document.querySelectorAll( '.nv-imaging-tab-btn' );
+		var tabLinks = document.querySelectorAll( '.nv-imaging-tab-nav .nav-tab' );
 		var allTabPanels = [
 			{ id: 'nv-imaging-tab-studies', key: 'studies' },
 			{ id: 'nv-imaging-tab-tools',   key: 'tools' },
 			{ id: 'nv-imaging-tab-audit',   key: 'audit' },
 			{ id: 'nv-imaging-tab-docs',    key: 'docs' },
+			{ id: 'nv-imaging-tab-debug',   key: 'debug' },
 		];
 
-		tabBtns.forEach( function ( btn ) {
-			btn.addEventListener( 'click', function () {
-				tabBtns.forEach( function ( b ) { b.classList.remove( 'nv-imaging-tab-active' ); } );
-				btn.classList.add( 'nv-imaging-tab-active' );
-				var tab = btn.dataset.tab;
+		tabLinks.forEach( function ( link ) {
+			link.addEventListener( 'click', function ( e ) {
+				e.preventDefault();
+				tabLinks.forEach( function ( l ) { l.classList.remove( 'nav-tab-active' ); } );
+				link.classList.add( 'nav-tab-active' );
+				var tab = link.dataset.tab;
 
 				// Show only the matching panel.
 				allTabPanels.forEach( function ( panel ) {

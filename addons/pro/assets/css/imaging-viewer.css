@@ -287,31 +287,11 @@
 .nv-imaging-stat strong { color: #1d2327; }
 .nv-imaging-stat-sep { color: #c3c4c7; }
 
-/* Tab navigation */
-.nv-imaging-tab-nav {
-	display: flex;
-	gap: 0;
-	border-bottom: 1px solid #c3c4c7;
+/* Tab navigation — uses WordPress core nav-tab-wrapper styles; only the
+   negative margin to align with the panel padding is overridden here. */
+.nv-imaging-tab-nav.nav-tab-wrapper {
 	margin: -20px -24px 16px;
 	padding: 0 16px;
-}
-.nv-imaging-tab-btn {
-	background: none !important;
-	border: none !important;
-	border-bottom: 3px solid transparent !important;
-	border-radius: 0 !important;
-	padding: 12px 16px !important;
-	font-size: 14px !important;
-	font-weight: 500;
-	color: #555 !important;
-	cursor: pointer;
-	margin-bottom: -1px;
-	box-shadow: none !important;
-}
-.nv-imaging-tab-btn:hover { color: #2271b1 !important; }
-.nv-imaging-tab-active {
-	color: #2271b1 !important;
-	border-bottom-color: #2271b1 !important;
 }
 
 /* Filter bar */
@@ -480,10 +460,49 @@
 /* Responsive: collapse grids on small screens */
 @media screen and (max-width: 900px) {
 	.nv-imaging-tools-grid,
-	.nv-imaging-docs-grid {
+	.nv-imaging-docs-grid,
+	.nv-imaging-debug-grid {
 		grid-template-columns: 1fr;
 	}
-	.nv-imaging-docs-card--wide {
+	.nv-imaging-docs-card--wide,
+	.nv-imaging-debug-card--wide {
 		grid-column: auto;
 	}
+}
+
+/* =========================================================
+   Debug tab
+   ========================================================= */
+.nv-imaging-debug-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 380px, 1fr ) );
+	gap: 24px;
+	padding: 16px 0;
+}
+.nv-imaging-debug-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	padding: 16px 20px;
+}
+.nv-imaging-debug-card h3 {
+	margin: 0 0 10px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+.nv-imaging-debug-card--wide {
+	grid-column: 1 / -1;
+}
+.nv-imaging-debug-ok {
+	color: #1a5c29;
+	font-weight: 500;
+}
+.nv-imaging-debug-warn {
+	color: #78672b;
+	font-weight: 500;
+}
+.nv-imaging-debug-error {
+	color: #8c1111;
+	font-weight: 500;
 }
