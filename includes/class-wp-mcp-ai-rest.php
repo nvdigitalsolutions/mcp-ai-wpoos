@@ -2885,6 +2885,42 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
+			// FALLBACK: If the LLM returned no text content but we have tool results, inject the
+			// tool result text into the response so the frontend has something to display.
+			// This mirrors the same fallback applied in handle_chat_request_with_streaming for SSE,
+			// and ensures providers like Anthropic that sometimes omit a follow-up text response
+			// after tool execution do not leave the chat interface blank.
+			if ( ! empty( $tool_result_messages ) && ! is_wp_error( $response ) ) {
+				$llm_text = '';
+				if ( ! empty( $response['choices'][0]['message']['content'] ) ) {
+					$llm_text = $this->normalise_message_content( $response['choices'][0]['message']['content'] );
+				} elseif ( isset( $response['content'] ) ) {
+					$llm_text = $this->normalise_message_content( $response['content'] );
+				}
+
+				if ( '' === $llm_text || ! is_string( $llm_text ) ) {
+					$fallback_text = $this->extract_text_from_tool_results( $tool_result_messages );
+					if ( '' !== $fallback_text ) {
+						if ( ! isset( $response['choices'][0] ) ) {
+							$response['choices'][0] = array( 'message' => array() );
+						} elseif ( ! isset( $response['choices'][0]['message'] ) ) {
+							$response['choices'][0]['message'] = array();
+						}
+						$response['choices'][0]['message']['content'] = $fallback_text;
+
+						WP_MCP_AI_Logger::log_event(
+							'debug',
+							'Non-SSE chat: Extracted text from tool results (LLM returned no content)',
+							array(
+								'extracted_length' => strlen( $fallback_text ),
+								'tool_count'       => count( $tool_result_messages ),
+								'assistant_id'     => $assistant_id,
+							)
+						);
+					}
+				}
+			}
+
 			// Update response completion timestamp after agentic loop.
 			$transcript_context['response_completed_at'] = microtime( true );
 
