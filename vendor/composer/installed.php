@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-tools-for-anthropic-format',
-        'version' => 'dev-copilot/update-tools-for-anthropic-format',
-        'reference' => 'cc6dd368fd951083c5c5ebf6854d7f26d60bb857',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-again',
+        'version' => 'dev-copilot/run-rebuild-all-zips-again',
+        'reference' => 'd496f71d2fadb35c387e835c92764648971fead0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-tools-for-anthropic-format',
-            'version' => 'dev-copilot/update-tools-for-anthropic-format',
-            'reference' => 'cc6dd368fd951083c5c5ebf6854d7f26d60bb857',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-again',
+            'version' => 'dev-copilot/run-rebuild-all-zips-again',
+            'reference' => 'd496f71d2fadb35c387e835c92764648971fead0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
