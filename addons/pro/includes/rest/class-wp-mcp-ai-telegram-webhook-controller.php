@@ -1014,11 +1014,28 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// later read back as conversation history the AI receives clean plain text
 		// rather than HTML tags. The Telegram-formatted version is preserved in
 		// raw_payload alongside the full API response.
+		//
+		// For group/supergroup chats the inbox contact is keyed to the chat ID
+		// (not the individual sender) so that all messages – inbound and outbound
+		// – appear in the same unified group thread. For private DMs the sender's
+		// from_id is used, matching the inbound message storage logic.
+		if ( 'group' === $tg_conv_type ) {
+			// Group/supergroup: key the outbound message to the group chat ID so it
+			// appears in the same inbox thread as the inbound group messages.
+			$tg_outbound_contact_id = $chat_id;
+		} elseif ( '' !== $from_id ) {
+			// Private DM with a known sender ID.
+			$tg_outbound_contact_id = $from_id;
+		} else {
+			// Fallback: no from_id available (e.g. channel posts), use chat_id.
+			$tg_outbound_contact_id = $chat_id;
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
 					'channel'            => 'telegram',
-					'channel_contact_id' => $from_id,
+					'channel_contact_id' => $tg_outbound_contact_id,
 					'direction'          => 'outbound',
 					'message_type'       => 'text',
 					'content'            => $raw_content,
@@ -1041,7 +1058,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $from_id, array( 'connection_id' => $connection_id, 'conversation_type' => $tg_conv_type ) );
+			$tg_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'telegram', $tg_outbound_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $tg_conv_type ) );
 			if ( $tg_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tg_contact_row_id );
 			}
