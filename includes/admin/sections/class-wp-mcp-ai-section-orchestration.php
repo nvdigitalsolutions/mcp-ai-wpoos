@@ -2464,7 +2464,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<style>
 				.wp-mcp-ai-agents-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+					grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
