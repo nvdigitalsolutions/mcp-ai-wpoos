@@ -44,7 +44,6 @@
 	var uploadStatus = document.getElementById( 'nv-imaging-upload-status' );
 	var uploadCancelBtn = document.getElementById( 'nv-imaging-upload-cancel' );
 
-	var studyBrowser = document.getElementById( 'nv-imaging-study-browser' );
 	var loadingEl = document.getElementById( 'nv-imaging-loading' );
 	var studyListEl = document.getElementById( 'nv-imaging-study-list' );
 
@@ -181,15 +180,26 @@
 	 */
 	function initTabs() {
 		var tabBtns = document.querySelectorAll( '.nv-imaging-tab-btn' );
+		var allTabPanels = [
+			{ id: 'nv-imaging-tab-studies', key: 'studies' },
+			{ id: 'nv-imaging-tab-tools',   key: 'tools' },
+			{ id: 'nv-imaging-tab-audit',   key: 'audit' },
+			{ id: 'nv-imaging-tab-docs',    key: 'docs' },
+		];
+
 		tabBtns.forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
 				tabBtns.forEach( function ( b ) { b.classList.remove( 'nv-imaging-tab-active' ); } );
 				btn.classList.add( 'nv-imaging-tab-active' );
 				var tab = btn.dataset.tab;
-				var studiesPanel = document.getElementById( 'nv-imaging-tab-studies' );
-				var auditPanel   = document.getElementById( 'nv-imaging-tab-audit' );
-				if ( studiesPanel ) { studiesPanel.style.display = ( tab === 'studies' ) ? '' : 'none'; }
-				if ( auditPanel )   { auditPanel.style.display   = ( tab === 'audit' )   ? '' : 'none'; }
+
+				// Show only the matching panel.
+				allTabPanels.forEach( function ( panel ) {
+					var el = document.getElementById( panel.id );
+					if ( el ) { el.style.display = ( panel.key === tab ) ? '' : 'none'; }
+				} );
+
+				// Lazy-load on demand.
 				if ( tab === 'audit' ) { loadAuditLog(); }
 			} );
 		} );
@@ -341,6 +351,108 @@
 		listEl.innerHTML = html;
 	}
 
+	// =========================================================================
+	// AI Tools tab
+	// =========================================================================
+
+	/** Currently-viewed study UID (set when viewer opens, cleared on back). */
+	var activeStudyUid = '';
+
+	/**
+	 * Wire up the AI Interpretation form on the Tools tab.
+	 */
+	function initToolsTab() {
+		var runBtn   = document.getElementById( 'nv-imaging-interpret-run' );
+		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
+		var focusSel = document.getElementById( 'nv-imaging-interpret-focus' );
+		var resultEl = document.getElementById( 'nv-imaging-interpret-result' );
+
+		if ( ! runBtn ) {
+			return;
+		}
+
+		runBtn.addEventListener( 'click', function () {
+			var studyUid = uidInput ? uidInput.value.trim() : '';
+			var focus    = focusSel ? focusSel.value : 'full';
+
+			if ( ! studyUid ) {
+				if ( resultEl ) {
+					resultEl.style.display = '';
+					resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+					resultEl.textContent = i18n.noStudySelected || 'Enter a Study UID to analyse.';
+				}
+				return;
+			}
+
+			runBtn.disabled = true;
+			runBtn.textContent = i18n.interpreting || 'Analysing…';
+			if ( resultEl ) {
+				resultEl.style.display = '';
+				resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-loading';
+				resultEl.textContent = i18n.interpreting || 'Analysing…';
+			}
+
+			apiFetch(
+				cfg.interpretUrl || ( restBase + '/interpret' ),
+				{
+					method: 'POST',
+					body: JSON.stringify( { study_uid: studyUid, focus: focus } ),
+				}
+			)
+				.then( function ( res ) {
+					return res.json().then( function ( data ) {
+						return { ok: res.ok, data: data };
+					} );
+				} )
+				.then( function ( result ) {
+					runBtn.disabled = false;
+					runBtn.textContent = i18n.interpretRun || 'Run AI Analysis';
+
+					if ( result.ok && result.data && result.data.interpretation ) {
+						if ( resultEl ) {
+							resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-output';
+							// Render newlines as paragraphs for readability.
+							var lines = String( result.data.interpretation ).split( '\n' );
+							resultEl.innerHTML = lines.map( function ( l ) {
+								return l.trim() ? '<p>' + escHtml( l ) + '</p>' : '';
+							} ).join( '' );
+						}
+					} else {
+						var errMsg = ( result.data && result.data.message )
+							? result.data.message
+							: ( i18n.interpretError || 'AI interpretation failed.' );
+						if ( resultEl ) {
+							resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+							resultEl.textContent = errMsg;
+						}
+					}
+				} )
+				.catch( function () {
+					runBtn.disabled = false;
+					runBtn.textContent = i18n.interpretRun || 'Run AI Analysis';
+					if ( resultEl ) {
+						resultEl.className = 'nv-imaging-interpret-result nv-imaging-interpret-error';
+						resultEl.textContent = i18n.interpretError || 'AI interpretation failed.';
+					}
+				} );
+		} );
+	}
+
+	/**
+	 * Pre-fill the Tools tab UID input with the currently-viewed study.
+	 *
+	 * Called whenever the viewer opens a study.
+	 *
+	 * @param {string} uid DICOM StudyInstanceUID.
+	 */
+	function setActiveStudyUid( uid ) {
+		activeStudyUid = uid || '';
+		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
+		if ( uidInput && activeStudyUid ) {
+			uidInput.value = activeStudyUid;
+		}
+	}
+
 	/**
 	 * Render the study list table.
 	 *
@@ -402,38 +514,91 @@
 		// Bind delete buttons.
 		studyListEl.querySelectorAll( '.nv-imaging-delete-btn' ).forEach( function ( btn ) {
 			btn.addEventListener( 'click', function () {
-				deleteStudy( btn.dataset.uid );
+				deleteStudy( btn.dataset.uid, btn );
 			} );
 		} );
 	}
 
 	/**
-	 * Delete a study after confirmation.
+	 * Delete a study with inline row-level confirmation (accessible alternative
+	 * to window.confirm / window.alert).
 	 *
-	 * @param {string} studyUid DICOM StudyInstanceUID.
+	 * When the user clicks the Delete button a confirmation message is injected
+	 * directly into the table row.  Confirming triggers the REST delete and
+	 * refreshes the study list; cancelling removes the inline prompt.
+	 *
+	 * @param {string}      studyUid  DICOM StudyInstanceUID.
+	 * @param {HTMLElement} sourceBtn The delete button that was clicked.
 	 */
-	function deleteStudy( studyUid ) {
-		// eslint-disable-next-line no-alert
-		if ( ! window.confirm( i18n.confirmDelete || 'Are you sure you want to delete this study? This action cannot be undone.' ) ) {
+	function deleteStudy( studyUid, sourceBtn ) {
+		// If a confirm row already exists for this study, remove it (toggle off).
+		var existingConfirm = document.getElementById( 'nv-del-confirm-' + CSS.escape( studyUid ) );
+		if ( existingConfirm ) {
+			existingConfirm.remove();
 			return;
 		}
-		apiFetch(
-			restBase + '/studies/' + encodeURIComponent( studyUid ),
-			{
-				method: 'DELETE',
-				headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
-			}
-		)
-			.then( function ( res ) {
-				if ( ! res.ok ) {
-					throw new Error( 'Delete failed (HTTP ' + res.status + ')' );
+
+		// Build an accessible inline confirmation row beneath the study row.
+		var sourceRow = sourceBtn ? sourceBtn.closest( 'tr' ) : null;
+		var confirmRow = document.createElement( 'tr' );
+		confirmRow.id = 'nv-del-confirm-' + CSS.escape( studyUid );
+		confirmRow.className = 'nv-imaging-confirm-row';
+		var colCount = sourceRow ? sourceRow.children.length : 7;
+		confirmRow.innerHTML =
+			'<td colspan="' + colCount + '" class="nv-imaging-confirm-cell" role="alert" aria-live="assertive">' +
+			'<span class="nv-imaging-confirm-msg">' +
+			escHtml( i18n.confirmDelete || 'Delete this study? All DICOM files will be permanently removed.' ) +
+			'</span> ' +
+			'<button type="button" class="button button-link-delete nv-imaging-confirm-yes">Yes, delete</button> ' +
+			'<button type="button" class="button nv-imaging-confirm-no">Cancel</button>' +
+			'<span class="nv-imaging-confirm-status" aria-live="polite"></span>' +
+			'</td>';
+
+		if ( sourceRow && sourceRow.parentNode ) {
+			sourceRow.parentNode.insertBefore( confirmRow, sourceRow.nextSibling );
+		} else {
+			// Fallback: append to study list container.
+			if ( studyListEl ) { studyListEl.appendChild( confirmRow ); }
+		}
+
+		// Cancel button.
+		confirmRow.querySelector( '.nv-imaging-confirm-no' ).addEventListener( 'click', function () {
+			confirmRow.remove();
+		} );
+
+		// Confirm button.
+		confirmRow.querySelector( '.nv-imaging-confirm-yes' ).addEventListener( 'click', function () {
+			var statusEl = confirmRow.querySelector( '.nv-imaging-confirm-status' );
+			var yesBtn   = confirmRow.querySelector( '.nv-imaging-confirm-yes' );
+			var noBtn    = confirmRow.querySelector( '.nv-imaging-confirm-no' );
+			yesBtn.disabled = true;
+			noBtn.disabled  = true;
+			if ( statusEl ) { statusEl.textContent = 'Deleting…'; }
+
+			apiFetch(
+				restBase + '/studies/' + encodeURIComponent( studyUid ),
+				{
+					method: 'DELETE',
+					headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
 				}
-				loadStudyList();
-			} )
-			.catch( function ( err ) {
-				// eslint-disable-next-line no-alert
-				window.alert( err.message );
-			} );
+			)
+				.then( function ( res ) {
+					if ( ! res.ok ) {
+						throw new Error( 'Delete failed (HTTP ' + res.status + ')' );
+					}
+					confirmRow.remove();
+					loadStudyList();
+					loadStats();
+				} )
+				.catch( function ( err ) {
+					yesBtn.disabled = false;
+					noBtn.disabled  = false;
+					if ( statusEl ) {
+						statusEl.className = 'nv-imaging-confirm-status nv-imaging-confirm-status--error';
+						statusEl.textContent = err.message;
+					}
+				} );
+		} );
 	}
 
 	// =========================================================================
@@ -456,6 +621,9 @@
 		if ( studyLabel ) {
 			studyLabel.textContent = studyUid;
 		}
+
+		// Pre-fill the AI Tools tab UID input.
+		setActiveStudyUid( studyUid );
 
 		// Fetch manifest then boot Cornerstone.
 		apiFetch( restBase + '/studies/' + encodeURIComponent( studyUid ) + '/manifest' )
@@ -1048,6 +1216,7 @@
 		initUpload();
 		initTabs();
 		initFilters();
+		initToolsTab();
 		loadStudyList();
 		loadStats();
 	} );

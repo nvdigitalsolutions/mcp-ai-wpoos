@@ -152,6 +152,31 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/interpret',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'interpret_study' ),
+					'permission_callback' => array( $this, 'can_view_imaging' ),
+					'args'                => array(
+						'study_uid' => array(
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'focus'     => array(
+							'default'           => 'full',
+							'sanitize_callback' => 'sanitize_key',
+							'validate_callback' => function ( $value ) {
+								return in_array( $value, array( 'quality', 'completeness', 'workflow', 'full' ), true );
+							},
+						),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/instances/(?P<instanceId>[a-zA-Z0-9.\-_]+)/file',
 			array(
 				array(
@@ -635,6 +660,70 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * POST /imaging/interpret – run AI interpretation on a study.
+	 *
+	 * Delegates to WP_MCP_AI_Tool_Interpret_Imaging_Study when available.
+	 * Returns a 503 if the pro tool class has not been loaded.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function interpret_study( WP_REST_Request $request ) {
+		$study_uid = $request->get_param( 'study_uid' );
+		$focus     = $request->get_param( 'focus' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Interpret_Imaging_Study' ) ) {
+			return new WP_Error(
+				'imaging_tool_unavailable',
+				__( 'The AI interpretation tool is not available. Ensure the pro toolkit is fully loaded and an AI provider (OpenAI / Gemini) is configured in Settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Interpret_Imaging_Study();
+		$result = $tool->execute(
+			array(
+				'study_uid' => $study_uid,
+				'focus'     => $focus,
+			),
+			array()
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_interpreted',
+			array(
+				'study_id' => $study_uid,
+				'focus'    => $focus,
+				'user_id'  => get_current_user_id(),
+			)
+		);
+
+		// Tool returns an array with a 'result' or 'output' key depending on version.
+		$output = '';
+		if ( is_array( $result ) ) {
+			$output = isset( $result['result'] ) ? $result['result']
+				: ( isset( $result['output'] ) ? $result['output']
+				: ( isset( $result['content'] ) ? $result['content']
+				: wp_json_encode( $result ) ) );
+		} elseif ( is_string( $result ) ) {
+			$output = $result;
+		}
+
+		return new WP_REST_Response(
+			array(
+				'study_uid'      => $study_uid,
+				'focus'          => $focus,
+				'interpretation' => $output,
+			),
+			200
+		);
+	}
+
+	/**
 	 * DELETE /imaging/studies/{studyId} – permanently delete a study.
 	 *
 	 * Removes the CPT post AND all DICOM files stored on disk for the study.
@@ -658,12 +747,32 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				foreach ( $files as $file ) {
 					if ( is_file( $file ) ) {
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-						@unlink( $file ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+						if ( ! unlink( $file ) ) {
+							WP_MCP_AI_Imaging_Audit_Log::log(
+								'study_delete_file_failed',
+								array(
+									'study_id' => $study_uid,
+									'file'     => basename( $file ),
+									'user_id'  => get_current_user_id(),
+								)
+							);
+						}
 					}
 				}
 			}
 			// Remove the study directory only if it is now empty.
-			@rmdir( $storage_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+			if ( ! @rmdir( $storage_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+				// Directory not empty or not writable — log for compliance audit but don't
+				// block the delete (the CPT post will still be removed).
+				WP_MCP_AI_Imaging_Audit_Log::log(
+					'study_delete_dir_failed',
+					array(
+						'study_id' => $study_uid,
+						'path'     => basename( $storage_path ),
+						'user_id'  => get_current_user_id(),
+					)
+				);
+			}
 		}
 
 		// Delete the CPT post (bypass trash — PHI data should be hard-deleted).

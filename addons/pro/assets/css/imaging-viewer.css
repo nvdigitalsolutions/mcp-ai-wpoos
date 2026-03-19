@@ -227,6 +227,28 @@
 	white-space: nowrap;
 }
 
+/* Inline delete confirmation row */
+.nv-imaging-confirm-row td {
+	background: #fff8f0 !important;
+}
+.nv-imaging-confirm-cell {
+	padding: 10px 14px !important;
+}
+.nv-imaging-confirm-msg {
+	font-weight: 500;
+	color: #50400a;
+	margin-right: 8px;
+}
+.nv-imaging-confirm-status {
+	margin-left: 8px;
+	font-size: 12px;
+	color: #555;
+}
+.nv-imaging-confirm-status--error {
+	color: #b32d2e;
+	font-weight: 600;
+}
+
 /* Error message within viewer */
 .nv-imaging-error {
 	color: #dc3232;
@@ -327,4 +349,141 @@
 /* Audit log */
 #nv-imaging-tab-audit .nv-imaging-table {
 	margin-top: 0;
+}
+
+/* =========================================================
+   AI Tools tab
+   ========================================================= */
+.nv-imaging-tools-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 380px, 1fr ) );
+	gap: 24px;
+	padding: 16px 0;
+}
+.nv-imaging-tool-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	padding: 16px 20px;
+}
+.nv-imaging-tool-card h3 {
+	margin: 0 0 10px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+.nv-imaging-tool-form-table {
+	margin-top: 0;
+}
+.nv-imaging-tool-form-table th {
+	width: 130px;
+	font-weight: 500;
+}
+.nv-imaging-tools-list {
+	list-style: disc;
+	margin: 0 0 12px 18px;
+	padding: 0;
+}
+.nv-imaging-tools-list li {
+	margin-bottom: 10px;
+}
+.nv-imaging-tools-list strong {
+	font-family: monospace;
+	font-size: 13px;
+}
+
+/* AI Interpretation result box */
+.nv-imaging-interpret-result {
+	margin-top: 14px;
+	padding: 12px 16px;
+	border-radius: 3px;
+	font-size: 13px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+.nv-imaging-interpret-result p {
+	margin: 0 0 8px;
+}
+.nv-imaging-interpret-result p:last-child {
+	margin-bottom: 0;
+}
+.nv-imaging-interpret-loading {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	color: #777;
+}
+.nv-imaging-interpret-output {
+	background: #edfaef;
+	border: 1px solid #46b450;
+	color: #1a5c29;
+}
+.nv-imaging-interpret-error {
+	background: #fbeaea;
+	border: 1px solid #dc3232;
+	color: #8c1111;
+}
+
+/* =========================================================
+   Documentation tab
+   ========================================================= */
+.nv-imaging-docs-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 340px, 1fr ) );
+	gap: 24px;
+	padding: 16px 0;
+}
+.nv-imaging-docs-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	padding: 16px 20px;
+}
+.nv-imaging-docs-card--wide {
+	grid-column: 1 / -1; /* span all columns in the grid, regardless of column count */
+}
+.nv-imaging-docs-card h3 {
+	margin: 0 0 10px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+.nv-imaging-docs-card ol,
+.nv-imaging-docs-card ul {
+	margin: 0 0 0 18px;
+	padding: 0;
+}
+.nv-imaging-docs-card li {
+	margin-bottom: 6px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.nv-imaging-docs-table {
+	margin-top: 8px;
+	font-size: 12px;
+}
+.nv-imaging-docs-table td,
+.nv-imaging-docs-table th {
+	padding: 5px 10px !important;
+}
+.nv-imaging-docs-table kbd {
+	display: inline-block;
+	padding: 1px 5px;
+	font-size: 11px;
+	font-family: monospace;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	box-shadow: 0 1px 0 #c3c4c7;
+}
+
+/* Responsive: collapse grids on small screens */
+@media screen and (max-width: 900px) {
+	.nv-imaging-tools-grid,
+	.nv-imaging-docs-grid {
+		grid-template-columns: 1fr;
+	}
+	.nv-imaging-docs-card--wide {
+		grid-column: auto;
+	}
 }
