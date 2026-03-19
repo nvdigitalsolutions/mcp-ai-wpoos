@@ -1,12 +1,24 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 16, 2026  
+**Last Updated:** March 19, 2026  
 **Plugin Version:** 1.1.4  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 19, 2026 UPDATE:** 🏥 **HEALTHCARE DICOM IMAGING VIEWER — FULL MANAGER REBUILD**
+> - **Black Images Fixed** — `csDicomImageLoader.external.cornerstone` link now correctly wired; auto-VOI from pixel min/max for studies without `WindowCenter`/`WindowWidth` tags
+> - **Multi-Study Upload Fixed** — All uploaded studies now appear in the browser (was: only last study shown after a multi-file batch)
+> - **4-Tab Manager** — Studies (search/filter bar) · AI Tools · Audit Log · Documentation
+> - **W/L Clinical Presets** — 11 presets for CT (Soft Tissue / Lung / Brain / Bone / Abdomen / Liver / Mediastinum), MR (Brain / Spine / Soft Tissue), PET (SUV Max)
+> - **Extra Viewer Tools** — Flip H/V, Rotate CW/CCW, PNG screenshot export; keyboard shortcuts (Arrow keys, R reset, I invert)
+> - **AI Interpretation** — `POST /imaging/interpret` REST endpoint; Tools tab form auto-fills UID from open study
+> - **Accessible Delete** — Inline confirmation row replaces non-accessible `window.confirm`
+> - **Stats Bar** — Total studies, modality breakdown, storage used — populated from `GET /imaging/stats`
+> - **In-app Documentation Tab** — Keyboard shortcut reference, W/L presets table, DICOM modality codes, full REST API reference, Privacy & HIPAA notes
+> - **New Doc**: [features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)
 
 > **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – FULL 760-TOOL COVERAGE**
 > - **Quick Tool Presets Expanded** – All 760 available tools are now reachable via one-click presets on the assistant CPT edit page (was ~527 tools)
@@ -1089,6 +1101,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
 | [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
