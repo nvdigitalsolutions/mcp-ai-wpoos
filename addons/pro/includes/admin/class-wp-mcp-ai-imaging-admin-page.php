@@ -73,6 +73,23 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	private static $valid_tabs = array( 'studies', 'tools', 'audit', 'docs', 'debug' );
 
 	/**
+	 * esm.sh CDN base URL for @cornerstonejs/core v1.
+	 *
+	 * Used both in the importmap bare-specifier entry and in the JS dynamic
+	 * import.  Having a single constant makes version bumps easier.
+	 *
+	 * @var string
+	 */
+	const CORNERSTONE_CORE_CDN = 'https://esm.sh/@cornerstonejs/core@1';
+
+	/**
+	 * esm.sh CDN URL for dicom-parser (peer dep of dicom-image-loader).
+	 *
+	 * @var string
+	 */
+	const DICOM_PARSER_CDN = 'https://esm.sh/dicom-parser';
+
+	/**
 	 * esm.sh CDN URL for the broken xmlbuilder2 ES-2022 build.
 	 *
 	 * This is the URL that @cornerstonejs/dicom-image-loader resolves at
@@ -102,20 +119,33 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
-		// Inject an ES module importmap that fixes the xmlbuilder2 CDN error.
-		// @cornerstonejs/dicom-image-loader pulls in dcmjs → xmlbuilder2.  The
-		// esm.sh CDN resolves xmlbuilder2 to its native ES-2022 build, which only
-		// has a default export (no named 'create' export).  The importmap below
-		// redirects that broken URL to the package's CJS entry point, which
-		// esm.sh converts to a proper ES module with all named exports intact.
+		// Inject an ES module importmap that:
+		//  1. Fixes the xmlbuilder2 CDN error (@cornerstonejs/dicom-image-loader
+		//     pulls in dcmjs → xmlbuilder2; the esm.sh ES-2022 build only has a
+		//     default export, so we redirect to the CJS build that has all named
+		//     exports).
+		//  2. Adds bare-specifier entries for @cornerstonejs/core and dicom-parser.
+		//     The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
+		//     and `?external=…,dicom-parser` so that esm.sh emits those packages
+		//     as bare specifiers rather than bundling them.  The importmap then
+		//     resolves those bare specifiers back to the same URLs that our own
+		//     direct import() calls use, guaranteeing all three packages share a
+		//     SINGLE module instance.  Without this the wadouri image-loader is
+		//     registered on a private internal copy of the core and the canvas
+		//     stays solid black.
 		add_action(
 			'admin_head',
 			function () {
-				// Build the importmap from constants.  Both URLs are plugin-level
-				// constants (not user input); esc_url_raw() ensures they remain
-				// valid URLs even if the constants are ever changed.
+				// All values are plugin-level constants, not user input.
+				// esc_url_raw() validates that each string is a proper URL.
 				$importmap = array(
 					'imports' => array(
+						// Bare specifiers – resolved by the browser when the
+						// ?external= packages emit bare import statements.
+						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
+						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
+
+						// URL-to-URL remap for the xmlbuilder2 CJS fix.
 						esc_url_raw( self::XMLBUILDER2_ESM_SH_BROKEN ) => esc_url_raw( self::XMLBUILDER2_ESM_SH_CJS ),
 					),
 				);

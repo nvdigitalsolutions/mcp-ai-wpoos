@@ -696,7 +696,10 @@
 			} )
 			.catch( function ( err ) {
 				if ( viewport ) {
-					viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( err.message ) + '</p>';
+					const msg = err && err.message ? err.message : String( err );
+					viewport.innerHTML =
+						'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+						escHtml( msg ) + '</p>';
 				}
 			} );
 	}
@@ -775,16 +778,29 @@
 		//   npx esbuild assets/js/imaging-viewer.js --bundle --outfile=assets/js/imaging-viewer.min.js
 		// The CDN fallback (esm.sh) is used when a local bundle is not available.
 		// For HIPAA-compliant air-gapped deployments, always use the local bundle.
+		//
+		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
+		// packages into the generated module, leaving them as bare ES specifiers.
+		// Combined with the importmap (injected by PHP in admin_head), this ensures
+		// all three packages share a SINGLE @cornerstonejs/core module instance.
+		// Without this, each package may load its own private copy of the core,
+		// the wadouri image-loader never gets registered in our RenderingEngine,
+		// and the canvas stays solid black with no error.
 		Promise.all( [
 			import( 'https://esm.sh/@cornerstonejs/core@1' ),
-			import( 'https://esm.sh/@cornerstonejs/tools@1' ),
-			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1' ),
+			import( 'https://esm.sh/@cornerstonejs/tools@1?external=@cornerstonejs/core' ),
+			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1?external=@cornerstonejs/core,dicom-parser' ),
 		] )
 			.then( function ( modules ) {
 				return bootCornerstone( modules[ 0 ], modules[ 1 ], modules[ 2 ], imageIds );
 			} )
 			.catch( function ( err ) {
-				viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( 'Viewer error: ' + err.message ) + '</p>';
+				// Show the error with a light background so it is readable even
+				// when the viewport-wrap has a dark background.
+				const msg = err && err.message ? err.message : String( err );
+				viewport.innerHTML =
+					'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+					escHtml( 'Viewer error: ' + msg ) + '</p>';
 			} );
 	}
 
@@ -921,15 +937,19 @@
 			// CRITICAL (fix for black images): Connect the DICOM image loader to
 			// Cornerstone core BEFORE calling init().  Without this link the wadouri
 			// image-loader is never registered and every canvas stays black.
+			// (No-op for newer loader versions that import cornerstone directly, but
+			// harmless and required by some 1.x CDN builds.)
 			if ( csDicomImageLoader.external ) {
 				csDicomImageLoader.external.cornerstone = csCore;
 			}
 
 			// Configure authentication headers sent with every XHR-based DICOM fetch.
 			// `beforeSend` is the standard hook in @cornerstonejs/dicom-image-loader v1.
+			// NOTE: beforeSend only fires in the main thread.  We therefore set
+			// maxWebWorkers: 0 below so that all loading stays on the main thread
+			// and the X-WP-Nonce header is always injected correctly.
 			if ( csDicomImageLoader.configure ) {
 				csDicomImageLoader.configure( {
-					useWebWorkers: false,
 					beforeSend: function ( xhr ) {
 						xhr.setRequestHeader( 'X-WP-Nonce', nonce );
 					},
@@ -940,8 +960,11 @@
 			await csTools.init();
 
 			// Call the loader's own init AFTER external.cornerstone is set.
+			// maxWebWorkers: 0 keeps decoding on the main thread so that the
+			// beforeSend authentication hook above is always applied (web workers
+			// cannot inherit the main-thread beforeSend callback).
 			if ( csDicomImageLoader.init ) {
-				csDicomImageLoader.init( { maxWebWorkers: 1 } );
+				csDicomImageLoader.init( { maxWebWorkers: 0 } );
 			}
 
 			csInitialized = true;
@@ -991,11 +1014,34 @@
 								vp.setProperties( { voiRange: { lower: lo, upper: hi } } );
 								vp.render();
 							}
+						} else {
+							// No pixel range in event detail (varies by Cornerstone version).
+							// Fall back to resetProperties() which auto-computes VOI from
+							// the actual pixel data when no DICOM Window/Level tags exist.
+							vp.resetProperties();
+							vp.render();
 						}
 					} catch ( _e ) {}
 				},
 				{ once: true }
 			);
+		}
+
+		// Surface DICOM image-load failures so the user sees a message instead of
+		// a silent black canvas.  The event name varies slightly across versions.
+		var loadFailEvent = csCore.Enums && csCore.Enums.Events && (
+			csCore.Enums.Events.IMAGE_LOAD_ERROR ||
+			csCore.Enums.Events.IMAGELOADFAILED
+		);
+		if ( loadFailEvent ) {
+			element.addEventListener( loadFailEvent, function ( evt ) {
+				var msg = ( evt.detail && evt.detail.error && evt.detail.error.message )
+					? evt.detail.error.message
+					: 'DICOM load failed';
+				if ( viewport ) {
+					viewport.innerHTML = '<p class="nv-imaging-error">' + escHtml( i18n.viewerError + ': ' + msg ) + '</p>';
+				}
+			} );
 		}
 
 		vp.render();
