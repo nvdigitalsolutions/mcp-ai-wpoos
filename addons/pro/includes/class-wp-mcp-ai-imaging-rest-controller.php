@@ -482,8 +482,9 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 				);
 
 				$instances[] = array(
-					'instanceUID' => $iuid,
-					'imageId'     => 'wadouri:' . $file_url,
+					'instanceUID'    => $iuid,
+					'imageId'        => 'wadouri:' . $file_url,
+					'instanceNumber' => isset( $inst['instance_number'] ) ? (int) $inst['instance_number'] : 0,
 				);
 			}
 
@@ -740,27 +741,40 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Remove all DICOM files stored in the study directory.
+		// Files may live in series subdirectories ({study}/{series}/{instance}.dcm)
+		// per the DICOM hierarchy, so we scan recursively then remove
+		// subdirectories from deepest to shallowest.
 		$storage_path = get_post_meta( $post->ID, '_imaging_storage_path', true );
 		if ( $storage_path && is_dir( $storage_path ) && $this->is_path_within_storage( $storage_path ) ) {
-			$files = glob( trailingslashit( $storage_path ) . '*.dcm' );
-			if ( is_array( $files ) ) {
-				foreach ( $files as $file ) {
-					if ( is_file( $file ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-						if ( ! unlink( $file ) ) {
-							WP_MCP_AI_Imaging_Audit_Log::log(
-								'study_delete_file_failed',
-								array(
-									'study_id' => $study_uid,
-									'file'     => basename( $file ),
-									'user_id'  => get_current_user_id(),
-								)
-							);
-						}
+			// Collect and delete all .dcm files recursively.
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $storage_path, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::CHILD_FIRST
+			);
+			foreach ( $iterator as $item ) {
+				$item_path = $item->getPathname();
+				if ( ! $this->is_path_within_storage( $item_path ) ) {
+					continue;
+				}
+				if ( $item->isFile() ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+					if ( ! unlink( $item_path ) ) {
+						WP_MCP_AI_Imaging_Audit_Log::log(
+							'study_delete_file_failed',
+							array(
+								'study_id' => $study_uid,
+								'file'     => $item->getFilename(),
+								'user_id'  => get_current_user_id(),
+							)
+						);
 					}
+				} elseif ( $item->isDir() ) {
+					// Remove empty series subdirectories (CHILD_FIRST order ensures
+					// files are deleted before their parent directory is reached).
+					@rmdir( $item_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
 				}
 			}
-			// Remove the study directory only if it is now empty.
+			// Remove the study root directory.
 			if ( ! @rmdir( $storage_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
 				// Directory not empty or not writable — log for compliance audit but don't
 				// block the delete (the CPT post will still be removed).
@@ -978,9 +992,15 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Move file to protected storage.
-		$study_dir = $storage_root . sanitize_file_name( $study_uid ) . '/';
-		wp_mkdir_p( $study_dir );
-		$dest_path = $study_dir . sanitize_file_name( $instance_uid ) . '.dcm';
+		// Industry-standard DICOM hierarchy: Study → Series → Instance
+		// (per DICOM PS 3.10 and IHE Radiology Technical Framework).
+		// Each series gets its own subdirectory so multi-series studies are
+		// organised correctly on disk.
+		$series_dir_name = '' !== $series_uid ? sanitize_file_name( $series_uid ) : 'ungrouped';
+		$study_dir       = $storage_root . sanitize_file_name( $study_uid ) . '/';
+		$series_dir      = $study_dir . $series_dir_name . '/';
+		wp_mkdir_p( $series_dir );
+		$dest_path = $series_dir . sanitize_file_name( $instance_uid ) . '.dcm';
 
 		if ( ! move_uploaded_file( $tmp_path, $dest_path ) ) {
 			return new WP_Error( 'imaging_move_failed', __( 'Failed to store DICOM file.', 'mcp-ai-wpoos-pro' ) );
