@@ -47,6 +47,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		const DEFAULT_TIMEOUT = 30;
 
 		/**
+		 * Shopify Catalog API base URL (global agentic commerce search).
+		 *
+		 * Endpoints: /global/v2/search, /global/v2/lookup, /global/v2/lookup/by-variant
+		 *
+		 * @var string
+		 */
+		const CATALOG_BASE_URL = 'https://discover.shopifyapps.com';
+
+		/**
+		 * Shopify token endpoint for obtaining a Catalog API JWT bearer token.
+		 *
+		 * POST client_id + client_secret (shpss_…) to receive an access_token (JWT, ~60 min TTL).
+		 *
+		 * @var string
+		 */
+		const CATALOG_AUTH_URL = 'https://api.shopify.com/auth/access_token';
+
+		/**
 		 * Remote Sites connection ID.
 		 *
 		 * @var string|null
@@ -176,8 +194,143 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			return self::sanitize_api_version( $api_version );
 		}
 
-		// ------------------------------------------------------------------ //
-		//  GraphQL helpers                                                     //
+		/**
+		 * Get the configured API mode: 'admin_api' (default) or 'catalog_api'.
+		 *
+		 * @return string 'admin_api' or 'catalog_api'.
+		 */
+		public function get_api_mode() {
+			$connection = $this->get_connection();
+			$mode       = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			return in_array( $mode, array( 'admin_api', 'catalog_api' ), true ) ? $mode : 'admin_api';
+		}
+
+		/**
+		 * Get the Catalog API client ID (Dev Dashboard credential).
+		 *
+		 * In catalog_api mode the connection stores client_id in api_key (plain-text).
+		 *
+		 * @return string Client ID or empty string.
+		 */
+		public function get_catalog_client_id() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['api_key'] )
+				? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] )
+				: '';
+		}
+
+		/**
+		 * Get the Catalog API client secret (shpss_… Dev Dashboard credential).
+		 *
+		 * In catalog_api mode the connection stores client_secret in api_secret (encrypted).
+		 *
+		 * @return string Client secret or empty string.
+		 */
+		public function get_catalog_client_secret() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['api_secret'] )
+				? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] )
+				: '';
+		}
+
+		/**
+		 * Fetch (or return a cached) Catalog API JWT bearer token.
+		 *
+		 * Exchanges client_id + client_secret for a short-lived JWT using
+		 * POST https://api.shopify.com/auth/access_token with grant_type=client_credentials.
+		 * The token is cached in a WordPress transient for its TTL minus a 60-second buffer.
+		 *
+		 * @return string|WP_Error JWT access token string or WP_Error on failure.
+		 */
+		public function get_catalog_token() {
+			$client_id     = $this->get_catalog_client_id();
+			$client_secret = $this->get_catalog_client_secret();
+
+			if ( empty( $client_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_missing_client_id',
+					__( 'Shopify Catalog API client ID is not configured for this connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( empty( $client_secret ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_missing_client_secret',
+					__( 'Shopify Catalog API client secret (shpss_…) is not configured for this connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Cache key unique to this connection's credentials.
+			$transient_key = 'wp_mcp_ai_shopify_cat_tok_' . md5( $client_id );
+
+			$cached = get_transient( $transient_key );
+			if ( ! empty( $cached ) ) {
+				return $cached;
+			}
+
+			$body = array(
+				'client_id'     => $client_id,
+				'client_secret' => $client_secret,
+				'grant_type'    => 'client_credentials',
+			);
+
+			$raw_response = wp_safe_remote_post(
+				self::CATALOG_AUTH_URL,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Content-Type' => 'application/json',
+						'Accept'       => 'application/json',
+						'User-Agent'   => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+					),
+					'body'    => wp_json_encode( $body ),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_auth_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Shopify Catalog API token request failed: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $raw_response );
+			$response_body = wp_remote_retrieve_body( $raw_response );
+
+			if ( 401 === $response_code || 403 === $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_unauthorized',
+					__( 'Shopify Catalog API credentials rejected. Please verify the client ID and client secret (shpss_…).', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_auth_http_error',
+					/* translators: %d: HTTP status code */
+					sprintf( __( 'Shopify Catalog API token endpoint returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $response_code )
+				);
+			}
+
+			$decoded = json_decode( $response_body, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE || empty( $decoded['access_token'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_invalid_token_response',
+					__( 'Shopify Catalog API returned an unexpected token response.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			$token      = $decoded['access_token'];
+			$expires_in = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
+			// Cache with a 60-second safety buffer to avoid using an expired token.
+			$cache_ttl  = max( 60, $expires_in - 60 );
+
+			set_transient( $transient_key, $token, $cache_ttl );
+
+			return $token;
+		}                                                     //
 		// ------------------------------------------------------------------ //
 
 		/**
@@ -797,6 +950,149 @@ query GetLocations($first: Int!) {
   }
 }';
 			return $this->graphql( $gql_query, array( 'first' => $first ) );
+		}
+
+		// ------------------------------------------------------------------ //
+		//  Catalog API helpers (global agentic commerce, JWT bearer auth)      //
+		// ------------------------------------------------------------------ //
+
+		/**
+		 * Send a GET request to the Shopify Catalog API using a JWT bearer token.
+		 *
+		 * Automatically fetches (and caches) a token via get_catalog_token().
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $path        Catalog API path, e.g. '/global/v2/search'.
+		 * @param array  $query_args  URL query parameters (key => value).
+		 * @return array|WP_Error Decoded response array or WP_Error on failure.
+		 */
+		public function catalog_request( $path, array $query_args = array() ) {
+			$token = $this->get_catalog_token();
+
+			if ( is_wp_error( $token ) ) {
+				return $token;
+			}
+
+			$url = self::CATALOG_BASE_URL . '/' . ltrim( $path, '/' );
+			if ( ! empty( $query_args ) ) {
+				$url = add_query_arg( $query_args, $url );
+			}
+
+			$raw_response = wp_safe_remote_get(
+				$url,
+				array(
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'Accept'        => 'application/json',
+						'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+					),
+				)
+			);
+
+			if ( is_wp_error( $raw_response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_request_failed',
+					/* translators: %s: error message */
+					sprintf( __( 'Shopify Catalog API request failed: %s', 'mcp-ai-wpoos-pro' ), $raw_response->get_error_message() )
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $raw_response );
+			$response_body = wp_remote_retrieve_body( $raw_response );
+
+			if ( strlen( $response_body ) > self::MAX_RESPONSE_SIZE ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_response_too_large',
+					__( 'Shopify Catalog API response exceeds the maximum allowed size.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 401 === $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_unauthorized',
+					__( 'Shopify Catalog API access denied. The bearer token may have expired; please retry.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 404 === $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_not_found',
+					__( 'Shopify Catalog API: the requested product was not found.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 429 === $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_rate_limited',
+					__( 'Shopify Catalog API rate limit reached. Please retry after a moment.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_http_error',
+					/* translators: %d: HTTP status code */
+					sprintf( __( 'Shopify Catalog API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $response_code )
+				);
+			}
+
+			$decoded = json_decode( $response_body, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_invalid_json',
+					__( 'Shopify Catalog API returned an invalid JSON response.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Search for products across the global Shopify Catalog.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $query   Search query string, e.g. 'wireless headphones'.
+		 * @param int    $limit   Maximum number of results to return (1–100). Default 20.
+		 * @param array  $filters Optional additional query parameters (e.g. min_price, max_price, categories).
+		 * @return array|WP_Error Decoded response array or WP_Error on failure.
+		 */
+		public function catalog_search( $query, $limit = 20, array $filters = array() ) {
+			$query_args = array_merge(
+				array(
+					'query' => $query,
+					'limit' => max( 1, min( 100, absint( $limit ) ) ),
+				),
+				$filters
+			);
+			return $this->catalog_request( 'global/v2/search', $query_args );
+		}
+
+		/**
+		 * Look up detailed product information using a Universal Product ID (UPID).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $upid Universal Product ID issued by the Shopify Catalog API.
+		 * @return array|WP_Error Decoded response array or WP_Error on failure.
+		 */
+		public function catalog_lookup( $upid ) {
+			return $this->catalog_request( 'global/v2/lookup', array( 'upid' => $upid ) );
+		}
+
+		/**
+		 * Look up detailed product information using a Variant ID (VID).
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $vid Variant ID issued by the Shopify Catalog API.
+		 * @return array|WP_Error Decoded response array or WP_Error on failure.
+		 */
+		public function catalog_lookup_by_variant( $vid ) {
+			return $this->catalog_request( 'global/v2/lookup/by-variant', array( 'vid' => $vid ) );
 		}
 	}
 }

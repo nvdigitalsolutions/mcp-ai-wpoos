@@ -532,6 +532,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_version' => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
 				? sanitize_text_field( $connection_data['shopify_api_version'] )
 				: '2025-01',
+			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+				? $connection_data['shopify_api_mode']
+				: 'admin_api',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -1180,6 +1183,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
 		}
 
+		$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+
+		if ( 'catalog_api' === $shopify_api_mode ) {
+			return self::test_shopify_catalog_connection( $connection );
+		}
+
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
 		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
 
@@ -1209,6 +1218,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shop_name'  => $shop_name,
 			'shop_plan'  => $shop_plan,
 			'message'    => $message,
+		);
+	}
+
+	/**
+	 * Test Shopify Catalog API connection.
+	 *
+	 * Exchanges client_id + client_secret for a JWT bearer token and verifies
+	 * the search endpoint is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		// Attempt to obtain a Catalog API JWT bearer token first.
+		$token = $client->get_catalog_token();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		// Verify the search endpoint with a minimal query.
+		$response = $client->catalog_search( 'test', 1 );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Catalog API connection successful. JWT token acquired and search endpoint verified.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -2133,10 +2180,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $api_url;
 		}
 
-		// For Shopify connections, build the Admin GraphQL API URL.
+		// For Shopify connections, build the Admin GraphQL API URL or Catalog API URL.
 		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
 			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+			}
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				$path = '' === $endpoint ? 'global/v2/search' : ltrim( $endpoint, '/' );
+				return WP_MCP_AI_Shopify_Client::CATALOG_BASE_URL . '/' . $path;
 			}
 			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
 				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
@@ -2172,13 +2224,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'User-Agent' => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
 		);
 
-		// For Shopify connections, use the X-Shopify-Access-Token header (Admin API).
+		// For Shopify connections, use mode-appropriate authentication.
 		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
-			$access_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
-			if ( ! empty( $access_token ) ) {
-				$headers['X-Shopify-Access-Token'] = $access_token;
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				// Catalog API uses a short-lived JWT bearer token obtained from get_catalog_token().
+				// The token is fetched dynamically by WP_MCP_AI_Shopify_Client; here we set Content-Type only.
+				$headers['Content-Type'] = 'application/json';
+				$headers['Accept']       = 'application/json';
+			} else {
+				// Admin API uses the X-Shopify-Access-Token header (shpat_/shpca_/shpua_/shpss_).
+				$access_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+				if ( ! empty( $access_token ) ) {
+					$headers['X-Shopify-Access-Token'] = $access_token;
+				}
+				$headers['Content-Type'] = 'application/json';
 			}
-			$headers['Content-Type'] = 'application/json';
 			return $headers;
 		}
 
@@ -2302,10 +2363,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'shopify' === $connection_type ) {
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
 			if ( empty( $connection['api_key'] ) ) {
+				$error_msg = 'catalog_api' === $shopify_api_mode
+					? __( 'Client ID is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
+					: __( 'Admin API access token is required for Shopify connections.', 'mcp-ai-wpoos-pro' );
+				return new WP_Error( 'wp_mcp_ai_pro_missing_shopify_credentials', $error_msg );
+			}
+			if ( 'catalog_api' === $shopify_api_mode && empty( $connection['api_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_shopify_credentials',
-					__( 'Admin API access token is required for Shopify connections.', 'mcp-ai-wpoos-pro' )
+					__( 'Client secret (shpss_…) is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
