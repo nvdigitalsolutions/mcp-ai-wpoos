@@ -1,11 +1,17 @@
 # GitHub Packages Alpha Publishing Workflow
 #
-# This workflow publishes alpha versions of the NPM packages to GitHub Packages.
+# This workflow publishes alpha versions of all NPM packages to GitHub Packages.
 #
-# Packages published:
+# Packages published (9 total):
 # - @nvdigitalsolutions/nvoos-storage
 # - @nvdigitalsolutions/nvoos-markdown
 # - @nvdigitalsolutions/nvoos-events
+# - @nvdigitalsolutions/nvoos-clipboard
+# - @nvdigitalsolutions/nvoos-http-client
+# - @nvdigitalsolutions/nvoos-offline-sync
+# - @nvdigitalsolutions/nvoos-slash-commands
+# - @nvdigitalsolutions/nvoos-audio
+# - @nvdigitalsolutions/nvoos-dom-batcher
 #
 # Trigger: Push tags matching v*.*.*-alpha.*
 # Example: v0.1.0-alpha.1, v0.2.0-alpha.2, etc.
@@ -37,6 +43,15 @@ on:
 permissions:
   contents: read
   packages: write
+
+# Single source of truth for the package list.
+# Add a new package name here and it will be automatically included
+# in every step: version bump, build, verify, dry-run summary, and publish.
+env:
+  PACKAGES: >-
+    nvoos-storage nvoos-markdown nvoos-events nvoos-clipboard
+    nvoos-http-client nvoos-offline-sync nvoos-slash-commands
+    nvoos-audio nvoos-dom-batcher
 
 jobs:
   publish:
@@ -86,86 +101,44 @@ jobs:
         if: steps.check_auth.outputs.has_token == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-
           echo "📝 Updating package.json files to version ${VERSION}..."
 
-          # Update nvoos-storage
-          cd packages/nvoos-storage
-          npm version ${VERSION} --no-git-tag-version
-          echo "✅ Updated @nvdigitalsolutions/nvoos-storage to ${VERSION}"
-          cd ../..
+          for pkg in $PACKAGES; do
+            cd packages/${pkg}
+            npm version ${VERSION} --no-git-tag-version
+            echo "✅ Updated @nvdigitalsolutions/${pkg} to ${VERSION}"
+            cd ../..
+          done
 
-          # Update nvoos-markdown
-          cd packages/nvoos-markdown
-          npm version ${VERSION} --no-git-tag-version
-          echo "✅ Updated @nvdigitalsolutions/nvoos-markdown to ${VERSION}"
-          cd ../..
-
-          # Update nvoos-events
-          cd packages/nvoos-events
-          npm version ${VERSION} --no-git-tag-version
-          echo "✅ Updated @nvdigitalsolutions/nvoos-events to ${VERSION}"
-          cd ../..
-
-      - name: Build nvoos-storage
+      - name: Build all packages
         if: steps.check_auth.outputs.has_token == 'true'
         run: |
-          echo "🔨 Building @nvdigitalsolutions/nvoos-storage..."
-          cd packages/nvoos-storage
-          npm run build
-          echo "✅ Build complete"
-          ls -lh dist/
-
-      - name: Build nvoos-markdown
-        if: steps.check_auth.outputs.has_token == 'true'
-        run: |
-          echo "🔨 Building @nvdigitalsolutions/nvoos-markdown..."
-          cd packages/nvoos-markdown
-          npm run build
-          echo "✅ Build complete"
-          ls -lh dist/
-
-      - name: Build nvoos-events
-        if: steps.check_auth.outputs.has_token == 'true'
-        run: |
-          echo "🔨 Building @nvdigitalsolutions/nvoos-events..."
-          cd packages/nvoos-events
-          npm run build
-          echo "✅ Build complete"
-          ls -lh dist/
+          for pkg in $PACKAGES; do
+            echo "🔨 Building @nvdigitalsolutions/${pkg}..."
+            cd packages/${pkg}
+            npm run build
+            echo "✅ Build complete"
+            ls -lh dist/
+            cd ../..
+          done
 
       - name: Verify package contents
         if: steps.check_auth.outputs.has_token == 'true'
         run: |
           echo "📦 Verifying package contents before publishing..."
-
-          # Check nvoos-storage
-          echo ""
-          echo "=== @nvdigitalsolutions/nvoos-storage ==="
-          cd packages/nvoos-storage
-          npm pack --dry-run
-          cd ../..
-
-          # Check nvoos-markdown
-          echo ""
-          echo "=== @nvdigitalsolutions/nvoos-markdown ==="
-          cd packages/nvoos-markdown
-          npm pack --dry-run
-          cd ../..
-
-          # Check nvoos-events
-          echo ""
-          echo "=== @nvdigitalsolutions/nvoos-events ==="
-          cd packages/nvoos-events
-          npm pack --dry-run
-          cd ../..
+          for pkg in $PACKAGES; do
+            echo ""
+            echo "=== @nvdigitalsolutions/${pkg} ==="
+            cd packages/${pkg}
+            npm pack --dry-run
+            cd ../..
+          done
 
       - name: Publish @nvdigitalsolutions/nvoos-storage
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "📤 Publishing @nvdigitalsolutions/nvoos-storage to GitHub Packages..."
           cd packages/nvoos-storage
           npm publish --tag alpha
           echo "✅ Published @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
@@ -175,7 +148,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "📤 Publishing @nvdigitalsolutions/nvoos-markdown to GitHub Packages..."
           cd packages/nvoos-markdown
           npm publish --tag alpha
           echo "✅ Published @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
@@ -185,59 +157,104 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "📤 Publishing @nvdigitalsolutions/nvoos-events to GitHub Packages..."
           cd packages/nvoos-events
           npm publish --tag alpha
           echo "✅ Published @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
 
+      - name: Publish @nvdigitalsolutions/nvoos-clipboard
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-clipboard
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-clipboard@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-http-client
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-http-client
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-http-client@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-offline-sync
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-offline-sync
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-offline-sync@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-slash-commands
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-slash-commands
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-slash-commands@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-audio
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-audio
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-audio@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-dom-batcher
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/nvoos-dom-batcher
+          npm publish --tag alpha
+          echo "✅ Published @nvdigitalsolutions/nvoos-dom-batcher@${{ steps.version.outputs.version }}"
+
       - name: Dry run summary
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run == 'true'
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           echo "🏃 Dry run complete - no packages were published"
           echo ""
           echo "The following packages would have been published:"
-          echo "  - @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
-          echo "  - @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
-          echo "  - @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
+          for pkg in $PACKAGES; do
+            echo "  - @nvdigitalsolutions/${pkg}@${VERSION}"
+          done
 
       - name: Publication summary
         if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          echo "## 🎉 Alpha packages published successfully to GitHub Packages!"
+          echo "## 🎉 All 9 alpha packages published successfully to GitHub Packages!"
           echo ""
           echo "### Published Packages"
           echo ""
-          echo "✅ **@nvdigitalsolutions/nvoos-storage@${VERSION}**"
-          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-storage@alpha\`"
-          echo "   GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages"
-          echo ""
-          echo "✅ **@nvdigitalsolutions/nvoos-markdown@${VERSION}**"
-          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-markdown@alpha\`"
-          echo "   GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages"
-          echo ""
-          echo "✅ **@nvdigitalsolutions/nvoos-events@${VERSION}**"
-          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-events@alpha\`"
-          echo "   GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages"
-          echo ""
+          for pkg in $PACKAGES; do
+            echo "✅ **@nvdigitalsolutions/${pkg}@${VERSION}**"
+            echo "   Install: \`npm install @nvdigitalsolutions/${pkg}@alpha\`"
+            echo "   GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages"
+            echo ""
+          done
           echo "### Installing from GitHub Packages"
           echo ""
           echo "\`\`\`bash"
-          echo "# Create/update .npmrc file to use GitHub Packages"
+          echo "# Add to .npmrc to use GitHub Packages registry for this scope"
           echo "@nvdigitalsolutions:registry=https://npm.pkg.github.com"
           echo ""
-          echo "# Authenticate (use GitHub Personal Access Token with read:packages scope)"
+          echo "# Authenticate (use a GitHub PAT with read:packages scope)"
           echo "npm login --registry=https://npm.pkg.github.com"
           echo ""
-          echo "# Install specific alpha version"
-          echo "npm install @nvdigitalsolutions/nvoos-storage@${VERSION}"
-          echo ""
-          echo "# Or install latest alpha"
-          echo "npm install @nvdigitalsolutions/nvoos-storage@alpha"
+          echo "# Install the latest alpha of any package"
+          echo "npm install @nvdigitalsolutions/nvoos-slash-commands@alpha"
+          echo "npm install @nvdigitalsolutions/nvoos-audio@alpha"
+          echo "npm install @nvdigitalsolutions/nvoos-dom-batcher@alpha"
           echo "\`\`\`"
           echo ""
           echo "### Documentation"
           echo ""
-          echo "- [Storage Utility](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-storage)"
-          echo "- [Markdown Renderer](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-markdown)"
-          echo "- [Event System](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-events)"
+          echo "- [All Packages](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages)"
