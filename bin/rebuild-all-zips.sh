@@ -69,9 +69,9 @@ fi
 echo ""
 
 # Build all versions using the build-plugin-zip.sh script
-# Use --all flag for base, pro, combined, jewelry-tma, and also add --core-only
+# Use --all flag for base, pro, combined, and also add --core-only
 # Always pass --skip-npm-build since we already ran the full build above
-"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only --jewelry-tma $VERSION_ARG --skip-npm-build
+"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG --skip-npm-build
 
 echo ""
 echo "=========================================="
