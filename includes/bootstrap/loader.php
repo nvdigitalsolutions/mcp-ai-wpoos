@@ -75,6 +75,15 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manag
 // Infrastructure utilities (must load early)
 // ---------------------------------------------------------------------------
 
+// Interface contracts and their WordPress/provider adapter implementations.
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-options-store.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-capability-checker.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-http-client.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-options-store.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/wp/class-wp-mcp-ai-wp-capability-checker.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/http/class-wp-mcp-ai-wp-http-client.php';
+
 // HTTP helper prevents SSL issues with loopback addresses.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
 WP_MCP_AI_HTTP_Helper::init();
@@ -146,6 +155,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
+
+// Provider interface adapters (thin delegates over the concrete clients above).
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openai-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-gemini-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-ollama-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-anthropic-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-cloudflare-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-lm-studio-provider-client.php';
 
 // ---------------------------------------------------------------------------
 // Tool infrastructure and utilities
