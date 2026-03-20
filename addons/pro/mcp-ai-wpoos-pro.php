@@ -729,6 +729,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_CRM_Email_Search_Leads'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Correspondence'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Accounting'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
+				// Upwork CRM tools.
+				'WP_MCP_AI_Tool_Search_Upwork_Jobs'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-search-upwork-jobs.php',
+				'WP_MCP_AI_Tool_Score_Upwork_Job'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-score-upwork-job.php',
+				'WP_MCP_AI_Tool_Draft_Upwork_Proposal' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-draft-upwork-proposal.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
@@ -1521,6 +1525,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['crm_email_search_leads']           = 'wordpress-core';
 			$pro_tools['crm_email_search_correspondence']  = 'wordpress-core';
 			$pro_tools['crm_email_search_accounting']      = 'wordpress-core';
+			// Upwork CRM tools.
+			$pro_tools['search_upwork_jobs']    = 'wordpress-core';
+			$pro_tools['score_upwork_job']      = 'wordpress-core';
+			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
 		}
 
 		// Add Fantasy Football tool mappings if enabled.
