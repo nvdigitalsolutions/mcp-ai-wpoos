@@ -1,0 +1,1003 @@
+/**
+ * Shopify Jewelry Mini App – Styles
+ *
+ * Uses Telegram CSS custom properties (applied by TMAContext.jsx) so the app
+ * automatically adapts to the user's Telegram theme (light / dark / custom).
+ * The jewelry brand accent is gold (#c9a227) which overrides the button colour
+ * when Telegram hasn't supplied its own theme.
+ *
+ * @package WP_MCP_AI
+ * @since   1.2.0
+ */
+
+/* ── Base reset & custom properties ────────────────────────────────────── */
+
+:root {
+	--tma-bg:           #ffffff;
+	--tma-text:         #1a1a1a;
+	--tma-hint:         #888888;
+	--tma-link:         #c9a227;
+	--tma-btn:          #c9a227;
+	--tma-btn-text:     #ffffff;
+	--tma-secondary-bg: #faf8f2;
+	--tma-header-bg:    #ffffff;
+	--tma-accent:       #c9a227;
+	--tma-section-bg:   #ffffff;
+	--tma-border:       rgba( 0, 0, 0, 0.08 );
+	--tma-radius:       12px;
+	--tma-nav-height:   60px;
+	--tma-header-height: 56px;
+	--tma-vh:           100vh;
+
+	/* Jewelry-specific tokens */
+	--jw-gold:          #c9a227;
+	--jw-gold-light:    #e8c96f;
+	--jw-gold-dark:     #9e7d18;
+	--jw-champagne:     #faf5e4;
+	--jw-champagne-alt: #f5edd5;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin:  0;
+	padding: 0;
+	height:  100%;
+	overflow: hidden;
+	background: var( --tma-bg );
+	color:      var( --tma-text );
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* ── App shell ──────────────────────────────────────────────────────────── */
+
+.tma-jw-shell {
+	display:    flex;
+	flex-direction: column;
+	height:     var( --tma-vh, 100vh );
+	max-height: 100dvh;
+	overflow:   hidden;
+	background: var( --tma-bg );
+}
+
+.tma-jw-content {
+	flex:     1;
+	overflow: hidden;
+	position: relative;
+}
+
+/* ── Page base ──────────────────────────────────────────────────────────── */
+
+.tma-jw-page {
+	position:   absolute;
+	inset:      0;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	display:    flex;
+	flex-direction: column;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+
+.tma-jw-page-header {
+	display:         flex;
+	align-items:     center;
+	gap:             10px;
+	padding:         8px 16px;
+	height:          var( --tma-header-height );
+	background:      var( --tma-header-bg );
+	border-bottom:   1px solid var( --tma-border );
+	flex-shrink:     0;
+	position:        sticky;
+	top:             0;
+	z-index:         10;
+}
+
+.tma-jw-page-header__avatar {
+	flex-shrink: 0;
+	width:       36px;
+	height:      36px;
+	border-radius: 50%;
+	background:  var( --jw-gold );
+	color:       #fff;
+	display:     flex;
+	align-items: center;
+	justify-content: center;
+	font-size:   18px;
+	box-shadow:  0 0 0 2px var( --jw-gold-light );
+}
+
+.tma-jw-page-header__avatar--ai {
+	background: linear-gradient( 135deg, var( --jw-gold ), var( --jw-gold-dark ) );
+}
+
+.tma-jw-page-header__info {
+	flex:         1;
+	min-width:    0;
+	overflow:     hidden;
+}
+
+.tma-jw-page-header__name {
+	font-weight:   600;
+	font-size:     15px;
+	white-space:   nowrap;
+	overflow:      hidden;
+	text-overflow: ellipsis;
+}
+
+.tma-jw-page-header__status {
+	font-size: 12px;
+	color:     var( --tma-hint );
+}
+
+.tma-jw-icon-btn {
+	background:  transparent;
+	border:      none;
+	cursor:      pointer;
+	padding:     4px 8px;
+	font-size:   18px;
+	line-height: 1;
+	color:       var( --tma-hint );
+	flex-shrink: 0;
+}
+
+/* ── Back button ────────────────────────────────────────────────────────── */
+
+.tma-jw-back-btn {
+	background:  transparent;
+	border:      none;
+	cursor:      pointer;
+	color:       var( --jw-gold );
+	font-size:   14px;
+	font-weight: 500;
+	padding:     8px 16px;
+	flex-shrink: 0;
+	text-align:  left;
+}
+
+/* ── Search bar ─────────────────────────────────────────────────────────── */
+
+.tma-jw-search {
+	display:      flex;
+	align-items:  center;
+	gap:          8px;
+	margin:       12px 16px 8px;
+	background:   var( --tma-secondary-bg );
+	border:       1px solid var( --tma-border );
+	border-radius: var( --tma-radius );
+	padding:      8px 12px;
+	flex-shrink:  0;
+}
+
+.tma-jw-search__icon {
+	color:       var( --tma-hint );
+	flex-shrink: 0;
+	display:     flex;
+	align-items: center;
+}
+
+.tma-jw-search__input {
+	flex:       1;
+	border:     none;
+	background: transparent;
+	outline:    none;
+	color:      var( --tma-text );
+	font-size:  14px;
+	min-width:  0;
+}
+
+.tma-jw-search__input::placeholder {
+	color: var( --tma-hint );
+}
+
+.tma-jw-search__clear {
+	background:  transparent;
+	border:      none;
+	cursor:      pointer;
+	color:       var( --tma-hint );
+	font-size:   14px;
+	padding:     0;
+	flex-shrink: 0;
+}
+
+/* ── Product grid ───────────────────────────────────────────────────────── */
+
+.tma-jw-shop-page__grid-wrap {
+	flex:      1;
+	overflow-y: auto;
+	padding:   8px 16px 16px;
+}
+
+.tma-jw-product-grid {
+	display:               grid;
+	grid-template-columns: repeat( 2, 1fr );
+	gap:                   12px;
+}
+
+/* ── Product card ───────────────────────────────────────────────────────── */
+
+.tma-jw-product-card {
+	background:    var( --tma-section-bg );
+	border:        1px solid var( --tma-border );
+	border-radius: var( --tma-radius );
+	padding:       0;
+	cursor:        pointer;
+	text-align:    left;
+	overflow:      hidden;
+	transition:    box-shadow 0.15s ease;
+}
+
+.tma-jw-product-card:active {
+	box-shadow: 0 2px 8px rgba( 201, 162, 39, 0.3 );
+}
+
+.tma-jw-product-card__img-wrap {
+	position:        relative;
+	width:           100%;
+	padding-bottom:  100%;
+	background:      var( --jw-champagne );
+	overflow:        hidden;
+}
+
+.tma-jw-product-card__img {
+	position:   absolute;
+	inset:      0;
+	width:      100%;
+	height:     100%;
+	object-fit: cover;
+}
+
+.tma-jw-product-card__img-placeholder {
+	position:        absolute;
+	inset:           0;
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	font-size:       40px;
+	background:      var( --jw-champagne );
+}
+
+.tma-jw-product-card__body {
+	padding: 8px 10px 10px;
+}
+
+.tma-jw-product-card__name {
+	margin:        0 0 4px;
+	font-size:     13px;
+	font-weight:   500;
+	line-height:   1.3;
+	overflow:      hidden;
+	display:       -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+}
+
+.tma-jw-product-card__price {
+	margin:      0;
+	font-size:   13px;
+	font-weight: 600;
+	color:       var( --jw-gold-dark );
+}
+
+/* ── Product detail page ────────────────────────────────────────────────── */
+
+.tma-jw-product-page__img-wrap {
+	width:           100%;
+	padding-bottom:  75%;
+	position:        relative;
+	background:      var( --jw-champagne );
+	flex-shrink:     0;
+}
+
+.tma-jw-product-page__img {
+	position:   absolute;
+	inset:      0;
+	width:      100%;
+	height:     100%;
+	object-fit: cover;
+}
+
+.tma-jw-product-page__img-placeholder {
+	position:        absolute;
+	inset:           0;
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	font-size:       72px;
+}
+
+.tma-jw-product-page__body {
+	padding: 16px;
+}
+
+.tma-jw-product-page__name {
+	margin:      0 0 8px;
+	font-size:   20px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.tma-jw-product-page__price {
+	margin:      0 0 12px;
+	font-size:   22px;
+	font-weight: 700;
+	color:       var( --jw-gold-dark );
+}
+
+.tma-jw-product-page__oos {
+	margin:      0 0 12px;
+	font-size:   14px;
+	color:       #ef4444;
+	font-weight: 500;
+}
+
+.tma-jw-product-page__desc {
+	font-size:   14px;
+	color:       var( --tma-hint );
+	line-height: 1.5;
+	margin:      0 0 16px;
+}
+
+/* ── Quantity row ───────────────────────────────────────────────────────── */
+
+.tma-jw-qty-row {
+	display:     flex;
+	align-items: center;
+	gap:         12px;
+	margin:      12px 0;
+}
+
+.tma-jw-qty-row--sm {
+	margin: 6px 0 0;
+}
+
+.tma-jw-qty-btn {
+	width:           32px;
+	height:          32px;
+	border:          1px solid var( --jw-gold );
+	border-radius:   50%;
+	background:      transparent;
+	cursor:          pointer;
+	font-size:       18px;
+	line-height:     1;
+	color:           var( --jw-gold );
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+}
+
+.tma-jw-qty-val {
+	font-size:   16px;
+	font-weight: 600;
+	min-width:   24px;
+	text-align:  center;
+}
+
+/* ── Add-to-cart / CTA buttons ──────────────────────────────────────────── */
+
+.tma-jw-add-to-cart-btn {
+	width:         100%;
+	padding:       14px;
+	background:    var( --jw-gold );
+	color:         #fff;
+	border:        none;
+	border-radius: var( --tma-radius );
+	font-size:     15px;
+	font-weight:   600;
+	cursor:        pointer;
+	transition:    background 0.15s ease;
+}
+
+.tma-jw-add-to-cart-btn.added {
+	background: #22c55e;
+}
+
+.tma-jw-add-to-cart-btn.disabled {
+	background: var( --tma-border );
+	color:      var( --tma-hint );
+	cursor:     default;
+}
+
+.tma-jw-view-cart-btn {
+	display:         block;
+	width:           100%;
+	margin-top:      10px;
+	padding:         12px;
+	background:      transparent;
+	border:          1px solid var( --jw-gold );
+	border-radius:   var( --tma-radius );
+	color:           var( --jw-gold );
+	font-size:       14px;
+	font-weight:     500;
+	cursor:          pointer;
+	text-align:      center;
+}
+
+/* ── Generic button variants ────────────────────────────────────────────── */
+
+.tma-jw-btn {
+	padding:       12px 20px;
+	border-radius: var( --tma-radius );
+	font-size:     15px;
+	font-weight:   600;
+	cursor:        pointer;
+	border:        none;
+	transition:    background 0.15s ease;
+}
+
+.tma-jw-btn--primary {
+	background: var( --jw-gold );
+	color:      #fff;
+}
+
+.tma-jw-btn--ghost {
+	background: transparent;
+	border:     1px solid var( --tma-border );
+	color:      var( --tma-text );
+}
+
+.tma-jw-btn--full {
+	width:      100%;
+	display:    block;
+	text-align: center;
+}
+
+/* ── Cart page ──────────────────────────────────────────────────────────── */
+
+.tma-jw-cart-page__items {
+	flex:      1;
+	overflow-y: auto;
+	padding:   8px 16px;
+}
+
+.tma-jw-cart-item {
+	display:       flex;
+	align-items:   flex-start;
+	gap:           12px;
+	padding:       12px 0;
+	border-bottom: 1px solid var( --tma-border );
+}
+
+.tma-jw-cart-item__img-wrap {
+	flex-shrink:   0;
+	width:         72px;
+	height:        72px;
+	border-radius: 8px;
+	overflow:      hidden;
+	background:    var( --jw-champagne );
+}
+
+.tma-jw-cart-item__img {
+	width:      100%;
+	height:     100%;
+	object-fit: cover;
+}
+
+.tma-jw-cart-item__img-placeholder {
+	width:           100%;
+	height:          100%;
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	font-size:       24px;
+}
+
+.tma-jw-cart-item__details {
+	flex:       1;
+	min-width:  0;
+}
+
+.tma-jw-cart-item__name {
+	margin:      0 0 4px;
+	font-size:   14px;
+	font-weight: 500;
+	line-height: 1.3;
+}
+
+.tma-jw-cart-item__price {
+	margin:      0;
+	font-size:   14px;
+	font-weight: 600;
+	color:       var( --jw-gold-dark );
+}
+
+.tma-jw-cart-item__remove {
+	flex-shrink: 0;
+	background:  transparent;
+	border:      none;
+	cursor:      pointer;
+	color:       var( --tma-hint );
+	font-size:   16px;
+	padding:     0 4px;
+	line-height: 1;
+}
+
+.tma-jw-cart-page__footer {
+	padding:       16px;
+	border-top:    1px solid var( --tma-border );
+	flex-shrink:   0;
+	display:       flex;
+	flex-direction: column;
+	gap:           10px;
+}
+
+.tma-jw-cart-page__subtotal {
+	display:         flex;
+	justify-content: space-between;
+	align-items:     center;
+	font-size:       16px;
+	font-weight:     700;
+	padding:         0 0 4px;
+}
+
+/* ── Checkout page ──────────────────────────────────────────────────────── */
+
+.tma-jw-checkout-page__summary {
+	margin:        16px;
+	padding:       14px;
+	background:    var( --jw-champagne );
+	border:        1px solid var( --jw-gold-light );
+	border-radius: var( --tma-radius );
+	flex-shrink:   0;
+}
+
+.tma-jw-checkout-page__summary-label {
+	font-size: 12px;
+	color:     var( --tma-hint );
+	margin:    0 0 4px;
+}
+
+.tma-jw-checkout-page__summary-total {
+	font-size:   20px;
+	font-weight: 700;
+	color:       var( --jw-gold-dark );
+	margin:      0 0 6px;
+}
+
+.tma-jw-checkout-page__summary-items {
+	display:    flex;
+	flex-wrap:  wrap;
+	gap:        4px;
+}
+
+.tma-jw-checkout-page__summary-item {
+	font-size:     12px;
+	background:    rgba( 201, 162, 39, 0.12 );
+	color:         var( --jw-gold-dark );
+	border-radius: 20px;
+	padding:       2px 8px;
+}
+
+.tma-jw-checkout-form {
+	padding:       0 16px 16px;
+	display:       flex;
+	flex-direction: column;
+	gap:           12px;
+	overflow-y:    auto;
+	flex:          1;
+}
+
+.tma-jw-form-field {
+	display:        flex;
+	flex-direction: column;
+	gap:            4px;
+}
+
+.tma-jw-form-field label {
+	font-size:   13px;
+	font-weight: 500;
+	color:       var( --tma-hint );
+}
+
+.tma-jw-input {
+	border:        1px solid var( --tma-border );
+	border-radius: 8px;
+	padding:       10px 12px;
+	font-size:     14px;
+	background:    var( --tma-secondary-bg );
+	color:         var( --tma-text );
+	outline:       none;
+	transition:    border-color 0.15s ease;
+}
+
+.tma-jw-input:focus {
+	border-color: var( --jw-gold );
+}
+
+.tma-jw-form-row {
+	display: flex;
+	gap:     12px;
+}
+
+.tma-jw-form-row--half > * {
+	flex: 1;
+	min-width: 0;
+}
+
+.tma-jw-checkout-error {
+	color:     #ef4444;
+	font-size: 13px;
+	margin:    0;
+}
+
+/* ── Orders page ────────────────────────────────────────────────────────── */
+
+.tma-jw-orders-page__list {
+	flex:      1;
+	overflow-y: auto;
+	padding:   8px 16px 16px;
+}
+
+.tma-jw-order-card {
+	background:    var( --tma-section-bg );
+	border:        1px solid var( --tma-border );
+	border-radius: var( --tma-radius );
+	padding:       12px 14px;
+	margin-bottom: 10px;
+}
+
+.tma-jw-order-card__header {
+	display:         flex;
+	justify-content: space-between;
+	align-items:     center;
+	margin-bottom:   6px;
+}
+
+.tma-jw-order-card__id {
+	font-size:   14px;
+	font-weight: 600;
+}
+
+.tma-jw-order-card__badge {
+	font-size:     11px;
+	font-weight:   600;
+	border-radius: 20px;
+	padding:       2px 8px;
+	text-transform: capitalize;
+}
+
+.tma-jw-order-card__badge--sm {
+	font-size: 10px;
+}
+
+.tma-jw-order-card__meta {
+	display:     flex;
+	gap:         10px;
+	font-size:   12px;
+	color:       var( --tma-hint );
+	margin-bottom: 6px;
+	flex-wrap:   wrap;
+	align-items: center;
+}
+
+.tma-jw-order-card__items {
+	display:   flex;
+	flex-wrap: wrap;
+	gap:       4px;
+}
+
+.tma-jw-order-card__item {
+	font-size:     12px;
+	background:    var( --tma-secondary-bg );
+	border-radius: 20px;
+	padding:       2px 8px;
+}
+
+/* ── Assistant page ─────────────────────────────────────────────────────── */
+
+.tma-jw-assistant-page {
+	display:        flex;
+	flex-direction: column;
+	height:         100%;
+}
+
+.tma-jw-assistant-page__messages {
+	flex:      1;
+	overflow-y: auto;
+	padding:   12px 16px;
+	display:   flex;
+	flex-direction: column;
+	gap:       10px;
+}
+
+.tma-jw-assistant-page__welcome {
+	padding:     16px 0;
+	text-align:  center;
+	color:       var( --tma-hint );
+	font-size:   14px;
+	line-height: 1.5;
+}
+
+.tma-jw-assistant-page__welcome-icon {
+	font-size:     48px;
+	margin-bottom: 12px;
+}
+
+.tma-jw-assistant-page__suggestions {
+	display:    flex;
+	flex-wrap:  wrap;
+	gap:        8px;
+	margin-top: 12px;
+	justify-content: center;
+}
+
+.tma-jw-suggestion-chip {
+	background:    var( --jw-champagne );
+	border:        1px solid var( --jw-gold-light );
+	border-radius: 20px;
+	padding:       6px 14px;
+	font-size:     13px;
+	cursor:        pointer;
+	color:         var( --jw-gold-dark );
+	font-weight:   500;
+}
+
+.tma-jw-chat-msg {
+	max-width:   80%;
+	padding:     10px 14px;
+	border-radius: 16px;
+	font-size:   14px;
+	line-height: 1.45;
+}
+
+.tma-jw-chat-msg--user {
+	align-self:  flex-end;
+	background:  var( --jw-gold );
+	color:       #fff;
+	border-bottom-right-radius: 4px;
+}
+
+.tma-jw-chat-msg--assistant {
+	align-self:  flex-start;
+	background:  var( --tma-secondary-bg );
+	color:       var( --tma-text );
+	border-bottom-left-radius: 4px;
+	border:      1px solid var( --tma-border );
+}
+
+.tma-jw-chat-msg--typing {
+	display:     flex;
+	gap:         4px;
+	align-items: center;
+	padding:     12px 16px;
+}
+
+.tma-jw-typing-dot {
+	width:            6px;
+	height:           6px;
+	background:       var( --tma-hint );
+	border-radius:    50%;
+	animation:        tma-jw-typing 1.2s infinite ease-in-out;
+}
+
+.tma-jw-typing-dot:nth-child(2) {
+	animation-delay: 0.2s;
+}
+
+.tma-jw-typing-dot:nth-child(3) {
+	animation-delay: 0.4s;
+}
+
+@keyframes tma-jw-typing {
+	0%, 60%, 100% { transform: translateY( 0 ); }
+	30%           { transform: translateY( -4px ); }
+}
+
+.tma-jw-assistant-page__input-bar {
+	display:       flex;
+	align-items:   flex-end;
+	gap:           8px;
+	padding:       10px 16px;
+	border-top:    1px solid var( --tma-border );
+	background:    var( --tma-header-bg );
+	flex-shrink:   0;
+}
+
+.tma-jw-assistant-page__input {
+	flex:          1;
+	border:        1px solid var( --tma-border );
+	border-radius: 20px;
+	padding:       10px 14px;
+	font-size:     14px;
+	background:    var( --tma-secondary-bg );
+	color:         var( --tma-text );
+	resize:        none;
+	outline:       none;
+	max-height:    100px;
+	overflow-y:    auto;
+	transition:    border-color 0.15s ease;
+}
+
+.tma-jw-assistant-page__input:focus {
+	border-color: var( --jw-gold );
+}
+
+.tma-jw-assistant-page__send-btn {
+	flex-shrink:     0;
+	width:           40px;
+	height:          40px;
+	background:      var( --jw-gold );
+	border:          none;
+	border-radius:   50%;
+	cursor:          pointer;
+	display:         flex;
+	align-items:     center;
+	justify-content: center;
+	transition:      background 0.15s ease;
+}
+
+.tma-jw-assistant-page__send-btn:disabled {
+	background: var( --tma-border );
+	cursor:     default;
+}
+
+.tma-jw-assistant-page__send-btn svg {
+	width:  18px;
+	height: 18px;
+	stroke: #fff;
+}
+
+/* ── Bottom navigation ──────────────────────────────────────────────────── */
+
+.tma-jw-nav {
+	display:         flex;
+	justify-content: space-around;
+	align-items:     center;
+	height:          var( --tma-nav-height );
+	background:      var( --tma-header-bg );
+	border-top:      1px solid var( --tma-border );
+	flex-shrink:     0;
+}
+
+.tma-jw-nav__btn {
+	flex:            1;
+	display:         flex;
+	flex-direction:  column;
+	align-items:     center;
+	justify-content: center;
+	gap:             2px;
+	background:      transparent;
+	border:          none;
+	cursor:          pointer;
+	color:           var( --tma-hint );
+	padding:         6px 4px;
+	font-size:       10px;
+	transition:      color 0.15s ease;
+}
+
+.tma-jw-nav__btn.active {
+	color: var( --jw-gold );
+}
+
+.tma-jw-nav__icon {
+	width:    24px;
+	height:   24px;
+	display:  flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tma-jw-nav__icon svg {
+	width:  22px;
+	height: 22px;
+}
+
+.tma-jw-nav__label {
+	font-size:   10px;
+	font-weight: 500;
+	line-height: 1;
+}
+
+.tma-jw-nav__cart-wrap {
+	position: relative;
+	display:  flex;
+}
+
+.tma-jw-nav__badge {
+	position:        absolute;
+	top:            -4px;
+	right:          -6px;
+	background:     var( --jw-gold );
+	color:          #fff;
+	border-radius:  10px;
+	font-size:      9px;
+	font-weight:    700;
+	padding:        1px 4px;
+	line-height:    1.4;
+	min-width:      14px;
+	text-align:     center;
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────────── */
+
+.tma-jw-spinner-wrap {
+	display:         flex;
+	justify-content: center;
+	align-items:     center;
+	padding:         32px 0;
+	flex:            1;
+}
+
+.tma-jw-spinner {
+	display:       block;
+	border:        2px solid var( --tma-border );
+	border-top-color: var( --jw-gold );
+	border-radius: 50%;
+	animation:     tma-jw-spin 0.7s linear infinite;
+}
+
+@keyframes tma-jw-spin {
+	to { transform: rotate( 360deg ); }
+}
+
+/* ── Error ──────────────────────────────────────────────────────────────── */
+
+.tma-jw-error {
+	display:       flex;
+	align-items:   center;
+	gap:           8px;
+	padding:       12px;
+	background:    #fef2f2;
+	border:        1px solid #fecaca;
+	border-radius: var( --tma-radius );
+	font-size:     14px;
+	margin:        8px 0;
+}
+
+.tma-jw-error__icon {
+	flex-shrink: 0;
+}
+
+.tma-jw-error__text {
+	flex:     1;
+	color:    #b91c1c;
+}
+
+.tma-jw-error__retry {
+	flex-shrink:   0;
+	background:    transparent;
+	border:        1px solid #b91c1c;
+	border-radius: 6px;
+	color:         #b91c1c;
+	font-size:     12px;
+	padding:       4px 10px;
+	cursor:        pointer;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+
+.tma-jw-empty,
+.tma-jw-empty-state {
+	display:         flex;
+	flex-direction:  column;
+	align-items:     center;
+	justify-content: center;
+	gap:             12px;
+	padding:         40px 24px;
+	text-align:      center;
+	color:           var( --tma-hint );
+	flex:            1;
+}
+
+.tma-jw-empty span,
+.tma-jw-empty-state__icon {
+	font-size: 48px;
+}
+
+.tma-jw-empty-state__title {
+	margin:      0;
+	font-size:   20px;
+	font-weight: 600;
+	color:       var( --tma-text );
+}
+
+.tma-jw-empty-state__text {
+	margin:    0;
+	font-size: 14px;
+}
