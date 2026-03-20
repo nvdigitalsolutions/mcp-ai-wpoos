@@ -74,39 +74,25 @@ echo -e "${BLUE}📍 Current branch: ${CURRENT_BRANCH}${NC}"
 echo ""
 echo -e "${YELLOW}📝 Updating package.json files...${NC}"
 
-cd packages/nvoos-storage
-npm version "${VERSION}" --no-git-tag-version
-echo -e "${GREEN}  ✅ Updated @nvdigitalsolutions/nvoos-storage${NC}"
-cd ../..
+PACKAGES="nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher"
 
-cd packages/nvoos-markdown
-npm version "${VERSION}" --no-git-tag-version
-echo -e "${GREEN}  ✅ Updated @nvdigitalsolutions/nvoos-markdown${NC}"
-cd ../..
-
-cd packages/nvoos-events
-npm version "${VERSION}" --no-git-tag-version
-echo -e "${GREEN}  ✅ Updated @nvdigitalsolutions/nvoos-events${NC}"
-cd ../..
+for pkg in $PACKAGES; do
+  cd packages/${pkg}
+  npm version "${VERSION}" --no-git-tag-version
+  echo -e "${GREEN}  ✅ Updated @nvdigitalsolutions/${pkg}${NC}"
+  cd ../..
+done
 
 # Build all packages
 echo ""
 echo -e "${YELLOW}🔨 Building packages...${NC}"
 
-cd packages/nvoos-storage
-npm run build
-echo -e "${GREEN}  ✅ Built nvoos-storage${NC}"
-cd ../..
-
-cd packages/nvoos-markdown
-npm run build
-echo -e "${GREEN}  ✅ Built nvoos-markdown${NC}"
-cd ../..
-
-cd packages/nvoos-events
-npm run build
-echo -e "${GREEN}  ✅ Built nvoos-events${NC}"
-cd ../..
+for pkg in $PACKAGES; do
+  cd packages/${pkg}
+  npm run build
+  echo -e "${GREEN}  ✅ Built ${pkg}${NC}"
+  cd ../..
+done
 
 # Create a commit with version updates
 echo ""
@@ -119,10 +105,16 @@ echo ""
 echo -e "${YELLOW}🏷️  Creating tag ${TAG}...${NC}"
 git tag -a "$TAG" -m "Alpha release ${VERSION}
 
-Packages included:
+Packages included (9 total):
 - @nvdigitalsolutions/nvoos-storage@${VERSION}
 - @nvdigitalsolutions/nvoos-markdown@${VERSION}
 - @nvdigitalsolutions/nvoos-events@${VERSION}
+- @nvdigitalsolutions/nvoos-http-client@${VERSION}
+- @nvdigitalsolutions/nvoos-clipboard@${VERSION}
+- @nvdigitalsolutions/nvoos-offline-sync@${VERSION}
+- @nvdigitalsolutions/nvoos-slash-commands@${VERSION}
+- @nvdigitalsolutions/nvoos-audio@${VERSION}
+- @nvdigitalsolutions/nvoos-dom-batcher@${VERSION}
 
 This is an alpha release for testing purposes.
 Use 'npm install <package>@alpha' to install."
@@ -145,19 +137,22 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
   echo -e "${GREEN}✅ Success!${NC}"
   echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
   echo ""
-  echo -e "${BLUE}📦 Alpha release ${VERSION} has been published!${NC}"
+  echo -e "${BLUE}📦 Alpha release ${VERSION} has been triggered!${NC}"
   echo ""
   echo -e "${YELLOW}Next steps:${NC}"
   echo "  1. Monitor the GitHub Actions workflow:"
   echo "     https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions"
   echo ""
   echo "  2. Once published, packages will be available at:"
-  echo "     - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-storage"
-  echo "     - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-markdown"
-  echo "     - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-events"
+  for pkg in $PACKAGES; do
+    echo "     - https://www.npmjs.com/package/@nvdigitalsolutions/${pkg}"
+  done
   echo ""
   echo "  3. Install alpha versions with:"
   echo "     npm install @nvdigitalsolutions/nvoos-storage@alpha"
+  echo "     npm install @nvdigitalsolutions/nvoos-slash-commands@alpha"
+  echo "     npm install @nvdigitalsolutions/nvoos-audio@alpha"
+  echo "     npm install @nvdigitalsolutions/nvoos-dom-batcher@alpha"
   echo ""
 else
   echo ""
