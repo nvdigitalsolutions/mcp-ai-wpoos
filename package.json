@@ -26,7 +26,7 @@
 		"cosmos:tma": "cosmos --config cosmos.config.json",
 		"cosmos:tma:export": "cosmos-export --config cosmos.config.json",
 		"build": "npm run build:css && npm run build:js && npm run build:js:pro",
-		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow && npm run build:tma-builder && npm run build:tma-woo-shop",
+		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow && npm run build:tma-builder && npm run build:tma-woo-shop && npm run build:tma-shopify-jewelry",
 		"build:zip": "./bin/build-plugin-zip.sh",
 		"build:zip:base": "./bin/build-plugin-zip.sh --base",
 		"build:zip:pro": "./bin/build-plugin-zip.sh --pro",
