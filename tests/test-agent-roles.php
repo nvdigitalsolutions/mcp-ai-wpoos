@@ -23,6 +23,8 @@ class Test_Agent_Roles extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'planner', $roles );
 		$this->assertArrayHasKey( 'executor', $roles );
 		$this->assertArrayHasKey( 'critic', $roles );
+		$this->assertArrayHasKey( 'specialist', $roles );
+		$this->assertArrayHasKey( 'generalist', $roles );
 	}
 
 	/**
@@ -270,5 +272,143 @@ class Test_Agent_Roles extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertEquals( 'wp_mcp_ai_invalid_context', $result->get_error_code() );
+	}
+
+	/**
+	 * Test specialist role
+	 */
+	public function test_specialist_role() {
+		$specialist = wp_mcp_ai_get_agent_role( 'specialist' );
+
+		$this->assertInstanceOf( WP_MCP_AI_Agent_Role_Interface::class, $specialist );
+		$this->assertEquals( 'specialist', $specialist->get_role_type() );
+		$this->assertNotEmpty( $specialist->get_role_name() );
+		$this->assertNotEmpty( $specialist->get_role_description() );
+		$this->assertFalse( $specialist->can_delegate() );
+
+		$capabilities = $specialist->get_capabilities();
+		$this->assertIsArray( $capabilities );
+		$this->assertContains( 'can-specialize', $capabilities );
+		$this->assertContains( 'autonomous', $capabilities );
+	}
+
+	/**
+	 * Test specialist task execution
+	 */
+	public function test_specialist_task_execution() {
+		$specialist = wp_mcp_ai_get_agent_role( 'specialist' );
+
+		$task = array(
+			'id'          => 'task_specialist_001',
+			'description' => 'Perform a security audit review',
+			'domain'      => 'security',
+		);
+
+		$context = array(
+			'assistant_id' => 1,
+			'user_id'      => 1,
+		);
+
+		$result = $specialist->execute_role_task( $task, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'task_id', $result );
+		$this->assertArrayHasKey( 'status', $result );
+		$this->assertArrayHasKey( 'domain', $result );
+		$this->assertArrayHasKey( 'result', $result );
+		$this->assertArrayHasKey( 'quality_checks', $result );
+		$this->assertArrayHasKey( 'recommendations', $result );
+		$this->assertArrayHasKey( 'execution_time', $result );
+		$this->assertEquals( 'completed', $result['status'] );
+		$this->assertEquals( 'security', $result['domain'] );
+	}
+
+	/**
+	 * Test specialist system prompt additions
+	 */
+	public function test_specialist_system_prompt_additions() {
+		$specialist = wp_mcp_ai_get_agent_role( 'specialist' );
+		$prompt     = $specialist->get_system_prompt_additions();
+
+		$this->assertIsString( $prompt );
+		$this->assertNotEmpty( $prompt );
+		$this->assertStringContainsString( 'Specialist agent', $prompt );
+	}
+
+	/**
+	 * Test generalist role
+	 */
+	public function test_generalist_role() {
+		$generalist = wp_mcp_ai_get_agent_role( 'generalist' );
+
+		$this->assertInstanceOf( WP_MCP_AI_Agent_Role_Interface::class, $generalist );
+		$this->assertEquals( 'generalist', $generalist->get_role_type() );
+		$this->assertNotEmpty( $generalist->get_role_name() );
+		$this->assertNotEmpty( $generalist->get_role_description() );
+		$this->assertFalse( $generalist->can_delegate() );
+
+		$capabilities = $generalist->get_capabilities();
+		$this->assertIsArray( $capabilities );
+		$this->assertContains( 'autonomous', $capabilities );
+	}
+
+	/**
+	 * Test generalist task execution
+	 */
+	public function test_generalist_task_execution() {
+		$generalist = wp_mcp_ai_get_agent_role( 'generalist' );
+
+		$task = array(
+			'id'          => 'task_generalist_001',
+			'description' => 'Summarize the latest blog posts',
+		);
+
+		$context = array(
+			'assistant_id' => 1,
+			'user_id'      => 1,
+		);
+
+		$result = $generalist->execute_role_task( $task, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'task_id', $result );
+		$this->assertArrayHasKey( 'status', $result );
+		$this->assertArrayHasKey( 'result', $result );
+		$this->assertArrayHasKey( 'execution_time', $result );
+		$this->assertEquals( 'completed', $result['status'] );
+	}
+
+	/**
+	 * Test generalist specialist recommendation for domain tasks
+	 */
+	public function test_generalist_specialist_recommendation() {
+		$generalist = wp_mcp_ai_get_agent_role( 'generalist' );
+
+		$task = array(
+			'description' => 'Conduct a comprehensive security vulnerability assessment',
+		);
+
+		$context = array(
+			'assistant_id' => 1,
+			'user_id'      => 1,
+		);
+
+		$result = $generalist->execute_role_task( $task, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'specialist_recommendation', $result );
+		$this->assertNotEmpty( $result['specialist_recommendation'] );
+	}
+
+	/**
+	 * Test generalist system prompt additions
+	 */
+	public function test_generalist_system_prompt_additions() {
+		$generalist = wp_mcp_ai_get_agent_role( 'generalist' );
+		$prompt     = $generalist->get_system_prompt_additions();
+
+		$this->assertIsString( $prompt );
+		$this->assertNotEmpty( $prompt );
+		$this->assertStringContainsString( 'Generalist agent', $prompt );
 	}
 }

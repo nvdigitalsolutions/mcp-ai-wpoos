@@ -22,6 +22,8 @@ require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-base.php';
 require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-planner.php';
 require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-executor.php';
 require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-critic.php';
+require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-specialist.php';
+require_once __DIR__ . '/agents/class-wp-mcp-ai-agent-role-generalist.php';
 
 /**
  * Get all available agent roles
@@ -33,9 +35,11 @@ function wp_mcp_ai_get_agent_roles() {
 
 	if ( null === $roles ) {
 		$roles = array(
-			'planner'  => new WP_MCP_AI_Agent_Role_Planner(),
-			'executor' => new WP_MCP_AI_Agent_Role_Executor(),
-			'critic'   => new WP_MCP_AI_Agent_Role_Critic(),
+			'planner'    => new WP_MCP_AI_Agent_Role_Planner(),
+			'executor'   => new WP_MCP_AI_Agent_Role_Executor(),
+			'critic'     => new WP_MCP_AI_Agent_Role_Critic(),
+			'specialist' => new WP_MCP_AI_Agent_Role_Specialist(),
+			'generalist' => new WP_MCP_AI_Agent_Role_Generalist(),
 		);
 
 		/**
