@@ -61,6 +61,13 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	);
 
 	/**
+	 * Subdirectory name used when a DICOM file has no SeriesInstanceUID.
+	 *
+	 * @var string
+	 */
+	const UNGROUPED_SERIES_DIR = 'ungrouped';
+
+	/**
 	 * Register REST routes.
 	 */
 	public function register_routes() {
@@ -996,7 +1003,7 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		// (per DICOM PS 3.10 and IHE Radiology Technical Framework).
 		// Each series gets its own subdirectory so multi-series studies are
 		// organised correctly on disk.
-		$series_dir_name = '' !== $series_uid ? sanitize_file_name( $series_uid ) : 'ungrouped';
+		$series_dir_name = '' !== $series_uid ? sanitize_file_name( $series_uid ) : self::UNGROUPED_SERIES_DIR;
 		$study_dir       = $storage_root . sanitize_file_name( $study_uid ) . '/';
 		$series_dir      = $study_dir . $series_dir_name . '/';
 		wp_mkdir_p( $series_dir );

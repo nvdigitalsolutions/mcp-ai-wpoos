@@ -1376,7 +1376,10 @@
 						fileInput.files = dt.files;
 						updateFileCountBadge( fileInput );
 					} catch ( _dtErr ) {
-						// DataTransfer assignment not supported — silently skip.
+						// DataTransfer constructor or file assignment not supported in this
+						// browser — drag-and-drop population is unavailable.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: drag-and-drop file assignment not supported in this browser.', _dtErr );
 					}
 				}
 			} );
@@ -1460,6 +1463,9 @@
 					try {
 						result = JSON.parse( xhr.responseText );
 					} catch ( _parseErr ) {
+						// Log malformed responses to aid debugging.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: could not parse upload response JSON.', _parseErr );
 						result = null;
 					}
 
