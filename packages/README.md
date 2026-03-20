@@ -26,6 +26,14 @@ All packages are **ES modules** with full TypeScript definitions. See each packa
 | [`nvoos-clipboard`](./nvoos-clipboard/) | Clipboard copy with fallback | Zero |
 | [`nvoos-offline-sync`](./nvoos-offline-sync/) | IndexedDB offline-first sync | Zero |
 
+### Tier 3 — Chat UI Utilities
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-slash-commands`](./nvoos-slash-commands/) | Slash command system with fuzzy-search autocomplete | Zero |
+| [`nvoos-audio`](./nvoos-audio/) | TTS, STT, translation, and voice chat with VAD | Zero |
+| [`nvoos-dom-batcher`](./nvoos-dom-batcher/) | RAF DOM batcher, scroll batcher, and UI utilities | Zero |
+
 ---
 
 ## Package Details
@@ -106,13 +114,63 @@ npm install @nvdigitalsolutions/nvoos-offline-sync
 
 ---
 
+### @nvdigitalsolutions/nvoos-slash-commands
+
+- Fuzzy-search autocomplete dropdown triggered by `/` in chat inputs
+- Keyboard navigation (↑ ↓ Enter Tab Escape)
+- `SlashCommandsHandler` — intercepting form submission, REST execution with correlation IDs, 5-minute command list cache
+- `CommandAutocomplete` — attaches to any text input; keyboard-navigable dropdown
+- Dispatches `slash-command-event` CustomEvent on `window`
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-slash-commands
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-audio
+
+- Text-to-speech playback via `attachSpeechButton()` (caching, lifecycle, error state)
+- Microphone recording → transcription via `handleTranscribeButtonClick()`
+- File-based transcription/translation via `handleTranscribeFileSelection()` / `handleTranslateFileSelection()`
+- Voice chat with Voice Activity Detection (VAD) via `handleVoiceChatButtonClick()`
+- `configure()` for overriding default CSS class names
+- `registerObjectUrl()` / `revokeObjectUrls()` for blob URL lifecycle management
+- Zero external dependencies (uses MediaRecorder, Web Audio API, SpeechSynthesis, Fetch)
+
+```bash
+npm install @nvdigitalsolutions/nvoos-audio
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-dom-batcher
+
+- `domUpdateBatcher.schedule()` — batches DOM writes into a single `requestAnimationFrame` per tick
+- `scrollBatcher.scrollToBottom()` — deduplicates scroll operations per element per frame
+- Formatting helpers: `escapeHtml`, `formatBytes`, `formatDuration`, `formatElapsedTime`
+- Status helpers: `setStatus`, `clearStatus`
+- Button utilities: `toggleButtonClass`, `setButtonState`, `setButtonIcon`, `updateButtonLabel`
+- Cross-instance messaging: `broadcastMessage`, `listenToChatEvents`
+- Attachment library: `validateAttachment`, `addToAttachmentLibrary`, `getFromAttachmentLibrary`, `removeFromAttachmentLibrary`
+- `displayRecordingTimer()` — animated timer for recording UIs
+- `configure({ debug })` to disable RAF batching during tests
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-dom-batcher
+```
+
+---
+
 ## Building All Packages
 
 Each package has an `adapt-for-npm.js` build script that transforms the WordPress
 plugin source into a clean ES module:
 
 ```bash
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
   (cd $pkg && node adapt-for-npm.js)
 done
 ```
@@ -121,14 +179,12 @@ done
 
 ## Additional Package Candidates
 
-The following files were identified as future extraction candidates during the
-industry-standards audit (see `FINAL_SUMMARY.md` for full analysis):
+The following files were identified as potential future extraction candidates
+(see `FINAL_SUMMARY.md` for full analysis):
 
 | File | Candidate Package | Portability |
 |------|------------------|-------------|
-| `chat-audio-service.js` (2112 LOC) | `nvoos-audio-recorder` + `nvoos-speech-synthesis` | Medium — split needed |
-| `chat-transcription-service.js` (779 LOC) | `nvoos-transcription` | Medium |
-| `chat-attachments-service.js` (586 LOC) | `nvoos-file-validator` | Medium |
+| `chat-attachments-service.js` (586 LOC) | `nvoos-file-validator` | Medium — rendering is WP-coupled |
 | `cron-status-service.js` (485 LOC) | `nvoos-job-status` | High |
 | `accessibility-enhancements.js` (503 LOC) | `nvoos-a11y` | Low — jQuery dep |
 
@@ -138,62 +194,21 @@ industry-standards audit (see `FINAL_SUMMARY.md` for full analysis):
 
 All packages are MIT licensed. See `LICENSE` in each package directory.
 
-
-**Location**: `/packages/nvoos-markdown/`
-
 ---
-
-### 3. @nvdigitalsolutions/nvoos-events
-**Real-time event coordination (SSE + Job Bus)**
-
-- **Version**: 0.1.0-alpha.1
-- **License**: MIT  
-- **Size**: Combined ~16.5 KB (minified)
-- **Dependencies**: @microsoft/fetch-event-source ^2.0.0 (peer)
-
-**What it does:**
-- Enhanced SSE client with automatic retry logic
-- Job event bus for async operation tracking
-- Promise-based job watching
-- Event caching and replay
-
-**Installation:**
-```bash
-npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
-```
-
-**Location**: `/packages/nvoos-events/`
 
 ## 🏗️ Package Structure
 
+Each package follows this layout:
+
 ```
-packages/
-├── IMPLEMENTATION_PLAN.md          # Development roadmap
-├── nvoos-storage/                  # Package 1
-│   ├── package.json
-│   ├── README.md
-│   ├── adapt-for-npm.js           # Build script
-│   ├── storage-util.js            # Original source
-│   └── dist/
-│       ├── nvoos-storage.js       # ES module output
-│       └── nvoos-storage.d.ts     # TypeScript definitions
-├── nvoos-markdown/                 # Package 2
-│   ├── package.json
-│   ├── README.md
-│   ├── adapt-for-npm.js
-│   ├── chat-markdown-service.js
-│   └── dist/
-│       ├── nvoos-markdown.js
-│       └── nvoos-markdown.d.ts
-└── nvoos-events/                   # Package 3
-    ├── package.json
-    ├── README.md
-    ├── adapt-for-npm.js
-    ├── sse-service.js
-    ├── job-event-bus.js
-    └── dist/
-        ├── nvoos-events.js
-        └── nvoos-events.d.ts
+packages/nvoos-{name}/
+├── {source}.js          ← copy of the original WordPress plugin source
+├── adapt-for-npm.js     ← build script (node adapt-for-npm.js to rebuild)
+├── dist/
+│   ├── nvoos-{name}.js  ← generated ES module
+│   └── nvoos-{name}.d.ts ← TypeScript definitions
+├── package.json         ← with "exports", "module", "types" fields
+└── README.md            ← installation + full API docs
 ```
 
 ## 🔧 Build Process
@@ -206,127 +221,26 @@ Each package includes a custom `adapt-for-npm.js` script that:
 4. **Generates TypeScript Definitions**: Creates .d.ts files for type safety
 5. **Preserves Comments**: Maintains JSDoc documentation
 
-### Building All Packages
-
-```bash
-cd packages/nvoos-storage && npm run build
-cd ../nvoos-markdown && npm run build  
-cd ../nvoos-events && npm run build
-```
-
-## 🎯 Extraction Strategy
-
-### What Was Changed
-
-**From WordPress Plugin Code:**
-- ❌ Global `window.wpMcpAi*` objects
-- ❌ WordPress-specific console prefixes
-- ❌ IIFE wrappers for browser globals
-- ❌ Hardcoded configuration paths
-
-**To NPM Package Code:**
-- ✅ ES module imports/exports
-- ✅ Configuration injection methods
-- ✅ Framework-agnostic design
-- ✅ TypeScript definitions
-- ✅ Comprehensive README files
-
-### What Was Preserved
-
-- ✅ All core functionality
-- ✅ Performance optimizations
-- ✅ Security features
-- ✅ Error handling patterns
-- ✅ JSDoc documentation
-
 ## 📊 Package Comparison
 
-| Feature | nvoos-storage | nvoos-markdown | nvoos-events |
-|---------|--------------|----------------|--------------|
-| **WordPress Dependencies** | None | None | None |
-| **External Dependencies** | 0 | 2 (peer) | 1 (peer) |
-| **Browser APIs Used** | Web Worker | None | fetch, AbortController |
-| **TypeScript** | ✅ Definitions | ✅ Definitions | ✅ Definitions |
-| **Tree-Shakeable** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Size (minified)** | ~5.4 KB | ~8.1 KB | ~16.5 KB |
-
-## 🚀 Publication Checklist
-
-### Pre-Publication (Completed ✅)
-
-- [x] Package structure created
-- [x] Source code extracted and adapted
-- [x] WordPress dependencies removed
-- [x] ES module exports added
-- [x] TypeScript definitions generated
-- [x] README documentation written
-- [x] Build scripts tested
-- [x] package.json metadata complete
-
-### Publication Steps
-
-**Alpha Publishing (Ready ✅)**
-- [x] Create GitHub Actions workflow for alpha publishing
-- [x] Add helper script (`bin/publish-alpha.sh`)
-- [x] Create comprehensive publishing documentation
-- [ ] Configure NPM_TOKEN secret in repository
-- [ ] Create NPM organization (@nvdigitalsolutions)
-- [ ] Set up 2FA for NPM account
-- [ ] Publish first alpha versions to NPM
-
-**See [Alpha Publishing Guide](../docs/npm-alpha-publishing.md) for detailed instructions.**
-
-**Future Steps**
-- [ ] Test packages in external projects
-- [ ] Write integration tests
-- [ ] Publish stable versions to NPM
-- [ ] Update main plugin to use packages (optional)
-- [ ] Create announcement blog post
-- [ ] Share on social media
-
-### Post-Publication
-
-- [ ] Monitor download statistics
-- [ ] Respond to issues and PRs
-- [ ] Collect community feedback
-- [ ] Iterate based on usage patterns
-- [ ] Plan additional extractions
+| Feature | storage | markdown | events | http-client | clipboard | offline-sync | slash-commands | audio | dom-batcher |
+|---------|---------|----------|--------|-------------|-----------|--------------|----------------|-------|-------------|
+| **WP Dependencies** | None | None | None | None | None | None | None | None | None |
+| **External Deps** | 0 | 2 (peer) | 1 (peer) | 1 (peer) | 0 | 0 | 0 | 0 | 0 |
+| **TypeScript** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Tree-Shakeable** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## 🔗 Links
 
 - **Main Repository**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Documentation**: /docs/npm-packages/
+- **Publishing Guide**: /docs/npm-alpha-publishing.md
 - **Issues**: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - **NV Digital**: https://nvdigitalsolutions.com
 
-## 📝 License
-
-All three packages are licensed under MIT for maximum adoption and community benefit.
-
-The original WordPress plugin (GPL-3.0) and extracted NPM packages (MIT) can coexist because:
-- Extracted code is original work by NV Digital Solutions
-- No GPL-licensed dependencies in extracted code
-- Dual-licensing is explicitly permitted
-
-## ✨ Success Metrics
-
-**Target (First 30 Days):**
-- 500+ combined weekly downloads
-- 10+ GitHub stars
-- 0 critical bugs reported
-- 1+ external contribution
-
-**Target (First 90 Days):**
-- 2,000+ combined weekly downloads
-- 50+ GitHub stars
-- Active community discussions
-- Featured in 1+ blog post
-
 ---
 
-**Status**: ✅ **COMPLETE - Ready for Publication**
+**Status**: ✅ **COMPLETE - All 9 packages ready for publication**
 
-All three packages extracted, adapted, documented, and built successfully. Ready for alpha publication to NPM.
-
-**Last Updated**: 2026-02-06  
+**Last Updated**: 2026-03-20  
 **Maintained By**: NV Digital Solutions

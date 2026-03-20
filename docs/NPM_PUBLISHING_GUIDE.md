@@ -13,7 +13,9 @@ Both workflows are triggered automatically by the same git tags.
 
 ## Available Packages
 
-The repository contains 3 NPM packages in the `packages/` directory:
+The repository contains 9 NPM packages in the `packages/` directory:
+
+### Tier 1 — Core Utilities
 
 1. **@nvdigitalsolutions/nvoos-storage** (v0.1.0-alpha.1)
    - Async storage utilities with Web Worker optimization
@@ -26,6 +28,34 @@ The repository contains 3 NPM packages in the `packages/` directory:
 3. **@nvdigitalsolutions/nvoos-events** (v0.1.0-alpha.1)
    - Real-time event coordination with SSE client and job event bus
    - Located: `packages/nvoos-events/`
+
+### Tier 2 — Extended Utilities
+
+4. **@nvdigitalsolutions/nvoos-http-client** (v0.1.0-alpha.1)
+   - Resilient HTTP client with automatic retry and exponential backoff
+   - Located: `packages/nvoos-http-client/`
+
+5. **@nvdigitalsolutions/nvoos-clipboard** (v0.1.0-alpha.1)
+   - Clipboard copy utilities with Clipboard API and execCommand fallback
+   - Located: `packages/nvoos-clipboard/`
+
+6. **@nvdigitalsolutions/nvoos-offline-sync** (v0.1.0-alpha.1)
+   - IndexedDB-backed offline-first sync manager with auto-drain on reconnect
+   - Located: `packages/nvoos-offline-sync/`
+
+### Tier 3 — Chat UI Utilities
+
+7. **@nvdigitalsolutions/nvoos-slash-commands** (v0.1.0-alpha.1)
+   - Slash command system with fuzzy-search autocomplete and execution engine
+   - Located: `packages/nvoos-slash-commands/`
+
+8. **@nvdigitalsolutions/nvoos-audio** (v0.1.0-alpha.1)
+   - Browser audio I/O: TTS, STT, audio translation, and voice chat with VAD
+   - Located: `packages/nvoos-audio/`
+
+9. **@nvdigitalsolutions/nvoos-dom-batcher** (v0.1.0-alpha.1)
+   - RAF DOM batcher, scroll batcher, and UI utilities for high-frequency streaming UIs
+   - Located: `packages/nvoos-dom-batcher/`
 
 ## Prerequisites
 
@@ -126,6 +156,12 @@ No authentication needed - just install:
 npm install @nvdigitalsolutions/nvoos-storage@alpha
 npm install @nvdigitalsolutions/nvoos-markdown@alpha
 npm install @nvdigitalsolutions/nvoos-events@alpha
+npm install @nvdigitalsolutions/nvoos-http-client@alpha
+npm install @nvdigitalsolutions/nvoos-clipboard@alpha
+npm install @nvdigitalsolutions/nvoos-offline-sync@alpha
+npm install @nvdigitalsolutions/nvoos-slash-commands@alpha
+npm install @nvdigitalsolutions/nvoos-audio@alpha
+npm install @nvdigitalsolutions/nvoos-dom-batcher@alpha
 
 # Install specific alpha version
 npm install @nvdigitalsolutions/nvoos-storage@0.1.0-alpha.2
@@ -163,6 +199,12 @@ npm login --registry=https://npm.pkg.github.com
 npm install @nvdigitalsolutions/nvoos-storage@alpha
 npm install @nvdigitalsolutions/nvoos-markdown@alpha
 npm install @nvdigitalsolutions/nvoos-events@alpha
+npm install @nvdigitalsolutions/nvoos-http-client@alpha
+npm install @nvdigitalsolutions/nvoos-clipboard@alpha
+npm install @nvdigitalsolutions/nvoos-offline-sync@alpha
+npm install @nvdigitalsolutions/nvoos-slash-commands@alpha
+npm install @nvdigitalsolutions/nvoos-audio@alpha
+npm install @nvdigitalsolutions/nvoos-dom-batcher@alpha
 
 # Install specific alpha version
 npm install @nvdigitalsolutions/nvoos-storage@0.1.0-alpha.2
@@ -230,20 +272,13 @@ If installation fails:
 Before publishing, test locally:
 
 ```bash
-# Build packages locally
-cd packages/nvoos-storage
-npm run build
-cd ../..
+# Build all packages
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+  echo "Building $pkg..."
+  (cd packages/$pkg && npm run build)
+done
 
-cd packages/nvoos-markdown
-npm run build
-cd ../..
-
-cd packages/nvoos-events
-npm run build
-cd ../..
-
-# Test package contents
+# Test package contents (example with nvoos-storage)
 cd packages/nvoos-storage
 npm pack --dry-run
 cd ../..

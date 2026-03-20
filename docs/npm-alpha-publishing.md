@@ -4,11 +4,17 @@ This guide explains how to publish alpha versions of the NPM packages from this 
 
 ## 📦 Packages
 
-Three standalone NPM packages are published from this repository:
+Nine standalone NPM packages are published from this repository:
 
 - **@nvdigitalsolutions/nvoos-storage** - Async storage utilities with Web Worker optimization
 - **@nvdigitalsolutions/nvoos-markdown** - Security-hardened markdown renderer with XSS protection
 - **@nvdigitalsolutions/nvoos-events** - Real-time event coordination with SSE client and job event bus
+- **@nvdigitalsolutions/nvoos-http-client** - Resilient HTTP client with retry and exponential backoff
+- **@nvdigitalsolutions/nvoos-clipboard** - Clipboard copy utilities with Clipboard API fallback
+- **@nvdigitalsolutions/nvoos-offline-sync** - IndexedDB-backed offline-first sync manager
+- **@nvdigitalsolutions/nvoos-slash-commands** - Slash command system with fuzzy-search autocomplete
+- **@nvdigitalsolutions/nvoos-audio** - Browser audio I/O: TTS, STT, translation, and voice chat with VAD
+- **@nvdigitalsolutions/nvoos-dom-batcher** - RAF DOM batcher, scroll batcher, and streaming UI utilities
 
 All packages are published under the `@nvdigitalsolutions` NPM organization.
 
@@ -45,7 +51,7 @@ The easiest way to publish an alpha version is using the provided script:
 # 1. Validate the version format
 # 2. Check for uncommitted changes
 # 3. Update all package.json files
-# 4. Build all three packages
+# 4. Build all nine packages
 # 5. Create a commit and tag
 # 6. Push the tag to trigger the GitHub Actions workflow
 ```
@@ -63,14 +69,14 @@ If you prefer to do it manually:
 
 ```bash
 # 1. Update package versions
-cd packages/nvoos-storage && npm version 0.1.0-alpha.2 --no-git-tag-version && cd ../..
-cd packages/nvoos-markdown && npm version 0.1.0-alpha.2 --no-git-tag-version && cd ../..
-cd packages/nvoos-events && npm version 0.1.0-alpha.2 --no-git-tag-version && cd ../..
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+  (cd packages/$pkg && npm version 0.1.0-alpha.2 --no-git-tag-version)
+done
 
 # 2. Build all packages
-cd packages/nvoos-storage && npm run build && cd ../..
-cd packages/nvoos-markdown && npm run build && cd ../..
-cd packages/nvoos-events && npm run build && cd ../..
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+  (cd packages/$pkg && npm run build)
+done
 
 # 3. Commit the changes
 git add packages/*/package.json
@@ -100,6 +106,12 @@ After pushing an alpha tag:
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-storage
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-markdown
    - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-events
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-http-client
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-clipboard
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-offline-sync
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-slash-commands
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-audio
+   - https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-dom-batcher
 
 ## 📥 Installing Alpha Versions
 
@@ -112,10 +124,20 @@ npm install @nvdigitalsolutions/nvoos-storage@alpha
 # Install specific alpha version
 npm install @nvdigitalsolutions/nvoos-storage@0.1.0-alpha.2
 
-# Install all three packages
+# Install all nine packages (Tier 1 — Core)
 npm install @nvdigitalsolutions/nvoos-storage@alpha \
             @nvdigitalsolutions/nvoos-markdown@alpha \
             @nvdigitalsolutions/nvoos-events@alpha
+
+# Install Tier 2 — Extended
+npm install @nvdigitalsolutions/nvoos-http-client@alpha \
+            @nvdigitalsolutions/nvoos-clipboard@alpha \
+            @nvdigitalsolutions/nvoos-offline-sync@alpha
+
+# Install Tier 3 — Chat UI
+npm install @nvdigitalsolutions/nvoos-slash-commands@alpha \
+            @nvdigitalsolutions/nvoos-audio@alpha \
+            @nvdigitalsolutions/nvoos-dom-batcher@alpha
 ```
 
 ## 🧪 Testing Alpha Packages
@@ -124,11 +146,11 @@ Before publishing, you can test the packages locally:
 
 ```bash
 # Build all packages
-cd packages/nvoos-storage && npm run build && cd ../..
-cd packages/nvoos-markdown && npm run build && cd ../..
-cd packages/nvoos-events && npm run build && cd ../..
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+  (cd packages/$pkg && npm run build)
+done
 
-# Create local tarball for testing
+# Create local tarball for testing (example with nvoos-storage)
 cd packages/nvoos-storage
 npm pack
 # This creates @nvdigitalsolutions-nvoos-storage-0.1.0-alpha.1.tgz

@@ -2,7 +2,7 @@
 
 ## Installation
 
-Install all three packages:
+### Tier 1 — Core Utilities
 
 ```bash
 # Storage utilities (zero dependencies)
@@ -13,6 +13,32 @@ npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
 
 # Event system (requires fetch-event-source)
 npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
+```
+
+### Tier 2 — Extended Utilities
+
+```bash
+# HTTP client with retry/backoff (requires ky)
+npm install @nvdigitalsolutions/nvoos-http-client ky
+
+# Clipboard copy with fallback (zero dependencies)
+npm install @nvdigitalsolutions/nvoos-clipboard
+
+# IndexedDB offline-first sync (zero dependencies)
+npm install @nvdigitalsolutions/nvoos-offline-sync
+```
+
+### Tier 3 — Chat UI Utilities
+
+```bash
+# Slash command system with fuzzy-search autocomplete (zero dependencies)
+npm install @nvdigitalsolutions/nvoos-slash-commands
+
+# Audio I/O: TTS, STT, translation, voice chat with VAD (zero dependencies)
+npm install @nvdigitalsolutions/nvoos-audio
+
+# RAF DOM batcher, scroll batcher, and UI utilities (zero dependencies)
+npm install @nvdigitalsolutions/nvoos-dom-batcher
 ```
 
 ## Usage Examples
@@ -138,12 +164,74 @@ function handleJobUpdate(data) {
 }
 ```
 
+### 5. Slash Commands
+
+```javascript
+import { SlashCommandsHandler, CommandAutocomplete } from '@nvdigitalsolutions/nvoos-slash-commands';
+
+// Configure endpoints once
+SlashCommandsHandler.configure({
+  nonce: 'your-auth-nonce',
+  slashCommandEndpoint: 'https://your-api.com/api/slash-commands',
+  slashCommandListEndpoint: 'https://your-api.com/api/slash-commands/list',
+});
+
+// Initialise handler and autocomplete
+const handler = new SlashCommandsHandler();
+handler.init();
+
+const input = document.querySelector('#chat-input');
+const autocomplete = new CommandAutocomplete(input);
+autocomplete.init();
+
+// Listen for command execution events
+window.addEventListener('slash-command-event', (e) => {
+  const { type, data } = e.detail;
+  if (type === 'command-executed') {
+    console.log('Result:', data.result);
+  }
+});
+```
+
+### 6. Audio — Transcription
+
+```javascript
+import { handleTranscribeButtonClick, supportsAudioRecording } from '@nvdigitalsolutions/nvoos-audio';
+
+if (supportsAudioRecording()) {
+  const btn = document.querySelector('#mic-btn');
+  const state = { config: { toolsEndpoint: '/api/tools', nonce: 'nonce' } };
+
+  btn.addEventListener('click', () => {
+    handleTranscribeButtonClick(btn, state);
+  });
+}
+```
+
+### 7. DOM Batcher — Streaming UI
+
+```javascript
+import { domUpdateBatcher, scrollBatcher } from '@nvdigitalsolutions/nvoos-dom-batcher';
+
+const output = document.getElementById('output');
+const container = document.getElementById('scroll-container');
+
+// Batch all token appends into one RAF frame
+eventSource.addEventListener('token', (e) => {
+  domUpdateBatcher.schedule(() => {
+    output.textContent += e.data;
+  });
+  scrollBatcher.scrollToBottom(container);
+});
+```
+
 ## Complete Example: AI Chat Application
 
 ```javascript
 import { StorageUtil } from '@nvdigitalsolutions/nvoos-storage';
 import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
 import { SSEService } from '@nvdigitalsolutions/nvoos-events';
+import { domUpdateBatcher, scrollBatcher } from '@nvdigitalsolutions/nvoos-dom-batcher';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -172,6 +260,8 @@ async function sendMessage(message) {
   messages.push({ role: 'user', content: message });
   
   let aiResponse = '';
+  const responseEl = document.getElementById('response');
+  const containerEl = document.getElementById('chat-container');
   
   const stream = SSEService.connect('/api/chat', {
     method: 'POST',
@@ -180,8 +270,10 @@ async function sendMessage(message) {
     onMessage: (data) => {
       if (data.token) {
         aiResponse += data.token;
-        const html = renderer.render(aiResponse);
-        document.getElementById('response').innerHTML = html;
+        domUpdateBatcher.schedule(() => {
+          responseEl.innerHTML = renderer.render(aiResponse);
+        });
+        scrollBatcher.scrollToBottom(containerEl);
       }
     },
     
@@ -213,11 +305,9 @@ All packages include TypeScript definitions:
 import type { StorageUtilInterface } from '@nvdigitalsolutions/nvoos-storage';
 import type { MarkdownConfig } from '@nvdigitalsolutions/nvoos-markdown';
 import type { SSEOptions, JobEventBusType } from '@nvdigitalsolutions/nvoos-events';
-
-const config: MarkdownConfig = {
-  codeBlockClass: 'my-code',
-  allowedTags: ['p', 'strong', 'em']
-};
+import type { SlashCommand, SlashCommandsConfig } from '@nvdigitalsolutions/nvoos-slash-commands';
+import type { AudioConfig } from '@nvdigitalsolutions/nvoos-audio';
+import type { DomBatcherConfig } from '@nvdigitalsolutions/nvoos-dom-batcher';
 ```
 
 ## Testing Locally
@@ -225,9 +315,9 @@ const config: MarkdownConfig = {
 Build all packages:
 
 ```bash
-cd packages/nvoos-storage && npm run build
-cd ../nvoos-markdown && npm run build
-cd ../nvoos-events && npm run build
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+  (cd packages/$pkg && npm run build)
+done
 ```
 
 ## Common Issues
@@ -255,6 +345,15 @@ SSEService.enableDebug();
 
 // Check CORS headers on server
 // Ensure content-type: text/event-stream
+```
+
+### DOM Batcher — disable batching in tests
+
+```javascript
+import { configure } from '@nvdigitalsolutions/nvoos-dom-batcher';
+
+// Runs synchronously during tests (no RAF needed)
+configure({ debug: true });
 ```
 
 ## Next Steps
