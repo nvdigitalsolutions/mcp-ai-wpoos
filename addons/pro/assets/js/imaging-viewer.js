@@ -26,7 +26,7 @@
 	// =========================================================================
 	// DOM references
 	// =========================================================================
-	var cfg = window.wpMcpAiImaging || {};
+	var cfg = wpMcpAiImaging || {}; // eslint-disable-line no-undef -- declared in /* global */ above; set by wp_localize_script.
 	var restBase = cfg.restBase || '';
 	var nonce = cfg.nonce || '';
 	var i18n = cfg.i18n || {};
@@ -408,16 +408,71 @@
 	var activeStudyUid = '';
 
 	/**
+	 * Populate (or refresh) the study select dropdown on the AI Tools tab.
+	 */
+	function refreshStudyDropdown() {
+		var sel = document.getElementById( 'nv-imaging-interpret-study' );
+		if ( ! sel ) {
+			return;
+		}
+
+		// Remember the current value so we can restore it after refresh.
+		var currentVal = sel.value;
+
+		// Clear existing options except the placeholder.
+		while ( sel.options.length > 1 ) {
+			sel.remove( 1 );
+		}
+
+		apiFetch( restBase + '/studies?per_page=100' )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( data ) {
+				var studies = ( data && data.studies ) ? data.studies : [];
+				studies.forEach( function ( s ) {
+					var opt = document.createElement( 'option' );
+					opt.value = s.study_uid;
+					// Label: "CT  20240101 — 1.2.840…(truncated to fit dropdown)"
+					var parts = [];
+					if ( s.modality ) { parts.push( s.modality ); }
+					if ( s.study_date ) { parts.push( s.study_date ); }
+					var prefix = parts.length ? parts.join( '\u2002' ) + ' \u2014 ' : '';
+					var uid = s.study_uid || '';
+					// 24 chars is long enough to uniquely identify a UID root while still fitting a dropdown.
+					opt.textContent = prefix + ( uid.length > 24 ? uid.substring( 0, 24 ) + '\u2026' : uid );
+					sel.appendChild( opt );
+				} );
+				// Restore previous selection if it still exists.
+				if ( currentVal ) {
+					sel.value = currentVal;
+				}
+			} )
+			.catch( function () {} ); // Silent: user can still type UID manually.
+	}
+
+	/**
 	 * Wire up the AI Interpretation form on the Tools tab.
 	 */
 	function initToolsTab() {
 		var runBtn   = document.getElementById( 'nv-imaging-interpret-run' );
+		var studySel = document.getElementById( 'nv-imaging-interpret-study' );
 		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
 		var focusSel = document.getElementById( 'nv-imaging-interpret-focus' );
 		var resultEl = document.getElementById( 'nv-imaging-interpret-result' );
 
 		if ( ! runBtn ) {
 			return;
+		}
+
+		// Populate the study dropdown on first load.
+		refreshStudyDropdown();
+
+		// When a study is chosen from the dropdown, fill the UID text input.
+		if ( studySel ) {
+			studySel.addEventListener( 'change', function () {
+				if ( studySel.value && uidInput ) {
+					uidInput.value = studySel.value;
+				}
+			} );
 		}
 
 		runBtn.addEventListener( 'click', function () {
@@ -747,7 +802,18 @@
 			return;
 		}
 
-		var imageIds = ( series.instances || [] ).map( function ( inst ) {
+		// Sort instances by InstanceNumber (DICOM tag 0020,0013) before building
+		// the imageId stack.  Correct slice ordering is required by the IHE
+		// Radiology Technical Framework and prevents images from displaying in a
+		// random sequence when multiple instances are in the series.
+		var instances = ( series.instances || [] ).slice();
+		instances.sort( function ( a, b ) {
+			var na = typeof a.instanceNumber === 'number' ? a.instanceNumber : 0;
+			var nb = typeof b.instanceNumber === 'number' ? b.instanceNumber : 0;
+			return na - nb;
+		} );
+
+		var imageIds = instances.map( function ( inst ) {
 			return inst.imageId;
 		} );
 
@@ -1226,58 +1292,195 @@
 			} );
 		}
 
+		// Folder-mode toggle: radio buttons switch the file input between
+		// individual-file mode (default) and folder-selection mode.
+		var modeFiles  = document.getElementById( 'nv-imaging-mode-files' );
+		var modeFolder = document.getElementById( 'nv-imaging-mode-folder' );
+		var fileInput  = document.getElementById( 'nv-imaging-file-input' );
+
+		function applyUploadMode( mode ) {
+			if ( ! fileInput ) {
+				return;
+			}
+			if ( 'folder' === mode ) {
+				fileInput.setAttribute( 'webkitdirectory', '' );
+				fileInput.removeAttribute( 'accept' ); // webkitdirectory conflicts with accept in some browsers.
+			} else {
+				fileInput.removeAttribute( 'webkitdirectory' );
+				fileInput.setAttribute( 'accept', '.dcm' );
+			}
+		}
+
+		if ( modeFiles ) {
+			modeFiles.addEventListener( 'change', function () {
+				if ( modeFiles.checked ) { applyUploadMode( 'files' ); }
+			} );
+		}
+		if ( modeFolder ) {
+			modeFolder.addEventListener( 'change', function () {
+				if ( modeFolder.checked ) { applyUploadMode( 'folder' ); }
+			} );
+		}
+
+		// Show file count badge after user selects files.
+		if ( fileInput ) {
+			fileInput.addEventListener( 'change', function () {
+				updateFileCountBadge( fileInput );
+			} );
+		}
+
+		// Drag-and-drop support on the upload panel.
+		// Users can drop .dcm files (or a DICOM folder) directly onto the panel.
+		if ( uploadPanel ) {
+			uploadPanel.addEventListener( 'dragover', function ( e ) {
+				e.preventDefault();
+				uploadPanel.classList.add( 'nv-imaging-drag-over' );
+			} );
+			uploadPanel.addEventListener( 'dragleave', function ( e ) {
+				if ( ! uploadPanel.contains( e.relatedTarget ) ) {
+					uploadPanel.classList.remove( 'nv-imaging-drag-over' );
+				}
+			} );
+			uploadPanel.addEventListener( 'drop', function ( e ) {
+				e.preventDefault();
+				uploadPanel.classList.remove( 'nv-imaging-drag-over' );
+				if ( fileInput && e.dataTransfer && e.dataTransfer.files.length ) {
+					// Assign dropped files to the file input via DataTransfer.
+					try {
+						var dt = new DataTransfer();
+						var dropped = e.dataTransfer.files;
+						for ( var di = 0; di < dropped.length; di++ ) {
+							dt.items.add( dropped[ di ] );
+						}
+						fileInput.files = dt.files;
+						updateFileCountBadge( fileInput );
+					} catch ( _dtErr ) {
+						// DataTransfer constructor or file assignment not supported in this
+						// browser — drag-and-drop population is unavailable.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: drag-and-drop file assignment not supported in this browser.', _dtErr );
+					}
+				}
+			} );
+		}
+
+		/**
+		 * Update (or create) a small badge below the file input showing how
+		 * many .dcm files are queued for upload.
+		 *
+		 * @param {HTMLInputElement} fi File input element.
+		 */
+		function updateFileCountBadge( fi ) {
+			var badgeId = 'nv-imaging-file-count';
+			var badge   = document.getElementById( badgeId );
+			if ( ! badge ) {
+				badge    = document.createElement( 'span' );
+				badge.id = badgeId;
+				badge.className = 'nv-imaging-file-count';
+				if ( fi.parentNode ) {
+					fi.parentNode.insertBefore( badge, fi.nextSibling );
+				}
+			}
+			var isFolderMode = modeFolder && modeFolder.checked;
+			var count = 0;
+			if ( fi.files ) {
+				for ( var k = 0; k < fi.files.length; k++ ) {
+					if ( ! isFolderMode || fi.files[ k ].name.toLowerCase().endsWith( '.dcm' ) ) {
+						count++;
+					}
+				}
+			}
+			badge.textContent = count > 0
+				? count + ' file' + ( 1 === count ? '' : 's' ) + ' selected'
+				: '';
+		}
+
 		if ( uploadForm ) {
 			uploadForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
-				var fileInput = document.getElementById( 'nv-imaging-file-input' );
-				if ( ! fileInput || ! fileInput.files.length ) {
+				var fi = document.getElementById( 'nv-imaging-file-input' );
+				if ( ! fi || ! fi.files.length ) {
 					showUploadStatus( 'Please select at least one .dcm file.', true );
 					return;
 				}
 
+				var isFolderMode = modeFolder && modeFolder.checked;
 				var formData = new FormData();
-				for ( var i = 0; i < fileInput.files.length; i++ ) {
-					formData.append( 'dicom_files[]', fileInput.files[ i ] );
+				var addedCount = 0;
+				for ( var i = 0; i < fi.files.length; i++ ) {
+					var f = fi.files[ i ];
+					// In folder mode, only submit .dcm files (skip non-DICOM files
+					// present in the folder such as DICOMDIR, README, images, etc.).
+					if ( isFolderMode && ! f.name.toLowerCase().endsWith( '.dcm' ) ) {
+						continue;
+					}
+					formData.append( 'dicom_files[]', f );
+					addedCount++;
 				}
 
-				showUploadStatus( 'Uploading…', false );
+				if ( 0 === addedCount ) {
+					showUploadStatus( i18n.noFilesInFolder || 'No .dcm files found in the selected folder.', true );
+					return;
+				}
 
-				fetch( restBase + '/upload', {
-					method: 'POST',
-					headers: { 'X-WP-Nonce': nonce },
-					body: formData,
-				} )
-					.then( function ( res ) {
-						return res.json().then( function ( data ) {
-							return { ok: res.ok, data: data };
-						} );
-					} )
-					.then( function ( result ) {
-						if ( result.ok && result.data && result.data.study_id ) {
-							// Check for per-file errors (partial success).
-							var files = Array.isArray( result.data.files ) ? result.data.files : [];
-							var failedFiles = files.filter( function ( file ) { return file.error; } );
+				showUploadStatus( 'Uploading… 0%', false );
 
-							if ( failedFiles.length > 0 ) {
-								var partialMsg = ( i18n.uploadPartialSuccess || '%1$d of %2$d file(s) could not be processed.' )
-									.replace( '%1$d', String( failedFiles.length ) )
-									.replace( '%2$d', String( files.length ) );
-								showUploadStatus( partialMsg, false );
-							} else {
-								showUploadStatus( i18n.uploadSuccess || 'Uploaded.', false );
-							}
-							uploadPanel.style.display = 'none';
-							loadStudyList();
+				// Use XMLHttpRequest instead of fetch to enable upload progress events.
+				// The progress callback runs on the main thread so the nonce header
+				// remains in scope (fetch does not expose upload progress natively).
+				var xhr = new XMLHttpRequest();
+
+				xhr.upload.addEventListener( 'progress', function ( pe ) {
+					if ( pe.lengthComputable && pe.total > 0 ) {
+						var pct = Math.round( ( pe.loaded / pe.total ) * 100 );
+						showUploadStatus( 'Uploading… ' + pct + '%', false );
+					}
+				} );
+
+				xhr.addEventListener( 'load', function () {
+					var result;
+					try {
+						result = JSON.parse( xhr.responseText );
+					} catch ( _parseErr ) {
+						// Log malformed responses to aid debugging.
+						// eslint-disable-next-line no-console
+						console.warn( 'nv-imaging: could not parse upload response JSON.', _parseErr );
+						result = null;
+					}
+
+					if ( xhr.status >= 200 && xhr.status < 300 && result && result.study_id ) {
+						// Check for per-file errors (partial success).
+						var files = Array.isArray( result.files ) ? result.files : [];
+						var failedFiles = files.filter( function ( file ) { return file.error; } );
+
+						if ( failedFiles.length > 0 ) {
+							var partialMsg = ( i18n.uploadPartialSuccess || '%1$d of %2$d file(s) could not be processed.' )
+								.replace( '%1$d', String( failedFiles.length ) )
+								.replace( '%2$d', String( files.length ) );
+							showUploadStatus( partialMsg, false );
 						} else {
-							var errMsg = ( result.data && result.data.message )
-								? result.data.message
-								: ( i18n.uploadError || 'Upload failed.' );
-							showUploadStatus( errMsg, true );
+							showUploadStatus( i18n.uploadSuccess || 'Uploaded.', false );
 						}
-					} )
-					.catch( function () {
-						showUploadStatus( i18n.uploadError || 'Upload failed.', true );
-					} );
+						uploadPanel.style.display = 'none';
+						loadStudyList();
+						loadStats();
+						// Refresh the study dropdown on the AI Tools tab.
+						refreshStudyDropdown();
+					} else {
+						var errMsg = ( result && result.message )
+							? result.message
+							: ( i18n.uploadError || 'Upload failed.' );
+						showUploadStatus( errMsg, true );
+					}
+				} );
+
+				xhr.addEventListener( 'error', function () {
+					showUploadStatus( i18n.uploadError || 'Upload failed.', true );
+				} );
+
+				xhr.open( 'POST', restBase + '/upload' );
+				xhr.setRequestHeader( 'X-WP-Nonce', nonce );
+				xhr.send( formData );
 			} );
 		}
 	}
