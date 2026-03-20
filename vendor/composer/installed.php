@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/refactor-decompose-entrypoint',
-        'version' => 'dev-copilot/refactor-decompose-entrypoint',
-        'reference' => '2f12cae816b34cb15458c1864a8678145fe1c989',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-another-one',
+        'version' => 'dev-copilot/run-rebuild-all-zips-another-one',
+        'reference' => 'ae6096a3591300679ef884ef4c98b083b9e7bf46',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/refactor-decompose-entrypoint',
-            'version' => 'dev-copilot/refactor-decompose-entrypoint',
-            'reference' => '2f12cae816b34cb15458c1864a8678145fe1c989',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-another-one',
+            'version' => 'dev-copilot/run-rebuild-all-zips-another-one',
+            'reference' => 'ae6096a3591300679ef884ef4c98b083b9e7bf46',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
