@@ -27,7 +27,8 @@
 const path    = require( 'path' );
 const webpack = require( 'webpack' );
 
-const stubPath = path.resolve( __dirname, 'src/imaging-viewer/stubs/empty.js' );
+const stubPath    = path.resolve( __dirname, 'src/imaging-viewer/stubs/empty.js' );
+const vtkStubPath = path.resolve( __dirname, 'src/imaging-viewer/stubs/vtk.js' );
 
 module.exports = {
 	mode: 'production',
@@ -71,12 +72,18 @@ module.exports = {
 	},
 
 	plugins: [
-		// Redirect ALL @kitware/vtk.js subpath imports to an empty stub.
-		// vtk.js is required only by OrientationMarkerTool and 3D volume tools;
-		// the Stack Viewport (2D DICOM viewer) does not need it.
+		// Redirect ALL @kitware/vtk.js subpath imports to a VTK-macro-compatible
+		// stub.  vtk.js is required only by OrientationMarkerTool and 3D volume
+		// tools; the Stack Viewport (2D DICOM viewer) does not need it.
+		//
+		// The stub must expose `newInstance( extend, className )` because several
+		// Cornerstone3D vtkClass wrappers call it at MODULE INIT TIME:
+		//   export const newInstance = macro.newInstance( extend, 'vtkXxx' );
+		// Without a usable `newInstance` the bundle throws at load time, preventing
+		// `window.nvCs` from being set and triggering the CDN fallback path.
 		new webpack.NormalModuleReplacementPlugin(
 			/@kitware[/\\]vtk\.js/,
-			stubPath
+			vtkStubPath
 		),
 		// Redirect polySeg WASM — used only by segmentation tools, not by
 		// the basic StackScrollMouseWheel / WindowLevel / Pan / Zoom tools.
