@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-healthcare-image-viewer-error',
+        'version' => 'dev-copilot/fix-healthcare-image-viewer-error',
+        'reference' => '14fe5aa334c4cdbf80ad0a1fb2bce856a915b1ef',
         'pretty_version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
         'version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
         'reference' => 'a7432cac946e3ee9c278e057741a1b58340d31f0',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-healthcare-image-viewer-error',
+            'version' => 'dev-copilot/fix-healthcare-image-viewer-error',
+            'reference' => '14fe5aa334c4cdbf80ad0a1fb2bce856a915b1ef',
             'pretty_version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
             'version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
             'reference' => 'a7432cac946e3ee9c278e057741a1b58340d31f0',

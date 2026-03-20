@@ -408,16 +408,71 @@
 	var activeStudyUid = '';
 
 	/**
+	 * Populate (or refresh) the study select dropdown on the AI Tools tab.
+	 */
+	function refreshStudyDropdown() {
+		var sel = document.getElementById( 'nv-imaging-interpret-study' );
+		if ( ! sel ) {
+			return;
+		}
+
+		// Remember the current value so we can restore it after refresh.
+		var currentVal = sel.value;
+
+		// Clear existing options except the placeholder.
+		while ( sel.options.length > 1 ) {
+			sel.remove( 1 );
+		}
+
+		apiFetch( restBase + '/studies?per_page=100' )
+			.then( function ( res ) { return res.json(); } )
+			.then( function ( data ) {
+				var studies = ( data && data.studies ) ? data.studies : [];
+				studies.forEach( function ( s ) {
+					var opt = document.createElement( 'option' );
+					opt.value = s.study_uid;
+					// Label: "CT  20240101 — 1.2.840…(truncated to fit dropdown)"
+					var parts = [];
+					if ( s.modality ) { parts.push( s.modality ); }
+					if ( s.study_date ) { parts.push( s.study_date ); }
+					var prefix = parts.length ? parts.join( '\u2002' ) + ' \u2014 ' : '';
+					var uid = s.study_uid || '';
+					// 24 chars is long enough to uniquely identify a UID root while still fitting a dropdown.
+					opt.textContent = prefix + ( uid.length > 24 ? uid.substring( 0, 24 ) + '\u2026' : uid );
+					sel.appendChild( opt );
+				} );
+				// Restore previous selection if it still exists.
+				if ( currentVal ) {
+					sel.value = currentVal;
+				}
+			} )
+			.catch( function () {} ); // Silent: user can still type UID manually.
+	}
+
+	/**
 	 * Wire up the AI Interpretation form on the Tools tab.
 	 */
 	function initToolsTab() {
 		var runBtn   = document.getElementById( 'nv-imaging-interpret-run' );
+		var studySel = document.getElementById( 'nv-imaging-interpret-study' );
 		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
 		var focusSel = document.getElementById( 'nv-imaging-interpret-focus' );
 		var resultEl = document.getElementById( 'nv-imaging-interpret-result' );
 
 		if ( ! runBtn ) {
 			return;
+		}
+
+		// Populate the study dropdown on first load.
+		refreshStudyDropdown();
+
+		// When a study is chosen from the dropdown, fill the UID text input.
+		if ( studySel ) {
+			studySel.addEventListener( 'change', function () {
+				if ( studySel.value && uidInput ) {
+					uidInput.value = studySel.value;
+				}
+			} );
 		}
 
 		runBtn.addEventListener( 'click', function () {
@@ -499,6 +554,11 @@
 		var uidInput = document.getElementById( 'nv-imaging-interpret-uid' );
 		if ( uidInput && activeStudyUid ) {
 			uidInput.value = activeStudyUid;
+		}
+		// Mirror selection in the study dropdown if the study is listed there.
+		var studySel = document.getElementById( 'nv-imaging-interpret-study' );
+		if ( studySel && activeStudyUid ) {
+			studySel.value = activeStudyUid;
 		}
 	}
 
@@ -767,15 +827,31 @@
 			viewport.appendChild( overlay );
 		}
 
-		// Dynamically import Cornerstone3D packages from pinned CDN versions.
+		// Prefer the locally-bundled Cornerstone3D packages (window.nvCs) set
+		// by imaging-viewer-bundle.js.  This avoids CDN dependency, importmaps,
+		// and type="module" requirements entirely — exactly the same approach used
+		// by the TMA Template Builder for its React bundle.
 		//
-		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
-		// packages into the generated module, leaving them as bare ES specifiers.
-		// Combined with the importmap (injected by PHP in admin_head), this ensures
-		// all three packages share a SINGLE @cornerstonejs/core module instance.
-		// Without this, each package may load its own private copy of the core,
-		// the wadouri image-loader never gets registered in our RenderingEngine,
-		// and the canvas stays solid black with no error.
+		// The CDN dynamic-import path below is kept as a fallback for deployments
+		// that do not have the compiled bundle (e.g. development without a build).
+		if ( window.nvCs ) {
+			bootCornerstone(
+				window.nvCs.csCore,
+				window.nvCs.csTools,
+				window.nvCs.csDicomImageLoader,
+				imageIds
+			).catch( function ( err ) {
+				var msg = err && err.message ? err.message : String( err );
+				viewport.innerHTML =
+					'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+					escHtml( 'Viewer error: ' + msg ) + '</p>';
+			} );
+			return;
+		}
+
+		// Fallback: load Cornerstone3D from CDN using dynamic ES module imports.
+		// Requires the importmap injected by the PHP admin page to be in place,
+		// and the script tag must be type="module".
 		//
 		// NOTE: Versions are pinned here and in class-wp-mcp-ai-imaging-admin-page.php.
 		// Both must be updated together when upgrading Cornerstone3D.
@@ -1226,18 +1302,62 @@
 			} );
 		}
 
+		// Folder-mode toggle: radio buttons switch the file input between
+		// individual-file mode (default) and folder-selection mode.
+		var modeFiles  = document.getElementById( 'nv-imaging-mode-files' );
+		var modeFolder = document.getElementById( 'nv-imaging-mode-folder' );
+		var fileInput  = document.getElementById( 'nv-imaging-file-input' );
+
+		function applyUploadMode( mode ) {
+			if ( ! fileInput ) {
+				return;
+			}
+			if ( 'folder' === mode ) {
+				fileInput.setAttribute( 'webkitdirectory', '' );
+				fileInput.removeAttribute( 'accept' ); // webkitdirectory conflicts with accept in some browsers.
+			} else {
+				fileInput.removeAttribute( 'webkitdirectory' );
+				fileInput.setAttribute( 'accept', '.dcm' );
+			}
+		}
+
+		if ( modeFiles ) {
+			modeFiles.addEventListener( 'change', function () {
+				if ( modeFiles.checked ) { applyUploadMode( 'files' ); }
+			} );
+		}
+		if ( modeFolder ) {
+			modeFolder.addEventListener( 'change', function () {
+				if ( modeFolder.checked ) { applyUploadMode( 'folder' ); }
+			} );
+		}
+
 		if ( uploadForm ) {
 			uploadForm.addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
-				var fileInput = document.getElementById( 'nv-imaging-file-input' );
-				if ( ! fileInput || ! fileInput.files.length ) {
+				var fi = document.getElementById( 'nv-imaging-file-input' );
+				if ( ! fi || ! fi.files.length ) {
 					showUploadStatus( 'Please select at least one .dcm file.', true );
 					return;
 				}
 
+				var isFolderMode = modeFolder && modeFolder.checked;
 				var formData = new FormData();
-				for ( var i = 0; i < fileInput.files.length; i++ ) {
-					formData.append( 'dicom_files[]', fileInput.files[ i ] );
+				var addedCount = 0;
+				for ( var i = 0; i < fi.files.length; i++ ) {
+					var f = fi.files[ i ];
+					// In folder mode, only submit .dcm files (skip non-DICOM files
+					// present in the folder such as DICOMDIR, README, images, etc.).
+					if ( isFolderMode && ! f.name.toLowerCase().endsWith( '.dcm' ) ) {
+						continue;
+					}
+					formData.append( 'dicom_files[]', f );
+					addedCount++;
+				}
+
+				if ( 0 === addedCount ) {
+					showUploadStatus( i18n.noFilesInFolder || 'No .dcm files found in the selected folder.', true );
+					return;
 				}
 
 				showUploadStatus( 'Uploading…', false );
@@ -1268,6 +1388,8 @@
 							}
 							uploadPanel.style.display = 'none';
 							loadStudyList();
+							// Refresh the study dropdown on the AI Tools tab.
+							refreshStudyDropdown();
 						} else {
 							var errMsg = ( result.data && result.data.message )
 								? result.data.message
@@ -1304,7 +1426,7 @@
 	// Bootstrap
 	// =========================================================================
 
-	document.addEventListener( 'DOMContentLoaded', function () {
+	function initAll() {
 		initNavigation();
 		initUpload();
 		initTabs();
@@ -1312,5 +1434,14 @@
 		initToolsTab();
 		loadStudyList();
 		loadStats();
-	} );
+	}
+
+	// Module scripts (type="module") are deferred: they execute after the HTML
+	// is parsed, at which point readyState is no longer 'loading'.  Regular
+	// footer scripts also run after parsing in most cases, but guard for both.
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', initAll );
+	} else {
+		initAll();
+	}
 } )();
