@@ -510,6 +510,137 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test saving an Upwork connection with OAuth credentials.
+	 */
+	public function test_save_upwork_connection_with_all_fields() {
+		$connection_data = array(
+			'name'            => 'Test Upwork Connection',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_upwork_client_id_abc',
+			'client_secret'   => 'test_upwork_client_secret_xyz',
+			'refresh_token'   => 'test_upwork_refresh_token_123',
+			'user_email'      => 'john.doe', // Upwork stores username in this field.
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotWPError( $result );
+		$this->assertIsString( $result );
+		$this->assertStringStartsWith( 'conn_', $result );
+
+		// Retrieve the saved connection.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'Test Upwork Connection', $connection['name'] );
+		$this->assertEquals( 'upwork', $connection['connection_type'] );
+		$this->assertEquals( 'test_upwork_client_id_abc', $connection['client_id'] );
+		$this->assertEquals( 'john.doe', $connection['user_email'] );
+
+		// Verify sensitive fields are encrypted at rest.
+		$this->assertNotEquals( 'test_upwork_client_secret_xyz', $connection['client_secret'] );
+		$this->assertNotEmpty( $connection['client_secret'] );
+		$this->assertNotEquals( 'test_upwork_refresh_token_123', $connection['refresh_token'] );
+		$this->assertNotEmpty( $connection['refresh_token'] );
+	}
+
+	/**
+	 * Test that Upwork validation requires client_id and client_secret.
+	 */
+	public function test_upwork_connection_validation_requires_oauth_credentials() {
+		$connection_data = array(
+			'name'            => 'Incomplete Upwork Connection',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			// client_id and client_secret deliberately omitted.
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_pro_missing_upwork_credentials', $result->get_error_code() );
+	}
+
+	/**
+	 * Test updating an Upwork connection preserves existing secrets when not provided.
+	 */
+	public function test_update_upwork_connection_preserves_existing_secrets() {
+		// Create initial connection.
+		$connection_data = array(
+			'name'            => 'Upwork Connection',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => 'original_client_id',
+			'client_secret'   => 'original_client_secret',
+			'refresh_token'   => 'original_refresh_token',
+			'user_email'      => 'original.user', // Upwork stores username in this field.
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Update without providing client_secret and refresh_token.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated Upwork Connection',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => 'updated_client_id',
+			'client_secret'   => '', // Empty — should preserve existing.
+			'refresh_token'   => '', // Empty — should preserve existing.
+			'user_email'      => 'updated.user', // Upwork stores username in this field.
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotWPError( $result );
+		$this->assertEquals( $connection_id, $result );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertEquals( 'Updated Upwork Connection', $updated['name'] );
+		$this->assertEquals( 'updated_client_id', $updated['client_id'] );
+		$this->assertEquals( 'updated.user', $updated['user_email'] );
+
+		// Secrets should be preserved (still encrypted, not empty).
+		$this->assertNotEmpty( $updated['client_secret'] );
+		$this->assertNotEmpty( $updated['refresh_token'] );
+	}
+
+	/**
+	 * Test test_connection returns a pending-OAuth response for Upwork.
+	 */
+	public function test_upwork_test_connection_returns_oauth_pending_message() {
+		$connection_data = array(
+			'name'            => 'Upwork OAuth Test',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$result     = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertTrue( $result['upwork'] );
+	}
+
+	/**
 	 * Test updating Gmail connection preserves existing client_id and secret when not provided.
 	 */
 	public function test_update_gmail_connection_preserves_existing_values() {

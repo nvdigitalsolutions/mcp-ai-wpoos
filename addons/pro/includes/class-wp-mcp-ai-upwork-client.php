@@ -193,7 +193,8 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 			}
 
 			$access_token = $data['access_token'];
-			// Use 90% of the reported lifetime as cache TTL, with floor of 60s.
+			// Use 90% of the reported lifetime as cache TTL (10% safety margin ensures a fresh
+			// token is available before expiry), with a floor of 60 seconds.
 			$expires_in   = isset( $data['expires_in'] ) ? (int) $data['expires_in'] : 3600;
 			$cache_ttl    = max( 60, (int) floor( $expires_in * 0.9 ) );
 
