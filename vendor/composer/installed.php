@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
-        'version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
-        'reference' => 'a7432cac946e3ee9c278e057741a1b58340d31f0',
+        'pretty_version' => 'dev-copilot/implement-architecture-refactor-plan',
+        'version' => 'dev-copilot/implement-architecture-refactor-plan',
+        'reference' => 'f16d8a09b8efd6a02f689f64170469571c8b3c7a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
-            'version' => 'dev-copilot/add-shopify-jewelry-telegram-addon',
-            'reference' => 'a7432cac946e3ee9c278e057741a1b58340d31f0',
+            'pretty_version' => 'dev-copilot/implement-architecture-refactor-plan',
+            'version' => 'dev-copilot/implement-architecture-refactor-plan',
+            'reference' => 'f16d8a09b8efd6a02f689f64170469571c8b3c7a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
