@@ -315,6 +315,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $job_skills ) && ! empty( $freelancer_skills ) ) {
 			$matched   = array_intersect( $freelancer_skills, $job_skills );
 			$match_pct = count( $matched ) / count( $job_skills );
+			// 1.5× multiplier rewards over-qualification: 67% match → 100 score. Clamped to 100.
 			$skill_score  = (int) round( min( 1.0, $match_pct * 1.5 ) * 100 );
 			$skill_detail = sprintf(
 				/* translators: 1: matched count, 2: total required */

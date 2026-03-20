@@ -107,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 		/**
 		 * Get a valid access token, refreshing via the refresh token if needed.
 		 *
-		 * Access tokens are cached in a transient for (expires_in - 60) seconds.
+		 * Access tokens are cached in a transient for 90% of expires_in (min 60s).
 		 *
 		 * @return string|WP_Error Access token string or WP_Error on failure.
 		 */
@@ -193,10 +193,12 @@ if ( ! class_exists( 'WP_MCP_AI_Upwork_Client' ) ) {
 			}
 
 			$access_token = $data['access_token'];
-			$expires_in   = isset( $data['expires_in'] ) ? max( 60, (int) $data['expires_in'] ) : 3600;
+			// Use 90% of the reported lifetime as cache TTL, with floor of 60s.
+			$expires_in   = isset( $data['expires_in'] ) ? (int) $data['expires_in'] : 3600;
+			$cache_ttl    = max( 60, (int) floor( $expires_in * 0.9 ) );
 
-			// Cache the token, leaving a 60-second buffer before expiry.
-			set_transient( $transient_key, $access_token, $expires_in - 60 );
+			// Cache the token with a conservative TTL.
+			set_transient( $transient_key, $access_token, $cache_ttl );
 
 			return $access_token;
 		}

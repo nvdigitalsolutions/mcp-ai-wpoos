@@ -254,7 +254,8 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( ! empty( $arguments['job_type'] ) ) {
-			$filter['contractorTier'] = strtoupper( sanitize_text_field( $arguments['job_type'] ) );
+			// Use the jobType filter for hourly/fixed — distinct from contractorTier (experience level).
+			$filter['jobType'] = strtoupper( sanitize_text_field( $arguments['job_type'] ) );
 		}
 
 		$exp_map = array(
@@ -263,6 +264,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			'expert'       => 3,
 		);
 		if ( ! empty( $arguments['experience_level'] ) && isset( $exp_map[ $arguments['experience_level'] ] ) ) {
+			// contractorTier maps to the experience level tier (1=Entry, 2=Intermediate, 3=Expert).
 			$filter['contractorTier'] = $exp_map[ $arguments['experience_level'] ];
 		}
 
