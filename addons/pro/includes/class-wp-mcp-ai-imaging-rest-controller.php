@@ -748,27 +748,43 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Remove all DICOM files stored in the study directory.
+		// Files are organised as {study_dir}/{series_uid}/{sop_uid}.dcm, so a
+		// flat glob( '*.dcm' ) misses them.  Use a recursive iterator instead,
+		// deleting files first (CHILD_FIRST) then series sub-directories.
 		$storage_path = get_post_meta( $post->ID, '_imaging_storage_path', true );
 		if ( $storage_path && is_dir( $storage_path ) && $this->is_path_within_storage( $storage_path ) ) {
-			$files = glob( trailingslashit( $storage_path ) . '*.dcm' );
-			if ( is_array( $files ) ) {
-				foreach ( $files as $file ) {
-					if ( is_file( $file ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
-						if ( ! unlink( $file ) ) {
-							WP_MCP_AI_Imaging_Audit_Log::log(
-								'study_delete_file_failed',
-								array(
-									'study_id' => $study_uid,
-									'file'     => basename( $file ),
-									'user_id'  => get_current_user_id(),
-								)
-							);
-						}
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $storage_path, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::CHILD_FIRST
+			);
+			foreach ( $iterator as $item ) {
+				if ( $item->isFile() ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+					if ( ! unlink( $item->getPathname() ) ) {
+						WP_MCP_AI_Imaging_Audit_Log::log(
+							'study_delete_file_failed',
+							array(
+								'study_id' => $study_uid,
+								'file'     => $item->getFilename(),
+								'user_id'  => get_current_user_id(),
+							)
+						);
+					}
+				} elseif ( $item->isDir() ) {
+					// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+					if ( ! @rmdir( $item->getPathname() ) ) {
+						WP_MCP_AI_Imaging_Audit_Log::log(
+							'study_delete_dir_failed',
+							array(
+								'study_id' => $study_uid,
+								'path'     => $item->getFilename(),
+								'user_id'  => get_current_user_id(),
+							)
+						);
 					}
 				}
 			}
-			// Remove the study directory only if it is now empty.
+			// Remove the study directory itself now that its contents are gone.
 			if ( ! @rmdir( $storage_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
 				// Directory not empty or not writable — log for compliance audit but don't
 				// block the delete (the CPT post will still be removed).

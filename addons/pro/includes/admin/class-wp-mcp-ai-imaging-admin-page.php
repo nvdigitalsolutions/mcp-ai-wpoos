@@ -100,12 +100,26 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	/**
 	 * Pinned esm.sh CDN URL for @cornerstonejs/dicom-image-loader.
 	 *
-	 * v1.86.x no longer depends on dcmjs/xmlbuilder2, so no importmap remap
-	 * for those packages is needed.
+	 * dcmjs (a transitive dependency of the loader) depends on xmlbuilder2.
+	 * xmlbuilder2 is listed as `?external=` on the CDN import so esm.sh emits
+	 * it as a bare specifier rather than bundling its es2022 build (which does
+	 * not expose the `create` named export correctly).  The importmap entry
+	 * XMLBUILDER2_CDN below resolves that bare specifier to a CJS-interop URL.
 	 *
 	 * @var string
 	 */
 	const CORNERSTONE_DICOM_LOADER_CDN = 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0';
+
+	/**
+	 * Pinned esm.sh CDN URL for xmlbuilder2 (transitive dep via dcmjs).
+	 *
+	 * The `?cjs-exports=create` query parameter instructs esm.sh to explicitly
+	 * re-export the `create` named export from the CommonJS package, fixing the
+	 * "does not provide an export named 'create'" browser error.
+	 *
+	 * @var string
+	 */
+	const XMLBUILDER2_CDN = 'https://esm.sh/xmlbuilder2@3.0.2?cjs-exports=create';
 
 	/**
 	 * Enqueue viewer assets when we are on the imaging page.
@@ -132,6 +146,11 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					'imports' => array(
 						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
 						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
+						// xmlbuilder2 is a transitive dep via dcmjs.  Listed as
+						// ?external= on the dicom-image-loader CDN import; the importmap
+						// resolves the bare specifier to a CJS-interop URL that correctly
+						// exports the `create` named function.
+						'xmlbuilder2'         => esc_url_raw( self::XMLBUILDER2_CDN ),
 					),
 				);
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -264,7 +283,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					<strong><?php esc_html_e( 'DICOM Storage Location', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</p>
 				<p>
-					<?php esc_html_e( 'DICOM files are stored in a protected directory on the server that is not accessible directly over HTTP. Each study is placed in its own sub-folder named after its DICOM StudyInstanceUID.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'DICOM files are stored in a protected directory on the server that is not accessible directly over HTTP. Files are organised in a three-level hierarchy: study → series → instance, each level named after its DICOM UID.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 				<table class="widefat striped" style="max-width:700px;margin-bottom:.5em;">
 					<tbody>
@@ -275,6 +294,14 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						<tr>
 							<th><?php esc_html_e( 'Sub-folder per study', 'mcp-ai-wpoos-pro' ); ?></th>
 							<td><code><?php echo esc_html( trailingslashit( $storage_path ) ); ?>{StudyInstanceUID}/</code></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Sub-folder per series', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code><?php echo esc_html( trailingslashit( $storage_path ) ); ?>{StudyInstanceUID}/{SeriesInstanceUID}/</code></td>
+						</tr>
+						<tr>
+							<th><?php esc_html_e( 'Instance file', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td><code>{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}.dcm</code></td>
 						</tr>
 						<tr>
 							<th><?php esc_html_e( 'HTTP access', 'mcp-ai-wpoos-pro' ); ?></th>

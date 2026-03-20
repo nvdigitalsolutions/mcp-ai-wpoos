@@ -23,6 +23,22 @@
 ( function () {
 	'use strict';
 
+	// Polyfill Array.prototype.at — added in Chrome 92, Firefox 90, Safari 15.4.
+	// Cornerstone3D 1.x uses it internally; older browsers/environments would
+	// otherwise throw "at is not a function" on the first series render.
+	if ( ! Array.prototype.at ) {
+		Object.defineProperty( Array.prototype, 'at', {
+			value: function ( index ) {
+				var len = this.length;
+				var k = Math.trunc( +index ) || 0;
+				if ( k < 0 ) { k += len; }
+				return ( k < 0 || k >= len ) ? undefined : this[ k ];
+			},
+			writable: true,
+			configurable: true,
+		} );
+	}
+
 	// =========================================================================
 	// DOM references
 	// =========================================================================
@@ -848,7 +864,7 @@
 		Promise.all( [
 			import( 'https://esm.sh/@cornerstonejs/core@1.86.1' ),
 			import( 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core' ),
-			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser' ),
+			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser,xmlbuilder2' ),
 		] )
 			.then( function ( modules ) {
 				return bootCornerstone( modules[ 0 ], modules[ 1 ], modules[ 2 ], imageIds );
@@ -1026,6 +1042,16 @@
 				csDicomImageLoader.init( { maxWebWorkers: 0 } );
 			}
 
+			// Register tools in the global tool registry once.  These are global
+			// registrations (not per-viewport) — calling csTools.addTool() more
+			// than once for the same tool on subsequent series clicks can trigger
+			// internal Cornerstone3D code paths that use Array.prototype.at().
+			csTools.addTool( csTools.StackScrollMouseWheelTool );
+			csTools.addTool( csTools.PanTool );
+			csTools.addTool( csTools.ZoomTool );
+			csTools.addTool( csTools.LengthTool );
+			csTools.addTool( csTools.WindowLevelTool );
+
 			csInitialized = true;
 		}
 
@@ -1136,12 +1162,9 @@
 		}
 		toolGroup = csTools.ToolGroupManager.createToolGroup( toolGroupId );
 
-		csTools.addTool( csTools.StackScrollMouseWheelTool );
-		csTools.addTool( csTools.PanTool );
-		csTools.addTool( csTools.ZoomTool );
-		csTools.addTool( csTools.LengthTool );
-		csTools.addTool( csTools.WindowLevelTool );
-
+		// Note: csTools.addTool() global registrations happen once in the
+		// csInitialized block above.  Here we only bind the already-registered
+		// tools to the new per-series tool group.
 		toolGroup.addTool( csTools.StackScrollMouseWheelTool.toolName );
 		toolGroup.addTool( csTools.PanTool.toolName );
 		toolGroup.addTool( csTools.ZoomTool.toolName );
