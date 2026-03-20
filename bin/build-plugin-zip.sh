@@ -37,6 +37,7 @@ BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
+BUILD_JEWELRY_TMA=false
 SKIP_NPM_BUILD=false
 VERSION=""
 
@@ -59,6 +60,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_CORE_ONLY=true
             shift
             ;;
+        --jewelry-tma)
+            BUILD_JEWELRY_TMA=true
+            shift
+            ;;
         --skip-npm-build)
             SKIP_NPM_BUILD=true
             shift
@@ -71,6 +76,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_BASE=true
             BUILD_PRO=true
             BUILD_COMBINED=true
+            BUILD_JEWELRY_TMA=true
             shift
             ;;
         -h|--help)
@@ -81,17 +87,19 @@ while [[ $# -gt 0 ]]; do
             echo "  --pro             Build pro add-on (requires base plugin)"
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
-            echo "  --all             Build all main versions (base, pro, combined)"
+            echo "  --jewelry-tma     Build Shopify Jewelry TMA add-on"
+            echo "  --all             Build all main versions (base, pro, combined, jewelry-tma)"
             echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                       # Build base, pro, and combined"
+            echo "  $0                       # Build base, pro, combined, and jewelry-tma"
             echo "  $0 --base                # Build only base version"
             echo "  $0 --pro                 # Build only pro add-on"
             echo "  $0 --combined            # Build base + pro combined"
             echo "  $0 --core-only           # Build only core plugin"
+            echo "  $0 --jewelry-tma         # Build only jewelry TMA add-on"
             echo "  $0 --skip-npm-build      # Skip npm build (assets already pre-built)"
             echo "  $0 --version 1.0.0       # Specify version"
             exit 0
@@ -104,12 +112,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no build type specified, build all versions (base, pro, combined, and core-only)
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ]; then
+# If no build type specified, build all versions (base, pro, combined, core-only, and jewelry-tma)
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_JEWELRY_TMA" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
     BUILD_CORE_ONLY=true
+    BUILD_JEWELRY_TMA=true
 fi
 
 # Get version if not specified
@@ -129,6 +138,7 @@ echo "Build targets:"
 [ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (mcp-ai-wpoos-pro)"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
 [ "$BUILD_CORE_ONLY" = true ] && echo "  ✓ Core plugin (mcp-ai-wpoos-core) - lightweight"
+[ "$BUILD_JEWELRY_TMA" = true ] && echo "  ✓ Shopify Jewelry TMA add-on (mcp-ai-shopify-jewelry-tma)"
 echo ""
 
 # Check requirements
@@ -244,6 +254,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
         --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma-shopify-jewelry.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -252,6 +263,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'addons/pro' \
+        --exclude 'addons/shopify-jewelry-tma' \
         --exclude 'assets/examples' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
@@ -707,6 +719,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
         --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma-shopify-jewelry.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -715,6 +728,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'assets/examples' \
+        --exclude 'addons/shopify-jewelry-tma' \
         --exclude 'mcp-ai-wpoos-base.php' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
@@ -802,6 +816,59 @@ if [ "$BUILD_COMBINED" = true ]; then
 fi
 
 # ============================================================================
+# Build Shopify Jewelry TMA Add-on
+# ============================================================================
+if [ "$BUILD_JEWELRY_TMA" = true ]; then
+    echo "Step 3e: Building Shopify Jewelry TMA add-on..."
+
+    JEWELRY_SLUG="mcp-ai-shopify-jewelry-tma"
+    mkdir -p "build/${JEWELRY_SLUG}"
+
+    if [ -d "addons/shopify-jewelry-tma" ]; then
+        # Read the addon version from its plugin header.
+        JEWELRY_VERSION=$(grep -E "^\s*\*\s*Version:" "addons/shopify-jewelry-tma/mcp-ai-shopify-jewelry-tma.php" | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+        if [ -z "$JEWELRY_VERSION" ]; then
+            JEWELRY_VERSION="$VERSION"
+        fi
+
+        echo "ℹ️  Shopify Jewelry TMA version: ${JEWELRY_VERSION}"
+
+        # Build the React SPA if assets haven't already been built.
+        if [ "$SKIP_NPM_BUILD" = true ]; then
+            echo "  Skipping React SPA build (--skip-npm-build set — using pre-built assets)."
+        else
+            if [ -f "addons/shopify-jewelry-tma/build/tma-shopify-jewelry/tma-shopify-jewelry.js" ]; then
+                echo "  Pre-built assets found — skipping SPA build."
+            else
+                echo "  Building React SPA (npm run build:tma-shopify-jewelry)..."
+                npm run build:tma-shopify-jewelry
+                echo "  ✓ React SPA built."
+            fi
+        fi
+
+        rsync -av --quiet addons/shopify-jewelry-tma/ "build/${JEWELRY_SLUG}/" \
+            --exclude '.git' \
+            --exclude '.gitignore' \
+            --exclude '.gitattributes' \
+            --exclude 'node_modules' \
+            --exclude '*.zip' \
+            --exclude '*.js.map' \
+            --exclude '*.css.map'
+
+        # Create ZIP
+        cd build
+        zip -r -q "${JEWELRY_SLUG}-${JEWELRY_VERSION}.zip" "${JEWELRY_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
+        cd ..
+
+        JEWELRY_SIZE=$(du -h "build/${JEWELRY_SLUG}-${JEWELRY_VERSION}.zip" | cut -f1)
+        echo "✅ Shopify Jewelry TMA add-on created: build/${JEWELRY_SLUG}-${JEWELRY_VERSION}.zip (${JEWELRY_SIZE})"
+    else
+        echo "⚠️  Shopify Jewelry TMA directory (addons/shopify-jewelry-tma) not found, skipping..."
+    fi
+    echo ""
+fi
+
+# ============================================================================
 # Summary
 # ============================================================================
 echo "=========================================="
@@ -820,6 +887,10 @@ echo "  2. Upload the appropriate ZIP file:"
 if [ "$BUILD_CORE_ONLY" = true ]; then
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
     echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
+fi
+if [ "$BUILD_JEWELRY_TMA" = true ]; then
+    JW_VER=$(grep -E "^\s*\*\s*Version:" "addons/shopify-jewelry-tma/mcp-ai-shopify-jewelry-tma.php" 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "$VERSION")
+    echo "     - mcp-ai-shopify-jewelry-tma-${JW_VER}.zip (Shopify Jewelry TMA add-on, requires Pro)"
 fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
