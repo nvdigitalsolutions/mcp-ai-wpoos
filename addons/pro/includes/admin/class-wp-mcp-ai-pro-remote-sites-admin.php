@@ -353,8 +353,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key = isset( $_POST['icloud_api_key'] ) ? wp_unslash( $_POST['icloud_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'shopify':
-					$api_key    = isset( $_POST['shopify_access_token'] ) ? wp_unslash( $_POST['shopify_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access token must not be sanitized.
-					$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
+					$shopify_api_mode = isset( $_POST['shopify_api_mode'] ) ? sanitize_key( wp_unslash( $_POST['shopify_api_mode'] ) ) : 'admin_api';
+					if ( ! in_array( $shopify_api_mode, array( 'admin_api', 'catalog_api' ), true ) ) {
+						$shopify_api_mode = 'admin_api';
+					}
+					if ( 'catalog_api' === $shopify_api_mode ) {
+						$api_key    = isset( $_POST['shopify_catalog_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_client_id'] ) ) : '';
+						$api_secret = isset( $_POST['shopify_catalog_client_secret'] ) ? wp_unslash( $_POST['shopify_catalog_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- client secret must not be sanitized.
+					} else {
+						$api_key    = isset( $_POST['shopify_access_token'] ) ? wp_unslash( $_POST['shopify_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access token must not be sanitized.
+						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
+					}
 					break;
 			}
 
@@ -455,18 +464,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$auth_type = 'none';
 			}
 
-			// For Shopify connections, build the store URL from the shop domain and use custom_header auth.
+			// For Shopify connections, set the URL based on API mode and use appropriate auth.
 			if ( 'shopify' === $connection_type ) {
-				$shop_domain = isset( $_POST['shopify_shop_domain'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_shop_domain'] ) ) : '';
-				// Strip scheme prefix and trailing slash if user included them.
-				$shop_domain = preg_replace( '#^https?://#i', '', $shop_domain );
-				$shop_domain = rtrim( $shop_domain, '/' );
-				// Append .myshopify.com if no dot is present (bare store name supplied).
-				if ( ! empty( $shop_domain ) && false === strpos( $shop_domain, '.' ) ) {
-					$shop_domain .= '.myshopify.com';
+				// $shopify_api_mode was resolved in the credential switch above.
+				if ( ! isset( $shopify_api_mode ) ) {
+					$shopify_api_mode = 'admin_api';
 				}
-				$url       = ! empty( $shop_domain ) ? 'https://' . $shop_domain : $url;
-				$auth_type = 'custom_header'; // Shopify uses X-Shopify-Access-Token header.
+				if ( 'catalog_api' === $shopify_api_mode ) {
+					// Catalog API is global — no store domain needed.
+					$url       = 'https://discover.shopifyapps.com';
+					$auth_type = 'none'; // Catalog API uses a JWT bearer obtained dynamically.
+				} else {
+					$shop_domain = isset( $_POST['shopify_shop_domain'] ) ? sanitize_text_field( wp_unslash( $_POST['shopify_shop_domain'] ) ) : '';
+					// Strip scheme prefix and trailing slash if user included them.
+					$shop_domain = preg_replace( '#^https?://#i', '', $shop_domain );
+					$shop_domain = rtrim( $shop_domain, '/' );
+					// Append .myshopify.com if no dot is present (bare store name supplied).
+					if ( ! empty( $shop_domain ) && false === strpos( $shop_domain, '.' ) ) {
+						$shop_domain .= '.myshopify.com';
+					}
+					$url       = ! empty( $shop_domain ) ? 'https://' . $shop_domain : $url;
+					$auth_type = 'custom_header'; // Admin API uses X-Shopify-Access-Token header.
+				}
 			}
 
 			// For mesh peer connections, use custom_header auth with mesh API key
@@ -639,6 +658,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'shopify_api_version' => 'shopify' === $connection_type && isset( $_POST['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $_POST['shopify_api_version'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shopify_api_version'] ) )
 					: ( 'shopify' === $connection_type ? '2025-01' : '' ),
+				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
+					? $shopify_api_mode
+					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1350,31 +1372,54 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Shopify -->
 				<tr class="shopify-only-field" style="display: none;">
 					<th scope="row">
+						<label for="shopify_api_mode"><?php esc_html_e( 'API Mode', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$saved_shopify_mode = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['shopify_api_mode'] )
+							? $connection['shopify_api_mode']
+							: 'admin_api';
+						?>
+						<select name="shopify_api_mode" id="shopify_api_mode" onchange="toggleShopifyApiMode(this.value)">
+							<option value="admin_api" <?php selected( $saved_shopify_mode, 'admin_api' ); ?>><?php esc_html_e( 'Admin API — store management (shpat_ / shpca_)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="catalog_api" <?php selected( $saved_shopify_mode, 'catalog_api' ); ?>><?php esc_html_e( 'Catalog API — global product search for agents (shpss_)', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Admin API connects to a specific store. Catalog API queries the global Shopify product catalog for agentic commerce using Dev Dashboard credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Admin API sub-fields -->
+				<tr class="shopify-only-field shopify-admin-api-field" style="display: none;">
+					<th scope="row">
 						<label for="shopify_shop_domain"><?php esc_html_e( 'Shop Domain', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="shopify_shop_domain" id="shopify_shop_domain" class="regular-text"
-							value="<?php echo $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( preg_replace( '#^https?://#i', '', rtrim( $connection['url'], '/' ) ) ) : ''; ?>"
+							value="<?php
+							$is_shopify_edit = $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+							$is_catalog_edit = $is_shopify_edit && isset( $connection['shopify_api_mode'] ) && 'catalog_api' === $connection['shopify_api_mode'];
+							echo $is_shopify_edit && ! $is_catalog_edit ? esc_attr( preg_replace( '#^https?://#i', '', rtrim( $connection['url'], '/' ) ) ) : '';
+							?>"
 							autocomplete="off" placeholder="mystore.myshopify.com">
 						<p class="description"><?php esc_html_e( 'Your Shopify store domain, e.g. mystore.myshopify.com. You can also enter just the store name and .myshopify.com will be appended automatically.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
-				<tr class="shopify-only-field" style="display: none;">
+				<tr class="shopify-only-field shopify-admin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="shopify_access_token"><?php esc_html_e( 'Admin API Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="shopify_access_token" id="shopify_access_token" class="regular-text" value="" autocomplete="new-password" placeholder="shpat_...">
+						<input type="password" name="shopify_access_token" id="shopify_access_token" class="regular-text" value="" autocomplete="new-password" placeholder="shpat_… / shpca_…">
 						<?php if ( $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing Admin API access token. Generate this token in your Shopify Admin → Apps → Develop apps → API credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Shopify Admin API access token (shpat_…). Generated in Shopify Admin → Apps → Develop apps → API credentials. Sent as the X-Shopify-Access-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Shopify Admin API access token (shpat_… for public apps, shpca_… for custom apps). Generated in Shopify Admin → Apps → Develop apps → API credentials. Sent as the X-Shopify-Access-Token header.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
-				<tr class="shopify-only-field" style="display: none;">
+				<tr class="shopify-only-field shopify-admin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="shopify_storefront_token"><?php esc_html_e( 'Storefront API Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -1388,7 +1433,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr class="shopify-only-field" style="display: none;">
+				<tr class="shopify-only-field shopify-admin-api-field" style="display: none;">
 					<th scope="row">
 						<label for="shopify_api_version"><?php esc_html_e( 'Admin API Version', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -1400,18 +1445,60 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Catalog API sub-fields -->
+				<tr class="shopify-only-field shopify-catalog-api-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_catalog_client_id"><?php esc_html_e( 'Catalog API Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="shopify_catalog_client_id" id="shopify_catalog_client_id" class="regular-text" value="" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+						<?php if ( $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing Client ID. Obtain this from your Shopify Dev Dashboard (dev.shopify.com).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Catalog API client ID from the Shopify Dev Dashboard (dev.shopify.com). Used together with the client secret to obtain a JWT bearer token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="shopify-only-field shopify-catalog-api-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_catalog_client_secret"><?php esc_html_e( 'Catalog API Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="shopify_catalog_client_secret" id="shopify_catalog_client_secret" class="regular-text" value="" autocomplete="new-password" placeholder="shpss_…">
+						<?php if ( $is_edit && 'shopify' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing client secret. Obtain this from your Shopify Dev Dashboard (dev.shopify.com). Begins with shpss_.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Catalog API client secret from the Shopify Dev Dashboard (shpss_…). Used with client_id to obtain a JWT bearer token for the global Catalog API. Stored encrypted.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
 				<tr class="shopify-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Shopify Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
-							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to create a Shopify Admin API access token:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
-							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
-								<li><?php esc_html_e( 'In your Shopify Admin, go to Settings → Apps and sales channels → Develop apps.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Click "Create an app" and give it a name (e.g. NV oOS AI).', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Under "API credentials", click "Configure Admin API scopes" and select the permissions you need (e.g. read_products, write_products, read_orders, read_customers).', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Click "Save" then "Install app" to generate the access token.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Copy the Admin API access token (shpat_…) and paste it above.', 'mcp-ai-wpoos-pro' ); ?></li>
-							</ol>
+							<!-- Admin API guide -->
+							<div class="shopify-admin-api-guide">
+								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Admin API — How to create an access token:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+								<ol style="margin: 0 0 16px; padding-left: 20px; line-height: 1.8;">
+									<li><?php esc_html_e( 'In your Shopify Admin, go to Settings → Apps and sales channels → Develop apps.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Click "Create an app" and give it a name (e.g. NV oOS AI).', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Under "API credentials", click "Configure Admin API scopes" and select the required permissions (read_products, write_products, read_orders, read_customers, etc.).', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Click "Save" then "Install app" to generate the access token.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Copy the Admin API access token (shpat_… or shpca_…) and paste it above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								</ol>
+							</div>
+							<!-- Catalog API guide -->
+							<div class="shopify-catalog-api-guide" style="display: none;">
+								<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'Catalog API — How to create Dev Dashboard credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+								<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+									<li><?php esc_html_e( 'Go to the Shopify Dev Dashboard at dev.shopify.com and sign in.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Create a new API key (app) and copy the Client ID and Client Secret (shpss_…).', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'Paste the Client ID and Client Secret above. A JWT bearer token is obtained automatically on each request (tokens expire in ~60 minutes and are cached).', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'The Catalog API enables product search and lookup across the global Shopify catalog — no store domain is required.', 'mcp-ai-wpoos-pro' ); ?></li>
+								</ol>
+							</div>
 						</div>
 					</td>
 				</tr>
@@ -5361,14 +5448,45 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				shopifyFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
-				// Shopify URL is computed from the shop domain field — hide the generic URL input.
+				// URL is derived from shop domain (Admin API) or fixed (Catalog API) — hide the generic URL input.
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'custom_header';
-				// Update the URL field to reflect the current shop domain value.
+				// Apply the current API mode sub-field state.
+				var shopifyModeSelect = document.getElementById('shopify_api_mode');
+				var currentMode = shopifyModeSelect ? shopifyModeSelect.value : 'admin_api';
+				toggleShopifyApiMode(currentMode);
+			}
+		}
+
+		/**
+		 * Show/hide Shopify Admin API vs Catalog API sub-fields based on the selected mode.
+		 *
+		 * @param {string} mode 'admin_api' or 'catalog_api'
+		 */
+		function toggleShopifyApiMode(mode) {
+			var adminFields   = document.querySelectorAll('.shopify-admin-api-field');
+			var catalogFields = document.querySelectorAll('.shopify-catalog-api-field');
+			var adminGuide    = document.querySelector('.shopify-admin-api-guide');
+			var catalogGuide  = document.querySelector('.shopify-catalog-api-guide');
+			var urlField      = document.getElementById('url');
+
+			if (mode === 'catalog_api') {
+				adminFields.forEach(function(f) { f.style.display = 'none'; });
+				catalogFields.forEach(function(f) { f.style.display = 'table-row'; });
+				if (adminGuide)   { adminGuide.style.display   = 'none'; }
+				if (catalogGuide) { catalogGuide.style.display = 'block'; }
+				// Catalog API always uses a fixed URL.
+				if (urlField) { urlField.value = 'https://discover.shopifyapps.com'; }
+			} else {
+				adminFields.forEach(function(f) { f.style.display = 'table-row'; });
+				catalogFields.forEach(function(f) { f.style.display = 'none'; });
+				if (adminGuide)   { adminGuide.style.display   = 'block'; }
+				if (catalogGuide) { catalogGuide.style.display = 'none'; }
+				// Admin API URL is derived from shop domain.
 				var shopDomainField = document.getElementById('shopify_shop_domain');
-				if (shopDomainField && shopDomainField.value) {
+				if (urlField && shopDomainField) {
 					var domain = shopDomainField.value.replace(/^https?:\/\//i, '').replace(/\/$/, '');
 					if (domain && domain.indexOf('.') === -1) {
 						domain += '.myshopify.com';
@@ -5439,7 +5557,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
-			// Shopify shop domain input: update the (read-only) URL field in real time.
+			// Shopify: listen for API mode changes to toggle sub-fields.
+			var shopifyModeSelect = document.getElementById('shopify_api_mode');
+			if (shopifyModeSelect) {
+				shopifyModeSelect.addEventListener('change', function() {
+					toggleShopifyApiMode(this.value);
+				});
+			}
+
+			// Shopify shop domain input: update the (read-only) URL field in real time (Admin API only).
 			var shopifyDomainInput = document.getElementById('shopify_shop_domain');
 			if (shopifyDomainInput) {
 				shopifyDomainInput.addEventListener('input', function() {
