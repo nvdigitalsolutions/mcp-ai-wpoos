@@ -772,7 +772,16 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 					}
 				} elseif ( $item->isDir() ) {
 					// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-					@rmdir( $item->getPathname() );
+					if ( ! @rmdir( $item->getPathname() ) ) {
+						WP_MCP_AI_Imaging_Audit_Log::log(
+							'study_delete_dir_failed',
+							array(
+								'study_id' => $study_uid,
+								'path'     => $item->getFilename(),
+								'user_id'  => get_current_user_id(),
+							)
+						);
+					}
 				}
 			}
 			// Remove the study directory itself now that its contents are gone.

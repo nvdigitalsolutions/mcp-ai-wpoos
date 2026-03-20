@@ -30,7 +30,7 @@
 		Object.defineProperty( Array.prototype, 'at', {
 			value: function ( index ) {
 				var len = this.length;
-				var k = Math.trunc( index ) || 0;
+				var k = Math.trunc( +index ) || 0;
 				if ( k < 0 ) { k += len; }
 				return ( k < 0 || k >= len ) ? undefined : this[ k ];
 			},
