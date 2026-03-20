@@ -117,7 +117,11 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
-		// Inject an ES module importmap.
+		// Inject an ES module importmap as early as possible in <head> so it is
+		// parsed before any module scripts on the page.  Priority 1 ensures it
+		// appears before WordPress-printed scripts (priority 10) and before other
+		// admin_head callbacks.
+		//
 		// The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
 		// and `?external=…,dicom-parser` so that esm.sh emits those packages as
 		// bare specifiers rather than bundling them.  The importmap resolves those
@@ -126,7 +130,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		// Without this, the wadouri image-loader is registered on a private
 		// internal copy of the core and the canvas stays solid black.
 		add_action(
-			'admin_head',
+			'admin_print_scripts',
 			function () {
 				$importmap = array(
 					'imports' => array(
@@ -136,7 +140,8 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				);
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo '<script type="importmap">' . wp_json_encode( $importmap ) . '</script>' . "\n";
-			}
+			},
+			1
 		);
 
 		wp_enqueue_script(
@@ -145,6 +150,27 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			array(),
 			WP_MCP_AI_PRO_VERSION,
 			true
+		);
+
+		// Load the viewer script as an ES module so the importmap is guaranteed
+		// to be respected for dynamic import() calls.  Modules are deferred by
+		// default, so the DOM is fully available when the script executes.
+		// Using `script_loader_tag` filter rather than wp_script_add_data( 'type' )
+		// for compatibility with WordPress < 6.3 where that data key is not supported.
+		add_filter(
+			'script_loader_tag',
+			function ( $tag, $handle ) {
+				if ( 'wp-mcp-ai-imaging-viewer' === $handle ) {
+					// WordPress 6+ does not emit type="text/javascript"; earlier
+					// versions may.  Remove any existing type attribute first so
+					// the final tag has exactly one: type="module".
+					$tag = preg_replace( '/\s+type=["\']text\/javascript["\']/', '', $tag );
+					$tag = str_replace( '<script ', '<script type="module" ', $tag );
+				}
+				return $tag;
+			},
+			10,
+			2
 		);
 
 		// Resolve the active tab (validated against whitelist) so the JS can
@@ -167,18 +193,21 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'interpretUrl' => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
 				'activeTab'    => $active_tab_for_js,
 				'i18n'         => array(
-					'loadingStudy'         => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
-					'noStudies'            => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
-					'uploadSuccess'        => __( 'Study uploaded successfully.', 'mcp-ai-wpoos-pro' ),
-					'uploadPartialSuccess' => __( 'Study uploaded, but %1$d of %2$d file(s) could not be processed.', 'mcp-ai-wpoos-pro' ),
-					'uploadError'          => __( 'Upload failed. Please ensure you are uploading valid DICOM (.dcm) files.', 'mcp-ai-wpoos-pro' ),
-					'viewerError'          => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
-					'noInstances'          => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
-					'confirmDelete'        => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),
-					'interpretRun'         => __( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ),
-					'interpreting'         => __( 'Analysing…', 'mcp-ai-wpoos-pro' ),
-					'interpretError'       => __( 'AI interpretation failed.', 'mcp-ai-wpoos-pro' ),
-					'noStudySelected'      => __( 'Enter a Study UID to analyse.', 'mcp-ai-wpoos-pro' ),
+					'loadingStudy'           => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
+					'noStudies'              => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
+					'uploadSuccess'          => __( 'Study uploaded successfully.', 'mcp-ai-wpoos-pro' ),
+					'uploadPartialSuccess'   => __( 'Study uploaded, but %1$d of %2$d file(s) could not be processed.', 'mcp-ai-wpoos-pro' ),
+					'uploadError'            => __( 'Upload failed. Please ensure you are uploading valid DICOM (.dcm) files.', 'mcp-ai-wpoos-pro' ),
+					'noFilesInFolder'        => __( 'No .dcm files found in the selected folder.', 'mcp-ai-wpoos-pro' ),
+					'viewerError'            => __( 'Unable to load imaging study.', 'mcp-ai-wpoos-pro' ),
+					'noInstances'            => __( 'No instances found in this series.', 'mcp-ai-wpoos-pro' ),
+					'confirmDelete'          => __( 'Are you sure you want to delete this study? This action cannot be undone.', 'mcp-ai-wpoos-pro' ),
+					'interpretRun'           => __( 'Run AI Analysis', 'mcp-ai-wpoos-pro' ),
+					'interpreting'           => __( 'Analysing…', 'mcp-ai-wpoos-pro' ),
+					'interpretError'         => __( 'AI interpretation failed.', 'mcp-ai-wpoos-pro' ),
+					'noStudySelected'        => __( 'Select or enter a Study UID to analyse.', 'mcp-ai-wpoos-pro' ),
+					'selectStudyPlaceholder' => __( '— select a study —', 'mcp-ai-wpoos-pro' ),
+					'loadingStudies'         => __( 'Loading studies…', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -299,7 +328,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			<div id="nv-imaging-upload-panel" class="nv-imaging-panel" style="display:none;">
 				<h2><?php esc_html_e( 'Upload DICOM Study', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Select one or more .dcm files from the same study/series. Files are stored in the uploads directory and protected from direct HTTP access via .htaccess rules.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Upload DICOM files for a study. Choose individual .dcm files or select an entire DICOM folder.', 'mcp-ai-wpoos-pro' ); ?>
 					<br>
 					<?php
 					printf(
@@ -309,6 +338,16 @@ class WP_MCP_AI_Imaging_Admin_Page {
 					);
 					?>
 				</p>
+				<div class="nv-imaging-upload-mode" style="margin-bottom:10px;">
+					<label style="margin-right:16px;">
+						<input type="radio" name="nv_imaging_upload_mode" id="nv-imaging-mode-files" value="files" checked />
+						<?php esc_html_e( 'Select individual .dcm files', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+					<label>
+						<input type="radio" name="nv_imaging_upload_mode" id="nv-imaging-mode-folder" value="folder" />
+						<?php esc_html_e( 'Select entire DICOM folder (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+					</label>
+				</div>
 				<form id="nv-imaging-upload-form" enctype="multipart/form-data">
 					<input type="file" id="nv-imaging-file-input" name="dicom_files[]" accept=".dcm" multiple />
 					<div id="nv-imaging-upload-status" aria-live="polite"></div>
@@ -391,9 +430,18 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						<div class="nv-imaging-tool-card">
 							<h3><?php esc_html_e( 'AI Study Interpretation', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<p class="description">
-								<?php esc_html_e( 'Uses the configured AI provider (OpenAI / Gemini) to analyse a study\'s metadata and return clinical observations. Open a study first, or paste its Study UID below.', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( 'Uses the configured AI provider (OpenAI / Gemini) to analyse a study\'s metadata and return clinical observations. Select a study from the dropdown, open one in the viewer, or paste its Study UID below.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 							<table class="form-table nv-imaging-tool-form-table">
+								<tr>
+									<th scope="row"><label for="nv-imaging-interpret-study"><?php esc_html_e( 'Select Study', 'mcp-ai-wpoos-pro' ); ?></label></th>
+									<td>
+										<select id="nv-imaging-interpret-study" class="regular-text">
+											<option value=""><?php esc_html_e( '— select a study —', 'mcp-ai-wpoos-pro' ); ?></option>
+										</select>
+										<p class="description"><?php esc_html_e( 'Choose from uploaded studies, or enter a UID manually below.', 'mcp-ai-wpoos-pro' ); ?></p>
+									</td>
+								</tr>
 								<tr>
 									<th scope="row"><label for="nv-imaging-interpret-uid"><?php esc_html_e( 'Study UID', 'mcp-ai-wpoos-pro' ); ?></label></th>
 									<td><input type="text" id="nv-imaging-interpret-uid" class="large-text" placeholder="<?php esc_attr_e( '1.2.840…', 'mcp-ai-wpoos-pro' ); ?>" /></td>
@@ -463,7 +511,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 						<div class="nv-imaging-docs-card">
 							<h3><?php esc_html_e( 'Quick Start', 'mcp-ai-wpoos-pro' ); ?></h3>
 							<ol>
-								<li><?php esc_html_e( 'Click "Upload Study" and select one or more .dcm DICOM files.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Upload Study" and select individual .dcm files or choose a folder containing all DICOM files for a study.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'The study appears in the Studies table. Click "View" to open the Cornerstone3D viewer.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Select a series in the left sidebar. Use the W/L toolbar to adjust brightness/contrast.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Left-click drag = Window/Level. Right-click drag = Pan. Mouse wheel = scroll slices.', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -540,7 +588,7 @@ class WP_MCP_AI_Imaging_Admin_Page {
 								<?php
 								printf(
 									/* translators: %s: REST base URL */
-									esc_html__( 'All endpoints are under %s and require the WP REST nonce header %s.', 'mcp-ai-wpoos-pro' ),
+									esc_html__( 'All endpoints are under %1$s and require the WP REST nonce header %2$s.', 'mcp-ai-wpoos-pro' ),
 									'<code>' . esc_html( rest_url( 'mcp-ai/v1/imaging' ) ) . '</code>',
 									'<code>X-WP-Nonce: &lt;nonce&gt;</code>'
 								);
@@ -657,15 +705,15 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		$all_audit_entries = class_exists( 'WP_MCP_AI_Imaging_Audit_Log' )
 			? get_option( WP_MCP_AI_Imaging_Audit_Log::OPTION_KEY, array() )
 			: array();
-		$audit_total   = count( $all_audit_entries );
-		$audit_entries = array_slice( array_reverse( array_values( $all_audit_entries ) ), 0, 10 );
+		$audit_total       = count( $all_audit_entries );
+		$audit_entries     = array_slice( array_reverse( array_values( $all_audit_entries ) ), 0, 10 );
 
 		$classes_to_check = array(
-			'WP_MCP_AI_Imaging_Admin_Page'       => __( 'Admin Page', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_REST_Controller'  => __( 'REST Controller', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Study_CPT'        => __( 'Study CPT', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Audit_Log'        => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
-			'WP_MCP_AI_Imaging_Capabilities'     => __( 'Capabilities Helper', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Admin_Page'      => __( 'Admin Page', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_REST_Controller' => __( 'REST Controller', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Study_CPT'       => __( 'Study CPT', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Audit_Log'       => __( 'Audit Log', 'mcp-ai-wpoos-pro' ),
+			'WP_MCP_AI_Imaging_Capabilities'    => __( 'Capabilities Helper', 'mcp-ai-wpoos-pro' ),
 		);
 
 		$caps_to_check = array(
