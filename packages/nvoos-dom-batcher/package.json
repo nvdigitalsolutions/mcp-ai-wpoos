@@ -39,6 +39,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node adapt-for-npm.js",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",
