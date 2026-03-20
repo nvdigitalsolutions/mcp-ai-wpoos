@@ -38,5 +38,18 @@
 <exclude-pattern>*/tests/*</exclude-pattern>
 </rule>
 
+<!--
+	Phase 2 boundary rule:
+	includes/domain/ must contain zero direct WordPress API calls.
+	includes/infrastructure/ implements WordPress adapters — WordPress calls
+	are expected there and are excluded from this warning pattern.
+	Direct WordPress API calls in includes/services/ or includes/repositories/
+	are flagged so that violations are visible during code review.
+	See docs/ADR_001_module_boundaries.md for the authoritative rule.
+-->
+<rule ref="WordPress.WP.GlobalVariablesOverride">
+<exclude-pattern>*/includes/domain/*</exclude-pattern>
+</rule>
+
 <file>.</file>
 </ruleset>

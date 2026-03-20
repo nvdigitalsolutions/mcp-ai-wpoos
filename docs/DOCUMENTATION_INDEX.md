@@ -1214,6 +1214,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[ADR_001_module_boundaries.md](ADR_001_module_boundaries.md)** | **⭐ NEW (Mar 2026):** Architecture Decision Record — four-layer module boundaries, interface catalogue, enforcement rules | Developers |
+| **[BUILD_MATRIX.md](BUILD_MATRIX.md)** | **⭐ NEW (Mar 2026):** Complete build script reference — every `npm run build:*` script, its config file, output, and when to run it | Developers |
 | [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
