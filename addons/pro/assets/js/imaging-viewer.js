@@ -827,15 +827,31 @@
 			viewport.appendChild( overlay );
 		}
 
-		// Dynamically import Cornerstone3D packages from pinned CDN versions.
+		// Prefer the locally-bundled Cornerstone3D packages (window.nvCs) set
+		// by imaging-viewer-bundle.js.  This avoids CDN dependency, importmaps,
+		// and type="module" requirements entirely — exactly the same approach used
+		// by the TMA Template Builder for its React bundle.
 		//
-		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
-		// packages into the generated module, leaving them as bare ES specifiers.
-		// Combined with the importmap (injected by PHP in admin_head), this ensures
-		// all three packages share a SINGLE @cornerstonejs/core module instance.
-		// Without this, each package may load its own private copy of the core,
-		// the wadouri image-loader never gets registered in our RenderingEngine,
-		// and the canvas stays solid black with no error.
+		// The CDN dynamic-import path below is kept as a fallback for deployments
+		// that do not have the compiled bundle (e.g. development without a build).
+		if ( window.nvCs ) {
+			bootCornerstone(
+				window.nvCs.csCore,
+				window.nvCs.csTools,
+				window.nvCs.csDicomImageLoader,
+				imageIds
+			).catch( function ( err ) {
+				var msg = err && err.message ? err.message : String( err );
+				viewport.innerHTML =
+					'<p class="nv-imaging-error" style="background:#fff;border-radius:3px;margin:12px;">' +
+					escHtml( 'Viewer error: ' + msg ) + '</p>';
+			} );
+			return;
+		}
+
+		// Fallback: load Cornerstone3D from CDN using dynamic ES module imports.
+		// Requires the importmap injected by the PHP admin page to be in place,
+		// and the script tag must be type="module".
 		//
 		// NOTE: Versions are pinned here and in class-wp-mcp-ai-imaging-admin-page.php.
 		// Both must be updated together when upgrading Cornerstone3D.

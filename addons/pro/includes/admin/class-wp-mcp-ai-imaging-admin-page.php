@@ -117,61 +117,71 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
-		// Inject an ES module importmap as early as possible in <head> so it is
-		// parsed before any module scripts on the page.  Priority 1 ensures it
-		// appears before WordPress-printed scripts (priority 10) and before other
-		// admin_head callbacks.
-		//
-		// The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
-		// and `?external=…,dicom-parser` so that esm.sh emits those packages as
-		// bare specifiers rather than bundling them.  The importmap resolves those
-		// bare specifiers back to the same pinned URLs our direct import() calls
-		// use, guaranteeing all three packages share a SINGLE module instance.
-		// Without this, the wadouri image-loader is registered on a private
-		// internal copy of the core and the canvas stays solid black.
-		add_action(
-			'admin_print_scripts',
-			function () {
-				$importmap = array(
-					'imports' => array(
-						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
-						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
-					),
-				);
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo '<script type="importmap">' . wp_json_encode( $importmap ) . '</script>' . "\n";
-			},
-			1
-		);
+		// -----------------------------------------------------------------------
+		// Cornerstone3D local bundle — same approach as the TMA Template Builder.
+		// The Webpack bundle pre-loads @cornerstonejs/core, /tools, and
+		// /dicom-image-loader into window.nvCs so the viewer IIFE uses them
+		// directly, with no CDN requests, importmaps, or type="module" needed.
+		// The CDN dynamic-import path in imaging-viewer.js is kept as a fallback
+		// for deployments that have not run `npm run build:imaging-viewer`.
+		// -----------------------------------------------------------------------
+		$bundle_path = WP_MCP_AI_PRO_PATH . 'build/imaging-viewer/imaging-viewer-bundle.js';
+		if ( file_exists( $bundle_path ) ) {
+			wp_enqueue_script(
+				'wp-mcp-ai-imaging-cs3d-bundle',
+				esc_url( WP_MCP_AI_PRO_URL . 'build/imaging-viewer/imaging-viewer-bundle.js' ),
+				array(),
+				WP_MCP_AI_PRO_VERSION,
+				true
+			);
+		}
 
 		wp_enqueue_script(
 			'wp-mcp-ai-imaging-viewer',
 			esc_url( WP_MCP_AI_PRO_URL . 'assets/js/imaging-viewer.js' ),
-			array(),
+			file_exists( $bundle_path ) ? array( 'wp-mcp-ai-imaging-cs3d-bundle' ) : array(),
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
 
-		// Load the viewer script as an ES module so the importmap is guaranteed
-		// to be respected for dynamic import() calls.  Modules are deferred by
-		// default, so the DOM is fully available when the script executes.
-		// Using `script_loader_tag` filter rather than wp_script_add_data( 'type' )
-		// for compatibility with WordPress < 6.3 where that data key is not supported.
-		add_filter(
-			'script_loader_tag',
-			function ( $tag, $handle ) {
-				if ( 'wp-mcp-ai-imaging-viewer' === $handle ) {
-					// WordPress 6+ does not emit type="text/javascript"; earlier
-					// versions may.  Remove any existing type attribute first so
-					// the final tag has exactly one: type="module".
-					$tag = preg_replace( '/\s+type=["\']text\/javascript["\']/', '', $tag );
-					$tag = str_replace( '<script ', '<script type="module" ', $tag );
-				}
-				return $tag;
-			},
-			10,
-			2
-		);
+		// Only inject importmap + type="module" when the local bundle is absent
+		// (CDN fallback mode).  When the bundle is present these are not needed.
+		if ( ! file_exists( $bundle_path ) ) {
+			// Inject an ES module importmap as early as possible in <head> so it is
+			// parsed before any module scripts on the page.  Priority 1 ensures it
+			// appears before WordPress-printed scripts (priority 10) and before other
+			// admin_head callbacks.
+			add_action(
+				'admin_print_scripts',
+				function () {
+					$importmap = array(
+						'imports' => array(
+							'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
+							'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
+						),
+					);
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo '<script type="importmap">' . wp_json_encode( $importmap ) . '</script>' . "\n";
+				},
+				1
+			);
+
+			// Load the viewer script as an ES module so the importmap is guaranteed
+			// to be respected for dynamic import() calls.  Modules are deferred by
+			// default, so the DOM is fully available when the script executes.
+			add_filter(
+				'script_loader_tag',
+				function ( $tag, $handle ) {
+					if ( 'wp-mcp-ai-imaging-viewer' === $handle ) {
+						$tag = preg_replace( '/\s+type=["\']text\/javascript["\']/', '', $tag );
+						$tag = str_replace( '<script ', '<script type="module" ', $tag );
+					}
+					return $tag;
+				},
+				10,
+				2
+			);
+		}
 
 		// Resolve the active tab (validated against whitelist) so the JS can
 		// initialise the correct panel without relying on URL parsing in the browser.
