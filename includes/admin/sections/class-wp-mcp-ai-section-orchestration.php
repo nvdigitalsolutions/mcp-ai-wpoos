@@ -3320,7 +3320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
