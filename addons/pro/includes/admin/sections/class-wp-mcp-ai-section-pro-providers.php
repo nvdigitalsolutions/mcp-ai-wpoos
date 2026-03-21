@@ -87,6 +87,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 			);
 
+			// Build server-side GGUF model options for the select field.
+			$server_model_options = array( '' => __( '— Select a downloaded model —', 'mcp-ai-wpoos' ) );
+			if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				$client     = new WP_MCP_AI_Embedded_Client();
+				$downloaded = $client->get_downloaded_models();
+				foreach ( $downloaded as $slug => $model ) {
+					$size_label                    = round( $model['file_size'] / 1048576 ) . ' MB';
+					$server_model_options[ $slug ] = $model['name'] . ' (' . $size_label . ')';
+				}
+			}
+
 			return array(
 				// Embedded LLM Settings (Pro version only).
 				'enable_embedded'           => array(
@@ -109,6 +120,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 					'description' => __( 'Models available for client-side inference. Models are automatically downloaded to the user\'s browser cache when first used. No server-side storage required.', 'mcp-ai-wpoos' ),
 					'callback'    => array( $this, 'render_embedded_model_management' ),
 				),
+				'embedded_server_model'     => array(
+					'type'        => 'select',
+					'label'       => __( 'Active Server Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select which downloaded GGUF model to use for server-side inference. Download models using the management panel below.', 'mcp-ai-wpoos' ),
+					'options'     => $server_model_options,
+					'default'     => '',
+				),
+				'server_model_management'   => array(
+					'type'        => 'custom',
+					'label'       => __( 'Server Model Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'Download GGUF models to the server for server-side inference. Models are stored in wp-content/uploads/mcp-ai-wpoos/models/.', 'mcp-ai-wpoos' ),
+					'callback'    => array( $this, 'render_server_model_management' ),
+				),
 			);
 		}
 
@@ -123,7 +147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 					'id'     => 'embedded',
 					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-smartphone',
-					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
+					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management', 'embedded_server_model', 'server_model_management' ),
 				),
 			);
 		}
@@ -183,7 +207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 		}
 
 		/**
-		 * Render embedded model management custom field.
+		 * Render embedded model management custom field (client-side notice).
 		 *
 		 * @param array $field_data Field configuration data.
 		 * @return void
@@ -195,6 +219,102 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 <strong><?php esc_html_e( 'Client-Side Models (Pro Feature)', 'mcp-ai-wpoos' ); ?></strong><br>
 			<?php esc_html_e( 'Models run in the user browser using WebGPU/WebAssembly. See Pro Settings page for model list and NPM dependencies.', 'mcp-ai-wpoos' ); ?>
 </p>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render the server-side GGUF model management panel.
+		 *
+		 * Outputs a table of pre-configured GGUF models with Download / Delete
+		 * action buttons.  The JavaScript in assets/js/admin-settings.js
+		 * (initEmbeddedModelManagement) handles the AJAX calls via the
+		 * .wp-mcp-ai-embedded-model-management container and its data-nonce attribute.
+		 *
+		 * @param array $field_data Field configuration data.
+		 * @return void
+		 */
+		public function render_server_model_management( $field_data ) {
+			if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				echo '<p>' . esc_html__( 'Embedded client not available.', 'mcp-ai-wpoos' ) . '</p>';
+				return;
+			}
+
+			$client          = new WP_MCP_AI_Embedded_Client();
+			$available_models = $client->get_available_models();
+			$downloaded_models = $client->get_downloaded_models();
+			$nonce           = wp_create_nonce( 'wp_mcp_ai_embedded_models' );
+			$models_dir      = $client->get_models_directory();
+			?>
+<div class="wp-mcp-ai-embedded-model-management" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+
+	<p class="description">
+		<?php
+		printf(
+			/* translators: %s: directory path */
+			esc_html__( 'Models are stored in: %s', 'mcp-ai-wpoos' ),
+			'<code>' . esc_html( $models_dir ) . '</code>'
+		);
+		?>
+	</p>
+
+	<table class="widefat striped" style="margin-top:12px;">
+		<thead>
+			<tr>
+				<th><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+				<th><?php esc_html_e( 'Size', 'mcp-ai-wpoos' ); ?></th>
+				<th><?php esc_html_e( 'RAM', 'mcp-ai-wpoos' ); ?></th>
+				<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+				<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach ( $available_models as $slug => $model ) : ?>
+				<?php
+				$is_downloaded = isset( $downloaded_models[ $slug ] );
+				$file_size_mb  = $is_downloaded ? round( $downloaded_models[ $slug ]['file_size'] / 1048576 ) . ' MB' : '—';
+				?>
+			<tr class="wp-mcp-ai-model-row" data-model-name="<?php echo esc_attr( $model['name'] ); ?>">
+				<td>
+					<strong><?php echo esc_html( $model['name'] ); ?></strong><br>
+					<span class="description"><?php echo esc_html( $model['description'] ); ?></span>
+				</td>
+				<td>~<?php echo esc_html( $model['size_mb'] ); ?> MB</td>
+				<td><?php echo esc_html( $model['ram_gb'] ); ?> GB+</td>
+				<td class="wp-mcp-ai-model-status">
+					<?php if ( $is_downloaded ) : ?>
+					<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span>
+					<?php esc_html_e( 'Downloaded', 'mcp-ai-wpoos' ); ?>
+					(<?php echo esc_html( $file_size_mb ); ?>)
+					<?php else : ?>
+					<span class="dashicons dashicons-download"></span>
+					<?php esc_html_e( 'Not Downloaded', 'mcp-ai-wpoos' ); ?>
+					<?php endif; ?>
+				</td>
+				<td>
+					<?php if ( $is_downloaded ) : ?>
+					<button type="button"
+						class="button button-small wp-mcp-ai-delete-model"
+						data-model-slug="<?php echo esc_attr( $slug ); ?>">
+						<?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<?php else : ?>
+					<button type="button"
+						class="button button-primary button-small wp-mcp-ai-download-model"
+						data-model-slug="<?php echo esc_attr( $slug ); ?>">
+						<?php esc_html_e( 'Download', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<?php endforeach; ?>
+		</tbody>
+	</table>
+
+	<p class="description" style="margin-top:8px;">
+		<?php esc_html_e( 'Downloads may take several minutes depending on model size and server connection speed. The page will reload after a successful download.', 'mcp-ai-wpoos' ); ?>
+	</p>
+
 </div>
 			<?php
 		}
