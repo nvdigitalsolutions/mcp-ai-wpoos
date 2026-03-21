@@ -75,6 +75,7 @@
 ### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
 - [🧑‍💻 Development Tooling](#-development-tooling)
+- [📦 NPM Packages](#-npm-packages)
 - [🧪 Testing & QA](#-testing--qa)
 - [🧩 Hooks & Filters](#-hooks--filters)
 - [🧰 WP-CLI Commands](#-wp-cli-commands)
@@ -267,6 +268,17 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ---
 
 ## 🆕 Latest Updates (February–March 2026)
+
+### NPM Packages – Zero-Config Publish for All 9 Packages (March 2026) ⭐ **NEW**
+
+**All nine standalone NPM packages extracted from the oOS chat UI can now be published to the NPM registry with zero per-package configuration** (PR #4364).
+
+- ✅ **9 packages** under the `@nvdigitalsolutions` scope — `nvoos-storage`, `nvoos-markdown`, `nvoos-events`, `nvoos-http-client`, `nvoos-clipboard`, `nvoos-offline-sync`, `nvoos-slash-commands`, `nvoos-audio`, `nvoos-dom-batcher`
+- ✅ **Two GitHub Actions workflows** for stable (`v*.*.*`) and alpha (`v*.*.*-alpha.*`) releases
+- ✅ **Single source of truth** — the `PACKAGES` env var in each workflow controls all packages; adding a new one requires editing one line
+- ✅ **CI steps per package**: version bump → build (`node adapt-for-npm.js`) → syntax check → publish
+- ✅ **Setup**: only an `NPM_TOKEN` repository secret is required; no per-package config needed
+- [NPM Packages →](packages/README.md) | [Quick Start →](packages/QUICK_START.md)
 
 ### Telegram Mini App – Member Loading Fix & Role-Based Access (March 2026) ⭐ **NEW**
 
@@ -2845,6 +2857,58 @@ For details on how NPM dependencies are managed and bundled for both the base pl
 - Base plugin dependencies: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`, `chart.js`, `@neplex/vectorizer`, `@langchain/*`, `@mlc-ai/web-llm`
 - Build commands: `npm run build:js`, `npm run install:chartjs`, `npm run install:vectorizer`, `npm run build:js:pro`
 - Pro addon has separate `addons/pro/package.json` for Pro-specific dependencies
+
+---
+
+## 📦 NPM Packages
+
+Nine standalone browser-utility packages have been extracted from the oOS chat UI and published to the NPM registry under the `@nvdigitalsolutions` scope. Each package is independently usable in any JavaScript/TypeScript project (no WordPress required).
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-storage`](packages/nvoos-storage/) | Async JSON via Web Worker — prevents main-thread blocking for large data | Zero |
+| [`nvoos-markdown`](packages/nvoos-markdown/) | XSS-safe markdown renderer with configurable allowed-tags profile | `marked`, `dompurify` |
+| [`nvoos-events`](packages/nvoos-events/) | SSE client with POST support + mitt-compatible job event bus | `@microsoft/fetch-event-source` |
+| [`nvoos-http-client`](packages/nvoos-http-client/) | HTTP client with automatic retry, exponential backoff, and request hooks | `ky` |
+| [`nvoos-clipboard`](packages/nvoos-clipboard/) | `copyTextToClipboard()` with Clipboard API / `execCommand` fallback | Zero |
+| [`nvoos-offline-sync`](packages/nvoos-offline-sync/) | IndexedDB offline-first sync with automatic server sync on reconnect | Zero |
+| [`nvoos-slash-commands`](packages/nvoos-slash-commands/) | Slash command system with fuzzy-search autocomplete and execution engine | Zero |
+| [`nvoos-audio`](packages/nvoos-audio/) | Browser audio I/O: TTS, STT, translation, voice chat with VAD | Zero |
+| [`nvoos-dom-batcher`](packages/nvoos-dom-batcher/) | `requestAnimationFrame` DOM batcher, scroll batcher, and UI utilities for streaming UIs | Zero |
+
+### Installation
+
+```bash
+# Tier 1 — Core utilities
+npm install @nvdigitalsolutions/nvoos-storage
+npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
+npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
+
+# Tier 2 — Extended browser utilities
+npm install @nvdigitalsolutions/nvoos-http-client ky
+npm install @nvdigitalsolutions/nvoos-clipboard
+npm install @nvdigitalsolutions/nvoos-offline-sync
+
+# Tier 3 — Chat UI utilities
+npm install @nvdigitalsolutions/nvoos-slash-commands
+npm install @nvdigitalsolutions/nvoos-audio
+npm install @nvdigitalsolutions/nvoos-dom-batcher
+```
+
+### Publishing
+
+Two GitHub Actions workflows handle NPM publishing automatically:
+
+| Workflow | Trigger | Tag pattern |
+|----------|---------|-------------|
+| `.github/workflows/npm-publish.yml` | Push tag or `workflow_dispatch` | `v*.*.*` |
+| `.github/workflows/npm-publish-alpha.yml` | Push tag or `workflow_dispatch` | `v*.*.*-alpha.*` |
+
+**Setup** — only one secret is required: add an `NPM_TOKEN` to the repository at *Settings → Secrets and variables → Actions*.
+
+**Adding a new package**: update the `PACKAGES` environment variable in both workflow files and place the package directory under `packages/`.
+
+See [`packages/README.md`](packages/README.md) for a full package listing and API overview, and [`packages/QUICK_START.md`](packages/QUICK_START.md) for usage examples.
 
 ---
 
