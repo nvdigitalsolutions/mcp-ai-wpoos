@@ -39,6 +39,26 @@
 - **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
 - **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
 
+### Added
+- **NPM Packages – Zero-Config Publish for All 9 Packages (March 2026)** (PR #4364): All nine standalone NPM packages extracted from the oOS chat UI are now automatically published to the NPM registry via GitHub Actions.
+  - **9 packages** under the `@nvdigitalsolutions` scope, all at `v0.1.0-alpha.1`:
+    - `nvoos-storage` — Async JSON via Web Worker (zero dependencies)
+    - `nvoos-markdown` — XSS-safe markdown renderer (peer deps: `marked`, `dompurify`)
+    - `nvoos-events` — SSE client + job event bus (peer dep: `@microsoft/fetch-event-source`)
+    - `nvoos-http-client` — HTTP client with automatic retry/backoff (peer dep: `ky`)
+    - `nvoos-clipboard` — Clipboard copy with Clipboard API / `execCommand` fallback (zero dependencies)
+    - `nvoos-offline-sync` — IndexedDB offline-first sync with auto server sync on reconnect (zero dependencies)
+    - `nvoos-slash-commands` — Slash command system with fuzzy-search autocomplete (zero dependencies)
+    - `nvoos-audio` — Browser audio I/O: TTS, STT, translation, voice chat with VAD (zero dependencies)
+    - `nvoos-dom-batcher` — RAF DOM batcher, scroll batcher, and UI utilities for high-frequency streaming UIs (zero dependencies)
+  - **Two GitHub Actions workflows**:
+    - `.github/workflows/npm-publish.yml` — Publishes stable releases on `v*.*.*` tags or `workflow_dispatch`
+    - `.github/workflows/npm-publish-alpha.yml` — Publishes alpha pre-releases on `v*.*.*-alpha.*` tags
+  - **Single source of truth**: Both workflows share a single `PACKAGES` environment variable; adding a new package requires updating only that one line.
+  - **CI steps per package**: version bump → `node adapt-for-npm.js` build → `node --check` syntax validation → publish (or dry-run)
+  - **Setup**: requires only an `NPM_TOKEN` secret in repository settings; no per-package configuration needed.
+  - See [`packages/README.md`](packages/README.md) and [`packages/QUICK_START.md`](packages/QUICK_START.md) for installation and usage.
+
 
 ## [1.1.4] - 2026-03-15
 
