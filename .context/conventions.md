@@ -5,6 +5,25 @@
 
 ---
 
+## PHP Compatibility Requirements
+
+NV oOS has **two PHP version targets** — always match the target to the code location:
+
+| Distribution | Minimum PHP | Why |
+|-------------|-------------|-----|
+| **Base plugin** (`includes/`, `mcp-ai-wpoos.php`) | **PHP 7.4+** | WordPress.org compatibility; widest host support |
+| **Pro addon** (`addons/pro/`) | **PHP 8.1+** | Uses enums, fibers, `readonly` properties, named args, intersection types |
+
+### Practical Rules
+
+- **Base plugin code:** must run on PHP 7.4. No enums, no named arguments, no `readonly`, no union types `int|string` (use PHPDoc instead).
+- **Pro addon code:** may use PHP 8.1+ features freely.
+- The `composer run lint:compat` check covers PHP 7.4–8.3 for the base plugin.
+- `CONTRIBUTING.md` asks contributors to have **PHP 8.1+** locally — this is so they can work on both tiers without switching runtimes.
+- When writing a PRD/Architecture Spec, the "Compatibility" field should read **PHP 7.4+** for base features or **PHP 8.1+** for Pro features.
+
+---
+
 ## Class & Function Naming
 
 | Type | Convention | Example |
