@@ -104,7 +104,18 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Event scheduling
 - Timeline management
 - Team collaboration
-- JetEngine CCT synchronization
+- JetEngine CCT synchronization (when JetEngine is active, four CCTs are auto-provisioned — see below)
+
+**JetEngine CCTs** (registered only when `enable_project_management` is on):
+
+| CCT slug | Table | Purpose |
+|---|---|---|
+| `mcp_task_plans` | `wp_jet_cct_mcp_task_plans` | Markdown task plans for autonomous orchestration |
+| `mcp_task_templates` | `wp_jet_cct_mcp_task_templates` | Reusable workflow templates |
+| `mcp_autonomous_sessions` | `wp_jet_cct_mcp_autonomous_sessions` | Active agent session state |
+| `mcp_execution_history` | `wp_jet_cct_mcp_execution_history` | Per-step tool-execution log |
+
+> **Note**: All four CCTs are visible in JetEngine's admin UI (`wp-admin/admin.php?page=jet-cct-<slug>`) only after enabling Project Management and running the site at least once with JetEngine active.
 
 **Tools Provided**:
 - `create_project` - Create new projects
