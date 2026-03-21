@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'post_type'          => array(
+				'post_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'The post type slug to describe (e.g. "post", "page", "mcp_ai_task").', 'mcp-ai-wpoos' ),
 				),
@@ -103,17 +103,17 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		$labels = array();
 		if ( isset( $pto->labels ) ) {
 			$label_map = array(
-				'name'                  => 'name',
-				'singular_name'         => 'singular_name',
-				'add_new_item'          => 'add_new_item',
-				'edit_item'             => 'edit_item',
-				'view_item'             => 'view_item',
-				'view_items'            => 'view_items',
-				'search_items'          => 'search_items',
-				'not_found'             => 'not_found',
-				'not_found_in_trash'    => 'not_found_in_trash',
-				'all_items'             => 'all_items',
-				'archives'              => 'archives',
+				'name'               => 'name',
+				'singular_name'      => 'singular_name',
+				'add_new_item'       => 'add_new_item',
+				'edit_item'          => 'edit_item',
+				'view_item'          => 'view_item',
+				'view_items'         => 'view_items',
+				'search_items'       => 'search_items',
+				'not_found'          => 'not_found',
+				'not_found_in_trash' => 'not_found_in_trash',
+				'all_items'          => 'all_items',
+				'archives'           => 'archives',
 			);
 			foreach ( $label_map as $prop => $key ) {
 				if ( isset( $pto->labels->$prop ) ) {
@@ -131,10 +131,19 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Build supported features.
-		$supports = array();
+		$supports     = array();
 		$all_features = array(
-			'title', 'editor', 'author', 'thumbnail', 'excerpt', 'trackbacks',
-			'custom-fields', 'comments', 'revisions', 'page-attributes', 'post-formats',
+			'title',
+			'editor',
+			'author',
+			'thumbnail',
+			'excerpt',
+			'trackbacks',
+			'custom-fields',
+			'comments',
+			'revisions',
+			'page-attributes',
+			'post-formats',
 		);
 		foreach ( $all_features as $feature ) {
 			if ( post_type_supports( $post_type, $feature ) ) {
@@ -143,7 +152,7 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Build registered taxonomies.
-		$taxonomies = array();
+		$taxonomies            = array();
 		$registered_taxonomies = get_object_taxonomies( $post_type, 'objects' );
 		foreach ( $registered_taxonomies as $tax_slug => $tax_obj ) {
 			$taxonomies[ $tax_slug ] = array(
@@ -154,8 +163,8 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Build available statuses for this post type.
-		$statuses         = array();
-		$all_statuses     = get_post_stati( array(), 'objects' );
+		$statuses          = array();
+		$all_statuses      = get_post_stati( array(), 'objects' );
 		$excluded_statuses = array( 'auto-draft', 'inherit' );
 		foreach ( $all_statuses as $status_slug => $status_obj ) {
 			if ( in_array( $status_slug, $excluded_statuses, true ) ) {
@@ -165,19 +174,19 @@ class WP_MCP_AI_Tool_Get_Post_Type_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$result = array(
-			'post_type'      => $post_type,
-			'label'          => $pto->label,
-			'description'    => isset( $pto->description ) ? $pto->description : '',
-			'public'         => (bool) $pto->public,
-			'hierarchical'   => (bool) $pto->hierarchical,
-			'has_archive'    => (bool) $pto->has_archive,
-			'show_in_rest'   => (bool) $pto->show_in_rest,
-			'rest_base'      => isset( $pto->rest_base ) ? $pto->rest_base : '',
-			'labels'         => $labels,
-			'capabilities'   => $caps,
-			'supports'       => $supports,
-			'taxonomies'     => $taxonomies,
-			'statuses'       => $statuses,
+			'post_type'    => $post_type,
+			'label'        => $pto->label,
+			'description'  => isset( $pto->description ) ? $pto->description : '',
+			'public'       => (bool) $pto->public,
+			'hierarchical' => (bool) $pto->hierarchical,
+			'has_archive'  => (bool) $pto->has_archive,
+			'show_in_rest' => (bool) $pto->show_in_rest,
+			'rest_base'    => isset( $pto->rest_base ) ? $pto->rest_base : '',
+			'labels'       => $labels,
+			'capabilities' => $caps,
+			'supports'     => $supports,
+			'taxonomies'   => $taxonomies,
+			'statuses'     => $statuses,
 		);
 
 		// Allow addons (e.g. pro toolkit) to inject meta field definitions.
