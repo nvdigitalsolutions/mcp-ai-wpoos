@@ -14,16 +14,19 @@
 3. [What is BMAD (Breakthrough Method for Agile AI-Driven Development)?](#what-is-bmad)
 4. [Why These Methods Matter for NV oOS](#why-these-methods-matter-for-nv-oos)
 5. [Current State Assessment](#current-state-assessment)
-6. [Proposed Hybrid Workflow: GSD × BMAD for NV oOS](#proposed-hybrid-workflow)
+6. [Proposed Hybrid Workflow: GSD × BMAD for NV oOS (Phases 0–9)](#proposed-hybrid-workflow)
 7. [Agent Role Mapping](#agent-role-mapping)
 8. [Implementation Phases](#implementation-phases)
 9. [Spec-Driven Development Templates](#spec-driven-development-templates)
 10. [Context Engineering Strategy](#context-engineering-strategy)
 11. [Tool System Integration](#tool-system-integration)
-12. [Quality Gates and Checklists](#quality-gates-and-checklists)
-13. [Expected Benefits](#expected-benefits)
-14. [Risks and Mitigations](#risks-and-mitigations)
-15. [References](#references)
+12. [NV oOS Pro Toolkit Integration](#nv-oos-pro-toolkit-integration)
+13. [Multi-Agent Team Compositions](#multi-agent-team-compositions)
+14. [Autonomous Development Loop](#autonomous-development-loop)
+15. [Quality Gates and Checklists](#quality-gates-and-checklists)
+16. [Expected Benefits](#expected-benefits)
+17. [Risks and Mitigations](#risks-and-mitigations)
+18. [References](#references)
 
 ---
 
@@ -205,7 +208,50 @@ NV oOS already has strong development practices that align well with GSD + BMAD 
 
 ## Proposed Hybrid Workflow
 
-The hybrid GSD × BMAD workflow for NV oOS combines BMAD's structured planning with GSD's execution efficiency:
+The hybrid GSD × BMAD workflow for NV oOS combines BMAD's structured planning with GSD's execution efficiency. The full workflow spans **10 phases (0–9)**, extending the original 6 with a pre-phase context initialization, a release management phase, a post-release monitoring phase, and a retrospective phase.
+
+```
+Phase 0        Phase 1        Phase 2        Phase 3        Phase 4
+Context Init → Discovery   → Planning    → Architecture → Story Breakdown
+(GSD)          (BMAD)         (BMAD)         (BMAD)         (BMAD)
+                                                               │
+                                                               ▼
+Phase 9        Phase 8        Phase 7        Phase 6        Phase 5
+Retrospective← Monitoring  ← Release     ← Validation  ← Implementation
+(GSD)          (Pro Toolkit)  (BMAD)         (BMAD)         (GSD)
+```
+
+### Phase 0: Context Initialization (GSD-Led)
+
+**Lead Agent:** Scrum Master
+**Activities:**
+- Load base context files (conventions, security requirements, testing patterns)
+- Load subsystem context relevant to the feature scope (tool-registry, REST API, Pro vs Base)
+- Initialize `.context/active/[feature].md` from the project brief summary
+- Establish token budget and context window targets (GSD 0–30% rule)
+
+**NV oOS Application:**
+```
+Context initialization order:
+1. .context/conventions.md       ← Always loaded (naming, code style)
+2. .context/security-checklist.md ← Always loaded (security requirements)
+3. .context/pro-vs-base.md       ← Feature gating decisions
+4. .context/[subsystem].md       ← Scoped to feature (tool-registry, rest-api, chat-ui)
+5. .context/active/[feature].md  ← Created fresh from Project Brief summary
+
+Context Budget Target: < 30% of context window (GSD principle)
+```
+
+**NV oOS Pro Tools Available:**
+- `batch_manage_memory` — Seed working memory with key architectural facts from previous sessions
+- `semantic_content_search` — Locate relevant existing implementations and patterns in the codebase
+
+**Context Initialization Checklist:**
+- [ ] Base context files exist (create from templates if missing)
+- [ ] Feature context file initialized from Project Brief
+- [ ] Context window budget estimated and under 30%
+- [ ] Working memory seeded with relevant architectural decisions
+- [ ] Subsystem context files identified and loaded
 
 ### Phase 1: Discovery & Analysis (BMAD-Led)
 
@@ -337,6 +383,107 @@ QA Checklist:
 - [ ] Base vs Pro version gating correct
 ```
 
+### Phase 7: Release & Deployment (BMAD-Led)
+
+**Lead Agent:** Scrum Master
+**Activities:**
+- Follow NV oOS release process (patch/minor/major) as defined in `docs/RELEASE_PROCESS.md`
+- Bump version numbers in all locations (plugin header, `composer.json`, `package.json`)
+- Update `CHANGELOG.md` with complete feature summary and affected files
+- Create Git tag and draft GitHub Release with descriptive notes
+- Verify WordPress.org compliance if base plugin is affected
+
+**NV oOS Application:**
+```
+Release checklist (from docs/RELEASE_PROCESS.md):
+├── Version bump: plugin header, composer.json, package.json
+├── composer run build:autoload (regenerate classmap for production)
+├── CHANGELOG.md entry: feature summary, affected files, API changes
+├── Git tag: git tag -a vX.Y.Z -m "Release vX.Y.Z"
+├── GitHub Release: title, release notes, attach build artifacts
+├── WordPress.org plugin check passes (if base plugin affected):
+│   ├── No output escaping violations
+│   ├── ABSPATH guards on all non-root files
+│   └── No hardcoded admin menu positions
+└── Base vs Pro gating tested in both WP_MCP_AI_BASE_VERSION modes
+```
+
+**NV oOS Tools Available:**
+- `check_wp_cli` — Verify WP-CLI is available and working for deployment operations
+- `check_site_security` — Final security scan before release is tagged
+
+**Release Gate (additional to existing):**
+- [ ] `composer run build:autoload` completed and classmap committed
+- [ ] All version strings updated consistently across all files
+- [ ] CHANGELOG.md entry written with complete affected-file list
+- [ ] Git tag created matching plugin header version
+- [ ] GitHub Release drafted and published
+- [ ] WordPress.org plugin check passes (for base plugin changes)
+
+### Phase 8: Post-Release Monitoring (Pro Toolkit-Assisted)
+
+**Lead Agent:** QA Engineer
+**Activities:**
+- Monitor feature health using Pro workflow health and orchestration monitoring tools
+- Track error rates, API call patterns, and tool execution results for 48–72 hours post-deploy
+- Alert on regressions or unexpected behavior via workflow health checks
+- Confirm JetEngine CCT database migrations completed successfully (if applicable)
+
+**NV oOS Application:**
+```
+Post-release monitoring points:
+├── PHP error log: no new warnings or errors after deploy
+├── Tool execution success rate > 95% (first 48 hours)
+├── API token usage within budget projections
+├── SSE connections healthy for any new streaming features
+├── JetEngine CCT migration options set (wp_mcp_ai_*_migration_v*)
+└── User-facing chat features: test via frontend chat widget
+```
+
+**NV oOS Tools Available:**
+- `check_workflow_health` — Monitor active workflows and orchestration pipelines for anomalies
+- `get_session_status` — Track autonomous session completion rates and errors
+- `analyze_data_patterns` — Identify anomalies in tool usage data and API call distributions
+
+**Post-Release Monitoring Checklist:**
+- [ ] No new PHP errors in the first 48 hours post-deploy
+- [ ] Tool execution success rate > 95%
+- [ ] API token usage within budget; no unexpected spikes
+- [ ] No regression in existing tool test suite
+- [ ] User-reported issues triaged and tracked
+
+### Phase 9: Retrospective & Context Harvest (GSD-Led)
+
+**Lead Agent:** Scrum Master + All Agents
+**Activities:**
+- Capture lessons learned from the full development cycle (Phases 0–8)
+- Update `.context/` files with new architectural decisions and discovered gotchas
+- Update `.bmad/` agent definitions if workflow improvements were found
+- Archive or close the active feature context file
+- Feed learnings back into the next cycle's Phase 0 initialization
+
+**NV oOS Application:**
+```
+Post-cycle context updates:
+├── Archive: .context/active/[feature].md → .context/archive/[feature]-vX.Y.Z.md
+├── Update subsystem context files with new patterns discovered
+├── Add new gotchas or conventions to .context/conventions.md
+├── Update .bmad/agents/*.yaml with improved critical_rules (if needed)
+├── Document API/integration quirks found during implementation
+└── Note any performance optimizations identified during monitoring
+```
+
+**NV oOS Tools Available:**
+- `batch_manage_memory` — Persist key learnings to long-term agent memory for future sessions
+- `manage_autonomous_session` (action: `complete`) — Close and archive completed development sessions
+
+**Context Harvest Checklist:**
+- [ ] All architectural decisions documented in updated context files
+- [ ] Discovered gotchas added to `.context/conventions.md`
+- [ ] `.context/active/[feature].md` archived (not deleted)
+- [ ] Agent definitions updated if workflow improvements identified
+- [ ] Retrospective summary added to feature's Architecture Specification doc
+
 ---
 
 ## Agent Role Mapping
@@ -430,6 +577,35 @@ agent:
 - [ ] Community feedback on template usability
 - [ ] Evaluate automated spec validation tools
 - [ ] Track metrics: shipping speed, code quality, test coverage
+
+### Phase 5: Multi-Agent Infrastructure (Weeks 9–12)
+
+**Goal:** Leverage NV oOS's built-in multi-agent capabilities for fully automated GSD × BMAD execution.
+
+- [ ] Map the 6 default assistants (`includes/class-wp-mcp-ai-default-assistants.php`) to BMAD roles (Orchestrator → Scrum Master, Researcher → Analyst, Publisher → Developer, SEO Auditor → QA)
+- [ ] Create `.bmad/teams/feature-development.yaml` defining the Orchestrator pattern team composition
+- [ ] Add BMAD-specific instructions to each assistant's system prompt:
+  - Orchestrator: enforce phase gates, load `.context/active/[feature].md` at session start
+  - Researcher: produce Project Briefs using `deep_research` + `generate_research_report`
+  - Publisher (Developer): enforce `.context/security-checklist.md` compliance on every story
+  - SEO Auditor (QA): run `check_workflow_health` + acceptance criteria check after each story
+- [ ] Test one complete Phase 0–6 cycle using `create_agent_team` + `delegate_to_agent`
+- [ ] Document team composition in `.bmad/teams/README.md`
+
+### Phase 6: Automation & Metrics (Weeks 13–16+)
+
+**Goal:** Automate gate checks, reduce manual overhead, and establish measurable success criteria.
+
+- [ ] Create automated context initialization workflow (Phase 0 automation via `batch_manage_memory`)
+- [ ] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
+- [ ] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation)
+- [ ] Establish baseline metrics for the first 3 completed feature cycles:
+  - Feature cycle time (Phase 0 start → Phase 7 release)
+  - Context setup time per AI session (target: < 5 minutes)
+  - Story completion rate (target: > 90% without rework)
+  - Defect rate post-merge (target: 30–50% reduction)
+- [ ] Configure Pro Dashboard monitoring (`docs/PRO_DASHBOARD_MONITORING.md`) for active development sessions
+- [ ] Track AI token usage per phase to identify context budget optimization opportunities
 
 ---
 
@@ -686,6 +862,267 @@ Story spec with acceptance criteria
 
 ---
 
+## NV oOS Pro Toolkit Integration
+
+This section maps each phase of the GSD × BMAD workflow to **specific NV oOS tools** that AI agents can invoke to automate or accelerate each phase. This transforms the methodology from a process framework into a tool-driven automation pipeline.
+
+### Phase-to-Tool Mapping
+
+| Phase | Lead Agent | NV oOS Tool(s) | Purpose |
+|-------|-----------|----------------|---------|
+| **0** — Context Init | Scrum Master | `batch_manage_memory`, `semantic_content_search` | Seed working memory; locate existing patterns |
+| **1** — Discovery | Analyst | `deep_research`, `verify_information`, `aggregate_research_data`, `generate_research_report` | Domain research, competitive analysis, fact verification |
+| **2** — Planning | Product Manager | `create_task_plan`, `generate_research_report`, `extract_structured_data` | Formalize PRD, create task plan artifact |
+| **3** — Architecture | Architect | `analyze_code_sequence`, `semantic_content_search`, `extract_structured_data` | Review existing patterns, define file map |
+| **4** — Story Breakdown | Scrum Master | `create_task_plan`, `update_task_plan`, `get_task_plan` | Decompose architecture into atomic stories |
+| **5** — Implementation | Developer | `manage_autonomous_session`, `delegate_to_agent`, `check_exit_conditions` | Execute stories in isolated context with loop control |
+| **6** — Validation | QA Engineer | `check_workflow_health`, `get_session_status`, `verify_information` | Run validation suite, check acceptance criteria |
+| **7** — Release | Scrum Master | `check_wp_cli`, `check_site_security` | Pre-release security scan and deployment checks |
+| **8** — Monitoring | QA Engineer | `check_workflow_health`, `analyze_data_patterns`, `get_session_status` | Post-release health monitoring |
+| **9** — Retrospective | Scrum Master | `batch_manage_memory`, `manage_autonomous_session` | Persist learnings, close/archive sessions |
+
+### Architect Agent Toolkit (Pro)
+
+The Pro addon includes dedicated **Architect Agent** tools (`addons/pro/includes/tools/architect-agent/`) that directly support Phases 1 and 3:
+
+| Tool | Capability | BMAD Phase |
+|------|-----------|------------|
+| `analyze_code_sequence` | Trace execution paths and identify architectural patterns in existing code | Phase 3 |
+| `extract_structured_data` | Parse existing file maps, schemas, class hierarchies, and API contracts | Phase 3 |
+| `aggregate_research_data` | Consolidate research from multiple sources into a structured summary | Phase 1 |
+| `generate_research_report` | Produce structured Project Briefs or Architecture Specifications as Markdown/PDF | Phase 1 |
+
+### Task Planning Toolkit (Pro)
+
+The `create_task_plan`, `update_task_plan`, and `get_task_plan` tools provide **persistent, structured task management** directly aligned to BMAD story breakdown in Phase 4:
+
+```
+Story Breakdown via Task Plan Tools:
+
+1. Phase 4 — Create:
+   create_task_plan(
+     project_name: "[Feature]-v[X.Y.Z]",
+     goal: "Epic from PRD",
+     phases: ["Architecture Review", "Core Implementation", "Tests", "Docs", "QA"]
+   )
+
+2. Phase 5 — Per story update:
+   update_task_plan(
+     task_id: "story-X.X",
+     status: "in_progress",
+     context: "Architecture reference + acceptance criteria"
+   )
+
+3. Phase 6 — QA review:
+   get_task_plan(project_name: "[Feature]-v[X.Y.Z]")
+   → Verify all stories are "complete" before advancing to Phase 7
+```
+
+### Autonomous Session Management (Pro)
+
+`manage_autonomous_session` bridges GSD's "isolated context execution" principle with the plugin's autonomous infrastructure:
+
+```
+GSD Execute Phase (5) via Autonomous Sessions:
+
+Per-story session:
+- session_id:     "story-X.X-[feature-slug]"
+- context_files:  [conventions.md, security-checklist.md, tool-registry.md, story-spec.md]
+- token_budget:   8000  ← keeps context lean (GSD 0–30% principle)
+- exit_signal:    "STORY_COMPLETE"
+- max_iterations: 15
+```
+
+### Memory & RAG Integration (Pro)
+
+The plugin's RAG and memory tools extend GSD context engineering beyond the current session:
+
+| Capability | Tool | Phase Used |
+|-----------|------|-----------|
+| Persistent architectural memory | `batch_manage_memory` | Phase 0 (load), Phase 9 (save) |
+| Semantic pattern search | `semantic_content_search` | Phase 0, Phase 3 |
+| Embedding-based context retrieval | `create_text_embeddings` | Phase 3 (for large codebases) |
+| Gemini Corpus RAG | `semantic_retrieval` (via Gemini provider) | Phase 1 (research grounding) |
+
+---
+
+## Multi-Agent Team Compositions
+
+NV oOS ships 6 pre-configured assistants (`includes/class-wp-mcp-ai-default-assistants.php`) that can be directly mapped to BMAD roles, enabling a fully NV oOS-native GSD × BMAD team without any external tooling.
+
+### BMAD Role → NV oOS Assistant Mapping
+
+| BMAD Role | NV oOS Assistant | Model | Specialty |
+|-----------|-----------------|-------|-----------|
+| **Analyst (Mary)** | The Research Operative | GPT-4o-mini | Domain research, competitive analysis, Crawl4AI web scraping, `deep_research` |
+| **Architect (Winston)** | The Unstructured Parser | GPT-4o-mini | Data modeling, schema extraction, vector store patterns, `analyze_code_sequence` |
+| **Product Manager (John)** | The Content Drafter | GPT-4o | Requirements formalization, story writing, PRD generation |
+| **Scrum Master (Bob)** | The Orchestrator | GPT-4o | Task decomposition, agent handoff coordination, phase gate enforcement |
+| **Developer (Amelia)** | The Publisher | GPT-4o-mini | Code execution, WordPress CRUD, atomic commits, WPCS compliance |
+| **QA Engineer (Quinn)** | The SEO & Compliance Auditor | GPT-4o-mini | Test validation, security review, documentation completeness, `check_workflow_health` |
+
+### Recommended Team Configuration
+
+```yaml
+# .bmad/teams/feature-development.yaml
+team:
+  name: NV oOS Feature Development Team
+  pattern: orchestrator   # Supervisor delegates to specialized workers
+  members:
+    - role: orchestrator
+      assistant: the-orchestrator
+      responsibilities:
+        - Load context from .context/active/[feature].md at session start
+        - Route tasks to appropriate specialist agents via delegate_to_agent
+        - Monitor progress via check_workflow_health
+        - Enforce phase-completion gates before advancing
+    - role: researcher
+      assistant: the-research-operative
+      responsibilities:
+        - Phase 1 (Discovery): domain research, competitor analysis
+        - Produce Project Brief using deep_research + generate_research_report
+        - Verify claims via verify_information before proceeding to Phase 2
+    - role: architect
+      assistant: the-unstructured-parser
+      responsibilities:
+        - Phase 3 (Architecture): analyze existing patterns via analyze_code_sequence
+        - Produce Architecture Specification using extract_structured_data
+        - Define data models, class hierarchy, and file maps
+    - role: developer
+      assistant: the-publisher
+      responsibilities:
+        - Phase 5 (Implementation): atomic story execution via manage_autonomous_session
+        - Follow WPCS + security-checklist.md strictly (capability checks, nonces, escaping)
+        - Commit atomically with story reference; update task_plan on completion
+    - role: qa_engineer
+      assistant: the-seo-compliance-auditor
+      responsibilities:
+        - Phase 6 (Validation): run PHPUnit, PHPCS, CodeQL; verify acceptance criteria
+        - Phase 8 (Monitoring): track post-release health via check_workflow_health
+        - Report anomalies and unresolved issues to the Orchestrator
+```
+
+### Instantiating the Team via NV oOS
+
+```
+# Instantiate the BMAD team using NV oOS Pro tools:
+create_agent_team({
+  "team_name":          "GSD-BMAD Feature Team",
+  "team_type":          "orchestrator",
+  "team_composition": {
+    "orchestrator": "the-orchestrator",
+    "researcher":   "the-research-operative",
+    "architect":    "the-unstructured-parser",
+    "developer":    "the-publisher",
+    "qa_engineer":  "the-seo-compliance-auditor"
+  },
+  "workflow_template": "feature_development",
+  "context_files": [
+    ".context/conventions.md",
+    ".context/security-checklist.md",
+    ".context/active/[feature].md"
+  ]
+})
+```
+
+### Scale-Adaptive Team Sizes
+
+Not every feature requires the full 5-agent team. Scale based on complexity:
+
+| Feature Size | Agents Used | Phases Run |
+|-------------|-------------|-----------|
+| **Patch / Bug Fix** | Developer + QA | 5, 6, 7 |
+| **Small Feature** | Orchestrator, Developer, QA | 0, 4, 5, 6, 7, 9 |
+| **Medium Feature** | Orchestrator, Researcher, Developer, QA | 0, 1, 2, 3, 4, 5, 6, 7, 9 |
+| **Major Feature / Integration** | Full 5-agent team | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 |
+
+---
+
+## Autonomous Development Loop
+
+For larger features spanning multiple development sessions, the **Autonomous Development Loop** (based on the Ralph Wiggum pattern from `docs/proposals/RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md`) provides continuous execution with intelligent exit detection.
+
+### Loop Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  Autonomous Development Loop                  │
+│                                                               │
+│  Phase 0: Initialize Session                                  │
+│     │ Load .context/active/[feature].md + context files      │
+│     ▼                                                         │
+│  Phase 4: Load Task Plan (get_task_plan)                      │
+│     │ Identify next pending story                             │
+│     ▼                                                         │
+│  Phase 5: Execute Story (manage_autonomous_session)           │
+│     │ delegate_to_agent → Developer assistant                 │
+│     ▼                                                         │
+│  Phase 6: Validate Story (check_workflow_health)              │
+│     │ All acceptance criteria met?                            │
+│     ├─ NO  → Fix issues → Re-execute story (max 3 retries)   │
+│     └─ YES → update_task_plan (mark complete)                 │
+│               │                                               │
+│               ▼                                               │
+│  All stories complete? (detect_completion_indicators)         │
+│     ├─ NO  → Back to "Load Task Plan" (next story)            │
+│     └─ YES + EXIT_SIGNAL emitted                              │
+│               │                                               │
+│               ▼                                               │
+│  Phase 7: Release Gate                                        │
+│  Phase 9: Retrospective (batch_manage_memory)                 │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### NV oOS Tool Chain for the Loop
+
+| Step | Tool | Purpose |
+|------|------|---------|
+| Initialize | `manage_autonomous_session` (start) | Create session with context files + token budget |
+| Load story list | `get_task_plan` | Retrieve stories with pending/complete status |
+| Execute story | `delegate_to_agent` | Run story in isolated sub-agent context |
+| Validate | `check_workflow_health` | Verify story outputs meet acceptance criteria |
+| Update progress | `update_task_plan` | Mark story complete, capture implementation notes |
+| Check completion | `detect_completion_indicators` | Semantic check: all stories done + EXIT_SIGNAL present |
+| Loop control | `check_exit_conditions` | Enforce circuit breaker; prevent runaway loops |
+| Exit | `manage_autonomous_session` (complete) | Close session, harvest context for Phase 9 |
+
+### Built-in Safeguards
+
+| Safeguard | Mechanism | Configuration |
+|-----------|-----------|--------------|
+| **Max iterations** | Agentic loop limit | 5-15 iterations per session (configurable per assistant) |
+| **Token budget** | Token tracking | Per-session budget enforced by `manage_autonomous_session` |
+| **Circuit breaker** | Error detection | `check_exit_conditions` monitors for unrecoverable states |
+| **Session timeout** | Cron-based expiry | 24-hour session expiration with context preservation |
+| **Dual-exit condition** | Completion + EXIT_SIGNAL | Both required; prevents premature loop termination |
+| **Retry cap** | Story-level retry count | Maximum 3 re-executions per story before escalation |
+
+### Loop Session Template
+
+```yaml
+# .context/templates/ralph-loop-session.md
+session:
+  id: "[feature-slug]-loop-[iteration]"
+  context_files:
+    - .context/conventions.md
+    - .context/security-checklist.md
+    - .context/tool-registry.md
+    - .context/active/[feature].md
+  token_budget: 10000
+  max_iterations: 15
+  exit_conditions:
+    - type: completion_indicator
+      check: "all stories in task_plan marked complete"
+    - type: exit_signal
+      value: "EXIT_SIGNAL: FEATURE_COMPLETE"
+  on_exit:
+    - update task_plan status to "complete"
+    - emit Phase 9 (Retrospective) trigger
+    - archive .context/active/[feature].md to .context/archive/
+```
+
+---
+
 ## Quality Gates and Checklists
 
 ### Pre-Implementation Gate (Before Writing Code)
@@ -737,6 +1174,9 @@ Story spec with acceptance criteria
 | Documentation drift | Some sections outdated | Specs always current | Near-zero drift |
 | Defect rate (post-merge) | Variable | Reduced via checklists | 30-50% reduction |
 | Security findings (post-release) | Occasional | Rare (caught in gates) | Significant reduction |
+| AI agent utilization | Ad-hoc assistant selection | Mapped roles via default assistants | Consistent, specialized outputs |
+| Autonomous execution overhead | Manual story-by-story handoffs | Ralph loop + task_plan tools | 60-80% reduction in manual handoffs |
+| Post-release visibility | Manual log inspection | Pro workflow health monitoring | Real-time health metrics |
 
 ### Qualitative Improvements
 
@@ -746,6 +1186,8 @@ Story spec with acceptance criteria
 4. **AI Effectiveness** — Context engineering makes AI agents more reliable and productive
 5. **Security Confidence** — Structured gates ensure security review is never skipped
 6. **Documentation Quality** — Spec-driven approach keeps docs as first-class artifacts
+7. **Tool Utilization** — Pro toolkit tools replace manual, error-prone steps in each phase
+8. **Continuous Learning** — Phase 9 retrospective feeds back into context files, compounding quality over time
 
 ---
 
@@ -753,11 +1195,13 @@ Story spec with acceptance criteria
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| **Over-process** — Too much ceremony for small changes | Medium | Medium | Scale-adaptive: use full workflow for major features, lightweight for patches |
-| **Template fatigue** — Contributors avoid templates | Medium | Low | Keep templates concise; automate where possible |
-| **Context file staleness** — `.context/` files become outdated | Medium | Medium | Review context files during retrospectives; keep them short |
-| **Learning curve** — Team needs to learn new workflow | Low | Low | Pilot on one feature first; document lessons learned |
+| **Over-process** — Too much ceremony for small changes | Medium | Medium | Scale-adaptive: use full workflow for major features, lightweight for patches (see Multi-Agent Team table) |
+| **Template fatigue** — Contributors avoid templates | Medium | Low | Keep templates concise; automate where possible (Phase 6 automation) |
+| **Context file staleness** — `.context/` files become outdated | Medium | Medium | Phase 9 retrospective review; keep files under 500 lines; archive rather than delete |
+| **Learning curve** — Team needs to learn new workflow | Low | Low | Pilot on one feature first; document lessons learned in Phase 9 |
 | **Tool incompatibility** — GSD/BMAD tools don't integrate with existing CI/CD | Low | Medium | Use only the methodology, not specific tooling; adapt to existing workflows |
+| **Loop runaway** — Autonomous loop consumes excessive tokens | Low | Medium | Built-in safeguards: max_iterations, token_budget, dual-exit conditions, circuit breaker |
+| **Agent role drift** — Default assistants diverge from BMAD personas over time | Low | Low | Review `.bmad/agents/*.yaml` during Phase 4 (Optimization) retrospectives |
 
 ---
 
@@ -781,16 +1225,27 @@ Story spec with acceptance criteria
 - [Goodbye Vibe Coding: Spec-Driven Development](https://www.pasqualepillitteri.it/en/news/158/framework-ai-spec-driven-development-guide-bmad-gsd-ralph-loop) — GSD + BMAD integration
 - [Spec-Driven Development Frameworks](https://www.vibesparking.com/en/blog/ai/2026-01-25-spec-driven-development-frameworks-bmad-gsd-ralph/) — Comparative analysis
 
+### NV oOS Internal References
+- `docs/proposals/RALPH-WIGGUM-TASK-ORCHESTRATION-IMPLEMENTATION.md` — Ralph Wiggum autonomous loop pattern and NV oOS tool implementations
+- `docs/MULTI_AGENT_ORCHESTRATION_IMPLEMENTATION.md` — 6 default assistants and multi-agent team patterns
+- `docs/PRO_DASHBOARD_MONITORING.md` — Post-release monitoring with Pro Dashboard
+- `docs/proposals/TOOLKIT_ENHANCEMENT_PROPOSAL.md` — Industry best practices for tool organization (UiPath, Microsoft Azure, LangChain)
+- `docs/RELEASE_PROCESS.md` — NV oOS release workflow for Phase 7
+- `includes/class-wp-mcp-ai-default-assistants.php` — Pre-configured assistants for BMAD role mapping
+- `addons/pro/includes/tools/architect-agent/` — Architect Agent toolkit tools for Phases 1 and 3
+
 ---
 
 ## Next Steps
 
-1. **Review this proposal** — Gather team feedback on the hybrid approach
+1. **Review this proposal** — Gather team feedback on the hybrid approach and the 10-phase workflow
 2. **Select a pilot feature** — Choose a medium-complexity feature from the roadmap
-3. **Create foundation files** — `.bmad/` agent definitions, `.context/` base files
-4. **Execute pilot** — Run one full cycle through the GSD × BMAD workflow
-5. **Retrospective** — Document results, adjust templates, and refine workflow
-6. **Adopt or adapt** — Based on pilot results, decide on broader adoption
+3. **Create foundation files** — `.bmad/` agent definitions, `.context/` base files, `.bmad/teams/feature-development.yaml`
+4. **Execute pilot (full cycle)** — Run one complete Phase 0–9 cycle using NV oOS default assistants and task planning tools
+5. **Retrospective** — Document results via Phase 9 context harvest; update agent definitions and context files
+6. **Multi-agent infrastructure** — Configure BMAD role mapping for the 6 default assistants (Implementation Phase 5)
+7. **Automation & metrics** — Set up `create_task_plan` automation, post-deploy `check_workflow_health`, and dashboard monitoring (Implementation Phase 6)
+8. **Adopt or adapt** — Based on pilot results, decide on broader adoption and refine team compositions
 
 ---
 
