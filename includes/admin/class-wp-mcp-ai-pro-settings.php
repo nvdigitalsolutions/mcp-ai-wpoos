@@ -1547,8 +1547,33 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( $embedded_client_path );
 			}
 
+			// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+			// These packages are pre-packed/CDN-loaded; availability is indicated by
+			// the presence of the imaging-viewer.js entry-point script.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && function_exists( 'wp_mcp_ai_cornerstone_package_names' ) ) {
+				$cornerstone_packages = wp_mcp_ai_cornerstone_package_names();
+			} else {
+				$cornerstone_packages = array(
+					'@cornerstonejs/core',
+					'@cornerstonejs/tools',
+					'@cornerstonejs/dicom-image-loader',
+				);
+			}
+			if ( in_array( $package, $cornerstone_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if imaging-viewer.js exists (CDN-loads Cornerstone3D at runtime).
+				$imaging_viewer_path = WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js';
+				if ( file_exists( $imaging_viewer_path ) ) {
+					return true;
+				}
+				// Priority 2: Check pro node_modules (development).
+				$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				return false;
+			}
+
 			// Check for pdf-parse package (Pro addon).
-			// This package is used for PDF text extraction via Node.js service.
 			if ( 'pdf-parse' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if it's in Pro addon's vendor directory (production).
 				$pdf_parse_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-parse/lib/pdf-parse.js';
