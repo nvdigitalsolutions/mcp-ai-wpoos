@@ -752,7 +752,7 @@
 /* Token Manager Table Action Buttons */
 .wp-mcp-ai-token-manager table td:last-child {
 	white-space: nowrap;
-	min-width: 140px;
+	min-width: 80px;
 }
 
 .wp-mcp-ai-reset-user-usage,
