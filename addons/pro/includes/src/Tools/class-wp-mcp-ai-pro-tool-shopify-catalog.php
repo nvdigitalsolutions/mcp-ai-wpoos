@@ -23,6 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * detailed product/variant lookups using Universal Product IDs (UPIDs) and
  * Variant IDs (VIDs) issued by the Catalog API.
  *
+ * To restrict results to a specific store, pass the store's numeric Shopify shop ID
+ * (or full GID like gid://shopify/Shop/12345) in the shop_ids parameter. The Catalog
+ * API does not accept .myshopify.com domain names directly — find the numeric ID in
+ * the Shopify admin URL or via the Admin GraphQL API (shop { id }).
+ *
  * Authentication uses a JWT bearer token obtained by exchanging a shpss_ client
  * secret (stored in a catalog_api mode Remote Sites connection) via the Shopify
  * token endpoint.
@@ -106,9 +111,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 					'minLength'   => 2,
 					'maxLength'   => 2,
 				),
-				'merchant_id'    => array(
+				'shop_ids'       => array(
 					'type'        => 'string',
-					'description' => __( 'Filter search results to a specific Shopify merchant ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Limit search results to specific Shopify stores. Accepts a numeric shop ID (e.g. "12345"), a Shop GID (e.g. "gid://shopify/Shop/12345"), or a comma-separated list for multiple stores. .myshopify.com domain names are not accepted — use the numeric ID found in the Shopify admin URL.', 'mcp-ai-wpoos-pro' ),
+				),
+				'ships_from'     => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 3166-1 alpha-2 country code to filter search results by merchant location (where the item ships from), e.g. "US", "GB", "DE".', 'mcp-ai-wpoos-pro' ),
+					'minLength'   => 2,
+					'maxLength'   => 2,
 				),
 			),
 			'required'             => array( 'connection_id', 'action' ),
@@ -228,8 +239,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			}
 			$filters['country_code'] = $country_code;
 		}
-		if ( ! empty( $arguments['merchant_id'] ) ) {
-			$filters['merchant_id'] = sanitize_text_field( $arguments['merchant_id'] );
+		if ( ! empty( $arguments['shop_ids'] ) ) {
+			$filters['shop_ids'] = sanitize_text_field( $arguments['shop_ids'] );
+		}
+		if ( ! empty( $arguments['ships_from'] ) ) {
+			$ships_from = strtoupper( sanitize_text_field( $arguments['ships_from'] ) );
+			if ( ! preg_match( '/^[A-Z]{2}$/', $ships_from ) ) {
+				return new WP_Error( 'wp_mcp_ai_shopify_catalog_invalid_ships_from', __( 'ships_from must be a 2-letter ISO 3166-1 alpha-2 code, e.g. "US", "GB".', 'mcp-ai-wpoos-pro' ) );
+			}
+			$filters['ships_from'] = $ships_from;
 		}
 
 		$response = $client->catalog_search( $query, $limit, $filters );
