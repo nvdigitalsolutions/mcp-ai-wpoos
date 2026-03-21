@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-yet-again',
-        'version' => 'dev-copilot/run-rebuild-all-zips-yet-again',
-        'reference' => '818b6c9c36297dbc211a3e106acc9e2e19758e2d',
+        'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-1c70fe38-af21-4182-a907-fdfffb0a1a27',
+        'version' => 'dev-copilot/run-rebuild-all-zips-script-1c70fe38-af21-4182-a907-fdfffb0a1a27',
+        'reference' => 'e517e7f6acf1c7fea36ed2e01c878daad0b9e82b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-yet-again',
-            'version' => 'dev-copilot/run-rebuild-all-zips-yet-again',
-            'reference' => '818b6c9c36297dbc211a3e106acc9e2e19758e2d',
+            'pretty_version' => 'dev-copilot/run-rebuild-all-zips-script-1c70fe38-af21-4182-a907-fdfffb0a1a27',
+            'version' => 'dev-copilot/run-rebuild-all-zips-script-1c70fe38-af21-4182-a907-fdfffb0a1a27',
+            'reference' => 'e517e7f6acf1c7fea36ed2e01c878daad0b9e82b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
