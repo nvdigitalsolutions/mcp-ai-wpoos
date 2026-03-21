@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		global $wpdb;
 
 		$event_type = ! empty( $arguments['event_type'] ) ? sanitize_text_field( $arguments['event_type'] ) : '';

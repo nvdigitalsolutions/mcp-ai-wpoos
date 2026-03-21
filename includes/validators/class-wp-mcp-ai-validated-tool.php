@@ -72,7 +72,7 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 	 * @param array $context   Execution context including user_id.
 	 * @return array|\WP_Error Tool results or error.
 	 */
-	final public function execute( $arguments = array(), $context = array() ) {
+	final public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if validator service is available.
 		if ( null === $this->validator_service ) {
 			return new \WP_Error(

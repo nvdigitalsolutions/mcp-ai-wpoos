@@ -177,7 +177,7 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$min_risk_score          = isset( $arguments['min_risk_score'] ) ? absint( $arguments['min_risk_score'] ) : 50;
 		$lookback_days           = isset( $arguments['lookback_days'] ) ? absint( $arguments['lookback_days'] ) : 90;
