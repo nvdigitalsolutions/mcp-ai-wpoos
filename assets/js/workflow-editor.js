@@ -30,7 +30,7 @@
 		},
 
 		bindEvents: function() {
-			var self = this;
+			const self = this;
 
 			// New workflow button
 			$('#mcp-ai-new-workflow').on('click', function() {
@@ -39,7 +39,7 @@
 
 			// Workflow item click
 			$(document).on('click', '.mcp-ai-workflow-item', function() {
-				var workflowSlug = $(this).data('workflow');
+				const workflowSlug = $(this).data('workflow');
 				$('.mcp-ai-workflow-item').removeClass('active');
 				$(this).addClass('active');
 				self.loadWorkflow(workflowSlug);
@@ -48,21 +48,21 @@
 			// Edit workflow
 			$(document).on('click', '.workflow-edit', function(e) {
 				e.stopPropagation();
-				var workflowSlug = $(this).data('workflow');
+				const workflowSlug = $(this).data('workflow');
 				self.loadWorkflow(workflowSlug);
 			});
 
 			// Test workflow
 			$(document).on('click', '.workflow-test', function(e) {
 				e.stopPropagation();
-				var workflowSlug = $(this).data('workflow');
+				const workflowSlug = $(this).data('workflow');
 				self.testWorkflow(workflowSlug);
 			});
 
 			// Delete workflow
 			$(document).on('click', '.workflow-delete', function(e) {
 				e.stopPropagation();
-				var workflowSlug = $(this).data('workflow');
+				const workflowSlug = $(this).data('workflow');
 				self.deleteWorkflow(workflowSlug);
 			});
 
@@ -73,7 +73,7 @@
 
 			// Remove step
 			$(document).on('click', '.mcp-ai-workflow-step-remove', function() {
-				var stepIndex = $(this).closest('.mcp-ai-workflow-step').data('index');
+				const stepIndex = $(this).closest('.mcp-ai-workflow-step').data('index');
 				self.removeStep(stepIndex);
 			});
 
@@ -106,7 +106,7 @@
 		},
 
 		loadWorkflow: function(workflowSlug) {
-			var workflow = mcpAiWorkflowEditor.workflows[workflowSlug];
+			const workflow = mcpAiWorkflowEditor.workflows[workflowSlug];
 			if (!workflow) {
 				alert('Workflow not found');
 				return;
@@ -118,8 +118,7 @@
 		},
 
 		renderWorkflowForm: function(workflow) {
-			var self = this;
-			var html = '<div class="mcp-ai-workflow-form">';
+			let html = '<div class="mcp-ai-workflow-form">';
 			
 			// Workflow name
 			html += '<div class="form-row">';
@@ -154,15 +153,15 @@
 		},
 
 		renderSteps: function() {
-			var html = '';
-			for (var i = 0; i < this.steps.length; i++) {
+			let html = '';
+			for (let i = 0; i < this.steps.length; i++) {
 				html += this.renderStep(i, this.steps[i]);
 			}
 			return html;
 		},
 
 		renderStep: function(index, step) {
-			var html = '<div class="mcp-ai-workflow-step" data-index="' + index + '">';
+			let html = '<div class="mcp-ai-workflow-step" data-index="' + index + '">';
 			html += '<div class="mcp-ai-workflow-step-header">';
 			html += '<span class="mcp-ai-workflow-step-number">' + (index + 1) + '</span>';
 			html += '<span class="mcp-ai-workflow-step-title">Step ' + (index + 1) + '</span>';
@@ -171,9 +170,9 @@
 			
 			html += '<div class="mcp-ai-workflow-step-content">';
 			html += '<label>Command</label>';
-			html += '<input type="text" class="regular-text step-command" value="' + (step.command || '') + '" placeholder="/command-name" />';
+			html += '<input type="text" class="regular-text step-command" value="' + escapeHtml( step.command || '' ) + '" placeholder="/command-name" />';
 			html += '<label style="margin-top: 10px;">Parameters (JSON)</label>';
-			html += '<textarea class="large-text step-params" rows="3">' + (step.params ? JSON.stringify(step.params) : '{}') + '</textarea>';
+			html += '<textarea class="large-text step-params" rows="3">' + escapeHtml( step.params ? JSON.stringify(step.params) : '{}' ) + '</textarea>';
 			html += '</div>';
 			
 			html += '</div>';
@@ -186,7 +185,7 @@
 				params: {}
 			});
 			
-			var html = this.renderStep(this.steps.length - 1, this.steps[this.steps.length - 1]);
+			const html = this.renderStep(this.steps.length - 1, this.steps[this.steps.length - 1]);
 			$('#workflow-steps').append(html);
 		},
 
@@ -199,9 +198,8 @@
 		},
 
 		saveWorkflow: function() {
-			var self = this;
-			var name = $('#workflow-name').val().trim();
-			var description = $('#workflow-description').val().trim();
+			const name = $('#workflow-name').val().trim();
+			const description = $('#workflow-description').val().trim();
 
 			if (!name) {
 				alert('Please enter a workflow name');
@@ -209,11 +207,11 @@
 			}
 
 			// Collect steps
-			var steps = [];
+			const steps = [];
 			$('.mcp-ai-workflow-step').each(function() {
-				var command = $(this).find('.step-command').val().trim();
-				var paramsText = $(this).find('.step-params').val().trim();
-				var params = {};
+				const command = $(this).find('.step-command').val().trim();
+				const paramsText = $(this).find('.step-params').val().trim();
+				let params = {};
 				
 				try {
 					params = paramsText ? JSON.parse(paramsText) : {};
@@ -294,12 +292,12 @@
 		},
 
 		testWorkflow: function(workflowSlug) {
-			var paramsStr = prompt('Enter test parameters (JSON):', '{}');
+			const paramsStr = prompt('Enter test parameters (JSON):', '{}');
 			if (paramsStr === null) {
 				return;
 			}
 
-			var params = {};
+			let params = {};
 			try {
 				params = JSON.parse(paramsStr);
 			} catch (e) {

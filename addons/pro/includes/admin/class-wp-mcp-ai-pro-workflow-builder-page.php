@@ -108,59 +108,56 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Enqueue the React-based workflow builder.
-		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/workflow-builder.asset.php';
-		
-		if ( file_exists( $asset_file ) ) {
-			$asset = require $asset_file;
-			
-			// Debug logging.
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
+			// Built assets are missing. Show an admin notice via render_page() — do NOT
+			// attempt to load the raw src/workflow-builder/index.jsx source file, as
+			// browsers cannot execute JSX and web servers typically return a 404 for it.
 			if ( $this->is_debug_logging_enabled() ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-				error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
+				error_log( sprintf( 'Workflow Builder: Built asset file not found: %s', $asset_file ) );
 			}
-			
-			wp_enqueue_script(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.js',
-				$asset['dependencies'],
-				$asset['version'],
-				true
-			);
+			return;
+		}
 
+		$asset = require $asset_file;
+
+		// Debug logging.
+		if ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
+		}
+
+		wp_enqueue_script(
+			'mcp-ai-pro-workflow-builder',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.js',
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+
+		wp_enqueue_style(
+			'mcp-ai-pro-workflow-builder',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.css',
+			array(),
+			$asset['version']
+		);
+
+		// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
+		// by wp-scripts into a separate style-*.css file. Without this, the canvas
+		// area has no layout and nodes/edges do not render correctly.
+		$style_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/style-workflow-builder.css';
+		if ( file_exists( $style_file ) ) {
 			wp_enqueue_style(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.css',
+				'mcp-ai-pro-workflow-builder-reactflow',
+				WP_MCP_AI_PRO_URL . 'build/workflow-builder/style-workflow-builder.css',
 				array(),
 				$asset['version']
 			);
-
-			// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
-			// by wp-scripts into a separate style-*.css file. Without this, the canvas
-			// area has no layout and nodes/edges do not render correctly.
-			$style_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/style-workflow-builder.css';
-			if ( file_exists( $style_file ) ) {
-				wp_enqueue_style(
-					'mcp-ai-pro-workflow-builder-reactflow',
-					WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/style-workflow-builder.css',
-					array(),
-					$asset['version']
-				);
-			}
-		} else {
-			// Fallback for development - load from src.
-			// Debug logging.
-			if ( $this->is_debug_logging_enabled() ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-				error_log( 'Workflow Builder: Built assets not found, using development fallback' );
-			}
-			
-			wp_enqueue_script(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'src/workflow-builder/index.jsx',
-				array( 'wp-element', 'wp-i18n' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
+		} elseif ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: ReactFlow style file not found: %s', $style_file ) );
 		}
 
 		// Localize script with data.
@@ -184,6 +181,26 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function render_page() {
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
+			?>
+			<div class="wrap">
+				<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>
+				<div class="notice notice-error">
+					<p>
+						<?php
+						esc_html_e(
+							'The Workflow Builder compiled assets are missing. Please run `npm install && npm run build` in the plugin directory to generate the required files, then reload this page.',
+							'mcp-ai-wpoos'
+						);
+						?>
+					</p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>

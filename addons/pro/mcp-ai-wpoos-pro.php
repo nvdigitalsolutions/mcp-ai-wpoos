@@ -275,6 +275,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
+		// Load CPT meta schema registry — exposes custom meta field definitions for all
+		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
+		// base get_post_type_schema tool can return complete field information.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cpt-meta-schema.php';
+		WP_MCP_AI_Pro_CPT_Meta_Schema::init();
+
 		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
 		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';
@@ -393,6 +399,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
+
+		// Load Healthcare Imaging Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-imaging-toolkit-init.php';
+		}
 
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
@@ -682,6 +693,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Code and development tools.
 			'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-wpcode-snippet.php',
 			'WP_MCP_AI_Pro_Tool_Generic_REST'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php',
+			// Toolkit CPT – generic CRUD/search for any pro toolkit Custom Post Type.
+			'WP_MCP_AI_Pro_Tool_CPT'                      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-cpt.php',
 			// GitHub tools.
 			'WP_MCP_AI_Pro_Tool_Github_Repository_Operations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-github-repository-operations.php',
 			'WP_MCP_AI_Pro_Tool_List_Github_Repositories' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-list-github-repositories.php',
@@ -700,6 +713,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
 			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
+			// Webpage Screenshot tool — always available, Playwright + mshots fallback.
+			'WP_MCP_AI_Tool_Capture_Webpage_Screenshot'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-capture-webpage-screenshot.php',
 		);
 
 		// Add CRM Toolkit tools if enabled.
@@ -886,9 +901,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			}
 		}
 
+		// Add Healthcare Imaging tools if enabled.
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			$imaging_tools = array(
+				'WP_MCP_AI_Tool_Manage_Imaging_Studies'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+				'WP_MCP_AI_Tool_Interpret_Imaging_Study'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-interpret-imaging-study.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $imaging_tools );
+		}
+
 		// Add WooCommerce tools if enabled.
-		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {
-			$woo_tools = array(
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
@@ -1405,6 +1428,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
+			// Toolkit CPT - generic CRUD/search for pro toolkit Custom Post Types.
+			'toolkit_cpt'                     => 'wordpress-core',
 			// Elementor tools - Require Elementor plugin.
 			'elementor'                       => 'wordpress-plugins',
 			// Social media publishing tools - Require external API credentials.
@@ -1483,6 +1508,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
 			$pro_tools['get_quiz_results']     = 'wordpress-core';
 			$pro_tools['get_quiz_analytics']   = 'wordpress-core';
+		}
+
+		// Add CRM Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
+			// CRM core CRUD tools.
+			$pro_tools['manage_crm_contact'] = 'wordpress-core';
+			$pro_tools['create_company']     = 'wordpress-core';
+			$pro_tools['get_companies']      = 'wordpress-core';
+			$pro_tools['research_company']   = 'wordpress-core';
+			// CRM Email Search tools.
+			$pro_tools['crm_email_search_leads']           = 'wordpress-core';
+			$pro_tools['crm_email_search_correspondence']  = 'wordpress-core';
+			$pro_tools['crm_email_search_accounting']      = 'wordpress-core';
 		}
 
 		// Add Fantasy Football tool mappings if enabled.
@@ -1580,11 +1618,32 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Specialized Health & Wellness Tools.
 			$pro_tools['get_member_health_summary'] = 'wordpress-core';
 			$pro_tools['get_medication_schedule']   = 'wordpress-core';
+			$pro_tools['research_policy']           = 'wordpress-core';
+			// Chart.js data visualization tool.
+			$pro_tools['generate_health_chart'] = 'wordpress-core';
+			// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
+			$pro_tools['create_health_reminder'] = 'wordpress-core';
+			$pro_tools['track_vaccinations']     = 'wordpress-core';
+			$pro_tools['log_health_metrics']     = 'wordpress-core';
+			$pro_tools['log_vital_signs']        = 'wordpress-core';
+			$pro_tools['import_vitals']          = 'wordpress-core';
+			$pro_tools['export_fhir_data']       = 'wordpress-core';
+			$pro_tools['manage_care_plan']       = 'wordpress-core';
+			// Health Research: compile data from CCT, options, files, and vector store.
+			$pro_tools['compile_health_research_data'] = 'wordpress-core';
+			// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
+			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
+			$pro_tools['parse_health_information']     = 'wordpress-core';
+		}
+
+		// Add Healthcare Imaging tool mappings if enabled.
+		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			$pro_tools['manage_imaging_studies']   = 'wordpress-core';
+			$pro_tools['interpret_imaging_study']  = 'wordpress-core';
 		}
 
 		// Add Document Generation Toolkit tool mappings if enabled.
-		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
-			$pro_tools['pro_pdf_document']   = 'external-tools';
+		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {			$pro_tools['pro_pdf_document']   = 'external-tools';
 			$pro_tools['pro_word_document']  = 'external-tools';
 			$pro_tools['pro_excel_document'] = 'external-tools';
 		}

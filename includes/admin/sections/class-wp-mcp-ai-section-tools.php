@@ -598,6 +598,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Healthcare Imaging Viewer fields.
+				'enable_healthcare_imaging'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Healthcare Imaging Viewer Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Healthcare Imaging Viewer toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables DICOM medical imaging viewer with Cornerstone3D. Provides secure PET/CT/MR study upload, metadata extraction, REST API integration, and HIPAA-aligned audit logging. Includes manage_imaging_studies tool for AI-powered medical image management. Always ensure HIPAA compliance for healthcare deployments. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Cloudways Pro Toolkit fields.
 				'enable_cloudways_toolkit'               => array(
 					'type'           => 'checkbox',
@@ -838,7 +847,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -1015,6 +1024,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_ai_cpt_management'               => 24,   // Metabox integration, lightweight.
 				'enable_eca_management'                  => 40,   // 5+ tools, iSAMS integration.
 				'enable_health_wellness_management'      => 128,  // 30+ tools, secure health data storage.
+				'enable_healthcare_imaging'              => 96,   // 1 tool, DICOM/Cornerstone3D medical imaging viewer.
 				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
 				'enable_crm_toolkit'                     => 56,   // 10+ tools, company/contact/lead/campaign management with web search.
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
@@ -1144,6 +1154,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_ai_cpt_management]"],' +
 							'input[name="wp_mcp_ai_settings[enable_eca_management]"],' +
 							'input[name="wp_mcp_ai_settings[enable_health_wellness_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_healthcare_imaging]"],' +
 							'input[name="wp_mcp_ai_settings[enable_cloudways_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +

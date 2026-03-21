@@ -77,6 +77,24 @@ class WP_MCP_AI_Tool_List_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'education',
+			'post_type'             => 'mcp_ai_student',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'educator', 'school_admin', 'registrar' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}

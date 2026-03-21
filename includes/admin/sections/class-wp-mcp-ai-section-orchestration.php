@@ -1721,7 +1721,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.executive-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 					gap: 20px;
 					margin: 30px 0;
 				}
@@ -1897,7 +1897,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.action-cards-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 					gap: 20px;
 				}
 				
@@ -2464,7 +2464,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<style>
 				.wp-mcp-ai-agents-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+					grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
@@ -2632,7 +2632,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}

@@ -268,6 +268,19 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (February–March 2026)
 
+### Telegram Mini App – Member Loading Fix & Role-Based Access (March 2026) ⭐ **NEW**
+
+**Health & Wellness and Medical Vitals templates now reliably load member CPT data**
+
+- ✅ **Server-side member pre-selection**: When a logged-in WordPress subscriber opens a health mini app template, their linked `mcp_ai_member` post is resolved server-side and injected into the page. The member picker overlay is bypassed entirely — the dashboard loads immediately without the user having to select themselves.
+- ✅ **Auto-select single member**: When `list_members` returns exactly one result (e.g. first Telegram session after creating a profile), the picker auto-selects that member and closes without requiring a manual tap.
+- ✅ **Role-based member visibility** — `list_members` tool now enforces:
+  - **Subscribers** (`read` only): see only members they authored — their own profiles.
+  - **Authors / Editors / Admins** (`edit_posts`+): see **all** members across the site for care-team management.
+- ✅ **Retry button on auth failure**: If the member list fetch fails (e.g. network error or unauthenticated first load outside Telegram), a **Retry** button replaces the infinite "Loading…" spinner so users are never stuck.
+- ✅ `wp_mcp_ai_get_member_id_by_user_id()` updated to return `0` for users above subscriber level so higher-role users always get the full member picker.
+- [Template developer reference →](docs/telegram-mini-app-templates.md)
+
 ### WordPress.org Compliance — Final Audit Complete (March 3, 2026) ✅ **FULLY COMPLIANT**
 
 **All 20 compliance categories resolved (PR #4004 + compliance audit)**
@@ -652,8 +665,8 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 **Pro Toolkit Infrastructure - Phase 3 Complete:**
 - ✅ All 13 Pro toolkit settings pages implemented
-- ✅ **13 Active Toolkits**: E-commerce (20), Social Media (19), Analytics (12), Multilingual (10), Video Production (12), Financial Planner (24), Document Generation (3), Calendar Booking (15), DJ Management (18), Image Production (15), AI Tool Builder (10), Architectural Design (16), CRM (1)
-- ✅ **Total: 175 Pro toolkit tools** across 13 specialized domains
+- ✅ **13 Active Toolkits**: E-commerce (20), Social Media (15), Analytics (12), Multilingual (10), Video Production (12), Financial Planner (24), Document Generation (15), Calendar Booking (15), DJ Management (18), Image Production (15), AI Tool Builder (10), Architectural Design (16), CRM (7)
+- ✅ **Total: 189 Pro toolkit tools** across 13 specialized domains
 - ✅ **All "planned" toolkits implemented**: Calendar Booking, DJ Management, Image Production, and AI Tool Builder are fully functional (not planned!)
 - ✅ Multi-agent functionality: Each toolkit can have dedicated AI assistant (up to 13 concurrent specialized agents)
 - [Phase 3 Details →](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
@@ -2467,6 +2480,7 @@ See [Error Handling Documentation](docs/guides/developer/best-practices/ERROR_HA
 Assistant posts ship with dedicated controls that map directly to runtime behaviour:
 
 - **Available Tools** – Choose which registered tools (core, WooCommerce, JetEngine, or custom) the model may invoke. Dependency-aware notices explain why certain tools are unavailable, and you can now disable the pre-built prompt shortcuts that tools normally contribute.
+- **Quick Tool Selection Presets** – 61 one-click presets group all 760 tools by use-case (🤖 Agentic Workflow, 🛒 E-commerce, ⚕️ Healthcare, 💬 Communication, 💻 Development, 📋 Registration & Compliance, and more). Click a preset to add its tools to the current selection; click again to remove them. Combine multiple presets freely. Use **✓ Select All** / **✗ Clear All** for bulk actions. Implemented in `includes/helpers/class-wp-mcp-ai-tool-presets-helper.php`.
 - **Model Defaults** – Provide assistant-specific overrides for the OpenAI model, temperature (0–2), and system prompt applied to every conversation.
 - **Base Knowledge** – Attach Media Library items that are chunked, truncated, and streamed as memory context, and optionally store an external **Vector Store ID** to coordinate retrieval workflows.
 - **Prompt Shortcuts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
@@ -3116,6 +3130,23 @@ When encountering problems, please:
 
 ### Common Issues
 
+#### npm EACCES Permission Error (package-lock.json)
+If you get `EACCES: permission denied, open '.../package-lock.json'` when running `npm install`:
+
+**This means you do NOT need to run `npm install`.**
+
+The plugin distributes pre-built minified assets (`.min.js`/`.min.css` files) so `npm install` is **never required** for production use. You only need npm if you are a developer modifying JavaScript source files.
+
+**Solutions:**
+- **If installing from ZIP**: Simply upload and activate the plugin. No npm commands needed.
+- **If cloning the repository for production use**: Activate the plugin as-is. The pre-built assets in the repository are ready for production.
+- **If you need to rebuild assets** (development only): Run npm on a development machine where you have write access, then deploy the built files.
+
+If you must run npm in a restricted directory (e.g., during CI or scripted deployments), use:
+```bash
+npm install --no-package-lock
+```
+
 #### npm/Composer Install Error After Cloning
 If you get `ENOENT: no such file or directory, uv_cwd` (npm) or `getcwd() failed` (composer) errors:
 
@@ -3136,35 +3167,44 @@ cd mcp-ai-wpoos
 # Verify you're in the right place
 pwd  # Should show the full plugins path
 
-# Install dependencies (autoloader optimization is configured by default)
-npm install && composer install --no-dev
+# NOTE: npm install is NOT required for production use.
+# Activate the plugin in WordPress admin - it is ready to use.
+# Only run composer if you need to update PHP dependencies (development only):
+# composer install --no-dev
 ```
 
 **For Local Development or VPS:**
 
 1. **Ensure you're in the correct directory** - Run `pwd` to verify you're in the `mcp-ai-wpoos` directory
-2. **Check package.json and composer.json exist** - Run `ls -la package.json composer.json` to confirm files are present
-3. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
-4. **Follow the correct workflow**:
+2. **Do not run commands from a moved/deleted directory** - If you moved files, open a new terminal session in the new location
+3. **Production workflow** (no npm or composer needed):
    ```bash
    # Clone the repository
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+
+   # Copy to WordPress plugins directory
+   cp -r mcp-ai-wpoos /path/to/wordpress/wp-content/plugins/
+   # Plugin is ready to activate - no build step required.
+   ```
+
+4. **Development workflow** (only if you need to rebuild JS/CSS assets):
+   ```bash
+   # Clone the repository on your development machine (not the server)
+   git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
    cd mcp-ai-wpoos
-   
-   # Install dependencies BEFORE moving/copying (optimization is configured by default)
-   npm install
+
+   # Install dev dependencies and rebuild assets
+   npm install && npm run build
    composer install --no-dev
-   
-   # THEN copy to WordPress plugins directory
-   cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+
+   # Deploy built files to the server
    ```
 
 5. **Alternative: Clone directly into WordPress** - This avoids copy/move issues:
    ```bash
    cd /path/to/wordpress/wp-content/plugins/
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-   cd mcp-ai-wpoos
-   npm install && composer install --no-dev
+   # Activate the plugin - it is production-ready without any npm or composer commands.
    ```
 
 #### Chat Not Working

@@ -295,87 +295,87 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 					<div class="hw-dash-charts-row">
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bp" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bp" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hr" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hr" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'SpO₂ (%)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-spo2" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-spo2" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-temp" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-temp" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-glucose" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-glucose" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'eGFR (mL/min/1.73m²)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-egfr" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-egfr" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-creatinine" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-creatinine" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'BUN (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bun" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bun" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Potassium / Sodium (mEq/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-electrolytes" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-electrolytes" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-phosphorus" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-phosphorus" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-albumin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-albumin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hemoglobin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hemoglobin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'WBC (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-wbc" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-wbc" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Hematocrit (%)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-hematocrit" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-hematocrit" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Platelets (×10³/µL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-platelets" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-platelets" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Chloride / CO2 (mEq/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-electrolytes-ext" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-electrolytes-ext" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Calcium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-calcium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-calcium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Magnesium (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-magnesium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-magnesium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'AST / ALT (U/L)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-liver" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-liver" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Bilirubin (mg/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-bilirubin" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-bilirubin" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Total Protein (g/dL)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="mv-chart-total-protein" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="mv-chart-total-protein" height="120"></canvas></div>
 						</div>
 					</div>
 
@@ -412,6 +412,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-kidney-tbody"></tbody>
@@ -428,6 +429,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-cbc-tbody"></tbody>
@@ -444,6 +446,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 									<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Normal Range', 'mcp-ai-wpoos-pro' ); ?></th>
 									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
 								</tr>
 							</thead>
 							<tbody id="mv-lft-tbody"></tbody>
@@ -477,7 +480,7 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .hw-dash-select{min-width:220px;}
 .hw-dash-section{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px 24px;margin:20px 0;}
 .hw-dash-section-title{font-size:18px;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid #f0f0f1;}
-.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
 .hw-dash-kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
 .hw-dash-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#1565c0;}
 .hw-dash-kpi-bp::before{background:#c62828;}
@@ -490,12 +493,14 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 .hw-dash-kpi-sub.status-warning{color:#e65100;}
 .hw-dash-kpi-sub.status-alert{color:#c62828;}
 .hw-dash-charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}}
+@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-wrap{height:240px;}}
 .hw-dash-chart-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px;}
+.hw-dash-chart-wrap{position:relative;height:160px;}
 .hw-dash-chart-title{font-size:13px;font-weight:600;margin:0 0 10px;color:#1e1e1e;}
 .hw-dash-table-wrap{margin-bottom:20px;}
 .hw-dash-table-title{font-size:14px;font-weight:600;margin:0 0 8px;}
 .hw-dash-goals-table td,.hw-dash-goals-table th,.hw-dash-vitals-table td,.hw-dash-vitals-table th,.hw-dash-kidney-table td,.hw-dash-kidney-table th{padding:8px 10px;font-size:13px;}
+.mv-cell-label{display:none;}
 .hw-dash-placeholder{color:#757575;text-align:center;padding:20px!important;}
 .hw-dash-loading{display:flex;align-items:center;gap:10px;padding:20px;color:#757575;}
 .hw-dash-no-members{color:#757575;}
@@ -523,6 +528,20 @@ class WP_MCP_AI_Medical_Vitals_Dashboard_Page {
 	content:"📋 Notes: ";
 	font-weight:600;
 	color:#1565c0;
+}
+/* ── Mobile: stack table rows as cards ───────────────────────── */
+@media(max-width:782px){
+.hw-dash-vitals-table,.hw-dash-kidney-table{table-layout:auto;width:100%;}
+.hw-dash-vitals-table thead,.hw-dash-kidney-table thead{display:none;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row,.hw-dash-kidney-table tbody tr{display:block;margin-bottom:12px;border:1px solid #dcdcde;border-radius:4px;overflow:hidden;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row td,.hw-dash-kidney-table tbody td{display:flex;justify-content:space-between;align-items:flex-start;width:100%;box-sizing:border-box;border-bottom:1px solid #f0f0f1;white-space:normal;word-break:break-word;background:inherit;}
+.hw-dash-vitals-table tbody tr.mv-vitals-data-row td::before,.hw-dash-kidney-table tbody td::before{content:none;}
+.mv-cell-label{display:block;font-weight:600;color:#555;flex-shrink:0;margin-right:10px;min-width:40%;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row{display:block;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row td{display:block;}
+.hw-dash-vitals-table tbody tr.mv-vitals-notes-row td::before{content:"📋 Notes: ";display:inline;font-weight:600;color:#1565c0;}
+.hw-dash-placeholder::before{content:none!important;}
+.hw-dash-placeholder{display:block!important;text-align:center;}
 }
 		';
 	}
@@ -604,6 +623,7 @@ function buildLineChart(canvasId,labels,data,color,refLine,refLabel,maxY){
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
+			maintainAspectRatio:false,
 			plugins:{legend:{display:!!refLine}},
 			scales:{
 				y:{beginAtZero:true,max:maxY||undefined,ticks:{maxTicksLimit:5}},
@@ -622,6 +642,7 @@ function buildMultiLineChart(canvasId,labels,datasets){
 		data:{labels:labels,datasets:datasets},
 		options:{
 			responsive:true,
+			maintainAspectRatio:false,
 			plugins:{legend:{display:true,position:'top'}},
 			scales:{
 				y:{beginAtZero:false,ticks:{maxTicksLimit:5}},
@@ -738,6 +759,13 @@ function renderMVDashboard(history){
 			if(v>0) return v;
 		}
 		return 0;
+	}
+	function latestDateFor(field){
+		for(var i=history.length-1;i>=0;i--){
+			var v=parseFloat(extractVitalValue(history[i],field));
+			if(v>0) return getEntryDate(history[i]);
+		}
+		return '';
 	}
 	var sys   = latestFor('bp_systolic');
 	var dia   = latestFor('bp_diastolic');
@@ -864,22 +892,22 @@ function renderMVDashboard(history){
 
 		tbody.append(
 			'<tr class="mv-vitals-data-row '+rowParity+'">'+
-			'<td>'+getEntryDate(r)+'</td>'+
-			'<td>'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
-			'<td>'+(rHr||'—')+'</td>'+
-			'<td>'+(rSpo2||'—')+'</td>'+
-			'<td>'+(rTemp||'—')+'</td>'+
-			'<td>'+(rGluc||'—')+'</td>'+
-			'<td>'+(rEgfr||'—')+'</td>'+
-			'<td>'+(rCreat||'—')+'</td>'+
-			'<td>'+(rHgb||'—')+'</td>'+
+			'<td data-label="Date"><span class="mv-cell-label">Date</span>'+getEntryDate(r)+'</td>'+
+			'<td data-label="BP (sys/dia)"><span class="mv-cell-label">BP (sys/dia)</span>'+(rSys&&rDia?rSys+'/'+rDia:'—')+'</td>'+
+			'<td data-label="HR"><span class="mv-cell-label">HR</span>'+(rHr||'—')+'</td>'+
+			'<td data-label="SpO₂"><span class="mv-cell-label">SpO₂</span>'+(rSpo2||'—')+'</td>'+
+			'<td data-label="Temp °F"><span class="mv-cell-label">Temp °F</span>'+(rTemp||'—')+'</td>'+
+			'<td data-label="Glucose"><span class="mv-cell-label">Glucose</span>'+(rGluc||'—')+'</td>'+
+			'<td data-label="eGFR"><span class="mv-cell-label">eGFR</span>'+(rEgfr||'—')+'</td>'+
+			'<td data-label="Creatinine"><span class="mv-cell-label">Creatinine</span>'+(rCreat||'—')+'</td>'+
+			'<td data-label="Hgb (g/dL)"><span class="mv-cell-label">Hgb (g/dL)</span>'+(rHgb||'—')+'</td>'+
 			'</tr>'
 		);
 
 		if(rNotes){
 			tbody.append(
 				'<tr class="mv-vitals-notes-row '+rowParity+'">'+
-				'<td colspan="8">'+rNotes+'</td>'+
+				'<td colspan="9">'+rNotes+'</td>'+
 				'</tr>'
 			);
 		}
@@ -890,14 +918,14 @@ function renderMVDashboard(history){
 
 	/* Kidney health markers table */
 	var kidneyMarkers=[
-		{label:'eGFR',       value:egfr,   unit:'mL/min/1.73m²',normal:'≥60',   cls:egfrStatusClass(egfr)},
-		{label:'Creatinine', value:creat,  unit:'mg/dL',         normal:'0.6–1.2',cls:(creat>0&&creat<=1.2)?'status-normal':creat<=1.5?'status-warning':'status-alert'},
-		{label:'BUN',        value:bun,    unit:'mg/dL',         normal:'7–20',  cls:(bun>=7&&bun<=20)?'status-normal':bun<=25?'status-warning':'status-alert'},
-		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert'},
-		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert'},
-		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert'},
-		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert'},
-		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb)}
+		{label:'eGFR',       value:egfr,   unit:'mL/min/1.73m²',normal:'≥60',   cls:egfrStatusClass(egfr),  date:latestDateFor('egfr')},
+		{label:'Creatinine', value:creat,  unit:'mg/dL',         normal:'0.6–1.2',cls:(creat>0&&creat<=1.2)?'status-normal':creat<=1.5?'status-warning':'status-alert', date:latestDateFor('creatinine')},
+		{label:'BUN',        value:bun,    unit:'mg/dL',         normal:'7–20',  cls:(bun>=7&&bun<=20)?'status-normal':bun<=25?'status-warning':'status-alert', date:latestDateFor('bun')},
+		{label:'K⁺ Potassium',value:pot,  unit:'mEq/L',         normal:'3.5–5.0',cls:(pot>=3.5&&pot<=5.0)?'status-normal':pot<=5.5?'status-warning':'status-alert', date:latestDateFor('potassium')},
+		{label:'Na⁺ Sodium', value:sodMv, unit:'mEq/L',         normal:'136–145',cls:(sodMv>=136&&sodMv<=145)?'status-normal':sodMv>=130?'status-warning':'status-alert', date:latestDateFor('sodium')},
+		{label:'Phosphorus', value:phos,  unit:'mg/dL',         normal:'2.5–4.5',cls:(phos>=2.5&&phos<=4.5)?'status-normal':phos<=5.5?'status-warning':'status-alert', date:latestDateFor('phosphorus')},
+		{label:'Albumin',    value:alb,   unit:'g/dL',          normal:'3.5–5.0',cls:(alb>=3.5&&alb<=5.0)?'status-normal':alb>=3.0?'status-warning':'status-alert', date:latestDateFor('albumin')},
+		{label:'Hemoglobin', value:hgb,   unit:'g/dL',          normal:'≥12.0', cls:hgbStatus(hgb), date:latestDateFor('hemoglobin')}
 	];
 	var hasKidney = egfr||creat||bun||pot||sodMv||phos||alb||hgb;
 	if(hasKidney){
@@ -907,10 +935,11 @@ function renderMVDashboard(history){
 			var statusText = m.value ? (m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert') : '—';
 			kTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
+				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
+				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -930,20 +959,20 @@ function renderMVDashboard(history){
 	var bsoPct   = latestFor('basophils_percent');
 
 	var cbcMarkers = [
-		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb)},
-		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct)},
-		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert'},
-		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc)},
-		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt)},
-		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert'},
-		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert'},
-		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert'},
-		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert'},
-		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning'},
-		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning'},
-		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning'},
-		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert'},
-		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning'}
+		{label:'Hemoglobin', value:hgb, unit:'g/dL',       normal:'≥12.0',    cls:hgbStatus(hgb),                                                                         date:latestDateFor('hemoglobin')},
+		{label:'Hematocrit', value:hct, unit:'%',           normal:'36–52',    cls:hctStatus(hct),                                                                         date:latestDateFor('hematocrit')},
+		{label:'RBC',        value:rbc, unit:'x10⁶/µL',    normal:'4.0–5.5',  cls:(rbc>=4.0&&rbc<=5.5)?'status-normal':rbc>=3.5?'status-warning':'status-alert',         date:latestDateFor('rbc')},
+		{label:'WBC',        value:wbc, unit:'x10³/µL',    normal:'4.0–11.0', cls:wbcStatus(wbc),                                                                         date:latestDateFor('wbc')},
+		{label:'Platelets',  value:plt, unit:'x10³/µL',    normal:'150–400',  cls:pltStatus(plt),                                                                         date:latestDateFor('platelets')},
+		{label:'MCV',        value:mcv, unit:'fL',          normal:'80–100',   cls:(mcv>=80&&mcv<=100)?'status-normal':mcv>=70?'status-warning':'status-alert',           date:latestDateFor('mcv')},
+		{label:'MCH',        value:mch, unit:'pg',          normal:'27–33',    cls:(mch>=27&&mch<=33)?'status-normal':mch>=24?'status-warning':'status-alert',            date:latestDateFor('mch')},
+		{label:'MCHC',       value:mchc,unit:'g/dL',       normal:'32–36',    cls:(mchc>=32&&mchc<=36)?'status-normal':mchc>=30?'status-warning':'status-alert',         date:latestDateFor('mchc')},
+		{label:'RDW',        value:rdw, unit:'%',           normal:'11.5–14.5',cls:(rdw>=11.5&&rdw<=14.5)?'status-normal':rdw<=16?'status-warning':'status-alert',       date:latestDateFor('rdw')},
+		{label:'Neutrophils %', value:neutPct, unit:'%',   normal:'50–70',    cls:(neutPct>=50&&neutPct<=70)?'status-normal':'status-warning',                           date:latestDateFor('neutrophils_percent')},
+		{label:'Lymphocytes %', value:lymphPct,unit:'%',   normal:'20–40',    cls:(lymphPct>=20&&lymphPct<=40)?'status-normal':'status-warning',                         date:latestDateFor('lymphocytes_percent')},
+		{label:'Monocytes %',   value:monoPct, unit:'%',   normal:'2–8',      cls:(monoPct>=2&&monoPct<=8)?'status-normal':'status-warning',                             date:latestDateFor('monocytes_percent')},
+		{label:'Eosinophils %', value:eoPct,   unit:'%',   normal:'1–4',      cls:(eoPct>=1&&eoPct<=4)?'status-normal':eoPct<=6?'status-warning':'status-alert',        date:latestDateFor('eosinophils_percent')},
+		{label:'Basophils %',   value:bsoPct,  unit:'%',   normal:'0–1',      cls:(bsoPct>=0&&bsoPct<=1)?'status-normal':'status-warning',                              date:latestDateFor('basophils_percent')}
 	];
 	var hasCbc = hgb||hct||rbc||wbc||plt||mcv||mch||mchc||rdw;
 	if(hasCbc){
@@ -954,10 +983,11 @@ function renderMVDashboard(history){
 			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
 			cTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
+				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
+				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});
@@ -966,14 +996,14 @@ function renderMVDashboard(history){
 
 	/* Extended BMP / Liver function table */
 	var lftMarkers = [
-		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert'},
-		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert'},
-		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert'},
-		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert'},
-		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert'},
-		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert'},
-		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert'},
-		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert'}
+		{label:'Chloride Cl⁻',  value:chlor, unit:'mEq/L', normal:'98–107',  cls:(chlor>=98&&chlor<=107)?'status-normal':chlor>=95?'status-warning':'status-alert', date:latestDateFor('chloride')},
+		{label:'CO2/HCO₃⁻',    value:co2,   unit:'mEq/L', normal:'22–29',   cls:(co2>=22&&co2<=29)?'status-normal':co2>=18?'status-warning':'status-alert',        date:latestDateFor('co2')},
+		{label:'Calcium Ca2+',  value:calc,  unit:'mg/dL', normal:'8.5–10.2',cls:(calc>=8.5&&calc<=10.2)?'status-normal':calc>=8.0?'status-warning':'status-alert', date:latestDateFor('calcium')},
+		{label:'Magnesium Mg2+',value:mag,   unit:'mg/dL', normal:'1.7–2.2', cls:(mag>=1.7&&mag<=2.2)?'status-normal':mag>=1.5?'status-warning':'status-alert',    date:latestDateFor('magnesium')},
+		{label:'Bilirubin (T)', value:bili,  unit:'mg/dL', normal:'0.1–1.2', cls:(bili<=1.2)?'status-normal':bili<=2.0?'status-warning':'status-alert',            date:latestDateFor('bilirubin')},
+		{label:'AST / SGOT',    value:ast,   unit:'U/L',   normal:'10–40',   cls:(ast>=10&&ast<=40)?'status-normal':ast<=80?'status-warning':'status-alert',        date:latestDateFor('ast')},
+		{label:'ALT / SGPT',    value:alt,   unit:'U/L',   normal:'7–56',    cls:(alt>=7&&alt<=56)?'status-normal':alt<=100?'status-warning':'status-alert',        date:latestDateFor('alt')},
+		{label:'Total Protein', value:tprot, unit:'g/dL',  normal:'6.0–8.3', cls:(tprot>=6.0&&tprot<=8.3)?'status-normal':tprot>=5.0?'status-warning':'status-alert', date:latestDateFor('total_protein')}
 	];
 	var hasLft = chlor||co2||calc||mag||bili||ast||alt||tprot;
 	if(hasLft){
@@ -984,10 +1014,11 @@ function renderMVDashboard(history){
 			var statusText = m.cls==='status-normal'?'Normal':m.cls==='status-warning'?'Monitor':'Alert';
 			lTbody.append(
 				'<tr>'+
-				'<td><strong>'+m.label+'</strong></td>'+
-				'<td>'+displayVal+'</td>'+
-				'<td>'+m.normal+'</td>'+
-				'<td class="'+m.cls+'">'+statusText+'</td>'+
+				'<td data-label="Marker"><span class="mv-cell-label">Marker</span><strong>'+m.label+'</strong></td>'+
+				'<td data-label="Value"><span class="mv-cell-label">Value</span>'+displayVal+'</td>'+
+				'<td data-label="Normal Range"><span class="mv-cell-label">Normal Range</span>'+m.normal+'</td>'+
+				'<td data-label="Status" class="'+m.cls+'"><span class="mv-cell-label">Status</span>'+statusText+'</td>'+
+				'<td data-label="Date"><span class="mv-cell-label">Date</span>'+(m.date||'—')+'</td>'+
 				'</tr>'
 			);
 		});

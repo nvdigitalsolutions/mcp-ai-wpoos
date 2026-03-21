@@ -729,7 +729,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$phone_number_id_meta = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
-		$connection_id_meta   = isset( $message_data['connection_id'] ) ? $message_data['connection_id'] : '';
+		$resolved_connection  = ! empty( $phone_number_id_meta ) ? $this->get_connection_by_phone_number_id( $phone_number_id_meta ) : null;
+		$connection_id_meta   = $resolved_connection && isset( $resolved_connection['id'] ) ? sanitize_key( $resolved_connection['id'] ) : '';
+		// Augment message_data with the resolved connection_id so downstream hooks see it.
+		$message_data['connection_id'] = $connection_id_meta;
 
 		// Persist to Channel Contacts CCT (find or create contact record).
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
@@ -737,9 +740,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'whatsapp',
 				$from,
 				array(
-					'display_name'  => $contact_name,
-					'phone_number'  => $from,
-					'connection_id' => $connection_id_meta,
+					'display_name'      => $contact_name,
+					'phone_number'      => $from,
+					'connection_id'     => $connection_id_meta,
+					'conversation_type' => 'dm',
 				)
 			);
 
@@ -771,6 +775,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => $timestamp,
 					'reply_sent'         => 0,
 					'assigned_agent'     => '',
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
@@ -1333,12 +1338,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 									'timestamp'          => time(),
 									'reply_sent'         => 1,
 									'assigned_agent'     => (string) $assistant_id,
+									'conversation_type'  => 'dm',
 								)
 							);
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id ) );
+							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
 							if ( $wa_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 							}
@@ -1385,13 +1391,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id ) );
+			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
 			if ( $wa_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 			}

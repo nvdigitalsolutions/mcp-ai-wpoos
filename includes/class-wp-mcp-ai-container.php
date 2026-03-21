@@ -770,6 +770,71 @@ class WP_MCP_AI_Container {
 				return new WP_MCP_AI_Cron_Status_Service();
 			}
 		);
+
+		// Infrastructure adapters (Phase 2 — domain/WordPress boundary).
+		$this->singleton(
+			'infrastructure.options_store',
+			function () {
+				return new WP_MCP_AI_WP_Options_Store();
+			}
+		);
+
+		$this->singleton(
+			'infrastructure.capability_checker',
+			function () {
+				return new WP_MCP_AI_WP_Capability_Checker();
+			}
+		);
+
+		$this->singleton(
+			'infrastructure.http_client',
+			function () {
+				return new WP_MCP_AI_WP_HTTP_Client();
+			}
+		);
+
+		// Provider adapters — implement Interface_WP_MCP_AI_Provider_Client.
+		$this->singleton(
+			'provider.openai',
+			function () {
+				return new WP_MCP_AI_OpenAI_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.gemini',
+			function () {
+				return new WP_MCP_AI_Gemini_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.anthropic',
+			function () {
+				return new WP_MCP_AI_Anthropic_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.ollama',
+			function () {
+				return new WP_MCP_AI_Ollama_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.cloudflare',
+			function () {
+				return new WP_MCP_AI_Cloudflare_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.lm_studio',
+			function () {
+				return new WP_MCP_AI_LM_Studio_Provider_Client();
+			}
+		);
 	}
 
 	/**

@@ -10,6 +10,24 @@
 (function ($) {
 	'use strict';
 
+	/**
+	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
+	 *
+	 * @param {string} url URL to validate.
+	 * @return {string} The URL HTML-encoded if safe, otherwise '#'.
+	 */
+	function safeUrl( url ) {
+		const str = String( url );
+		if ( ! /^https?:\/\//i.test( str ) ) {
+			return '#';
+		}
+		return str
+			.replace( /&/g, '&amp;' )
+			.replace( /"/g, '&quot;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' );
+	}
+
 	const MediaCollectionAdmin = {
 		/**
 		 * Initialize the admin interface enhancements.
@@ -111,13 +129,15 @@
 			const errorCount = urlParams.get('processing_errors');
 
 			if (processedCount) {
-				let message = `<strong>Processing Complete!</strong> ${processedCount} collection(s) processed successfully.`;
+				const safeProcessed = parseInt( processedCount, 10 );
+				const safeErrors = errorCount ? parseInt( errorCount, 10 ) : 0;
+				let message = `<strong>Processing Complete!</strong> ${safeProcessed} collection(s) processed successfully.`;
 
-				if (errorCount) {
-					message += ` ${errorCount} collection(s) failed to process.`;
+				if (safeErrors) {
+					message += ` ${safeErrors} collection(s) failed to process.`;
 				}
 
-				const noticeClass = errorCount > 0 ? 'notice-warning' : 'notice-success';
+				const noticeClass = safeErrors > 0 ? 'notice-warning' : 'notice-success';
 
 				const notice = `
 					<div class="notice ${noticeClass} template-bulk-action is-dismissible">
@@ -142,11 +162,15 @@
 			const exportKey = urlParams.get('export_key');
 
 			if (exportedCount && exportKey) {
+				const safeCount = parseInt( exportedCount, 10 );
+				const safeKey = encodeURIComponent( exportKey );
+				const safeNonce = encodeURIComponent( mcpAiMediaCollection.nonce );
+				const safeAjaxUrl = safeUrl( mcpAiMediaCollection.ajaxUrl );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
-						<p><strong>Export Complete!</strong> ${exportedCount} collection(s) exported.</p>
+						<p><strong>Export Complete!</strong> ${safeCount} collection(s) exported.</p>
 						<p>
-							<a href="${mcpAiMediaCollection.ajaxUrl}?action=mcp_ai_download_collection_export&key=${exportKey}&_wpnonce=${mcpAiMediaCollection.nonce}" 
+							<a href="${safeAjaxUrl}?action=mcp_ai_download_collection_export&key=${safeKey}&_wpnonce=${safeNonce}" 
 							   class="template-export-link" download="media-collections-export.json">
 								<span class="dashicons dashicons-download"></span>
 								Download Export File

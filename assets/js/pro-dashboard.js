@@ -8,6 +8,18 @@
 (function($) {
 	'use strict';
 
+	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml( text ) {
+		const d = document.createElement( 'div' );
+		d.textContent = String( text );
+		return d.innerHTML.replace( /"/g, '&quot;' );
+	}
+
 	// Debug: Check if script is loading
 	console.log('Pro Dashboard script loaded');
 	console.log('jQuery version:', $.fn.jquery);
@@ -465,7 +477,6 @@
 		filterMonitoringEvents: function() {
 			const eventType = $('#monitoring-event-type').val();
 			const severity = $('#monitoring-severity').val();
-			const timeframe = $('#monitoring-timeframe').val();
 			const search = $('#monitoring-search').val().toLowerCase();
 			
 			// Filter event table rows
@@ -582,7 +593,6 @@
 		 * Refresh monitoring data.
 		 */
 		refreshMonitoringData: function() {
-			const self = this;
 			const $refreshButton = $('#wp-mcp-ai-refresh-monitoring');
 			
 			// Show loading state
@@ -690,10 +700,10 @@
 			const timestamp = $row.data('event-timestamp');
 			
 			const detailsHtml = '<div class="wp-mcp-ai-event-details">' +
-				'<div class="wp-mcp-ai-detail-row"><strong>Severity:</strong> <span class="wp-mcp-ai-severity-badge wp-mcp-ai-severity-' + severity + '">' + severity + '</span></div>' +
-				'<div class="wp-mcp-ai-detail-row"><strong>Type:</strong> ' + type + '</div>' +
-				'<div class="wp-mcp-ai-detail-row"><strong>Message:</strong> ' + message + '</div>' +
-				'<div class="wp-mcp-ai-detail-row"><strong>Timestamp:</strong> ' + new Date(timestamp * 1000).toLocaleString() + '</div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Severity:</strong> <span class="wp-mcp-ai-severity-badge wp-mcp-ai-severity-' + escapeHtml( severity ) + '">' + escapeHtml( severity ) + '</span></div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Type:</strong> ' + escapeHtml( type ) + '</div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Message:</strong> ' + escapeHtml( message ) + '</div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Timestamp:</strong> ' + escapeHtml( new Date(timestamp * 1000).toLocaleString() ) + '</div>' +
 				'</div>';
 			
 			$('#wp-mcp-ai-event-details-content').html(detailsHtml);

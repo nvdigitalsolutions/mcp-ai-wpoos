@@ -179,6 +179,7 @@ jobs:
             --exclude 'babel.config.js' \
             --exclude 'jest.config.js' \
             --exclude 'esbuild.config.js' \
+            --exclude 'webpack.config.tma-woo-shop.js' \
             --exclude 'docker-compose.yml' \
             --exclude 'patches' \
             --exclude 'docs' \

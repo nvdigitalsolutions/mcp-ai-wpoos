@@ -33,6 +33,7 @@ const init = () => {
 		saveUrl: root.dataset.saveUrl || '',
 		activeTemplate: root.dataset.activeTemplate || 'default',
 		previewBaseUrl: root.dataset.previewBaseUrl || '',
+		customizeUrl: root.dataset.customizeUrl || '',
 	};
 
 	createRoot( root ).render(

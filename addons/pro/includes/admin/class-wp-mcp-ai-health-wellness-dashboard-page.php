@@ -412,27 +412,27 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 					<div class="hw-dash-charts-row">
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Steps — daily trend', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-steps" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-steps" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Water — daily glasses', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-water" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-water" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Sleep — daily hours', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-sleep" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-sleep" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Calories — daily kcal', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-calories" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-calories" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Sodium — daily mg (goal ≤2,300)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-sodium" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-sodium" height="120"></canvas></div>
 						</div>
 						<div class="hw-dash-chart-card">
 							<h3 class="hw-dash-chart-title"><?php esc_html_e( 'Mood — daily rating (1–5)', 'mcp-ai-wpoos-pro' ); ?></h3>
-							<canvas id="hw-chart-mood" height="120"></canvas>
+							<div class="hw-dash-chart-wrap"><canvas id="hw-chart-mood" height="120"></canvas></div>
 						</div>
 					</div>
 
@@ -486,7 +486,7 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 .hw-dash-select{min-width:220px;}
 .hw-dash-section{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:20px 24px;margin:20px 0;}
 .hw-dash-section-title{font-size:18px;margin:0 0 16px;padding-bottom:10px;border-bottom:2px solid #f0f0f1;}
-.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.hw-dash-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
 .hw-dash-kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
 .hw-dash-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#2e7d32;}
 .hw-dash-kpi-steps::before{background:#2e7d32;}
@@ -504,8 +504,9 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 .hw-dash-kpi-sub.status-warning{color:#e65100;}
 .hw-dash-kpi-sub.status-alert{color:#c62828;}
 .hw-dash-charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}}
+@media(max-width:782px){.hw-dash-charts-row{grid-template-columns:1fr;}.hw-dash-chart-wrap{height:240px;}}
 .hw-dash-chart-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px;}
+.hw-dash-chart-wrap{position:relative;height:160px;}
 .hw-dash-chart-title{font-size:13px;font-weight:600;margin:0 0 10px;color:#1e1e1e;}
 .hw-dash-table-wrap{margin-bottom:20px;}
 .hw-dash-table-title{font-size:14px;font-weight:600;margin:0 0 8px;}
@@ -525,6 +526,16 @@ class WP_MCP_AI_Health_Wellness_Dashboard_Page {
 .status-warning{color:#e65100!important;font-weight:600;}
 .status-alert{color:#c62828!important;font-weight:600;}
 .hw-dash-no-members{color:#757575;}
+/* ── Mobile: stack table rows as cards ───────────────────────── */
+@media(max-width:782px){
+.hw-dash-goals-table{table-layout:auto;width:100%;}
+.hw-dash-goals-table thead{display:none;}
+.hw-dash-goals-table tbody tr{display:block;margin-bottom:12px;border:1px solid #dcdcde;border-radius:4px;overflow:hidden;}
+.hw-dash-goals-table tbody td{display:flex;justify-content:space-between;align-items:flex-start;width:100%;box-sizing:border-box;border-bottom:1px solid #f0f0f1;white-space:normal;word-break:break-word;}
+.hw-dash-goals-table tbody td::before{content:attr(data-label);font-weight:600;color:#555;flex-shrink:0;margin-right:10px;min-width:40%;}
+.hw-dash-placeholder::before{content:none!important;}
+.hw-dash-placeholder{display:block!important;text-align:center;}
+}
 		';
 	}
 
@@ -601,6 +612,7 @@ type:'line',
 data:{labels:labels,datasets:datasets},
 options:{
 responsive:true,
+maintainAspectRatio:false,
 plugins:{legend:{display:!!refLine}},
 scales:{
 y:{beginAtZero:true,max:maxY||undefined,ticks:{maxTicksLimit:5}},
@@ -684,11 +696,11 @@ return avg(last5) > avg(prev5) ? '↑' : avg(last5)<avg(prev5) ? '↓' : '→';
 })(g.label==='Steps'?stepsArr:g.label==='Water'?waterArr:g.label==='Sleep'?sleepArr:g.label==='Calories'?calArr:sodArr) : '—';
 tbody.append(
 '<tr>'+
-'<td>'+g.icon+' '+g.label+'</td>'+
-'<td>'+g.total.toLocaleString()+' '+g.unit+'</td>'+
-'<td>'+g.daily+' '+g.unit+'/day</td>'+
-'<td>'+avgDay+'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="'+fillCls+'" style="width:'+fillW+'%"></div></div> <small>'+pctVal+'%</small></td>'+
-'<td>'+trend+'</td>'+
+'<td data-label="Metric">'+g.icon+' '+g.label+'</td>'+
+'<td data-label="Period Total / Avg">'+g.total.toLocaleString()+' '+g.unit+'</td>'+
+'<td data-label="Daily Goal">'+g.daily+' '+g.unit+'/day</td>'+
+'<td data-label="Avg Achievement">'+avgDay+'/day &nbsp;<div class="hw-dash-progress-wrap"><div class="'+fillCls+'" style="width:'+fillW+'%"></div></div> <small>'+pctVal+'%</small></td>'+
+'<td data-label="Trend">'+trend+'</td>'+
 '</tr>'
 );
 });

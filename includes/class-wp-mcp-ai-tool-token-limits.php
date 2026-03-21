@@ -95,6 +95,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 		'web_search_validated'              => 2.0,
 		// Web browser - loads and processes full web pages.
 		'web_browser'                       => 2.5,
+		// Webpage screenshot - captures visual screenshot via Playwright or mshots.
+		'capture_webpage_screenshot'        => 2.0,
 		// Deep research - multi-step, multi-source research with several external lookups.
 		'deep_research'                     => 3.0,
 		// Document processing.

@@ -334,16 +334,6 @@
         const pendingScrolls = new Map();
         let rafScheduled = false;
 
-        function performScrolls() {
-            rafScheduled = false;
-            pendingScrolls.forEach(function(scrollTo, element) {
-                if (element && element.parentNode) {
-                    element.scrollTop = scrollTo;
-                }
-            });
-            pendingScrolls.clear();
-        }
-
         return {
             /**
              * Schedule a scroll to bottom operation.
@@ -1609,7 +1599,7 @@
      * @return {*} Cleaned object
      */
     // Keys that typically contain large binary data to be stripped
-    var LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
+    const LARGE_CONTENT_KEYS = ['data', 'base64', 'data_url', 'raw_data', 'binary'];
 
     function stripLargeContentFromObject(obj, depth) {
         if (depth === undefined) {
@@ -1645,7 +1635,7 @@
                 // Check length first to avoid expensive regex on small strings
                 if (obj.length > 5000) {
                     // Sample first 100 chars to check if it looks like base64
-                    var sample = obj.substring(0, 100);
+                    const sample = obj.substring(0, 100);
                     if (/^[A-Za-z0-9+/=]+$/.test(sample)) {
                         return '[base64 data stripped]';
                     }
@@ -1657,12 +1647,12 @@
         // Handle objects - create clean copy
         const cleaned = {};
         
-        for (var key in obj) {
+        for (const key in obj) {
             if (!Object.prototype.hasOwnProperty.call(obj, key)) {
                 continue;
             }
 
-            var value = obj[key];
+            const value = obj[key];
 
             // Skip keys that typically contain large binary data
             if (LARGE_CONTENT_KEYS.indexOf(key) !== -1) {
@@ -1850,7 +1840,7 @@
                     const responseClone = response.clone();
                     
                     return response.json()
-                        .catch(function(parseError) {
+                        .catch(function(_parseError) {
                             // If JSON parsing fails, try to get text for debugging
                             return responseClone.text().then(function(text) {
                                 if (!silent && window.console && console.error) {
@@ -2834,7 +2824,7 @@
                 : Promise.resolve({ success: true });
 
             savePromise
-                .then(function (result) {
+                .then(function (_result) {
                     // Mark as saved in localStorage
                     markMessageAsSaved(messageKey);
                     updateSaveButtonState(button, 'saved');
@@ -3847,7 +3837,7 @@
                 setVoiceChatRecordingState(state, true);
                 updateVoiceChatButtonState(state);
             })
-            .catch(function (error) {
+            .catch(function (_error) {
                 setStatus(
                     state.container,
                     getString('voiceChatPermissionDenied', 'Microphone access was denied.')
@@ -3980,11 +3970,8 @@
             lastModified: Date.now(),
         });
 
-        let uploadedRecord = null;
-
         uploadAudioForTranscription(state, file)
             .then(function (record) {
-                uploadedRecord = record;
                 if (!record || typeof record.id === 'undefined') {
                     throw new Error('Upload failed');
                 }
@@ -4431,6 +4418,17 @@
             const storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
             attachSpeechButton(bubble, state, storedText);
             attachCopyButton(bubble, storedText);
+        });
+
+        // Attach save buttons for assistant messages (mirrors system-message pattern below)
+        let assistantMsgIndex = 0;
+        Array.prototype.forEach.call(bubbles, function (bubble, domIndex) {
+            // Use the actual position in conversation if available, otherwise use DOM index
+            const conversationIndex = (state.conversation && Array.isArray(state.conversation))
+                ? findAssistantMessageIndex(state.conversation, assistantMsgIndex)
+                : domIndex;
+            attachSaveButton(bubble, state, conversationIndex);
+            assistantMsgIndex++;
         });
 
         // Attach save buttons for system messages only
@@ -6376,7 +6374,7 @@
             item.className = 'wp-mcp-ai-chat__attachments-item';
 
             // Add file type icon
-            var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+            let fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
             if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
                 fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo(attachment);
             }
@@ -6408,7 +6406,7 @@
             }
 
             // Prepend file type label to metadata
-            var fullMeta = fileInfo.label || '';
+            let fullMeta = fileInfo.label || '';
             if (metaText) {
                 fullMeta += (fullMeta ? ' • ' : '') + metaText;
             }
@@ -8664,14 +8662,14 @@
         // For video generation jobs, show a placeholder video element that will become active
         // when the video file is created (typically within 5 minutes).
         // Use a generic property-based check (expected_url + .mp4 filename) to avoid tight coupling.
-        var isVideoPending = parsedContent.expected_url && 
+        const isVideoPending = parsedContent.expected_url && 
                              parsedContent.expected_filename && 
                              parsedContent.expected_filename.indexOf('.mp4') !== -1;
         
         if (isVideoPending) {
             // Create a message payload with the video placeholder as an attachment
             // This uses the standard attachment rendering which includes video player support
-            var videoPlaceholderPayload = {
+            const videoPlaceholderPayload = {
                 text: parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.'),
                 attachments: [{
                     url: parsedContent.expected_url,
@@ -8775,7 +8773,7 @@
             const attachments = [];
             const attachmentTitles = [];
 
-            resultArray.forEach(function(item, index) {
+            resultArray.forEach(function(item, _index) {
                 if (!item || typeof item !== 'object') {
                     return;
                 }
@@ -8846,7 +8844,7 @@
 
         // Generic array handling for other tools
         // Build a simple list from the array
-        const items = resultArray.map(function(item, index) {
+        const items = resultArray.map(function(item, _index) {
             if (typeof item === 'string') {
                 return item;
             }
@@ -10306,20 +10304,6 @@
     }
 
     /**
-     * Legacy polling function - kept for compatibility
-     * Now just an alias to waitForAsyncToolResult
-     * 
-     * @deprecated Use waitForAsyncToolResult instead
-     * @param {Object} state Chat state object
-     * @param {string} jobId Job ID for the async tool execution
-     * @param {string} toolName Tool name for display purposes
-     * @return {Promise} Promise that resolves with the tool result
-     */
-    function waitForAsyncToolResultLegacy(state, jobId, toolName) {
-        return waitForAsyncToolResult(state, jobId, toolName);
-    }
-
-    /**
      * Attempt timeout recovery by making a final check for job completion.
      * 
      * When an async tool times out, the video/file may have actually been created
@@ -11607,9 +11591,6 @@
                 // Use display metadata if available, otherwise build from content
                 let assistantPayload;
                 
-                // Check if this message has tool_calls (either in message or display metadata)
-                const hasToolCalls = message.tool_calls || (display && display.tool_calls);
-                
                 if (display) {
                     // Use saved display metadata for consistency
                     // Include both message and text fields if available
@@ -11723,9 +11704,9 @@
             return;
         }
 
-        var vectorStoreId = state.config.vectorStoreId;
-        var assistantId = state.config.assistantId;
-        var url = state.config.vectorStorePreloadEndpoint + '?assistant_id=' + encodeURIComponent(assistantId);
+        const vectorStoreId = state.config.vectorStoreId;
+        const assistantId = state.config.assistantId;
+        const url = state.config.vectorStorePreloadEndpoint + '?assistant_id=' + encodeURIComponent(assistantId);
 
         console.log('[NV oOS] Pre-loading vector store for assistant:', {
             assistantId: assistantId,
@@ -12018,22 +11999,22 @@
             // For profession tests assistantId is "profession_XXX" which fails absint() server-side.
             // Explicitly check for undefined/null rather than relying on falsy, since 0 is a
             // distinct "no valid assistant" case and must not fall back to "profession_XXX".
-            var fetchAssistantId = (state.config.embeddedAssistantId !== undefined && state.config.embeddedAssistantId !== null)
+            const fetchAssistantId = (state.config.embeddedAssistantId !== undefined && state.config.embeddedAssistantId !== null)
                 ? state.config.embeddedAssistantId
                 : state.config.assistantId;
-            var fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(fetchAssistantId);
+            let fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(fetchAssistantId);
             if (state.config.professionId) {
                 fetchUrl += '&profession_id=' + encodeURIComponent(state.config.professionId);
             }
             console.log('[NV oOS] System/professional prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
 
-            var applyServerConfig = function(serverConfig) {
+            const applyServerConfig = function(serverConfig) {
                 if (serverConfig && (serverConfig.system_prompt || serverConfig.professional_prompt)) {
                     // Pre-combine professional_prompt + system_prompt, matching PHP shortcode behaviour
                     // for embedded providers so the client always has a single populated systemPrompt.
-                    var fetchedSystemPrompt = serverConfig.system_prompt || '';
-                    var fetchedProfessionalPrompt = serverConfig.professional_prompt || '';
-                    var combinedSystemPrompt = '';
+                    const fetchedSystemPrompt = serverConfig.system_prompt || '';
+                    const fetchedProfessionalPrompt = serverConfig.professional_prompt || '';
+                    let combinedSystemPrompt = '';
                     if (fetchedProfessionalPrompt && fetchedSystemPrompt) {
                         combinedSystemPrompt = fetchedProfessionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + fetchedSystemPrompt;
                     } else {
@@ -12104,7 +12085,7 @@
             // Build the system prompt that will be passed to the embedded client constructor.
             // New page renders: PHP pre-combines professional + assistant prompts into systemPrompt.
             // Old cached pages: may have only professionalPrompt (no systemPrompt) or both.
-            var completeSystemPrompt = '';
+            let completeSystemPrompt = '';
             if (state.config.systemPrompt) {
                 // PHP has already merged any professional-role content into systemPrompt.
                 // Use it directly to avoid duplicating professional content.
@@ -12601,12 +12582,12 @@
             });
         }
         if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = effectiveSystemPrompt;
+            let systemPromptContent = effectiveSystemPrompt;
 
             // Enhance system prompt with base knowledge context if available.
             // This ensures embedded WebLLM has access to the same knowledge as server-side providers.
             if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
-                var knowledgeContext = '\n\n## Base Knowledge\n\n';
+                let knowledgeContext = '\n\n## Base Knowledge\n\n';
                 knowledgeContext += 'You have access to the following knowledge base files:\n';
                 knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
@@ -12621,12 +12602,12 @@
             // Inject current date/time context so the model knows the current date.
             // Server-side providers receive this via sanitize_options() in PHP; embedded must add it here.
             // Format matches PHP: gmdate('l, F j, Y'), gmdate('Y'), gmdate('H:i:s').
-            var now = new Date();
-            var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            var pad2 = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
-            var dateStr = dayNames[now.getUTCDay()] + ', ' + monthNames[now.getUTCMonth()] + ' ' + now.getUTCDate() + ', ' + now.getUTCFullYear();
-            var timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
+            const now = new Date();
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            const pad2 = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
+            const dateStr = dayNames[now.getUTCDay()] + ', ' + monthNames[now.getUTCMonth()] + ' ' + now.getUTCDate() + ', ' + now.getUTCFullYear();
+            const timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
             systemPromptContent += '\n\n---\n\n**Current Context Information:**\n- Current Date: ' + dateStr + '\n- Current Year: ' + now.getUTCFullYear() + '\n- Current Time: ' + timeStr;
 
             formattedMessages.unshift({
@@ -13417,8 +13398,34 @@
                             capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
                         });
                         const assistantMessage = createConversationMessage('assistant', finalContent, displayMetadata);
-                        state.conversation.push(assistantMessage);
-                        
+
+                        // Add agentic intermediate messages (assistant with tool_calls) FIRST,
+                        // then tool_results, then the final assistant — this is the ordering
+                        // Anthropic requires: assistant(tool_use) → tool_result → final_assistant.
+                        // Without the intermediates before tool_results, Anthropic throws
+                        // "unexpected tool_use_id found in tool_result blocks".
+                        const streamingAgenticMessages = (streamResult.finalData && Array.isArray(streamResult.finalData.agentic_tool_messages))
+                            ? streamResult.finalData.agentic_tool_messages : [];
+
+                        streamingAgenticMessages.forEach(function(agenticMessage) {
+                            if (agenticMessage && agenticMessage.role === 'assistant') {
+                                const formattedMessage = {
+                                    role: 'assistant',
+                                    content: agenticMessage.content || null,
+                                    display: {
+                                        bubbleType: 'assistant',
+                                        text: agenticMessage.content || '',
+                                        attachments: []
+                                    }
+                                };
+                                if (agenticMessage.tool_calls && Array.isArray(agenticMessage.tool_calls)) {
+                                    formattedMessage.tool_calls = agenticMessage.tool_calls;
+                                    formattedMessage.display.tool_calls = agenticMessage.tool_calls;
+                                }
+                                state.conversation.push(formattedMessage);
+                            }
+                        });
+
                         // Process tool_results if present (add them to conversation)
                         if (streamResult.finalData && streamResult.finalData.tool_results) {
                             streamResult.finalData.tool_results.forEach(function(toolResult) {
@@ -13447,6 +13454,9 @@
                                 }
                             });
                         }
+
+                        // Push final assistant message AFTER agentic intermediates and tool_results.
+                        state.conversation.push(assistantMessage);
                         
                         // Save and finalize
                         saveConversationToStorage(state);
@@ -14015,7 +14025,7 @@
             // This handles the case where the server closes the connection after sending [DONE]
             // but before the browser's reader.read() returns {done: true}.
             // The network error is benign in this case - we have all the data we need.
-            var hasContent = typeof fullContent === 'string' && fullContent.length > 0;
+            const hasContent = typeof fullContent === 'string' && fullContent.length > 0;
             if (capturedFinalData || hasContent) {
                 if (window.console && console.log) {
                     console.log('[NV oOS] Stream read error after final data received, treating as successful completion:', {
@@ -14727,10 +14737,10 @@
             // By setting "Tool completed successfully" here instead of clearing immediately,
             // the calling code's delayed clearStatus (after 1.5s) will work properly,
             // giving users time to see the completion message.
-            var hasAsyncPendingTools = false;
+            let hasAsyncPendingTools = false;
             data.tool_results.forEach(function(toolResult) {
                 if (toolResult && toolResult.content) {
-                    var parsedContent = parseToolResultContent(toolResult.content);
+                    const parsedContent = parseToolResultContent(toolResult.content);
                     if (isAsyncPendingToolResult(parsedContent)) {
                         hasAsyncPendingTools = true;
                     }
@@ -15130,6 +15140,23 @@
             }
         }
 
+        // Resolve agentic_tool_messages from either SSE top-level or non-SSE data.data location.
+        // SSE path (after PHP fix): data.agentic_tool_messages
+        // Non-SSE path: data.data.agentic_tool_messages
+        const agenticMessages = (data && Array.isArray(data.agentic_tool_messages) && data.agentic_tool_messages.length > 0)
+            ? data.agentic_tool_messages
+            : (data && data.data && Array.isArray(data.data.agentic_tool_messages) && data.data.agentic_tool_messages.length > 0)
+                ? data.data.agentic_tool_messages
+                : [];
+
+        // When there are agentic intermediates or tool_results, the final assistant message must be
+        // pushed AFTER them so that Anthropic (and other providers) receive the correct ordering:
+        //   assistant(tool_use) → tool_result → final_assistant
+        // Without this, Anthropic throws "unexpected tool_use_id" because tool_result blocks
+        // appear in the conversation without a preceding assistant message containing tool_use blocks.
+        const hasDeferredMessages = agenticMessages.length > 0 ||
+            (data && Array.isArray(data.tool_results) && data.tool_results.length > 0);
+
         // OpenAI requires assistant messages with tool_calls to have valid content.
         // Empty string causes "Invalid parameter(s): messages" errors.
         // Use null for messages with tool_calls but no text content.
@@ -15143,14 +15170,18 @@
                 // OpenAI accepts null but not empty string for content when tool_calls present
                 assistantMessage.content = null;
             }
-            state.conversation.push(assistantMessage);
+            // Only push immediately when there are no agentic intermediates or tool_results.
+            // Otherwise defer the push until after those messages to maintain correct ordering.
+            if (!hasDeferredMessages) {
+                state.conversation.push(assistantMessage);
+            }
         }
 
         // Add intermediate assistant messages with tool_calls from agentic loop to conversation.
         // These messages capture the AI's reasoning and tool invocations during multi-step workflows.
         // They must be added before tool_results to maintain correct message ordering for API compatibility.
-        if (data && Array.isArray(data.agentic_tool_messages) && data.agentic_tool_messages.length > 0) {
-            data.agentic_tool_messages.forEach(function (agenticMessage) {
+        if (agenticMessages.length > 0) {
+            agenticMessages.forEach(function (agenticMessage) {
                 if (agenticMessage && agenticMessage.role === 'assistant') {
                     // Create a properly formatted assistant message for conversation state
                     const formattedMessage = {
@@ -15318,7 +15349,7 @@
          */
         function addVideoPendingAttachment(assistantDisplay, parsedContent, bubbleElement) {
             // Check if this is a pending video generation
-            var isVideoPending = parsedContent.expected_url && 
+            const isVideoPending = parsedContent.expected_url && 
                                  parsedContent.expected_filename && 
                                  parsedContent.expected_filename.indexOf('.mp4') !== -1;
             
@@ -15327,7 +15358,7 @@
             }
             
             // Add text to assistant display if not already present
-            var videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
+            const videoText = parsedContent.message || getString('videoGenerating', 'Video generation started. Your video will be available within approximately 5 minutes.');
             if (!assistantDisplay.text) {
                 assistantDisplay.text = videoText;
             } else if (assistantDisplay.text.indexOf(videoText) === -1) {
@@ -15335,7 +15366,7 @@
             }
             
             // Add video placeholder attachment to assistant display
-            var videoAttachment = {
+            const videoAttachment = {
                 url: parsedContent.expected_url,
                 label: parsedContent.expected_filename || 'Video (generating...)',
                 downloadName: parsedContent.expected_filename || 'video.mp4',
@@ -15362,7 +15393,7 @@
             }
             
             // Find or create the attachments list
-            var list = bubbleElement.querySelector('.wp-mcp-ai-chat__bubble-attachments');
+            let list = bubbleElement.querySelector('.wp-mcp-ai-chat__bubble-attachments');
             if (!list) {
                 list = document.createElement('ul');
                 list.className = 'wp-mcp-ai-chat__bubble-attachments';
@@ -15370,29 +15401,29 @@
             }
             
             // Create the video attachment item
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__bubble-attachment';
             
             // Render video player
-            var videoContainer = document.createElement('div');
+            const videoContainer = document.createElement('div');
             videoContainer.className = 'wp-mcp-ai-chat__video-container';
             
-            var video = document.createElement('video');
+            const video = document.createElement('video');
             video.controls = true;
             video.preload = 'metadata';
             video.className = 'wp-mcp-ai-chat__video-player';
             
-            var source = document.createElement('source');
+            const source = document.createElement('source');
             source.src = attachment.url;
             
             // Determine MIME type based on URL
-            var mimeType = getVideoMimeType(attachment.url);
+            const mimeType = getVideoMimeType(attachment.url);
             source.type = mimeType;
             
             video.appendChild(source);
             
             // Add fallback text
-            var fallbackText = document.createTextNode(
+            const fallbackText = document.createTextNode(
                 getString('videoNotSupported', 'Your browser does not support video playback.')
             );
             video.appendChild(fallbackText);
@@ -15400,7 +15431,7 @@
             videoContainer.appendChild(video);
             
             // Add download link below video
-            var downloadLink = document.createElement('a');
+            const downloadLink = document.createElement('a');
             downloadLink.href = attachment.url;
             downloadLink.download = attachment.downloadName || 'video.mp4';
             downloadLink.className = 'wp-mcp-ai-chat__video-download';
@@ -15411,7 +15442,7 @@
             
             // Add metadata if present
             if (attachment.meta) {
-                var meta = document.createElement('div');
+                const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
                 meta.textContent = attachment.meta;
                 item.appendChild(meta);
@@ -15807,14 +15838,14 @@
         // If so, set "Tool completed successfully" status instead of clearing
         // This allows the calling code's delayed clearStatus to work properly
         // hasToolResults was already declared at the start of this function
-        var hasAsyncPending = false;
+        let hasAsyncPending = false;
         
         if (hasToolResults) {
             // Check if any tool results are async pending
-            for (var i = 0; i < data.tool_results.length; i++) {
-                var toolResult = data.tool_results[i];
+            for (let i = 0; i < data.tool_results.length; i++) {
+                const toolResult = data.tool_results[i];
                 if (toolResult && toolResult.content) {
-                    var parsedContent = parseToolResultContent(toolResult.content);
+                    const parsedContent = parseToolResultContent(toolResult.content);
                     if (isAsyncPendingToolResult(parsedContent)) {
                         hasAsyncPending = true;
                         break;
@@ -15837,6 +15868,16 @@
         } else {
             // No tool results - clear status as before
             setStatus(state.container, '');
+        }
+
+        // Deferred push: if the final assistant message was held back so that agentic
+        // intermediates and tool_results could be added first, push it now.
+        // This guarantees the correct ordering for Anthropic and other providers:
+        //   assistant(tool_use) → tool_result → final_assistant
+        if (hasDeferredMessages && state.conversation.indexOf(assistantMessage) === -1) {
+            if (assistantMessage.content || assistantMessage.tool_calls) {
+                state.conversation.push(assistantMessage);
+            }
         }
 
         // SYSTEMATIC VALIDATION: Ensure final assistant/tool messages persist
@@ -16556,7 +16597,7 @@
                     item.classList.add('wp-mcp-ai-chat__bubble-attachment--file');
 
                     // Get file type info for icon display
-                    var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+                    let fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
                     if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
                         fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo({
                             type: attachment.meta || '',
@@ -17304,7 +17345,7 @@
             const videoExtensions = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.avi', '.mkv'];
             for (let i = 0; i < videoExtensions.length; i++) {
                 const ext = videoExtensions[i];
-                if (urlPath.lastIndexOf(ext) === urlPath.length - ext.length) {
+                if (urlPath.endsWith(ext)) {
                     return true;
                 }
             }
@@ -17748,204 +17789,6 @@
         }
         
         return result;
-    }
-
-    /**
-     * Dedicated function for saving chat posts with enhanced error handling.
-     * 
-     * @param {Object} state - Chat state object
-     * @param {Object} saveData - Data to save (title, content, post_type, etc.)
-     * @param {Object} options - Optional settings (retry, timeout, etc.)
-     * @return {Promise} Promise that resolves with save result
-     */
-    function saveChatPost(state, saveData, options) {
-        if (!state || !state.config || !state.config.toolsEndpoint) {
-            return Promise.reject(new Error('Tools endpoint not configured'));
-        }
-
-        if (!saveData || typeof saveData !== 'object') {
-            return Promise.reject(new Error('Invalid save data'));
-        }
-
-        if (!saveData.content && !saveData.post_id) {
-            return Promise.reject(new Error('Save data must include content or post_id'));
-        }
-
-        // Default options
-        const opts = options || {};
-        const maxRetries = opts.maxRetries || 1;
-        const retryDelay = opts.retryDelay || 1000;
-        const timeout = opts.timeout || 30000;
-
-        // Build the payload for save_post tool
-        const payload = {
-            assistant_id: state.config.assistantId,
-            tool: 'save_post',
-            arguments: {
-                title: saveData.title || '',
-                content: saveData.content || '',
-                post_type: saveData.post_type || 'post',
-                status: saveData.status || 'draft',
-            },
-        };
-
-        // Add optional fields
-        if (saveData.post_id) {
-            const postId = parseInt(saveData.post_id, 10);
-            if (isNaN(postId) || postId <= 0) {
-                return Promise.reject(new Error('Invalid post_id provided'));
-            }
-            payload.arguments.post_id = postId;
-        }
-        if (saveData.excerpt) {
-            payload.arguments.excerpt = saveData.excerpt;
-        }
-        if (saveData.slug) {
-            payload.arguments.slug = saveData.slug;
-        }
-
-        // Add session key if available
-        if (state.config.sessionKey) {
-            payload.session_key = state.config.sessionKey;
-        }
-
-        /**
-         * Internal function to attempt the save request.
-         * 
-         * @param {number} attempt - Current attempt number
-         * @return {Promise} Promise that resolves with response data
-         */
-        function attemptSave(attempt) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(function() {
-                controller.abort();
-            }, timeout);
-
-            return postJson(
-                state.config.toolsEndpoint,
-                payload,
-                buildJsonHeaders(state),
-                {
-                    timeout: timeout,
-                    signal: controller.signal,
-                    state: state
-                }
-            )
-                .then(function(response) {
-                    clearTimeout(timeoutId);
-                    
-                    // Clone response for error handling
-                    const responseClone = response.clone();
-                    
-                    return response.json()
-                        .catch(function(parseError) {
-                            // If JSON parsing fails, try to get text for debugging
-                            return responseClone.text().then(function(text) {
-                                throw new Error('Invalid JSON response: ' + text.substring(0, 100));
-                            }).catch(function() {
-                                throw parseError;
-                            });
-                        })
-                        .then(function(data) {
-                            if (!response.ok) {
-                                // Extract error message from response - prefer data.message, fallback to data.error
-                                const defaultMsg = 'Save failed with status ' + response.status;
-                                const errorMsg = data && data.message 
-                                    ? data.message 
-                                    : extractErrorMessage(data && data.error, defaultMsg);
-                                throw new Error(errorMsg);
-                            }
-                            
-                            // Validate response data structure
-                            if (!data || typeof data !== 'object') {
-                                throw new Error('Invalid response format from save endpoint');
-                            }
-                            
-                            return data;
-                        });
-                })
-                .catch(function(error) {
-                    clearTimeout(timeoutId);
-                    
-                    // Check if we should retry
-                    if (attempt < maxRetries && error.name !== 'AbortError') {
-                        // Wait before retrying
-                        return new Promise(function(resolve) {
-                            setTimeout(function() {
-                                resolve(attemptSave(attempt + 1));
-                            }, retryDelay);
-                        });
-                    }
-                    
-                    // Transform error for better user feedback
-                    if (error.name === 'AbortError') {
-                        throw new Error('Save request timed out after ' + (timeout / 1000) + ' seconds');
-                    }
-                    
-                    throw error;
-                });
-        }
-
-        return attemptSave(0);
-    }
-
-    /**
-     * Helper function to save post from chat message.
-     * This wraps saveChatPost with user-friendly feedback.
-     * 
-     * @param {Object} state - Chat state object
-     * @param {Object} saveData - Data to save
-     * @return {Promise} Promise that resolves with formatted result
-     */
-    function savePostFromChat(state, saveData) {
-        if (!state || !state.container) {
-            return Promise.reject(new Error('Invalid chat state'));
-        }
-
-        // Show saving status
-        setStatus(state.container, getString('savingPost', 'Saving post...'));
-
-        return saveChatPost(state, saveData, {
-            maxRetries: 2,
-            retryDelay: 1000,
-            timeout: 30000,
-        })
-            .then(function(result) {
-                clearStatus(state.container);
-                
-                // Format success message
-                let message = 'Post saved successfully';
-                if (result && result.post_id) {
-                    message += ' (ID: ' + result.post_id + ')';
-                }
-                if (result && result.edit_url) {
-                    message += '. <a href="' + escapeHtml(result.edit_url) + '" target="_blank">Edit post</a>';
-                }
-                
-                // Show success message in chat
-                if (state.messagesEl) {
-                    appendMessage(state.messagesEl, 'system', {
-                        text: message,
-                        attachments: [],
-                    }, false, { state: state });
-                }
-                
-                return result;
-            })
-            .catch(function(error) {
-                clearStatus(state.container);
-                
-                // Show error message
-                const errorMessage = error && error.message ? error.message : 'Failed to save post';
-                if (state.messagesEl) {
-                    appendMessage(state.messagesEl, 'system', {
-                        text: 'Error: ' + escapeHtml(errorMessage),
-                        attachments: [],
-                    }, false, { state: state });
-                }
-                
-                throw error;
-            });
     }
 
     /**

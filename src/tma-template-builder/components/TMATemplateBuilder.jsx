@@ -13,7 +13,7 @@
  * @since   1.1.3
  */
 
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	DndContext,
@@ -55,10 +55,12 @@ const TOOLKIT_COLORS = {
  * @param {Object}   props.template      Template metadata from REST API.
  * @param {boolean}  props.isActive      Whether this template is selected.
  * @param {boolean}  props.isPreviewing  Whether this template's preview is open.
+ * @param {boolean}  props.isEditing     Whether this template's editor is open.
  * @param {Function} props.onSelect      Called when user clicks "Select".
  * @param {Function} props.onPreview     Called when user clicks "Preview".
+ * @param {Function} props.onEdit        Called when user clicks "Edit".
  */
-const SortableTemplateCard = ( { template, isActive, isPreviewing, onSelect, onPreview } ) => {
+const SortableTemplateCard = ( { template, isActive, isPreviewing, isEditing, onSelect, onPreview, onEdit } ) => {
 	const {
 		attributes,
 		listeners,
@@ -110,6 +112,11 @@ const SortableTemplateCard = ( { template, isActive, isPreviewing, onSelect, onP
 						{ template.toolkit.replace( /_/g, ' ' ) }
 					</span>
 				) }
+				{ template.has_customizations && (
+					<span className="tma-tpl-card__badge tma-tpl-card__badge--custom">
+						{ __( '✎ Customized', 'mcp-ai-wpoos-pro' ) }
+					</span>
+				) }
 			</div>
 
 			<div className="tma-tpl-card__actions">
@@ -132,6 +139,298 @@ const SortableTemplateCard = ( { template, isActive, isPreviewing, onSelect, onP
 						? __( '✕ Close', 'mcp-ai-wpoos-pro' )
 						: __( '👁 Preview', 'mcp-ai-wpoos-pro' ) }
 				</button>
+				<button
+					type="button"
+					className={ `tma-tpl-btn tma-tpl-btn--edit${ isEditing ? ' tma-tpl-btn--edit-active' : '' }` }
+					onClick={ () => onEdit( template.slug ) }
+					title={ __( 'Edit template appearance and inject custom CSS', 'mcp-ai-wpoos-pro' ) }
+				>
+					{ isEditing
+						? __( '✕ Close', 'mcp-ai-wpoos-pro' )
+						: __( '✎ Edit', 'mcp-ai-wpoos-pro' ) }
+				</button>
+			</div>
+		</div>
+	);
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Template editor panel                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Inline editor panel that lets admins customise a template's appearance and
+ * inject custom CSS that is applied every time the Mini App is rendered.
+ *
+ * Tabs:
+ *  - Appearance: name, description, icon (emoji), accent colour
+ *  - Custom CSS: free-form CSS textarea
+ *
+ * @param {Object}   props
+ * @param {Object}   props.template      Template metadata (from REST list).
+ * @param {Object}   props.config        Builder config (nonce, customizeUrl).
+ * @param {Function} props.onClose       Called when the panel is dismissed.
+ * @param {Function} props.onSaved       Called with updated template data after save.
+ * @param {Function} props.onReset       Called with updated template data after reset.
+ */
+const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
+	const [ activeTab, setActiveTab   ] = useState( 'appearance' );
+	const [ draft,     setDraft       ] = useState( {
+		name:         template.name         || '',
+		description:  template.description  || '',
+		icon:         template.icon         || '',
+		accent_color: template.accent_color || '',
+		custom_css:   template.custom_css   || '',
+	} );
+	const [ saving,    setSaving      ] = useState( false );
+	const [ resetting, setResetting   ] = useState( false );
+	const [ status,    setStatus      ] = useState( null ); // { type: 'success'|'error', msg: string }
+	const cssRef = useRef( null );
+
+	// Keep draft in sync if parent refreshes template data (e.g. after save or reset).
+	// `template` object reference changes whenever the parent calls updateTemplate(), so
+	// this correctly re-initialises the draft to the freshly-saved/reset values.
+	useEffect( () => {
+		setDraft( {
+			name:         template.name         || '',
+			description:  template.description  || '',
+			icon:         template.icon         || '',
+			accent_color: template.accent_color || '',
+			custom_css:   template.custom_css   || '',
+		} );
+	}, [ template ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const baseUrl = config.customizeUrl
+		? `${ config.customizeUrl }/${ encodeURIComponent( template.slug ) }/customize`
+		: null;
+
+	const flash = ( type, msg ) => {
+		setStatus( { type, msg } );
+		setTimeout( () => setStatus( null ), 4000 );
+	};
+
+	const handleSave = useCallback( async () => {
+		if ( ! baseUrl ) {
+			return;
+		}
+		setSaving( true );
+		setStatus( null );
+		try {
+			const res = await fetch( baseUrl, {
+				method:  'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.nonce },
+				body:    JSON.stringify( draft ),
+			} );
+			const data = await res.json();
+			if ( data.success !== false && ! data.code ) {
+				flash( 'success', __( 'Template customizations saved.', 'mcp-ai-wpoos-pro' ) );
+				onSaved( data );
+			} else {
+				flash( 'error', data.message || __( 'Could not save. Please try again.', 'mcp-ai-wpoos-pro' ) );
+			}
+		} catch {
+			flash( 'error', __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) );
+		} finally {
+			setSaving( false );
+		}
+	}, [ baseUrl, config.nonce, draft, onSaved ] );
+
+	const handleReset = useCallback( async () => {
+		if ( ! baseUrl ) {
+			return;
+		}
+		// eslint-disable-next-line no-alert
+		if ( ! window.confirm( __( 'Reset all customizations for this template to defaults?', 'mcp-ai-wpoos-pro' ) ) ) {
+			return;
+		}
+		setResetting( true );
+		setStatus( null );
+		try {
+			const res = await fetch( baseUrl, {
+				method:  'DELETE',
+				headers: { 'X-WP-Nonce': config.nonce },
+			} );
+			const data = await res.json();
+			if ( data.success !== false && ! data.code ) {
+				flash( 'success', __( 'Template reset to defaults.', 'mcp-ai-wpoos-pro' ) );
+				onReset( data );
+			} else {
+				flash( 'error', data.message || __( 'Could not reset. Please try again.', 'mcp-ai-wpoos-pro' ) );
+			}
+		} catch {
+			flash( 'error', __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) );
+		} finally {
+			setResetting( false );
+		}
+	}, [ baseUrl, config.nonce, onReset ] );
+
+	return (
+		<div className="tma-tpl-editor">
+			{ /* Editor header */ }
+			<div className="tma-tpl-editor__header">
+				<span className="tma-tpl-editor__title">
+					{ __( '✎ Edit Template:', 'mcp-ai-wpoos-pro' ) }
+					<strong> { template.base_name || template.name }</strong>
+				</span>
+				<button
+					type="button"
+					className="tma-tpl-editor__close"
+					onClick={ onClose }
+					title={ __( 'Close editor', 'mcp-ai-wpoos-pro' ) }
+				>
+					✕
+				</button>
+			</div>
+
+			{ /* Tabs */ }
+			<div className="tma-tpl-editor__tabs">
+				<button
+					type="button"
+					className={ `tma-tpl-editor__tab${ activeTab === 'appearance' ? ' tma-tpl-editor__tab--active' : '' }` }
+					onClick={ () => setActiveTab( 'appearance' ) }
+				>
+					{ __( 'Appearance', 'mcp-ai-wpoos-pro' ) }
+				</button>
+				<button
+					type="button"
+					className={ `tma-tpl-editor__tab${ activeTab === 'css' ? ' tma-tpl-editor__tab--active' : '' }` }
+					onClick={ () => setActiveTab( 'css' ) }
+				>
+					{ __( 'Custom CSS', 'mcp-ai-wpoos-pro' ) }
+				</button>
+			</div>
+
+			{ /* Tab: Appearance */ }
+			{ activeTab === 'appearance' && (
+				<div className="tma-tpl-editor__body">
+					<div className="tma-tpl-editor__row">
+						<label className="tma-tpl-editor__label">
+							{ __( 'Icon / Emoji', 'mcp-ai-wpoos-pro' ) }
+							<span className="tma-tpl-editor__hint">
+								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_icon || '' })` }
+							</span>
+						</label>
+						<input
+							type="text"
+							className="tma-tpl-editor__input tma-tpl-editor__input--icon"
+							value={ draft.icon }
+							maxLength={ 10 }
+							placeholder={ template.base_icon || '📱' }
+							onChange={ ( e ) => setDraft( ( p ) => ( { ...p, icon: e.target.value } ) ) }
+						/>
+					</div>
+
+					<div className="tma-tpl-editor__row">
+						<label className="tma-tpl-editor__label">
+							{ __( 'Display Name', 'mcp-ai-wpoos-pro' ) }
+							<span className="tma-tpl-editor__hint">
+								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_name || '' })` }
+							</span>
+						</label>
+						<input
+							type="text"
+							className="tma-tpl-editor__input"
+							value={ draft.name }
+							maxLength={ 120 }
+							placeholder={ template.base_name }
+							onChange={ ( e ) => setDraft( ( p ) => ( { ...p, name: e.target.value } ) ) }
+						/>
+					</div>
+
+					<div className="tma-tpl-editor__row">
+						<label className="tma-tpl-editor__label">
+							{ __( 'Description', 'mcp-ai-wpoos-pro' ) }
+							<span className="tma-tpl-editor__hint">
+								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_description || '' })` }
+							</span>
+						</label>
+						<textarea
+							className="tma-tpl-editor__input tma-tpl-editor__textarea"
+							value={ draft.description }
+							maxLength={ 500 }
+							rows={ 3 }
+							placeholder={ template.base_description }
+							onChange={ ( e ) => setDraft( ( p ) => ( { ...p, description: e.target.value } ) ) }
+						/>
+					</div>
+
+					<div className="tma-tpl-editor__row">
+						<label className="tma-tpl-editor__label">
+							{ __( 'Accent Color', 'mcp-ai-wpoos-pro' ) }
+							<span className="tma-tpl-editor__hint">
+								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_accent_color || '#2481cc' })` }
+							</span>
+						</label>
+						<div className="tma-tpl-editor__color-row">
+							<input
+								type="color"
+								className="tma-tpl-editor__color-swatch"
+								value={ /^#[0-9a-f]{6}$/i.test( draft.accent_color ) ? draft.accent_color : ( template.base_accent_color || '#2481cc' ) }
+								onChange={ ( e ) => setDraft( ( p ) => ( { ...p, accent_color: e.target.value } ) ) }
+							/>
+							<input
+								type="text"
+								className="tma-tpl-editor__input tma-tpl-editor__input--color"
+								value={ draft.accent_color }
+								maxLength={ 30 }
+								placeholder={ template.base_accent_color || '#2481cc' }
+								onChange={ ( e ) => setDraft( ( p ) => ( { ...p, accent_color: e.target.value } ) ) }
+							/>
+						</div>
+					</div>
+				</div>
+			) }
+
+			{ /* Tab: Custom CSS */ }
+			{ activeTab === 'css' && (
+				<div className="tma-tpl-editor__body">
+					<p className="tma-tpl-editor__desc description">
+						{ __(
+							'CSS entered here is injected into the Mini App page <head> every time this template is rendered. Use it to override colours, fonts, layout or any visual aspect.',
+							'mcp-ai-wpoos-pro'
+						) }
+					</p>
+					<textarea
+						ref={ cssRef }
+						className="tma-tpl-editor__input tma-tpl-editor__textarea tma-tpl-editor__textarea--code"
+						value={ draft.custom_css }
+						rows={ 14 }
+						placeholder={ '/* Example: change the accent color */\n:root { --tma-btn: #ff6b35; --tma-btn-text: #ffffff; }' }
+						onChange={ ( e ) => setDraft( ( p ) => ( { ...p, custom_css: e.target.value } ) ) }
+						spellCheck={ false }
+					/>
+				</div>
+			) }
+
+			{ /* Footer: save / reset / status */ }
+			<div className="tma-tpl-editor__footer">
+				<button
+					type="button"
+					className="button button-primary"
+					onClick={ handleSave }
+					disabled={ saving || resetting }
+				>
+					{ saving
+						? __( 'Saving…', 'mcp-ai-wpoos-pro' )
+						: __( 'Save Changes', 'mcp-ai-wpoos-pro' ) }
+				</button>
+				{ template.has_customizations && (
+					<button
+						type="button"
+						className="button tma-tpl-editor__reset-btn"
+						onClick={ handleReset }
+						disabled={ saving || resetting }
+					>
+						{ resetting
+							? __( 'Resetting…', 'mcp-ai-wpoos-pro' )
+							: __( '↺ Reset to Defaults', 'mcp-ai-wpoos-pro' ) }
+					</button>
+				) }
+				{ status && (
+					<span className={ `tma-tpl-save-msg tma-tpl-save-msg--${ status.type === 'success' ? 'ok' : 'err' }` }>
+						{ status.type === 'success' ? `✓ ${ status.msg }` : `✕ ${ status.msg }` }
+					</span>
+				) }
 			</div>
 		</div>
 	);
@@ -210,6 +509,7 @@ export const TMATemplateBuilder = ( {
 	const [ error,       setError       ] = useState( null );
 	const [ activeSlug,  setActiveSlug  ] = useState( initialSlug ?? config.activeTemplate ?? 'default' );
 	const [ previewSlug, setPreviewSlug ] = useState( null );
+	const [ editingSlug, setEditingSlug ] = useState( null );
 	const [ saving,      setSaving      ] = useState( false );
 	const [ saveStatus,  setSaveStatus  ] = useState( null ); // 'success' | 'error'
 
@@ -267,6 +567,20 @@ export const TMATemplateBuilder = ( {
 	/* ── Toggle preview pane ── */
 	const handlePreview = useCallback( ( slug ) => {
 		setPreviewSlug( ( prev ) => ( prev === slug ? null : slug ) );
+	}, [] );
+
+	/* ── Toggle edit panel ── */
+	const handleEdit = useCallback( ( slug ) => {
+		setEditingSlug( ( prev ) => ( prev === slug ? null : slug ) );
+		// Close preview when opening editor for better UX.
+		setPreviewSlug( null );
+	}, [] );
+
+	/* ── Update a single template in state (used after save/reset) ── */
+	const updateTemplate = useCallback( ( updatedMeta ) => {
+		setTemplates( ( prev ) =>
+			prev.map( ( t ) => ( t.slug === updatedMeta.slug ? { ...t, ...updatedMeta } : t ) )
+		);
 	}, [] );
 
 	/* ── Save global template via REST ── */
@@ -345,13 +659,30 @@ export const TMATemplateBuilder = ( {
 								template={ tpl }
 								isActive={ activeSlug === tpl.slug }
 								isPreviewing={ previewSlug === tpl.slug }
+								isEditing={ editingSlug === tpl.slug }
 								onSelect={ handleSelect }
 								onPreview={ handlePreview }
+								onEdit={ handleEdit }
 							/>
 						) ) }
 					</div>
 				</SortableContext>
 			</DndContext>
+
+			{ /* Inline template editor – shown below the card grid */ }
+			{ editingSlug && ( () => {
+				const tplToEdit = templates.find( ( t ) => t.slug === editingSlug );
+				return tplToEdit ? (
+					<TemplateEditor
+						key={ editingSlug }
+						template={ tplToEdit }
+						config={ config }
+						onClose={ () => setEditingSlug( null ) }
+						onSaved={ ( updated ) => updateTemplate( updated ) }
+						onReset={ ( updated ) => updateTemplate( updated ) }
+					/>
+				) : null;
+			} )() }
 
 			{ previewSlug && (
 				<PreviewPane

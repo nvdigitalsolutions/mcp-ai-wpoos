@@ -90,6 +90,8 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v3' ), 103 );
 		// v4 migration: add extended BMP/CMP electrolytes and liver function test columns.
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v4' ), 104 );
+		// v5 migration: ensure hemoglobin column is present (ADD if missing, MODIFY to DECIMAL).
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_columns_v5' ), 105 );
 	}
 
 	/**
@@ -1019,6 +1021,53 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `{$field}` DECIMAL(10,4) NULL DEFAULT NULL" );
 			}
+		}
+
+		update_option( $option_key, '1', false );
+	}
+
+	/**
+	 * v5 migration: ensure the hemoglobin column exists and uses DECIMAL(10,4).
+	 *
+	 * The v2 migration only issued an ALTER TABLE MODIFY, which silently fails
+	 * when the hemoglobin column was never created (sites where the CCT was
+	 * registered before hemoglobin was added to the schema).  This migration
+	 * uses the same ADD-or-MODIFY pattern introduced in v3 so that:
+	 *  - Fresh installs where JetEngine created the column as bigint get it
+	 *    converted to DECIMAL(10,4).
+	 *  - Older installs where the column is entirely absent get the column
+	 *    added as DECIMAL(10,4).
+	 *
+	 * Runs once per site and records a wp_options flag to skip future requests.
+	 *
+	 * @return void
+	 */
+	public static function maybe_migrate_columns_v5() {
+		if ( ! self::table_exists() ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_vitals_log_migration_v5';
+		if ( get_option( $option_key ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// Retrieve existing columns once to avoid redundant DESCRIBE queries.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+
+		// Ensure hemoglobin exists as DECIMAL(10,4).  ADD if absent (sites that
+		// registered the CCT before hemoglobin was added to the schema), or MODIFY
+		// if present as bigint (sites where JetEngine created it from the schema).
+		if ( ! in_array( 'hemoglobin', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `hemoglobin` DECIMAL(10,4) NULL DEFAULT NULL" );
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` MODIFY `hemoglobin` DECIMAL(10,4) NULL DEFAULT NULL" );
 		}
 
 		update_option( $option_key, '1', false );

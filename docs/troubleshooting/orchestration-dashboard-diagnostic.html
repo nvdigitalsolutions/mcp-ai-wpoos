@@ -46,13 +46,25 @@
     </div>
 
     <script>
+        /**
+         * Escape HTML special characters to prevent XSS.
+         *
+         * @param {string} text Text to escape.
+         * @return {string} Escaped text.
+         */
+        function escapeHtml( text ) {
+            var d = document.createElement( 'div' );
+            d.textContent = String( text );
+            return d.innerHTML;
+        }
+
         // Test 1: Environment
         function testEnvironment() {
             let html = '';
             
             // Check jQuery
             if (typeof jQuery !== 'undefined') {
-                html += '<div class="test-result pass">✓ jQuery is loaded (version: ' + jQuery.fn.jquery + ')</div>';
+                html += '<div class="test-result pass">✓ jQuery is loaded (version: ' + escapeHtml( jQuery.fn.jquery ) + ')</div>';
             } else {
                 html += '<div class="test-result fail">✗ jQuery is NOT loaded</div>';
             }
@@ -80,7 +92,7 @@
             
             // Check ajaxurl
             if (typeof ajaxurl !== 'undefined') {
-                html += '<div class="test-result pass">✓ ajaxurl is defined: <code>' + ajaxurl + '</code></div>';
+                html += '<div class="test-result pass">✓ ajaxurl is defined: <code>' + escapeHtml( ajaxurl ) + '</code></div>';
             } else {
                 html += '<div class="test-result fail">✗ ajaxurl is NOT defined (this is normal on front-end)</div>';
             }
@@ -107,19 +119,19 @@
                 
                 // Check required properties
                 if (wpMcpAiOrchestration.ajaxUrl) {
-                    html += '<div class="test-result pass">✓ ajaxUrl is set: <code>' + wpMcpAiOrchestration.ajaxUrl + '</code></div>';
+                    html += '<div class="test-result pass">✓ ajaxUrl is set: <code>' + escapeHtml( wpMcpAiOrchestration.ajaxUrl ) + '</code></div>';
                 } else {
                     html += '<div class="test-result fail">✗ ajaxUrl is NOT set</div>';
                 }
                 
                 if (wpMcpAiOrchestration.nonce) {
-                    html += '<div class="test-result pass">✓ nonce is set: <code>' + wpMcpAiOrchestration.nonce + '</code></div>';
+                    html += '<div class="test-result pass">✓ nonce is set: <code>' + escapeHtml( wpMcpAiOrchestration.nonce ) + '</code></div>';
                 } else {
                     html += '<div class="test-result fail">✗ nonce is NOT set</div>';
                 }
                 
                 if (wpMcpAiOrchestration.refreshInterval) {
-                    html += '<div class="test-result pass">✓ refreshInterval is set: ' + wpMcpAiOrchestration.refreshInterval + 'ms</div>';
+                    html += '<div class="test-result pass">✓ refreshInterval is set: ' + escapeHtml( String( wpMcpAiOrchestration.refreshInterval ) ) + 'ms</div>';
                 }
             } else {
                 html += '<div class="test-result fail">✗ wpMcpAiOrchestration is NOT defined</div>';

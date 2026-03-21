@@ -159,7 +159,7 @@ if [ "$SKIP_NPM_BUILD" = true ]; then
 else
     echo "Step 1: Building frontend assets..."
     npm ci --silent 2>/dev/null || npm install --silent
-    npm run build
+    npm run build:full
     echo "✅ Frontend assets built"
 fi
 echo ""
@@ -199,7 +199,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
@@ -243,6 +243,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'cosmos.config.json' \
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -461,6 +462,8 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '.git' \
             --exclude '.gitignore' \
             --exclude '.gitattributes' \
+            --exclude '.distignore' \
+            --exclude '.npmrc' \
             --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
@@ -471,6 +474,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'assets/examples' \
             --exclude 'composer.lock' \
             --exclude 'package-lock.json' \
+            --exclude 'package.json' \
             --exclude '*.js.map' \
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
@@ -658,7 +662,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
@@ -702,6 +706,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'cosmos.config.json' \
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \

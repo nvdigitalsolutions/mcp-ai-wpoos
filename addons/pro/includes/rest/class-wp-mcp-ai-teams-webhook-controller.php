@@ -335,6 +335,9 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		// therefore only enforced for channel messages.
 		$is_dm = ( 'personal' === $conversation_type || 'groupChat' === $conversation_type );
 
+		$inbox_contact_id = ( 'channel' === $conversation_type ) ? $channel_id : $user_id;
+		$inbox_conv_type  = ( 'channel' === $conversation_type ) ? 'channel' : 'dm';
+
 		if ( ! empty( $connection['require_mention'] ) && ! $is_dm ) {
 			if ( ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
 				return rest_ensure_response( $this->empty_response() );
@@ -363,8 +366,8 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'teams',
-				$user_id,
-				array( 'display_name' => '' !== $display_name ? $display_name : $user_id, 'connection_id' => $connection_id )
+				$inbox_contact_id,
+				array( 'display_name' => '' !== $display_name ? $display_name : $inbox_contact_id, 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -376,7 +379,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
 					'channel'            => 'teams',
-					'channel_contact_id' => $user_id,
+					'channel_contact_id' => $inbox_contact_id,
 					'direction'          => 'inbound',
 					'message_id'         => $activity_id,
 					'message_type'       => 'text',
@@ -387,6 +390,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+					'conversation_type'  => $inbox_conv_type,
 				)
 			);
 		}
@@ -501,7 +505,9 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		// scope the history to that thread so each thread maintains independent
 		// context. Personal/groupChat and top-level channel messages use the
 		// channel/conversation-level key (no thread scope).
-		$is_dm     = ( 'personal' === $conversation_type || 'groupChat' === $conversation_type );
+		$is_dm            = ( 'personal' === $conversation_type || 'groupChat' === $conversation_type );
+		$inbox_contact_id = ( 'channel' === $conversation_type ) ? $channel_id : $user_id;
+		$inbox_conv_type  = ( 'channel' === $conversation_type ) ? 'channel' : 'dm';
 		$thread_id = '' !== $reply_to_id ? $reply_to_id : $activity_id;
 
 		$history_key = $this->get_conversation_history_key(
@@ -782,7 +788,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
 					'channel'            => 'teams',
-					'channel_contact_id' => $user_id,
+					'channel_contact_id' => $inbox_contact_id,
 					'direction'          => 'outbound',
 					'message_type'       => 'text',
 					'content'            => $content,
@@ -792,13 +798,14 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => $inbox_conv_type,
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'teams', $user_id, array( 'connection_id' => $connection_id ) );
+			$ms_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'teams', $inbox_contact_id, array( 'connection_id' => $connection_id, 'conversation_type' => $inbox_conv_type ) );
 			if ( $ms_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $ms_contact_row_id );
 			}

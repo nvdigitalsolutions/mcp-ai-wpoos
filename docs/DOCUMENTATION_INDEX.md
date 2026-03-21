@@ -1,12 +1,30 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 15, 2026  
+**Last Updated:** March 19, 2026  
 **Plugin Version:** 1.1.4  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 19, 2026 UPDATE:** 🏥 **HEALTHCARE DICOM IMAGING VIEWER — FULL MANAGER REBUILD**
+> - **Black Images Fixed** — `csDicomImageLoader.external.cornerstone` link now correctly wired; auto-VOI from pixel min/max for studies without `WindowCenter`/`WindowWidth` tags
+> - **Multi-Study Upload Fixed** — All uploaded studies now appear in the browser (was: only last study shown after a multi-file batch)
+> - **4-Tab Manager** — Studies (search/filter bar) · AI Tools · Audit Log · Documentation
+> - **W/L Clinical Presets** — 11 presets for CT (Soft Tissue / Lung / Brain / Bone / Abdomen / Liver / Mediastinum), MR (Brain / Spine / Soft Tissue), PET (SUV Max)
+> - **Extra Viewer Tools** — Flip H/V, Rotate CW/CCW, PNG screenshot export; keyboard shortcuts (Arrow keys, R reset, I invert)
+> - **AI Interpretation** — `POST /imaging/interpret` REST endpoint; Tools tab form auto-fills UID from open study
+> - **Accessible Delete** — Inline confirmation row replaces non-accessible `window.confirm`
+> - **Stats Bar** — Total studies, modality breakdown, storage used — populated from `GET /imaging/stats`
+> - **In-app Documentation Tab** — Keyboard shortcut reference, W/L presets table, DICOM modality codes, full REST API reference, Privacy & HIPAA notes
+> - **New Doc**: [features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)
+
+> **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – FULL 760-TOOL COVERAGE**
+> - **Quick Tool Presets Expanded** – All 760 available tools are now reachable via one-click presets on the assistant CPT edit page (was ~527 tools)
+> - **New Preset** – `📋 Registration & Compliance` (44 tools): registration lifecycle, regulated products, compliance certificates, authority submission, NMRA/MOHAP sync
+> - **20+ Updated Presets** – E-commerce (Shopify), Communication (Discord/Slack/Teams/Apple/Telegram/WhatsApp/Messenger/Google Chat), Development (tool scaffolding), Files (cloud storage/PDF/Excel), SEO (social listening/competitor analysis), Site Management (page builder sections), Healthcare (health metrics/vitals import), Sales/CRM, Finance, and more
+> - **Total**: 61 presets covering all 760 tools (2,030 tool references) — up from 60 presets covering ~527 tools
 
 > **📌 MARCH 15, 2026 UPDATE:** 🔒 **SECURITY HARDENING + CHANNEL FIXES + v1.1.4**
 > - **Security** – AES-256-GCM encryption, finfo fail-closed, Discord replay protection, HTTPS enforcement, ZIP bomb guard, OCR info-disclosure fix
@@ -1083,12 +1101,18 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
+| [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
 **Pro Custom Post Types:**
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**Telegram Mini App Health Templates:**
+- **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach
+- **Medical Vitals** (`medical_vitals`) – Vitals + kidney lab tracking (BP, HR, SpO₂, eGFR, creatinine, BUN, K⁺, Na⁺), 7-day trends, medication dosage, AI doctor assistant
 
 ### Performance & Optimization
 
@@ -1190,6 +1214,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[ADR_001_module_boundaries.md](ADR_001_module_boundaries.md)** | **⭐ NEW (Mar 2026):** Architecture Decision Record — four-layer module boundaries, interface catalogue, enforcement rules | Developers |
+| **[BUILD_MATRIX.md](BUILD_MATRIX.md)** | **⭐ NEW (Mar 2026):** Complete build script reference — every `npm run build:*` script, its config file, output, and when to run it | Developers |
 | [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |

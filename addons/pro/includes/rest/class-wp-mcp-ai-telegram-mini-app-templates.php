@@ -110,6 +110,12 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	const OPTION_KEY = 'wp_mcp_ai_telegram_mini_app_template';
 
 	/**
+	 * Prefix for per-template customization option keys.
+	 * Full key: wp_mcp_ai_tma_custom_{slug}
+	 */
+	const CUSTOM_OPTION_PREFIX = 'wp_mcp_ai_tma_custom_';
+
+	/**
 	 * Registered templates indexed by slug.
 	 *
 	 * @var WP_MCP_AI_Telegram_Mini_App_Template_Base[]
@@ -210,25 +216,186 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	/**
 	 * Static proxy: return metadata arrays for all registered templates.
 	 *
-	 * Each item contains: slug, name, description, icon, accent_color, toolkit.
+	 * Each item contains: slug, name, description, icon, accent_color, toolkit,
+	 * has_customizations, custom_css.  When a template has saved customizations
+	 * the display fields (name, description, icon, accent_color) are merged so
+	 * the React picker always shows the user-edited values.
 	 *
 	 * @since 1.1.3
 	 *
-	 * @return array<int,array<string,string>>
+	 * @return array<int,array<string,mixed>>
 	 */
 	public static function get_all_meta() {
 		$meta = array();
 		foreach ( self::instance()->all() as $tpl ) {
+			$custom = self::get_customizations( $tpl->get_slug() );
 			$meta[] = array(
-				'slug'         => $tpl->get_slug(),
-				'name'         => $tpl->get_name(),
-				'description'  => $tpl->get_description(),
-				'icon'         => $tpl->get_icon(),
-				'accent_color' => $tpl->get_accent_color(),
-				'toolkit'      => $tpl->get_toolkit(),
+				'slug'                 => $tpl->get_slug(),
+				'name'                 => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+				'description'          => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+				'icon'                 => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+				'accent_color'         => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+				'toolkit'              => $tpl->get_toolkit(),
+				'has_customizations'   => ! empty( $custom ),
+				'custom_css'           => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+				// Base (original) values always available for the editor to show defaults.
+				'base_name'            => $tpl->get_name(),
+				'base_description'     => $tpl->get_description(),
+				'base_icon'            => $tpl->get_icon(),
+				'base_accent_color'    => $tpl->get_accent_color(),
 			);
 		}
 		return $meta;
+	}
+
+	/**
+	 * Return the full metadata for a single registered template, including any
+	 * saved customizations.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array|null   Metadata array or null if the slug is not registered.
+	 */
+	public static function get_meta( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$tpl  = self::get( $slug );
+		if ( ! $tpl ) {
+			return null;
+		}
+		$custom = self::get_customizations( $slug );
+		return array(
+			'slug'               => $tpl->get_slug(),
+			'name'               => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+			'description'        => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+			'icon'               => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+			'accent_color'       => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+			'toolkit'            => $tpl->get_toolkit(),
+			'has_customizations' => ! empty( $custom ),
+			'custom_css'         => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+			'base_name'          => $tpl->get_name(),
+			'base_description'   => $tpl->get_description(),
+			'base_icon'          => $tpl->get_icon(),
+			'base_accent_color'  => $tpl->get_accent_color(),
+		);
+	}
+
+	// ── Per-template customization helpers ──────────────────────────────────
+
+	/**
+	 * Return saved customizations for a template slug.
+	 *
+	 * Returns an associative array with keys: name, description, icon,
+	 * accent_color, custom_css.  Returns an empty array when no customizations
+	 * have been saved.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array
+	 */
+	public static function get_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$data = get_option( self::CUSTOM_OPTION_PREFIX . $slug, array() );
+		return is_array( $data ) ? $data : array();
+	}
+
+	/**
+	 * Save per-template customizations.
+	 *
+	 * Only the following keys are accepted; all values are sanitized.
+	 *   name         – display name shown in the picker card (≤ 120 chars)
+	 *   description  – short description shown below the name (≤ 500 chars)
+	 *   icon         – emoji / short string shown as the card icon (≤ 10 chars)
+	 *   accent_color – valid CSS colour value (≤ 30 chars)
+	 *   custom_css   – raw CSS injected into the rendered Mini App <head>
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @param  array  $data Associative array of fields to save.
+	 * @return bool         True on success.
+	 */
+	public static function save_customizations( $slug, array $data ) {
+		$slug = sanitize_key( (string) $slug );
+		if ( ! self::instance()->has( $slug ) ) {
+			return false;
+		}
+
+		$allowed = array( 'name', 'description', 'icon', 'accent_color', 'custom_css' );
+		$current = self::get_customizations( $slug );
+		$merged  = $current;
+
+		foreach ( $allowed as $key ) {
+			if ( ! array_key_exists( $key, $data ) ) {
+				continue;
+			}
+			switch ( $key ) {
+				case 'name':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 120 );
+					break;
+				case 'description':
+					$merged[ $key ] = substr( sanitize_textarea_field( (string) $data[ $key ] ), 0, 500 );
+					break;
+				case 'icon':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 10 );
+					break;
+				case 'accent_color':
+					// Allow only CSS-safe colour strings (hex, rgb/rgba, hsl/hsla, named colours).
+					// Pattern matches: #rgb, #rrggbb, #rrggbbaa, rgb(...), rgba(...), hsl(...), hsla(...), CSS named colours.
+					$color = sanitize_text_field( (string) $data[ $key ] );
+					if ( preg_match( '/^(#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6,8})|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+[\s,.\d]*\)|hsla?\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%[\s,.\d]*\)|[a-zA-Z]{2,30})$/', $color ) ) {
+						$merged[ $key ] = $color;
+					}
+					break;
+				case 'custom_css':
+					// Strip PHP/HTML tags and @import directives to prevent loading external
+					// stylesheets via the Mini App page (admins-only feature, but defence-in-depth).
+					$css = wp_strip_all_tags( (string) $data[ $key ] );
+					// Remove @import rules (case-insensitive, with optional whitespace).
+					$css = preg_replace( '/@import\s[^;]+;?/i', '', $css );
+					$merged[ $key ] = $css;
+					break;
+			}
+		}
+
+		// Remove empty strings to keep the stored value compact.
+		$merged = array_filter(
+			$merged,
+			function( $v ) {
+				return '' !== $v;
+			}
+		);
+
+		return update_option( self::CUSTOM_OPTION_PREFIX . $slug, $merged, false );
+	}
+
+	/**
+	 * Delete all customizations for a template slug, restoring defaults.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return bool         True if the option was successfully deleted or did not exist.
+	 */
+	public static function reset_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		return delete_option( self::CUSTOM_OPTION_PREFIX . $slug );
+	}
+
+	/**
+	 * Return any saved custom CSS for a template slug (empty string if none).
+	 *
+	 * Convenience helper used by the REST controller when rendering HTML.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return string
+	 */
+	public static function get_custom_css( $slug ) {
+		$custom = self::get_customizations( sanitize_key( (string) $slug ) );
+		return isset( $custom['custom_css'] ) ? $custom['custom_css'] : '';
 	}
 
 	/**
@@ -263,6 +430,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_AI_Chat() );
 		$this->register( new WP_MCP_AI_TMA_Template_Ecommerce() );
 		$this->register( new WP_MCP_AI_TMA_Template_Woo_Shop() );
+		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Jewelry() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -1307,6 +1475,19 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		$chart_js_url    = $ctx['chart_js_url'];
 		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
 
+		// Resolve the member linked to the current WordPress user so the mini app
+		// can auto-select without showing the picker on the very first load.
+		$server_member_id   = absint( $ctx['member_id'] ?? 0 );
+		$server_member_name = '';
+		if ( $server_member_id ) {
+			$member_post = get_post( $server_member_id );
+			if ( $member_post && 'mcp_ai_member' === $member_post->post_type ) {
+				$server_member_name = $member_post->post_title;
+			} else {
+				$server_member_id = 0;
+			}
+		}
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-health-wellness-template">' .
 
@@ -1649,6 +1830,9 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'var MEMBER_NAME="";' .
 		'var TMA_TOKEN="";' .
 		'var coachHist=[];' .
+		/* Server-resolved member for the current WordPress user (0 when unknown) */
+		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
+		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
 
 		/* ── Markdown renderer loader ── */
 		/* Load the lightweight TMA markdown renderer on demand so coach     */
@@ -1689,6 +1873,12 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				/* Re-fetch members with fresh auth if the picker is still open */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){hwFetchMembers();}' .
+				/* Re-sync server health metrics now that auth is established.
+				 * hwSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)hwSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -1741,7 +1931,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'function hwShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			'hwFetchMembers();' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * hwInitSession().  Calling hwFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; hwInitSession() will call
+			 * hwFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'hwFetchMembers();' .
+			'}' .
 		'}' .
 
 		'function hwHideMemberPicker(){' .
@@ -1749,9 +1949,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(p)p.style.display="none";' .
 		'}' .
 
-		'function hwFetchMembers(){' .
+		'window.hwFetchMembers=function(){' .
 			'var list=document.getElementById("tma-hw-member-list");' .
 			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var hwErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
@@ -1760,9 +1962,12 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				/* If the request failed (auth not yet established), keep the Loading… placeholder
-				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds. */
-				'if(!d){return;}' .
+				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds.
+				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				'if(!d){if(list)list.innerHTML=hwErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
+				/* Auto-select when exactly one member exists — skip picker entirely */
+				'if(members.length===1){hwSelectMember(members[0].id,members[0].name);return;}' .
 				/* Build member cards (may be empty) then always append "+ New Member" */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
@@ -1780,10 +1985,8 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'+\'</div>\';' .
 				'list.innerHTML=cards+newCard;' .
 			'})' .
-			'.catch(function(){' .
-				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'});' .
-		'}' .
+			'.catch(function(){if(list)list.innerHTML=hwErrHtml;});' .
+		'};' .
 
 		'window.hwSelectMember=function(id,name){' .
 			'MEMBER_ID=id;MEMBER_NAME=name;' .
@@ -2117,13 +2320,27 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'};' .
 
 		/* ── Init ── */
-		/* Restore member from localStorage. If no member is saved show the    */
-		/* member picker overlay so the user can select one before viewing data. */
-		'hwLoadSavedMember();' .
-		'if(MEMBER_ID){' .
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function hwActivateMember(){' .
 			'hwHideMemberPicker();' .
 			'var lbl=document.getElementById("tma-hw-member-label");' .
 			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
+		/* Priority order for member selection:                                  */
+		/*  1. localStorage (fastest – avoids any flicker)                       */
+		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
+		/*  3. Show member picker (user must choose or create)                   */
+		'hwLoadSavedMember();' .
+		'if(MEMBER_ID){' .
+			'hwActivateMember();' .
+		'}else if(SERVER_MEMBER_ID){' .
+			/* Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so data loads immediately. */
+			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
+			'try{localStorage.setItem("hw_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
+			'hwActivateMember();' .
 		'}else{' .
 			'hwShowMemberPicker();' .
 		'}' .
@@ -2192,6 +2409,19 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		$assistant_id    = $ctx['assistant_id'];
 		$chart_js_url    = $ctx['chart_js_url'];
 		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
+
+		// Resolve the member linked to the current WordPress user so the mini app
+		// can auto-select without showing the picker on the very first load.
+		$server_member_id   = absint( $ctx['member_id'] ?? 0 );
+		$server_member_name = '';
+		if ( $server_member_id ) {
+			$member_post = get_post( $server_member_id );
+			if ( $member_post && 'mcp_ai_member' === $member_post->post_type ) {
+				$server_member_name = $member_post->post_title;
+			} else {
+				$server_member_id = 0;
+			}
+		}
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-medical-vitals-template">' .
@@ -2684,6 +2914,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var MEMBER_NAME="";' .
 		'var TMA_TOKEN="";' .
 		'var doctorHist=[];' .
+		/* Server-resolved member for the current WordPress user (0 when unknown) */
+		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
+		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
 
 		/* ── Markdown renderer loader ── */
 		/* Load the lightweight TMA markdown renderer on demand so doctor    */
@@ -2727,6 +2960,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				/* Re-fetch members with fresh auth if the picker is still open */
 				'var picker=document.getElementById("tma-member-picker");' .
 				'if(picker&&picker.style.display==="flex"){mvFetchMembers();}' .
+				/* Re-sync server vitals now that auth is established.
+				 * mvSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)mvSyncFromServer();' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
@@ -2785,7 +3024,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'function mvShowMemberPicker(){' .
 			'var p=document.getElementById("tma-member-picker");' .
 			'if(p)p.style.display="flex";' .
-			'mvFetchMembers();' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * mvInitSession().  Calling mvFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; mvInitSession() will call
+			 * mvFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'mvFetchMembers();' .
+			'}' .
 		'}' .
 
 		'function mvHideMemberPicker(){' .
@@ -2793,9 +3042,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(p)p.style.display="none";' .
 		'}' .
 
-		'function mvFetchMembers(){' .
+		'window.mvFetchMembers=function(){' .
 			'var list=document.getElementById("tma-mv-member-list");' .
 			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var mvErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
 			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
@@ -2804,9 +3055,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				/* If the request failed (auth not yet established), keep the Loading… placeholder
-				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds. */
-				'if(!d){return;}' .
+				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds.
+				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				'if(!d){if(list)list.innerHTML=mvErrHtml;return;}' .
 				'var members=d.result&&d.result.members?d.result.members:[];' .
+				/* Auto-select when exactly one member exists — skip picker entirely */
+				'if(members.length===1){mvSelectMember(members[0].id,members[0].name);return;}' .
 				/* Build member cards (may be empty) then always append "+ New Member" */
 				'var cards=members.map(function(m){' .
 					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
@@ -2824,10 +3078,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'+\'</div>\';' .
 				'list.innerHTML=cards+newCard;' .
 			'})' .
-			'.catch(function(){' .
-				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'});' .
-		'}' .
+			'.catch(function(){if(list)list.innerHTML=mvErrHtml;});' .
+		'};' .
 
 		'window.mvSelectMember=function(id,name){' .
 			'MEMBER_ID=id;MEMBER_NAME=name;' .
@@ -3286,7 +3538,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
 				'var serverRows=d.result.history.map(function(row){' .
-					'return{ts:(row.measurement_date||"")+"T"+(row.measurement_time||"00:00")+":00.000Z",' .
+					/* Normalise measurement_time to HH:MM — the CCT column may
+					 * store HH:MM:SS when data was logged via the AI tool or
+					 * imported, which would produce the invalid ISO string
+					 * "2024-01-15T14:30:00:00.000Z".  Slicing to 5 chars
+					 * ensures the result is always a valid ISO 8601 timestamp. */
+					'return{ts:(row.measurement_date||"")+"T"+String(row.measurement_time||"00:00").slice(0,5)+":00.000Z",' .
 						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
 						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
 						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
@@ -3501,13 +3758,27 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'};' .
 
 		/* ── Init ── */
-		/* Restore member from localStorage. If no member is saved show the    */
-		/* member picker overlay so the user can select one before viewing data. */
-		'mvLoadSavedMember();' .
-		'if(MEMBER_ID){' .
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function mvActivateMember(){' .
 			'mvHideMemberPicker();' .
 			'var lbl=document.getElementById("tma-mv-member-label");' .
 			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
+		/* Priority order for member selection:                                  */
+		/*  1. localStorage (fastest – avoids any flicker)                       */
+		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
+		/*  3. Show member picker (user must choose or create)                   */
+		'mvLoadSavedMember();' .
+		'if(MEMBER_ID){' .
+			'mvActivateMember();' .
+		'}else if(SERVER_MEMBER_ID){' .
+			/* Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so vitals data loads immediately. */
+			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
+			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
+			'mvActivateMember();' .
 		'}else{' .
 			'mvShowMemberPicker();' .
 		'}' .
@@ -3601,6 +3872,119 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 			'<script>window.wpTmaWooConfig=' . $config . ';</script>' .
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
 			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			'</body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   TEMPLATE: Shopify Jewelry Shop
+   ========================================================================== */
+
+/**
+ * Jewelry Shop Telegram Mini App template (Shopify-powered).
+ *
+ * Gold-themed React SPA for jewelry retailers connected to a Shopify store via
+ * the plugin's Remote Sites / Shopify tools infrastructure. Provides:
+ *
+ *  - Product catalog with debounced search
+ *  - Product detail page with add-to-cart
+ *  - Shopping cart with quantity controls
+ *  - Checkout / order enquiry form
+ *  - Shopify order history
+ *  - AI jewelry concierge chat
+ *
+ * The compiled React bundle lives at:
+ *   addons/pro/build/tma-shopify-jewelry/tma-shopify-jewelry.js
+ *   addons/pro/build/tma-shopify-jewelry/tma-shopify-jewelry.css
+ *
+ * Build with: npm run build:tma-shopify-jewelry
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'jewelry_shop';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'Jewelry Shop (Shopify)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Gold-themed React SPA for jewelry retailers. Connects to any Shopify store via Remote Sites. Includes product catalog, cart, checkout and an AI jewelry concierge.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '💍';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#c9a227';
+	}
+
+	/**
+	 * Render the body HTML for this template.
+	 *
+	 * Injects a `window.wpTmaJewelryConfig` JS object with all URLs and IDs
+	 * the React SPA needs, then loads the compiled bundle from the pro addon's
+	 * build directory.
+	 *
+	 * Context keys used:
+	 *   validate_url         – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
+	 *   tools_url            – Base URL for the tool-execution endpoint.
+	 *   chat_url             – TMA-aware chat endpoint.
+	 *   nonce                – Initial WordPress nonce.
+	 *   assistant_id         – Resolved Mini App assistant ID.
+	 *   site_name            – Site display name.
+	 *   shopify_connection_id – Shopify Remote Sites connection ID (optional; falls back to global option).
+	 *
+	 * @param  array $ctx Context variables injected by the TMA controller.
+	 * @return string     HTML body fragment.
+	 */
+	public function render_html( array $ctx ) {
+		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-jewelry/tma-shopify-jewelry.js' : '';
+		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-jewelry/tma-shopify-jewelry.css' : '';
+
+		// Resolve the Shopify connection ID: per-context value, then global option.
+		$connection_id = '';
+		if ( ! empty( $ctx['shopify_connection_id'] ) ) {
+			$connection_id = sanitize_key( $ctx['shopify_connection_id'] );
+		} else {
+			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_shopify_jewelry_connection_id', '' ) );
+		}
+
+		// wp_json_encode() uses JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+		// ensuring the output is safe for inline <script> embedding.
+		$config = wp_json_encode(
+			array(
+				'validateUrl'  => $ctx['validate_url']  ?? '',
+				'toolsUrl'     => $ctx['tools_url']     ?? '',
+				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'nonce'        => $ctx['nonce']         ?? '',
+				'assistantId'  => $ctx['assistant_id']  ?? '',
+				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'connectionId' => $connection_id,
+			)
+		);
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $config produced by wp_json_encode (HTML-safe); CSS/JS URLs escaped with esc_url().
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-jw-template">' .
+			'<div id="tma-shopify-jewelry-root"></div>' .
+			'<script>window.wpTmaJewelryConfig=' . $config . ';</script>' .
+			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
 		// phpcs:enable
 	}

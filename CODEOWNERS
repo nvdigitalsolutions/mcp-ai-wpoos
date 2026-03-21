@@ -9,6 +9,14 @@
 /wp-mcp-ai-base.php @nvdigitalsolutions
 /includes/ @nvdigitalsolutions
 
+# Layered architecture folders (Phase 1–4 refactor)
+/includes/bootstrap/ @nvdigitalsolutions
+/includes/domain/ @nvdigitalsolutions
+/includes/infrastructure/ @nvdigitalsolutions
+/includes/interfaces/ @nvdigitalsolutions
+/includes/services/ @nvdigitalsolutions
+/includes/repositories/ @nvdigitalsolutions
+
 # Documentation
 /docs/ @nvdigitalsolutions
 *.md @nvdigitalsolutions

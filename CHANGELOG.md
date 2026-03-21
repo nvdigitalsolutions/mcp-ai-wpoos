@@ -1,6 +1,45 @@
 # oOS – Changelog
 
 
+## [Unreleased]
+
+### Changed
+- **Quick Tool Selection Presets – Full 760-Tool Coverage (March 16, 2026)**: Expanded the Quick Tool Selection Presets on the assistant CPT edit page from ~527 covered tools to all 760 available tools, ensuring every registered tool can be applied via a preset without requiring manual search.
+  - **New preset**: `📋 Registration & Compliance` (44 tools) — end-to-end regulated product/permit workflow: registration lifecycle (create/approve/renew/submit), document expiry tracking, regulatory submissions, compliance certificates, authority submission, NMRA/MOHAP sync, import duty/HS code
+  - **🛒 E-commerce**: Added Shopify (products/orders/customers/inventory), regulated product lifecycle (create/validate/duplicate/import-export Excel), inventory forecast/tracking, bulk order management, abandoned cart recovery, customer lifetime value
+  - **💬 Communication & Messaging**: Full cross-platform coverage — Discord (reactions/channels/voice members), Slack (create/read channels), Teams (channels/messages), Apple Messages (send/group/interactive/read), Telegram (reactions/commands/webhooks), WhatsApp interactive/media/template, Messenger broadcasts, Google Chat spaces/members, Twitter DMs/webhook, Outlook email/messages, unified broadcast, email notification management
+  - **🔐 Authentication & Security**: Added `vault_access`, `vault_manage`, `analyze_tool_security`, `check_tool_compliance`, `generate_password`
+  - **💻 Development**: Added tool scaffolding suite (`generate_tool_scaffold`, `generate_tool_logic`, `generate_tool_parameters`, `generate_tool_documentation`, `generate_tool_tests`, `refactor_tool_code`, `validate_tool_schema`, `benchmark_tool_performance`), `git_operations`, `execute_shell_command`, `search_codebase`, `automate_development_workflow`
+  - **📁 Files & Documents**: Added PDF tools (watermark/merge/OCR/extract), Excel import/export/validate, `generate_excel`/`generate_pdf`/`generate_word`, iCloud Drive + OneDrive CRUD, regulated document management, `track_document_version`
+  - **📈 SEO & Marketing**: Added `analyze_competitor_sites`, `social_listening_trends`, `influencer_identification`, `monitor_mentions_replies`, `post_to_multiple_platforms`, `schedule_social_post`, `create_content_calendar`, `bulk_schedule_posts`, `get_cross_platform_analytics`, pipeline reports
+  - **⚙️ Site Management**: Added page-section builder tools (hero/CTA/homepage/services/footer/navigation/testimonial/landing page/gallery/sidebar), site template import/export/save, `scaffold_theme_structure`
+  - **✍️ Content Writing**: Added `generate_post_ideas`, `generate_cover_letter`, `get_post`, `delete_post`, `create_content_calendar`, `moderate_comments`
+  - **⏰ Scheduling & Automation**: Added full appointment lifecycle (create/update/cancel/reschedule), availability rules, booking links, appointment reminders/confirmations, Google/Outlook calendar sync, `bulk_schedule_posts`
+  - **⚕️ Healthcare**: Added `log_health_metrics`, `import_vitals`, `sync_with_mohap`, `sync_with_nmra`
+  - **⚖️ Legal**: Added `add_regulatory_requirement`, regulatory requirements/updates retrieval, `check_document_expiry`, `check_product_compliance`, `generate_compliance_certificate`, `generate_compliance_report`
+  - **💼 Sales & CRM**: Added `create_company`/`get_companies`/`research_company`, CRM email search (leads/correspondence/accounting), `client_communication_log`, `generate_invoice_pdf`, `send_client_invoice`, `sales_performance_dashboard`
+  - **💼 Finance & Business**: Added `generate_invoice_pdf`, `generate_submission_pack`, `generate_compliance_report`, `generate_pdf_dossier`
+  - **🎓 Education**: Added full registration lifecycle (create/approve/renew/submit, import/export Excel, expiry alerts/forecast)
+  - **📊 Workflow Monitoring**: Added workflow rule CRUD (`create_workflow_rule`, `update_workflow_rule`, `delete_workflow_rule`, `list_workflow_rules`, `test_workflow_rule`, `get_workflow_execution_log`)
+  - **📋 Project Management**: Added `add_task_dependency`, `remove_task_dependency`, `get_task_dependencies`, `manage_template_versions`
+  - **🏗️ Architect**: Added `generate_site_plan`, `integrate_with_architect`, `generate_architectural_drawing`
+  - **🎬 Media Templates**: Added `create_social_video`, `create_remotion_video`, `manage_template_versions`
+  - **🧠 AI/ML**: Added `prepare_file_for_vector_store`
+  - **⚖️ Legal & Policy**: Added regulatory CRUD, `check_authority_status`, `submit_to_authority`, `validate_document_checklist`
+  - **📊 Business Analytics**: Added `segment_customers`, `export_customer_data`
+  - **Result**: 61 presets covering all 760 tools (2,030 total tool references across presets) — up from 60 presets covering ~527 tools
+
+### Fixed
+- **Telegram Mini App – Member Loading (March 2026)**: Health & Wellness and Medical Vitals mini app templates no longer get stuck on "Loading…" when a subscriber opens the app for the first time.
+  - Server-side member pre-selection: the current WordPress user's linked `mcp_ai_member` post is resolved at page-render time and injected as `SERVER_MEMBER_ID`/`SERVER_MEMBER_NAME` JS variables; the member picker is skipped when a match is found.
+  - Auto-select single member: `hwFetchMembers()` / `mvFetchMembers()` now auto-select and close the picker when only one member is returned, eliminating the manual-tap requirement after first member creation.
+  - Retry button: when the member list request fails (auth not yet established or network error) a **Retry** button is shown instead of leaving the user on an infinite "Loading…" state.
+
+### Changed
+- **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
+- **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
+
+
 ## [1.1.4] - 2026-03-15
 
 ### Security
