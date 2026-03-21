@@ -121,7 +121,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Reorder submenu items to ensure proper menu order.
 		 *
-		 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
+		 * Ensures Getting Started appears first, followed by General Settings,
+		 * Orchestration Dashboard, and Task Plans.
 		 * This method reorganizes the submenu items under the main NV oOS menu to maintain
 		 * a logical and consistent navigation structure.
 		 *
@@ -138,17 +139,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			$main_submenu = $submenu[ self::PAGE_SLUG ];
 
-			// Define desired order: General Settings (0), Orchestration (10), Task Plans (20).
-			$ordered_items         = array();
-			$general_settings_item = null;
-			$orchestration_item    = null;
-			$task_plans_item       = null;
-			$other_items           = array();
+			// Define desired order: Getting Started (0), General Settings (10), Orchestration (20), Task Plans (30).
+			$ordered_items          = array();
+			$getting_started_item   = null;
+			$general_settings_item  = null;
+			$orchestration_item     = null;
+			$task_plans_item        = null;
+			$other_items            = array();
 
 			// Categorize menu items.
 			foreach ( $main_submenu as $item ) {
-				// General Settings (the main dashboard page).
-				if ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+				if ( isset( $item[2] ) && 'wp-mcp-ai-getting-started' === $item[2] ) {
+					// Getting Started wizard page.
+					$getting_started_item = $item;
+				} elseif ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+					// General Settings (the main dashboard page).
 					$general_settings_item = $item;
 				} elseif ( isset( $item[2] ) && false !== strpos( $item[2], 'mcp-ai-orchestration' ) ) {
 					// Orchestration Dashboard.
@@ -163,18 +168,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Rebuild menu in desired order.
+			if ( $getting_started_item ) {
+				$ordered_items[0] = $getting_started_item;
+			}
 			if ( $general_settings_item ) {
-				$ordered_items[0] = $general_settings_item;
+				$ordered_items[10] = $general_settings_item;
 			}
 			if ( $orchestration_item ) {
-				$ordered_items[10] = $orchestration_item;
+				$ordered_items[20] = $orchestration_item;
 			}
 			if ( $task_plans_item ) {
-				$ordered_items[20] = $task_plans_item;
+				$ordered_items[30] = $task_plans_item;
 			}
 
 			// Add other items after.
-			$position = 30;
+			$position = 40;
 			foreach ( $other_items as $item ) {
 				$ordered_items[ $position ] = $item;
 				++$position;
