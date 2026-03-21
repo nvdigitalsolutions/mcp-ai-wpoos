@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param array $context   Execution context.
 	 * @return array Tool result.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return array(

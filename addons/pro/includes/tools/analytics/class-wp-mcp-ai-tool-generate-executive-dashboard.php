@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$period                 = ! empty( $arguments['period'] ) ? sanitize_text_field( $arguments['period'] ) : 'monthly';
 		$compare_previous       = ! isset( $arguments['compare_previous'] ) || $arguments['compare_previous'];
