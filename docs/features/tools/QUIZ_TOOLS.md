@@ -47,9 +47,14 @@ Once enabled, the system will:
 - Primary data source for all quiz tools
 
 ### JetEngine CCT Sync (Full Version Only)
-When JetEngine is active, quiz data is automatically synchronized to:
-- `quizzes` CCT - Available at `/wp-json/jet-cct/quizzes`
-- `quiz_submissions` CCT - Available at `/wp-json/jet-cct/quiz_submissions`
+When JetEngine is active **and** the `enable_quiz_system` setting is enabled, quiz data is automatically synchronized to two CCTs:
+
+| Class | CCT slug | Table | Purpose |
+|---|---|---|---|
+| `WP_MCP_AI_JetEngine_Quizzes_CCT` | `quizzes` | `wp_jet_cct_quizzes` | Quiz definitions (REST: `/wp-json/jet-cct/quizzes`) |
+| `WP_MCP_AI_JetEngine_Submissions_CCT` | `quiz_submissions` | `wp_jet_cct_quiz_submissions` | User submissions (REST: `/wp-json/jet-cct/quiz_submissions`) |
+
+> **Note**: Both CCTs are registered via `maybe_register_cct()` on the `init` hook. If `enable_quiz_system` is off they are not provisioned and will not appear in JetEngine's admin UI.
 
 **New CCT Fields (v1.1):**
 - `started_at` - ISO 8601 timestamp when quiz was started
