@@ -134,4 +134,83 @@ Check [ROADMAP.md](docs/ROADMAP.md) for planned features and release dates. Vote
 
 Maintainers follow [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for all releases.
 
+---
+
+## GSD × BMAD Development Methodology
+
+NV oOS uses a hybrid **GSD (Get Shit Done) + BMAD (Breakthrough Method for Agile AI-Driven Development)** methodology for AI-assisted feature development. This workflow is fully documented in [docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md).
+
+### Workflow Summary (10 Phases)
+
+| Phase | Name | Lead | Purpose |
+|-------|------|------|---------|
+| **0** | Context Init | Scrum Master | Load context files, initialize feature context, set token budget |
+| **1** | Discovery | Analyst | Domain research, Project Brief |
+| **2** | Planning | Product Manager | PRD, epics, stories, tool/API definitions |
+| **3** | Architecture | Architect | System design, data model, file map, security model |
+| **4** | Story Breakdown | Scrum Master | Atomic stories with embedded architecture context |
+| **5** | Implementation | Developer | Isolated GSD-style story execution, atomic commits |
+| **6** | Validation | QA Engineer | PHPUnit, PHPCS, ESLint, CodeQL, acceptance criteria |
+| **7** | Release | Scrum Master | Version bump, CHANGELOG, Git tag, GitHub Release |
+| **8** | Monitoring | QA Engineer | 48–72 hour post-release health monitoring |
+| **9** | Retrospective | Scrum Master | Context harvest, learnings persisted, context archived |
+
+### Scale-Adaptive Usage
+
+Not every change requires the full workflow. Choose based on complexity:
+
+| Change Size | Phases Required |
+|------------|----------------|
+| **Patch / Bug Fix** | 5, 6, 7 |
+| **Small Feature** | 0, 4, 5, 6, 7, 9 |
+| **Medium Feature** | 0, 1, 2, 3, 4, 5, 6, 7, 9 |
+| **Major Feature / Integration** | 0–9 (all phases) |
+
+### Infrastructure
+
+- **Agent definitions:** `.bmad/agents/` — YAML role definitions for each BMAD agent
+- **Team compositions:** `.bmad/teams/feature-development.yaml` — Multi-agent team configuration
+- **Context files:** `.context/` — GSD context engineering files (conventions, security, subsystem guides)
+- **Templates:** `docs/proposals/templates/` — Project Brief, PRD, Architecture Spec templates
+
+### Phase-Completion Checklists
+
+#### Pre-Implementation Gate (Before Phase 5)
+
+- [ ] Project Brief approved (Phase 1 complete)
+- [ ] PRD complete with all acceptance criteria (Phase 2 complete)
+- [ ] Architecture Specification reviewed and Architecture Review Checklist checked (Phase 3 complete)
+- [ ] Stories broken down and sequenced in task plan (Phase 4 complete)
+- [ ] Security model defined
+- [ ] Test strategy defined
+
+#### Per-Story Gate (During Phase 5/6, Before Merging)
+
+- [ ] All acceptance criteria met
+- [ ] PHPUnit tests pass: `composer run test`
+- [ ] PHPCS clean: `composer run lint`
+- [ ] ESLint clean (if JS changes): `npm run lint:js`
+- [ ] CodeQL scan passes
+- [ ] PHPDoc blocks on all new classes and methods
+- [ ] Security checklist verified:
+  - [ ] Input sanitized (`sanitize_text_field()`, `absint()`, etc.)
+  - [ ] Output escaped (`esc_html()`, `esc_url()`, etc.)
+  - [ ] Capabilities checked before privileged operations
+  - [ ] Nonces verified for state-changing requests
+  - [ ] ABSPATH guard on all new PHP files
+- [ ] Documentation updated if needed
+- [ ] Base vs Pro gating correct
+
+#### Release Gate (Phase 7)
+
+- [ ] All stories in milestone complete
+- [ ] Full test suite passes
+- [ ] `composer run build:autoload` completed and classmap committed
+- [ ] Version bumped consistently (plugin header, `composer.json`, `package.json`, `WP_MCP_AI_VERSION`)
+- [ ] `CHANGELOG.md` entry with affected files and API changes
+- [ ] Git tag created matching plugin header version
+- [ ] GitHub Release drafted and published
+- [ ] WordPress.org plugin check passes (for base plugin changes)
+- [ ] Backward compatibility verified
+
 Thank you for helping improve NV oOS. 🚀
