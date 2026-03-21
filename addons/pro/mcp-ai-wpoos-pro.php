@@ -932,6 +932,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Catalog'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-catalog.php',
 		);
 		$pro_tools     = array_merge( $pro_tools, $shopify_tools );
 
@@ -1492,6 +1493,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'shopify_orders'                  => 'external-tools',
 			'shopify_customers'               => 'external-tools',
 			'shopify_inventory'               => 'external-tools',
+			'shopify_catalog'                 => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',
