@@ -45,7 +45,8 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 		public static function download_model() {
 			self::verify_request();
 
-			$model_slug = isset( $_POST['model'] ) ? sanitize_key( wp_unslash( $_POST['model'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in verify_request()
+			$raw        = isset( $_POST['model'] ) ? wp_unslash( $_POST['model'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized in sanitize_model_slug()
+			$model_slug = self::sanitize_model_slug( $raw );
 
 			if ( empty( $model_slug ) ) {
 				wp_send_json_error( __( 'Model slug is required.', 'mcp-ai-wpoos' ) );
@@ -73,7 +74,8 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 		public static function delete_model() {
 			self::verify_request();
 
-			$model_slug = isset( $_POST['model'] ) ? sanitize_key( wp_unslash( $_POST['model'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in verify_request()
+			$raw        = isset( $_POST['model'] ) ? wp_unslash( $_POST['model'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized in sanitize_model_slug()
+			$model_slug = self::sanitize_model_slug( $raw );
 
 			if ( empty( $model_slug ) ) {
 				wp_send_json_error( __( 'Model slug is required.', 'mcp-ai-wpoos' ) );
@@ -123,6 +125,22 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 		// -------------------------------------------------------------------------
 		// Private helper
 		// -------------------------------------------------------------------------
+
+		/**
+		 * Sanitize a raw model slug from user input.
+		 *
+		 * Model slugs may contain dots (e.g. "qwen2-0.5b-instruct-q4_k_m").
+		 * sanitize_key() strips dots, so we use a custom pattern that keeps
+		 * only the characters that legitimately appear in GGUF slugs.
+		 * The returned slug is validated against the known-models catalogue
+		 * by the caller, so this function only needs to exclude dangerous chars.
+		 *
+		 * @param string $raw Raw value from user input (already wp_unslash()ed by caller).
+		 * @return string Sanitized slug (may be empty string if input was empty).
+		 */
+		private static function sanitize_model_slug( $raw ) {
+			return preg_replace( '/[^a-z0-9._-]/', '', strtolower( $raw ) );
+		}
 
 		/**
 		 * Verify nonce and capability.  Sends JSON error and exits on failure.

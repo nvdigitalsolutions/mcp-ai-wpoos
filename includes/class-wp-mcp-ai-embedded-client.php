@@ -351,11 +351,15 @@ return array(
 public function create_chat_completion( array $messages, array $options = array() ) {
 // Resolve model slug.
 $settings   = WP_MCP_AI_Admin_Settings::get_settings();
-$model_slug = isset( $options['model'] ) ? sanitize_key( $options['model'] ) : '';
+// Model slugs may contain dots (e.g. "qwen2-0.5b-instruct-q4_k_m"); sanitize_key()
+// strips dots, so keep only the characters that legitimately appear in GGUF slugs.
+$model_slug = isset( $options['model'] )
+	? preg_replace( '/[^a-z0-9._-]/', '', strtolower( $options['model'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- preg_replace IS the sanitizer
+	: '';
 if ( empty( $model_slug ) ) {
 $model_slug = isset( $settings['embedded_server_model'] )
-? sanitize_key( $settings['embedded_server_model'] )
-: '';
+	? preg_replace( '/[^a-z0-9._-]/', '', strtolower( $settings['embedded_server_model'] ) )
+	: '';
 }
 
 // Fall back to first downloaded model.
