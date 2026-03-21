@@ -603,8 +603,12 @@ class WP_MCP_AI_Model_Service {
 	/**
 	 * Get embedded models
 	 *
-	 * Returns client-side WebLLM models that run in the browser using WebGPU/WebAssembly.
-	 * These models are loaded from CDN on-demand, not server-side GGUF models.
+	 * Returns server-side GGUF models (downloaded to the uploads models directory)
+	 * first, followed by client-side WebLLM models that run in the browser.
+	 *
+	 * Server-side models are only listed when at least one has been downloaded via
+	 * the Embedded LLM admin UI. Their model IDs are the GGUF filenames, which the
+	 * language model router passes to WP_MCP_AI_Embedded_Client for inference.
 	 *
 	 * @param array $settings Settings array.
 	 * @return array Array of model_id => model_name pairs.
@@ -623,10 +627,28 @@ class WP_MCP_AI_Model_Service {
 			return array();
 		}
 
-		// Return client-side WebLLM models (run in browser via WebGPU/WebAssembly).
+		$models = array();
+
+		// --- Server-side GGUF models (stored in uploads/mcp-ai-wpoos/models/) ---
+		// List only the models that have been downloaded and are ready for inference.
+		if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+			$client     = new WP_MCP_AI_Embedded_Client();
+			$downloaded = $client->get_downloaded_models();
+
+			foreach ( $downloaded as $model ) {
+				// Key is the GGUF filename so the router can build the file path.
+				$models[ $model['filename'] ] = sprintf(
+					/* translators: 1: model display name */
+					__( '%1$s [Server-Side]', 'mcp-ai-wpoos' ),
+					$model['name']
+				);
+			}
+		}
+
+		// --- Client-side WebLLM models (run in browser via WebGPU/WebAssembly) ---
 		// These models are loaded from CDN automatically when first used.
 		// All available models are listed. Models marked with * support function calling.
-		$models = array(
+		$browser_models = array(
 			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC'      => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
 			'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'        => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
 			'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Llama 8B (~5GB)', 'mcp-ai-wpoos' ),
@@ -641,7 +663,7 @@ class WP_MCP_AI_Model_Service {
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 		);
 
-		return $models;
+		return array_merge( $models, $browser_models );
 	}
 
 	/**

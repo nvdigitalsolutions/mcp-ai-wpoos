@@ -65,6 +65,17 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $cloudflare_client;
 
 		/**
+		 * Server-side embedded LLM client instance.
+		 *
+		 * When non-null and is_available() returns true, chat completion requests
+		 * for the 'embedded' provider are routed here instead of returning the
+		 * client-side-only error.
+		 *
+		 * @var WP_MCP_AI_Embedded_Client|null
+		 */
+		protected $embedded_client;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_OpenAI_Client      $openai_client        OpenAI client instance.
@@ -74,8 +85,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param WP_MCP_AI_Anthropic_Client   $anthropic_client     Anthropic client instance (optional).
 		 * @param WP_MCP_AI_Huggingface_Client $huggingface_client   Hugging Face client instance (optional).
 		 * @param WP_MCP_AI_Cloudflare_Client  $cloudflare_client    Cloudflare client instance (optional).
+		 * @param WP_MCP_AI_Embedded_Client    $embedded_client      Server-side embedded LLM client (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, WP_MCP_AI_Embedded_Client $embedded_client = null ) {
 			$this->openai_client      = $openai_client;
 			$this->gemini_client      = $gemini_client;
 			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
@@ -83,6 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->anthropic_client   = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
 			$this->huggingface_client = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
 			$this->cloudflare_client  = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
+			$this->embedded_client    = $embedded_client ? $embedded_client : new WP_MCP_AI_Embedded_Client();
 		}
 
 		/**
@@ -244,11 +257,17 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 					return $this->cloudflare_client->create_chat_completion( $messages, $options );
 
 				case 'embedded':
-					// Embedded LLM runs client-side in the browser using WebLLM.
-					// Server-side chat completion requests for embedded provider are not supported.
+					// If the server-side embedded client is available (proc_open enabled,
+					// llama-cli binary present, and a GGUF model downloaded), use it.
+					// This enables lightweight local inference to save cloud API costs.
+					if ( null !== $this->embedded_client && $this->embedded_client->is_available() ) {
+						return $this->embedded_client->create_chat_completion( $messages, $options );
+					}
+
+					// Otherwise fall back: client-side WebLLM handles this in the browser.
 					return new WP_Error(
 						'wp_mcp_ai_embedded_client_side_only',
-						__( 'Embedded LLM provider runs client-side in the browser. Server-side API requests are not supported for this provider.', 'mcp-ai-wpoos' ),
+						__( 'Embedded LLM provider runs client-side in the browser. For server-side inference, install llama-cli and download a model via Settings → NV oOS → Providers → Embedded LLM.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 

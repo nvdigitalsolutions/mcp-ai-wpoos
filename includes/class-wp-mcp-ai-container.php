@@ -308,6 +308,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'client.embedded',
+			function () {
+				return new WP_MCP_AI_Embedded_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
@@ -318,7 +325,9 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.ollama' ),
 					$container->get( 'client.lm_studio' ),
 					$container->get( 'client.anthropic' ),
-					$container->get( 'client.huggingface' )
+					$container->get( 'client.huggingface' ),
+					$container->get( 'client.cloudflare' ),
+					$container->get( 'client.embedded' )
 				);
 			}
 		);
