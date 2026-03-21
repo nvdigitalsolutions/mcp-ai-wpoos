@@ -104,7 +104,18 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Event scheduling
 - Timeline management
 - Team collaboration
-- JetEngine CCT synchronization
+- JetEngine CCT synchronization (when JetEngine is active, four CCTs are auto-provisioned — see below)
+
+**JetEngine CCTs** (registered only when `enable_project_management` is on):
+
+| CCT slug | Table | Purpose |
+|---|---|---|
+| `mcp_task_plans` | `wp_jet_cct_mcp_task_plans` | Markdown task plans for autonomous orchestration |
+| `mcp_task_templates` | `wp_jet_cct_mcp_task_templates` | Reusable workflow templates |
+| `mcp_autonomous_sessions` | `wp_jet_cct_mcp_autonomous_sessions` | Active agent session state |
+| `mcp_execution_history` | `wp_jet_cct_mcp_execution_history` | Per-step tool-execution log |
+
+> **Note**: All four CCTs are visible in JetEngine's admin UI (`wp-admin/admin.php?page=jet-cct-<slug>`) only after enabling Project Management and running the site at least once with JetEngine active.
 
 **Tools Provided**:
 - `create_project` - Create new projects
@@ -226,6 +237,15 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Allergy and condition tracking
 - Pet health management
 - Secure health data storage
+- JetEngine CCT for vitals log (when JetEngine is active — see below)
+
+**JetEngine CCT** (registered only when `enable_health_wellness_management` is on):
+
+| CCT slug | Table | Purpose |
+|---|---|---|
+| `vitals_log` | `wp_jet_cct_vitals_log` | Time-series vital signs log (blood pressure, glucose, weight, CBC panel, LFT, electrolytes) |
+
+> **Note**: The `vitals_log` CCT is used by the `log_vital_signs` and `import_vitals` tools. It will not appear in JetEngine's admin UI unless Health & Wellness is enabled.
 
 **Tool Categories**:
 - **Members**: Create, update, list family/pet members
@@ -836,7 +856,29 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 ---
 
-## How to Enable Pro Toolkits
+### 21. 💬 Chat Channels Inbox
+
+**Setting**: `enable_chat_channels_toolkit`  
+**Status**: Pro addon required
+
+**Features**:
+- Unified inbox for Slack, Teams, Discord, Telegram, WhatsApp, and Google Chat
+- AI-powered auto-reply to incoming messages
+- Conversation threading and history
+- JetEngine CCT storage for contacts and messages (when JetEngine is active — see below)
+
+**JetEngine CCTs** (registered only when `enable_chat_channels_toolkit` is on):
+
+| Class | CCT slug | Table | Purpose |
+|---|---|---|---|
+| `WP_MCP_AI_Channel_Contacts_CCT` | `channel_contacts` | `wp_jet_cct_channel_contacts` | Contact/conversation index per platform |
+| `WP_MCP_AI_Channel_Messages_CCT` | `channel_messages` | `wp_jet_cct_channel_messages` | Individual messages per conversation |
+
+> **Note**: When JetEngine is inactive, the toolkit falls back to CPT storage (`mcp_chan_contact` / `mcp_chan_message`). The CCT admin pages will not appear unless the toolkit is enabled.
+
+**Documentation**: See `addons/pro/includes/chat-channels-toolkit-init.php`
+
+---
 
 ### Step 1: Install Pro Addon
 

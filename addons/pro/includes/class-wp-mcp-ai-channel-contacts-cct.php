@@ -389,6 +389,11 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 * Register the CCT in JetEngine if not already registered.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 		if ( ! $module ) {
 			return;
