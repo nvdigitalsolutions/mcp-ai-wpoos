@@ -275,12 +275,17 @@
 	// =========================================================================
 
 	/**
-	 * Build the studies API URL with current filter state.
+	 * Build the studies API URL for a specific page.
 	 *
+	 * Uses per_page=500 to minimise round-trips. Auto-pagination in
+	 * loadStudyList() will request additional pages when total_pages > 1.
+	 *
+	 * @param {number} page 1-based page number.
 	 * @returns {string}
 	 */
-	function buildStudiesUrl() {
-		var url = restBase + '/studies?per_page=100';
+	function buildStudiesUrl( page ) {
+		var p   = Math.max( 1, parseInt( page, 10 ) || 1 );
+		var url = restBase + '/studies?per_page=500&page=' + p;
 		if ( filterModality ) { url += '&modality='  + encodeURIComponent( filterModality ); }
 		if ( filterDateFrom ) { url += '&date_from=' + encodeURIComponent( filterDateFrom ); }
 		if ( filterDateTo )   { url += '&date_to='   + encodeURIComponent( filterDateTo ); }
@@ -331,7 +336,12 @@
 	// =========================================================================
 
 	/**
-	 * Load and render the study list.
+	 * Load and render the study list, fetching all available pages so that
+	 * every previously uploaded study appears in the list regardless of how
+	 * many studies exist.
+	 *
+	 * Pages are fetched sequentially until total_pages is reached.
+	 * The combined array of studies from all pages is rendered once complete.
 	 */
 	function loadStudyList() {
 		if ( loadingEl ) {
@@ -341,21 +351,42 @@
 			studyListEl.style.display = 'none';
 		}
 
-		apiFetch( buildStudiesUrl() )
-			.then( function ( res ) {
-				if ( ! res.ok ) {
-					throw new Error( 'Failed to load studies (HTTP ' + res.status + ')' );
-				}
-				return res.json();
-			} )
-			.then( function ( data ) {
-				renderStudyList( data.studies || [] );
-			} )
-			.catch( function ( err ) {
-				if ( loadingEl ) {
-					loadingEl.textContent = err.message;
-				}
-			} );
+		var allStudies = [];
+
+		/**
+		 * Fetch one page of studies and recurse to the next if needed.
+		 *
+		 * @param {number} page Page number to fetch (1-based).
+		 */
+		function fetchPage( page ) {
+			apiFetch( buildStudiesUrl( page ) )
+				.then( function ( res ) {
+					if ( ! res.ok ) {
+						throw new Error( 'Failed to load studies (HTTP ' + res.status + ')' );
+					}
+					return res.json();
+				} )
+				.then( function ( data ) {
+					var pageStudies = Array.isArray( data.studies ) ? data.studies : [];
+					allStudies = allStudies.concat( pageStudies );
+
+					var totalPages = data.total_pages ? parseInt( data.total_pages, 10 ) : 1;
+					if ( page < totalPages ) {
+						// More pages to fetch — continue loading.
+						fetchPage( page + 1 );
+					} else {
+						// All pages loaded — render the complete list.
+						renderStudyList( allStudies );
+					}
+				} )
+				.catch( function ( err ) {
+					if ( loadingEl ) {
+						loadingEl.textContent = err.message;
+					}
+				} );
+		}
+
+		fetchPage( 1 );
 	}
 
 	// =========================================================================
@@ -440,7 +471,7 @@
 			sel.remove( 1 );
 		}
 
-		apiFetch( restBase + '/studies?per_page=100' )
+		apiFetch( restBase + '/studies?per_page=500' )
 			.then( function ( res ) { return res.json(); } )
 			.then( function ( data ) {
 				var studies = ( data && data.studies ) ? data.studies : [];

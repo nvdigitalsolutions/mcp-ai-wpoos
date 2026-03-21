@@ -105,7 +105,7 @@ class WP_MCP_AI_Imaging_Study_CPT {
 			return new WP_Error( 'imaging_missing_uid', __( 'StudyInstanceUID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$title   = isset( $data['study_description'] ) && '' !== $data['study_description']
+		$title = isset( $data['study_description'] ) && '' !== $data['study_description']
 			? sanitize_text_field( $data['study_description'] )
 			: $study_uid;
 
@@ -189,8 +189,8 @@ class WP_MCP_AI_Imaging_Study_CPT {
 						$series_data['instances']
 					);
 					// Deduplicate by sop_instance_uid.
-					$seen      = array();
-					$deduped   = array();
+					$seen    = array();
+					$deduped = array();
 					foreach ( $existing['instances'] as $inst ) {
 						$iuid = isset( $inst['sop_instance_uid'] ) ? $inst['sop_instance_uid'] : '';
 						if ( '' === $iuid || ! isset( $seen[ $iuid ] ) ) {
@@ -213,23 +213,31 @@ class WP_MCP_AI_Imaging_Study_CPT {
 	/**
 	 * Get all studies (for admin listing).
 	 *
-	 * @param int   $per_page Results per page.
+	 * @param int   $per_page Results per page. Use -1 to return all studies.
 	 * @param int   $page     Page number (1-based).
 	 * @param array $filters  Optional filter criteria:
 	 *                        - modality   (string) Filter by _imaging_modality meta value.
 	 *                        - date_from  (string) YYYY-MM-DD lower bound on _imaging_study_date.
 	 *                        - date_to    (string) YYYY-MM-DD upper bound on _imaging_study_date.
 	 *                        - search     (string) LIKE match against _imaging_study_instance_uid.
-	 * @return array {posts, total}
+	 * @return array {posts, total, pages}
 	 */
 	public static function get_all( $per_page = 20, $page = 1, $filters = array() ) {
+		$per_page_val = (int) $per_page;
+		$page_val     = max( 1, absint( $page ) );
+
 		$args = array(
-			'post_type'      => self::POST_TYPE,
-			'post_status'    => 'publish',
-			'posts_per_page' => absint( $per_page ),
-			'paged'          => absint( $page ),
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'post_type'        => self::POST_TYPE,
+			'post_status'      => 'publish',
+			'posts_per_page'   => -1 === $per_page_val ? -1 : max( 1, $per_page_val ),
+			'paged'            => $page_val,
+			'orderby'          => 'date',
+			'order'            => 'DESC',
+			// Suppress external post-query filters so that third-party plugins
+			// cannot inadvertently limit the result set (e.g., by modifying
+			// posts_clauses or posts_where on a secondary WP_Query).
+			'suppress_filters' => true,
+			'no_found_rows'    => false,
 		);
 
 		$meta_query = array();
@@ -247,10 +255,10 @@ class WP_MCP_AI_Imaging_Study_CPT {
 				'key'  => '_imaging_study_date',
 				'type' => 'CHAR',
 			);
-			$date_from = ! empty( $filters['date_from'] )
+			$date_from   = ! empty( $filters['date_from'] )
 				? str_replace( '-', '', sanitize_text_field( $filters['date_from'] ) )
 				: '';
-			$date_to   = ! empty( $filters['date_to'] )
+			$date_to     = ! empty( $filters['date_to'] )
 				? str_replace( '-', '', sanitize_text_field( $filters['date_to'] ) )
 				: '';
 
@@ -286,9 +294,16 @@ class WP_MCP_AI_Imaging_Study_CPT {
 
 		$query = new WP_Query( $args );
 
+		$total            = (int) $query->found_posts;
+		$effective_per_pg = -1 === $per_page_val ? -1 : max( 1, $per_page_val );
+		$pages            = ( -1 === $effective_per_pg )
+			? 1
+			: (int) ceil( $total / $effective_per_pg );
+
 		return array(
 			'posts' => $query->posts,
-			'total' => $query->found_posts,
+			'total' => $total,
+			'pages' => max( 1, $pages ),
 		);
 	}
 }
