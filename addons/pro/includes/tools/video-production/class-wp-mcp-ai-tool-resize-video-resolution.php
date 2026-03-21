@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Resize_Video_Resolution implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement resize_video_resolution logic
 		// This requires FFmpeg or similar video processing library
 
