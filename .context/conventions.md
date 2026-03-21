@@ -41,14 +41,104 @@ NV oOS has **two PHP version targets** — always match the target to the code l
 ## File Organization
 
 ```
+mcp-ai-wpoos.php                       ← Plugin entry point (no logic here)
+mcp-ai-wpoos-base.php                  ← Alternate entry for base-only distribution
 includes/
-├── tools/class-wp-mcp-ai-tool-{name}.php    # Base tools (165 core)
-├── admin/class-wp-mcp-ai-{component}.php    # Admin UI classes
-├── class-wp-mcp-ai-{component}.php          # Core classes
-addons/pro/includes/
-├── tools/class-wp-mcp-ai-pro-tool-{name}.php  # Pro tools (348+)
-├── tools/{category}/class-wp-mcp-ai-tool-{name}.php  # Categorized pro tools
+├── bootstrap/                         ← Boot sequence: constants → autoload → helpers
+│                                        → cron → hooks → loader → activation
+├── class-wp-mcp-ai-plugin.php         ← Main singleton + DI container wiring
+├── class-wp-mcp-ai-container.php      ← Service locator / DI
+├── tools/                             ← 217 tool files; 165 enabled in base mode
+│   ├── class-wp-mcp-ai-tool-{name}.php
+│   └── orchestration/                 ← Multi-tool orchestration
+├── admin/                             ← All wp-admin UI + AJAX handlers
+│   ├── class-wp-mcp-ai-admin-settings.php
+│   ├── class-wp-mcp-ai-admin-ajax-handlers.php
+│   ├── sections/                      ← Settings tab section classes
+│   └── widgets/                       ← Dashboard widget classes
+├── assistants/                        ← Assistant CPT + metaboxes
+├── services/                          ← Business logic (20+ service classes)
+├── repositories/                      ← Data access layer
+├── integrations/                      ← JetEngine, Elementor, Auth0, ChatKit
+├── infrastructure/                    ← HTTP client, options-store, provider adapters
+├── interfaces/                        ← PHP interfaces (OptionsStore, HttpClient…)
+├── knowledge-base/                    ← KB documents, professions, playbooks
+├── blocks/                            ← WordPress blocks (chat, tools-grid…)
+├── bundled-skills/                    ← SKILL.md files (MCP, PDF, Excel, video…)
+└── helpers/                           ← Utility helpers
+addons/pro/
+├── mcp-ai-wpoos-pro.php               ← Pro entry (no WP plugin header in repo)
+└── includes/
+    ├── tools/                         ← 354+ pro tool classes (same naming convention)
+    ├── tools/{category}/              ← Categorized pro tools
+    ├── admin/                         ← Pro admin pages
+    ├── rest/                          ← Pro REST controllers
+    ├── integrations/                  ← WooCommerce, Shopify, social media, Google
+    └── services/                      ← Pro-specific services
+assets/
+├── js/                                ← 100+ JS files; *.min.js served
+│   ├── chat.js                        ← Main chat UI
+│   ├── admin-settings.js              ← Settings page JS
+│   └── vendor/                        ← Vendored JS (chart.js, vectorizer…)
+└── css/                               ← Styles; *.min.css served
+packages/                              ← 9 standalone NPM packages
 ```
+
+## Key Constants
+
+| Constant | Default | Effect |
+|---|---|---|
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = 165-tool base only; `false` = all 519 tools |
+| `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks — do not redefine |
+| `WP_MCP_AI_PRO_VERSION` | set by Pro at boot | Prevents double-loading of Pro addon |
+| `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
+
+To test base-only mode in a clone (where Pro is auto-loaded):
+```php
+define( 'WP_MCP_AI_BASE_VERSION', true );  // in wp-config.php
+```
+
+## Build Commands
+
+### PHP (run before every PR)
+```bash
+composer run lint:base        # PHPCS – base plugin only
+composer run lint             # PHPCS – full codebase including Pro
+composer run lint:compat      # PHP 7.4–8.3 compatibility
+composer run format           # PHPCBF – auto-fix style issues
+composer run test:install     # One-time: install WordPress PHPUnit test suite
+composer run test             # PHPUnit – full test suite
+composer run ci:all           # lint (errors-only) + test:coverage (CI entry point)
+```
+
+### JavaScript / CSS
+```bash
+npm run build                 # CSS + base JS + Pro JS (production, minified)
+npm run build:full            # build + Workflow Builder + TMA React builds
+npm run lint:js               # ESLint on assets/js/**/*.js
+npm run lint:js:fix           # Auto-fix JS lint issues
+npm test                      # Jest unit tests
+```
+
+> **Before a PR:** `composer run lint:base && composer run test`
+> **Full CI check:** `composer run ci:all && npm run build`
+
+## Base vs Pro
+
+| | Base plugin | Pro addon |
+|---|---|---|
+| **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
+| **Tools** | 165 core tools | +354 Pro tools = **519 total** |
+| **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
+| **PHP minimum** | 7.4 | 8.1 |
+| **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (phpspreadsheet etc.) |
+| **JS build config** | `esbuild.config.js` | `esbuild.config.pro.js` |
+| **React builds** | none | Workflow Builder, TMA templates |
+| **License** | GPLv3 | Proprietary |
+
+Pro-exclusive feature areas: WooCommerce, JetEngine CCTs, social media channels (Slack/Discord/Teams/Telegram/WhatsApp/Instagram), Google services, GitHub, media processing (FFmpeg, DICOM), multi-agent orchestration, health & wellness (27 tools), finance/ERP, Telegram Mini Apps.
+
+**How Pro auto-loads in a clone:** `addons/pro/mcp-ai-wpoos-pro.php` has no WordPress plugin header, so WordPress doesn't see it as a plugin. `wp_mcp_ai_maybe_load_pro_addon()` in `class-wp-mcp-ai-plugin.php` detects the file and requires it automatically — no manual activation needed.
 
 ## PHP Code Style
 
