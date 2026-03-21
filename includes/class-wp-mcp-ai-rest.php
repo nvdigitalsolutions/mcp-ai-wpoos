@@ -1141,7 +1141,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Parse pagination parameters; -1 (or null) means return all (default).
 			$per_page = $request->get_param( 'per_page' );
 			$per_page = ( null !== $per_page ) ? intval( $per_page ) : -1;
-			$page     = max( 1, absint( (int) $request->get_param( 'page' ) ?: 1 ) );
+			$page_raw = $request->get_param( 'page' );
+			$page     = max( 1, absint( null !== $page_raw ? (int) $page_raw : 1 ) );
 
 			$total_assistants = 0;
 			$total_pages      = 1;
@@ -4400,7 +4401,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Try to serve from cache (keyed on assistant_id).
 			$cache_params = array_filter(
-				array( 'assistant_id' => $assistant_id ?: null ),
+				array( 'assistant_id' => $assistant_id ? $assistant_id : null ),
 				static function ( $v ) {
 					return null !== $v;
 				}
