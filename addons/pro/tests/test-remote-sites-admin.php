@@ -249,6 +249,8 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'QuickBooks (Accounting)', $output );
 		$this->assertStringContainsString( 'value="ezuite_erp"', $output );
 		$this->assertStringContainsString( 'EZuite ERP (Inventory)', $output );
+		$this->assertStringContainsString( 'value="upwork"', $output );
+		$this->assertStringContainsString( 'Upwork (Freelance Marketplace)', $output );
 
 		// Clean up.
 		unset( $_GET['page'] );
@@ -499,6 +501,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_google_drive_connection_type_in_dropdown() {
 		$admin        = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['add']  = '1'; // Must be set so render_admin_page renders the add form with the dropdown.
 
 		ob_start();
 		$admin->render_admin_page();
@@ -508,7 +511,26 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'value="google_drive"', $output, 'Google Drive should be in connection type dropdown' );
 		$this->assertStringContainsString( 'Google Drive (Cloud Storage)', $output, 'Google Drive label should be present' );
 
-		unset( $_GET['page'] );
+		unset( $_GET['page'], $_GET['add'] );
+	}
+
+	/**
+	 * Test that connection type "upwork" appears in the dropdown.
+	 */
+	public function test_upwork_connection_type_in_dropdown() {
+		$admin        = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['add']  = '1'; // Must be set so render_admin_page renders the add form with the dropdown.
+
+		ob_start();
+		$admin->render_admin_page();
+		$output = ob_get_clean();
+
+		// Check that Upwork option exists in the dropdown.
+		$this->assertStringContainsString( 'value="upwork"', $output, 'Upwork should be in connection type dropdown' );
+		$this->assertStringContainsString( 'Upwork (Freelance Marketplace)', $output, 'Upwork label should be present' );
+
+		unset( $_GET['page'], $_GET['add'] );
 	}
 
 	/**
@@ -693,6 +715,66 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Verify transient was set with state data.
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+		$this->assertNotFalse( $state_data, 'State data transient should exist' );
+		$this->assertIsArray( $state_data, 'State data should be an array' );
+		$this->assertArrayHasKey( 'user_id', $state_data, 'State data should contain user_id' );
+		$this->assertArrayHasKey( 'connection_id', $state_data, 'State data should contain connection_id' );
+		$this->assertEquals( $connection_id, $state_data['connection_id'], 'Connection ID should match' );
+
+		// Clean up.
+		delete_transient( $transient_key );
+	}
+
+	/**
+	 * Test Upwork OAuth state parameter generation and validation.
+	 *
+	 * Verifies OAuth 2.0 CSRF protection via state parameter and that
+	 * wp_safe_redirect targets the Upwork authorization endpoint.
+	 */
+	public function test_upwork_oauth_state_parameter_validation() {
+		// Create a test Upwork connection.
+		$connection_data = array(
+			'name'            => 'Test Upwork',
+			'url'             => 'https://api.upwork.com/graphql',
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_upwork_client_id',
+			'client_secret'   => 'test_upwork_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Invoke handle_upwork_oauth_start via reflection.
+		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method     = $reflection->getMethod( 'handle_upwork_oauth_start' );
+		$method->setAccessible( true );
+
+		// Capture redirect to extract state parameter.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
+		$this->redirect_url = '';
+
+		try {
+			$method->invoke( $admin, $connection_id );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
+
+		// Verify redirect URL contains Upwork OAuth authorization endpoint.
+		$this->assertStringContainsString( 'www.upwork.com/ab/account-security/oauth2/authorize', $redirect_url, 'Should redirect to Upwork OAuth endpoint' );
+
+		// Extract state parameter from redirect URL.
+		$parsed = wp_parse_url( $redirect_url );
+		parse_str( $parsed['query'], $params );
+		$this->assertArrayHasKey( 'state', $params, 'State parameter should be present' );
+
+		$state         = $params['state'];
+		$transient_key = 'wp_mcp_ai_upwork_oauth_state_' . md5( $state );
 		$state_data    = get_transient( $transient_key );
 		$this->assertNotFalse( $state_data, 'State data transient should exist' );
 		$this->assertIsArray( $state_data, 'State data should be an array' );

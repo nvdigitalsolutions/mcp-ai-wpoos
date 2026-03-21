@@ -65,7 +65,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
-	 * Allow Google OAuth host for redirects.
+	 * Allow OAuth redirect hosts for remote connection types.
 	 *
 	 * @since 1.0.0
 	 *
@@ -75,6 +75,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	public function allow_google_oauth_host( $hosts ) {
 		$hosts[] = 'accounts.google.com';
 		$hosts[] = 'login.microsoftonline.com';
+		$hosts[] = 'www.upwork.com'; // Upwork OAuth2 authorization endpoint.
 		return $hosts;
 	}
 
