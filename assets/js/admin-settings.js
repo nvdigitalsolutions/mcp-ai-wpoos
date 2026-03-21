@@ -1081,7 +1081,7 @@ window.wpMcpAiSaveExpandedState = function() {
                 data: {
                     action: 'wp_mcp_ai_download_embedded_model',
                     nonce: nonce,
-                    model: modelSlug
+                    slug: modelSlug
                 }
             }, {
                 context: 'embedded-model-download',
@@ -1139,6 +1139,7 @@ window.wpMcpAiSaveExpandedState = function() {
             
             // Disable button and show progress
             $btn.prop('disabled', true).text('Deleting...');
+            $row.find('.wp-mcp-ai-model-status').html('<span class="dashicons dashicons-update dashicons-spin"></span> Deleting...');
             
             log('Sending delete request', {
                 url: wpMcpAiAdmin.ajaxUrl,
@@ -1152,7 +1153,7 @@ window.wpMcpAiSaveExpandedState = function() {
                 data: {
                     action: 'wp_mcp_ai_delete_embedded_model',
                     nonce: nonce,
-                    model: modelSlug
+                    slug: modelSlug
                 }
             }, {
                 context: 'embedded-model-delete',
@@ -1174,10 +1175,56 @@ window.wpMcpAiSaveExpandedState = function() {
             .fail(function(jqXHR, textStatus, errorThrown) {
                 log('Delete failed', { status: textStatus, error: errorThrown });
                 $btn.prop('disabled', false).text('Delete');
+                $row.find('.wp-mcp-ai-model-status').html('<span class="dashicons dashicons-yes-alt"></span> Downloaded');
                 alert('Delete failed. Please check your connection and try again.');
             });
         });
-        
+
+        // Handle "Test Server Inference" button click
+        $container.on('click', '.wp-mcp-ai-test-embedded-server', function(e) {
+            e.preventDefault();
+
+            const $btn = $(this);
+            const $result = $container.find('.wp-mcp-ai-server-test-result');
+
+            log('Test server inference button clicked');
+
+            $btn.prop('disabled', true).text('Testing...');
+            $result.html('<span style="color:#3c434a;">Running smoke-test...</span>');
+
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_test_embedded_server',
+                    nonce: nonce
+                }
+            }, {
+                context: 'embedded-server-test',
+                showGlobalError: false,
+                timeout: 60000
+            })
+            .done(function(response) {
+                log('Test server response', response);
+                const msg = response.data && response.data.message ? response.data.message : '';
+                if (response.success) {
+                    const $ok = $('<span>').css('color', '#00a32a').text('\u2713 ' + (msg || 'Server inference is working.'));
+                    $result.empty().append($ok);
+                } else {
+                    const $err = $('<span>').css('color', '#d63638').text('\u2717 ' + (msg || 'Test failed.'));
+                    $result.empty().append($err);
+                }
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                log('Test server failed', { status: textStatus, error: errorThrown });
+                const $fail = $('<span>').css('color', '#d63638').text('\u2717 Test failed. Please check your server configuration.');
+                $result.empty().append($fail);
+            })
+            .always(function() {
+                $btn.prop('disabled', false).text('Test Server Inference');
+            });
+        });
+
         log('Embedded model management initialized');
     }
 
