@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Merge_Videos implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement merge_videos logic
 		// This requires FFmpeg or similar video processing library
 

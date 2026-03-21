@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Generate_Video_Captions implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement generate_video_captions logic
 		// This requires FFmpeg or similar video processing library
 

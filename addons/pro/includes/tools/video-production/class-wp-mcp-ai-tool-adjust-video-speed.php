@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_Adjust_Video_Speed implements WP_MCP_AI_Tool_Interface, WP_
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement adjust_video_speed logic
 		// This requires FFmpeg or similar video processing library
 

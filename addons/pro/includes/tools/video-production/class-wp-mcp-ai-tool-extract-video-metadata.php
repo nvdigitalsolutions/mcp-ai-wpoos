@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_Extract_Video_Metadata implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement extract_video_metadata logic
 		// This requires FFmpeg or similar video processing library
 

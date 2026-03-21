@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Trim_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement trim_video logic
 		// This requires FFmpeg or similar video processing library
 
