@@ -181,6 +181,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
 			}
 
+			// Preserve existing upwork_username (Upwork) if not provided.
+			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
+				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
+			}
+
 			// Preserve existing bot_username (Telegram) if not provided.
 			if ( empty( $connection_data['bot_username'] ) && ! empty( $existing_connection['bot_username'] ) ) {
 				$connection_data['bot_username'] = $existing_connection['bot_username'];
@@ -923,6 +928,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'success'      => true,
 				'google_drive' => true,
 				'message'      => __( 'Google Drive OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Handle Upwork connections separately.
+		if ( 'upwork' === $connection_type ) {
+			return array(
+				'success' => true,
+				'upwork'  => true,
+				'message' => __( 'Upwork OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -2415,6 +2429,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 			// Note: folder_id is optional - if not provided, full drive access within granted scopes
+		}
+
+		if ( 'upwork' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_upwork_credentials',
+					__( 'OAuth Client ID and client secret are required for Upwork connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 		}
 
 		return true;

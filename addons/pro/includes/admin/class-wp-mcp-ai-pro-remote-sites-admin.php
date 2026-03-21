@@ -204,6 +204,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_google_drive_oauth_callback();
 		}
 
+		// Handle Upwork OAuth connect action.
+		if ( 'upwork_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = sanitize_key( wp_unslash( $_GET['_wpnonce'] ) );
+			$connection_id = sanitize_key( wp_unslash( $_GET['connection_id'] ) );
+			if ( ! wp_verify_nonce( $nonce, 'upwork_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+			$this->handle_upwork_oauth_start( $connection_id );
+		}
+
+		// Handle Upwork OAuth callback action.
+		if ( 'upwork_oauth_callback' === $oauth_handler ) {
+			$this->handle_upwork_oauth_callback();
+		}
+
 		// Handle Google Chat OAuth connect action.
 		if ( 'google_chat_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
 			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -298,6 +313,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$refresh_token = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email    = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
 					break;
+				case 'upwork':
+					$client_id     = isset( $_POST['upwork_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['upwork_client_secret'] ) ? wp_unslash( $_POST['upwork_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['upwork_refresh_token'] ) ? wp_unslash( $_POST['upwork_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '';
+					break;
 				case 'telegram':
 					$api_key   = isset( $_POST['telegram_bot_token'] ) ? wp_unslash( $_POST['telegram_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
@@ -391,6 +412,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'google_drive' === $connection_type ) {
 				$url       = 'https://www.googleapis.com/drive/v3';
 				$auth_type = 'none'; // Google Drive uses OAuth, not standard auth types
+			}
+
+			// For Upwork connections, always use the Upwork GraphQL API URL.
+			if ( 'upwork' === $connection_type ) {
+				$url       = 'https://api.upwork.com/graphql';
+				$auth_type = 'none'; // Upwork uses OAuth, not standard auth types.
 			}
 
 			// For chat channel connections, set appropriate API URLs
@@ -558,6 +585,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'user_email'      => $user_email,
 				// Google Drive-specific fields.
 				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
+				// Upwork-specific fields.
+				'upwork_username' => isset( $_POST['upwork_user_email'] ) ? sanitize_text_field( wp_unslash( $_POST['upwork_user_email'] ) ) : '',
 				// Telegram-specific fields.
 				'bot_username'         => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				'secret_token'         => $telegram_secret_token,
@@ -909,6 +938,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
 									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'upwork'             => __( 'Upwork', 'mcp-ai-wpoos-pro' ),
 									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
 									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
 									'slack'              => __( 'Slack', 'mcp-ai-wpoos-pro' ),
@@ -935,6 +965,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'ezuite_erp'         => '#8c50a7',
 									'gmail'              => '#ea4335', // Google red color
 									'google_drive'       => '#4285f4', // Google blue color
+									'upwork'             => '#14a800', // Upwork green
 									'telegram'           => '#0088cc', // Telegram blue
 									'whatsapp'           => '#25d366', // WhatsApp green
 									'slack'              => '#4a154b', // Slack purple
@@ -1223,6 +1254,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
 								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="upwork" <?php selected( $connection_type, 'upwork' ); ?>>
+								<?php esc_html_e( 'Upwork (Freelance Marketplace)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="telegram" <?php selected( $connection_type, 'telegram' ); ?>>
 								<?php esc_html_e( 'Telegram (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
@@ -1987,6 +2021,112 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endif; ?>
 						</td>
 					</tr>
+				<?php endif; ?>
+
+				<!-- Type-specific fields for Upwork -->
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_client_id" id="upwork_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Upwork app Client ID from the API access page.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="upwork_client_secret" id="upwork_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description">
+							<?php if ( $is_edit && ! empty( $connection['client_secret'] ) ) : ?>
+								<strong><?php esc_html_e( '(saved — leave blank to keep existing)', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php else : ?>
+								<?php esc_html_e( 'Your Upwork app Client Secret.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php endif; ?>
+						</p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Redirect URI', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$upwork_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'upwork_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $upwork_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description"><?php esc_html_e( 'Add this URL as an Authorized Redirect URI in your Upwork app settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="upwork_refresh_token" id="upwork_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<p class="description">
+							<?php if ( $is_edit && ! empty( $connection['refresh_token'] ) ) : ?>
+								<strong><?php esc_html_e( '(saved — use the connect button to refresh)', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php else : ?>
+								<?php esc_html_e( 'Leave empty and use the Connect button below to obtain a refresh token via OAuth.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php endif; ?>
+						</p>
+					</td>
+				</tr>
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row">
+						<label for="upwork_user_email"><?php esc_html_e( 'Upwork Username (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="upwork_user_email" id="upwork_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="your-upwork-username">
+						<p class="description"><?php esc_html_e( 'Your Upwork username (auto-populated after OAuth connect).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<?php if ( $is_edit && 'upwork' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+				<tr class="upwork-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Connect Upwork Account', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$upwork_oauth_url = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'upwork_oauth_connect',
+								'connection_id' => $connection['id'],
+								'_wpnonce'      => wp_create_nonce( 'upwork_oauth_connect_' . $connection['id'] ),
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<a href="<?php echo esc_url( $upwork_oauth_url ); ?>" class="button button-primary">
+							<?php esc_html_e( '🔗 Connect Upwork Account', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+						<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+							<span class="dashicons dashicons-yes" style="color: green; vertical-align: middle; margin-left: 8px;"></span>
+							<span style="color: green;">
+								<?php
+								if ( ! empty( $connection['user_email'] ) ) {
+									echo esc_html(
+										sprintf(
+											/* translators: %s: Upwork username */
+											__( 'Connected as: %s', 'mcp-ai-wpoos-pro' ),
+											$connection['user_email']
+										)
+									);
+								} else {
+									esc_html_e( 'Connected', 'mcp-ai-wpoos-pro' );
+								}
+								?>
+							</span>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Click to authorize this plugin to access your Upwork account via OAuth 2.0.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
 				<?php endif; ?>
 
 				<!-- Type-specific fields for Telegram -->
@@ -5157,6 +5297,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var office365Fields = document.querySelectorAll('.office365-only-field');
 			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var shopifyFields = document.querySelectorAll('.shopify-only-field');
+			var upworkFields = document.querySelectorAll('.upwork-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -5231,6 +5372,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			shopifyFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			upworkFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -5308,6 +5452,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Google Drive doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'upwork') {
+				upworkFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Upwork uses OAuth, set URL to Upwork GraphQL API
+				urlField.value = 'https://api.upwork.com/graphql';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Upwork doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			} else if (connectionType === 'telegram') {
 				telegramFields.forEach(function(field) {
@@ -13401,6 +13556,238 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		return $access;
+	}
+
+	/**
+	 * Start the Upwork OAuth 2.0 authorization flow.
+	 *
+	 * Redirects the user to the Upwork authorization endpoint after storing
+	 * a CSRF state token in a transient.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 */
+	protected function handle_upwork_oauth_start( $connection_id ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( 'upwork' !== $connection['connection_type'] ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not an Upwork connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$state     = wp_generate_uuid4();
+		$transient = 'wp_mcp_ai_upwork_oauth_state_' . md5( $state );
+
+		set_transient(
+			$transient,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		$params = array(
+			'response_type' => 'code',
+			'client_id'     => $connection['client_id'],
+			'redirect_uri'  => add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'upwork_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			),
+			'state'         => $state,
+		);
+
+		$authorize_url = add_query_arg( $params, 'https://www.upwork.com/ab/account-security/oauth2/authorize' );
+
+		wp_safe_redirect( $authorize_url );
+		exit;
+	}
+
+	/**
+	 * Handle the Upwork OAuth 2.0 callback after user authorisation.
+	 *
+	 * Exchanges the authorisation code for tokens, fetches the user's Upwork
+	 * display name, and saves the updated connection credentials.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function handle_upwork_oauth_callback() {
+		// OAuth callback — state parameter provides CSRF protection.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code  = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode(
+				sprintf(
+					/* translators: %s: OAuth error message */
+					__( 'Upwork OAuth error: %s', 'mcp-ai-wpoos-pro' ),
+					$error
+				)
+			) ) );
+			exit;
+		}
+
+		$transient_key = 'wp_mcp_ai_upwork_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+		delete_transient( $transient_key );
+
+		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $code ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$connection_id = $state_data['connection_id'];
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$redirect_uri = add_query_arg(
+			array(
+				'page'          => 'wp-mcp-ai-remote-sites',
+				'oauth_handler' => 'upwork_oauth_callback',
+			),
+			admin_url( 'admin.php' )
+		);
+
+		// Exchange authorisation code for tokens.
+		$response = wp_remote_post(
+			'https://www.upwork.com/api/v3/oauth2/token',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept'       => 'application/json',
+					'Content-Type' => 'application/x-www-form-urlencoded',
+				),
+				'body'    => array(
+					'grant_type'    => 'authorization_code',
+					'client_id'     => $connection['client_id'],
+					'client_secret' => $client_secret,
+					'redirect_uri'  => $redirect_uri,
+					'code'          => $code,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== (int) $status_code ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Upwork rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( ! is_array( $decoded ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Upwork.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+
+		// Fall back to existing refresh_token if none returned (Upwork may omit it on re-auth).
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Fetch the connected user's display name.
+		$upwork_username = '';
+		if ( $access_token ) {
+			$user_query    = '{ viewer { id nid name { fullName } } }';
+			$user_response = wp_remote_post(
+				'https://api.upwork.com/graphql',
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Content-Type'  => 'application/json',
+						'Accept'        => 'application/json',
+					),
+					'body'    => wp_json_encode( array( 'query' => $user_query ) ),
+				)
+			);
+			if ( ! is_wp_error( $user_response ) && 200 === wp_remote_retrieve_response_code( $user_response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $user_response ), true );
+				if ( isset( $user_data['data']['viewer']['name']['fullName'] ) ) {
+					$upwork_username = sanitize_text_field( $user_data['data']['viewer']['name']['fullName'] );
+				}
+			}
+		}
+
+		// Save the updated connection data.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'upwork',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			'client_secret'   => '',
+			'refresh_token'   => $refresh_token,
+			'user_email'      => $upwork_username ? $upwork_username : ( isset( $connection['user_email'] ) ? $connection['user_email'] : '' ),
+			'enabled'         => $connection['enabled'],
+		);
+		// Flag already-encrypted client_secret to prevent double-encryption.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			exit;
+		}
+
+		$success_message = __( 'Upwork account connected successfully!', 'mcp-ai-wpoos-pro' );
+		if ( $upwork_username ) {
+			$success_message = sprintf(
+				/* translators: %s: Upwork username */
+				__( 'Upwork account connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
+				$upwork_username
+			);
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+		exit;
 	}
 }
 

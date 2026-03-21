@@ -14,8 +14,9 @@ This document provides a comprehensive list of all external services used by the
 3. [Infrastructure & CDN Services](#infrastructure--cdn-services)
 4. [OAuth Integration Services](#oauth-integration-services)
 5. [Chat Channel Services](#chat-channel-services)
-6. [WordPress Core Services](#wordpress-core-services)
-7. [Implementation Guidelines](#implementation-guidelines)
+6. [Remote Connection Services](#remote-connection-services)
+7. [WordPress Core Services](#wordpress-core-services)
+8. [Implementation Guidelines](#implementation-guidelines)
 
 ---
 
@@ -476,6 +477,394 @@ These services are used by the Chat Channels Toolkit pro addon for messaging pla
 
 ---
 
+## Remote Connection Services
+
+These services are used by the Remote Sites system (NV oOS Pro addon) when remote connections are configured. All entries here require explicit administrator configuration — no data is sent to these services unless a connection of the corresponding type has been set up.
+
+### 20. EZuite ERP API
+
+**Service URL:** `https://api.ezuite.com/api/External_Api/Action_Api/Invoke`  
+**Purpose:** Enterprise inventory management — query product data, inventory levels, and warehouse information via the EZuite ERP platform  
+**Data Sent:**
+- API key and API secret (in request headers)
+- Inventory query parameters (product codes, warehouse IDs, filters)
+
+**When Used:** When EZuite ERP tools are used after a `ezuite_erp` connection is configured
+
+**Legal & Privacy:**
+- **Website:** https://www.ezuite.com/
+- **Contact EZuite for API Terms and Privacy Policy**
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-ezuite-erp.php`
+- `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
+
+---
+
+### 21. iSAMS School Management API
+
+**Service URL:** `https://{instance}.isams.cloud/api/`  
+**Purpose:** School management system — query student records, staff, timetables, and exam results  
+**Data Sent:**
+- API key and API secret (in request headers)
+- Query parameters (student IDs, year groups, date ranges, record type filters)
+
+**When Used:** When iSAMS tools are used after an `isams` connection is configured
+
+**Legal & Privacy:**
+- **Website:** https://www.isams.com/
+- **Privacy Policy:** https://www.isams.com/privacy-policy/
+- **Terms of Service:** https://www.isams.com/terms-and-conditions/
+- **API Documentation:** https://developerdocs.isams.cloud/
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php`
+
+---
+
+### 22. PayHere Payment Gateway
+
+**Service URL:** `https://www.payhere.lk` (live) / `https://sandbox.payhere.lk` (sandbox)  
+**Purpose:** Sri Lankan payment gateway — verify payment status, query transaction records  
+**Data Sent:**
+- App ID and App Secret (for authentication)
+- Order IDs and transaction reference numbers
+- Payment verification request parameters
+
+**When Used:** When PayHere payment tools are used after a `payhere` connection is configured
+
+**Legal & Privacy:**
+- **Website:** https://www.payhere.lk/
+- **Privacy Policy:** https://www.payhere.lk/privacy-policy
+- **Terms of Service:** https://www.payhere.lk/terms
+- **API Documentation:** https://support.payhere.lk/api-&-mobile-sdk
+
+**Related Files:**
+- Payment tool files in `addons/pro/includes/tools/`
+- `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
+
+---
+
+### 23. Gmail API (Google)
+
+**Service URL:** `https://gmail.googleapis.com`  
+**Purpose:** Search and read Gmail messages — read-only access using the Gmail REST API  
+**Data Sent:**
+- OAuth2 access token (derived from stored refresh token)
+- Search query strings (e.g. `from:user@example.com subject:invoice`)
+- Message IDs for retrieval
+
+**When Used:** When the `search_gmail` tool is used after a `gmail` connection is configured
+
+**Legal & Privacy:**
+- **Google Privacy Policy:** https://policies.google.com/privacy
+- **Google API Terms of Service:** https://developers.google.com/terms
+- **Gmail API Terms:** https://developers.google.com/gmail/api/auth/scopes
+- **OAuth2 Policy:** https://developers.google.com/identity/protocols/oauth2/policies
+- **Data Usage:** Only read-only scope (`gmail.readonly`) is requested; no email sending or modification
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-search-gmail.php`
+
+---
+
+### 24. Google Drive API
+
+**Service URL:** `https://www.googleapis.com/drive/v3`  
+**Purpose:** List and read files in Google Drive — read-only access to file metadata and content  
+**Data Sent:**
+- OAuth2 access token (derived from stored refresh token)
+- Search query strings (file names, MIME types, folder IDs)
+- File IDs for content retrieval
+
+**When Used:** When the `search_drive` tool is used after a `google_drive` connection is configured
+
+**Legal & Privacy:**
+- **Google Privacy Policy:** https://policies.google.com/privacy
+- **Google API Terms of Service:** https://developers.google.com/terms
+- **Drive API Docs:** https://developers.google.com/drive/api/v3/reference
+- **Data Usage:** Only read-only scopes (`drive.readonly`, `drive.metadata.readonly`) are requested
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-search-drive.php`
+
+---
+
+### 25. Upwork API
+
+**Service URL:** `https://api.upwork.com/graphql`  
+**Purpose:** Freelance marketplace — search job postings, score job fit, and draft proposals  
+**Data Sent:**
+- OAuth2 access token (derived from stored refresh token)
+- Job search queries (keywords, categories, filters)
+- Job posting IDs for scoring and proposal drafting
+
+**When Used:** When Upwork tools are used after an `upwork` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.upwork.com/legal/terms-of-use/
+- **Privacy Policy:** https://www.upwork.com/legal/privacy-policy/
+- **API Terms:** https://www.upwork.com/legal/api-tos/
+- **Developer Portal:** https://www.upwork.com/developer/
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-search-upwork-jobs.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-score-upwork-job.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-draft-upwork-proposal.php`
+
+---
+
+### 26. Telegram Bot API
+
+**Service URL:** `https://api.telegram.org`  
+**Purpose:** Chat channel integration — send and receive Telegram messages, manage webhooks, and enable AI assistant auto-replies via a Telegram bot  
+**Data Sent:**
+- Bot Token (in API URL path)
+- Message content, chat IDs, and reply payloads
+- Webhook registration URL and secret token
+- Reaction emoji identifiers
+
+**When Used:** When Telegram tools are used or when an incoming webhook is received after a `telegram` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://telegram.org/tos
+- **Privacy Policy:** https://telegram.org/privacy
+- **Bot API Docs:** https://core.telegram.org/bots/api
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-telegram-updates.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-telegram-commands.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php`
+
+---
+
+### 27. WhatsApp Business (Meta Cloud API)
+
+**Service URL:** `https://graph.facebook.com/{version}` (default: `v21.0`)  
+**Purpose:** WhatsApp Business messaging — send and receive WhatsApp messages via the Meta Cloud API  
+**Data Sent:**
+- Cloud API Access Token (in Authorization header)
+- Message content, recipient phone numbers, and media payloads
+- Webhook verification tokens (during setup)
+- HMAC-SHA256 signatures (for webhook verification)
+
+**When Used:** When WhatsApp tools are used or when an incoming webhook is received after a `whatsapp` connection is configured
+
+**Legal & Privacy:**
+- **Meta Terms of Service:** https://www.facebook.com/terms.php
+- **WhatsApp Business Terms:** https://www.whatsapp.com/legal/business-terms/
+- **Meta Privacy Policy:** https://www.facebook.com/privacy/policy/
+- **Cloud API Docs:** https://developers.facebook.com/docs/whatsapp/cloud-api
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php`
+
+---
+
+### 28. Slack API
+
+**Service URL:** `https://slack.com/api`  
+**Purpose:** Slack workspace integration — send messages, read channel history, and list channels  
+**Data Sent:**
+- Bot Token (in Authorization header)
+- Message content, channel IDs, and thread timestamps
+- Signing Secret (for webhook verification)
+
+**When Used:** When Slack tools are used or when an incoming webhook is received after a `slack` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://slack.com/terms-of-service
+- **Privacy Policy:** https://slack.com/privacy-policy
+- **API Terms:** https://api.slack.com/developer-policy
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-slack-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-slack-messages.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-slack-channels.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-create-slack-channel.php`
+
+---
+
+### 29. Discord API
+
+**Service URL:** `https://discord.com/api/v10`  
+**Purpose:** Discord server integration — send messages, read channel history, manage channels, and add message reactions  
+**Data Sent:**
+- Bot Token (in Authorization header)
+- Message content, channel IDs, guild IDs, and reaction emojis
+- Public Key (for webhook interaction verification)
+
+**When Used:** When Discord tools are used or when an incoming webhook is received after a `discord` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://discord.com/terms
+- **Privacy Policy:** https://discord.com/privacy
+- **Developer Terms:** https://discord.com/developers/docs/policies-and-agreements/developer-terms-of-service
+- **API Docs:** https://discord.com/developers/docs/reference
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-discord-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-discord-messages.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-discord-channels.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-create-discord-channel.php`
+
+---
+
+### 30. Microsoft Teams (Bot Framework)
+
+**Service URL:** `https://smba.trafficmanager.net/apis`  
+**Purpose:** Microsoft Teams integration — read Teams channel messages via the Azure Bot Framework  
+**Data Sent:**
+- Azure AD OAuth2 access token (derived from client credentials)
+- Channel IDs, team IDs, and message content
+- Bot Framework activity payloads (for incoming webhook messages)
+
+**When Used:** When Teams tools are used or when an incoming Teams webhook is received after a `microsoft_teams` connection is configured
+
+**Legal & Privacy:**
+- **Microsoft Privacy Statement:** https://privacy.microsoft.com/en-us/privacystatement
+- **Microsoft Services Agreement:** https://www.microsoft.com/en-us/servicesagreement
+- **Azure Bot Service Terms:** https://azure.microsoft.com/en-us/support/legal/
+- **Microsoft Graph API Terms:** https://learn.microsoft.com/en-us/legal/microsoft-apis/terms-of-use
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-teams-channels.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-teams-messages.php`
+
+---
+
+### 31. Facebook Messenger (Meta Graph API)
+
+**Service URL:** `https://graph.facebook.com/{version}` (default: `v21.0`)  
+**Purpose:** Facebook Messenger integration — send and receive messages via a Facebook Page  
+**Data Sent:**
+- Page Access Token (in request)
+- Message content, recipient PSIDs (Page-Scoped IDs), and media payloads
+- App Secret (for webhook HMAC-SHA256 signature verification)
+- Verify Token (during webhook setup)
+
+**When Used:** When Messenger tools are used or when an incoming webhook is received after a `facebook_messenger` connection is configured
+
+**Legal & Privacy:**
+- **Meta Terms of Service:** https://www.facebook.com/terms.php
+- **Messenger Platform Terms:** https://developers.facebook.com/terms/
+- **Meta Privacy Policy:** https://www.facebook.com/privacy/policy/
+- **Messenger Platform Docs:** https://developers.facebook.com/docs/messenger-platform
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-messenger-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php`
+
+---
+
+### 32. Google Chat API
+
+**Service URL:** `https://chat.googleapis.com/v1`  
+**Purpose:** Google Chat (Google Workspace) integration — send messages, manage Spaces, and interact with Google Chat bots  
+**Data Sent:**
+- Service Account JSON credentials or OAuth2 access token
+- Message content, Space IDs, and member identifiers
+- OIDC audience URL (for webhook verification)
+
+**When Used:** When Google Chat tools are used after a `google_chat` connection is configured
+
+**Legal & Privacy:**
+- **Google Privacy Policy:** https://policies.google.com/privacy
+- **Google API Terms of Service:** https://developers.google.com/terms
+- **Google Chat API Docs:** https://developers.google.com/chat/api/reference/rest
+- **Google Workspace Terms:** https://workspace.google.com/terms/
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-google-chat-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-google-chat-messages.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-create-google-chat-space.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-add-google-chat-space-member.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-list-google-chat-space-members.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-remove-google-chat-space-member.php`
+
+---
+
+### 33. Twitter / X API v2
+
+**Service URL:** `https://api.twitter.com/2`  
+**Purpose:** Twitter/X integration — retrieve direct messages and manage webhook subscriptions for real-time DM notifications  
+**Data Sent:**
+- Bearer Token or OAuth 2.0 access token (in Authorization header)
+- Twitter User ID (for DM access)
+- Webhook registration URLs
+
+**When Used:** When Twitter DM tools are used after a `twitter` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://twitter.com/en/tos
+- **Privacy Policy:** https://twitter.com/en/privacy
+- **Developer Agreement:** https://developer.twitter.com/en/developer-terms/agreement-and-policy
+- **Developer Portal:** https://developer.twitter.com/
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-twitter-dms.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-manage-twitter-webhook.php`
+
+---
+
+### 34. Apple Messages for Business
+
+**Service URL:** User-configured MSP API URL (varies by Message Service Provider)  
+**Purpose:** Apple Messages for Business integration — send and receive messages through the Apple Messages app via an approved Message Service Provider (MSP)  
+**Data Sent:**
+- MSP API key (in request headers)
+- Message content, Business ID, and recipient identifiers
+- Webhook secret (for message verification)
+
+**When Used:** When Apple Messages tools are used after an `apple_messages` connection is configured
+
+**Legal & Privacy:**
+- **Apple Messages for Business Docs:** https://register.apple.com/resources/messages-for-business/MSP_Spec.pdf
+- **Apple Privacy Policy:** https://www.apple.com/legal/privacy/
+- **Apple Business Register Terms:** https://register.apple.com/
+- **Note:** Privacy and terms for the MSP API URL also depend on the Message Service Provider chosen by the site administrator
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-apple-message.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-apple-message-group.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-get-apple-messages.php`
+
+---
+
+### 35. Shopify API
+
+**Service URL:** `https://{store}.myshopify.com` (Admin API) / `https://discover.shopifyapps.com` (Catalog API)  
+**Purpose:** Shopify e-commerce integration — query products, customers, orders, and inventory  
+**Data Sent:**
+- **Admin API:** Admin API Access Token (in `X-Shopify-Access-Token` header); product/customer/order query parameters
+- **Catalog API:** Client ID and Client Secret (exchanged for a JWT bearer token from `https://api.shopify.com/auth/access_token`); catalog search queries and filters
+
+**When Used:** When Shopify tools are used after a `shopify` connection is configured
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.shopify.com/legal/terms
+- **Privacy Policy:** https://www.shopify.com/legal/privacy
+- **API Terms:** https://www.shopify.com/legal/api-terms
+- **Partner Terms:** https://www.shopify.com/legal/partnersapi
+- **Developer Docs:** https://shopify.dev/docs/api
+
+**Related Files:**
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-shopify-products.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-shopify-customers.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-shopify-orders.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php`
+
+---
+
 ## WordPress Core Services
 
 These are official WordPress.org services used for plugin functionality.
@@ -585,7 +974,25 @@ When adding a new external service integration:
 | QuickBooks | Active | 2026-02 | OAuth required |
 | Mailjet | Active | 2026-02 | OAuth required |
 | Flowhub | Active | 2026-02 | Cannabis retail |
+| Microsoft Graph (Office 365) | Active | 2026-02 | Azure AD OAuth2 |
+| iCloud Drive Gateway | Active | 2026-02 | User-configured gateway |
 | WordPress.org | Active | 2026-02 | Core service |
+| EZuite ERP | Active | 2026-03 | Remote connection |
+| iSAMS | Active | 2026-03 | Remote connection |
+| PayHere | Active | 2026-03 | Remote connection |
+| Gmail API | Active | 2026-03 | OAuth2, read-only |
+| Google Drive API | Active | 2026-03 | OAuth2, read-only |
+| Upwork API | Active | 2026-03 | OAuth2 |
+| Telegram Bot API | Active | 2026-03 | Bot Token |
+| WhatsApp Business (Meta) | Active | 2026-03 | Cloud API |
+| Slack API | Active | 2026-03 | Bot Token |
+| Discord API | Active | 2026-03 | Bot Token |
+| Microsoft Teams (Bot Framework) | Active | 2026-03 | Azure AD OAuth2 |
+| Facebook Messenger | Active | 2026-03 | Page Access Token |
+| Google Chat API | Active | 2026-03 | Service Account / OAuth2 |
+| Twitter / X API v2 | Active | 2026-03 | Bearer Token |
+| Apple Messages for Business | Active | 2026-03 | MSP-dependent |
+| Shopify API | Active | 2026-03 | Access Token / JWT |
 
 ---
 
