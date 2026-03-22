@@ -300,6 +300,341 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		}
 
 		// -------------------------------------------------------------------------
+		// Public API – binary management
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Return the current status of the llama-cli binary.
+		 *
+		 * @return array {
+		 *     @type bool   $found     Whether a usable binary was located.
+		 *     @type string $path      Absolute path to the binary (empty when not found).
+		 *     @type string $platform  Human-readable platform string (e.g. "linux x64").
+		 *     @type string $message   Short status description.
+		 * }
+		 */
+		public function get_binary_status() {
+			$platform = $this->detect_platform();
+			$result   = $this->get_inference_binary();
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'found'    => false,
+					'path'     => '',
+					'platform' => $platform['os'] . ' ' . $platform['arch'],
+					'message'  => __( 'llama-cli binary not found.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			return array(
+				'found'    => true,
+				'path'     => $result,
+				'platform' => $platform['os'] . ' ' . $platform['arch'],
+				'message'  => __( 'llama-cli binary is installed.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
+		 * Download the llama-cli binary from the latest GitHub release.
+		 *
+		 * Workflow:
+		 *  1. Query the GitHub Releases API to locate the most recent release.
+		 *  2. Find the ZIP asset that matches the current platform.
+		 *  3. Stream the ZIP to a temp file.
+		 *  4. Extract the `llama-cli` (or `llama-cli.exe`) binary from the ZIP.
+		 *  5. Move it into the plugin's `bin/llama.cpp/` directory and make it executable.
+		 *
+		 * Only supported on Linux (x64 and arm64). macOS and Windows return a
+		 * WP_Error directing the user to install via Homebrew / manually.
+		 *
+		 * @return array|WP_Error Success array or WP_Error on failure.
+		 */
+		public function download_binary() {
+			$platform = $this->detect_platform();
+
+			// Only automated download is supported on Linux.
+			if ( 'linux' !== $platform['os'] ) {
+				$instructions = $this->get_binary_installation_instructions( $platform['os'] );
+				return new WP_Error(
+					'wp_mcp_ai_binary_unsupported_platform',
+					sprintf(
+						/* translators: %s: manual installation instructions */
+						__( 'Automated binary download is only supported on Linux servers. Please install manually:\n\n%s', 'mcp-ai-wpoos' ),
+						$instructions
+					)
+				);
+			}
+
+			if ( 'unknown' === $platform['arch'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_binary_unsupported_arch',
+					__( 'Could not determine server CPU architecture. Please install llama-cli manually.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Resolve the destination directory (plugin bin/llama.cpp/).
+			$bin_dir = WP_MCP_AI_PATH . 'bin/llama.cpp/';
+			if ( ! is_dir( $bin_dir ) ) {
+				wp_mkdir_p( $bin_dir );
+			}
+
+			if ( ! is_writable( $bin_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
+				return new WP_Error(
+					'wp_mcp_ai_binary_not_writable',
+					sprintf(
+						/* translators: %s: directory path */
+						__( 'Binary directory is not writable: %s', 'mcp-ai-wpoos' ),
+						$bin_dir
+					)
+				);
+			}
+
+			// --- Step 1: Find the download URL via GitHub API ---
+			$asset_url = $this->resolve_binary_download_url( $platform );
+			if ( is_wp_error( $asset_url ) ) {
+				return $asset_url;
+			}
+
+			// --- Step 2: Download the ZIP to a temp file (random name to avoid collisions) ---
+			$tmp_zip = wp_tempnam( 'llama-cli-download', $bin_dir );
+			$timeout = (int) apply_filters( 'wp_mcp_ai_embedded_binary_download_timeout', 300 );
+
+			$response = wp_remote_get(
+				$asset_url,
+				array(
+					'timeout'  => $timeout,
+					'stream'   => true,
+					'filename' => $tmp_zip,
+					'headers'  => array(
+						'User-Agent' => 'WP-MCP-AI/' . WP_MCP_AI_VERSION,
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				@unlink( $tmp_zip ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				return new WP_Error(
+					'wp_mcp_ai_binary_download_failed',
+					sprintf(
+						/* translators: %s: error detail */
+						__( 'Binary download failed: %s', 'mcp-ai-wpoos' ),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			if ( $code < 200 || $code >= 300 ) {
+				@unlink( $tmp_zip ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				return new WP_Error(
+					'wp_mcp_ai_binary_download_failed',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Binary download failed with HTTP status %d.', 'mcp-ai-wpoos' ),
+						$code
+					)
+				);
+			}
+
+			// --- Step 3: Extract llama-cli from the ZIP ---
+			$bin_name    = 'llama-cli';
+			$dest_path   = $bin_dir . $bin_name;
+			$extract_err = $this->extract_binary_from_zip( $tmp_zip, $bin_name, $dest_path );
+
+			@unlink( $tmp_zip ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+
+			if ( is_wp_error( $extract_err ) ) {
+				return $extract_err;
+			}
+
+			// --- Step 4: Make it executable ---
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			if ( ! chmod( $dest_path, 0755 ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_binary_chmod_failed',
+					sprintf(
+						/* translators: %s: absolute path to binary file */
+						__( 'Binary was extracted but could not be made executable. Please run: chmod +x %s', 'mcp-ai-wpoos' ),
+						$dest_path
+					)
+				);
+			}
+
+			return array(
+				'success' => true,
+				'message' => __( 'llama-cli binary installed successfully.', 'mcp-ai-wpoos' ),
+				'path'    => $dest_path,
+			);
+		}
+
+		/**
+		 * Query the GitHub Releases API and return the download URL of the
+		 * platform-appropriate llama.cpp ZIP asset.
+		 *
+		 * @param array $platform Platform info from detect_platform().
+		 * @return string|WP_Error Download URL string or WP_Error.
+		 */
+		private function resolve_binary_download_url( $platform ) {
+			$api_url  = 'https://api.github.com/repos/ggerganov/llama.cpp/releases/latest';
+			$response = wp_remote_get(
+				$api_url,
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'User-Agent' => 'WP-MCP-AI/' . WP_MCP_AI_VERSION,
+						'Accept'     => 'application/vnd.github+json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_github_api_failed',
+					sprintf(
+						/* translators: %s: error detail */
+						__( 'Could not reach GitHub API: %s', 'mcp-ai-wpoos' ),
+						$response->get_error_message()
+					)
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $code ) {
+				return new WP_Error(
+					'wp_mcp_ai_github_api_failed',
+					sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'GitHub API returned status %d. Please try again later.', 'mcp-ai-wpoos' ),
+						$code
+					)
+				);
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+
+			if ( ! is_array( $data ) || empty( $data['assets'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_github_api_failed',
+					json_last_error() !== JSON_ERROR_NONE
+						? sprintf(
+							/* translators: %s: JSON parse error string */
+							__( 'Could not parse GitHub release data (JSON error: %s).', 'mcp-ai-wpoos' ),
+							json_last_error_msg()
+						)
+						: __( 'GitHub release data contained no assets.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Build the asset name fragment we're looking for:
+			// e.g. "bin-ubuntu-x64.zip" for Linux x64.
+			$arch_map = array(
+				'x64'   => 'x64',
+				'arm64' => 'arm64',
+			);
+			$arch_str = isset( $arch_map[ $platform['arch'] ] ) ? $arch_map[ $platform['arch'] ] : $platform['arch'];
+			$needle   = 'bin-ubuntu-' . $arch_str . '.zip';
+
+			foreach ( $data['assets'] as $asset ) {
+				if ( ! isset( $asset['name'], $asset['browser_download_url'] ) ) {
+					continue;
+				}
+				if ( false !== stripos( $asset['name'], $needle ) ) {
+					return $asset['browser_download_url'];
+				}
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_binary_asset_not_found',
+				sprintf(
+					/* translators: %1$s: asset name fragment, %2$s: release tag */
+					__( 'Could not find a "%1$s" asset in release %2$s. Please install llama-cli manually.', 'mcp-ai-wpoos' ),
+					$needle,
+					isset( $data['tag_name'] ) ? $data['tag_name'] : 'unknown'
+				)
+			);
+		}
+
+		/**
+		 * Extract the `llama-cli` binary from a downloaded ZIP file.
+		 *
+		 * The llama.cpp release ZIP contains the binary at a path like
+		 * `build/bin/llama-cli`. We scan all entries and copy the first
+		 * file whose base name matches $bin_name to $dest_path.
+		 *
+		 * @param string $zip_path  Absolute path to the downloaded ZIP.
+		 * @param string $bin_name  Expected binary filename (e.g. 'llama-cli').
+		 * @param string $dest_path Absolute destination path for the binary.
+		 * @return true|WP_Error
+		 */
+		private function extract_binary_from_zip( $zip_path, $bin_name, $dest_path ) {
+			if ( ! class_exists( 'ZipArchive' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_zip_unavailable',
+					__( 'PHP ZipArchive extension is not available. Please install llama-cli manually.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$zip = new ZipArchive();
+			$res = $zip->open( $zip_path );
+			if ( true !== $res ) {
+				return new WP_Error(
+					'wp_mcp_ai_zip_open_failed',
+					sprintf(
+						/* translators: %d: ZipArchive error code */
+						__( 'Could not open downloaded ZIP (error code %d).', 'mcp-ai-wpoos' ),
+						$res
+					)
+				);
+			}
+
+			$found     = false;
+			$num_files = $zip->numFiles; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- ZipArchive::$numFiles is a PHP built-in property.
+			for ( $i = 0; $i < $num_files; $i++ ) {
+				$entry = $zip->getNameIndex( $i );
+				if ( false === $entry ) {
+					continue;
+				}
+				// Match any entry whose basename equals the binary name.
+				if ( basename( $entry ) === $bin_name ) {
+					$contents = $zip->getFromIndex( $i );
+					if ( false === $contents ) {
+						$zip->close();
+						return new WP_Error(
+							'wp_mcp_ai_zip_extract_failed',
+							__( 'Could not read binary from ZIP archive.', 'mcp-ai-wpoos' )
+						);
+					}
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+					if ( false === file_put_contents( $dest_path, $contents ) ) {
+						$zip->close();
+						return new WP_Error(
+							'wp_mcp_ai_zip_write_failed',
+							__( 'Could not write binary to disk.', 'mcp-ai-wpoos' )
+						);
+					}
+					$found = true;
+					break;
+				}
+			}
+
+			$zip->close();
+
+			if ( ! $found ) {
+				return new WP_Error(
+					'wp_mcp_ai_binary_not_in_zip',
+					sprintf(
+						/* translators: %s: binary filename */
+						__( 'Binary "%s" was not found inside the downloaded ZIP.', 'mcp-ai-wpoos' ),
+						$bin_name
+					)
+				);
+			}
+
+			return true;
+		}
+
+		// -------------------------------------------------------------------------
 		// Public API – inference
 		// -------------------------------------------------------------------------
 

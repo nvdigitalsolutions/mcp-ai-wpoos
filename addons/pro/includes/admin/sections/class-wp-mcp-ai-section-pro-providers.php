@@ -61,7 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 		 * @return int
 		 */
 		public function get_priority() {
-			return 15; // After base providers (10)
+			return 15; // After base providers (10).
 		}
 
 		/**
@@ -240,22 +240,105 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				return;
 			}
 
-			$client          = new WP_MCP_AI_Embedded_Client();
-			$available_models = $client->get_available_models();
+			$client            = new WP_MCP_AI_Embedded_Client();
+			$available_models  = $client->get_available_models();
 			$downloaded_models = $client->get_downloaded_models();
-			$nonce           = wp_create_nonce( 'wp_mcp_ai_embedded_models' );
-			$models_dir      = $client->get_models_directory();
+			$binary_status     = $client->get_binary_status();
+			$nonce             = wp_create_nonce( 'wp_mcp_ai_embedded_models' );
+			$models_dir        = $client->get_models_directory();
+			$binary_found      = $binary_status['found'];
+			$platform          = $binary_status['platform'];
+			$bin_dir_path      = WP_MCP_AI_PATH . 'bin/llama.cpp';
+			// Derive the arch suffix used in the GitHub release asset name (e.g. "x64", "arm64").
+			$arch_suffix         = ( false !== strpos( $platform, 'arm64' ) ) ? 'arm64' : 'x64';
+			$status_border_color = $binary_found ? '#46b450' : '#d63638';
+			$status_bg_color     = $binary_found ? '#f0fff0' : '#fff8f8';
 			?>
 <div class="wp-mcp-ai-embedded-model-management" data-nonce="<?php echo esc_attr( $nonce ); ?>">
 
+			<?php /* ---- llama.cpp binary status ---- */ ?>
+	<div class="wp-mcp-ai-binary-status" style="margin-bottom:16px; padding:12px 16px; border:1px solid <?php echo esc_attr( $status_border_color ); ?>; border-radius:4px; background:<?php echo esc_attr( $status_bg_color ); ?>;">
+		<h4 style="margin:0 0 8px;">
+			<?php if ( $binary_found ) : ?>
+				<span class="dashicons dashicons-yes-alt" style="color:#46b450; vertical-align:middle;"></span>
+				<?php esc_html_e( 'llama.cpp Runtime: Installed', 'mcp-ai-wpoos' ); ?>
+			<?php else : ?>
+				<span class="dashicons dashicons-warning" style="color:#d63638; vertical-align:middle;"></span>
+				<?php esc_html_e( 'llama.cpp Runtime: Not Installed', 'mcp-ai-wpoos' ); ?>
+			<?php endif; ?>
+		</h4>
+
+			<?php if ( $binary_found ) : ?>
+			<p style="margin:0 0 4px;">
+				<?php
+				printf(
+					/* translators: %s: file path */
+					esc_html__( 'Binary path: %s', 'mcp-ai-wpoos' ),
+					'<code>' . esc_html( $binary_status['path'] ) . '</code>'
+				);
+				?>
+			</p>
+			<p style="margin:0; color:#666;">
+				<?php
+				printf(
+					/* translators: %s: platform string e.g. "linux x64" */
+					esc_html__( 'Platform: %s', 'mcp-ai-wpoos' ),
+					'<strong>' . esc_html( $platform ) . '</strong>'
+				);
+				?>
+			</p>
+		<?php else : ?>
+			<p style="margin:0 0 8px;">
+				<?php esc_html_e( 'The llama.cpp runtime (llama-cli) is required to run server-side inference. Download it automatically or follow the manual instructions below.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p style="margin:0 0 8px; color:#666;">
+				<?php
+				printf(
+					/* translators: %s: platform string e.g. "linux x64" */
+					esc_html__( 'Detected platform: %s', 'mcp-ai-wpoos' ),
+					'<strong>' . esc_html( $platform ) . '</strong>'
+				);
+				?>
+			</p>
+
+			<?php if ( 0 === strpos( $platform, 'linux' ) ) : ?>
+				<button type="button" id="wp-mcp-ai-download-binary" class="button button-primary" style="margin-right:8px;">
+					<span class="dashicons dashicons-download" style="vertical-align:middle; margin-top:3px;"></span>
+					<?php esc_html_e( 'Download llama.cpp Binary', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span id="wp-mcp-ai-binary-download-status" style="display:none; vertical-align:middle; margin-left:8px;"></span>
+			<?php endif; ?>
+
+			<details style="margin-top:10px;">
+				<summary style="cursor:pointer; color:#2271b1;"><?php esc_html_e( 'Manual installation instructions', 'mcp-ai-wpoos' ); ?></summary>
+				<pre style="margin-top:8px; padding:10px; background:#f6f7f7; border:1px solid #ddd; overflow-x:auto; white-space:pre-wrap; font-size:12px;"># <?php esc_html_e( 'Download the binary:', 'mcp-ai-wpoos' ); ?>
+
+wget -O /tmp/llama-cli https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-cli-ubuntu-<?php echo esc_html( $arch_suffix ); ?>
+
+
+# <?php esc_html_e( 'Install to plugin directory:', 'mcp-ai-wpoos' ); ?>
+
+mkdir -p <?php echo esc_html( $bin_dir_path ); ?>
+
+mv /tmp/llama-cli <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
+chmod +x <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
+
+# <?php esc_html_e( 'Verify:', 'mcp-ai-wpoos' ); ?>
+
+			<?php echo esc_html( $bin_dir_path ); ?>/llama-cli --version</pre>
+			</details>
+		<?php endif; ?>
+	</div>
+
+			<?php /* ---- GGUF model table ---- */ ?>
 	<p class="description">
-		<?php
-		printf(
+			<?php
+			printf(
 			/* translators: %s: directory path */
-			esc_html__( 'Models are stored in: %s', 'mcp-ai-wpoos' ),
-			'<code>' . esc_html( $models_dir ) . '</code>'
-		);
-		?>
+				esc_html__( 'Models are stored in: %s', 'mcp-ai-wpoos' ),
+				'<code>' . esc_html( $models_dir ) . '</code>'
+			);
+			?>
 	</p>
 
 	<table class="widefat striped" style="margin-top:12px;">
@@ -284,11 +367,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				<td class="wp-mcp-ai-model-status">
 					<?php if ( $is_downloaded ) : ?>
 					<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span>
-					<?php esc_html_e( 'Downloaded', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Downloaded', 'mcp-ai-wpoos' ); ?>
 					(<?php echo esc_html( $file_size_mb ); ?>)
 					<?php else : ?>
 					<span class="dashicons dashicons-download"></span>
-					<?php esc_html_e( 'Not Downloaded', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Not Downloaded', 'mcp-ai-wpoos' ); ?>
 					<?php endif; ?>
 				</td>
 				<td>
@@ -312,7 +395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 	</table>
 
 	<p class="description" style="margin-top:8px;">
-		<?php esc_html_e( 'Downloads may take several minutes depending on model size and server connection speed. The page will reload after a successful download.', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Downloads may take several minutes depending on model size and server connection speed. The page will reload after a successful download.', 'mcp-ai-wpoos' ); ?>
 	</p>
 
 </div>
