@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+        'version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+        'reference' => '0dc1156300ae5e9fa7b2b85e417d82d8e5143fa8',
         'pretty_version' => 'dev-copilot/fix-puppeteer-browsers-reference',
         'version' => 'dev-copilot/fix-puppeteer-browsers-reference',
         'reference' => 'f0509d92f807198fa7ac20a7c13f5121f32ef6c7',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+            'version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+            'reference' => '0dc1156300ae5e9fa7b2b85e417d82d8e5143fa8',
             'pretty_version' => 'dev-copilot/fix-puppeteer-browsers-reference',
             'version' => 'dev-copilot/fix-puppeteer-browsers-reference',
             'reference' => 'f0509d92f807198fa7ac20a7c13f5121f32ef6c7',

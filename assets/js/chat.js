@@ -12931,8 +12931,10 @@
             disableForm(state, false);
         }
 
-        // Check if provider is embedded - run LLM client-side in browser
-        const isEmbeddedProvider = state.config.provider === 'embedded';
+        // Check if provider is embedded - run LLM client-side in browser.
+        // Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are
+        // flagged via isEmbeddedServer and must be handled by the normal REST API path.
+        const isEmbeddedProvider = state.config.provider === 'embedded' && !state.config.isEmbeddedServer;
         
         if (isEmbeddedProvider) {
             // Apply max history messages limit for the embedded path.
