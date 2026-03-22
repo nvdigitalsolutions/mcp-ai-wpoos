@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-active-server-model-issue',
-        'version' => 'dev-copilot/fix-active-server-model-issue',
-        'reference' => '79ee2e246f02c49aea8a35841d35b9b0918fd864',
+        'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+        'version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+        'reference' => '0dc1156300ae5e9fa7b2b85e417d82d8e5143fa8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-active-server-model-issue',
-            'version' => 'dev-copilot/fix-active-server-model-issue',
-            'reference' => '79ee2e246f02c49aea8a35841d35b9b0918fd864',
+            'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+            'version' => 'dev-copilot/fix-embedded-chat-client-error-one-more-time',
+            'reference' => '0dc1156300ae5e9fa7b2b85e417d82d8e5143fa8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -115,6 +115,21 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		}
 
 		/**
+		 * Check whether a model slug refers to a known server-side GGUF model.
+		 *
+		 * Used by the REST API and shortcode to distinguish server-side GGUF
+		 * models (llama.cpp) from client-side WebLLM models when both share
+		 * the 'embedded' provider.
+		 *
+		 * @param string $slug Model slug to test.
+		 * @return bool True if $slug is in the GGUF catalogue.
+		 */
+		public static function is_server_model_slug( $slug ) {
+			$slug = sanitize_key( $slug );
+			return isset( static::$available_models[ $slug ] );
+		}
+
+		/**
 		 * Return only the models that are already downloaded to disk.
 		 *
 		 * @return array Keyed by model slug; values include an extra 'file_size' key.
