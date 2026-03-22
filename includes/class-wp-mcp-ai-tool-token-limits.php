@@ -971,10 +971,10 @@ class WP_MCP_AI_Tool_Token_Limits {
 				throw new Exception(
 					esc_html(
 						sprintf(
-							/* translators: 1: Session usage, 2: Session limit */
-							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
-							$session_usage,
-							$limit
+							/* translators: 1: Session token usage (formatted number), 2: Session token limit (formatted number) */
+							__( 'Tool execution blocked. This session used %1$s of the %2$s token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
+							number_format_i18n( $session_usage ),
+							number_format_i18n( $limit )
 						)
 					)
 				);
@@ -1001,6 +1001,22 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$buffer_percentage = apply_filters( 'wp_mcp_ai_session_limit_safety_buffer', 0.20, $limit, $session_usage );
 		$safety_buffer     = (int) ( $limit * $buffer_percentage );
 		$effective_limit   = max( $limit - $safety_buffer, 0 );
+
+		// Fire a near-limit warning at 75% of the session limit to allow early monitoring.
+		$warning_threshold = (int) ( $limit * 0.75 );
+		if ( $session_usage >= $warning_threshold && $session_usage < $effective_limit ) {
+			/**
+			 * Fires when a session is approaching its token limit (75% consumed).
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param int    $user_id    User ID.
+			 * @param string $session_id Session identifier.
+			 * @param int    $usage      Current session usage.
+			 * @param int    $limit      Session token limit.
+			 */
+			do_action( 'wp_mcp_ai_session_limit_approaching', $user_id, $session_id, $session_usage, $limit );
+		}
 
 		if ( $session_usage >= $effective_limit ) {
 			WP_MCP_AI_Logger::log_event(
@@ -1046,10 +1062,10 @@ class WP_MCP_AI_Tool_Token_Limits {
 				throw new Exception(
 					esc_html(
 						sprintf(
-							/* translators: 1: Session usage, 2: Session limit */
-							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
-							$session_usage,
-							$limit
+							/* translators: 1: Session token usage (formatted number), 2: Session token limit (formatted number) */
+							__( 'Tool execution blocked. This session used %1$s of the %2$s token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
+							number_format_i18n( $session_usage ),
+							number_format_i18n( $limit )
 						)
 					)
 				);

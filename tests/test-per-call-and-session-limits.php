@@ -125,7 +125,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 
 		// Try to execute another tool call - should throw exception.
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessageMatches( '/Session token limit exceeded/' );
+		$this->expectExceptionMessageMatches( '/Tool execution blocked/' );
 
 		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug, array(), $context );
 	}
@@ -331,7 +331,7 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 
 		// Third call should now be blocked because session is marked over-budget.
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessageMatches( '/Session token limit exceeded/' );
+		$this->expectExceptionMessageMatches( '/Tool execution blocked/' );
 
 		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug . '_3', array(), $context );
 	}
@@ -361,8 +361,56 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 
 		// Second call should be blocked immediately.
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessageMatches( '/Session token limit exceeded/' );
+		$this->expectExceptionMessageMatches( '/Tool execution blocked/' );
 
 		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug . '_2', array(), $context );
+	}
+
+	/**
+	 * Test that the near-limit warning action fires at 75% of session limit.
+	 */
+	public function test_session_limit_approaching_action_fires_at_75_percent() {
+		$session_id = 'test-session-' . time();
+		$tool_slug  = 'test_tool';
+		$context    = array(
+			'user_id'    => $this->test_user_id,
+			'session_id' => $session_id,
+		);
+
+		// Enable per-session limits with 10K threshold.
+		// Warning fires at 75% (7,500 tokens), effective limit is at 80% (8,000 tokens).
+		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		update_option( 'wp_mcp_ai_per_session_token_limit', 10000 );
+
+		$logged_data = null;
+		add_action(
+			'wp_mcp_ai_session_limit_approaching',
+			function( $user_id, $sid, $usage, $limit ) use ( &$logged_data ) {
+				$logged_data = compact( 'user_id', 'sid', 'usage', 'limit' );
+			},
+			10,
+			4
+		);
+
+		// Record ~7,750 tokens (77.5% of 10K limit — between 75% warning threshold and 80% effective limit).
+		// estimate_tokens uses floor(strlen($str) / 4), so target_chars = target_tokens * 4.
+		$target_tokens = 7750; // 77.5% of 10,000; above 7,500 (75%) and below 8,000 (80%).
+		$result        = str_repeat( 'a', $target_tokens * 4 );
+		WP_MCP_AI_Tool_Token_Limits::record_tool_usage( $tool_slug, array(), $context, $result );
+
+		// Verify session usage is in the 75-80% zone.
+		$usage = WP_MCP_AI_Tool_Token_Limits::get_session_usage( $this->test_user_id, $session_id );
+		$this->assertGreaterThanOrEqual( 7500, $usage, 'Usage should be at or above 75% warning threshold' );
+		$this->assertLessThan( 8000, $usage, 'Usage should be below 80% effective limit' );
+
+		// Check: the approaching action should fire on the next tool call check.
+		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug . '_2', array(), $context );
+
+		// The approaching action should have fired with the correct parameters.
+		$this->assertNotNull( $logged_data, 'Near-limit warning action should fire when session usage exceeds 75% of limit' );
+		$this->assertEquals( $this->test_user_id, $logged_data['user_id'] );
+		$this->assertEquals( $session_id, $logged_data['sid'] );
+		$this->assertGreaterThanOrEqual( 7500, $logged_data['usage'] );
+		$this->assertEquals( 10000, $logged_data['limit'] );
 	}
 }
