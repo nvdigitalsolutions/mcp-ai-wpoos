@@ -584,7 +584,7 @@ agent:
 
 - [x] Map the 6 default assistants (`includes/class-wp-mcp-ai-default-assistants.php`) to BMAD roles (Orchestrator → Scrum Master, Researcher → Analyst, Publisher → Developer, SEO Auditor → QA)
 - [x] Create `.bmad/teams/feature-development.yaml` defining the Orchestrator pattern team composition
-- [ ] Add BMAD-specific instructions to each assistant's system prompt:
+- [x] Add BMAD-specific instructions to each assistant's system prompt:
   - Orchestrator: enforce phase gates, load `.context/active/[feature].md` at session start
   - Researcher: produce Project Briefs using `deep_research` + `generate_research_report`
   - Publisher (Developer): enforce `.context/security-checklist.md` compliance on every story
@@ -597,7 +597,7 @@ agent:
 **Goal:** Automate gate checks, reduce manual overhead, and establish measurable success criteria.
 
 - [ ] Create automated context initialization workflow (Phase 0 automation via `batch_manage_memory`)
-- [ ] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
+- [x] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
 - [ ] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation)
 - [ ] Establish baseline metrics for the first 3 completed feature cycles:
   - Feature cycle time (Phase 0 start → Phase 7 release)
@@ -1243,8 +1243,8 @@ session:
 3. ~~**Create foundation files** — `.bmad/` agent definitions, `.context/` base files, `.bmad/teams/feature-development.yaml`~~ ✅ Done
 4. **Execute pilot (full cycle)** — Run one complete Phase 0–9 cycle using NV oOS default assistants and task planning tools
 5. **Retrospective** — Document results via Phase 9 context harvest; update agent definitions and context files
-6. **Multi-agent infrastructure** — Configure BMAD role mapping for the 6 default assistants (Implementation Phase 5)
-7. **Automation & metrics** — Set up `create_task_plan` automation, post-deploy `check_workflow_health`, and dashboard monitoring (Implementation Phase 6)
+6. ~~**Multi-agent infrastructure** — Configure BMAD role mapping for the 6 default assistants (Implementation Phase 5)~~ ✅ Done
+7. **Automation & metrics** — Set up post-deploy `check_workflow_health` and dashboard monitoring (Implementation Phase 6)
 8. **Adopt or adapt** — Based on pilot results, decide on broader adoption and refine team compositions
 
 ---

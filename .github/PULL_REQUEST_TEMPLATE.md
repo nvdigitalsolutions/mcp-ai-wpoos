@@ -21,7 +21,7 @@ Closes #
 - [ ] Phase 1 (Discovery) — Project Brief: `docs/proposals/[FEATURE]-PROJECT-BRIEF.md`
 - [ ] Phase 2 (Planning) — PRD: `docs/proposals/[FEATURE]-PRD.md`
 - [ ] Phase 3 (Architecture) — Arch Spec: `docs/proposals/[FEATURE]-ARCHITECTURE.md`
-- [ ] Phase 4 (Story Breakdown) — Stories in task plan
+- [ ] Phase 4 (Story Breakdown) — Stories in task plan (created via `create_task_plan`)
 - [ ] Phase 5 (Implementation) — Atomic commits per story
 - [ ] Not applicable (patch / bug fix)
 
