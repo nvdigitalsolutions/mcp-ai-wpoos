@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-model-download-error-again',
-        'version' => 'dev-copilot/fix-model-download-error-again',
-        'reference' => 'f8b32d9f568200a9ac3eb40e31000ec47fd114a3',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-npm',
+        'version' => 'dev-copilot/rebuild-all-zips-with-npm',
+        'reference' => 'b4809f3363fd451e4b863a69a81fdb0d43d95b00',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-model-download-error-again',
-            'version' => 'dev-copilot/fix-model-download-error-again',
-            'reference' => 'f8b32d9f568200a9ac3eb40e31000ec47fd114a3',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-npm',
+            'version' => 'dev-copilot/rebuild-all-zips-with-npm',
+            'reference' => 'b4809f3363fd451e4b863a69a81fdb0d43d95b00',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
