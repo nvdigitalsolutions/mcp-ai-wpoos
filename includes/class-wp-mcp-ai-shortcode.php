@@ -830,7 +830,7 @@ class WP_MCP_AI_Shortcode {
 			$is_embedded_server_model = 'embedded' === $assistant_provider
 				&& ! empty( $assistant_model )
 				&& class_exists( 'WP_MCP_AI_Embedded_Client' )
-				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( sanitize_key( $assistant_model ) );
+				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( $assistant_model );
 			$needs_embedded_provider  = $this->is_embedded_provider_available( $assistant_provider ) && ! $is_embedded_server_model;
 
 			// Parse additional_tools from the shortcode attribute early so it can be used for:

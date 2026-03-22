@@ -118,6 +118,10 @@ class Test_Embedded_Model_Slug_Sanitization extends WP_UnitTestCase {
 
 	/**
 	 * Test that get_available_models() returns an array keyed by valid slugs.
+	 *
+	 * GGUF model slugs may contain dots for version numbers (e.g. "3.1" in
+	 * granite-3.1-2b-instruct-q4_k_m). We validate against sanitize_model_slug()
+	 * rather than sanitize_key(), since the latter would incorrectly strip dots.
 	 */
 	public function test_get_available_models_returns_known_slugs() {
 		$models = $this->client->get_available_models();
@@ -126,13 +130,125 @@ class Test_Embedded_Model_Slug_Sanitization extends WP_UnitTestCase {
 		$this->assertNotEmpty( $models );
 
 		foreach ( array_keys( $models ) as $slug ) {
-			// Every registered slug must match the pattern expected by sanitize_key().
+			// Every registered slug must round-trip through sanitize_model_slug() unchanged.
 			$this->assertEquals(
 				$slug,
-				sanitize_key( $slug ),
-				"Model slug '$slug' is not safe for use as a sanitize_key() value."
+				WP_MCP_AI_Embedded_Client::sanitize_model_slug( $slug ),
+				"Model slug '$slug' is not safe for use as a sanitize_model_slug() value."
 			);
 		}
+	}
+
+	// =========================================================================
+	// sanitize_model_slug
+	// =========================================================================
+
+	/**
+	 * Test that sanitize_model_slug() preserves dots in version numbers.
+	 */
+	public function test_sanitize_model_slug_preserves_dots() {
+		$this->assertEquals(
+			'granite-3.1-2b-instruct-q4_k_m',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'granite-3.1-2b-instruct-q4_k_m' )
+		);
+		$this->assertEquals(
+			'qwen2-0.5b-instruct-q4_k_m',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'qwen2-0.5b-instruct-q4_k_m' )
+		);
+	}
+
+	/**
+	 * Test that sanitize_model_slug() strips dangerous characters.
+	 */
+	public function test_sanitize_model_slug_strips_special_chars() {
+		// Angle brackets are stripped; the alphanumeric content remains.
+		$this->assertEquals(
+			'modelscript',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'model<script>' )
+		);
+		$this->assertEquals(
+			'some-model',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'some model' ) // Space stripped.
+		);
+		$this->assertEquals(
+			'etcpasswd',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( '../../../etc/passwd' ) // Slashes stripped.
+		);
+	}
+
+	/**
+	 * Test that sanitize_model_slug() collapses consecutive dots and trims edge dots.
+	 *
+	 * Prevents path-traversal-style sequences like "model..name" or ".hidden".
+	 */
+	public function test_sanitize_model_slug_normalises_dots() {
+		$this->assertEquals(
+			'model.name',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'model..name' )
+		);
+		$this->assertEquals(
+			'model',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( '.model.' )
+		);
+		// Legitimate version-number dots must still be preserved.
+		$this->assertEquals(
+			'granite-3.1-2b',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'granite-3.1-2b' )
+		);
+	}
+
+	/**
+	 * Test that sanitize_model_slug() converts to lowercase.
+	 */
+	public function test_sanitize_model_slug_lowercases() {
+		$this->assertEquals(
+			'granite-3.1-2b',
+			WP_MCP_AI_Embedded_Client::sanitize_model_slug( 'Granite-3.1-2B' )
+		);
+	}
+
+	// =========================================================================
+	// is_server_model_slug with dotted version numbers
+	// =========================================================================
+
+	/**
+	 * Test that is_server_model_slug() correctly recognises granite-3.1 slug.
+	 *
+	 * Previously broken because sanitize_key() stripped the dot, turning
+	 * "granite-3.1-2b-instruct-q4_k_m" into "granite-31-2b-instruct-q4_k_m"
+	 * which did not match the catalogue key.
+	 */
+	public function test_is_server_model_slug_recognises_granite() {
+		$this->assertTrue(
+			WP_MCP_AI_Embedded_Client::is_server_model_slug( 'granite-3.1-2b-instruct-q4_k_m' ),
+			'granite-3.1-2b-instruct-q4_k_m must be recognised as a server-side GGUF slug.'
+		);
+	}
+
+	/**
+	 * Test that is_server_model_slug() correctly recognises qwen2-0.5b slug.
+	 */
+	public function test_is_server_model_slug_recognises_qwen2_dotted() {
+		$this->assertTrue(
+			WP_MCP_AI_Embedded_Client::is_server_model_slug( 'qwen2-0.5b-instruct-q4_k_m' ),
+			'qwen2-0.5b-instruct-q4_k_m must be recognised as a server-side GGUF slug.'
+		);
+	}
+
+	/**
+	 * Test that is_server_model_slug() returns false for a WebLLM client-side model ID.
+	 */
+	public function test_is_server_model_slug_rejects_webllm_id() {
+		$this->assertFalse(
+			WP_MCP_AI_Embedded_Client::is_server_model_slug( 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' )
+		);
+	}
+
+	/**
+	 * Test that is_server_model_slug() returns false for an empty string.
+	 */
+	public function test_is_server_model_slug_rejects_empty() {
+		$this->assertFalse( WP_MCP_AI_Embedded_Client::is_server_model_slug( '' ) );
 	}
 
 	/**

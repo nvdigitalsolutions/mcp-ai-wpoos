@@ -2401,8 +2401,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are
 			// processed here on the server — only pure WebLLM requests should be rejected.
 			if ( isset( $assistant_config['provider'] ) && 'embedded' === $assistant_config['provider'] ) {
-				$model_slug        = isset( $assistant_config['model'] ) ? sanitize_key( $assistant_config['model'] ) : '';
-				$is_server_model   = class_exists( 'WP_MCP_AI_Embedded_Client' ) && WP_MCP_AI_Embedded_Client::is_server_model_slug( $model_slug );
+				$model_slug      = isset( $assistant_config['model'] ) ? $assistant_config['model'] : '';
+				$is_server_model = class_exists( 'WP_MCP_AI_Embedded_Client' ) && WP_MCP_AI_Embedded_Client::is_server_model_slug( $model_slug );
 
 				if ( ! $is_server_model ) {
 					WP_MCP_AI_Logger::log_event(

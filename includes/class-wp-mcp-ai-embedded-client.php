@@ -115,17 +115,41 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		}
 
 		/**
+		 * Sanitize a GGUF model slug.
+		 *
+		 * Unlike sanitize_key(), this preserves dots so that version numbers
+		 * such as "3.1" or "0.5b" in GGUF slugs (e.g. granite-3.1-2b-instruct-q4_k_m)
+		 * are not stripped. Only lowercase alphanumeric characters, dots, dashes,
+		 * and underscores are allowed. Consecutive dots and leading/trailing dots
+		 * are also removed to prevent ambiguous path segments.
+		 *
+		 * Note: the sanitized slug is only ever used as a key into the hardcoded
+		 * $available_models catalogue, never directly as a filesystem path; the
+		 * catalogue itself provides the actual filename used in file operations.
+		 *
+		 * @param string $slug Raw model slug.
+		 * @return string Sanitized slug safe for use as an array key or file path segment.
+		 */
+		public static function sanitize_model_slug( $slug ) {
+			// Strip anything that is not alphanumeric, a dot, a dash, or an underscore.
+			$slug = preg_replace( '/[^a-z0-9.\-_]/', '', strtolower( (string) $slug ) );
+			// Collapse consecutive dots and trim leading/trailing dots.
+			$slug = preg_replace( '/\.{2,}/', '.', $slug );
+			return trim( $slug, '.' );
+		}
+
+		/**
 		 * Check whether a model slug refers to a known server-side GGUF model.
 		 *
 		 * Used by the REST API and shortcode to distinguish server-side GGUF
 		 * models (llama.cpp) from client-side WebLLM models when both share
 		 * the 'embedded' provider.
 		 *
-		 * @param string $slug Model slug to test.
+		 * @param string $slug Model slug to test (may arrive pre-sanitized via sanitize_key or raw).
 		 * @return bool True if $slug is in the GGUF catalogue.
 		 */
 		public static function is_server_model_slug( $slug ) {
-			$slug = sanitize_key( $slug );
+			$slug = static::sanitize_model_slug( $slug );
 			return isset( static::$available_models[ $slug ] );
 		}
 
@@ -702,11 +726,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
 			// Resolve model slug.
+			// Use sanitize_model_slug() (not sanitize_key()) to preserve dots in GGUF
+			// version numbers such as "3.1" in granite-3.1-2b-instruct-q4_k_m.
 			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
-			$model_slug = isset( $options['model'] ) ? sanitize_key( $options['model'] ) : '';
+			$model_slug = isset( $options['model'] ) ? static::sanitize_model_slug( $options['model'] ) : '';
 			if ( empty( $model_slug ) ) {
 				$model_slug = isset( $settings['embedded_server_model'] )
-				? sanitize_key( $settings['embedded_server_model'] )
+				? static::sanitize_model_slug( $settings['embedded_server_model'] )
 				: '';
 			}
 
