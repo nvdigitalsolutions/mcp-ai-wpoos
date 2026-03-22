@@ -114,6 +114,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 				$settings['mailjet_api_secret'] = sanitize_text_field( wp_unslash( $_POST['mailjet_api_secret'] ) );
 			}
 
+			// Sanitize Brevo settings.
+			if ( isset( $_POST['brevo_api_key'] ) ) {
+				$settings['brevo_api_key'] = sanitize_text_field( wp_unslash( $_POST['brevo_api_key'] ) );
+			}
+
+			// Sanitize Mailgun settings.
+			if ( isset( $_POST['mailgun_api_key'] ) ) {
+				$settings['mailgun_api_key'] = sanitize_text_field( wp_unslash( $_POST['mailgun_api_key'] ) );
+			}
+
+			if ( isset( $_POST['mailgun_domain'] ) ) {
+				$settings['mailgun_domain'] = sanitize_text_field( wp_unslash( $_POST['mailgun_domain'] ) );
+			}
+
 			// Sanitize QuickBooks settings.
 			if ( isset( $_POST['quickbooks_api_key'] ) ) {
 				$settings['quickbooks_api_key'] = sanitize_text_field( wp_unslash( $_POST['quickbooks_api_key'] ) );
@@ -170,6 +184,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 			$cloudways_email              = isset( $settings['cloudways_email'] ) ? $settings['cloudways_email'] : '';
 			$mailjet_api_key              = isset( $settings['mailjet_api_key'] ) ? $settings['mailjet_api_key'] : '';
 			$mailjet_api_secret           = isset( $settings['mailjet_api_secret'] ) ? $settings['mailjet_api_secret'] : '';
+			$brevo_api_key                = isset( $settings['brevo_api_key'] ) ? $settings['brevo_api_key'] : '';
+			$mailgun_api_key              = isset( $settings['mailgun_api_key'] ) ? $settings['mailgun_api_key'] : '';
+			$mailgun_domain               = isset( $settings['mailgun_domain'] ) ? $settings['mailgun_domain'] : '';
 			$quickbooks_api_key           = isset( $settings['quickbooks_api_key'] ) ? $settings['quickbooks_api_key'] : '';
 			$quickbooks_client_id         = isset( $settings['quickbooks_client_id'] ) ? $settings['quickbooks_client_id'] : '';
 			$quickbooks_client_secret     = isset( $settings['quickbooks_client_secret'] ) ? $settings['quickbooks_client_secret'] : '';
@@ -395,6 +412,55 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 							<td>
 								<input type="password" id="mailjet_api_secret" name="mailjet_api_secret" value="<?php echo esc_attr( $mailjet_api_secret ); ?>" class="regular-text" autocomplete="new-password" />
 								<p class="description"><?php esc_html_e( 'API secret for Mailjet email service.', 'mcp-ai-wpoos' ); ?></p>
+							</td>
+						</tr>
+
+						<!-- Brevo Section -->
+						<tr>
+							<td colspan="2">
+								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-email-alt"></span>
+									<?php esc_html_e( 'Brevo', 'mcp-ai-wpoos' ); ?>
+								</h2>
+								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="brevo_api_key"><?php esc_html_e( 'Brevo API Key', 'mcp-ai-wpoos' ); ?></label>
+							</th>
+							<td>
+								<input type="password" id="brevo_api_key" name="brevo_api_key" value="<?php echo esc_attr( $brevo_api_key ); ?>" class="regular-text" autocomplete="new-password" />
+								<p class="description"><?php esc_html_e( 'API key for Brevo (formerly Sendinblue) email marketing and CRM integration.', 'mcp-ai-wpoos' ); ?></p>
+							</td>
+						</tr>
+
+						<!-- Mailgun Section -->
+						<tr>
+							<td colspan="2">
+								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-email-alt2"></span>
+									<?php esc_html_e( 'Mailgun', 'mcp-ai-wpoos' ); ?>
+								</h2>
+								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="mailgun_api_key"><?php esc_html_e( 'Mailgun API Key', 'mcp-ai-wpoos' ); ?></label>
+							</th>
+							<td>
+								<input type="password" id="mailgun_api_key" name="mailgun_api_key" value="<?php echo esc_attr( $mailgun_api_key ); ?>" class="regular-text" autocomplete="new-password" />
+								<p class="description"><?php esc_html_e( 'Private API key for Mailgun email delivery. Found under API Security in your Mailgun dashboard.', 'mcp-ai-wpoos' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="mailgun_domain"><?php esc_html_e( 'Mailgun Sending Domain', 'mcp-ai-wpoos' ); ?></label>
+							</th>
+							<td>
+								<input type="text" id="mailgun_domain" name="mailgun_domain" value="<?php echo esc_attr( $mailgun_domain ); ?>" class="regular-text" placeholder="mg.example.com" />
+								<p class="description"><?php esc_html_e( 'Verified Mailgun sending domain (e.g. mg.example.com).', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 
