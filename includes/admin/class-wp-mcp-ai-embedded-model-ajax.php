@@ -25,8 +25,8 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 		 */
 		public static function init() {
 			add_action( 'wp_ajax_wp_mcp_ai_download_embedded_model', array( __CLASS__, 'download_model' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_delete_embedded_model',   array( __CLASS__, 'delete_model' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_list_embedded_models',    array( __CLASS__, 'list_models' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_delete_embedded_model', array( __CLASS__, 'delete_model' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_list_embedded_models', array( __CLASS__, 'list_models' ) );
 		}
 
 		// -------------------------------------------------------------------------
@@ -100,14 +100,14 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 		public static function list_models() {
 			self::verify_request();
 
-			$client    = new WP_MCP_AI_Embedded_Client();
-			$available = $client->get_available_models();
+			$client     = new WP_MCP_AI_Embedded_Client();
+			$available  = $client->get_available_models();
 			$downloaded = $client->get_downloaded_models();
 
 			$models = array();
 			foreach ( $available as $slug => $model ) {
-				$is_downloaded      = isset( $downloaded[ $slug ] );
-				$models[ $slug ]    = array_merge(
+				$is_downloaded   = isset( $downloaded[ $slug ] );
+				$models[ $slug ] = array_merge(
 					$model,
 					array(
 						'slug'          => $slug,
