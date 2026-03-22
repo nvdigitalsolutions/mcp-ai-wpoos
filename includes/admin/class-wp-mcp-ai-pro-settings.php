@@ -1366,6 +1366,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				// docx ships only package.json in vendor; detected via bin/generate-word.bundle.js below.
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
+				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.

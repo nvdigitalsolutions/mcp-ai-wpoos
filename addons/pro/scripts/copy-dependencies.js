@@ -510,6 +510,15 @@ const dependencies = [
 		],
 	},
 	{
+		name: '@puppeteer/browsers',
+		dirs: [
+			{ src: 'lib', dest: '@puppeteer/browsers/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@puppeteer/browsers/package.json' },
+		],
+	},
+	{
 		name: 'qrcode',
 		// Copy the Node.js lib/ so node-services/qrcode-service.js can load it
 		// via an explicit path without requiring npm install on the server.
