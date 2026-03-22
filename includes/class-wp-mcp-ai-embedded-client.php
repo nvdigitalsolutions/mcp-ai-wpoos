@@ -46,7 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			'qwen2-0.5b-instruct-q4_k_m'     => array(
 				'name'         => 'Qwen2 0.5B Instruct (Q4_K_M)',
 				'filename'     => 'qwen2-0.5b-instruct-q4_k_m.gguf',
-				'download_url' => 'https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0.5b-instruct-q4_k_m.gguf',
+				'download_url' => 'https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct-q4_k_m.gguf',
 				'size_mb'      => 352,
 				'ram_gb'       => 2,
 				'description'  => 'Ultra-fast, minimal RAM. Good for simple tasks.',
@@ -54,7 +54,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			'granite-3.1-2b-instruct-q4_k_m' => array(
 				'name'         => 'IBM Granite 3.1 2B Instruct (Q4_K_M)',
 				'filename'     => 'granite-3.1-2b-instruct-q4_k_m.gguf',
-				'download_url' => 'https://huggingface.co/ibm-granite/granite-3.1-2b-instruct-GGUF/resolve/main/granite-3.1-2b-instruct.Q4_K_M.gguf',
+				'download_url' => 'https://huggingface.co/bartowski/granite-3.1-2b-instruct-GGUF/resolve/main/granite-3.1-2b-instruct-Q4_K_M.gguf',
 				'size_mb'      => 1240,
 				'ram_gb'       => 4,
 				'description'  => 'Recommended. Best balance of speed and quality.',
