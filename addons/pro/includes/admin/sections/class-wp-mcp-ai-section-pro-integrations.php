@@ -2,7 +2,7 @@
 /**
  * Pro Integrations Settings Section
  *
- * Settings for pro-only integrations (Mailjet, Brevo, Google Analytics, Yahoo, ESPN).
+ * Settings for pro-only integrations (Mailjet, Brevo, Mailgun, Google Analytics, Yahoo, ESPN).
  * These integrations have tools in the pro addon.
  *
  * @package WP_MCP_AI_Pro
@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure pro-only integration services (Mailjet, Brevo, Google Analytics, Fantasy Sports). These integrations are available in the Pro addon.', 'mcp-ai-wpoos' );
+			return __( 'Configure pro-only integration services (Mailjet, Brevo, Mailgun, Google Analytics, Fantasy Sports). These integrations are available in the Pro addon.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -147,6 +147,47 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Mailgun.
+				'mailgun_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'Mailgun API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Mailgun API reference */
+						__( 'Private API key for Mailgun email delivery. Get it from your Mailgun dashboard under API Security. See %s for details.', 'mcp-ai-wpoos' ),
+						'<a href="https://documentation.mailgun.com/docs/mailgun/api-reference/send/mailgun" target="_blank" rel="noopener noreferrer">Mailgun API reference</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'mailgun_domain'                    => array(
+					'type'        => 'text',
+					'label'       => __( 'Mailgun Sending Domain', 'mcp-ai-wpoos' ),
+					'description' => __( 'Verified Mailgun sending domain (e.g. mg.example.com). Found under Sending → Domains in your Mailgun dashboard.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'mg.example.com',
+				),
+				'mailgun_region'                    => array(
+					'type'        => 'select',
+					'label'       => __( 'Mailgun Region', 'mcp-ai-wpoos' ),
+					'description' => __( 'Choose the Mailgun region that matches where your domain is registered.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'us' => __( 'US (api.mailgun.net)', 'mcp-ai-wpoos' ),
+						'eu' => __( 'EU (api.eu.mailgun.net)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'us',
+				),
+				'mailgun_from_email'                => array(
+					'type'        => 'email',
+					'label'       => __( 'Mailgun From Email', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default "from" email address for Mailgun messages. Must use your verified Mailgun sending domain.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'noreply@mg.example.com',
+				),
+				'mailgun_from_name'                 => array(
+					'type'        => 'text',
+					'label'       => __( 'Mailgun From Name', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default "from" name for Mailgun messages.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'My Site',
+				),
+
 				// Google Analytics.
 				'google_analytics_property_id'      => array(
 					'type'        => 'text',
@@ -229,6 +270,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'label'  => __( 'Brevo', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email-alt',
 					'fields' => array( 'brevo_api_key', 'brevo_from_email', 'brevo_from_name', 'brevo_webhook_secret' ),
+				),
+				'mailgun'       => array(
+					'id'     => 'mailgun',
+					'label'  => __( 'Mailgun', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-email-alt2',
+					'fields' => array( 'mailgun_api_key', 'mailgun_domain', 'mailgun_region', 'mailgun_from_email', 'mailgun_from_name' ),
 				),
 				'analytics'     => array(
 					'id'     => 'analytics',
