@@ -59,7 +59,7 @@ class WP_MCP_AI_Default_Assistants {
 						'create_agent_team',
 						'delegate_to_agent',
 						'create_assistant',
-						// GSD × BMAD Workflow Management (Base).
+						// GSD × BMAD Phase Management (Base).
 						'batch_manage_memory',
 						'create_task_plan',
 						'update_task_plan',
@@ -186,7 +186,8 @@ class WP_MCP_AI_Default_Assistants {
 						// Validation.
 						'analyze_code_sequence',
 						'validate_reasoning_chain',
-						// GSD × BMAD Phase 3 (Architect) Tools.
+						// GSD × BMAD Phase 3 (Architect) Tools — supplements analyze_code_sequence
+						// and validate_reasoning_chain already listed above.
 						'semantic_content_search',
 					),
 					$is_pro_active ? array(
