@@ -578,6 +578,14 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// Flush and discard any output buffered by WordPress core or third-party
+		// plugins before we send binary DICOM data.  Any buffered text prepended
+		// to the response body would corrupt the DICOM preamble and cause the
+		// image loader (Cornerstone3D) to fail with a parse error.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
 		// Stream file in chunks to handle large DICOM files (up to 256 MB) efficiently.
 		$file_size = filesize( $file_path );
 		header( 'Content-Type: application/dicom' );
@@ -973,6 +981,30 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Produce a filesystem-safe directory/filename component from a DICOM UID.
+	 *
+	 * DICOM UIDs consist exclusively of ASCII digits (0–9) and dots (.).  Both
+	 * are safe on every major filesystem.  We therefore retain them unchanged and
+	 * replace any other character (which should never appear in a conformant UID)
+	 * with an underscore.
+	 *
+	 * We deliberately avoid sanitize_file_name() here.  That function applies a
+	 * filterable hook (`sanitize_file_name`) that third-party plugins can override
+	 * to strip dots or transform the string.  Stripping dots would collapse
+	 * distinct UIDs — e.g. "1.2.3.4.56" and "1.2.3.4.5.6" both become
+	 * "1234_56" — causing separate studies to share the same on-disk directory,
+	 * so only the first study's CPT post is ever created and the remaining studies
+	 * remain invisible in the study browser.
+	 *
+	 * @param string $uid Raw DICOM UID value (StudyInstanceUID / SeriesInstanceUID /
+	 *                    SOPInstanceUID).
+	 * @return string Filesystem-safe string with only digits and dots retained.
+	 */
+	private function sanitize_uid_for_path( $uid ) {
+		return preg_replace( '/[^0-9.]/', '_', (string) $uid );
+	}
+
+	/**
 	 * Get or create the protected DICOM storage root directory.
 	 *
 	 * The directory lives inside the WordPress uploads folder at
@@ -1047,11 +1079,21 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		// (per DICOM PS 3.10 and IHE Radiology Technical Framework).
 		// Each series gets its own subdirectory so multi-series studies are
 		// organised correctly on disk.
-		$series_dir_name = '' !== $series_uid ? sanitize_file_name( $series_uid ) : self::UNGROUPED_SERIES_DIR;
-		$study_dir       = $storage_root . sanitize_file_name( $study_uid ) . '/';
+		//
+		// We use sanitize_uid_for_path() instead of sanitize_file_name() because
+		// sanitize_file_name() applies a filterable hook that third-party plugins can
+		// override (e.g. to strip dots).  DICOM UIDs differ only in their numeric
+		// segments separated by dots; stripping dots collapses distinct UIDs such as
+		// "1.2.3.4.56" and "1.2.3.4.5.6" to the same directory name, causing separate
+		// studies to share a folder and preventing all but one CPT post from appearing
+		// in the study browser.  sanitize_uid_for_path() retains every digit and dot
+		// while replacing any non-UID character with an underscore, making the
+		// transformation deterministic regardless of active plugins.
+		$series_dir_name = '' !== $series_uid ? $this->sanitize_uid_for_path( $series_uid ) : self::UNGROUPED_SERIES_DIR;
+		$study_dir       = $storage_root . $this->sanitize_uid_for_path( $study_uid ) . '/';
 		$series_dir      = $study_dir . $series_dir_name . '/';
 		wp_mkdir_p( $series_dir );
-		$dest_path = $series_dir . sanitize_file_name( $instance_uid ) . '.dcm';
+		$dest_path = $series_dir . $this->sanitize_uid_for_path( $instance_uid ) . '.dcm';
 
 		if ( ! move_uploaded_file( $tmp_path, $dest_path ) ) {
 			return new WP_Error( 'imaging_move_failed', __( 'Failed to store DICOM file.', 'mcp-ai-wpoos-pro' ) );

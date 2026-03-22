@@ -61,6 +61,9 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Interpret_Imaging_Study' ) ) {
 			require_once $base . 'tools/class-wp-mcp-ai-tool-interpret-imaging-study.php';
 		}
+		if ( ! class_exists( 'WP_MCP_AI_Imaging_REST_Controller' ) ) {
+			require_once $base . 'class-wp-mcp-ai-imaging-rest-controller.php';
+		}
 
 		// Register CPT.
 		do_action( 'init' );
@@ -690,5 +693,104 @@ class Test_Healthcare_Imaging_Toolkit extends WP_UnitTestCase {
 		$this->assertContains( 'pro', $flags );
 		$this->assertContains( 'pii-data', $flags );
 		$this->assertContains( 'requires-credentials', $flags );
+	}
+
+	// =========================================================================
+	// sanitize_uid_for_path — dot-preservation regression tests
+	// =========================================================================
+
+	/**
+	 * sanitize_uid_for_path must preserve every dot in a standard DICOM UID.
+	 *
+	 * This is the core regression guard for the "only 1 study showing" bug:
+	 * if dots were stripped by sanitize_file_name() (via a third-party filter),
+	 * two UIDs that differ only in dot position — e.g. "1.2.3.4.56" and
+	 * "1.2.3.4.5.6" — would map to the same directory name, collapsing distinct
+	 * studies into a single folder and preventing the extra CPT posts from being
+	 * created or found.
+	 */
+	public function test_sanitize_uid_for_path_preserves_dots() {
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+		$reflect    = new ReflectionMethod( $controller, 'sanitize_uid_for_path' );
+		$reflect->setAccessible( true );
+
+		$uid      = '1.2.840.10008.5.1.4.1.1.128';
+		$expected = '1.2.840.10008.5.1.4.1.1.128';
+
+		$this->assertSame( $expected, $reflect->invoke( $controller, $uid ) );
+	}
+
+	/**
+	 * sanitize_uid_for_path must produce distinct output for UIDs that differ
+	 * only in where the dots appear ("dot-position collision" scenario).
+	 *
+	 * Without dot-preservation, "1.2.3.4.56" and "1.2.3.4.5.6" both reduce to
+	 * "1234_56" → same directory → second study never gets its own CPT post.
+	 */
+	public function test_sanitize_uid_for_path_distinct_for_dot_position_variants() {
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+		$reflect    = new ReflectionMethod( $controller, 'sanitize_uid_for_path' );
+		$reflect->setAccessible( true );
+
+		$uid_a = '1.2.3.4.56';
+		$uid_b = '1.2.3.4.5.6';
+
+		$this->assertNotSame(
+			$reflect->invoke( $controller, $uid_a ),
+			$reflect->invoke( $controller, $uid_b ),
+			'UIDs that differ in dot position must map to distinct path segments.'
+		);
+	}
+
+	/**
+	 * sanitize_uid_for_path replaces characters outside [0-9.] with underscores
+	 * rather than silently dropping them.
+	 *
+	 * A malformed or non-standard UID should still produce a safe path component;
+	 * replacing with underscore preserves uniqueness better than stripping.
+	 */
+	public function test_sanitize_uid_for_path_replaces_non_uid_chars_with_underscore() {
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+		$reflect    = new ReflectionMethod( $controller, 'sanitize_uid_for_path' );
+		$reflect->setAccessible( true );
+
+		// Characters that a rogue sanitize_file_name filter might try to strip.
+		$raw      = '1.2.3/bad\\uid?foo';
+		$expected = '1.2.3_bad_uid_foo';
+
+		$this->assertSame( $expected, $reflect->invoke( $controller, $raw ) );
+	}
+
+	/**
+	 * Three studies with UIDs that only differ in dot placement must each produce
+	 * a distinct on-disk path segment (no folder collision).
+	 *
+	 * This directly exercises the reported scenario: "3 study folders in the
+	 * upload folder, only 1 study showing in the viewer."
+	 */
+	public function test_sanitize_uid_for_path_no_collision_for_three_studies() {
+		$controller = new WP_MCP_AI_Imaging_REST_Controller();
+		$reflect    = new ReflectionMethod( $controller, 'sanitize_uid_for_path' );
+		$reflect->setAccessible( true );
+
+		$study_uids = array(
+			'1.2.840.10008.5.1.4.1.1.2.100',
+			'1.2.840.10008.5.1.4.1.1.2.200',
+			'1.2.840.10008.5.1.4.1.1.3.100',
+		);
+
+		$sanitized = array_map(
+			function ( $uid ) use ( $reflect, $controller ) {
+				return $reflect->invoke( $controller, $uid );
+			},
+			$study_uids
+		);
+
+		// All three must be unique.
+		$this->assertCount(
+			3,
+			array_unique( $sanitized ),
+			'Three distinct study UIDs must produce three distinct path segments.'
+		);
 	}
 }
