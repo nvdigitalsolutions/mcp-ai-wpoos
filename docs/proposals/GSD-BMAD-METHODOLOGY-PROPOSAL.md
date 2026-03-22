@@ -584,7 +584,7 @@ agent:
 
 - [x] Map the 6 default assistants (`includes/class-wp-mcp-ai-default-assistants.php`) to BMAD roles (Orchestrator → Scrum Master, Researcher → Analyst, Publisher → Developer, SEO Auditor → QA)
 - [x] Create `.bmad/teams/feature-development.yaml` defining the Orchestrator pattern team composition
-- [ ] Add BMAD-specific instructions to each assistant's system prompt:
+- [x] Add BMAD-specific instructions to each assistant's system prompt:
   - Orchestrator: enforce phase gates, load `.context/active/[feature].md` at session start
   - Researcher: produce Project Briefs using `deep_research` + `generate_research_report`
   - Publisher (Developer): enforce `.context/security-checklist.md` compliance on every story

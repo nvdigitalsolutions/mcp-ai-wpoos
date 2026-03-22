@@ -59,6 +59,13 @@ class WP_MCP_AI_Default_Assistants {
 						'create_agent_team',
 						'delegate_to_agent',
 						'create_assistant',
+						// GSD × BMAD Workflow Management (Base).
+						'batch_manage_memory',
+						'create_task_plan',
+						'update_task_plan',
+						'get_task_plan',
+						'manage_autonomous_session',
+						'check_exit_conditions',
 						// Workflow Management (Base).
 						'list_cron_jobs',
 						'create_cron_job',
@@ -132,6 +139,9 @@ class WP_MCP_AI_Default_Assistants {
 						'lookup_product_price',
 						'get_import_duty',
 						'verify_information',
+						// Pro - GSD × BMAD Phase 1 (Analyst) Tools.
+						'aggregate_research_data',
+						'generate_research_report',
 						// Pro - Social Media Research.
 						'get_facebook_instagram_insights',
 						'get_linkedin_insights',
@@ -152,29 +162,37 @@ class WP_MCP_AI_Default_Assistants {
 				'title'         => __( 'The Unstructured Parser', 'mcp-ai-wpoos' ),
 				'description'   => __( 'Sequential normalization specialist. Converts raw research data into structured JSON/Objects, validates schemas, transforms unstructured text into embeddings, and prepares data for downstream consumption. Ensures data quality and consistency.', 'mcp-ai-wpoos' ),
 				'system_prompt' => self::get_parser_prompt(),
-				'tools'         => array(
-					// Vector & Embedding.
-					'create_vector_store',
-					'create_text_embeddings',
-					'batch_embed_content',
-					// Data Extraction & Transformation.
-					'client_extract_entities',
-					'client_summarize_text',
-					'client_question_answering',
-					// Dataset Operations.
-					'huggingface_dataset_get_rows',
-					'huggingface_dataset_get_statistics',
-					'huggingface_dataset_get_info',
-					'huggingface_dataset_filter',
-					'huggingface_dataset_list_splits',
-					'huggingface_dataset_get_parquet',
-					// Visualization & Charting.
-					'create_chart',
-					'generate_chart',
-					'generate_mermaid',
-					// Validation.
-					'analyze_code_sequence',
-					'validate_reasoning_chain',
+				'tools'         => array_merge(
+					array(
+						// Vector & Embedding.
+						'create_vector_store',
+						'create_text_embeddings',
+						'batch_embed_content',
+						// Data Extraction & Transformation.
+						'client_extract_entities',
+						'client_summarize_text',
+						'client_question_answering',
+						// Dataset Operations.
+						'huggingface_dataset_get_rows',
+						'huggingface_dataset_get_statistics',
+						'huggingface_dataset_get_info',
+						'huggingface_dataset_filter',
+						'huggingface_dataset_list_splits',
+						'huggingface_dataset_get_parquet',
+						// Visualization & Charting.
+						'create_chart',
+						'generate_chart',
+						'generate_mermaid',
+						// Validation.
+						'analyze_code_sequence',
+						'validate_reasoning_chain',
+						// GSD × BMAD Phase 3 (Architect) Tools.
+						'semantic_content_search',
+					),
+					$is_pro_active ? array(
+						// Pro - GSD × BMAD Phase 3 (Architect) Tools.
+						'extract_structured_data',
+					) : array()
 				),
 				'provider'      => 'openai',
 				'model'         => 'gpt-4o-mini',
@@ -211,6 +229,8 @@ class WP_MCP_AI_Default_Assistants {
 						// Text Processing (Base).
 						'client_summarize_text',
 						'client_extract_entities',
+						// GSD × BMAD Phase 2 (Product Manager) Tools.
+						'create_task_plan',
 					),
 					$is_pro_active ? array(
 						// Pro Enhancement - Advanced Media.
@@ -225,6 +245,9 @@ class WP_MCP_AI_Default_Assistants {
 						'post_google_business_update',
 						'post_linkedin',
 						'post_tiktok',
+						// Pro - GSD × BMAD Phase 2 (Product Manager) Tools.
+						'generate_research_report',
+						'extract_structured_data',
 					) : array()
 				),
 				'provider'      => 'openai',
@@ -264,6 +287,10 @@ class WP_MCP_AI_Default_Assistants {
 						// Research for verification (Base).
 						'web_search',
 						'client_analyze_sentiment',
+						// GSD × BMAD Phase 6 & 8 (QA Engineer) Tools.
+						'get_task_plan',
+						'get_session_status',
+						'check_workflow_health',
 					),
 					$is_pro_active ? array(
 						// Pro Enhancement - Advanced Analytics.
@@ -313,6 +340,11 @@ class WP_MCP_AI_Default_Assistants {
 						// Media (Base).
 						'search_attachments',
 						'upload_file_to_wordpress',
+						// GSD × BMAD Phase 5 (Developer) Tools.
+						'manage_autonomous_session',
+						'check_exit_conditions',
+						'update_task_plan',
+						'batch_manage_memory',
 					),
 					$is_pro_active ? array(
 						// Pro Enhancement - Advanced Publishing.
