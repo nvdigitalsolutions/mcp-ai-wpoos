@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-active-server-model-issue',
-        'version' => 'dev-copilot/fix-active-server-model-issue',
-        'reference' => '79ee2e246f02c49aea8a35841d35b9b0918fd864',
+        'pretty_version' => 'dev-copilot/fix-puppeteer-browsers-reference',
+        'version' => 'dev-copilot/fix-puppeteer-browsers-reference',
+        'reference' => 'f0509d92f807198fa7ac20a7c13f5121f32ef6c7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-active-server-model-issue',
-            'version' => 'dev-copilot/fix-active-server-model-issue',
-            'reference' => '79ee2e246f02c49aea8a35841d35b9b0918fd864',
+            'pretty_version' => 'dev-copilot/fix-puppeteer-browsers-reference',
+            'version' => 'dev-copilot/fix-puppeteer-browsers-reference',
+            'reference' => 'f0509d92f807198fa7ac20a7c13f5121f32ef6c7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
