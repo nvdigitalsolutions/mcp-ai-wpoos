@@ -584,7 +584,7 @@ agent:
 
 - [x] Map the 6 default assistants (`includes/class-wp-mcp-ai-default-assistants.php`) to BMAD roles (Orchestrator → Scrum Master, Researcher → Analyst, Publisher → Developer, SEO Auditor → QA)
 - [x] Create `.bmad/teams/feature-development.yaml` defining the Orchestrator pattern team composition
-- [ ] Add BMAD-specific instructions to each assistant's system prompt:
+- [x] Add BMAD-specific instructions to each assistant's system prompt:
   - Orchestrator: enforce phase gates, load `.context/active/[feature].md` at session start
   - Researcher: produce Project Briefs using `deep_research` + `generate_research_report`
   - Publisher (Developer): enforce `.context/security-checklist.md` compliance on every story
@@ -596,16 +596,16 @@ agent:
 
 **Goal:** Automate gate checks, reduce manual overhead, and establish measurable success criteria.
 
-- [ ] Create automated context initialization workflow (Phase 0 automation via `batch_manage_memory`)
-- [ ] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
-- [ ] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation)
-- [ ] Establish baseline metrics for the first 3 completed feature cycles:
+- [x] Create automated context initialization workflow (Phase 0 automation via `batch_manage_memory`)
+- [x] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
+- [x] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation)
+- [x] Establish baseline metrics for the first 3 completed feature cycles:
   - Feature cycle time (Phase 0 start → Phase 7 release)
   - Context setup time per AI session (target: < 5 minutes)
   - Story completion rate (target: > 90% without rework)
   - Defect rate post-merge (target: 30–50% reduction)
-- [ ] Configure Pro Dashboard monitoring (`docs/PRO_DASHBOARD_MONITORING.md`) for active development sessions
-- [ ] Track AI token usage per phase to identify context budget optimization opportunities
+- [x] Configure Pro Dashboard monitoring (`docs/PRO_DASHBOARD_MONITORING.md`) for active development sessions
+- [x] Track AI token usage per phase to identify context budget optimization opportunities
 
 ---
 

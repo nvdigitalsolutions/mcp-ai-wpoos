@@ -1,0 +1,266 @@
+# GSD × BMAD Phase 8: Post-Deploy Health Check
+#
+# This workflow implements Phase 8 (Monitoring) of the GSD × BMAD development
+# methodology. It runs automatically after a versioned release tag is pushed and
+# can also be triggered manually for any environment.
+#
+# It validates:
+#   1. Plugin ZIP artifact integrity (release build)
+#   2. WordPress site health via the check_workflow_health REST endpoint
+#      (requires WP_HEALTH_CHECK_URL and WP_HEALTH_CHECK_TOKEN secrets)
+#   3. Emits Phase 8 monitoring checklist as a workflow summary
+#
+# Phase 8 target: workflow health > 95% tool execution success rate (48–72 hours).
+#
+# To enable live site health checks, add these repository secrets and variables:
+#   WP_HEALTH_CHECK_URL   - Repository VARIABLE (Settings → Secrets and variables → Variables)
+#                           Full URL to your WordPress REST endpoint
+#                           e.g. https://example.com/wp-json/mcp-ai/v1/health
+#   WP_HEALTH_CHECK_TOKEN - Repository SECRET (Settings → Secrets and variables → Secrets)
+#                           Bearer token (assistant credential) with read access
+#
+# Reference: docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md (Phase 8)
+
+name: Phase 8 — Post-Deploy Health Check
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment label (e.g. staging, production)'
+        required: false
+        default: 'production'
+        type: string
+      check_live_site:
+        description: 'Call live WordPress health endpoint (requires WP_HEALTH_CHECK_URL secret)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  MONITORING_WINDOW_HOURS: 72
+
+jobs:
+  # ===========================================================================
+  # Job 1: Validate Release Artifact
+  # ===========================================================================
+  validate-artifact:
+    name: Validate Release Artifact
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag or input
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="${{ github.event.inputs.environment }}"
+            # Fall back to latest tag if no version available
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "unknown")
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Checking health for release: ${VERSION}"
+
+      - name: Verify CHANGELOG entry exists
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [ "$VERSION" = "unknown" ]; then
+            echo "⚠️  Could not determine version — skipping CHANGELOG check"
+            exit 0
+          fi
+          if grep -qE "(^= *\[?${VERSION}\]?|^## *\[?${VERSION}\]?)" CHANGELOG.md 2>/dev/null; then
+            echo "✅ CHANGELOG entry found for v${VERSION}"
+          else
+            echo "⚠️  No CHANGELOG entry found for v${VERSION}"
+            echo "::warning::CHANGELOG.md does not contain an entry for v${VERSION}"
+          fi
+
+      - name: Verify required documentation files exist
+        run: |
+          MISSING=()
+          for f in README.md CHANGELOG.md LICENSE; do
+            if [ ! -f "$f" ]; then
+              MISSING+=("$f")
+            fi
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "❌ Missing required files: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "✅ All required documentation files present"
+
+      - name: Verify plugin main file version header
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [ "$VERSION" = "unknown" ]; then
+            echo "⚠️  Skipping version header check (unknown version)"
+            exit 0
+          fi
+          # Both tag (strip leading 'v') and plugin header use bare X.Y.Z format.
+          # Pre-release suffixes (e.g. 1.2.3-beta) are preserved in both.
+          PLUGIN_FILE="mcp-ai-wpoos.php"
+          if [ ! -f "$PLUGIN_FILE" ]; then
+            echo "⚠️  Plugin main file not found: ${PLUGIN_FILE}"
+            echo "::warning::Could not locate plugin main file for version header check"
+            exit 0
+          fi
+          PLUGIN_VERSION=$(grep -oP "(?<=Version: )[\d.]+(-\S+)?" "$PLUGIN_FILE" || echo "")
+          if [ "$PLUGIN_VERSION" = "$VERSION" ]; then
+            echo "✅ Plugin header version matches tag: ${VERSION}"
+          else
+            echo "⚠️  Plugin header version (${PLUGIN_VERSION}) does not match tag (${VERSION})"
+            echo "::warning::Plugin header version ${PLUGIN_VERSION} does not match tag ${VERSION}"
+          fi
+
+  # ===========================================================================
+  # Job 2: WordPress Site Health Check (optional — requires secrets)
+  # ===========================================================================
+  wordpress-health:
+    name: WordPress Workflow Health Check
+    runs-on: ubuntu-latest
+    needs: validate-artifact
+    if: >
+      (github.event_name == 'push' && vars.WP_HEALTH_CHECK_URL != '') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.check_live_site == 'true')
+
+    steps:
+      - name: Install jq
+        run: sudo apt-get install -y --no-install-recommends jq 2>/dev/null || true
+
+      - name: Call check_workflow_health REST endpoint
+        id: health_check
+        run: |
+          URL="${{ vars.WP_HEALTH_CHECK_URL }}"
+          TOKEN="${{ secrets.WP_HEALTH_CHECK_TOKEN }}"
+
+          if [ -z "$URL" ]; then
+            echo "⚠️  WP_HEALTH_CHECK_URL not configured — skipping live health check"
+            echo "status=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🔍 Calling WordPress health endpoint: $URL"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            "$URL" || echo -e "\n000")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP status: ${HTTP_CODE}"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Health check returned HTTP 200"
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            echo "response=${BODY}" >> $GITHUB_OUTPUT
+
+            # Extract overall status from JSON using jq (falls back to grep if jq unavailable)
+            if command -v jq &>/dev/null; then
+              OVERALL=$(echo "$BODY" | jq -r '.health.status // .status // empty' 2>/dev/null)
+            else
+              OVERALL=$(echo "$BODY" | grep -oP '(?<="status":")[^"]+' | head -1)
+            fi
+            if [ -n "$OVERALL" ]; then
+              echo "Overall workflow health: ${OVERALL}"
+              if [ "$OVERALL" = "error" ]; then
+                echo "::error::Workflow health status is ERROR — investigate immediately"
+                exit 1
+              elif [ "$OVERALL" = "warning" ]; then
+                echo "::warning::Workflow health status is WARNING — review recommended"
+              fi
+            fi
+          elif [ "$HTTP_CODE" = "000" ]; then
+            echo "::warning::Could not reach health endpoint (connection timeout or DNS failure)"
+            echo "status=unreachable" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Health endpoint returned HTTP ${HTTP_CODE}"
+            echo "status=error" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Report health check result
+        if: always()
+        run: |
+          STATUS="${{ steps.health_check.outputs.status }}"
+          case "$STATUS" in
+            healthy)  echo "✅ WordPress workflow health: HEALTHY" ;;
+            warning)  echo "⚠️  WordPress workflow health: WARNING" ;;
+            error)    echo "❌ WordPress workflow health: ERROR" ;;
+            skipped)  echo "⏭️  Health check skipped (WP_HEALTH_CHECK_URL not configured)" ;;
+            *)        echo "ℹ️  Health check status: ${STATUS:-unknown}" ;;
+          esac
+
+  # ===========================================================================
+  # Job 3: Phase 8 Monitoring Checklist Summary
+  # ===========================================================================
+  phase-8-summary:
+    name: Phase 8 Monitoring Checklist
+    runs-on: ubuntu-latest
+    needs: [validate-artifact]
+    if: always()
+
+    steps:
+      - name: Emit Phase 8 monitoring checklist
+        run: |
+          VERSION="${{ needs.validate-artifact.outputs.version || 'unknown' }}"
+
+          cat >> $GITHUB_STEP_SUMMARY << 'SUMMARY'
+          ## 🔍 Phase 8 — Post-Release Monitoring Checklist
+
+          > GSD × BMAD Phase 8 (Monitoring) — 48–72 hour post-release window.
+          > Reference: `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`
+
+          ### Automated Checks (this workflow)
+          - [x] Release artifact validated (CHANGELOG, plugin header, required files)
+          - [x] WordPress health endpoint called (if `WP_HEALTH_CHECK_URL` configured)
+
+          ### Manual Checks (QA Engineer — complete within 72 hours)
+
+          #### Tool Execution Health
+          - [ ] Run `check_workflow_health` in the AI assistant — confirm status: `healthy`
+          - [ ] Verify tool execution success rate > 95%
+          - [ ] Check `wp_mcp_ai_recent_errors` for new PHP errors introduced by this release
+
+          #### Workflow & Session Health
+          - [ ] Run `get_session_status` — confirm all active sessions completed normally
+          - [ ] Check Pro Dashboard monitoring tab: `/wp-admin/admin.php?page=nvoos-pro-dashboard&tab=monitoring`
+          - [ ] Verify no new `Critical` or `High` severity events appeared in the 24h event timeline
+
+          #### Performance
+          - [ ] Run `analyze_data_patterns` — confirm no unexpected API usage spikes
+          - [ ] Verify memory usage remains within normal bounds (see System Health card)
+          - [ ] Confirm AI token usage is within the expected Phase 6 budget targets
+
+          #### Regression
+          - [ ] No regression in existing tool test suite (`composer run test` passes)
+          - [ ] No new PHP warnings in error log
+          - [ ] User-reported issues triaged and tracked
+
+          ### Escalation
+          If tool execution success rate drops below 95%, or `check_workflow_health` returns
+          `error` status, escalate immediately to the Orchestrator (Scrum Master).
+
+          ### Metrics Recording
+          After the 72-hour window, record results in `docs/GSD-BMAD-METRICS-BASELINE.md`:
+          - Feature cycle time (Phase 0 → Phase 7)
+          - Context setup time average
+          - Story completion rate (QA first-pass approvals)
+          - Bug fixes merged within 30 days
+
+          SUMMARY
+
+          echo "✅ Phase 8 monitoring checklist emitted to workflow summary"

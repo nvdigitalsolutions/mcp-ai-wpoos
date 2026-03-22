@@ -21,9 +21,36 @@ Closes #
 - [ ] Phase 1 (Discovery) — Project Brief: `docs/proposals/[FEATURE]-PROJECT-BRIEF.md`
 - [ ] Phase 2 (Planning) — PRD: `docs/proposals/[FEATURE]-PRD.md`
 - [ ] Phase 3 (Architecture) — Arch Spec: `docs/proposals/[FEATURE]-ARCHITECTURE.md`
-- [ ] Phase 4 (Story Breakdown) — Stories in task plan
+- [ ] Phase 4 (Story Breakdown) — Stories in task plan (see artifact below)
 - [ ] Phase 5 (Implementation) — Atomic commits per story
 - [ ] Not applicable (patch / bug fix)
+
+## Story Breakdown Artifact
+<!-- Medium+ features: paste the create_task_plan output here so reviewers can see the full story list. -->
+<!-- Run in your AI assistant: create_task_plan(plan_name="[feature]", goal="[goal]", tasks=[...]) -->
+<!-- Then expand the section below and paste the returned markdown. -->
+<details>
+<summary>Task Plan — <code>create_task_plan</code> output (expand to view)</summary>
+
+```markdown
+<!-- Paste create_task_plan markdown output here. Example:
+
+# [Feature Name] Task Plan
+
+## Goal
+[Feature goal]
+
+## Tasks
+- [ ] Story 1.1: ... (Priority: High)
+- [ ] Story 1.2: ... (Priority: Medium)
+
+## Status
+Progress: 0%
+Created: YYYY-MM-DD HH:MM:SS
+-->
+```
+
+</details>
 
 ## Changes Made
 <!-- List the specific changes made in this PR -->
