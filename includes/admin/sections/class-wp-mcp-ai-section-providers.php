@@ -1298,6 +1298,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized input.
 		 */
 		public function sanitize( $input ) {
+			// For the 'embedded' subtab, delegate to the Pro Providers section.
+			// The Pro Providers section is intentionally NOT registered in the Settings Registry
+			// (to prevent duplicate rendering), so its sanitize() is never called automatically.
+			// When the base Providers section renders the embedded subtab it delegates to the Pro
+			// section for rendering; we mirror that here for sanitization so that
+			// embedded_server_model, embedded_model, and enable_embedded are correctly saved.
+			$active_subtab = $this->get_active_subtab();
+			if ( 'embedded' === $active_subtab
+				&& class_exists( 'WP_MCP_AI_Section_Pro_Providers' )
+				&& function_exists( 'wp_mcp_ai_container' )
+			) {
+				$container   = wp_mcp_ai_container();
+				$pro_section = $container->get( 'section.pro_providers' );
+				if ( $pro_section && method_exists( $pro_section, 'sanitize' ) ) {
+					return $pro_section->sanitize( $input );
+				}
+			}
+
 			$sanitized = array();
 
 			// Handle provider_priority_list separately.
