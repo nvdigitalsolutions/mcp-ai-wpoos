@@ -1362,8 +1362,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
 				'pdf-parse'                         => 'pdf-parse/index.js',
 				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
-				'docx'                              => 'docx/package.json',
 				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
+				// docx ships only package.json in vendor; detected via bin/generate-word.bundle.js below.
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 			);
@@ -1431,11 +1431,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
-			// Check for document generation packages bundled into local scripts.
+			// Check for document generation and video packages bundled into bin/ scripts.
+			// pdfkit and exceljs are detected via pro_vendor_packages above.
+			// docx ships only package.json in vendor, so we detect it via its bin bundle.
 			$script_bundled_packages = array(
-				'pdfkit'        => 'generate-pdf.bundle.js',
 				'docx'          => 'generate-word.bundle.js',
-				'exceljs'       => 'generate-excel.bundle.js',
 				'@remotion/cli' => 'remotion-render.bundle.js',
 			);
 			if ( isset( $script_bundled_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
