@@ -1357,6 +1357,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				// Document generation packages.
 				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
 				'pdf-parse'                         => 'pdf-parse/index.js',
+				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
+				'docx'                              => 'docx/package.json',
+				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 			);
