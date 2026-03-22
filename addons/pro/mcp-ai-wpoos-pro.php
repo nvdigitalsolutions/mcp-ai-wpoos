@@ -684,6 +684,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
+			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
+			'WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php',
 			// Google Workspace tools.
 			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
 			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
@@ -1481,6 +1484,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                    => 'external-tools',
 			'send_mailjet_email'              => 'external-tools',
+			// Brevo email marketing and CRM tools - Require Brevo API key.
+			'send_brevo_email'                => 'external-tools',
+			'manage_brevo_contacts'           => 'external-tools',
+			'get_brevo_statistics'            => 'external-tools',
 			// Google Workspace tools - Require external API credentials.
 			'create_google_calendar_event'    => 'external-tools',
 			'google_analytics_report'         => 'external-tools',

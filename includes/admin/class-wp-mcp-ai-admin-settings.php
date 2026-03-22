@@ -387,6 +387,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'description'      => __( 'Allows assistants to send transactional or group email through Mailjet.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Populate these fields before assigning assistants to send Mailjet emails.', 'mcp-ai-wpoos' ),
 				),
+				'brevo'            => array(
+					'label'            => __( 'Brevo', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'brevo_api_key' ),
+					'fields'           => array(
+						'brevo_api_key'    => __( 'API Key', 'mcp-ai-wpoos' ),
+						'brevo_from_email' => __( 'From Email', 'mcp-ai-wpoos' ),
+						'brevo_from_name'  => __( 'From Name', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Allows assistants to send transactional email and manage contacts through Brevo (formerly Sendinblue).', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Brevo API key before assigning assistants to send Brevo emails.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://developers.brevo.com/docs/getting-started',
+				),
 				'quickbooks'       => array(
 					'label'            => __( 'QuickBooks Online', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'quickbooks_company_id', 'quickbooks_api_key' ),
@@ -2090,6 +2102,30 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'brevo_api_key',
+				__( 'Brevo API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'brevo_from_email',
+				__( 'Brevo From Email', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_from_email_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'brevo_from_name',
+				__( 'Brevo From Name', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_from_name_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
 				'group_email_capability',
 				__( 'Group Email Capability', 'mcp-ai-wpoos' ),
 				array( $this, 'render_group_email_capability_field' ),
@@ -2527,6 +2563,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['mailjet_from_name'] ) ) {
 				$clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+			}
+
+			if ( isset( $settings['brevo_api_key'] ) ) {
+				$clean['brevo_api_key'] = trim( sanitize_text_field( $settings['brevo_api_key'] ) );
+			}
+
+			if ( isset( $settings['brevo_from_email'] ) ) {
+				$clean['brevo_from_email'] = sanitize_email( $settings['brevo_from_email'] );
+			}
+
+			if ( isset( $settings['brevo_from_name'] ) ) {
+				$clean['brevo_from_name'] = sanitize_text_field( $settings['brevo_from_name'] );
+			}
+
+			if ( isset( $settings['brevo_webhook_secret'] ) ) {
+				$clean['brevo_webhook_secret'] = trim( sanitize_text_field( $settings['brevo_webhook_secret'] ) );
 			}
 
 			if ( isset( $settings['google_analytics_property_id'] ) ) {
@@ -4310,6 +4362,39 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
+		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Brevo API key field.
+		 */
+		public function render_brevo_api_key_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_api_key]" value="<?php echo esc_attr( $settings['brevo_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Brevo API key used to authenticate requests. Get it from your Brevo account under SMTP & API.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Brevo from email field.
+		 */
+		public function render_brevo_from_email_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_from_email]" value="<?php echo esc_attr( $settings['brevo_from_email'] ); ?>" class="regular-text" placeholder="sender@example.com" />
+		<p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address. Must be a verified sender in Brevo.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Brevo from name field.
+		 */
+		public function render_brevo_from_name_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_from_name]" value="<?php echo esc_attr( $settings['brevo_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
 		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}

@@ -2,7 +2,7 @@
 /**
  * Pro Integrations Settings Section
  *
- * Settings for pro-only integrations (Mailjet, Google Analytics, Yahoo, ESPN).
+ * Settings for pro-only integrations (Mailjet, Brevo, Google Analytics, Yahoo, ESPN).
  * These integrations have tools in the pro addon.
  *
  * @package WP_MCP_AI_Pro
@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure pro-only integration services (Mailjet, Google Analytics, Fantasy Sports). These integrations are available in the Pro addon.', 'mcp-ai-wpoos' );
+			return __( 'Configure pro-only integration services (Mailjet, Brevo, Google Analytics, Fantasy Sports). These integrations are available in the Pro addon.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -111,6 +111,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'type'         => 'password',
 					'label'        => __( 'Mailjet Webhook Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Optional secret for verifying webhook requests from Mailjet.', 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
+				// Brevo.
+				'brevo_api_key'                     => array(
+					'type'         => 'password',
+					'label'        => __( 'Brevo API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Brevo developer docs */
+						__( 'API key for Brevo (formerly Sendinblue) email marketing and CRM tools. Get this from your Brevo account under SMTP & API → API Keys. See %s for details.', 'mcp-ai-wpoos' ),
+						'<a href="https://developers.brevo.com/docs/getting-started" target="_blank" rel="noopener noreferrer">Brevo developer docs</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'brevo_from_email'                  => array(
+					'type'        => 'email',
+					'label'       => __( 'Brevo From Email', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default "from" email address for Brevo messages. Must be a verified sender in your Brevo account.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'noreply@example.com',
+				),
+				'brevo_from_name'                   => array(
+					'type'        => 'text',
+					'label'       => __( 'Brevo From Name', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default "from" name for Brevo messages.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'My Site',
+				),
+				'brevo_webhook_secret'              => array(
+					'type'         => 'password',
+					'label'        => __( 'Brevo Webhook Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Optional secret for verifying webhook requests from Brevo.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
@@ -191,6 +223,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'label'  => __( 'Mailjet', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
+				),
+				'brevo'         => array(
+					'id'     => 'brevo',
+					'label'  => __( 'Brevo', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-email-alt',
+					'fields' => array( 'brevo_api_key', 'brevo_from_email', 'brevo_from_name', 'brevo_webhook_secret' ),
 				),
 				'analytics'     => array(
 					'id'     => 'analytics',
