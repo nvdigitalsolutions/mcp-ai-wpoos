@@ -27,6 +27,8 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_download_embedded_model', array( __CLASS__, 'download_model' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_delete_embedded_model', array( __CLASS__, 'delete_model' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_list_embedded_models', array( __CLASS__, 'list_models' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_download_llama_binary', array( __CLASS__, 'download_binary' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_get_llama_binary_status', array( __CLASS__, 'get_binary_status' ) );
 		}
 
 		// -------------------------------------------------------------------------
@@ -120,6 +122,42 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Model_Ajax' ) ) {
 			}
 
 			wp_send_json_success( array( 'models' => $models ) );
+		}
+
+		/**
+		 * AJAX: download and install the llama-cli binary from GitHub.
+		 *
+		 * Expected POST fields:
+		 *  - nonce  (string) Nonce created with wp_create_nonce('wp_mcp_ai_embedded_models').
+		 *
+		 * @return void Sends JSON response and exits.
+		 */
+		public static function download_binary() {
+			self::verify_request();
+
+			$client = new WP_MCP_AI_Embedded_Client();
+			$result = $client->download_binary();
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( $result->get_error_message() );
+			}
+
+			wp_send_json_success( $result );
+		}
+
+		/**
+		 * AJAX: return the current binary installation status.
+		 *
+		 * Expected POST fields:
+		 *  - nonce  (string) Nonce created with wp_create_nonce('wp_mcp_ai_embedded_models').
+		 *
+		 * @return void Sends JSON response and exits.
+		 */
+		public static function get_binary_status() {
+			self::verify_request();
+
+			$client = new WP_MCP_AI_Embedded_Client();
+			wp_send_json_success( $client->get_binary_status() );
 		}
 
 		// -------------------------------------------------------------------------
