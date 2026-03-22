@@ -1865,23 +1865,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( $connection && ! empty( $connection['welcome_message'] ) ) {
 			$text = $connection['welcome_message'];
 		} else {
-			$welcome_lines = array(
-				sprintf( "👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:", $site_name ),
-				'/help – List available commands',
-				'/tools – Browse AI tools',
-				'/vectorstore – Get vector store info',
-				'/balance – Check credits',
-				'/app – Open the Mini App',
-				'/settings – Open settings',
-				'/status – Check connection status',
-				'/cancel – Reset conversation',
+			$text = sprintf(
+				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use /help to see available commands.\n\nJust type your question to get started!",
+				$site_name
 			);
-			// Append dynamically registered slash commands.
-			foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
-				$welcome_lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
-			}
-			$welcome_lines[] = "\nJust type your question to get started!";
-			$text = implode( "\n", $welcome_lines );
 		}
 
 		/**
