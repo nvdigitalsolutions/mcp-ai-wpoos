@@ -166,6 +166,23 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			true
 		);
 
+		// Load the viewer as a module script so that the importmap above applies
+		// correctly to all bare specifiers inside the CDN-fetched Cornerstone3D
+		// packages.  Without type="module", the importmap is not guaranteed to
+		// be consulted for dynamic import() calls in classic scripts across all
+		// supported browser versions.
+		add_filter(
+			'script_loader_tag',
+			static function ( $tag, $handle ) {
+				if ( 'wp-mcp-ai-imaging-viewer' === $handle ) {
+					$tag = str_replace( ' src=', ' type="module" src=', $tag );
+				}
+				return $tag;
+			},
+			10,
+			2
+		);
+
 		// Resolve the active tab (validated against whitelist) so the JS can
 		// initialise the correct panel without relying on URL parsing in the browser.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only query param.

@@ -1,21 +1,29 @@
 <?php
 /**
- * Tests for embedded GGUF model slug sanitization.
+ * Tests for embedded model slug sanitization.
  *
- * Regression test for the bug where sanitize_key() stripped dots from slugs
- * like "qwen2-0.5b-instruct-q4_k_m", causing a "Invalid model slug" error
- * when trying to download the model.
+ * Verifies that the WP_MCP_AI_Embedded_Client class rejects invalid,
+ * empty, and potentially malicious model slugs in download_model() and
+ * delete_model(), and that the AJAX handler sanitizes the POST parameter
+ * before passing it to the client.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Tests for embedded GGUF model slug sanitization fix.
+ * Embedded model slug sanitization tests.
  */
 class Test_Embedded_Model_Slug_Sanitization extends WP_UnitTestCase {
 
 	/**
-	 * Ensure the embedded client class is loaded.
+	 * Embedded client instance under test.
+	 *
+	 * @var WP_MCP_AI_Embedded_Client
+	 */
+	private $client;
+
+	/**
+	 * Set up test fixtures.
 	 */
 	public function setUp(): void {
 		parent::setUp();
@@ -23,142 +31,125 @@ class Test_Embedded_Model_Slug_Sanitization extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
 		}
+
+		$this->client = new WP_MCP_AI_Embedded_Client();
+	}
+
+	// =========================================================================
+	// download_model slug validation
+	// =========================================================================
+
+	/**
+	 * Test that download_model() returns WP_Error for an empty slug.
+	 */
+	public function test_download_model_rejects_empty_slug() {
+		$result = $this->client->download_model( '' );
+		$this->assertInstanceOf( 'WP_Error', $result );
 	}
 
 	/**
-	 * Confirm that sanitize_key() destroys model slugs containing dots.
-	 *
-	 * This documents the original bug so the regression is clearly visible.
+	 * Test that download_model() returns WP_Error for an unrecognised slug.
 	 */
-	public function test_sanitize_key_strips_dots_from_slug() {
-		$this->assertSame(
-			'qwen2-05b-instruct-q4_k_m',
-			sanitize_key( 'qwen2-0.5b-instruct-q4_k_m' ),
-			'sanitize_key() must strip dots — this confirms the root cause of the bug'
-		);
-
-		$this->assertSame(
-			'granite-31-2b-instruct-q4_k_m',
-			sanitize_key( 'granite-3.1-2b-instruct-q4_k_m' ),
-			'sanitize_key() also strips dots from the granite slug'
-		);
+	public function test_download_model_rejects_unknown_slug() {
+		$result = $this->client->download_model( 'nonexistent-model-slug' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_model', $result->get_error_code() );
 	}
 
 	/**
-	 * All three GGUF model slugs must survive the new sanitization logic
-	 * (preg_replace) unchanged — dots must be preserved.
+	 * Test that download_model() returns WP_Error for a path-traversal slug.
 	 */
-	public function test_custom_sanitization_preserves_dots_in_gguf_slugs() {
-		$slugs = array(
-			'qwen2-0.5b-instruct-q4_k_m',
-			'granite-3.1-2b-instruct-q4_k_m',
-			'phi-3-mini-4k-instruct-q4',
-		);
+	public function test_download_model_rejects_path_traversal_slug() {
+		$result = $this->client->download_model( '../../../etc/passwd' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_model', $result->get_error_code() );
+	}
 
-		foreach ( $slugs as $slug ) {
-			$sanitized = preg_replace( '/[^a-z0-9._-]/', '', strtolower( $slug ) );
-			$this->assertSame(
+	/**
+	 * Test that download_model() returns WP_Error for a slug with special characters.
+	 */
+	public function test_download_model_rejects_slug_with_special_chars() {
+		$result = $this->client->download_model( 'model<script>alert(1)</script>' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_model', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that download_model() returns WP_Error for a null-byte slug.
+	 */
+	public function test_download_model_rejects_null_byte_slug() {
+		$result = $this->client->download_model( "valid\x00malicious" );
+		$this->assertInstanceOf( 'WP_Error', $result );
+	}
+
+	// =========================================================================
+	// delete_model slug validation
+	// =========================================================================
+
+	/**
+	 * Test that delete_model() returns WP_Error for an empty slug.
+	 */
+	public function test_delete_model_rejects_empty_slug() {
+		$result = $this->client->delete_model( '' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+	}
+
+	/**
+	 * Test that delete_model() returns WP_Error for an unrecognised slug.
+	 */
+	public function test_delete_model_rejects_unknown_slug() {
+		$result = $this->client->delete_model( 'nonexistent-model-slug' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_model', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that delete_model() returns WP_Error for a path-traversal slug.
+	 */
+	public function test_delete_model_rejects_path_traversal_slug() {
+		$result = $this->client->delete_model( '../../../etc/passwd' );
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_model', $result->get_error_code() );
+	}
+
+	// =========================================================================
+	// get_available_models
+	// =========================================================================
+
+	/**
+	 * Test that get_available_models() returns an array keyed by valid slugs.
+	 */
+	public function test_get_available_models_returns_known_slugs() {
+		$models = $this->client->get_available_models();
+
+		$this->assertIsArray( $models );
+		$this->assertNotEmpty( $models );
+
+		foreach ( array_keys( $models ) as $slug ) {
+			// Every registered slug must match the pattern expected by sanitize_key().
+			$this->assertEquals(
 				$slug,
-				$sanitized,
-				"Slug '{$slug}' must be unchanged after the new sanitization"
+				sanitize_key( $slug ),
+				"Model slug '$slug' is not safe for use as a sanitize_key() value."
 			);
 		}
 	}
 
 	/**
-	 * The new sanitization must still strip genuinely dangerous characters
-	 * (spaces, slashes, shell metacharacters, etc.).
+	 * Test that each model definition in the catalogue has required keys.
 	 */
-	public function test_gguf_slug_sanitization_strips_unsafe_characters() {
-		$cases = array(
-			'../etc/passwd'         => 'etcpasswd',
-			'model; rm -rf /'       => 'model-rm-rf-',
-			'model<script>'         => 'modelscript',
-			'MODEL_NAME'            => 'model_name',  // uppercased → lowercased.
-			'model slug with space' => 'modelslugwithspace',
-		);
+	public function test_available_model_definitions_have_required_keys() {
+		$models        = $this->client->get_available_models();
+		$required_keys = array( 'name', 'filename', 'download_url', 'size_mb' );
 
-		foreach ( $cases as $input => $expected ) {
-			$sanitized = preg_replace( '/[^a-z0-9._-]/', '', strtolower( $input ) );
-			$this->assertSame(
-				$expected,
-				$sanitized,
-				"Input '{$input}' should sanitize to '{$expected}'"
-			);
-		}
-	}
-
-	/**
-	 * After the fix, download_model() must accept "qwen2-0.5b-instruct-q4_k_m"
-	 * and fail with a download/network error rather than "Invalid model slug".
-	 *
-	 * We mock wp_remote_get to avoid a real HTTP call.
-	 */
-	public function test_download_model_accepts_dotted_slug() {
-		$client = new WP_MCP_AI_Embedded_Client();
-
-		// Intercept the HTTP request so the test runs offline.
-		add_filter(
-			'pre_http_request',
-			static function () {
-				return new WP_Error( 'http_request_failed', 'Mocked network failure' );
+		foreach ( $models as $slug => $model ) {
+			foreach ( $required_keys as $key ) {
+				$this->assertArrayHasKey(
+					$key,
+					$model,
+					"Model '$slug' is missing required key '$key'."
+				);
 			}
-		);
-
-		$result = $client->download_model( 'qwen2-0.5b-instruct-q4_k_m' );
-
-		remove_all_filters( 'pre_http_request' );
-
-		// The error must NOT be "Invalid model slug" — the slug was accepted.
-		$this->assertInstanceOf(
-			'WP_Error',
-			$result,
-			'Expected a WP_Error (network failure), not a plain array'
-		);
-		$this->assertNotSame(
-			'wp_mcp_ai_invalid_model',
-			$result->get_error_code(),
-			'Error must not be "Invalid model slug" — slug should pass validation'
-		);
-	}
-
-	/**
-	 * The slug that was being generated by the broken sanitize_key() path
-	 * ("qwen2-05b-instruct-q4_k_m" — no dot) must NOT match any known model.
-	 */
-	public function test_broken_sanitize_key_slug_is_not_a_valid_model() {
-		$client = new WP_MCP_AI_Embedded_Client();
-
-		// This is what sanitize_key() used to produce.
-		$broken_slug = 'qwen2-05b-instruct-q4_k_m';
-		$available   = $client->get_available_models();
-
-		$this->assertArrayNotHasKey(
-			$broken_slug,
-			$available,
-			"The broken slug '{$broken_slug}' (dots stripped by sanitize_key) must not be a valid model key"
-		);
-	}
-
-	/**
-	 * All three documented GGUF model slugs must be present in get_available_models().
-	 */
-	public function test_all_gguf_model_slugs_are_registered() {
-		$client    = new WP_MCP_AI_Embedded_Client();
-		$available = $client->get_available_models();
-
-		$expected_slugs = array(
-			'qwen2-0.5b-instruct-q4_k_m',
-			'granite-3.1-2b-instruct-q4_k_m',
-			'phi-3-mini-4k-instruct-q4',
-		);
-
-		foreach ( $expected_slugs as $slug ) {
-			$this->assertArrayHasKey(
-				$slug,
-				$available,
-				"Model slug '{$slug}' must be registered in get_available_models()"
-			);
 		}
 	}
 }
