@@ -27,6 +27,8 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		remove_all_filters( 'wp_mcp_ai_mailgun_pre_send' );
+		remove_all_filters( 'wp_mcp_ai_mailgun_request_args' );
+		remove_all_filters( 'pre_http_request' );
 		parent::tearDown();
 	}
 
@@ -241,6 +243,11 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 		// Verify tracking disabled.
 		$this->assertSame( 'no', $captured_request['body']['o:tracking'] );
 
+		// Verify tags are stored as an array (each sent as a separate o:tag field).
+		$this->assertIsArray( $captured_request['body']['o:tag'] );
+		$this->assertContains( 'welcome', $captured_request['body']['o:tag'] );
+		$this->assertContains( 'test', $captured_request['body']['o:tag'] );
+
 		// Verify Basic Auth header uses "api:" prefix.
 		$expected_auth = 'Basic ' . base64_encode( 'api:key-test123' );
 		$this->assertSame( $expected_auth, $captured_request['args']['headers']['Authorization'] );
@@ -262,38 +269,31 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 
 		$captured_url = null;
 
-		add_filter(
-			'wp_mcp_ai_mailgun_pre_send',
-			function ( $preempt, $body, $request_args ) use ( &$captured_url ) {
-				// Extract the URL from request args (it's passed separately; capture via pre_http_request would be more accurate
-				// but is not needed — we check the filter arg which carries the resolved domain).
-				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => '<eu-id>', 'message' => 'Queued.' ) ),
-					'headers'  => array(),
-				);
-			},
-			10,
-			3
-		);
-
-		// Capture the actual URL via the request_args filter.
+		// Capture the URL before the pre-send filter short-circuits the request.
 		add_filter(
 			'wp_mcp_ai_mailgun_request_args',
-			function ( $args, $body, $arguments, $context, $tool ) use ( &$captured_url ) {
-				// The URL is built inside execute() and passed to wp_remote_post; we verify via
-				// a separate http_api_args hook on the pre_http_request filter.
+			function ( $args, $body, $arguments, $context, $tool ) {
 				return $args;
 			},
 			10,
 			5
 		);
 
+		// Use pre_http_request to capture the actual URL that would be sent to wp_remote_post.
+		// The pre_http_request filter runs before wp_mcp_ai_mailgun_pre_send pre-emption
+		// is applied, so we record the URL here.
 		add_filter(
 			'pre_http_request',
-			function ( $response, $parsed_args, $url ) use ( &$captured_url ) {
+			function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
 				$captured_url = $url;
-				return $response;
+				// Return a fake 200 response to short-circuit the actual HTTP call.
+				return array(
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'body'     => wp_json_encode( array( 'id' => '<eu-id>', 'message' => 'Queued.' ) ),
+					'headers'  => array(),
+					'cookies'  => array(),
+					'filename' => null,
+				);
 			},
 			10,
 			3
@@ -309,11 +309,15 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
+		remove_all_filters( 'pre_http_request' );
+
 		$this->assertNotWPError( $result );
-		// EU region requests are pre-empted by wp_mcp_ai_mailgun_pre_send before reaching wp_remote_post,
-		// so the URL is not captured via pre_http_request. We verify the result is successful which
-		// confirms the region logic ran without error.
 		$this->assertTrue( $result['sent'] );
+
+		// The EU region base URL should appear in the captured request URL.
+		if ( null !== $captured_url ) {
+			$this->assertStringContainsString( 'api.eu.mailgun.net', $captured_url );
+		}
 	}
 
 	/**
@@ -329,16 +333,19 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		$captured_body = null;
+		$captured_url = null;
 
+		// Capture the actual request URL via pre_http_request.
 		add_filter(
-			'wp_mcp_ai_mailgun_pre_send',
-			function ( $preempt, $body ) use ( &$captured_body ) {
-				$captured_body = $body;
+			'pre_http_request',
+			function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
+				$captured_url = $url;
 				return array(
 					'response' => array( 'code' => 200, 'message' => 'OK' ),
 					'body'     => wp_json_encode( array( 'id' => '<id>', 'message' => 'Queued.' ) ),
 					'headers'  => array(),
+					'cookies'  => array(),
+					'filename' => null,
 				);
 			},
 			10,
@@ -356,10 +363,16 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
+		remove_all_filters( 'pre_http_request' );
+
 		$this->assertNotWPError( $result );
 		$this->assertTrue( $result['sent'] );
-		// If the override was respected the request should succeed; the domain is embedded in the URL,
-		// not in the POST body, so we verify execution succeeded without error.
+
+		// The override domain should appear in the URL, not the settings domain.
+		if ( null !== $captured_url ) {
+			$this->assertStringContainsString( 'mg.override.com', $captured_url );
+			$this->assertStringNotContainsString( 'mg.default.com', $captured_url );
+		}
 	}
 
 	/**

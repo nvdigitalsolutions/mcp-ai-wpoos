@@ -299,17 +299,23 @@ class WP_MCP_AI_Pro_Tool_Send_Mailgun_Email implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Tracking.
-		$tracking = isset( $arguments['tracking'] ) ? (bool) $arguments['tracking'] : true;
+		$tracking           = isset( $arguments['tracking'] ) ? (bool) $arguments['tracking'] : true;
 		$body['o:tracking'] = $tracking ? 'yes' : 'no';
 
-		// Tags (Mailgun supports up to 3 per message).
+		// Tags (Mailgun supports up to 3 per message, each sent as a separate o:tag field).
 		if ( ! empty( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
-			$tags = array_slice( $arguments['tags'], 0, 3 );
-			foreach ( $tags as $tag ) {
+			$tag_list = array();
+			foreach ( array_slice( $arguments['tags'], 0, 3 ) as $tag ) {
 				$clean_tag = substr( sanitize_text_field( $tag ), 0, 128 );
 				if ( '' !== $clean_tag ) {
-					$body['o:tag[]'] = isset( $body['o:tag[]'] ) ? $body['o:tag[]'] . ',' . $clean_tag : $clean_tag;
+					$tag_list[] = $clean_tag;
 				}
+			}
+
+			if ( ! empty( $tag_list ) ) {
+				// wp_remote_post encodes arrays as repeated fields (o:tag[0]=a&o:tag[1]=b),
+				// which Mailgun accepts. Use a plain indexed array.
+				$body['o:tag'] = $tag_list;
 			}
 		}
 
