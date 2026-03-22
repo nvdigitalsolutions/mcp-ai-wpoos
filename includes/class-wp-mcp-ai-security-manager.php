@@ -38,6 +38,37 @@ class WP_MCP_AI_Security_Manager {
 	 */
 	public function __construct() {
 		$this->settings = wp_mcp_ai_get_settings_repository();
+		add_filter( 'wp_mcp_ai_cors_allow_origin', array( $this, 'get_cors_allow_origin' ) );
+	}
+
+	/**
+	 * Return the configured CORS allowed origin value.
+	 *
+	 * Returns the admin-configured origin when set, allows localhost when
+	 * WP_DEBUG is true, and falls back to the wildcard '*' default otherwise.
+	 *
+	 * @param string $fallback Default value passed through the filter (usually '*').
+	 * @return string The Access-Control-Allow-Origin value to use.
+	 */
+	public function get_cors_allow_origin( $fallback ) {
+		$saved = (string) $this->settings->get( 'cors_allowed_origin', '' );
+		$saved = rtrim( trim( $saved ), '/' );
+
+		if ( '' !== $saved ) {
+			return $saved;
+		}
+
+		// In debug mode, allow localhost origins for local development.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$origin = isset( $_SERVER['HTTP_ORIGIN'] )
+				? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) )
+				: '';
+			if ( '' !== $origin && preg_match( '#^https?://localhost(:\d+)?$#i', $origin ) ) {
+				return $origin;
+			}
+		}
+
+		return $fallback;
 	}
 
 	/**

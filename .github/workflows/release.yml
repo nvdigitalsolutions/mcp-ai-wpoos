@@ -472,3 +472,41 @@ jobs:
           echo "- GitHub: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build.outputs.version }}"
           echo "- WordPress.org: https://wordpress.org/plugins/${{ env.PLUGIN_SLUG }}/"
           echo "- Documentation: https://github.com/${{ github.repository }}/tree/main/docs"
+
+      # GSD × BMAD Phase 8 — Post-Release Monitoring Checklist
+      # This step writes the Phase 8 checklist to the GitHub Actions job
+      # summary so the on-call team has immediate visibility after every
+      # release.  Monitor for 48–72 hours post-deploy.
+      - name: GSD × BMAD Phase 8 — Post-Release Monitoring Checklist
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << 'PHASE8'
+          ## 🔍 GSD × BMAD Phase 8 — Post-Release Monitoring Checklist
+
+          Monitor for **48–72 hours** after deployment. Use the NV oOS
+          `check_workflow_health` Pro tool and WordPress error logs.
+
+          ### Health Checks
+          - [ ] No new PHP errors/warnings in error log for first 48 hours
+          - [ ] Tool execution success rate > 95% (check Pro Dashboard)
+          - [ ] All SSE connections healthy — no unexpected disconnects
+          - [ ] No regression in existing tool test suite
+          - [ ] API token usage within budget; no unexpected spikes
+
+          ### Functional Verification
+          - [ ] Core chat flow works (base plugin: send message → receive response)
+          - [ ] MCP endpoint responds correctly (`GET /mcp-ai/v1/tools`)
+          - [ ] Authentication paths verified (nonce, bearer token, guest token)
+          - [ ] Any new features in this release manually smoke-tested
+
+          ### User Feedback
+          - [ ] No new GitHub issues opened against this release
+          - [ ] Support channels monitored for unexpected errors
+          - [ ] User-reported issues triaged and tracked
+
+          ### Phase 8 → Phase 9 Gate
+          - [ ] All health checks green for 48+ hours
+          - [ ] Tool success rate confirmed > 95%
+          - [ ] No blocking issues open
+
+          > **Reference:** `.context/active/[feature].md` | `docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md`
+          PHASE8

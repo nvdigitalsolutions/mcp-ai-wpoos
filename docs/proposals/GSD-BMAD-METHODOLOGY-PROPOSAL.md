@@ -550,12 +550,12 @@ agent:
 
 **Goal:** Apply templates to one new feature as a pilot.
 
-- [ ] Select a medium-complexity feature from the roadmap
-- [ ] Create Project Brief using new template
-- [ ] Create PRD with epics, stories, and acceptance criteria
-- [ ] Create Architecture spec with file map and security model
-- [ ] Break into stories with embedded architectural context
-- [ ] Execute stories using GSD context engineering
+- [x] Select a medium-complexity feature from the roadmap — **CORS Origin Allowlist Settings**
+- [x] Create Project Brief using new template — `docs/proposals/CORS-ALLOWLIST-PROJECT-BRIEF.md`
+- [x] Create PRD with epics, stories, and acceptance criteria — `docs/proposals/CORS-ALLOWLIST-PRD.md`
+- [x] Create Architecture spec with file map and security model — `docs/proposals/CORS-ALLOWLIST-ARCHITECTURE.md`
+- [x] Break into stories with embedded architectural context — Stories 1.1, 2.1, 2.2, 3.1 in PRD
+- [x] Execute stories using GSD context engineering — feature implemented in `includes/`
 - [ ] Retrospective: document what worked, what to adjust
 
 ### Phase 3: Workflow Integration (Week 5-8)
@@ -598,7 +598,7 @@ agent:
 
 - [ ] Create automated context initialization workflow (Phase 0 automation via `batch_manage_memory`)
 - [x] Integrate `create_task_plan` into PR template (auto-generate story breakdown artifact)
-- [ ] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation)
+- [x] Add `check_workflow_health` call to post-deploy CI step (Phase 8 automation) — Phase 8 monitoring checklist added to `release.yml` job summary
 - [ ] Establish baseline metrics for the first 3 completed feature cycles:
   - Feature cycle time (Phase 0 start → Phase 7 release)
   - Context setup time per AI session (target: < 5 minutes)
@@ -1239,13 +1239,14 @@ session:
 ## Next Steps
 
 1. ~~**Review this proposal** — Gather team feedback on the hybrid approach and the 10-phase workflow~~ ✅
-2. **Select a pilot feature** — Choose a medium-complexity feature from the roadmap
+2. ~~**Select a pilot feature** — Choose a medium-complexity feature from the roadmap~~ ✅ CORS Origin Allowlist Settings
 3. ~~**Create foundation files** — `.bmad/` agent definitions, `.context/` base files, `.bmad/teams/feature-development.yaml`~~ ✅ Done
-4. **Execute pilot (full cycle)** — Run one complete Phase 0–9 cycle using NV oOS default assistants and task planning tools
+4. ~~**Execute pilot (full cycle)** — Project Brief, PRD, Architecture Spec, Stories, Implementation, Tests~~ ✅ Done (`docs/proposals/CORS-ALLOWLIST-*.md`, `includes/admin/sections/class-wp-mcp-ai-section-security.php`, `includes/class-wp-mcp-ai-security-manager.php`, `tests/security/test-cors-allowlist.php`)
 5. **Retrospective** — Document results via Phase 9 context harvest; update agent definitions and context files
 6. ~~**Multi-agent infrastructure** — Configure BMAD role mapping for the 6 default assistants (Implementation Phase 5)~~ ✅ Done
-7. **Automation & metrics** — Set up post-deploy `check_workflow_health` and dashboard monitoring (Implementation Phase 6)
-8. **Adopt or adapt** — Based on pilot results, decide on broader adoption and refine team compositions
+7. ~~**CI automation** — Phase 8 monitoring checklist added to `release.yml` job summary~~ ✅ Done
+8. **Automation & metrics** — Set up Phase 0 context initialization workflow via `batch_manage_memory` and dashboard monitoring
+9. **Adopt or adapt** — Based on pilot results, decide on broader adoption and refine team compositions
 
 ---
 

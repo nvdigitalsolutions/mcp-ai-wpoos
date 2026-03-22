@@ -292,6 +292,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				),
 
 				// ========================================
+				// CORS & CROSS-ORIGIN CONTROL
+				// ========================================
+				'_heading_cors'                            => array(
+					'type'  => 'heading',
+					'label' => __( 'CORS & Cross-Origin Control', 'mcp-ai-wpoos' ),
+				),
+				'cors_allowed_origin'                      => array(
+					'type'        => 'text',
+					'label'       => __( 'CORS Allowed Origin', 'mcp-ai-wpoos' ),
+					'description' => __( 'The origin allowed to call NV oOS endpoints (e.g. <code>https://app.example.com</code>). Leave empty to allow all origins (<code>*</code>). Only one origin can be specified; for multiple origins use the <code>wp_mcp_ai_cors_allow_origin</code> filter in your theme/plugin. When <strong>WP_DEBUG</strong> is enabled, <code>localhost</code> origins are always permitted for local development.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://app.example.com',
+					'default'     => '',
+				),
+
+				// ========================================
 				// AUDIT LOGGING & COMPLIANCE
 				// ========================================
 				'_heading_audit_logging'                   => array(
@@ -443,6 +458,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 				if ( strlen( $input['root_security_key'] ) < 32 ) {
 					$errors[] = __( 'Root Security Key must be at least 32 characters long.', 'mcp-ai-wpoos' );
 				}
+			}
+
+			// Sanitize CORS allowed origin.
+			if ( isset( $input['cors_allowed_origin'] ) ) {
+				$trimmed = trim( sanitize_text_field( $input['cors_allowed_origin'] ) );
+				$trimmed = rtrim( $trimmed, '/' );
+				$cleaned = esc_url_raw( $trimmed );
+				// If esc_url_raw strips the value it was not a valid URL; silently
+				// fall back to empty (wildcard) to avoid locking out the site.
+				$input['cors_allowed_origin'] = ( $cleaned === $trimmed ) ? $cleaned : '';
 			}
 
 			// Validate rate limit numbers.
