@@ -278,7 +278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				);
 				?>
 			</p>
-			<p style="margin:0; color:#666;">
+			<p style="margin:0 0 8px; color:#666;">
 				<?php
 				printf(
 					/* translators: %s: platform string e.g. "linux x64" */
@@ -287,6 +287,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				);
 				?>
 			</p>
+			<?php if ( 0 === strpos( $platform, 'linux' ) ) : ?>
+				<button type="button" id="wp-mcp-ai-reinstall-binary" class="button button-secondary" style="margin-right:8px;">
+					<span class="dashicons dashicons-update" style="vertical-align:middle; margin-top:3px;"></span>
+					<?php esc_html_e( 'Re-install llama.cpp Binary', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span id="wp-mcp-ai-binary-reinstall-status" style="display:none; vertical-align:middle; margin-left:8px;"></span>
+				<p class="description" style="margin-top:6px;">
+					<?php esc_html_e( 'Use this if llama-cli is missing its shared libraries (e.g. libmtmd.so.0) or if you want to upgrade to the latest version.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php endif; ?>
 		<?php else : ?>
 			<p style="margin:0 0 8px;">
 				<?php esc_html_e( 'The llama.cpp runtime (llama-cli) is required to run server-side inference. Download it automatically or follow the manual instructions below.', 'mcp-ai-wpoos' ); ?>
@@ -311,21 +321,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 
 			<details style="margin-top:10px;">
 				<summary style="cursor:pointer; color:#2271b1;"><?php esc_html_e( 'Manual installation instructions', 'mcp-ai-wpoos' ); ?></summary>
-				<pre style="margin-top:8px; padding:10px; background:#f6f7f7; border:1px solid #ddd; overflow-x:auto; white-space:pre-wrap; font-size:12px;"># <?php esc_html_e( 'Download the binary:', 'mcp-ai-wpoos' ); ?>
+				<pre style="margin-top:8px; padding:10px; background:#f6f7f7; border:1px solid #ddd; overflow-x:auto; white-space:pre-wrap; font-size:12px;"># <?php esc_html_e( 'Download the latest release archive from:', 'mcp-ai-wpoos' ); ?>
 
-wget -O /tmp/llama-cli https://github.com/ggerganov/llama.cpp/releases/latest/download/llama-cli-ubuntu-<?php echo esc_html( $arch_suffix ); ?>
+# https://github.com/ggml-org/llama.cpp/releases/latest
+# (<?php
+			/* translators: %s: architecture string, e.g. "x64" or "arm64" */
+			printf( esc_html__( 'download the file named like: llama-bXXXX-bin-ubuntu-%s.tar.gz', 'mcp-ai-wpoos' ), esc_html( $arch_suffix ) );
+			?>)
 
+# <?php esc_html_e( 'Extract and install the binary and shared libraries:', 'mcp-ai-wpoos' ); ?>
 
-# <?php esc_html_e( 'Install to plugin directory:', 'mcp-ai-wpoos' ); ?>
+mkdir -p /tmp/llama-bin-extract <?php echo esc_html( $bin_dir_path ); ?>
 
-mkdir -p <?php echo esc_html( $bin_dir_path ); ?>
-
-mv /tmp/llama-cli <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
+tar -xzf /tmp/llama-bXXXX-bin-ubuntu-<?php echo esc_html( $arch_suffix ); ?>.tar.gz -C /tmp/llama-bin-extract/
+mv /tmp/llama-bin-extract/*/llama-cli <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
+cp /tmp/llama-bin-extract/*/lib*.so* <?php echo esc_html( $bin_dir_path ); ?>/ 2>/dev/null; true
 chmod +x <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
 
 # <?php esc_html_e( 'Verify:', 'mcp-ai-wpoos' ); ?>
 
-			<?php echo esc_html( $bin_dir_path ); ?>/llama-cli --version</pre>
+<?php echo esc_html( $bin_dir_path ); ?>/llama-cli --version</pre>
 			</details>
 		<?php endif; ?>
 	</div>
