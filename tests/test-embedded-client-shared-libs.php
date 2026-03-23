@@ -379,8 +379,123 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// get_shared_libs_status – diagnostic API
+	// =========================================================================
+
+	/**
+	 * When no binary is present, get_shared_libs_status() returns an empty result.
+	 */
+	public function test_get_shared_libs_status_returns_empty_when_binary_absent() {
+		// Ensure there is no binary in any of the standard lookup locations.
+		// We can guarantee this by checking the method's behaviour when the client
+		// detects no binary (the default state in a test environment).
+		$status = $this->client->get_shared_libs_status();
+
+		// Regardless of whether a system binary happens to be installed, the
+		// method must return a properly shaped array.
+		$this->assertArrayHasKey( 'found', $status );
+		$this->assertArrayHasKey( 'libs', $status );
+		$this->assertArrayHasKey( 'bin_dir', $status );
+		$this->assertIsBool( $status['found'] );
+		$this->assertIsArray( $status['libs'] );
+		$this->assertIsString( $status['bin_dir'] );
+
+		// When no binary exists, found must be false and libs must be empty.
+		if ( ! $this->client->get_binary_status()['found'] ) {
+			$this->assertFalse( $status['found'] );
+			$this->assertEmpty( $status['libs'] );
+			$this->assertSame( '', $status['bin_dir'] );
+		}
+	}
+
+	/**
+	 * get_shared_libs_status() lists .so files when they exist next to the binary.
+	 *
+	 * This test plants a fake executable and two shared library files in a temp
+	 * directory and verifies that get_shared_libs_status() discovers them.
+	 */
+	public function test_get_shared_libs_status_lists_so_files_in_binary_dir() {
+		$bin_path     = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+
+		// Plant two shared library files alongside the binary.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libllama.so', 'mock-lib' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0', 'mock-lib' );
+
+		$status = $fresh_client->get_shared_libs_status();
+
+		$this->assertTrue( $status['found'], 'found must be true when .so files are present.' );
+		$this->assertContains( 'libllama.so', $status['libs'], 'libllama.so must appear in the libs list.' );
+		$this->assertContains( 'libmtmd.so.0', $status['libs'], 'libmtmd.so.0 must appear in the libs list.' );
+		$this->assertSame( trailingslashit( $this->tmp_dir ), $status['bin_dir'] );
+	}
+
+	/**
+	 * get_shared_libs_status() returns found=false when binary dir has no .so files.
+	 */
+	public function test_get_shared_libs_status_returns_false_when_no_so_files() {
+		$bin_path     = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+
+		$status = $fresh_client->get_shared_libs_status();
+
+		$this->assertFalse( $status['found'], 'found must be false when no .so files are present.' );
+		$this->assertEmpty( $status['libs'] );
+		$this->assertSame( trailingslashit( $this->tmp_dir ), $status['bin_dir'] );
+	}
+
+	/**
+	 * The libs array returned by get_shared_libs_status() is sorted alphabetically.
+	 */
+	public function test_get_shared_libs_status_libs_are_sorted() {
+		$bin_path     = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libz.so', 'mock' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/liba.so', 'mock' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libm.so.0', 'mock' );
+
+		$libs   = $fresh_client->get_shared_libs_status()['libs'];
+		$sorted = $libs;
+		sort( $sorted );
+		$this->assertSame( $sorted, $libs, 'libs list must be sorted alphabetically.' );
+	}
+
+	// =========================================================================
 	// Helpers
 	// =========================================================================
+
+	/**
+	 * Create a fake executable llama-cli binary at the given path.
+	 *
+	 * @param string $path Absolute destination path for the binary.
+	 * @return string The same path, for convenience.
+	 */
+	private function create_mock_binary( $path ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $path, '#!/bin/sh' . PHP_EOL . 'echo mock' );
+		chmod( $path, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		return $path;
+	}
+
+	/**
+	 * Return a fresh WP_MCP_AI_Embedded_Client that resolves its binary via
+	 * the settings-configured path (the last lookup fallback in
+	 * get_inference_binary()).  Cleans up the option after each test via the
+	 * tearDown-registered option delete.
+	 *
+	 * @param string $bin_path Absolute path to a valid (mock) llama-cli binary.
+	 * @return WP_MCP_AI_Embedded_Client
+	 */
+	private function client_with_binary_path( $bin_path ) {
+		update_option( 'wp_mcp_ai_settings', array( 'embedded_binary_path' => $bin_path ) );
+		return new WP_MCP_AI_Embedded_Client();
+	}
 
 	/**
 	 * Create a mock tar.gz archive in the system temp directory.
