@@ -816,15 +816,22 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				$linker_path = $bin_dir . $base_so;
 
 				// Create the SONAME name (lib*.so.MAJOR) for lib*.so.MAJOR.x.y.
-				// Tries a symlink first; falls back to a file copy when symlink()
-				// is blocked by the server (e.g. some shared-hosting environments
-				// such as Cloudways do not allow PHP to create symlinks in the
-				// plugin directory).
+				// Tries a symlink first (when the function is available and
+				// permitted); falls back to a file copy when symlink() is listed
+				// in PHP's disable_functions (e.g. Cloudways) or when the call
+				// itself fails (e.g. permission error).
+				// IMPORTANT: @symlink() does NOT suppress the E_ERROR thrown when
+				// symlink is in disable_functions — only warnings/notices are
+				// suppressed by @.  We must guard with function_exists() first.
 				if ( ! file_exists( $soname_path ) && ! is_link( $soname_path ) ) {
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-					if ( ! @symlink( $basename, $soname_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-						// symlink() failed; copy the versioned file so the dynamic
-						// linker can still find the SONAME at runtime.
+					$soname_created = false;
+					if ( function_exists( 'symlink' ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
+						$soname_created = @symlink( $basename, $soname_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+					}
+					if ( ! $soname_created ) {
+						// symlink() unavailable or failed; copy the versioned file
+						// so the dynamic linker can still find the SONAME at runtime.
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 						$lib_data = file_get_contents( $filepath );
 						if ( false === $lib_data || false === file_put_contents( $soname_path, $lib_data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
@@ -845,14 +852,18 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				}
 
 				// Create the linker-name (lib*.so) pointing at the SONAME.
-				// Falls back to a file copy when symlink() is unavailable.
+				// Falls back to a file copy when symlink() is unavailable or blocked.
 				// No error is logged on copy failure: the linker-name is used by
 				// the compile-time linker (ld), not by the runtime loader.  The
 				// runtime only needs the SONAME (lib*.so.MAJOR) to be present;
 				// absent the linker-name is a minor inconvenience, not a blocker.
 				if ( ! file_exists( $linker_path ) && ! is_link( $linker_path ) ) {
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-					if ( ! @symlink( $soname, $linker_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+					$linker_created = false;
+					if ( function_exists( 'symlink' ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
+						$linker_created = @symlink( $soname, $linker_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+					}
+					if ( ! $linker_created ) {
 						// Copy the SONAME file (symlink or copy) to the linker name.
 						if ( file_exists( $soname_path ) ) {
 							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents

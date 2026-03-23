@@ -562,6 +562,65 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Regression test: when symlink() is listed in PHP's disable_functions the
+	 * old code called @symlink() anyway, which throws an uncatchable E_ERROR
+	 * ("Call to undefined function symlink()") that brought down the entire
+	 * page load — reproducing the 500 error on the provider-diagnostic admin
+	 * page on Cloudways after PR #4416.
+	 *
+	 * The fix guards both symlink() calls with function_exists('symlink').
+	 * When symlink() is unavailable the copy-fallback path must be taken and
+	 * the SONAME file must exist as a plain file afterwards.
+	 *
+	 * This test exercises the copy-fallback path directly by using uopz (when
+	 * available) to make symlink() itself return false, confirming the fallback
+	 * produces a regular file; without uopz the test falls back to asserting
+	 * that the method completes without error (which itself would catch the
+	 * original E_ERROR regression in an environment where symlink is disabled).
+	 */
+	public function test_soname_copy_fallback_when_symlink_function_disabled() {
+		// Plant only the versioned library; no SONAME, no linker-name.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0.0.8480', 'mock-lib-bytes' );
+
+		if ( function_exists( 'uopz_set_return' ) ) {
+			// Make symlink() always return false so the copy-fallback branch is
+			// exercised. This is more targeted than mocking function_exists().
+			uopz_set_return( 'symlink', false );
+			$this->call_private_method( 'create_soname_symlinks', array( $this->tmp_dir ) );
+			uopz_unset_return( 'symlink' );
+
+			// SONAME must exist as a plain file (copy), not a symlink.
+			$soname_path = $this->tmp_dir . '/libmtmd.so.0';
+			$this->assertTrue(
+				file_exists( $soname_path ),
+				'libmtmd.so.0 must exist as a file copy when symlink() is unavailable.'
+			);
+			$this->assertFalse(
+				is_link( $soname_path ),
+				'libmtmd.so.0 must be a plain file (not a symlink) when symlink() fails.'
+			);
+			$this->assertSame(
+				'mock-lib-bytes',
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				file_get_contents( $soname_path ),
+				'libmtmd.so.0 content must match the versioned source file.'
+			);
+		} else {
+			// uopz not available: simply assert the method completes without
+			// error.  In an environment where symlink() is in disable_functions
+			// this call would have thrown E_ERROR before the fix; the assertion
+			// below would never be reached, causing the test to fail.
+			$this->call_private_method( 'create_soname_symlinks', array( $this->tmp_dir ) );
+
+			$this->assertTrue(
+				file_exists( $this->tmp_dir . '/libmtmd.so.0' ),
+				'libmtmd.so.0 must exist after create_soname_symlinks() completes without error.'
+			);
+		}
+	}
+
 	// =========================================================================
 	// Helpers
 	// =========================================================================
