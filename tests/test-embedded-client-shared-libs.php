@@ -467,6 +467,102 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// create_soname_symlinks – copy fallback when symlink() is unavailable
+	// =========================================================================
+
+	/**
+	 * create_soname_symlinks() creates the SONAME file as a copy when a pre-
+	 * existing copy already covers it (simulates the copy-fallback path by
+	 * directly pre-populating the directory with only versioned libs, then
+	 * verifying the SONAME name appears after calling the method).
+	 *
+	 * Regression test: on some shared-hosting environments (e.g. Cloudways)
+	 * PHP's symlink() is blocked, so the previous implementation silently left
+	 * the SONAME file absent and llama-cli failed with
+	 * "cannot open shared object file: libmtmd.so.0".
+	 */
+	public function test_soname_created_as_copy_when_only_versioned_file_present() {
+		// Plant a versioned library directly (no archive), simulating what the
+		// file system looks like after a download where symlinks were skipped.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0.0.8480', 'mock-mtmd-lib' );
+
+		$this->call_private_method( 'create_soname_symlinks', array( $this->tmp_dir ) );
+
+		// The SONAME (libmtmd.so.0) must now exist, either as a symlink or a copy.
+		$soname_path = $this->tmp_dir . '/libmtmd.so.0';
+		// file_exists() returns true for both resolved symlinks and plain files.
+		$this->assertTrue(
+			file_exists( $soname_path ),
+			'libmtmd.so.0 must exist after create_soname_symlinks() (as symlink or copy).'
+		);
+
+		// The linker-name (libmtmd.so) must also exist.
+		$linker_path = $this->tmp_dir . '/libmtmd.so';
+		$this->assertTrue(
+			file_exists( $linker_path ),
+			'libmtmd.so must exist after create_soname_symlinks() (as symlink or copy).'
+		);
+	}
+
+	/**
+	 * Two versioned files for the same library (e.g. libmtmd.so.0.0.8479 and
+	 * libmtmd.so.0.0.8480) must result in exactly one SONAME file, not two
+	 * colliding copies.
+	 */
+	public function test_soname_created_once_when_multiple_versions_present() {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0.0.8479', 'content-8479' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0.0.8480', 'content-8480' );
+
+		$this->call_private_method( 'create_soname_symlinks', array( $this->tmp_dir ) );
+
+		$soname_path = $this->tmp_dir . '/libmtmd.so.0';
+		$this->assertTrue(
+			file_exists( $soname_path ),
+			'libmtmd.so.0 must exist after create_soname_symlinks().'
+		);
+	}
+
+	/**
+	 * get_shared_libs_status() auto-repairs missing SONAME files for existing
+	 * installations where the initial extraction ran before this fix existed.
+	 *
+	 * Regression test: users who installed llama.cpp before the symlink/copy
+	 * logic was added had only the versioned files (e.g. libmtmd.so.0.0.8480)
+	 * and were missing the SONAME (libmtmd.so.0), causing
+	 * "error while loading shared libraries: libmtmd.so.0".
+	 */
+	public function test_get_shared_libs_status_repairs_missing_soname() {
+		// Create a mock binary and plant only the versioned lib (no SONAME).
+		$bin_path     = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $this->tmp_dir . '/libmtmd.so.0.0.8480', 'mock-lib-content' );
+
+		// SONAME must NOT exist before we call get_shared_libs_status().
+		$this->assertFileDoesNotExist( $this->tmp_dir . '/libmtmd.so.0' );
+
+		$status = $fresh_client->get_shared_libs_status();
+
+		// get_shared_libs_status() must have triggered SONAME creation.
+		$soname_path = $this->tmp_dir . '/libmtmd.so.0';
+		$this->assertTrue(
+			file_exists( $soname_path ),
+			'get_shared_libs_status() must auto-repair missing libmtmd.so.0.'
+		);
+
+		// The SONAME must appear in the returned libs list.
+		$this->assertContains(
+			'libmtmd.so.0',
+			$status['libs'],
+			'libmtmd.so.0 must appear in the libs list returned by get_shared_libs_status().'
+		);
+	}
+
+	// =========================================================================
 	// Helpers
 	// =========================================================================
 
