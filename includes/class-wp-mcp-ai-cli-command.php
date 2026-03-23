@@ -1300,6 +1300,31 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-slash-command.php';
 	}
 
+	// Load Assistant CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Assistant_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-assistant-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-assistant-command.php';
+	}
+
+	// Load Tool CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Tool_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-tool-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-tool-command.php';
+	}
+
+	// Load Settings CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Settings_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-settings-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-settings-command.php';
+	}
+
+	// Load Credential CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Credential_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-credential-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-credential-command.php';
+	}
+
+	// Load Log CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Log_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-log-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-log-command.php';
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
