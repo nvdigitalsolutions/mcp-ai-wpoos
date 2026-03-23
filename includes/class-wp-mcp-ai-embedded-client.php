@@ -486,10 +486,10 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				);
 			}
 
-			// --- Step 3: Extract llama-cli from the tar.gz archive ---
+			// --- Step 3: Extract llama-cli and shared libraries from the tar.gz archive ---
 			$bin_name    = 'llama-cli';
 			$dest_path   = $bin_dir . $bin_name;
-			$extract_err = $this->extract_binary_from_archive( $tmp_archive, $bin_name, $dest_path );
+			$extract_err = $this->extract_binary_from_archive( $tmp_archive, $bin_name, $dest_path, $bin_dir );
 
 			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
 
@@ -606,18 +606,23 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		}
 
 		/**
-		 * Extract the `llama-cli` binary from a downloaded tar.gz archive.
+		 * Extract the `llama-cli` binary and shared libraries from a downloaded tar.gz archive.
 		 *
 		 * The llama.cpp release tar.gz contains the binary at a path like
-		 * `llama-bXXXX-bin-ubuntu-x64/llama-cli`. We scan all entries and copy
-		 * the first file whose base name matches $bin_name to $dest_path.
+		 * `llama-bXXXX-bin-ubuntu-x64/llama-cli` and shared libraries such as
+		 * `libmtmd.so.0`, `libllama.so`, etc. We scan all entries, copy the first
+		 * file whose base name matches $bin_name to $dest_path, and copy any shared
+		 * library files (matching `lib*.so` or `lib*.so.N`) into $bin_dir so the
+		 * dynamic linker can find them at runtime via LD_LIBRARY_PATH.
 		 *
 		 * @param string $archive_path Absolute path to the downloaded tar.gz archive.
 		 * @param string $bin_name     Expected binary filename (e.g. 'llama-cli').
 		 * @param string $dest_path    Absolute destination path for the binary.
+		 * @param string $bin_dir      Directory to extract shared libraries into.
+		 *                             Defaults to the directory of $dest_path.
 		 * @return true|WP_Error
 		 */
-		private function extract_binary_from_archive( $archive_path, $bin_name, $dest_path ) {
+		private function extract_binary_from_archive( $archive_path, $bin_name, $dest_path, $bin_dir = '' ) {
 			if ( ! class_exists( 'PharData' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_phar_unavailable',
@@ -625,12 +630,21 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				);
 			}
 
+			// Default $bin_dir to the directory that will contain the binary.
+			if ( '' === $bin_dir ) {
+				$bin_dir = dirname( $dest_path );
+			}
+			$bin_dir = trailingslashit( $bin_dir );
+
 			try {
-				$phar  = new PharData( $archive_path );
-				$found = false;
+				$phar    = new PharData( $archive_path );
+				$found   = false;
+				$lib_pat = '/^lib.+\.so(\.\d+)*$/';
 
 				foreach ( new RecursiveIteratorIterator( $phar ) as $entry ) {
-					if ( $entry->getFilename() === $bin_name ) {
+					$filename = $entry->getFilename();
+
+					if ( $filename === $bin_name ) {
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 						$contents = file_get_contents( $entry->getPathname() );
 						if ( false === $contents ) {
@@ -647,7 +661,26 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 							);
 						}
 						$found = true;
-						break;
+					} elseif ( 1 === preg_match( $lib_pat, $filename ) ) {
+						// Extract shared libraries (e.g. libmtmd.so.0, libllama.so)
+						// into the binary directory so they are found at runtime.
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+						$lib_contents = file_get_contents( $entry->getPathname() );
+						if ( false !== $lib_contents ) {
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+							$wrote = file_put_contents( $bin_dir . $filename, $lib_contents );
+							if ( false === $wrote && class_exists( 'WP_MCP_AI_Logger' ) ) {
+								WP_MCP_AI_Logger::log_event(
+									'embedded_lib_extract_failed',
+									sprintf(
+										/* translators: %s: shared library filename */
+										__( 'Could not extract shared library "%s" from archive. The binary may fail at runtime if this library is required.', 'mcp-ai-wpoos' ),
+										$filename
+									),
+									array( 'dest' => $bin_dir . $filename )
+								);
+							}
+						}
 					}
 				}
 			} catch ( Exception $e ) {
@@ -852,6 +885,11 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 * Using proc_open with a command array avoids shell-expansion and prevents
 		 * command injection regardless of the content of the arguments.
 		 *
+		 * On Linux the binary's own directory is prepended to LD_LIBRARY_PATH so
+		 * that shared libraries bundled alongside llama-cli (e.g. libmtmd.so.0,
+		 * libllama.so) are found by the dynamic linker even when they are not
+		 * installed system-wide.
+		 *
 		 * @param string $binary Absolute path to the llama-cli binary.
 		 * @param array  $args   Argument tokens (each a separate element).
 		 * @return string|WP_Error Trimmed stdout/stderr output, or WP_Error on failure.
@@ -865,8 +903,24 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				2 => array( 'pipe', 'w' ),  // stderr.
 			);
 
+			// On Linux, prepend the binary's own directory to LD_LIBRARY_PATH so
+			// shared libraries (e.g. libmtmd.so.0) that were extracted alongside
+			// llama-cli are resolved without requiring a system-wide install.
+			// getenv() with no arguments returns all current env vars (PHP 7.4+).
+			$env      = null;
+			$platform = $this->detect_platform();
+			if ( 'linux' === $platform['os'] ) {
+				$bin_dir     = dirname( $binary );
+				$current_env = getenv();
+				if ( is_array( $current_env ) ) {
+					$ld_path                       = $current_env['LD_LIBRARY_PATH'] ?? '';
+					$current_env['LD_LIBRARY_PATH'] = $bin_dir . ( '' !== $ld_path ? ':' . $ld_path : '' );
+					$env                           = $current_env;
+				}
+			}
+
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open
-			$process = proc_open( $cmd, $descriptors, $pipes );
+			$process = proc_open( $cmd, $descriptors, $pipes, null, $env );
 
 			if ( ! is_resource( $process ) ) {
 				return new WP_Error(
@@ -1047,7 +1101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					return sprintf(
 						/* translators: %1$s: plugin bin directory */
 						__(
-							"Install llama-cli on Linux:\n\n1. Download the latest release archive from:\n   https://github.com/ggml-org/llama.cpp/releases/latest\n   (download the file named like 'llama-bXXXX-bin-ubuntu-x64.tar.gz')\n\n2. Extract and install the binary:\n   tar -xzf llama-bXXXX-bin-ubuntu-x64.tar.gz llama-cli\n   mkdir -p %1\$s\n   mv llama-cli %1\$s/llama-cli\n   chmod +x %1\$s/llama-cli\n\n3. Verify:\n   %1\$s/llama-cli --version",
+							"Install llama-cli on Linux:\n\n1. Download the latest release archive from:\n   https://github.com/ggml-org/llama.cpp/releases/latest\n   (download the file named like 'llama-bXXXX-bin-ubuntu-x64.tar.gz')\n\n2. Extract and install the binary and shared libraries:\n   tar -xzf llama-bXXXX-bin-ubuntu-x64.tar.gz\n   mkdir -p %1\$s\n   mv llama-bXXXX-bin-ubuntu-x64/llama-cli %1\$s/llama-cli\n   cp llama-bXXXX-bin-ubuntu-x64/lib*.so* %1\$s/ 2>/dev/null || true\n   chmod +x %1\$s/llama-cli\n\n3. Verify:\n   %1\$s/llama-cli --version",
 							'mcp-ai-wpoos'
 						),
 						$plugin_dir . 'bin/llama.cpp'
