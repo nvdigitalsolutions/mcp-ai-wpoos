@@ -479,6 +479,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
 					$enable_embedded   = $embedded_settings['enabled'];
 					$embedded_model    = $embedded_settings['model'];
+					// Check server-side binary status (shown regardless of enable_embedded).
+					$llama_binary = self::get_llama_binary_status();
 					?>
 				<div class="card">
 					<h2><?php esc_html_e( '8. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
@@ -514,6 +516,54 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<th><?php esc_html_e( 'Model Type', 'mcp-ai-wpoos' ); ?></th>
 								<td><?php esc_html_e( 'WebLLM (Client-side, runs in browser using WebGPU/WebAssembly)', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Server-Side Binary (llama-cli)', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $llama_binary['found'] ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Found', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( $llama_binary['path'] ); ?></code>
+									<?php else : ?>
+										<span style="color: #888;">— <?php esc_html_e( 'Not installed', 'mcp-ai-wpoos' ); ?></span>
+										<em><?php esc_html_e( '(optional — required only for server-side inference)', 'mcp-ai-wpoos' ); ?></em>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php if ( $llama_binary['found'] ) : ?>
+							<tr>
+								<th><?php esc_html_e( 'Binary Executable', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $llama_binary['executable'] ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'No — run: chmod +x', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Shared Libraries', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $llama_binary['shared_libs_ok'] ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'All resolved', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Missing libraries detected', 'mcp-ai-wpoos' ); ?></span>
+										<ul style="margin: 5px 0 5px 20px; list-style: disc;">
+											<?php foreach ( $llama_binary['missing_libs'] as $lib ) : ?>
+												<li><code><?php echo esc_html( $lib ); ?></code></li>
+											<?php endforeach; ?>
+										</ul>
+										<p class="description" style="margin-top: 5px;">
+											<?php esc_html_e( 'Fix: install the missing libraries via your package manager (e.g. apt install &lt;libname&gt;), or replace the binary with a statically-linked llama-cli build from the llama.cpp releases page.', 'mcp-ai-wpoos' ); ?>
+										</p>
+									<?php endif; ?>
+									<?php if ( ! empty( $llama_binary['ldd_output'] ) ) : ?>
+										<details style="margin-top: 8px;">
+											<summary style="cursor: pointer;"><?php esc_html_e( 'Full ldd output', 'mcp-ai-wpoos' ); ?></summary>
+											<pre style="font-size: 11px; overflow-x: auto; white-space: pre-wrap; background: #f6f7f7; padding: 8px; margin-top: 4px;"><?php echo esc_html( $llama_binary['ldd_output'] ); ?></pre>
+										</details>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php endif; ?>
 						</tbody>
 					</table>
 
@@ -1388,6 +1438,166 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		}
 
 		/**
+		 * Detect the llama-cli binary and check its shared-library dependencies.
+		 *
+		 * Searches in the plugin's own bin/llama.cpp directory first, then common
+		 * system paths. On Linux, uses `ldd` to enumerate dynamic library
+		 * dependencies and flags any that are missing (e.g. libmtmd.so.0).
+		 *
+		 * @return array {
+		 *   @type bool   $found        Whether a binary was located.
+		 *   @type string $path         Absolute path of the located binary (empty if not found).
+		 *   @type bool   $executable   Whether the binary has the executable bit set.
+		 *   @type bool   $shared_libs_ok  True when all dynamic dependencies resolve.
+		 *   @type array  $missing_libs    Library names that could not be resolved.
+		 *   @type string $ldd_output      Raw ldd output (empty on non-Linux or when ldd unavailable).
+		 *   @type string $error           Human-readable error summary (empty on success).
+		 * }
+		 */
+		public static function get_llama_binary_status() {
+			$result = array(
+				'found'          => false,
+				'path'           => '',
+				'executable'     => false,
+				'shared_libs_ok' => false,
+				'missing_libs'   => array(),
+				'ldd_output'     => '',
+				'error'          => '',
+			);
+
+			// Candidate paths: plugin-bundled binary first, then common system locations.
+			$plugin_bin_dir  = defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH : '';
+			$candidate_paths = array();
+
+			if ( $plugin_bin_dir ) {
+				// The path seen in the reported error (flat layout).
+				$candidate_paths[] = $plugin_bin_dir . 'bin/llama.cpp/llama-cli';
+				// Platform-specific subdirectories that older releases used.
+				$candidate_paths[] = $plugin_bin_dir . 'bin/llama.cpp/linux-x64/llama-cli';
+				$candidate_paths[] = $plugin_bin_dir . 'bin/llama.cpp/llama.cpp-linux-x64/llama-cli';
+				$candidate_paths[] = $plugin_bin_dir . 'bin/llama.cpp/Linux-x86_64/llama-cli';
+			}
+
+			// Common system-wide installation paths.
+			$candidate_paths[] = '/usr/local/bin/llama-cli';
+			$candidate_paths[] = '/usr/bin/llama-cli';
+
+			// Locate the first existing binary.
+			$binary_path = '';
+			foreach ( $candidate_paths as $candidate ) {
+				if ( file_exists( $candidate ) ) {
+					$binary_path = $candidate;
+					break;
+				}
+			}
+
+			if ( ! $binary_path ) {
+				$result['error'] = __( 'No llama-cli binary found in the plugin bin directory or common system paths.', 'mcp-ai-wpoos' );
+				return $result;
+			}
+
+			$result['found'] = true;
+			$result['path']  = $binary_path;
+			$result['executable'] = is_executable( $binary_path );
+
+			// On Linux, use ldd to check shared-library dependencies.
+			if ( 'Linux' !== PHP_OS_FAMILY ) {
+				$result['shared_libs_ok'] = true;
+				return $result;
+			}
+
+			// Verify proc_open is available (needed to run ldd).
+			$disabled_functions = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
+			if ( ! function_exists( 'proc_open' ) || in_array( 'proc_open', $disabled_functions, true ) ) {
+				$result['error'] = __( 'proc_open() is disabled — cannot run ldd to verify shared library dependencies.', 'mcp-ai-wpoos' );
+				return $result;
+			}
+
+			// Locate ldd via well-known paths (avoids shell_exec / which).
+			$ldd_bin = '';
+			foreach ( array( '/usr/bin/ldd', '/usr/local/bin/ldd', '/bin/ldd' ) as $candidate_ldd ) {
+				if ( file_exists( $candidate_ldd ) ) {
+					$ldd_bin = $candidate_ldd;
+					break;
+				}
+			}
+
+			if ( ! $ldd_bin ) {
+				$result['error'] = __( 'ldd not found on this system — cannot verify shared library dependencies.', 'mcp-ai-wpoos' );
+				return $result;
+			}
+
+			// Validate the binary path is within an expected directory before passing to proc_open.
+			$realpath        = realpath( $binary_path );
+			$plugin_bin_real = defined( 'WP_MCP_AI_PATH' ) ? realpath( WP_MCP_AI_PATH . 'bin' ) : '';
+			$allowed_dirs    = array( '/usr/local/bin', '/usr/bin' );
+			if ( $plugin_bin_real ) {
+				$allowed_dirs[] = $plugin_bin_real;
+			}
+			$path_allowed = false;
+			if ( $realpath ) {
+				foreach ( $allowed_dirs as $allowed ) {
+					if ( 0 === strpos( $realpath, trailingslashit( $allowed ) ) ) {
+						$path_allowed = true;
+						break;
+					}
+				}
+			}
+			if ( ! $path_allowed ) {
+				$result['error'] = __( 'Binary path is outside expected directories — cannot run ldd.', 'mcp-ai-wpoos' );
+				return $result;
+			}
+
+			// Run: ldd <binary_path>.
+			$cmd         = array( $ldd_bin, $realpath );
+			$descriptors = array(
+				0 => array( 'pipe', 'r' ),
+				1 => array( 'pipe', 'w' ),
+				2 => array( 'pipe', 'w' ),
+			);
+
+			$process = proc_open( $cmd, $descriptors, $pipes );
+			if ( ! is_resource( $process ) ) {
+				$result['error'] = __( 'Failed to launch ldd process.', 'mcp-ai-wpoos' );
+				return $result;
+			}
+
+			fclose( $pipes[0] );
+			$stdout = stream_get_contents( $pipes[1] );
+			$stderr = stream_get_contents( $pipes[2] );
+			fclose( $pipes[1] );
+			fclose( $pipes[2] );
+			proc_close( $process );
+
+			$stdout                  = is_string( $stdout ) ? $stdout : '';
+			$stderr                  = is_string( $stderr ) ? $stderr : '';
+			$ldd_output              = $stdout . $stderr;
+			$result['ldd_output']    = $ldd_output;
+			$result['shared_libs_ok'] = true;
+
+			// Parse ldd output for "not found" entries.
+			// Example line: "   libmtmd.so.0 => not found"
+			$lines = explode( "\n", $ldd_output );
+			foreach ( $lines as $line ) {
+				// Extract the library name from "    libfoo.so.1 => not found".
+				if ( preg_match( '/^\s*([\w.-]+)\s*=>\s*not found/i', $line, $matches ) ) {
+					$result['missing_libs'][] = $matches[1];
+					$result['shared_libs_ok'] = false;
+				}
+			}
+
+			if ( ! $result['shared_libs_ok'] ) {
+				$result['error'] = sprintf(
+					/* translators: %s: comma-separated list of missing shared library names */
+					__( 'Missing shared libraries: %s. Install them on the server (e.g. via apt/yum) or replace the binary with a statically-linked build.', 'mcp-ai-wpoos' ),
+					implode( ', ', $result['missing_libs'] )
+				);
+			}
+
+			return $result;
+		}
+
+		/**
 		 * Test Embedded LLM connection.
 		 *
 		 * Tests configuration for client-side WebLLM models.
@@ -1431,16 +1641,42 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					$selected_model_name = $available_models[ $selected_model ];
 				}
 
+				// Check llama-cli server-side binary status and include it in the response.
+				$binary_status = self::get_llama_binary_status();
+
+				$details = array(
+					__( 'Available Models', 'mcp-ai-wpoos' )  => $model_count,
+					__( 'Selected Model', 'mcp-ai-wpoos' )    => $selected_model_name,
+					__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
+					__( 'Model Type', 'mcp-ai-wpoos' )        => __( 'WebLLM (Client-side)', 'mcp-ai-wpoos' ),
+					__( 'Runtime', 'mcp-ai-wpoos' )           => __( 'Browser (WebGPU/WebAssembly)', 'mcp-ai-wpoos' ),
+				);
+
+				if ( $binary_status['found'] ) {
+					$details[ __( 'Binary Path', 'mcp-ai-wpoos' ) ]       = $binary_status['path'];
+					$details[ __( 'Binary Executable', 'mcp-ai-wpoos' ) ] = $binary_status['executable']
+						? __( 'Yes', 'mcp-ai-wpoos' )
+						: __( 'No (run: chmod +x)', 'mcp-ai-wpoos' );
+					$details[ __( 'Shared Libraries', 'mcp-ai-wpoos' ) ]  = $binary_status['shared_libs_ok']
+						? __( 'All resolved ✓', 'mcp-ai-wpoos' )
+						: sprintf(
+							/* translators: %s: comma-separated list of missing shared library names */
+							__( 'Missing: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $binary_status['missing_libs'] )
+						);
+				} else {
+					$details[ __( 'Server-Side Binary', 'mcp-ai-wpoos' ) ] = __( 'Not installed (optional — only needed for server-side inference)', 'mcp-ai-wpoos' );
+				}
+
+				$message = __( 'Embedded LLM configuration verified!', 'mcp-ai-wpoos' );
+				if ( $binary_status['found'] && ! $binary_status['shared_libs_ok'] ) {
+					$message = __( 'Embedded LLM configured, but llama-cli binary has missing shared library dependencies (see details below).', 'mcp-ai-wpoos' );
+				}
+
 				wp_send_json_success(
 					array(
-						'message' => __( 'Embedded LLM configuration verified!', 'mcp-ai-wpoos' ),
-						'details' => array(
-							__( 'Available Models', 'mcp-ai-wpoos' )  => $model_count,
-							__( 'Selected Model', 'mcp-ai-wpoos' )    => $selected_model_name,
-							__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
-							__( 'Model Type', 'mcp-ai-wpoos' )        => __( 'WebLLM (Client-side)', 'mcp-ai-wpoos' ),
-							__( 'Runtime', 'mcp-ai-wpoos' )           => __( 'Browser (WebGPU/WebAssembly)', 'mcp-ai-wpoos' ),
-						),
+						'message' => $message,
+						'details' => $details,
 					)
 				);
 			} catch ( Exception $e ) {

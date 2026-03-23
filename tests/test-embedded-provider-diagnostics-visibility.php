@@ -157,4 +157,77 @@ class WP_MCP_AI_Embedded_Provider_Diagnostics_Visibility_Test extends WP_UnitTes
 			'When Pro is active, embedded section should be visible (correct constant is used)'
 		);
 	}
+
+	/**
+	 * Test that get_llama_binary_status returns a well-structured result.
+	 *
+	 * Verifies the returned array always contains all expected keys regardless
+	 * of whether a binary is installed on the system running the tests.
+	 */
+	public function test_get_llama_binary_status_returns_expected_keys() {
+		$status = WP_MCP_AI_Provider_Diagnostics::get_llama_binary_status();
+
+		$this->assertIsArray( $status, 'get_llama_binary_status() must return an array' );
+
+		foreach ( array( 'found', 'path', 'executable', 'shared_libs_ok', 'missing_libs', 'ldd_output', 'error' ) as $key ) {
+			$this->assertArrayHasKey( $key, $status, "Result must contain key: {$key}" );
+		}
+	}
+
+	/**
+	 * Test that get_llama_binary_status reports not-found when no binary is present.
+	 *
+	 * In CI and standard test environments there is no llama-cli binary, so
+	 * the method should return found=false and an empty path.
+	 */
+	public function test_get_llama_binary_status_not_found_in_test_env() {
+		// If a binary actually exists on this machine, skip the negative assertion.
+		$system_paths = array( '/usr/local/bin/llama-cli', '/usr/bin/llama-cli' );
+		foreach ( $system_paths as $path ) {
+			if ( file_exists( $path ) ) {
+				$this->markTestSkipped( 'llama-cli is installed at ' . $path . ' — skipping not-found assertion.' );
+			}
+		}
+		if ( defined( 'WP_MCP_AI_PATH' ) ) {
+			$plugin_paths = array(
+				WP_MCP_AI_PATH . 'bin/llama.cpp/llama-cli',
+				WP_MCP_AI_PATH . 'bin/llama.cpp/linux-x64/llama-cli',
+			);
+			foreach ( $plugin_paths as $path ) {
+				if ( file_exists( $path ) ) {
+					$this->markTestSkipped( 'llama-cli found at ' . $path . ' — skipping not-found assertion.' );
+				}
+			}
+		}
+
+		$status = WP_MCP_AI_Provider_Diagnostics::get_llama_binary_status();
+
+		$this->assertFalse( $status['found'], 'Binary should not be found in test environment' );
+		$this->assertSame( '', $status['path'], 'Path should be empty when binary is not found' );
+		$this->assertNotEmpty( $status['error'], 'An error message should be set when binary is not found' );
+		$this->assertIsArray( $status['missing_libs'], 'missing_libs should always be an array' );
+	}
+
+	/**
+	 * Test that the diagnostics page HTML includes the server-side binary row.
+	 *
+	 * When the Pro addon is active the table must always render the
+	 * "Server-Side Binary" row so users can see whether llama-cli is installed.
+	 */
+	public function test_embedded_section_includes_binary_status_row() {
+		// Skip if Pro addon is not active.
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Pro addon not active' );
+		}
+
+		ob_start();
+		WP_MCP_AI_Provider_Diagnostics::render_page();
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString(
+			'Server-Side Binary (llama-cli)',
+			$output,
+			'The Embedded LLM table must contain a Server-Side Binary row'
+		);
+	}
 }
