@@ -221,6 +221,164 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// create_soname_symlinks – SONAME symlink creation
+	// =========================================================================
+
+	/**
+	 * Test that extract_binary_from_archive() creates SONAME symlink for a
+	 * versioned shared library (lib*.so.X.Y.Z → lib*.so.X and lib*.so).
+	 *
+	 * Regression test: recent llama.cpp releases ship lib*.so.X.Y.Z as the
+	 * real file while lib*.so.X (SONAME) and lib*.so are symlinks that
+	 * PharData cannot extract.  The binary fails at runtime with
+	 * "error while loading shared libraries: libmtmd.so.0" unless we
+	 * create the missing SONAME symlinks after extraction.
+	 */
+	public function test_soname_symlinks_created_for_versioned_lib() {
+		if ( ! class_exists( 'PharData' ) ) {
+			$this->markTestSkipped( 'PharData extension is not available.' );
+		}
+
+		// Archive that mimics a recent llama.cpp release: only the versioned
+		// file is present as a regular entry; the symlinks are not.
+		$archive_path = $this->create_mock_archive(
+			array(
+				'bundle/llama-cli'         => 'mock-binary-content',
+				'bundle/libmtmd.so.0.9.8'  => 'mock-mtmd-lib-content',
+				'bundle/libggml.so.0.9.8'  => 'mock-ggml-lib-content',
+			)
+		);
+
+		$dest_path = $this->tmp_dir . '/llama-cli';
+		$bin_dir   = $this->tmp_dir;
+
+		$result = $this->call_private_method(
+			'extract_binary_from_archive',
+			array( $archive_path, 'llama-cli', $dest_path, $bin_dir )
+		);
+
+		$this->assertTrue( $result, 'extract_binary_from_archive() must return true on success.' );
+		$this->assertFileExists( $dest_path, 'llama-cli binary must be extracted.' );
+
+		// Versioned files must be present.
+		$this->assertFileExists( $bin_dir . '/libmtmd.so.0.9.8', 'Versioned libmtmd must be extracted.' );
+		$this->assertFileExists( $bin_dir . '/libggml.so.0.9.8', 'Versioned libggml must be extracted.' );
+
+		// SONAME symlinks (lib*.so.0) must be created automatically.
+		$this->assertTrue(
+			is_link( $bin_dir . '/libmtmd.so.0' ),
+			'SONAME symlink libmtmd.so.0 must be created so the binary can load it at runtime.'
+		);
+		$this->assertTrue(
+			is_link( $bin_dir . '/libggml.so.0' ),
+			'SONAME symlink libggml.so.0 must be created so the binary can load it at runtime.'
+		);
+
+		// Linker-name symlinks (lib*.so) must also be created.
+		$this->assertTrue(
+			is_link( $bin_dir . '/libmtmd.so' ),
+			'Linker-name symlink libmtmd.so must be created.'
+		);
+		$this->assertTrue(
+			is_link( $bin_dir . '/libggml.so' ),
+			'Linker-name symlink libggml.so must be created.'
+		);
+
+		// Symlink targets must resolve to the versioned files.
+		$this->assertEquals(
+			'libmtmd.so.0.9.8',
+			readlink( $bin_dir . '/libmtmd.so.0' ),
+			'SONAME symlink must point to the versioned file.'
+		);
+		$this->assertEquals(
+			'libmtmd.so.0',
+			readlink( $bin_dir . '/libmtmd.so' ),
+			'Linker-name symlink must point to the SONAME.'
+		);
+
+		@unlink( $archive_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+	}
+
+	/**
+	 * Test that create_soname_symlinks() does not overwrite existing files.
+	 *
+	 * If a lib*.so.X file was already extracted from the archive (e.g. an
+	 * older build that shipped the SONAME as a regular file), the method
+	 * must not replace it with a symlink.
+	 */
+	public function test_soname_symlinks_not_overwritten() {
+		if ( ! class_exists( 'PharData' ) ) {
+			$this->markTestSkipped( 'PharData extension is not available.' );
+		}
+
+		// Archive with both the versioned file and the SONAME as regular files.
+		$archive_path = $this->create_mock_archive(
+			array(
+				'bundle/llama-cli'        => 'mock-binary-content',
+				'bundle/libmtmd.so.0.9.8' => 'versioned-content',
+				'bundle/libmtmd.so.0'     => 'soname-content',
+			)
+		);
+
+		$dest_path = $this->tmp_dir . '/llama-cli';
+		$bin_dir   = $this->tmp_dir;
+
+		$this->call_private_method(
+			'extract_binary_from_archive',
+			array( $archive_path, 'llama-cli', $dest_path, $bin_dir )
+		);
+
+		// The SONAME file that came from the archive must NOT be replaced by
+		// a symlink; it is a regular file and must stay that way.
+		$this->assertFalse(
+			is_link( $bin_dir . '/libmtmd.so.0' ),
+			'Existing SONAME file must not be replaced by a symlink.'
+		);
+		$this->assertEquals(
+			'soname-content',
+			file_get_contents( $bin_dir . '/libmtmd.so.0' ),
+			'Existing SONAME file content must be preserved.'
+		);
+
+		@unlink( $archive_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+	}
+
+	/**
+	 * Test that create_soname_symlinks() skips files that are already SONAME-
+	 * level versioned (lib*.so.X with no further dot).
+	 *
+	 * A file like libmtmd.so.0 is already at SONAME granularity; we must not
+	 * try to create libmtmd.so.0 → libmtmd.so.0 (i.e. self-referential symlink).
+	 */
+	public function test_soname_symlinks_skips_soname_level_files() {
+		if ( ! class_exists( 'PharData' ) ) {
+			$this->markTestSkipped( 'PharData extension is not available.' );
+		}
+
+		// Archive with only a SONAME-level file (no full version like .0.9.8).
+		$archive_path = $this->create_mock_archive(
+			array(
+				'bundle/llama-cli'    => 'mock-binary-content',
+				'bundle/libmtmd.so.0' => 'soname-content',
+			)
+		);
+
+		$dest_path = $this->tmp_dir . '/llama-cli';
+		$bin_dir   = $this->tmp_dir;
+
+		$this->call_private_method(
+			'extract_binary_from_archive',
+			array( $archive_path, 'llama-cli', $dest_path, $bin_dir )
+		);
+
+		// libmtmd.so.0 exists as a regular file; it must not be changed.
+		$this->assertFileExists( $bin_dir . '/libmtmd.so.0' );
+		$this->assertFalse( is_link( $bin_dir . '/libmtmd.so.0' ), 'SONAME file must not become a symlink.' );
+
+		@unlink( $archive_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+	}
+
+	// =========================================================================
 	// Helpers
 	// =========================================================================
 

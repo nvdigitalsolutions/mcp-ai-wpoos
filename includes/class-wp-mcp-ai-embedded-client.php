@@ -705,7 +705,102 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				);
 			}
 
+			// Create SONAME symlinks for any versioned shared libraries that were
+			// extracted. Recent llama.cpp releases ship lib*.so.X.Y.Z as the real
+			// file and lib*.so.X / lib*.so as symlinks. PHP's PharData cannot
+			// extract symlink entries from tar archives, so the SONAME
+			// (e.g. libmtmd.so.0) is never written to disk, causing the binary to
+			// fail with "error while loading shared libraries: libmtmd.so.0".
+			$this->create_soname_symlinks( $bin_dir );
+
 			return true;
+		}
+
+		/**
+		 * Create missing SONAME and linker-name symlinks for versioned shared
+		 * libraries in $bin_dir.
+		 *
+		 * llama.cpp tar.gz archives contain:
+		 *  libmtmd.so.0.9.8  – actual ELF shared object
+		 *  libmtmd.so.0      – symlink → libmtmd.so.0.9.8  (SONAME)
+		 *  libmtmd.so        – symlink → libmtmd.so.0       (linker name)
+		 *
+		 * PharData silently skips symlink entries, so only the versioned file is
+		 * extracted. This method scans $bin_dir for lib*.so.MAJOR.rest files and
+		 * creates lib*.so.MAJOR and lib*.so symlinks when they are absent, ensuring
+		 * the dynamic linker can resolve the binary's SONAME at runtime.
+		 *
+		 * @param string $bin_dir Absolute path to the directory (with trailing slash).
+		 */
+		private function create_soname_symlinks( $bin_dir ) {
+			$bin_dir = trailingslashit( $bin_dir );
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob
+			$versioned_libs = glob( $bin_dir . 'lib*.so.*' );
+			if ( empty( $versioned_libs ) ) {
+				return;
+			}
+
+			foreach ( $versioned_libs as $filepath ) {
+				$basename = basename( $filepath );
+
+				// Match lib<name>.so.<MAJOR>.<minor_rest> only.
+				// lib<name>.so.0       → already a SONAME; skip (no dot after major).
+				// lib<name>.so.0.9.8   → versioned; create .so.0 and .so symlinks.
+				// Use [^.]+ for the name to avoid matching malformed names (e.g. lib..so.*).
+				if ( ! preg_match( '/^lib[^.]+\.so\.\d+\./', $basename ) ) {
+					continue;
+				}
+
+				// Extract the base prefix (lib<name>.so) and the major version number.
+				// The earlier pattern guarantees this match will succeed.
+				if ( ! preg_match( '/^(lib[^.]+\.so)\.(\d+)/', $basename, $m ) ) {
+					continue;
+				}
+				$base_so     = $m[1]; // e.g. libmtmd.so
+				$major       = $m[2]; // e.g. 0
+				$soname      = $base_so . '.' . $major; // e.g. libmtmd.so.0
+				$soname_path = $bin_dir . $soname;
+				$linker_path = $bin_dir . $base_so;
+
+				// Create the SONAME symlink (lib*.so.MAJOR → lib*.so.MAJOR.x.y).
+				if ( ! file_exists( $soname_path ) && ! is_link( $soname_path ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
+					if ( ! @symlink( $basename, $soname_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'embedded_lib_symlink_failed',
+								sprintf(
+									/* translators: 1: symlink filename, 2: target filename */
+									__( 'Could not create shared library symlink "%1$s" -> "%2$s". The binary may fail at runtime.', 'mcp-ai-wpoos' ),
+									$soname,
+									$basename
+								),
+								array( 'path' => $soname_path )
+							);
+						}
+					}
+				}
+
+				// Create the linker-name symlink (lib*.so → lib*.so.MAJOR).
+				if ( ! file_exists( $linker_path ) && ! is_link( $linker_path ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
+					if ( ! @symlink( $soname, $linker_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'embedded_lib_symlink_failed',
+								sprintf(
+									/* translators: 1: symlink filename, 2: target filename */
+									__( 'Could not create shared library symlink "%1$s" -> "%2$s". The binary may fail at runtime.', 'mcp-ai-wpoos' ),
+									$base_so,
+									$soname
+								),
+								array( 'path' => $linker_path )
+							);
+						}
+					}
+				}
+			}
 		}
 
 		// -------------------------------------------------------------------------
