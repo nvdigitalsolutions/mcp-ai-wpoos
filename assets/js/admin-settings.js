@@ -903,6 +903,7 @@ window.wpMcpAiSaveExpandedState = function() {
         initProviderPriorityList();
         initEmbeddedModelManagement();
         initLlamaBinaryDownload();
+        initLlamaReinstallButton();
         
         log('All admin handlers initialized successfully');
     });
@@ -1228,6 +1229,55 @@ window.wpMcpAiSaveExpandedState = function() {
         });
 
         log('llama.cpp binary download button initialized');
+    }
+
+    function initLlamaReinstallButton() {
+        const $btn = $('#wp-mcp-ai-reinstall-binary');
+
+        if ($btn.length === 0) {
+            return;
+        }
+
+        const $container = $btn.closest('.wp-mcp-ai-embedded-model-management');
+        const nonce = $container.data('nonce');
+        const $status = $('#wp-mcp-ai-binary-reinstall-status');
+
+        $btn.on('click', function(e) {
+            e.preventDefault();
+
+            if (!confirm('This will re-download and re-install the llama.cpp runtime binary from GitHub, replacing the current installation. Shared libraries (e.g. libmtmd.so.0) will also be restored. Continue?')) {
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Re-installing...');
+            $status.show().html('<span class="dashicons dashicons-update dashicons-spin"></span> Downloading from GitHub...');
+
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                timeout: 300000, // 5 minutes for binary download
+                data: {
+                    action: 'wp_mcp_ai_download_llama_binary',
+                    nonce: nonce
+                }
+            }, {
+                success: function(response) {
+                    if (response.success) {
+                        $status.html('<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span> Re-installed successfully. Reloading...');
+                        setTimeout(function() { window.location.reload(); }, 1500);
+                    } else {
+                        $btn.prop('disabled', false).text('Re-install llama.cpp Binary');
+                        $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> ' + (response.data || 'Re-install failed.'));
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Re-install llama.cpp Binary');
+                    $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> Request failed. Please try again or install manually.');
+                }
+            });
+        });
+
+        log('llama.cpp binary reinstall button initialized');
     }
 
 })(jQuery);
