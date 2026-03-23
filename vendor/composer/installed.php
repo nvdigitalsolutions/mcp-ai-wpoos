@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-diagnostics-test-server-side-llm',
-        'version' => 'dev-copilot/update-diagnostics-test-server-side-llm',
-        'reference' => '9cc7bc3b0b5eb9f2ba192ac962a1441a721958f4',
+        'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
+        'version' => 'dev-copilot/fix-provider-test-page-error',
+        'reference' => '18c0061629b3f8736420d6bd53ed6f242e8d9c10',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-diagnostics-test-server-side-llm',
-            'version' => 'dev-copilot/update-diagnostics-test-server-side-llm',
-            'reference' => '9cc7bc3b0b5eb9f2ba192ac962a1441a721958f4',
+            'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
+            'version' => 'dev-copilot/fix-provider-test-page-error',
+            'reference' => '18c0061629b3f8736420d6bd53ed6f242e8d9c10',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
