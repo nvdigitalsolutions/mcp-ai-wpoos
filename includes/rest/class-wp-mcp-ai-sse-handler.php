@@ -50,6 +50,22 @@ class WP_MCP_AI_SSE_Handler {
 	 * @since 1.0.0
 	 */
 	public function send_sse_headers() {
+		// Disable PHP-level output compression before anything is sent.
+		// zlib.output_compression (and ob_gzhandler) buffer all output until the
+		// script ends, which prevents SSE events from reaching the browser in
+		// real-time and causes ERR_HTTP2_PROTOCOL_ERROR on HTTP/2 connections.
+		// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: ini_set() may be disabled on restricted hosts; failure is non-critical since X-Accel-Buffering: no is the primary mitigation.
+		@ini_set( 'zlib.output_compression', 'Off' );
+		@ini_set( 'output_buffering', 'Off' );
+		// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
+
+		// Discard any existing output buffers (including the one started by
+		// clean_output_buffer() at init) so their contents do not corrupt the
+		// SSE stream before the headers are sent.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/event-stream; charset=UTF-8' );
 			header( 'Cache-Control: no-cache, no-store, must-revalidate, no-transform' );
@@ -78,15 +94,12 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
 
-			// Remove Connection header for HTTP/2.
+			// HTTP/2 does not support the Connection or Transfer-Encoding hop-by-hop
+			// headers. Sending them causes ERR_HTTP2_PROTOCOL_ERROR in browsers.
 			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
 				header_remove( 'Connection' );
+				header_remove( 'Transfer-Encoding' );
 			}
-		}
-
-		// Disable output buffering completely.
-		while ( ob_get_level() > 0 ) {
-			ob_end_flush();
 		}
 
 		// Send retry directive to help clients reconnect if connection drops.
@@ -96,6 +109,31 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+	}
+
+	/**
+	 * Finish an SSE streaming response cleanly.
+	 *
+	 * Replaces bare `exit` at the end of SSE handlers. When running under
+	 * PHP-FPM, `fastcgi_finish_request()` properly closes the FastCGI
+	 * transaction and sends a well-formed HTTP/2 DATA+END_STREAM frame,
+	 * preventing the `ERR_HTTP2_PROTOCOL_ERROR` that a raw `exit()` causes
+	 * (PHP-FPM terminates the connection abruptly, nginx emits RST_STREAM).
+	 *
+	 * After `fastcgi_finish_request()` the PHP process continues briefly for
+	 * any registered shutdown functions; no further output will reach the
+	 * client, so this is safe to use as the final statement in an SSE handler.
+	 *
+	 * Falls back to `exit()` on non-FPM environments (CLI, mod_php, etc.).
+	 *
+	 * @since 1.2.0
+	 */
+	public function finish() {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+			return;
+		}
+		exit;
 	}
 
 	/**
