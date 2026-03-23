@@ -70,8 +70,16 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Content-Type: text/event-stream; charset=UTF-8' );
 			header( 'Cache-Control: no-cache, no-store, must-revalidate, no-transform' );
 			header( 'Pragma: no-cache' );
-			header( 'Connection: keep-alive' );
 			header( 'X-Accel-Buffering: no' );
+
+			// Do NOT send the Connection header. It is a hop-by-hop header that:
+			// - Is forbidden by RFC 7540 §8.1.2.2 in HTTP/2, causing ERR_HTTP2_PROTOCOL_ERROR
+			//   in browsers. PHP runs behind a reverse proxy (Nginx, Apache, Cloudways, etc.)
+			//   so SERVER_PROTOCOL always reflects the backend HTTP/1.1 connection, not the
+			//   actual client protocol. We cannot reliably detect HTTP/2 from PHP.
+			// - Is redundant in HTTP/1.1 (persistent connections are the default since RFC 2616).
+			header_remove( 'Connection' );
+			header_remove( 'Transfer-Encoding' );
 
 			/**
 			 * Filter the Access-Control-Allow-Origin value for SSE streaming responses.
@@ -93,13 +101,6 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Access-Control-Allow-Origin: ' . $allow_origin );
 			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
-
-			// HTTP/2 does not support the Connection or Transfer-Encoding hop-by-hop
-			// headers. Sending them causes ERR_HTTP2_PROTOCOL_ERROR in browsers.
-			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-				header_remove( 'Connection' );
-				header_remove( 'Transfer-Encoding' );
-			}
 		}
 
 		// Send retry directive to help clients reconnect if connection drops.
@@ -316,7 +317,6 @@ class WP_MCP_AI_SSE_Handler {
 			'Content-Type'                 => 'text/event-stream; charset=UTF-8',
 			'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
 			'Pragma'                       => 'no-cache',
-			'Connection'                   => 'keep-alive',
 			'Vary'                         => 'Accept, Authorization',
 			'Access-Control-Allow-Origin'  => $allow_origin,
 			'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
@@ -325,9 +325,12 @@ class WP_MCP_AI_SSE_Handler {
 			'X-Content-Type-Options'       => 'nosniff',
 		);
 
-		if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-			unset( $headers['Connection'] );
-		}
+		// Do NOT include the Connection header. It is forbidden in HTTP/2
+		// (RFC 7540 §8.1.2.2) and causes ERR_HTTP2_PROTOCOL_ERROR. Since PHP
+		// runs behind a reverse proxy, SERVER_PROTOCOL always reflects the
+		// backend HTTP/1.1 connection — we cannot reliably detect the client
+		// protocol from PHP. Connection is also redundant in HTTP/1.1 where
+		// persistent connections are the default.
 
 		$callback = null;
 		$callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {
