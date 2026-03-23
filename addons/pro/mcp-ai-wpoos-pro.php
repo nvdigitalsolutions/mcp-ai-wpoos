@@ -1768,6 +1768,32 @@ if ( $plugins_loaded_fired ) {
 }
 
 /**
+ * Register WP-CLI commands for the Pro addon.
+ *
+ * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
+
+	$wp_mcp_ai_pro_cli_files = array(
+		'class-wp-mcp-ai-pro-cli-status-command.php',
+		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
+		'class-wp-mcp-ai-pro-cli-connection-command.php',
+		'class-wp-mcp-ai-pro-cli-project-command.php',
+		'class-wp-mcp-ai-pro-cli-task-command.php',
+	);
+
+	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
+		$wp_mcp_ai_pro_cli_path = $wp_mcp_ai_pro_cli_dir . $wp_mcp_ai_pro_cli_file;
+		if ( file_exists( $wp_mcp_ai_pro_cli_path ) ) {
+			require_once $wp_mcp_ai_pro_cli_path;
+		}
+	}
+
+	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
+}
+
+/**
  * ============================================================================
  * ACTIVATION / DEACTIVATION
  * ============================================================================
