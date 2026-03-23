@@ -1021,9 +1021,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Check if job is already in a terminal state.
 			$status = isset( $initial_details['status'] ) ? $initial_details['status'] : 'unknown';
 			if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
-				// Job is already done, send completion marker and exit.
+				// Job is already done, send completion marker and finish.
 				$this->sse_handler->send_sse_done();
-				exit;
+				$this->sse_handler->finish();
+				return;
 			}
 
 			// Poll for updates until job completes or times out.
@@ -1082,7 +1083,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 					$this->sse_handler->send_sse_done();
-					exit;
+					$this->sse_handler->finish();
+					return;
 				}
 
 				// Normalize updated details to ensure JSON serializability.
@@ -1101,7 +1103,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( in_array( $current_status, array( 'completed', 'failed' ), true ) ) {
 					// Job finished - send final update and close.
 					$this->sse_handler->send_sse_done();
-					exit;
+					$this->sse_handler->finish();
+					return;
 				}
 			}
 
@@ -1115,7 +1118,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 			$this->sse_handler->send_sse_done();
-			exit;
+			$this->sse_handler->finish();
 		}
 
 		/**
@@ -3232,7 +3235,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			} catch ( Error $e ) {
 				// Log detailed error information for debugging.
 				$error_class = get_class( $e );
@@ -3274,7 +3278,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			}
 
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -3292,7 +3297,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			}
 
 			// Agentic loop with streaming updates.
@@ -3606,7 +3612,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								)
 							);
 							$this->send_sse_done();
-							exit;
+							$this->finish_sse();
+							return;
 						}
 
 						$this->send_sse_event(
@@ -3655,7 +3662,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 					$this->send_sse_done();
-					exit;
+					$this->finish_sse();
+					return;
 				}
 
 				++$iteration;
@@ -3929,7 +3937,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$this->send_sse_done();
 
-			exit;
+			$this->finish_sse();
 		}
 
 		/**
@@ -3962,6 +3970,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function send_sse_done() {
 			$this->sse_handler->send_sse_done();
+		}
+
+		/**
+		 * Finish an SSE streaming response cleanly.
+		 *
+		 * Uses fastcgi_finish_request() when available so that the HTTP/2
+		 * DATA+END_STREAM frame is sent properly, preventing ERR_HTTP2_PROTOCOL_ERROR.
+		 * Falls back to exit() on non-FPM environments.
+		 *
+		 * Delegates to SSE handler.
+		 *
+		 * @since 1.2.0
+		 */
+		protected function finish_sse() {
+			$this->sse_handler->finish();
 		}
 
 		/**

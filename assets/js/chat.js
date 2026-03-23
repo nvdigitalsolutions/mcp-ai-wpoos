@@ -13612,7 +13612,66 @@
                         assistantId: payload.assistant_id,
                         streamCompleted: streamCompleted
                     });
-                    
+
+                    // SSE-to-non-streaming fallback:
+                    // When the stream fails before any data is received (e.g.
+                    // ERR_HTTP2_PROTOCOL_ERROR caused by the server closing the
+                    // HTTP/2 stream before PHP has flushed any body bytes), retry
+                    // the request as a plain JSON POST without the stream flag.
+                    // This mirrors how LM Studio handles responses — it sends a
+                    // complete JSON body rather than an SSE stream, so the same
+                    // non-streaming path works for all providers.
+                    const isNetworkError = error && (
+                        (error.name === 'TypeError' && error.message === 'network error') ||
+                        (error.name === 'TypeError' && typeof error.message === 'string' && error.message.toLowerCase().includes('network'))
+                    );
+                    if (isNetworkError && !streamCompleted) {
+                        if (window.console && console.warn) {
+                            console.warn('[NV oOS] SSE stream failed before receiving data, falling back to non-streaming request');
+                        }
+
+                        // Remove the incomplete streaming message element
+                        if (streamingMessageElement && streamingMessageElement.parentNode) {
+                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                            streamingMessageElement = null;
+                        }
+                        state.thinkingText = null;
+                        state.streamingContent = null;
+
+                        // Build a non-streaming payload (same as payload but without stream flag)
+                        var nonStreamPayload = Object.assign({}, payload);
+                        delete nonStreamPayload.stream;
+
+                        return postJson(
+                            state.config.messagesEndpoint,
+                            nonStreamPayload,
+                            buildJsonHeaders(state),
+                            { state: state }
+                        )
+                            .then(function (response) {
+                                return response
+                                    .json()
+                                    .catch(function () { return null; })
+                                    .then(function (data) {
+                                        if (!response.ok) { throw response; }
+                                        return data;
+                                    });
+                            })
+                            .then(function (data) {
+                                return handleChatResponse(state, data);
+                            })
+                            .then(function (result) {
+                                saveConversationToStorage(state);
+                                finalize();
+                                return result;
+                            })
+                            .catch(function (fallbackError) {
+                                handleError(state, fallbackError);
+                                restoreSubmissionState(state, submissionContext);
+                                finalize();
+                            });
+                    }
+
                     handleError(state, error);
                     restoreSubmissionState(state, submissionContext);
                     
