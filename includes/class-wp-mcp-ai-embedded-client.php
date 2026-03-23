@@ -998,6 +998,19 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'--no-display-prompt',
 			);
 
+			// Embedded inference via llama-cli is a long-running synchronous process.
+			// Without removing the PHP execution time limit the process may be killed
+			// mid-inference (default max_execution_time is often 30 s on shared hosts),
+			// which drops the SSE connection and produces ERR_HTTP2_PROTOCOL_ERROR on
+			// the client. ignore_user_abort(true) prevents PHP from dying if nginx closes
+			// the upstream connection before inference finishes (fastcgi_read_timeout).
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+			}
+			if ( function_exists( 'ignore_user_abort' ) ) {
+				ignore_user_abort( true );
+			}
+
 			$output = $this->run_binary( $binary, $args );
 
 			if ( is_wp_error( $output ) ) {
