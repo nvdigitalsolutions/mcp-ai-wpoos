@@ -403,6 +403,12 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$bin_dir = trailingslashit( dirname( $binary_status['path'] ) );
 
+			// Ensure any missing SONAME names are created (or repaired via copy
+			// fallback) before we scan the directory.  This auto-repairs existing
+			// installations where the initial extraction ran before the symlink/
+			// copy logic existed, or where symlink() was blocked by the server.
+			$this->create_soname_symlinks( $bin_dir );
+
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob
 			$lib_files = glob( $bin_dir . 'lib*.so*' );
 			if ( ! is_array( $lib_files ) ) {
@@ -809,40 +815,52 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				$soname_path = $bin_dir . $soname;
 				$linker_path = $bin_dir . $base_so;
 
-				// Create the SONAME symlink (lib*.so.MAJOR → lib*.so.MAJOR.x.y).
+				// Create the SONAME name (lib*.so.MAJOR) for lib*.so.MAJOR.x.y.
+				// Tries a symlink first; falls back to a file copy when symlink()
+				// is blocked by the server (e.g. some shared-hosting environments
+				// such as Cloudways do not allow PHP to create symlinks in the
+				// plugin directory).
 				if ( ! file_exists( $soname_path ) && ! is_link( $soname_path ) ) {
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
 					if ( ! @symlink( $basename, $soname_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-							WP_MCP_AI_Logger::log_event(
-								'embedded_lib_symlink_failed',
-								sprintf(
-									/* translators: 1: symlink filename, 2: target filename */
-									__( 'Could not create shared library symlink "%1$s" -> "%2$s". The binary may fail at runtime.', 'mcp-ai-wpoos' ),
-									$soname,
-									$basename
-								),
-								array( 'path' => $soname_path )
-							);
+						// symlink() failed; copy the versioned file so the dynamic
+						// linker can still find the SONAME at runtime.
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+						$lib_data = file_get_contents( $filepath );
+						if ( false === $lib_data || false === file_put_contents( $soname_path, $lib_data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+							if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+								WP_MCP_AI_Logger::log_event(
+									'embedded_lib_soname_failed',
+									sprintf(
+										/* translators: 1: SONAME filename, 2: versioned filename */
+										__( 'Could not create shared library SONAME "%1$s" (tried symlink and copy of "%2$s"). The binary may fail at runtime.', 'mcp-ai-wpoos' ),
+										$soname,
+										$basename
+									),
+									array( 'path' => $soname_path )
+								);
+							}
 						}
 					}
 				}
 
-				// Create the linker-name symlink (lib*.so → lib*.so.MAJOR).
+				// Create the linker-name (lib*.so) pointing at the SONAME.
+				// Falls back to a file copy when symlink() is unavailable.
+				// No error is logged on copy failure: the linker-name is used by
+				// the compile-time linker (ld), not by the runtime loader.  The
+				// runtime only needs the SONAME (lib*.so.MAJOR) to be present;
+				// absent the linker-name is a minor inconvenience, not a blocker.
 				if ( ! file_exists( $linker_path ) && ! is_link( $linker_path ) ) {
 					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
 					if ( ! @symlink( $soname, $linker_path ) ) { // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-							WP_MCP_AI_Logger::log_event(
-								'embedded_lib_symlink_failed',
-								sprintf(
-									/* translators: 1: symlink filename, 2: target filename */
-									__( 'Could not create shared library symlink "%1$s" -> "%2$s". The binary may fail at runtime.', 'mcp-ai-wpoos' ),
-									$base_so,
-									$soname
-								),
-								array( 'path' => $linker_path )
-							);
+						// Copy the SONAME file (symlink or copy) to the linker name.
+						if ( file_exists( $soname_path ) ) {
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+							$soname_data = file_get_contents( $soname_path );
+							if ( false !== $soname_data ) {
+								// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+								file_put_contents( $linker_path, $soname_data );
+							}
 						}
 					}
 				}
