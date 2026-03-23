@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
         'version' => 'dev-copilot/fix-provider-test-page-error',
-        'reference' => '931f94504dcd11cb27971b9ac5435589b2aa5aad',
+        'reference' => 'ef08459ce72b10d3fb42651531d16afc7563430d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
             'version' => 'dev-copilot/fix-provider-test-page-error',
-            'reference' => '931f94504dcd11cb27971b9ac5435589b2aa5aad',
+            'reference' => 'ef08459ce72b10d3fb42651531d16afc7563430d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
