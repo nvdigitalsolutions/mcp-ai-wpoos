@@ -374,6 +374,52 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		}
 
 		/**
+		 * Return the list of shared library files co-located with the llama-cli binary.
+		 *
+		 * Scans the directory that contains the llama-cli binary for files matching
+		 * lib*.so or lib*.so.* (ELF shared objects and their SONAME / linker-name
+		 * symlinks). On platforms other than Linux this will almost always return an
+		 * empty list because shared libraries are not required there.
+		 *
+		 * @return array {
+		 *     @type bool   $found   True when the binary directory contains at least one
+		 *                           shared library file.
+		 *     @type array  $libs    List of shared library filenames (basenames only),
+		 *                           sorted alphabetically.
+		 *     @type string $bin_dir Absolute path to the directory that was scanned, or
+		 *                           empty string when the binary could not be located.
+		 * }
+		 */
+		public function get_shared_libs_status() {
+			$binary_status = $this->get_binary_status();
+
+			if ( empty( $binary_status['found'] ) || empty( $binary_status['path'] ) ) {
+				return array(
+					'found'   => false,
+					'libs'    => array(),
+					'bin_dir' => '',
+				);
+			}
+
+			$bin_dir = trailingslashit( dirname( $binary_status['path'] ) );
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob
+			$lib_files = glob( $bin_dir . 'lib*.so*' );
+			if ( ! is_array( $lib_files ) ) {
+				$lib_files = array();
+			}
+
+			$libs = array_map( 'basename', $lib_files );
+			sort( $libs );
+
+			return array(
+				'found'   => ! empty( $libs ),
+				'libs'    => $libs,
+				'bin_dir' => $bin_dir,
+			);
+		}
+
+		/**
 		 * Download the llama-cli binary from the latest GitHub release.
 		 *
 		 * Workflow:

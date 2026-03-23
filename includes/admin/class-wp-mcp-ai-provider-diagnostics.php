@@ -543,7 +543,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<!-- Server-Side LLM (llama.cpp / GGUF) -->
 					<?php
 					$embedded_client   = class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null;
-					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array( 'found' => false, 'platform' => '', 'message' => '' );
+					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array( 'found' => false, 'path' => '', 'platform' => '', 'message' => '' );
+					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array( 'found' => false, 'libs' => array(), 'bin_dir' => '' );
 					$downloaded_models = $embedded_client ? $embedded_client->get_downloaded_models() : array();
 					$available_models  = $embedded_client ? $embedded_client->get_available_models() : array();
 					$server_model_slug = isset( $settings['embedded_server_model'] ) ? $settings['embedded_server_model'] : '';
@@ -564,6 +565,32 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 										<?php endif; ?>
 									<?php else : ?>
 										<span style="color: orange;">&#9888; <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php if ( $server_binary_ok && ! empty( $server_binary['path'] ) ) : ?>
+							<tr>
+								<th><?php esc_html_e( 'Binary Path', 'mcp-ai-wpoos' ); ?></th>
+								<td><code><?php echo esc_html( $server_binary['path'] ); ?></code></td>
+							</tr>
+							<?php endif; ?>
+							<tr>
+								<th><?php esc_html_e( 'Shared Libraries', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $shared_libs['found'] ) : ?>
+										<span style="color: green;">&#10003; <?php echo (int) count( $shared_libs['libs'] ); ?> <?php esc_html_e( 'file(s) present', 'mcp-ai-wpoos' ); ?></span>
+										<ul style="margin: 5px 0 0 0; padding-left: 20px;">
+											<?php foreach ( $shared_libs['libs'] as $lib ) : ?>
+												<li><code><?php echo esc_html( $lib ); ?></code></li>
+											<?php endforeach; ?>
+										</ul>
+									<?php elseif ( $server_binary_ok ) : ?>
+										<span style="color: orange;">&#9888; <?php esc_html_e( 'No shared libraries found alongside binary', 'mcp-ai-wpoos' ); ?></span>
+										<p class="description" style="margin: 4px 0 0 0;">
+											<?php esc_html_e( 'On Linux, shared libraries (e.g. libllama.so, libmtmd.so.0) must be placed in the same directory as llama-cli. Copy the lib*.so* files from the llama.cpp release archive into that directory.', 'mcp-ai-wpoos' ); ?>
+										</p>
+									<?php else : ?>
+										<span style="color: #666;">&#8212; <?php esc_html_e( 'N/A (binary not installed)', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
 							</tr>
