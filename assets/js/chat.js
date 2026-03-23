@@ -628,11 +628,29 @@
      * @param {string} url - The URL to POST to.
      * @param {Object} data - Data to send as JSON.
      * @param {Object} headers - Request headers.
-     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks, streaming).
      * @return {Promise<Response>} Promise that resolves to the response.
      */
     function postJson(url, data, headers, options) {
         options = options || {};
+
+        // For SSE streaming requests, bypass the HTTP client service (Ky) entirely and use
+        // native fetch. Ky's AbortController-based timeout can fire for long-running embedded
+        // LLM inference (visible as `timeout.ts` in the ERR_HTTP2_PROTOCOL_ERROR call stack),
+        // and its afterResponse hooks call response.clone() which tees the SSE body stream
+        // causing the readable half to stall or error. Retry logic is also wrong for SSE.
+        if (options.streaming) {
+            const fetchOptions = {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            };
+            if (options.signal) {
+                fetchOptions.signal = options.signal;
+            }
+            return fetch(url, fetchOptions);
+        }
         
         // Use HTTP client service if available
         if (httpClientService && httpClientService.postJson) {
@@ -13114,7 +13132,9 @@
             state.config.messagesEndpoint,
             payload,
             headers,
-            { state: state }
+            // streaming: true bypasses the Ky HTTP client in favour of native fetch.
+            // Ky's timeout and afterResponse body-clone break SSE stream reading.
+            { state: state, streaming: true }
         )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)

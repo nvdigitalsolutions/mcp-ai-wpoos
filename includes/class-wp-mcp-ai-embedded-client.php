@@ -246,7 +246,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					sprintf(
@@ -259,7 +259,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					sprintf(
@@ -274,7 +274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// MIN_DOWNLOAD_RATIO of the documented size).
 			$min_expected = (int) ( $model['size_mb'] * self::MIN_DOWNLOAD_RATIO * 1024 * 1024 );
 			if ( ! file_exists( $tmp_path ) || filesize( $tmp_path ) < $min_expected ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_download_incomplete',
 					__( 'Downloaded file appears incomplete or corrupt.', 'mcp-ai-wpoos' )
@@ -282,8 +282,9 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			// Atomic rename.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 			if ( ! rename( $tmp_path, $dest_path ) ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					__( 'Could not save model file to disk.', 'mcp-ai-wpoos' )
@@ -492,7 +493,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// Rename the placeholder so PharData can detect the format from the extension.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 			if ( ! rename( $tmp_base, $tmp_archive ) ) {
-				@unlink( $tmp_base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_binary_temp_failed',
 					__( 'Could not create temporary file for binary download.', 'mcp-ai-wpoos' )
@@ -514,7 +515,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_binary_download_failed',
 					sprintf(
@@ -527,7 +528,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
-				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error(
 					'wp_mcp_ai_binary_download_failed',
 					sprintf(
@@ -543,7 +544,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$dest_path   = $bin_dir . $bin_name;
 			$extract_err = $this->extract_binary_from_archive( $tmp_archive, $bin_name, $dest_path, $bin_dir );
 
-			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,Generic.PHP.NoSilencedErrors.Discouraged
+			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 
 			if ( is_wp_error( $extract_err ) ) {
 				return $extract_err;
@@ -772,7 +773,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 * Create missing SONAME and linker-name symlinks for versioned shared
 		 * libraries in $bin_dir.
 		 *
-		 * llama.cpp tar.gz archives contain:
+		 * Each llama.cpp tar.gz archive contains:
 		 *  libmtmd.so.0.9.8  – actual ELF shared object
 		 *  libmtmd.so.0      – symlink → libmtmd.so.0.9.8  (SONAME)
 		 *  libmtmd.so        – symlink → libmtmd.so.0       (linker name)
@@ -809,9 +810,9 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				if ( ! preg_match( '/^(lib[^.]+\.so)\.(\d+)/', $basename, $m ) ) {
 					continue;
 				}
-				$base_so     = $m[1]; // e.g. libmtmd.so
-				$major       = $m[2]; // e.g. 0
-				$soname      = $base_so . '.' . $major; // e.g. libmtmd.so.0
+				$base_so     = $m[1]; // e.g. libmtmd.so.
+				$major       = $m[2]; // e.g. 0.
+				$soname      = $base_so . '.' . $major; // e.g. libmtmd.so.0.
 				$soname_path = $bin_dir . $soname;
 				$linker_path = $bin_dir . $base_so;
 
@@ -827,7 +828,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					$soname_created = false;
 					if ( function_exists( 'symlink' ) ) {
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-						$soname_created = @symlink( $basename, $soname_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+						$soname_created = @symlink( $basename, $soname_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 					}
 					if ( ! $soname_created ) {
 						// symlink() unavailable or failed; copy the versioned file
@@ -861,7 +862,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					$linker_created = false;
 					if ( function_exists( 'symlink' ) ) {
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-						$linker_created = @symlink( $soname, $linker_path ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+						$linker_created = @symlink( $soname, $linker_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 					}
 					if ( ! $linker_created ) {
 						// Copy the SONAME file (symlink or copy) to the linker name.
@@ -998,6 +999,19 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'--no-display-prompt',
 			);
 
+			// Embedded inference via llama-cli is a long-running synchronous process.
+			// Without removing the PHP execution time limit the process may be killed
+			// mid-inference (default max_execution_time is often 30 s on shared hosts),
+			// which drops the SSE connection and produces ERR_HTTP2_PROTOCOL_ERROR on
+			// the client. ignore_user_abort(true) prevents PHP from dying if nginx closes
+			// the upstream connection before inference finishes (fastcgi_read_timeout).
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+			}
+			if ( function_exists( 'ignore_user_abort' ) ) {
+				ignore_user_abort( true );
+			}
+
 			$output = $this->run_binary( $binary, $args );
 
 			if ( is_wp_error( $output ) ) {
@@ -1052,10 +1066,11 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Execute the llama-cli binary with the supplied arguments via proc_open.
+		 * Execute the llama-cli binary with the supplied arguments.
 		 *
-		 * Using proc_open with a command array avoids shell-expansion and prevents
-		 * command injection regardless of the content of the arguments.
+		 * Uses Symfony\Component\Process\Process for robust, shell-injection-safe
+		 * process management.  The command is passed as an array so no shell
+		 * expansion ever occurs, matching the previous proc_open behaviour.
 		 *
 		 * On Linux the binary's own directory is prepended to LD_LIBRARY_PATH so
 		 * that shared libraries bundled alongside llama-cli (e.g. libmtmd.so.0,
@@ -1074,13 +1089,14 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 * @return string|WP_Error Stdout output (or stderr fallback), or WP_Error on failure.
 		 */
 		private function run_binary( $binary, array $args, $use_stderr_fallback = false ) {
-			$cmd = array_merge( array( $binary ), $args );
+			if ( ! class_exists( 'Symfony\Component\Process\Process' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_process_unavailable',
+					__( 'Symfony Process component is not available. Please run composer install.', 'mcp-ai-wpoos' )
+				);
+			}
 
-			$descriptors = array(
-				0 => array( 'pipe', 'r' ),  // stdin.
-				1 => array( 'pipe', 'w' ),  // stdout.
-				2 => array( 'pipe', 'w' ),  // stderr.
-			);
+			$cmd = array_merge( array( $binary ), $args );
 
 			// On Linux, prepend the binary's own directory to LD_LIBRARY_PATH so
 			// shared libraries (e.g. libmtmd.so.0) that were extracted alongside
@@ -1092,32 +1108,39 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				$bin_dir     = dirname( $binary );
 				$current_env = getenv();
 				if ( is_array( $current_env ) ) {
-					$ld_path                       = $current_env['LD_LIBRARY_PATH'] ?? '';
+					$ld_path                        = $current_env['LD_LIBRARY_PATH'] ?? '';
 					$current_env['LD_LIBRARY_PATH'] = $bin_dir . ( '' !== $ld_path ? ':' . $ld_path : '' );
-					$env                           = $current_env;
+					$env                            = $current_env;
 				}
 			}
 
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open
-			$process = proc_open( $cmd, $descriptors, $pipes, null, $env );
+			// timeout=null means no limit; inference can take 60–120 s on slow hosts.
+			// Symfony Process reads stdout and stderr alternately, which avoids the
+			// pipe-buffer deadlock that sequential stream_get_contents() calls risk
+			// when either stream fills the OS buffer before the other is drained.
+			$process = new \Symfony\Component\Process\Process( $cmd, null, $env, null, null );
 
-			if ( ! is_resource( $process ) ) {
+			try {
+				$process->run();
+			} catch ( \Symfony\Component\Process\Exception\ProcessTimedOutException $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_binary_timeout',
+					__( 'llama-cli process timed out.', 'mcp-ai-wpoos' )
+				);
+			} catch ( \Exception $e ) {
 				return new WP_Error(
 					'wp_mcp_ai_binary_exec_failed',
-					__( 'Could not start llama-cli process.', 'mcp-ai-wpoos' )
+					sprintf(
+						/* translators: %s: exception message */
+						__( 'Could not start llama-cli process: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					)
 				);
 			}
 
-			// Close stdin immediately (no input needed).
-			fclose( $pipes[0] );
-
-			$stdout = stream_get_contents( $pipes[1] );
-			$stderr = stream_get_contents( $pipes[2] );
-
-			fclose( $pipes[1] );
-			fclose( $pipes[2] );
-
-			$exit_code = proc_close( $process );
+			$exit_code = $process->getExitCode();
+			$stdout    = $process->getOutput();
+			$stderr    = $process->getErrorOutput();
 
 			// Non-zero exit codes indicate a binary-level error.
 			if ( 0 !== $exit_code ) {
