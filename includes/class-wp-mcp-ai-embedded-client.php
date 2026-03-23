@@ -895,7 +895,9 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			// Run with --version flag; safe and quick.
-			$output = $this->run_binary( $binary, array( '--version' ) );
+			// Pass true for $use_stderr_fallback because llama-cli builds b8479+
+			// write their version string to stderr rather than stdout.
+			$output = $this->run_binary( $binary, array( '--version' ), true );
 
 			if ( is_wp_error( $output ) ) {
 				return $output;
@@ -1060,11 +1062,18 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 * libllama.so) are found by the dynamic linker even when they are not
 		 * installed system-wide.
 		 *
-		 * @param string $binary Absolute path to the llama-cli binary.
-		 * @param array  $args   Argument tokens (each a separate element).
-		 * @return string|WP_Error Trimmed stdout/stderr output, or WP_Error on failure.
+		 * @param string $binary              Absolute path to the llama-cli binary.
+		 * @param array  $args                Argument tokens (each a separate element).
+		 * @param bool   $use_stderr_fallback When true, return stderr content as a
+		 *                                    fallback when stdout is empty after a
+		 *                                    successful (exit_code 0) run.  This is
+		 *                                    needed for llama-cli builds b8479+ which
+		 *                                    write --version output to stderr instead
+		 *                                    of stdout.  Must NOT be set for inference
+		 *                                    calls where stderr contains only logging.
+		 * @return string|WP_Error Stdout output (or stderr fallback), or WP_Error on failure.
 		 */
-		private function run_binary( $binary, array $args ) {
+		private function run_binary( $binary, array $args, $use_stderr_fallback = false ) {
 			$cmd = array_merge( array( $binary ), $args );
 
 			$descriptors = array(
@@ -1121,6 +1130,15 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 						$error_detail
 					)
 				);
+			}
+
+			// Some llama-cli builds (b8479+) write --version to stderr rather than
+			// stdout.  When the caller opted in to the fallback and stdout is empty
+			// after a successful run, return stderr so the caller can confirm the
+			// binary is working.  Inference calls must NOT use this fallback because
+			// their stderr contains only progress/logging, not generated tokens.
+			if ( $use_stderr_fallback && '' === (string) $stdout && '' !== (string) $stderr ) {
+				return trim( $stderr );
 			}
 
 			return (string) $stdout;

@@ -622,6 +622,77 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// run_binary – stderr fallback for newer llama.cpp builds
+	// =========================================================================
+
+	/**
+	 * test_connection() succeeds when llama-cli writes --version only to stderr.
+	 *
+	 * llama.cpp builds b8479+ write their version string to stderr instead of
+	 * stdout.  Before this fix, run_binary() returned '' (empty stdout) which
+	 * caused test_connection() to return the false error
+	 * "llama-cli binary returned no output".
+	 *
+	 * The fix adds a $use_stderr_fallback parameter to run_binary(): when true
+	 * and stdout is empty after a successful (exit_code 0) run, stderr is
+	 * returned instead.  test_connection() passes true for --version calls.
+	 */
+	public function test_connection_succeeds_when_version_written_to_stderr() {
+		if ( ! function_exists( 'proc_open' ) ) {
+			$this->markTestSkipped( 'proc_open is not available in this test environment.' );
+		}
+
+		// Create a mock llama-cli that prints nothing to stdout and a version
+		// string to stderr, mirroring the behaviour of llama.cpp b8479+.
+		$bin_path = $this->tmp_dir . '/llama-cli';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents(
+			$bin_path,
+			'#!/bin/sh' . PHP_EOL .
+			'echo "version: 9999 (abc1234)" >&2' . PHP_EOL .
+			'exit 0' . PHP_EOL
+		);
+		chmod( $bin_path, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$result       = $fresh_client->test_connection();
+
+		$this->assertNotWPError( $result, 'test_connection() must not return WP_Error when version is on stderr.' );
+		$this->assertTrue( $result['success'], 'test_connection() must return success => true.' );
+		$this->assertStringContainsString( 'version', $result['version'], 'Version string from stderr must be returned.' );
+	}
+
+	/**
+	 * test_connection() still fails (WP_Error) when the binary produces no output
+	 * on either stdout or stderr.
+	 *
+	 * This ensures the "no output" guard in test_connection() is preserved: a
+	 * silent binary (or one that exits with no output at all) must still be
+	 * detected as broken even with the stderr fallback enabled.
+	 */
+	public function test_connection_fails_when_binary_produces_no_output_at_all() {
+		if ( ! function_exists( 'proc_open' ) ) {
+			$this->markTestSkipped( 'proc_open is not available in this test environment.' );
+		}
+
+		// Create a mock binary that exits cleanly but writes nothing anywhere.
+		$bin_path = $this->tmp_dir . '/llama-cli';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents(
+			$bin_path,
+			'#!/bin/sh' . PHP_EOL .
+			'exit 0' . PHP_EOL
+		);
+		chmod( $bin_path, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$result       = $fresh_client->test_connection();
+
+		$this->assertWPError( $result, 'test_connection() must return WP_Error when binary produces no output at all.' );
+		$this->assertSame( 'wp_mcp_ai_binary_error', $result->get_error_code() );
+	}
+
+	// =========================================================================
 	// Helpers
 	// =========================================================================
 
