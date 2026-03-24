@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-embedded-chat-client-logging',
         'version' => 'dev-copilot/enhance-embedded-chat-client-logging',
-        'reference' => '8b726fba52432483e63e562677674981cc54b145',
+        'reference' => 'a6be33ce6404377701fa1f6db37a522fed4c0ae2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-embedded-chat-client-logging',
             'version' => 'dev-copilot/enhance-embedded-chat-client-logging',
-            'reference' => '8b726fba52432483e63e562677674981cc54b145',
+            'reference' => 'a6be33ce6404377701fa1f6db37a522fed4c0ae2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
