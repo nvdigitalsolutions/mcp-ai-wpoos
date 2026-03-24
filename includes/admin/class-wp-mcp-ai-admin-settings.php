@@ -39,7 +39,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
 		// Embedded LLM provider defaults (Pro addon).
-		const DEFAULT_EMBEDDED_MODEL = 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+		const DEFAULT_EMBEDDED_MODEL = 'gemma-2-2b-it-q4f16_1-MLC';
 
 		/**
 		 * Cached settings for the current request.
