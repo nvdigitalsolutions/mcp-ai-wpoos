@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base (165 tools) or Full Version (519 tools) via Pro add-on.
+AI Assistant framework with OpenAI, Gemini, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
 
 == Description ==
 
@@ -19,11 +19,11 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Version (default — 165 core tools):** Active out of the box. Covers content management, media generation, research, site operations, analytics, MCP server, and more.
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them.
 
-**Full Version (519 tools):** Unlocks all Pro add-ons. Install the separate **NV oOS Pro add-on** plugin alongside this plugin to enable the Full Version automatically.
+**Pro Addon (PHP 8.1+ required):** A separate plugin that adds **genuinely new** tools built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers). It does not unlock, gate, or restrict any functionality that already exists in the base plugin. Pro-only capabilities include advanced multi-agent orchestration, autonomous research pipelines, project management toolkits, vault/secret management, real-time collaboration features, and specialist toolsets (Shopify catalog, medical imaging, CRM integrations, and more).
 
-Pro add-ons include WooCommerce e-commerce tools, JetEngine CPT/Taxonomy AI integration, social media publishing and analytics, GitHub integration, Google services, FFmpeg media processing, WP-CLI automation, and multi-agent orchestration.
+The PHP version is the definitive differentiator: if your server runs PHP 7.4–8.0 you get the full base feature set; PHP 8.1+ unlocks the Pro addon's additional tools on top.
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
@@ -269,6 +269,21 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.5 - March 2026 =
+
+**WordPress.org Compliance**
+
+* Telemetry opt-in: activation tracking is now disabled by default; users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking (Guideline 7)
+* Removed Pro add-on gating from base tool registry; all base plugin tools load without license checks (Guideline 5)
+* Improved `sanitize_settings_callback` to recursively sanitize nested array settings using `sanitize_textarea_field()` and `esc_url_raw()` (Guideline 6)
+* Fixed 15 broken external service URLs in readme.txt (Guideline 2)
+
+**Dependencies**
+
+* Updated `symfony/cache` from 6.4.34 to 6.4.35
+* Updated `symfony/validator` from 6.4.34 to 6.4.35
+* Regenerated production classmap autoloader
 
 = 1.1.4 - March 2026 =
 
@@ -559,7 +574,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When ReliefWeb tools are used
 * **Service URL:** https://api.reliefweb.int/v1/reports
 * **Terms of Service:** https://reliefweb.int/terms-conditions
-* **Privacy Policy:** https://reliefweb.int/privacy-policy
+* **Privacy Policy:** https://reliefweb.int/terms
 
 **11. WordPress.org API**
 * **Purpose:** PHP version compatibility check for site health
@@ -614,7 +629,7 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** API key for account verification; images for background removal
 * **When:** When the remove background tool is used
 * **Service URL:** https://api.remove.bg/v1.0/
-* **Terms of Service:** https://www.remove.bg/terms-of-service
+* **Terms of Service:** https://www.remove.bg/tos
 * **Privacy Policy:** https://www.remove.bg/privacy
 
 **18. Flowhub API**
@@ -631,7 +646,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When Plaid connection testing or financial tools are used
 * **Service URL:** https://sandbox.plaid.com / https://production.plaid.com
 * **Terms of Service:** https://plaid.com/legal/
-* **Privacy Policy:** https://plaid.com/legal/privacy-policy
+* **Privacy Policy:** https://plaid.com/legal/
 
 **20. PayHere API**
 * **Purpose:** Payment processing for Sri Lankan merchants
@@ -654,8 +669,8 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** Music generation parameters (tempo, genre, duration), API key
 * **When:** When music generation tools are used
 * **Service URL:** https://music-api.mubert.com/api/v3/public/tracks
-* **Terms of Service:** https://mubert.com/corporate/terms
-* **Privacy Policy:** https://mubert.com/corporate/privacy
+* **Terms of Service:** https://mubert.com/documents/mubert_website_tou.pdf
+* **Privacy Policy:** https://mubert.com/render/docs/privacy-policy
 
 **23. GDACS (Global Disaster Alert and Coordination System)**
 * **Purpose:** Global disaster and emergency event data retrieval
@@ -663,7 +678,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the GDACS disaster events tool is used
 * **Service URL:** https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP
 * **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
-* **Privacy Policy:** https://www.gdacs.org/About/privacy.aspx
+* **Privacy Policy:** https://www.gdacs.org/About/overview.aspx
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -686,18 +701,18 @@ These services are only contacted when specific tools/features are used:
 **26. NV Digital Solutions Activation Tracking**
 * **Purpose:** Anonymous plugin activation/deactivation analytics to understand usage patterns
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
-* **When:** On plugin activation and deactivation (opt-out available via settings or filter)
+* **When:** Only when a site owner explicitly opts in via Settings → NV oOS → "Enable activation tracking". Tracking is **disabled by default** and requires explicit consent. Tracking is never sent from local/development environments.
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
-* **Terms of Service:** https://nvdigitalsolutions.com/terms
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
-* **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
+* **Opt-In:** Enable via Settings → NV oOS → "Enable activation tracking" or return `true` from the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is OFF by default.
 
 **27. NV Digital Solutions License Server & Optional Component Downloads**
 * **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
 * **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
-* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download (optional component ZIP downloads from the plugin's own GitHub releases)
-* **Terms of Service:** https://nvdigitalsolutions.com/terms; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
@@ -708,7 +723,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Repository management, code search, issue tracking, and OAuth authorisation flow to connect the GitHub integration
 * **Data Sent:** OAuth tokens, repository queries, commit data; during OAuth setup: client ID, client secret (as Basic Auth header), authorisation code, and redirect URI
 * **When:** When GitHub tools are used after OAuth setup; the OAuth token exchange endpoint is called once per authorisation when a user connects their GitHub account
-* **Service URL:** https://api.github.com (GitHub REST API); https://github.com/login/oauth/access_token (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
+* **Service URL:** https://api.github.com (GitHub REST API); https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
@@ -741,16 +756,16 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Data Sent:** Search query string; sent only when Tavily is selected as the web search provider
 * **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Tavily"
 * **Service URL:** https://api.tavily.com/search
-* **Terms of Service:** https://tavily.com/terms-of-use
-* **Privacy Policy:** https://tavily.com/privacy-policy
+* **Terms of Service:** https://www.tavily.com/terms
+* **Privacy Policy:** https://docs.tavily.com/documentation/privacy
 
 **33. Exa AI Search API**
 * **Purpose:** Neural/semantic web search purpose-built for AI agents; returns full-text page content and metadata
 * **Data Sent:** Search query string and search parameters (number of results, content type)
 * **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Exa"
 * **Service URL:** https://api.exa.ai/search
-* **Terms of Service:** https://exa.ai/terms
-* **Privacy Policy:** https://exa.ai/privacy
+* **Terms of Service:** https://trust.exa.ai/
+* **Privacy Policy:** https://exa.ai/privacy-policy
 
 **34. Perplexity AI API**
 * **Purpose:** AI-powered web search that returns synthesised answers with inline citations
@@ -834,7 +849,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **When:** Only when the `setup_2fa` tool is used and the TOTP (authenticator app) method is selected
 * **Service URL:** https://api.qrserver.com/v1/create-qr-code/
 * **Terms of Service:** https://goqr.me/api/
-* **Privacy Policy:** https://goqr.me/privacy/
+* **Privacy Policy:** https://goqr.me/privacy-safety-security/
 
 
 
@@ -952,8 +967,8 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **Web Search Providers (when configured):**
 * Brave Search: data sent to https://api.search.brave.com — [Privacy](https://brave.com/privacy/browser/) | [Terms](https://brave.com/terms-of-use/)
-* Tavily: data sent to https://api.tavily.com — [Privacy](https://tavily.com/privacy-policy) | [Terms](https://tavily.com/terms-of-use)
-* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy) | [Terms](https://exa.ai/terms)
+* Tavily: data sent to https://api.tavily.com — [Privacy](https://docs.tavily.com/documentation/privacy) | [Terms](https://www.tavily.com/terms)
+* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy-policy) | [Terms](https://trust.exa.ai/)
 * Perplexity: data sent to https://api.perplexity.ai — [Privacy](https://www.perplexity.ai/hub/legal/privacy-policy) | [Terms](https://www.perplexity.ai/hub/legal/terms-of-service)
 * DuckDuckGo: data sent to https://api.duckduckgo.com — [Privacy](https://duckduckgo.com/privacy) | [Terms](https://duckduckgo.com/terms)
 
@@ -989,7 +1004,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **QR Server API (when TOTP two-factor authentication setup is used):**
 * Data sent to: https://api.qrserver.com — server-side request made by WordPress (not by the user's browser); the request payload is the TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret)
-* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy/)
+* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy-safety-security/)
 * Terms of Service: https://goqr.me/api/
 * Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
 
@@ -1047,7 +1062,7 @@ This plugin may connect to the following external services based on your configu
 * Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
 * WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
 * Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
-* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy/) | [Terms](https://goqr.me/api/)
+* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy-safety-security/) | [Terms](https://goqr.me/api/)
 
 **Optional browser-native AI CDN libraries (no user data transmitted):**
 * Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)

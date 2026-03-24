@@ -60,6 +60,27 @@
   - See [`packages/README.md`](packages/README.md) and [`packages/QUICK_START.md`](packages/QUICK_START.md) for installation and usage.
 
 
+## [1.1.5] - 2026-03-24
+
+### Changed
+- **Telemetry Opt-In (March 24, 2026)**: Activation tracking is now disabled by default (opt-in model). Users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking. Setting renamed from `disable_activation_tracking` → `enable_activation_tracking`. Complies with WordPress.org Guideline 7 & 9.
+- **Tool Registry (March 24, 2026)**: Removed Pro add-on license gating from base tool registry. All tools included in the plugin ZIP are now always registered; runtime availability is controlled by each tool's `is_available()` method (dependency check, not license gate). Complies with WordPress.org Guideline 5.
+- **Settings Sanitization (March 24, 2026)**: `sanitize_settings_callback` now recursively sanitizes nested array settings using `sanitize_textarea_field()` for strings and `esc_url_raw()` for URL values. Complies with WordPress.org Guideline 6.
+- **`WP_MCP_AI_BASE_VERSION` default (March 24, 2026)**: Changed from `true` to `false` so full base tool set loads by default without requiring any `wp-config.php` define.
+
+### Fixed
+- **15 Dead URLs in readme.txt (March 24, 2026)**: Fixed 15 broken external service documentation links (ReliefWeb, remove.bg, Plaid, Mubert, GDACS, NV Digital Terms, GitHub releases, Tavily, Exa.ai, GoQR privacy). All verified working after fix.
+
+### Dependencies
+- **symfony/cache** updated from v6.4.34 to v6.4.35
+- **symfony/validator** updated from v6.4.34 to v6.4.35
+- **addons/pro/vendor**: Removed stale gitlinks; populated all 6 previously-empty vendor directories with real package files
+- Production classmap autoloader regenerated (686 entries)
+
+### Documentation
+- Added `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
+- Added `docs/03-wp-org-compliance.md` — compliance change log for this PR
+
 ## [1.1.4] - 2026-03-15
 
 ### Security

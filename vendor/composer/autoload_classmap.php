@@ -617,6 +617,7 @@ return array(
     'Symfony\\Component\\Validator\\Mapping\\PropertyMetadataInterface' => $vendorDir . '/symfony/validator/Mapping/PropertyMetadataInterface.php',
     'Symfony\\Component\\Validator\\Mapping\\TraversalStrategy' => $vendorDir . '/symfony/validator/Mapping/TraversalStrategy.php',
     'Symfony\\Component\\Validator\\ObjectInitializerInterface' => $vendorDir . '/symfony/validator/ObjectInitializerInterface.php',
+    'Symfony\\Component\\Validator\\Test\\ConstraintValidatorTestCase' => $vendorDir . '/symfony/validator/Test/ConstraintValidatorTestCase.php',
     'Symfony\\Component\\Validator\\Util\\PropertyPath' => $vendorDir . '/symfony/validator/Util/PropertyPath.php',
     'Symfony\\Component\\Validator\\Validation' => $vendorDir . '/symfony/validator/Validation.php',
     'Symfony\\Component\\Validator\\ValidatorBuilder' => $vendorDir . '/symfony/validator/ValidatorBuilder.php',

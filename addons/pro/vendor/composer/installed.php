@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
-        'pretty_version' => 'dev-copilot/fix-providers-section-registration',
-        'version' => 'dev-copilot/fix-providers-section-registration',
-        'reference' => 'e4552c9f96a8e07c4a76e86bb16303d0aada56b6',
+        'pretty_version' => 'dev-copilot/fix-email-guidelines-issues',
+        'version' => 'dev-copilot/fix-email-guidelines-issues',
+        'reference' => '77036a5e07ae0f7abd0b1e1f3bf3a77fb46fd8a5',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
-            'pretty_version' => 'dev-copilot/fix-providers-section-registration',
-            'version' => 'dev-copilot/fix-providers-section-registration',
-            'reference' => 'e4552c9f96a8e07c4a76e86bb16303d0aada56b6',
+            'pretty_version' => 'dev-copilot/fix-email-guidelines-issues',
+            'version' => 'dev-copilot/fix-email-guidelines-issues',
+            'reference' => '77036a5e07ae0f7abd0b1e1f3bf3a77fb46fd8a5',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

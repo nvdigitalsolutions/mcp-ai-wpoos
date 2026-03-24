@@ -241,27 +241,74 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * those sections find no matching subtab in $_POST and return an empty array,
 		 * wiping stored API keys.
 		 *
-		 * The fix: return the input unchanged. All callers that reach update_option()
-		 * have already sanitized the data before calling it:
-		 *  - handle_save_settings() runs the full section-based sanitization with the
+		 * This callback applies a general-purpose sanitization pass that covers string
+		 * type safety while preserving the context-aware merge that all callers perform
+		 * before calling update_option():
+		 *  - handle_save_settings() runs full section-based sanitization with the
 		 *    correct $_POST context and then calls array_merge with existing settings.
 		 *  - OAuth/integration handlers (Gmail, QuickBooks, etc.) fetch the full
 		 *    existing settings, modify only their specific keys, and save the result.
 		 *
 		 * @param mixed $input Settings value passed to update_option().
-		 * @return array Settings array, preserved as-is.
+		 * @return array Sanitized settings array.
 		 */
 		public function sanitize_settings_callback( $input ) {
 			if ( ! is_array( $input ) ) {
-				// Preserve existing settings if input is invalid.
+				// Preserve existing settings if input is not a valid array.
 				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				return is_array( $existing ) ? $existing : array();
 			}
-			// Return the input unchanged. The full section-based sanitization already ran
-			// (with the correct $_POST context) before update_option() was called.
-			// Running it again here would cause subtab-aware sections to return empty arrays
-			// when $_POST does not match their tab/subtab, clearing stored provider keys.
-			return $input;
+			return $this->sanitize_settings_array_recursive( $input );
+		}
+
+		/**
+		 * Recursively sanitize a settings array.
+		 *
+		 * Applies type-appropriate sanitization to each value:
+		 * - Booleans are cast to bool.
+		 * - Integers are cast to int.
+		 * - Floats are cast to float.
+		 * - Strings that look like URLs are passed through esc_url_raw().
+		 * - All other strings use sanitize_textarea_field(), which strips HTML/PHP
+		 *   tags but PRESERVES newlines — critical for multiline settings such as
+		 *   ip_whitelist (newline-separated IPs) and textarea prompts.
+		 *   sanitize_text_field() is intentionally NOT used here because it collapses
+		 *   all whitespace including newlines, which would corrupt those values.
+		 * - Arrays are processed recursively.
+		 * - Array keys are preserved exactly as-is. sanitize_key() is intentionally
+		 *   NOT applied to keys because the settings contain camelCase and mixed-case
+		 *   keys (e.g. 'backgroundColor', 'High', 'Low') that would be corrupted by
+		 *   the lowercase conversion sanitize_key() performs.
+		 * - NULL and other scalar types are returned as-is.
+		 *
+		 * @param array $data The array to sanitize.
+		 * @return array Sanitized array with original keys preserved.
+		 */
+		private function sanitize_settings_array_recursive( array $data ) {
+			$sanitized = array();
+			foreach ( $data as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$sanitized[ $key ] = $this->sanitize_settings_array_recursive( $value );
+				} elseif ( is_bool( $value ) ) {
+					$sanitized[ $key ] = (bool) $value;
+				} elseif ( is_int( $value ) ) {
+					$sanitized[ $key ] = (int) $value;
+				} elseif ( is_float( $value ) ) {
+					$sanitized[ $key ] = (float) $value;
+				} elseif ( is_string( $value ) ) {
+					// Use esc_url_raw for values that look like URLs.
+					if ( preg_match( '/^https?:\/\//i', $value ) ) {
+						$sanitized[ $key ] = esc_url_raw( $value );
+					} else {
+						// sanitize_textarea_field strips HTML tags while preserving
+						// newlines — safe for all string types in this option.
+						$sanitized[ $key ] = sanitize_textarea_field( $value );
+					}
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+			return $sanitized;
 		}
 
 		/**
