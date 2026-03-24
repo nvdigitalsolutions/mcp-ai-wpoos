@@ -1177,25 +1177,26 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
-		 * Determine if base version mode is enabled.
+		 * Determine if the plugin is running in base (PHP 7.4+) mode.
 		 *
-		 * Base version mode excludes tools that require third-party plugins or external API credentials.
-		 * When Pro addon is loaded, base version mode is automatically disabled to provide full functionality.
+		 * The base version is PHP 7.4+ compatible and includes all tools whose
+		 * code ships in the main plugin. The Pro addon requires PHP 8.1+ and
+		 * adds genuinely new tools using modern PHP features.
 		 *
-		 * @return bool
+		 * Extended tools (WooCommerce, JetEngine, etc.) are always attempted;
+		 * they self-report unavailability via is_available() when their required
+		 * third-party plugins are not active.
+		 *
+		 * @return bool True when the WP_MCP_AI_BASE_VERSION constant is set to true.
 		 */
 		protected function is_base_version() {
-			// If Pro addon is loaded, disable base version mode to enable all tools.
-			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-				return false;
-			}
-
 			/**
 			 * Filter whether to enable base version mode.
 			 *
 			 * When true, only tools that work with a base WordPress installation are loaded.
 			 * Tools requiring WooCommerce, JetEngine, JetFormBuilder, Elementor, RankMath,
-			 * WPCode, or external API credentials are excluded.
+			 * WPCode, or external API credentials are still registered but will report
+			 * themselves as unavailable via their own is_available() checks.
 			 *
 			 * @param bool $is_base_version Whether base version mode is enabled.
 			 */
@@ -1418,8 +1419,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			// are now loaded via the Architect Agent Toolkit (addons/pro/includes/architect-agent-toolkit-init.php).
 			$pro_tools = array();
 
-			// Combine tools based on version mode.
-			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools, $pro_tools );
+			// All tools shipped in this plugin are always attempted.
+			// Extended tools self-report unavailability via is_available() when their
+			// required third-party plugins (WooCommerce, JetEngine, etc.) are not active.
+			// The Pro addon (addons/pro/) contributes genuinely NEW tools that require PHP 8.1+.
+			$default_tools = array_merge( $base_tools, $extended_tools, $pro_tools );
 
 			/**
 			 * Filter the list of default tools to load.

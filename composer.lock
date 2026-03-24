@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5ac3d97b86789654d02efd411d8b7c4d",
+    "content-hash": "d6dde4f62a02b7cef786c4fdfe3cc9a4",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -970,16 +970,16 @@
         },
         {
             "name": "symfony/cache",
-            "version": "v6.4.34",
+            "version": "v6.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/cache.git",
-                "reference": "a0a1690543329685c044362c873b78c6de9d4faa"
+                "reference": "77f5eca135d1b5471de4301b99496649e4f62878"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/cache/zipball/a0a1690543329685c044362c873b78c6de9d4faa",
-                "reference": "a0a1690543329685c044362c873b78c6de9d4faa",
+                "url": "https://api.github.com/repos/symfony/cache/zipball/77f5eca135d1b5471de4301b99496649e4f62878",
+                "reference": "77f5eca135d1b5471de4301b99496649e4f62878",
                 "shasum": ""
             },
             "require": {
@@ -1046,7 +1046,7 @@
                 "psr6"
             ],
             "support": {
-                "source": "https://github.com/symfony/cache/tree/v6.4.34"
+                "source": "https://github.com/symfony/cache/tree/v6.4.35"
             },
             "funding": [
                 {
@@ -1066,7 +1066,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-20T15:06:30+00:00"
+            "time": "2026-03-05T20:47:12+00:00"
         },
         {
             "name": "symfony/cache-contracts",
@@ -1941,16 +1941,16 @@
         },
         {
             "name": "symfony/validator",
-            "version": "v6.4.34",
+            "version": "v6.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/validator.git",
-                "reference": "7c3897b7f739d4ab913481e680405ca82d08084d"
+                "reference": "9dc02b6c7502f7c4b68a741d2826bbec061c5953"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/validator/zipball/7c3897b7f739d4ab913481e680405ca82d08084d",
-                "reference": "7c3897b7f739d4ab913481e680405ca82d08084d",
+                "url": "https://api.github.com/repos/symfony/validator/zipball/9dc02b6c7502f7c4b68a741d2826bbec061c5953",
+                "reference": "9dc02b6c7502f7c4b68a741d2826bbec061c5953",
                 "shasum": ""
             },
             "require": {
@@ -2018,7 +2018,7 @@
             "description": "Provides tools to validate values",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/validator/tree/v6.4.34"
+                "source": "https://github.com/symfony/validator/tree/v6.4.35"
             },
             "funding": [
                 {
@@ -2038,7 +2038,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-23T17:49:24+00:00"
+            "time": "2026-03-02T17:53:19+00:00"
         },
         {
             "name": "symfony/var-exporter",

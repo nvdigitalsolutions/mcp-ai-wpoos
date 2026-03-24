@@ -63,21 +63,19 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	/**
 	 * Determine whether third-party plugin integrations should be loaded.
 	 *
-	 * Integrations are loaded when:
-	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
-	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
+	 * Integration classes are always loaded — they guard themselves against
+	 * missing dependencies internally. This ensures that tools for WooCommerce,
+	 * JetEngine, Cloudways, QuickBooks, etc. are available to any site that has
+	 * those plugins active, regardless of whether the Pro addon is installed.
 	 *
-	 * This ensures that when using base + pro as separate plugins, JetEngine
-	 * integrations are available for chat transcript storage and other Pro features.
-	 *
-	 * Note: In base version with only JetEngine available (no Pro), only the minimal
-	 * JetEngine CCT files needed for chat transcripts are loaded via a separate condition.
+	 * The Pro addon (PHP 8.1+) adds genuinely new tools on top of these; it does
+	 * not "unlock" tools that are already present in the base plugin.
 	 *
 	 * @since 1.1.0
-	 * @return bool Whether integrations should be loaded.
+	 * @return bool Always true — integration files are always loaded.
 	 */
 	function wp_mcp_ai_should_load_integrations() {
-		return ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+		return true;
 	}
 }
 
