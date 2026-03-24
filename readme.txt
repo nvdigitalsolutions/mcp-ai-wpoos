@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -269,6 +269,21 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.5 - March 2026 =
+
+**WordPress.org Compliance**
+
+* Telemetry opt-in: activation tracking is now disabled by default; users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking (Guideline 7)
+* Removed Pro add-on gating from base tool registry; all base plugin tools load without license checks (Guideline 5)
+* Improved `sanitize_settings_callback` to recursively sanitize nested array settings using `sanitize_textarea_field()` and `esc_url_raw()` (Guideline 6)
+* Fixed 15 broken external service URLs in readme.txt (Guideline 2)
+
+**Dependencies**
+
+* Updated `symfony/cache` from 6.4.34 to 6.4.35
+* Updated `symfony/validator` from 6.4.34 to 6.4.35
+* Regenerated production classmap autoloader
 
 = 1.1.4 - March 2026 =
 
