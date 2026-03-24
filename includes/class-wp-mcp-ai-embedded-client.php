@@ -204,6 +204,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 */
 		public function download_model( $slug ) {
 			if ( ! isset( static::$available_models[ $slug ] ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_download_error',
+						'Embedded model download requested for unknown slug.',
+						array( 'slug' => $slug )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_invalid_model',
 					sprintf(
@@ -227,6 +234,18 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				);
 			}
 
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_model_download_start',
+					'Starting embedded GGUF model download.',
+					array(
+						'slug'     => $slug,
+						'filename' => $model['filename'],
+						'size_mb'  => $model['size_mb'],
+					)
+				);
+			}
+
 			// Stream to a temp file first, then rename (atomic-ish move).
 			$tmp_path = $dest_path . '.tmp';
 
@@ -247,6 +266,16 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			if ( is_wp_error( $response ) ) {
 				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_download_error',
+						'Embedded model download failed (HTTP error).',
+						array(
+							'slug'  => $slug,
+							'error' => $response->get_error_message(),
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					sprintf(
@@ -260,6 +289,16 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
 				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_download_error',
+						'Embedded model download failed (non-2xx HTTP status).',
+						array(
+							'slug'        => $slug,
+							'http_status' => $code,
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					sprintf(
@@ -275,6 +314,17 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$min_expected = (int) ( $model['size_mb'] * self::MIN_DOWNLOAD_RATIO * 1024 * 1024 );
 			if ( ! file_exists( $tmp_path ) || filesize( $tmp_path ) < $min_expected ) {
 				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_download_error',
+						'Embedded model download incomplete or corrupt.',
+						array(
+							'slug'         => $slug,
+							'min_expected' => $min_expected,
+							'actual_size'  => file_exists( $tmp_path ) ? filesize( $tmp_path ) : 0,
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_download_incomplete',
 					__( 'Downloaded file appears incomplete or corrupt.', 'mcp-ai-wpoos' )
@@ -285,9 +335,31 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 			if ( ! rename( $tmp_path, $dest_path ) ) {
 				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_download_error',
+						'Embedded model downloaded but could not be saved to disk.',
+						array(
+							'slug' => $slug,
+							'dest' => $dest_path,
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_download_failed',
 					__( 'Could not save model file to disk.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_model_downloaded',
+					'Embedded GGUF model downloaded successfully.',
+					array(
+						'slug'      => $slug,
+						'filename'  => $model['filename'],
+						'file_size' => filesize( $dest_path ),
+					)
 				);
 			}
 
@@ -306,6 +378,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 */
 		public function delete_model( $slug ) {
 			if ( ! isset( static::$available_models[ $slug ] ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_delete_error',
+						'Embedded model deletion requested for unknown slug.',
+						array( 'slug' => $slug )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_invalid_model',
 					sprintf(
@@ -320,6 +399,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$path       = $models_dir . static::$available_models[ $slug ]['filename'];
 
 			if ( ! file_exists( $path ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_delete_error',
+						'Embedded model file not found for deletion.',
+						array( 'slug' => $slug )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_model_not_found',
 					__( 'Model file not found.', 'mcp-ai-wpoos' )
@@ -327,9 +413,27 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			if ( ! unlink( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_model_delete_error',
+						'Could not delete embedded model file.',
+						array(
+							'slug' => $slug,
+							'path' => $path,
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_delete_failed',
 					__( 'Could not delete model file.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_model_deleted',
+					'Embedded GGUF model deleted successfully.',
+					array( 'slug' => $slug )
 				);
 			}
 
@@ -446,6 +550,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			// Only automated download is supported on Linux.
 			if ( 'linux' !== $platform['os'] ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary automated download is not supported on this platform.',
+						array( 'os' => $platform['os'] )
+					);
+				}
 				$instructions = $this->get_binary_installation_instructions( $platform['os'] );
 				return new WP_Error(
 					'wp_mcp_ai_binary_unsupported_platform',
@@ -458,9 +569,26 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			if ( 'unknown' === $platform['arch'] ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary automated download failed: unknown CPU architecture.'
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_unsupported_arch',
 					__( 'Could not determine server CPU architecture. Please install llama-cli manually.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_binary_download_start',
+					'Starting embedded llama-cli binary download.',
+					array(
+						'os'   => $platform['os'],
+						'arch' => $platform['arch'],
+					)
 				);
 			}
 
@@ -471,6 +599,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			if ( ! is_writable( $bin_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed: binary directory is not writable.',
+						array( 'bin_dir' => $bin_dir )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_not_writable',
 					sprintf(
@@ -484,6 +619,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// --- Step 1: Find the download URL via GitHub API ---
 			$asset_url = $this->resolve_binary_download_url( $platform );
 			if ( is_wp_error( $asset_url ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed: could not resolve download URL.',
+						array( 'error' => $asset_url->get_error_message() )
+					);
+				}
 				return $asset_url;
 			}
 
@@ -494,6 +636,12 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
 			if ( ! rename( $tmp_base, $tmp_archive ) ) {
 				@unlink( $tmp_base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed: could not create temporary file.'
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_temp_failed',
 					__( 'Could not create temporary file for binary download.', 'mcp-ai-wpoos' )
@@ -516,6 +664,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			if ( is_wp_error( $response ) ) {
 				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed (HTTP error).',
+						array( 'error' => $response->get_error_message() )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_download_failed',
 					sprintf(
@@ -529,6 +684,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
 				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed (non-2xx HTTP status).',
+						array( 'http_status' => $code )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_download_failed',
 					sprintf(
@@ -547,18 +709,43 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
 
 			if ( is_wp_error( $extract_err ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary download failed during archive extraction.',
+						array( 'error' => $extract_err->get_error_message() )
+					);
+				}
 				return $extract_err;
 			}
 
 			// --- Step 4: Make it executable ---
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
 			if ( ! chmod( $dest_path, 0755 ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_download_error',
+						'Embedded binary extracted but could not be made executable.',
+						array( 'path' => $dest_path )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_chmod_failed',
 					sprintf(
 						/* translators: %s: absolute path to binary file */
 						__( 'Binary was extracted but could not be made executable. Please run: chmod +x %s', 'mcp-ai-wpoos' ),
 						$dest_path
+					)
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_binary_downloaded',
+					'Embedded llama-cli binary installed successfully.',
+					array(
+						'path'     => $dest_path,
+						'platform' => $platform['os'] . ' ' . $platform['arch'],
 					)
 				);
 			}
@@ -892,6 +1079,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$binary = $this->get_inference_binary();
 
 			if ( is_wp_error( $binary ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_connection_test_error',
+						'Embedded LLM connection test failed: binary not found.',
+						array( 'error' => $binary->get_error_message() )
+					);
+				}
 				return $binary;
 			}
 
@@ -901,13 +1095,34 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$output = $this->run_binary( $binary, array( '--version' ), true );
 
 			if ( is_wp_error( $output ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_connection_test_error',
+						'Embedded LLM connection test failed: binary execution error.',
+						array( 'error' => $output->get_error_message() )
+					);
+				}
 				return $output;
 			}
 
 			if ( '' === $output ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_connection_test_error',
+						'Embedded LLM connection test failed: binary returned no output.'
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_error',
 					__( 'llama-cli binary returned no output. Please verify the binary is executable.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_connection_test_success',
+					'Embedded LLM connection test passed.',
+					array( 'version' => trim( $output ) )
 				);
 			}
 
@@ -946,6 +1161,12 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			if ( empty( $model_slug ) || ! isset( static::$available_models[ $model_slug ] ) ) {
 				$downloaded = $this->get_downloaded_models();
 				if ( empty( $downloaded ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'embedded_inference_error',
+							'Server-side embedded LLM inference failed: no model downloaded.'
+						);
+					}
 					return new WP_Error(
 						'wp_mcp_ai_no_embedded_model',
 						__( 'No embedded GGUF model is downloaded. Please download a model in Settings → NV oOS → Providers → Embedded LLM (Pro).', 'mcp-ai-wpoos' )
@@ -956,6 +1177,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			if ( ! $this->is_model_downloaded( $model_slug ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_inference_error',
+						'Server-side embedded LLM inference failed: requested model not downloaded.',
+						array( 'model' => $model_slug )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_model_not_downloaded',
 					sprintf(
@@ -968,6 +1196,16 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$binary = $this->get_inference_binary();
 			if ( is_wp_error( $binary ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_inference_error',
+						'Server-side embedded LLM inference failed: binary not found.',
+						array(
+							'model' => $model_slug,
+							'error' => $binary->get_error_message(),
+						)
+					);
+				}
 				return $binary;
 			}
 
@@ -977,6 +1215,16 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// Catching this early prevents the SSE stream from hanging indefinitely at the
 			// "generating" step waiting for a process that will never start.
 			if ( ! is_executable( $binary ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_inference_error',
+						'Server-side embedded LLM inference failed: binary not executable.',
+						array(
+							'model'  => $model_slug,
+							'binary' => $binary,
+						)
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_not_executable',
 					sprintf(
@@ -997,6 +1245,19 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$context_size = max( 128, min( isset( $options['context_size'] ) ? (int) $options['context_size'] : 2048, 8192 ) );
 
 			$prompt = $this->build_prompt( $messages );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_inference_start',
+					'Starting server-side embedded LLM inference.',
+					array(
+						'model'         => $model_slug,
+						'message_count' => count( $messages ),
+						'max_tokens'    => $max_tokens,
+						'temperature'   => $temperature,
+					)
+				);
+			}
 
 			// Build argument array (no shell expansion – each element is a distinct argument).
 			$args = array(
@@ -1031,10 +1292,27 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$output = $this->run_binary( $binary, $args );
 
 			if ( is_wp_error( $output ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_inference_error',
+						'Server-side embedded LLM inference failed during execution.',
+						array(
+							'model' => $model_slug,
+							'error' => $output->get_error_message(),
+						)
+					);
+				}
 				return $output;
 			}
 
 			if ( '' === $output ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_inference_error',
+						'Server-side embedded LLM inference produced no output.',
+						array( 'model' => $model_slug )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_inference_failed',
 					__( 'Embedded LLM inference produced no output. Please verify the binary and model file are valid.', 'mcp-ai-wpoos' )
@@ -1106,6 +1384,12 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 */
 		private function run_binary( $binary, array $args, $use_stderr_fallback = false ) {
 			if ( ! class_exists( 'Symfony\Component\Process\Process' ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_execution_error',
+						'Embedded LLM binary execution failed: Symfony Process component unavailable.'
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_process_unavailable',
 					__( 'Symfony Process component is not available. Please run composer install.', 'mcp-ai-wpoos' )
@@ -1139,11 +1423,24 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			try {
 				$process->run();
 			} catch ( \Symfony\Component\Process\Exception\ProcessTimedOutException $e ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_execution_error',
+						'Embedded LLM binary process timed out.'
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_timeout',
 					__( 'llama-cli process timed out.', 'mcp-ai-wpoos' )
 				);
 			} catch ( \Exception $e ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_execution_error',
+						'Embedded LLM binary process could not be started.',
+						array( 'exception' => $e->getMessage() )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_exec_failed',
 					sprintf(
@@ -1161,6 +1458,13 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// Non-zero exit codes indicate a binary-level error.
 			if ( 0 !== $exit_code ) {
 				$error_detail = ! empty( $stderr ) ? trim( $stderr ) : 'exit code ' . $exit_code;
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_binary_execution_error',
+						'Embedded LLM binary exited with non-zero exit code.',
+						array( 'exit_code' => $exit_code )
+					);
+				}
 				return new WP_Error(
 					'wp_mcp_ai_binary_error',
 					sprintf(
