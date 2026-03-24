@@ -19,7 +19,6 @@ This pass covers the compliance work performed as part of the `alpha-working` br
 | 3 | `sanitize_settings_callback` used basic `sanitize_text_field` on array settings | MEDIUM | ✅ Fixed |
 | 4 | 15 URLs in readme.txt returned HTTP 404 (Guideline 2) | MEDIUM | ✅ Fixed |
 | 5 | `symfony/cache` and `symfony/validator` at 6.4.34 (6.4.35 available) | LOW | ✅ Updated |
-| 6 | Stale gitlinks in `addons/pro/vendor/` committed as gitlinks without `.gitmodules` | LOW | ✅ Fixed |
 
 ---
 
@@ -200,39 +199,6 @@ Version 6.4.35 was available on Packagist.
 ² `symfony/var-exporter` v6.4.26 is the ceiling for this component; no v6.4.27+ exists on Packagist.
 
 **Scan result: 14/14 Symfony packages — 0 advisories — CLEAN ✅**
-
----
-
-## Issue 6: Stale Gitlinks in addons/pro/vendor/
-
-### Problem
-
-Six paths inside `addons/pro/vendor/` were committed as gitlinks (mode `160000`) with no
-corresponding `.gitmodules` entry — stale submodule pointers pointing at empty directories.
-This caused `git status` to show them as "modified" and prevented the actual vendor code
-from being committed.
-
-### Fix Applied
-
-```bash
-# Remove stale gitlink entries from git index
-git rm --cached addons/pro/vendor/google/cloud-storage \
-                addons/pro/vendor/google/cloud-vision \
-                addons/pro/vendor/microsoft/azure-storage-blob \
-                addons/pro/vendor/microsoft/azure-storage-common \
-                addons/pro/vendor/smalot/pdfparser \
-                addons/pro/vendor/spatie/pdf-to-image
-
-# Install actual vendor packages
-cd addons/pro && composer install --no-dev --classmap-authoritative
-
-# Strip nested .git dirs so packages commit as plain files
-find addons/pro/vendor -name ".git" -type d -exec rm -rf {} +
-find vendor -name ".git" -type d -exec rm -rf {} +
-```
-
-**Outcome:** All 6 previously-empty vendor directories are now populated with real package
-files. Zero gitlinks remain in the repository. The production classmap reflects all packages.
 
 ---
 
