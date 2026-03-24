@@ -971,22 +971,6 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				return $binary;
 			}
 
-			// Confirm the binary is still executable before starting inference.
-			// Permissions may have changed between get_inference_binary()'s check and now
-			// (e.g. web-server user lacks execute rights, or chmod was undone by a deploy).
-			// Catching this early prevents the SSE stream from hanging indefinitely at the
-			// "generating" step waiting for a process that will never start.
-			if ( ! is_executable( $binary ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_binary_not_executable',
-					sprintf(
-						/* translators: %s: absolute path to the llama-cli binary */
-						__( 'llama-cli binary is not executable. Please run: chmod +x %s', 'mcp-ai-wpoos' ),
-						$binary
-					)
-				);
-			}
-
 			$models_dir = $this->get_models_directory();
 			$model_path = $models_dir . static::$available_models[ $model_slug ]['filename'];
 
