@@ -1008,6 +1008,13 @@ class WP_MCP_AI_Shortcode {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
 			}
 
+			// Pass max_tokens from the orchestration layer so the embedded client-side
+			// model respects the same token budget as server-side providers instead of
+			// falling back to a hardcoded default.
+			if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				$config['max_tokens'] = WP_MCP_AI_Resource_Manager::instance()->get_max_tokens();
+			}
+
 			// Add base knowledge (memory files and vector store) for embedded provider.
 			// This enables the embedded client to access the same knowledge base as server-side providers.
 			// Merge assistant memory files with any profession memory files so both are available.
