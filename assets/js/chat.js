@@ -16049,9 +16049,24 @@
 
     function disableForm(state, disabled) {
         const container = state.container;
-        const elements = container.querySelectorAll('button, textarea, input');
-        Array.prototype.forEach.call(elements, function (element) {
-            element.disabled = disabled;
+
+        // Scope to the input form and the control buttons (save/export/new-chat).
+        // Elements inside the messages list (copy, speech, individual save/delete) are
+        // intentionally left interactive so the user can act on message content while
+        // a response is streaming or processing.
+        const sections = [
+            container.querySelector('.wp-mcp-ai-chat__form'),
+            container.querySelector('.wp-mcp-ai-chat__control-buttons'),
+        ];
+
+        sections.forEach(function (section) {
+            if (!section) {
+                return;
+            }
+            const elements = section.querySelectorAll('button, textarea, input');
+            Array.prototype.forEach.call(elements, function (element) {
+                element.disabled = disabled;
+            });
         });
 
         if (disabled) {
