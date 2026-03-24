@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
-        'version' => 'dev-copilot/fix-provider-test-page-error',
-        'reference' => 'ef08459ce72b10d3fb42651531d16afc7563430d',
+        'pretty_version' => 'dev-copilot/enhance-embedded-chat-client-logging',
+        'version' => 'dev-copilot/enhance-embedded-chat-client-logging',
+        'reference' => 'a6be33ce6404377701fa1f6db37a522fed4c0ae2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-provider-test-page-error',
-            'version' => 'dev-copilot/fix-provider-test-page-error',
-            'reference' => 'ef08459ce72b10d3fb42651531d16afc7563430d',
+            'pretty_version' => 'dev-copilot/enhance-embedded-chat-client-logging',
+            'version' => 'dev-copilot/enhance-embedded-chat-client-logging',
+            'reference' => 'a6be33ce6404377701fa1f6db37a522fed4c0ae2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
