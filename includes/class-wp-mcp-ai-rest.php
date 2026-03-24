@@ -2901,6 +2901,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'iterations'   => $iteration,
 					)
 				);
+
+				// When the loop exits because it hit max_iterations, the final LLM response may
+				// still contain tool_calls that were never executed (the PHP side did not make
+				// another iteration to process them). If those tool_calls are forwarded to the
+				// browser client as-is, the JS will persist an assistant message that has
+				// tool_call_ids with no matching tool-response messages. On the very next user
+				// turn the full conversation — including that orphaned assistant message — is
+				// sent back to OpenAI, which rejects the request with:
+				//   "An assistant message with 'tool_calls' must be followed by tool messages
+				//    responding to each 'tool_call_id'."
+				// Stripping the unexecuted tool_calls from the final response prevents the
+				// client from ever storing that invalid state. The defensive filter inside
+				// filter_tool_messages_for_payload() provides a second layer of protection for
+				// any orphaned messages that may have been stored in a previous session.
+				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'Non-SSE' );
 			}
 
 			// FALLBACK: If the LLM returned no text content but we have tool results, inject the
@@ -3685,6 +3700,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'message' => __( 'Reached maximum tool execution iterations.', 'mcp-ai-wpoos' ),
 					)
 				);
+
+				// Same as the non-SSE path: when the loop exits because max_iterations was
+				// reached the final LLM response may still have unexecuted tool_calls.
+				// Strip them so the SSE "message" event does not include orphaned tool_call_ids
+				// that would later cause "An assistant message with 'tool_calls' must be
+				// followed by tool messages responding to each 'tool_call_id'" errors.
+				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'SSE' );
 			}
 
 			// Update response completion timestamp after agentic loop.
@@ -9188,6 +9210,59 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					usleep( self::STREAMING_CHUNK_DELAY_US );
 				}
 			}
+		}
+
+		/**
+		 * Strip unexecuted tool_calls from an LLM response in-place.
+		 *
+		 * When the agentic loop exits because it has reached max_iterations, the
+		 * final LLM response may still contain tool_calls that were never executed.
+		 * Forwarding those to the browser would cause the JS client to persist an
+		 * assistant message with orphaned tool_call_ids in localStorage. On the very
+		 * next user turn those orphaned ids would be sent back to OpenAI, triggering:
+		 *   "An assistant message with 'tool_calls' must be followed by tool messages
+		 *    responding to each 'tool_call_id'."
+		 *
+		 * This method mutates $response directly and returns the number of stripped
+		 * tool calls so the caller can log appropriately.
+		 *
+		 * @param array  $response     LLM response array (mutated in place).
+		 * @param string $assistant_id Assistant identifier (for logging).
+		 * @param int    $iteration    Iteration count at time of stripping (for logging).
+		 * @param string $context_label Short label for the log message, e.g. 'Non-SSE' or 'SSE'.
+		 * @return int Number of tool_calls stripped (0 if none).
+		 */
+		protected function strip_orphaned_tool_calls_from_response( array &$response, $assistant_id, $iteration, $context_label = '' ) {
+			if ( is_wp_error( $response ) ) {
+				return 0;
+			}
+
+			$orphaned = $this->extract_tool_calls_from_response( $response );
+
+			if ( empty( $orphaned ) ) {
+				return 0;
+			}
+
+			if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+				unset( $response['choices'][0]['message']['tool_calls'] );
+			}
+
+			if ( isset( $response['choices'][0]['finish_reason'] ) && 'tool_calls' === $response['choices'][0]['finish_reason'] ) {
+				$response['choices'][0]['finish_reason'] = 'stop';
+			}
+
+			$label = '' !== $context_label ? trim( $context_label ) . ': ' : '';
+			WP_MCP_AI_Logger::log_event(
+				'stripped_orphaned_tool_calls',
+				$label . 'Stripped unexecuted tool_calls from final response after reaching max_iterations.',
+				array(
+					'assistant_id'   => $assistant_id,
+					'iterations'     => $iteration,
+					'stripped_count' => count( $orphaned ),
+				)
+			);
+
+			return count( $orphaned );
 		}
 
 		/**

@@ -3401,6 +3401,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$pending_calls           = array();
 			$awaiting_tool_responses = false;
 
+			// Index in $filtered where the current incomplete tool-call group starts.
+			// When we later encounter a user/system message while pending_calls is still
+			// non-empty, we know the assistant message (and any partial tool responses)
+			// at this index were never properly answered and must be removed to keep the
+			// conversation valid for the OpenAI API.
+			$incomplete_group_start = null;
+
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
 					continue;
@@ -3413,15 +3420,44 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never fully
+					// answered (awaiting_tool_responses is still true), drop the entire incomplete
+					// group from $filtered to prevent sending an invalid conversation to OpenAI.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before user/system message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
 					$pending_calls           = array();
 					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
 					$filtered[]              = $message;
 					continue;
 				}
 
 				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group
+					// before starting a new one.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before next assistant message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
 					$pending_calls           = array();
 					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
 
 					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 						foreach ( $message['tool_calls'] as $tool_call ) {
@@ -3441,6 +3477,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					if ( ! empty( $pending_calls ) ) {
 						$awaiting_tool_responses = true;
+						// Remember the position in $filtered where this group begins so we
+						// can truncate back to it if the group turns out to be incomplete.
+						$incomplete_group_start = count( $filtered );
 					}
 
 					$filtered[] = $message;
@@ -3467,6 +3506,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					if ( empty( $pending_calls ) ) {
 						$awaiting_tool_responses = false;
+						// All tool_calls for this assistant message are now answered;
+						// the group is complete so we no longer need to guard its start.
+						$incomplete_group_start = null;
 					}
 
 					$filtered[] = $message;
@@ -3475,6 +3517,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$pending_calls           = array();
 				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
 				$filtered[]              = $message;
 			}
 
