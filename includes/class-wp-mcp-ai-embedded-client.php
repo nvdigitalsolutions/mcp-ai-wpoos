@@ -67,6 +67,14 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'ram_gb'       => 6,
 				'description'  => 'Higher quality responses. Requires more RAM.',
 			),
+			'gemma-2-2b-it-q4_k_m'          => array(
+				'name'         => 'Google Gemma 2 2B Instruct (Q4_K_M)',
+				'filename'     => 'gemma-2-2b-it-Q4_K_M.gguf',
+				'download_url' => 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf',
+				'size_mb'      => 1650,
+				'ram_gb'       => 4,
+				'description'  => 'Google Gemma 2 2B. Compact and efficient for CPU inference.',
+			),
 		);
 
 		// -------------------------------------------------------------------------

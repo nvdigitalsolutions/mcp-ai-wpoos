@@ -622,6 +622,115 @@ class Test_Embedded_Client_Shared_Libs extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// is_executable – binary permission checks
+	// =========================================================================
+
+	/**
+	 * Test that a freshly extracted mock binary is considered executable by PHP.
+	 *
+	 * Verifies that create_mock_binary() produces a file for which is_executable()
+	 * returns true and that get_binary_status()['found'] reflects this when the
+	 * settings-configured path points at the same file.
+	 */
+	public function test_mock_binary_is_executable() {
+		$bin_path = $this->create_mock_binary( $this->tmp_dir . '/llama-cli' );
+
+		$this->assertFileExists( $bin_path, 'Mock binary must exist on disk.' );
+		$this->assertTrue( is_executable( $bin_path ), 'Mock binary must be executable (chmod 0755 must have been applied).' );
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$status       = $fresh_client->get_binary_status();
+
+		$this->assertTrue( $status['found'], 'get_binary_status() must report found=true for an executable binary.' );
+		$this->assertSame( $bin_path, $status['path'], 'get_binary_status() must return the correct binary path.' );
+	}
+
+	/**
+	 * Test that a non-executable file is NOT reported as found by get_binary_status().
+	 *
+	 * Verifies the is_executable() guard in get_inference_binary(): a file whose
+	 * execute bit is cleared (chmod 0644) must not be returned as a valid binary.
+	 */
+	public function test_non_executable_binary_not_found() {
+		$bin_path = $this->tmp_dir . '/llama-cli';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $bin_path, '#!/bin/sh' . PHP_EOL . 'echo mock' );
+		chmod( $bin_path, 0644 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- execute bit intentionally absent
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$status       = $fresh_client->get_binary_status();
+
+		$this->assertFalse( $status['found'], 'A non-executable file must not be reported as a valid binary.' );
+	}
+
+	/**
+	 * Test that run_binary() (via Symfony Process) executes the binary and captures output.
+	 *
+	 * Symfony\Component\Process\Process is the execution engine used by the
+	 * embedded LLM client.  This test confirms that:
+	 *  1. The Symfony Process component is available (composer install ran).
+	 *  2. A mock executable binary can be launched via the same code-path
+	 *     that llama-cli inference uses.
+	 *  3. stdout is captured correctly and returned by run_binary().
+	 *  4. A zero exit code is treated as success.
+	 */
+	public function test_run_binary_executes_via_symfony_process() {
+		if ( ! class_exists( 'Symfony\Component\Process\Process' ) ) {
+			$this->markTestSkipped( 'Symfony Process component is not available. Run composer install.' );
+		}
+
+		// Create a mock binary that echoes a known string to stdout and exits 0.
+		$bin_path = $this->tmp_dir . '/llama-cli';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents(
+			$bin_path,
+			'#!/bin/sh' . PHP_EOL .
+			'echo "llama-cli mock output"' . PHP_EOL .
+			'exit 0' . PHP_EOL
+		);
+		chmod( $bin_path, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
+		$this->assertTrue( is_executable( $bin_path ), 'Binary must be executable before invoking run_binary().' );
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$result       = $fresh_client->test_connection();
+
+		// test_connection() calls run_binary() via Symfony Process internally.
+		$this->assertNotWPError( $result, 'run_binary() via Symfony Process must succeed for a valid executable.' );
+		$this->assertTrue( $result['success'], 'test_connection() must return success => true.' );
+	}
+
+	/**
+	 * Test that run_binary() returns a WP_Error when the binary exits with a
+	 * non-zero status code (simulating an unrecognised flag or runtime error).
+	 *
+	 * This mirrors what happens when llama-cli encounters an unsupported argument:
+	 * the process exits non-zero and run_binary() must surface a WP_Error rather
+	 * than silently returning empty output.
+	 */
+	public function test_run_binary_returns_error_on_non_zero_exit() {
+		if ( ! class_exists( 'Symfony\Component\Process\Process' ) ) {
+			$this->markTestSkipped( 'Symfony Process component is not available. Run composer install.' );
+		}
+
+		$bin_path = $this->tmp_dir . '/llama-cli';
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents(
+			$bin_path,
+			'#!/bin/sh' . PHP_EOL .
+			'echo "error: unrecognised option" >&2' . PHP_EOL .
+			'exit 1' . PHP_EOL
+		);
+		chmod( $bin_path, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+
+		$fresh_client = $this->client_with_binary_path( $bin_path );
+		$result       = $fresh_client->test_connection();
+
+		$this->assertWPError( $result, 'run_binary() must return WP_Error when the binary exits non-zero.' );
+		$this->assertSame( 'wp_mcp_ai_binary_error', $result->get_error_code() );
+	}
+
+	// =========================================================================
 	// run_binary – stderr fallback for newer llama.cpp builds
 	// =========================================================================
 
