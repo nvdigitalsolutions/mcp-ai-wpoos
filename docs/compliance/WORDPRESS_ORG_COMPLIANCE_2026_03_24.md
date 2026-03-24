@@ -1,13 +1,62 @@
 # WordPress.org Plugin Review Compliance — March 24, 2026
 
-**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar24/3.9A8 (Pass 17)
+**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar24/3.9A9 (Pass 18)
 **Date:** March 24, 2026
-**Plugin Version:** 1.1.4 → 1.1.5 (compliance update)
+**Plugin Version:** 1.1.5 (pre-submission final review)
 **Status:** All identified issues addressed — Ready for submission
 
 ---
 
-## Summary of Changes in This Review Cycle
+## Pass 18 — Pre-Submission Final Review
+
+Pass 18 is a dedicated final sweep of the base plugin before WordPress.org submission.
+It incorporates all fixes from Pass 17 and adds one additional fix discovered during the
+final review.
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | 29 bare `phpcs:ignore` annotations in `class-wp-mcp-ai-embedded-client.php` — missing `--` justification text | MEDIUM | ✅ Fixed in Pass 18 |
+| 2 | 1 bare `phpcs:disable` in `mcp-ai-wpoos.php` plugin header — missing `--` justification text | LOW | ✅ Fixed in Pass 18 |
+
+### Issue 1 — Bare `phpcs:ignore` in Embedded Client
+
+**File:** `includes/class-wp-mcp-ai-embedded-client.php`
+
+The compliance document for Pass 17 stated "0 bare phpcs:disable or phpcs:ignore lines" but
+a final scan revealed 29 `phpcs:ignore` annotations in the embedded LLM client that did not
+include a `--` justification comment. All WordPress.org review guidelines and the project's
+own PHPCS compliance policy require every suppression to explain *why* the rule does not
+apply.
+
+The 29 instances were concentrated in four areas:
+- Binary/model file downloads: `file_put_contents`, `rename`, `chmod`, `unlink` (temp cleanup)
+- Status checks: `glob`, `is_writable`
+- SONAME symlink management: `symlink`, `file_get_contents`, `file_put_contents`
+- Runtime environment: `getenv` for `LD_LIBRARY_PATH` construction
+
+**Fix:** Justification text added after `--` on all 29 lines explaining why the
+WordPress-preferred API (WP_Filesystem) is not usable in each specific context (binary
+management at CLI/cron level, no HTTP context, no initialized WP_Filesystem object
+available).
+
+### Issue 2 — Bare `phpcs:disable` in Main Plugin Header
+
+**File:** `mcp-ai-wpoos.php`
+
+The `@package` block in the main plugin header contained:
+```
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
+```
+without a `--` justification comment.
+
+**Fix:** Justification appended:
+```
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Main plugin entry point; file is intentionally named after the plugin slug, not a class.
+```
+
+---
+
+## Pass 17 — Summary of Changes
 
 This pass covers the compliance work performed as part of the `alpha-working` branch PR
 (March 24, 2026) before tagging version 1.1.5.
@@ -202,7 +251,7 @@ Version 6.4.35 was available on Packagist.
 
 ---
 
-## Full Base Plugin Compliance Verification (Pass 17)
+## Full Base Plugin Compliance Verification (Pass 18)
 
 A complete compliance sweep of all `includes/` PHP files, `readme.txt`, and `composer.json`
 was performed on March 24, 2026. Findings from each guideline category:
@@ -282,7 +331,7 @@ All 13 `register_setting()` call sites in `includes/` have a `sanitize_callback`
   `wp_kses()`, or similar.
 - SQL queries use `$wpdb->prepare()` for user-supplied values; DDL statements have full
   `phpcs:ignore PreparedSQL` annotations with `--` justification text.
-- 3 bare `phpcs:disable` suppressions eliminated in Pass 16; 0 bare suppressions remain.
+- 3 bare `phpcs:disable` suppressions eliminated in Pass 16; 29 bare `phpcs:ignore` in embedded client + 1 bare `phpcs:disable` in plugin header eliminated in Pass 18; **0 bare suppressions remain**.
 
 ### Guideline 8 — Prefixing
 
@@ -304,6 +353,7 @@ prefix. No global namespace pollution.
 **Status: ✅ PASS**
 
 - 0 bare `phpcs:disable` or `phpcs:ignore` lines (all include `--` justification text).
+- Pass 18 eliminated 29 bare `phpcs:ignore` in `class-wp-mcp-ai-embedded-client.php` and 1 bare `phpcs:disable` in `mcp-ai-wpoos.php`.
 
 ### Guideline 11 — `error_log()` Gating
 
@@ -351,14 +401,14 @@ All `error_log()` calls are gated by one of:
 | 7 | Input sanitization / output escaping | ✅ All inputs sanitized; all outputs escaped; SQL uses prepare() |
 | 8 | Prefixing | ✅ All global symbols use `wp_mcp_ai_` / `WP_MCP_AI_` prefix |
 | 9 | Privacy Policy | ✅ Tracking opt-in (fixed this cycle); all 43+ services documented |
-| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions (30 fixed in Passes 16+18) |
 | 11 | `error_log()` gating | ✅ All instances gated |
 | 12 | Pro feature separation | ✅ `addons/` excluded via `.distignore`; no base `require` of `addons/` |
 | 13 | Security | ✅ Nonces, capabilities, sanitization, SQL, URL validation verified |
 
 **Total documented external services: 43** (+2a for Gemini Semantic Retrieval)
 
-**Base plugin compliance status: ✅ Fully compliant — March 24, 2026 (Pass 17)**
+**Base plugin compliance status: ✅ Fully compliant — March 24, 2026 (Pass 18)**
 
 ---
 

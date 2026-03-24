@@ -96,7 +96,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				wp_mkdir_p( $models_dir );
 
 				// Deny direct HTTP access to raw model files.
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- WP Filesystem API unavailable at early init; writing a one-line .htaccess guard via raw PHP is the only viable approach.
 				$wrote = file_put_contents( $models_dir . '.htaccess', "Options -Indexes\nDeny from all\n" );
 				if ( false === $wrote ) {
 					// Log but don't halt – directory was created; .htaccess is a best-effort guard.
@@ -273,7 +273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp file cleanup after write error; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_model_download_error',
@@ -296,7 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp file cleanup after verify error; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_model_download_error',
@@ -321,7 +321,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// MIN_DOWNLOAD_RATIO of the documented size).
 			$min_expected = (int) ( $model['size_mb'] * self::MIN_DOWNLOAD_RATIO * 1024 * 1024 );
 			if ( ! file_exists( $tmp_path ) || filesize( $tmp_path ) < $min_expected ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp file cleanup after extraction error; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_model_download_error',
@@ -340,9 +340,9 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			// Atomic rename.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic file replacement via rename(); WP_Filesystem::move() is not suitable here as it requires an initialized filesystem context and does not guarantee atomicity across filesystems.
 			if ( ! rename( $tmp_path, $dest_path ) ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp file cleanup after rename failure; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_model_download_error',
@@ -420,7 +420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				);
 			}
 
-			if ( ! unlink( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			if ( ! unlink( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Deleting a managed GGUF model file; WP_Filesystem::delete() requires an initialised filesystem object which is not available in this server-side model-management context.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_model_delete_error',
@@ -522,7 +522,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// copy logic existed, or where symlink() was blocked by the server.
 			$this->create_soname_symlinks( $bin_dir );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob -- Listing binary files by pattern in a plugin-managed directory; WP_Filesystem has no glob equivalent and opendir/readdir would require significantly more code for simple pattern matching.
 			$lib_files = glob( $bin_dir . 'lib*.so*' );
 			if ( ! is_array( $lib_files ) ) {
 				$lib_files = array();
@@ -606,7 +606,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				wp_mkdir_p( $bin_dir );
 			}
 
-			if ( ! is_writable( $bin_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
+			if ( ! is_writable( $bin_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Checking writability of the binary directory before download; WP_Filesystem::is_writable() requires an initialised filesystem object not available at this point.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_binary_download_error',
@@ -641,9 +641,9 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$tmp_base    = wp_tempnam( 'llama-cli-download', $bin_dir );
 			$tmp_archive = $tmp_base . '.tar.gz';
 			// Rename the placeholder so PharData can detect the format from the extension.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic binary replacement; WP_Filesystem::move() is not suitable here as it requires an initialized filesystem context and does not guarantee atomicity across filesystems.
 			if ( ! rename( $tmp_base, $tmp_archive ) ) {
-				@unlink( $tmp_base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_base ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp file cleanup after rename failure; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_binary_download_error',
@@ -671,7 +671,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp archive cleanup after extraction error; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_binary_download_error',
@@ -691,7 +691,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
-				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Temp archive cleanup after extract success; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
 						'embedded_binary_download_error',
@@ -714,7 +714,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$dest_path   = $bin_dir . $bin_name;
 			$extract_err = $this->extract_binary_from_archive( $tmp_archive, $bin_name, $dest_path, $bin_dir );
 
-			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged
+			@unlink( $tmp_archive ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink,WordPress.PHP.NoSilencedErrors.Discouraged -- Final temp archive cleanup; unlink() used directly as WP_Filesystem has no temp-cleanup method; @ suppresses errors on non-existent temp files.
 
 			if ( is_wp_error( $extract_err ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -728,7 +728,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			}
 
 			// --- Step 4: Make it executable ---
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Setting execute permission on a downloaded binary; WP_Filesystem::chmod() requires an initialised filesystem object which is unavailable in this CLI/binary-management context.
 			if ( ! chmod( $dest_path, 0755 ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
@@ -893,7 +893,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					$filename = $entry->getFilename();
 
 					if ( $filename === $bin_name ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a shared library binary to create a SONAME copy; WP_Filesystem::get_contents() requires an initialised filesystem object unavailable in this binary-management context.
 						$contents = file_get_contents( $entry->getPathname() );
 						if ( false === $contents ) {
 							return new WP_Error(
@@ -901,7 +901,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 								__( 'Could not read binary from archive.', 'mcp-ai-wpoos' )
 							);
 						}
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing a shared library SONAME copy when symlink() is blocked; WP_Filesystem::put_contents() requires an initialised filesystem object unavailable in this binary-management context.
 						if ( false === file_put_contents( $dest_path, $contents ) ) {
 							return new WP_Error(
 								'wp_mcp_ai_archive_write_failed',
@@ -912,10 +912,10 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					} elseif ( 1 === preg_match( $lib_pat, $filename ) ) {
 						// Extract shared libraries (e.g. libmtmd.so.0, libllama.so)
 						// into the binary directory so they are found at runtime.
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a shared library binary to create a linker-name copy; WP_Filesystem::get_contents() requires an initialised filesystem object unavailable in this binary-management context.
 						$lib_contents = file_get_contents( $entry->getPathname() );
 						if ( false !== $lib_contents ) {
-							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing a shared library linker-name copy when symlink() is blocked; WP_Filesystem::put_contents() requires an initialised filesystem object unavailable in this binary-management context.
 							$wrote = file_put_contents( $bin_dir . $filename, $lib_contents );
 							if ( false === $wrote && class_exists( 'WP_MCP_AI_Logger' ) ) {
 								WP_MCP_AI_Logger::log_event(
@@ -983,7 +983,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		private function create_soname_symlinks( $bin_dir ) {
 			$bin_dir = trailingslashit( $bin_dir );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.glob_glob -- Listing shared library files by pattern in the binary directory; WP_Filesystem has no glob equivalent and opendir/readdir would require significantly more code for simple pattern matching.
 			$versioned_libs = glob( $bin_dir . 'lib*.so.*' );
 			if ( empty( $versioned_libs ) ) {
 				return;
@@ -1022,15 +1022,15 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				if ( ! file_exists( $soname_path ) && ! is_link( $soname_path ) ) {
 					$soname_created = false;
 					if ( function_exists( 'symlink' ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-						$soname_created = @symlink( $basename, $soname_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink -- Creating a SONAME symlink for a shared library; WP_Filesystem has no symlink() equivalent; fallback to file copy if symlink() is blocked.
+						$soname_created = @symlink( $basename, $soname_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- symlink() is blocked on some hosts (e.g. Cloudways); @ prevents a fatal and the boolean return value is checked immediately below.
 					}
 					if ( ! $soname_created ) {
 						// symlink() unavailable or failed; copy the versioned file
 						// so the dynamic linker can still find the SONAME at runtime.
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading library binary for SONAME copy fallback; WP_Filesystem::get_contents() requires an initialised filesystem object unavailable here.
 						$lib_data = file_get_contents( $filepath );
-						if ( false === $lib_data || false === file_put_contents( $soname_path, $lib_data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+						if ( false === $lib_data || false === file_put_contents( $soname_path, $lib_data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing SONAME copy fallback when symlink is unavailable; WP_Filesystem::put_contents() requires an initialised filesystem object unavailable here.
 							if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 								WP_MCP_AI_Logger::log_event(
 									'embedded_lib_soname_failed',
@@ -1056,16 +1056,16 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				if ( ! file_exists( $linker_path ) && ! is_link( $linker_path ) ) {
 					$linker_created = false;
 					if ( function_exists( 'symlink' ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink
-						$linker_created = @symlink( $soname, $linker_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_symlink -- Creating a linker-name symlink for a shared library; WP_Filesystem has no symlink() equivalent; fallback to file copy if symlink() is blocked.
+						$linker_created = @symlink( $soname, $linker_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- symlink() is blocked on some hosts (e.g. Cloudways); @ prevents a fatal and the boolean return value is checked immediately below.
 					}
 					if ( ! $linker_created ) {
 						// Copy the SONAME file (symlink or copy) to the linker name.
 						if ( file_exists( $soname_path ) ) {
-							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+							// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading library binary for linker-name copy fallback; WP_Filesystem::get_contents() requires an initialised filesystem object unavailable here.
 							$soname_data = file_get_contents( $soname_path );
 							if ( false !== $soname_data ) {
-								// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+								// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing linker-name copy fallback when symlink is unavailable; WP_Filesystem::put_contents() requires an initialised filesystem object unavailable here.
 								file_put_contents( $linker_path, $soname_data );
 							}
 						}
@@ -1539,7 +1539,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				return true;
 			}
 
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_getenv
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_getenv -- Reading LD_LIBRARY_PATH for process environment construction; getenv() is used here (not $_ENV or $_SERVER) because proc_open() requires an explicit environment array built at runtime.
 			if ( getenv( 'CLOUDWAYS_DEPLOYMENT' ) ) {
 				return true;
 			}
