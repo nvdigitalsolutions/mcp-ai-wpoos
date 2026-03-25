@@ -65,7 +65,13 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 		$this->assertEquals( 'embedded', $subtab_groups['embedded']['id'] );
 
 		// Verify the embedded subtab has expected fields (client-side + server-side after Pro move).
-		$expected_fields = array( 'enable_embedded', 'embedded_model', 'embedded_model_management', 'embedded_server_model', 'server_model_management' );
+		$expected_fields = array(
+			'enable_embedded',
+			'embedded_model',
+			'embedded_model_management',
+			'embedded_server_model',
+			'server_model_management',
+		);
 		$this->assertEquals( $expected_fields, $subtab_groups['embedded']['fields'] );
 	}
 

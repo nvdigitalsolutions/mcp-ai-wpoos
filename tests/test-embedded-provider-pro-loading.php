@@ -87,11 +87,7 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		}
 
 		// enable_embedded lives in the Pro Providers section (moved from base with the server-side client).
-		$section    = new WP_MCP_AI_Section_Pro_Providers();
-		$reflection = new ReflectionClass( $section );
-		$method     = $reflection->getMethod( 'get_fields' );
-		$method->setAccessible( true );
-		$fields = $method->invoke( $section );
+		$fields = $this->get_pro_section_fields();
 
 		// Check enable_embedded field exists.
 		$this->assertArrayHasKey( 'enable_embedded', $fields, 'enable_embedded field should exist in Pro section' );
@@ -132,12 +128,8 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'embedded', $subtabs, 'Step 3: Subtab should be visible' );
 
 		// Step 4: Pro Providers section fields show auto-enabled status.
-		if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
-			$pro_section    = new WP_MCP_AI_Section_Pro_Providers();
-			$pro_reflection = new ReflectionClass( $pro_section );
-			$pro_method     = $pro_reflection->getMethod( 'get_fields' );
-			$pro_method->setAccessible( true );
-			$pro_fields = $pro_method->invoke( $pro_section );
+		if ( null !== $this->get_pro_section_fields() ) {
+			$pro_fields = $this->get_pro_section_fields();
 			$this->assertTrue( $pro_fields['enable_embedded']['default'], 'Step 4: Should be auto-enabled in Pro section' );
 		}
 	}
@@ -162,5 +154,29 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 			$status['embedded_provider_enabled'],
 			'Embedded provider should be enabled without manual configuration'
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get field definitions from the Pro Providers section via reflection.
+	 *
+	 * Returns null when WP_MCP_AI_Section_Pro_Providers is not available.
+	 *
+	 * @return array|null
+	 */
+	private function get_pro_section_fields() {
+		if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+			return null;
+		}
+
+		$section    = new WP_MCP_AI_Section_Pro_Providers();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_fields' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $section );
 	}
 }
