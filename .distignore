@@ -127,6 +127,10 @@ shared
 
 # Specific exclusions for this plugin
 # Note: test-capability-flags-integration.php moved to bin/ which is already excluded
+# mcp-ai-wpoos-base.php is a restricted-mode entry point for private/custom builds only;
+# it sets WP_MCP_AI_BASE_VERSION=true which hides built-in tools and shows Pro upsells.
+# Excluded from WP.org distribution to ensure all included tools are always available.
+mcp-ai-wpoos-base.php
 mcp-diagnostic-debug.php
 test-storage-service.html
 examples
