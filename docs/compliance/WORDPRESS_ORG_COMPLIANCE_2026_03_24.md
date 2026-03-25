@@ -7,45 +7,6 @@
 
 ---
 
-## Pass 19 — Embedded Client Moved to Pro Addon
-
-Pass 19 corrects a structural placement issue discovered after Pass 18.
-
-| # | Issue | Severity | Status |
-|---|-------|----------|--------|
-| 1 | `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` were loaded unconditionally in the base plugin despite being Pro-only features | HIGH | ✅ Fixed in Pass 19 |
-
-### Issue 1 — Server-Side Embedded LLM Client in Base Plugin
-
-**Files moved:**
-
-- `includes/class-wp-mcp-ai-embedded-client.php` → `addons/pro/includes/class-wp-mcp-ai-embedded-client.php`
-- `includes/admin/class-wp-mcp-ai-embedded-model-ajax.php` → `addons/pro/includes/admin/class-wp-mcp-ai-embedded-model-ajax.php`
-
-**Problem:**
-
-Both files were `require_once`-d from `includes/bootstrap/loader.php` unconditionally —
-meaning every base plugin installation loaded the server-side llama.cpp inference engine
-and its AJAX handlers. The AJAX handler already contained a `WP_MCP_AI_PRO_VERSION` guard
-at runtime, but the class definition was still loaded even without Pro.
-
-**Fix:**
-
-1. Both PHP files physically moved to `addons/pro/includes/` hierarchy.
-2. `includes/bootstrap/loader.php` — two `require_once` calls replaced with explanatory
-   comments indicating these are Pro-only features.
-3. `addons/pro/mcp-ai-wpoos-pro.php` — `class-wp-mcp-ai-embedded-client.php` required
-   early (alongside other Pro infrastructure), `class-wp-mcp-ai-embedded-model-ajax.php`
-   required in the admin block.
-4. `includes/class-wp-mcp-ai-language-model-router.php` — `WP_MCP_AI_Embedded_Client`
-   type hint removed from constructor signature; replaced with `class_exists()` guard
-   before instantiation; `null` client returns a `WP_Error` if `embedded` provider is
-   requested without Pro.
-5. Three test files (`test-embedded-client-logging.php`, `test-embedded-client-shared-libs.php`,
-   `test-embedded-model-slug-sanitization.php`) updated to load from the new Pro path.
-
----
-
 ## Pass 18 — Pre-Submission Final Review
 
 Pass 18 is a dedicated final sweep of the base plugin before WordPress.org submission.
