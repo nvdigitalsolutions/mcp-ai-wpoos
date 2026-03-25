@@ -35,7 +35,14 @@ class Test_Embedded_Client_Logging extends WP_UnitTestCase {
 		parent::setUp();
 
 		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+			$pro_client_path = WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-embedded-client.php';
+			if ( file_exists( $pro_client_path ) ) {
+				require_once $pro_client_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Embedded_Client requires the Pro addon.' );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {

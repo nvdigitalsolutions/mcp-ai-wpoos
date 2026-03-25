@@ -1,9 +1,48 @@
 # WordPress.org Plugin Review Compliance — March 24, 2026
 
-**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar24/3.9A9 (Pass 18)
-**Date:** March 24, 2026
+**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar24/3.9B0 (Pass 19)
+**Date:** March 25, 2026
 **Plugin Version:** 1.1.5 (pre-submission final review)
 **Status:** All identified issues addressed — Ready for submission
+
+---
+
+## Pass 19 — Embedded Client Moved to Pro Addon
+
+Pass 19 corrects a structural placement issue discovered after Pass 18.
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` were loaded unconditionally in the base plugin despite being Pro-only features | HIGH | ✅ Fixed in Pass 19 |
+
+### Issue 1 — Server-Side Embedded LLM Client in Base Plugin
+
+**Files moved:**
+
+- `includes/class-wp-mcp-ai-embedded-client.php` → `addons/pro/includes/class-wp-mcp-ai-embedded-client.php`
+- `includes/admin/class-wp-mcp-ai-embedded-model-ajax.php` → `addons/pro/includes/admin/class-wp-mcp-ai-embedded-model-ajax.php`
+
+**Problem:**
+
+Both files were `require_once`-d from `includes/bootstrap/loader.php` unconditionally —
+meaning every base plugin installation loaded the server-side llama.cpp inference engine
+and its AJAX handlers. The AJAX handler already contained a `WP_MCP_AI_PRO_VERSION` guard
+at runtime, but the class definition was still loaded even without Pro.
+
+**Fix:**
+
+1. Both PHP files physically moved to `addons/pro/includes/` hierarchy.
+2. `includes/bootstrap/loader.php` — two `require_once` calls replaced with explanatory
+   comments indicating these are Pro-only features.
+3. `addons/pro/mcp-ai-wpoos-pro.php` — `class-wp-mcp-ai-embedded-client.php` required
+   early (alongside other Pro infrastructure), `class-wp-mcp-ai-embedded-model-ajax.php`
+   required in the admin block.
+4. `includes/class-wp-mcp-ai-language-model-router.php` — `WP_MCP_AI_Embedded_Client`
+   type hint removed from constructor signature; replaced with `class_exists()` guard
+   before instantiation; `null` client returns a `WP_Error` if `embedded` provider is
+   requested without Pro.
+5. Three test files (`test-embedded-client-logging.php`, `test-embedded-client-shared-libs.php`,
+   `test-embedded-model-slug-sanitization.php`) updated to load from the new Pro path.
 
 ---
 
@@ -373,6 +412,9 @@ All `error_log()` calls are gated by one of:
 - `addons/` directory excluded from distribution ZIP via `.distignore`.
 - No `require` or `include` of `addons/` paths from any file in `includes/`.
 - Pro build configs excluded from both `.distignore` and `bin/build-plugin-zip.sh`.
+- Server-side embedded LLM client (`WP_MCP_AI_Embedded_Client`) and its AJAX handler
+  moved from `includes/` to `addons/pro/includes/` in Pass 19 — the base plugin no
+  longer loads any embedded inference code.
 
 ### Guideline 13 — Security
 
@@ -403,12 +445,12 @@ All `error_log()` calls are gated by one of:
 | 9 | Privacy Policy | ✅ Tracking opt-in (fixed this cycle); all 43+ services documented |
 | 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions (30 fixed in Passes 16+18) |
 | 11 | `error_log()` gating | ✅ All instances gated |
-| 12 | Pro feature separation | ✅ `addons/` excluded via `.distignore`; no base `require` of `addons/` |
+| 12 | Pro feature separation | ✅ `addons/` excluded via `.distignore`; embedded client moved to `addons/pro/` in Pass 19 |
 | 13 | Security | ✅ Nonces, capabilities, sanitization, SQL, URL validation verified |
 
 **Total documented external services: 43** (+2a for Gemini Semantic Retrieval)
 
-**Base plugin compliance status: ✅ Fully compliant — March 24, 2026 (Pass 18)**
+**Base plugin compliance status: ✅ Fully compliant — March 25, 2026 (Pass 19)**
 
 ---
 

@@ -155,7 +155,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+// WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openai-provider-client.php';
@@ -406,7 +406,7 @@ if ( is_admin() ) {
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
+	// WP_MCP_AI_Embedded_Model_Ajax is a Pro-only feature loaded by the Pro addon.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
 
 	// Pro Dashboard.

@@ -275,6 +275,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
+		// Load the server-side Embedded LLM client (llama.cpp / GGUF inference).
+		// This is a Pro-only feature; the base plugin's language model router uses
+		// class_exists() to detect its presence before instantiating it.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+
 		// Load CPT meta schema registry — exposes custom meta field definitions for all
 		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
 		// base get_post_type_schema tool can return complete field information.
@@ -309,6 +314,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load WebLLM Advanced Features settings page (Phase 1).
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
+
+			// Load Embedded Model AJAX handlers (Pro-only: download/delete/list GGUF models and llama-cli binary).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
 
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
