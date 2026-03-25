@@ -62,16 +62,32 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
+			WP_MCP_AI_Logger::log_event(
+				'ollama_test_connection',
+				'Testing Ollama connection.',
+				array(
+					'url'     => $url,
+					'timeout' => $timeout,
+				)
+			);
+
 			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Ollama connection test failed.', array( 'error' => $response->get_error_message() ) );
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Ollama connection failed.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
 			}
 
 			$code = wp_remote_retrieve_response_code( $response );
 			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'Ollama connection test returned non-2xx status.',
+					array( 'http_status' => $code )
+				);
 				return new WP_Error( 'wp_mcp_ai_api_error', __( 'Ollama returned error.', 'mcp-ai-wpoos' ), array( 'status' => $code ) );
 			}
+
+			WP_MCP_AI_Logger::log_event( 'ollama_test_connection', 'Ollama connection successful.' );
 
 			return array(
 				'success' => true,
@@ -151,14 +167,18 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
+			WP_MCP_AI_Logger::log_event( 'ollama_list_models', 'Fetching models from Ollama.', array( 'url' => $url ) );
+
 			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Ollama model listing failed.', array( 'error' => $response->get_error_message() ) );
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
 			}
 
 			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Ollama model list response.', array( 'body' => wp_remote_retrieve_body( $response ) ) );
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
 			}
 
@@ -174,6 +194,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					}
 				}
 			}
+
+			WP_MCP_AI_Logger::log_event( 'ollama_list_models', 'Ollama models retrieved.', array( 'count' => count( $models ) ) );
+
 			return $models;
 		}
 
@@ -220,9 +243,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$http_args['stream'] = true;
 			}
 
+			WP_MCP_AI_Logger::log_event( 'ollama_request', 'Sending request to Ollama.', array( 'model' => $model ) );
+
 			$response = wp_remote_post( $url, $http_args );
 
 			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Ollama request failed.', array( 'error' => $response->get_error_message() ) );
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Request failed.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
 			}
 
@@ -234,8 +260,11 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Non-streaming response - decode and normalize as before.
 			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Ollama response.', array( 'body' => wp_remote_retrieve_body( $response ) ) );
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
 			}
+
+			WP_MCP_AI_Logger::log_event( 'ollama_response', 'Ollama request completed.' );
 
 			return $this->normalize_response( $decoded, $model );
 		}
@@ -255,6 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$body = wp_remote_retrieve_body( $response );
 
 			if ( empty( $body ) ) {
+				WP_MCP_AI_Logger::log_error( 'Empty streaming response from Ollama.', array( 'model' => $model ) );
 				return new WP_Error( 'wp_mcp_ai_empty_streaming_response', __( 'Empty streaming response from Ollama.', 'mcp-ai-wpoos' ) );
 			}
 
@@ -294,6 +324,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			// If we didn't find a final chunk, return an error.
 			if ( null === $final_chunk ) {
+				WP_MCP_AI_Logger::log_error(
+					'Ollama streaming response did not complete.',
+					array(
+						'model'       => $model,
+						'accumulated' => strlen( $accumulated_content ),
+					)
+				);
 				return new WP_Error( 'wp_mcp_ai_incomplete_streaming_response', __( 'Ollama streaming response did not complete (no done=true chunk).', 'mcp-ai-wpoos' ) );
 			}
 
@@ -661,6 +698,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/generate';
 
+			WP_MCP_AI_Logger::log_event( 'ollama_completion_request', 'Sending completion request to Ollama.', array( 'model' => $model ) );
+
 			$response = wp_remote_post(
 				$url,
 				array(
@@ -672,6 +711,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Ollama completion request failed.', array( 'error' => $response->get_error_message() ) );
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
@@ -686,11 +726,19 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Ollama completion response.', array( 'body' => $body ) );
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON response from Ollama.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
 				$error_message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'Unexpected response from Ollama.', 'mcp-ai-wpoos' );
+				WP_MCP_AI_Logger::log_error(
+					'Ollama completion request returned non-2xx status.',
+					array(
+						'http_status'  => $code,
+						'error_detail' => $error_message,
+					)
+				);
 
 				return new WP_Error(
 					'wp_mcp_ai_api_error',
@@ -719,8 +767,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					),
 				);
 
+				WP_MCP_AI_Logger::log_event( 'ollama_completion_response', 'Ollama completion request completed.' );
+
 				return $normalized;
 			}
+
+			WP_MCP_AI_Logger::log_event( 'ollama_completion_response', 'Ollama completion request completed.' );
 
 			return $decoded;
 		}

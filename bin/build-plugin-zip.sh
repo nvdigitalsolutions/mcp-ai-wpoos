@@ -196,6 +196,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.codex' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.bmad' \
+        --exclude '.context' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -208,6 +210,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
+        --exclude 'MAINTAINER_MAP.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -244,6 +247,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
         --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma.js' \
+        --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -659,6 +664,8 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.codex' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.bmad' \
+        --exclude '.context' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
@@ -671,6 +678,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
+        --exclude 'MAINTAINER_MAP.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -707,6 +715,8 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'cosmos.webpack.config.js' \
         --exclude 'webpack.config.tma-builder.js' \
         --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma.js' \
+        --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \

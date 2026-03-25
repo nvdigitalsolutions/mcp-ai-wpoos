@@ -1,0 +1,158 @@
+team:
+  name: NV oOS Feature Development Team
+  description: >
+    Full GSD × BMAD feature development team for medium-to-large NV oOS features.
+    Orchestrator delegates to specialized agents at each phase gate.
+  pattern: orchestrator   # Supervisor delegates to specialized workers
+  workflow: GSD × BMAD (Phases 0–9)
+  config_version: "1.0"
+
+  members:
+    - role: orchestrator
+      agent_id: nv-oos-scrum-master
+      assistant: the-orchestrator
+      model: GPT-4o
+      phases: [0, 4, 7, 9]
+      responsibilities:
+        - Load context from .context/active/[feature].md at session start (Phase 0)
+        - Route tasks to appropriate specialist agents via delegate_to_agent
+        - Monitor progress via check_workflow_health
+        - Enforce phase-completion gates before advancing
+        - Coordinate release checklist (Phase 7)
+        - Archive context and harvest learnings (Phase 9)
+
+    - role: researcher
+      agent_id: nv-oos-analyst
+      assistant: the-research-operative
+      model: GPT-4o-mini
+      phases: [1]
+      responsibilities:
+        - Phase 1 (Discovery): domain research, competitor analysis
+        - Produce Project Brief using deep_research + generate_research_report
+        - Verify claims via verify_information before producing brief
+
+    - role: product_manager
+      agent_id: nv-oos-product-manager
+      assistant: the-content-drafter
+      model: GPT-4o
+      phases: [2]
+      responsibilities:
+        - Phase 2 (Planning): formalize brief into PRD
+        - Define epics, user stories, acceptance criteria
+        - Specify tool definitions and REST endpoints
+
+    - role: architect
+      agent_id: nv-oos-architect
+      assistant: the-unstructured-parser
+      model: GPT-4o-mini
+      phases: [3]
+      responsibilities:
+        - Phase 3 (Architecture): analyze existing patterns via analyze_code_sequence
+        - Produce Architecture Specification using extract_structured_data
+        - Define data models, class hierarchy, security model, and file maps
+
+    - role: developer
+      agent_id: nv-oos-developer
+      assistant: the-publisher
+      model: GPT-4o-mini
+      phases: [5]
+      responsibilities:
+        - Phase 5 (Implementation): atomic story execution via manage_autonomous_session
+        - Follow WPCS + security-checklist.md strictly
+        - Commit atomically with story reference; update task_plan on completion
+
+    - role: qa_engineer
+      agent_id: nv-oos-qa-engineer
+      assistant: the-seo-compliance-auditor
+      model: GPT-4o-mini
+      phases: [6, 8]
+      responsibilities:
+        - Phase 6 (Validation): run PHPUnit, PHPCS, CodeQL; verify acceptance criteria
+        - Phase 8 (Monitoring): track post-release health via check_workflow_health
+
+  phase_gates:
+    phase_0_to_1:
+      - Base context files loaded
+      - Feature context initialized from Project Brief
+      - Context budget < 30%
+    phase_1_to_2:
+      - Project Brief complete and approved
+      - Feasibility assessment documented
+    phase_2_to_3:
+      - PRD approved with all acceptance criteria
+      - PRD Validation Checklist fully checked
+    phase_3_to_4:
+      - Architecture Specification complete and reviewed
+      - Architecture Review Checklist fully checked
+      - File Map complete
+    phase_4_to_5:
+      - All stories broken down in task plan
+      - Stories sequenced with dependencies
+    phase_5_to_6:
+      - All story code committed
+      - Atomic commits with story references
+    phase_6_to_7:
+      - All acceptance criteria verified
+      - PHPUnit, PHPCS, ESLint, CodeQL all pass
+      - Security review complete
+    phase_7_to_8:
+      - Version bumped in all locations
+      - CHANGELOG.md updated
+      - Git tag created and GitHub Release published
+    phase_8_to_9:
+      - No new errors in first 48 hours
+      - Tool success rate > 95%
+    phase_9_complete:
+      - Context archived to .context/archive/
+      - Learnings persisted via batch_manage_memory
+
+  context_files:
+    base: # Always loaded
+      - .context/conventions.md
+      - .context/security-checklist.md
+    feature: # Loaded per active feature
+      - .context/active/[feature].md
+    subsystem: # Loaded based on feature scope
+      - .context/tool-registry.md
+      - .context/rest-api.md
+      - .context/chat-ui.md
+      - .context/testing.md
+      - .context/pro-vs-base.md
+
+  scale_adaptive:
+    patch_bug_fix:
+      agents: [developer, qa_engineer]
+      phases: [5, 6, 7]
+      description: "Use for bug fixes and patches — skip discovery/design phases"
+    small_feature:
+      agents: [orchestrator, developer, qa_engineer]
+      phases: [0, 4, 5, 6, 7, 9]
+      description: "Use for well-understood small features — skip discovery/design phases"
+    medium_feature:
+      agents: [orchestrator, researcher, developer, qa_engineer]
+      phases: [0, 1, 2, 3, 4, 5, 6, 7, 9]
+      description: "Use for medium features requiring research and architecture planning"
+    major_feature:
+      agents: [orchestrator, researcher, product_manager, architect, developer, qa_engineer]
+      phases: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      description: "Use for major features and integrations — full workflow"
+
+  instantiation_example: |
+    # Instantiate via NV oOS Pro tools:
+    create_agent_team({
+      "team_name":          "GSD-BMAD Feature Team",
+      "team_type":          "orchestrator",
+      "team_composition": {
+        "orchestrator": "the-orchestrator",
+        "researcher":   "the-research-operative",
+        "architect":    "the-unstructured-parser",
+        "developer":    "the-publisher",
+        "qa_engineer":  "the-seo-compliance-auditor"
+      },
+      "workflow_template": "feature_development",
+      "context_files": [
+        ".context/conventions.md",
+        ".context/security-checklist.md",
+        ".context/active/[feature].md"
+      ]
+    })

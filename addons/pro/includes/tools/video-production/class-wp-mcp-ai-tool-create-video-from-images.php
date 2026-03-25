@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Create_Video_From_Images implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement create_video_from_images logic
 		// This requires FFmpeg or similar video processing library
 

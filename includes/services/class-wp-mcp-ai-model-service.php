@@ -641,6 +641,20 @@ class WP_MCP_AI_Model_Service {
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 		);
 
+		// Append any server-side GGUF models that have been downloaded.
+		if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+			$client     = new WP_MCP_AI_Embedded_Client();
+			$downloaded = $client->get_downloaded_models();
+			foreach ( $downloaded as $slug => $model ) {
+				// Prefix slug to distinguish server-side models from client-side ones.
+				$models[ $slug ] = sprintf(
+					/* translators: %s: model name */
+					__( '[Server] %s', 'mcp-ai-wpoos' ),
+					$model['name']
+				);
+			}
+		}
+
 		return $models;
 	}
 
@@ -710,7 +724,7 @@ class WP_MCP_AI_Model_Service {
 			'ollama'      => 'llama4',
 			'lm_studio'   => 'meta-llama/llama-4-scout-17b-16e-instruct',
 			'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
-			'embedded'    => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			'embedded'    => 'gemma-2-2b-it-q4f16_1-MLC',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';

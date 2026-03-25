@@ -803,6 +803,11 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	 * Register the CCT in JetEngine if not already registered.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_health_wellness_management'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 		if ( ! $module ) {
 			return;

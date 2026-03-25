@@ -275,6 +275,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
+		// Load the server-side Embedded LLM client (llama.cpp / GGUF inference).
+		// This is a Pro-only feature; the base plugin's language model router uses
+		// class_exists() to detect its presence before instantiating it.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+
 		// Load CPT meta schema registry — exposes custom meta field definitions for all
 		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
 		// base get_post_type_schema tool can return complete field information.
@@ -309,6 +314,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load WebLLM Advanced Features settings page (Phase 1).
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
+
+			// Load Embedded Model AJAX handlers (Pro-only: download/delete/list GGUF models and llama-cli binary).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
 
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
@@ -684,6 +692,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
+			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
+			'WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php',
+			'WP_MCP_AI_Pro_Tool_Send_Mailgun_Email'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailgun-email.php',
 			// Google Workspace tools.
 			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
 			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
@@ -729,6 +741,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_CRM_Email_Search_Leads'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Correspondence'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php',
 				'WP_MCP_AI_Tool_CRM_Email_Search_Accounting'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
+				// Upwork CRM tools.
+				'WP_MCP_AI_Tool_Search_Upwork_Jobs'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-search-upwork-jobs.php',
+				'WP_MCP_AI_Tool_Score_Upwork_Job'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-score-upwork-job.php',
+				'WP_MCP_AI_Tool_Draft_Upwork_Proposal' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-draft-upwork-proposal.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
@@ -928,6 +944,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Inventory' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-inventory.php',
+			'WP_MCP_AI_Pro_Tool_Shopify_Catalog'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-catalog.php',
 		);
 		$pro_tools     = array_merge( $pro_tools, $shopify_tools );
 
@@ -1476,6 +1493,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                    => 'external-tools',
 			'send_mailjet_email'              => 'external-tools',
+			// Brevo email marketing and CRM tools - Require Brevo API key.
+			'send_brevo_email'                => 'external-tools',
+			'manage_brevo_contacts'           => 'external-tools',
+			'get_brevo_statistics'            => 'external-tools',
+			// Mailgun email delivery tools - Require Mailgun API key and domain.
+			'send_mailgun_email'              => 'external-tools',
 			// Google Workspace tools - Require external API credentials.
 			'create_google_calendar_event'    => 'external-tools',
 			'google_analytics_report'         => 'external-tools',
@@ -1488,6 +1511,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'shopify_orders'                  => 'external-tools',
 			'shopify_customers'               => 'external-tools',
 			'shopify_inventory'               => 'external-tools',
+			'shopify_catalog'                 => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',
@@ -1521,6 +1545,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['crm_email_search_leads']           = 'wordpress-core';
 			$pro_tools['crm_email_search_correspondence']  = 'wordpress-core';
 			$pro_tools['crm_email_search_accounting']      = 'wordpress-core';
+			// Upwork CRM tools.
+			$pro_tools['search_upwork_jobs']    = 'wordpress-core';
+			$pro_tools['score_upwork_job']      = 'wordpress-core';
+			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
 		}
 
 		// Add Fantasy Football tool mappings if enabled.
@@ -1745,6 +1773,32 @@ if ( $plugins_loaded_fired ) {
 	// Not yet at plugins_loaded - schedule init for when it fires.
 	// This handles the separate plugin scenario and early activation scenarios.
 	add_action( 'plugins_loaded', 'wp_mcp_ai_pro_init', 15 );
+}
+
+/**
+ * Register WP-CLI commands for the Pro addon.
+ *
+ * Loads and registers all Pro gap-fill CLI command classes when WP-CLI is active.
+ */
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	$wp_mcp_ai_pro_cli_dir = WP_MCP_AI_PRO_PATH . 'includes/cli/';
+
+	$wp_mcp_ai_pro_cli_files = array(
+		'class-wp-mcp-ai-pro-cli-status-command.php',
+		'class-wp-mcp-ai-pro-cli-toolkit-command.php',
+		'class-wp-mcp-ai-pro-cli-connection-command.php',
+		'class-wp-mcp-ai-pro-cli-project-command.php',
+		'class-wp-mcp-ai-pro-cli-task-command.php',
+	);
+
+	foreach ( $wp_mcp_ai_pro_cli_files as $wp_mcp_ai_pro_cli_file ) {
+		$wp_mcp_ai_pro_cli_path = $wp_mcp_ai_pro_cli_dir . $wp_mcp_ai_pro_cli_file;
+		if ( file_exists( $wp_mcp_ai_pro_cli_path ) ) {
+			require_once $wp_mcp_ai_pro_cli_path;
+		}
+	}
+
+	unset( $wp_mcp_ai_pro_cli_dir, $wp_mcp_ai_pro_cli_files, $wp_mcp_ai_pro_cli_file, $wp_mcp_ai_pro_cli_path );
 }
 
 /**

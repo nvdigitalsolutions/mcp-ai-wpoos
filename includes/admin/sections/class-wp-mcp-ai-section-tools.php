@@ -781,7 +781,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - show promotional notice in base version.
+			// Site Creator requires the Pro addon (addons/pro/). When running without the
+			// Pro addon entry point, show an informational notice in the settings footer.
 			$is_base_version = wp_mcp_ai_is_base_version();
 
 			$fields['enable_site_creator']                     = array(

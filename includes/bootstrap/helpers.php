@@ -31,16 +31,19 @@ if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
-	 * Check if base version mode is enabled.
+	 * Check if the private/custom base-mode entry point is active.
 	 *
-	 * Full version is enabled by default, providing all available tools.
-	 * Base version mode is only active if explicitly set to true in wp-config.php:
-	 * define( 'WP_MCP_AI_BASE_VERSION', true );
+	 * Returns true only when WP_MCP_AI_BASE_VERSION is explicitly set to true,
+	 * which happens via mcp-ai-wpoos-base.php. That entry point is excluded from
+	 * the WordPress.org distribution ZIP (.distignore) so it never fires for
+	 * WordPress.org users — all tools are always available there.
 	 *
-	 * Base version mode limits the plugin to core tools only, excluding tools that require
-	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
+	 * This function is NOT used to gate AI tools. It is used solely by internal
+	 * helpers that need to conditionally show settings for Pro addon features
+	 * (e.g. Site Creator, JetEngine CPT AI) that are provided by the Pro addon
+	 * and are absent from a private base-only build.
 	 *
-	 * @return bool Whether base version mode is active.
+	 * @return bool True only when the private base-mode entry point is active.
 	 */
 	function wp_mcp_ai_is_base_version() {
 		return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
@@ -63,21 +66,19 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	/**
 	 * Determine whether third-party plugin integrations should be loaded.
 	 *
-	 * Integrations are loaded when:
-	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
-	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
+	 * Integration classes are always loaded — they guard themselves against
+	 * missing dependencies internally. This ensures that tools for WooCommerce,
+	 * JetEngine, Cloudways, QuickBooks, etc. are available to any site that has
+	 * those plugins active, regardless of whether the Pro addon is installed.
 	 *
-	 * This ensures that when using base + pro as separate plugins, JetEngine
-	 * integrations are available for chat transcript storage and other Pro features.
-	 *
-	 * Note: In base version with only JetEngine available (no Pro), only the minimal
-	 * JetEngine CCT files needed for chat transcripts are loaded via a separate condition.
+	 * The Pro addon (PHP 8.1+) adds genuinely new tools on top of these; it does
+	 * not "unlock" tools that are already present in the base plugin.
 	 *
 	 * @since 1.1.0
-	 * @return bool Whether integrations should be loaded.
+	 * @return bool Always true — integration files are always loaded.
 	 */
 	function wp_mcp_ai_should_load_integrations() {
-		return ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+		return true;
 	}
 }
 

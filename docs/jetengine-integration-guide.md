@@ -340,7 +340,21 @@ All features respect WordPress capabilities:
 ## FAQ
 
 ### Q: Does this work with JetEngine CCTs?
-**A:** Currently, the AI integration focuses on JetEngine CPTs (custom post types) and taxonomies. CCT support may be added in a future update.
+**A:** Yes — the plugin provisions and manages several CCTs automatically. Each CCT is gated behind its toolkit setting so it only appears in JetEngine's admin UI when that toolkit is enabled:
+
+| CCT slug | Gating setting | Toolkit |
+|---|---|---|
+| `mcp_task_plans` | `enable_project_management` | Project Management (Ralph Orchestration) |
+| `mcp_task_templates` | `enable_project_management` | Project Management (Ralph Orchestration) |
+| `mcp_autonomous_sessions` | `enable_project_management` | Project Management (Ralph Orchestration) |
+| `mcp_execution_history` | `enable_project_management` | Project Management (Ralph Orchestration) |
+| `vitals_log` | `enable_health_wellness_management` | Health & Wellness |
+| `quizzes` | `enable_quiz_system` | Quiz System |
+| `quiz_submissions` | `enable_quiz_system` | Quiz System |
+| `channel_contacts` | `enable_chat_channels_toolkit` | Chat Channels Inbox |
+| `channel_messages` | `enable_chat_channels_toolkit` | Chat Channels Inbox |
+
+All CCTs are registered via `maybe_register_cct()` on the `init` hook (priority 5). The CPT-based AI assistant metaboxes and Research & Add pages described in this guide are separate and apply only to custom post types and taxonomies created in JetEngine.
 
 ### Q: Can I use this with other page builders?
 **A:** Yes! The AI assistant works independently of page builders. It integrates at the WordPress admin level, so it works with Elementor, Bricks, Gutenberg, or any other builder.

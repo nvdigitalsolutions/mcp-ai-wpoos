@@ -107,6 +107,11 @@ class WP_MCP_AI_JetEngine_Submissions_CCT {
 	 * Register the submissions CCT if it is missing.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_quiz_system'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 
 		if ( ! $module ) {

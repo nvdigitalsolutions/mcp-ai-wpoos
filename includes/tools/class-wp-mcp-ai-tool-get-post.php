@@ -108,20 +108,20 @@ class WP_MCP_AI_Tool_Get_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		$include_taxonomies = isset( $arguments['include_taxonomies'] ) ? (bool) $arguments['include_taxonomies'] : true;
 
 		$result = array(
-			'ID'            => $post->ID,
-			'post_type'     => $post->post_type,
-			'title'         => get_the_title( $post ),
-			'content'       => $post->post_content,
-			'excerpt'       => $post->post_excerpt,
-			'status'        => $post->post_status,
-			'author_id'     => (int) $post->post_author,
-			'date'          => get_the_date( DATE_W3C, $post ),
-			'modified'      => get_the_modified_date( DATE_W3C, $post ),
-			'slug'          => $post->post_name,
-			'parent_id'     => (int) $post->post_parent,
-			'menu_order'    => (int) $post->menu_order,
-			'comment_status'=> $post->comment_status,
-			'permalink'     => get_permalink( $post ),
+			'ID'             => $post->ID,
+			'post_type'      => $post->post_type,
+			'title'          => get_the_title( $post ),
+			'content'        => $post->post_content,
+			'excerpt'        => $post->post_excerpt,
+			'status'         => $post->post_status,
+			'author_id'      => (int) $post->post_author,
+			'date'           => get_the_date( DATE_W3C, $post ),
+			'modified'       => get_the_modified_date( DATE_W3C, $post ),
+			'slug'           => $post->post_name,
+			'parent_id'      => (int) $post->post_parent,
+			'menu_order'     => (int) $post->menu_order,
+			'comment_status' => $post->comment_status,
+			'permalink'      => get_permalink( $post ),
 		);
 
 		$edit_link = get_edit_post_link( $post_id, '' );

@@ -68,6 +68,22 @@ The system uses WordPress Custom Post Types (CPT):
 
 All metadata is stored using WordPress post meta for efficient querying and filtering.
 
+#### JetEngine CCT Storage (optional)
+
+When JetEngine is active **and** the `enable_project_management` setting is enabled, the plugin
+auto-provisions four Custom Content Types (CCTs) for the Ralph orchestration pattern:
+
+| Class | CCT slug | Purpose |
+|---|---|---|
+| `WP_MCP_AI_Task_Plans_CCT` | `mcp_task_plans` | Markdown task plans with checkbox progress tracking |
+| `WP_MCP_AI_Task_Templates_CCT` | `mcp_task_templates` | Reusable workflow templates |
+| `WP_MCP_AI_Autonomous_Sessions_CCT` | `mcp_autonomous_sessions` | Active agent session state |
+| `WP_MCP_AI_Execution_History_CCT` | `mcp_execution_history` | Per-step tool-execution log |
+
+These CCTs are registered via `maybe_register_cct()` on the `init` hook (priority 5). If
+`enable_project_management` is off the registration is skipped entirely, so the JetEngine admin
+pages (`wp-admin/admin.php?page=jet-cct-<slug>`) will not appear.
+
 ### Feature Toggle
 Administrators can enable/disable the feature at:
 **Settings → NV oOS → Tools & Features → Project Management**

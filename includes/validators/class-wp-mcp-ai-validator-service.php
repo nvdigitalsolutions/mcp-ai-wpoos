@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-wp-mcp-ai-identity-translator.php';
+
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
@@ -61,6 +63,38 @@ class WP_MCP_AI_Validator_Service {
 	private function __construct() {
 		$this->validator = Validation::createValidatorBuilder()
 			->enableAttributeMapping()
+			->setTranslator( new WP_MCP_AI_Identity_Translator() )
+			->getValidator();
+	}
+
+	/**
+	 * Exclude non-serializable properties when serialized.
+	 *
+	 * WP_MCP_AI_Validator_Service is a singleton that lazily builds a Symfony
+	 * Validator on first use. Persisting the validator object graph (which
+	 * may include closures, reflection metadata, and other non-serializable
+	 * internals) is unnecessary and error-prone. Returning an empty array
+	 * means the serialized form is a bare class token; __wakeup() then
+	 * reconstitutes a fully functional validator from scratch. Callers that
+	 * unserialize the service get a functionally equivalent instance — the
+	 * singleton reference in self::$instance is intentionally NOT restored
+	 * here because the deserialized copy is used directly.
+	 *
+	 * @return array
+	 */
+	public function __sleep() {
+		return array();
+	}
+
+	/**
+	 * Re-initialize the validator after unserialization.
+	 *
+	 * @return void
+	 */
+	public function __wakeup() {
+		$this->validator = Validation::createValidatorBuilder()
+			->enableAttributeMapping()
+			->setTranslator( new WP_MCP_AI_Identity_Translator() )
 			->getValidator();
 	}
 

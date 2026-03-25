@@ -30,8 +30,8 @@ $wp_mcp_ai_is_elementor_editor = false;
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
 if ( $wp_mcp_ai_is_ajax_request && isset( $_REQUEST['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
-	$wp_mcp_ai_request_action      = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
-	$wp_mcp_ai_is_elementor_ajax   = ( strpos( $wp_mcp_ai_request_action, 'elementor' ) === 0 );
+	$wp_mcp_ai_request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+	$wp_mcp_ai_is_elementor_ajax = ( strpos( $wp_mcp_ai_request_action, 'elementor' ) === 0 );
 }
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
@@ -155,6 +155,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
+// WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
 // Provider interface adapters (thin delegates over the concrete clients above).
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-openai-provider-client.php';
@@ -298,8 +299,12 @@ if ( ! $wp_mcp_ai_skip_buffering ) {
 	ob_end_clean();
 }
 
-unset( $wp_mcp_ai_is_ajax_request, $wp_mcp_ai_is_elementor_ajax, $wp_mcp_ai_is_elementor_editor,
-	$wp_mcp_ai_skip_buffering );
+unset(
+	$wp_mcp_ai_is_ajax_request,
+	$wp_mcp_ai_is_elementor_ajax,
+	$wp_mcp_ai_is_elementor_editor,
+	$wp_mcp_ai_skip_buffering
+);
 
 // ---------------------------------------------------------------------------
 // Admin-only includes
@@ -360,14 +365,14 @@ if ( is_admin() ) {
 
 	// Optional/dev-only admin pages.
 	$wp_mcp_ai_optional_admin_pages = array(
-		'class-wp-mcp-ai-admin-test-assistant'       => 'admin.test_assistant',
-		'class-wp-mcp-ai-admin-test-profession'      => 'admin.test_profession',
-		'class-wp-mcp-ai-admin-test-model'           => 'admin.test_model',
-		'class-wp-mcp-ai-admin-test-team'            => 'admin.test_team',
-		'class-wp-mcp-ai-admin-profession-settings'  => 'admin.profession_settings',
-		'class-wp-mcp-ai-admin-team-settings'        => 'admin.team_settings',
+		'class-wp-mcp-ai-admin-test-assistant'           => 'admin.test_assistant',
+		'class-wp-mcp-ai-admin-test-profession'          => 'admin.test_profession',
+		'class-wp-mcp-ai-admin-test-model'               => 'admin.test_model',
+		'class-wp-mcp-ai-admin-test-team'                => 'admin.test_team',
+		'class-wp-mcp-ai-admin-profession-settings'      => 'admin.profession_settings',
+		'class-wp-mcp-ai-admin-team-settings'            => 'admin.team_settings',
 		'class-wp-mcp-ai-admin-profession-research-page' => 'admin.profession_research',
-		'class-wp-mcp-ai-admin-team-research-page'   => 'admin.team_research',
+		'class-wp-mcp-ai-admin-team-research-page'       => 'admin.team_research',
 	);
 	foreach ( $wp_mcp_ai_optional_admin_pages as $wp_mcp_ai_file => $wp_mcp_ai_service ) {
 		$wp_mcp_ai_page_path = WP_MCP_AI_PATH . 'includes/admin/' . $wp_mcp_ai_file . '.php';
@@ -401,6 +406,7 @@ if ( is_admin() ) {
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
+	// WP_MCP_AI_Embedded_Model_Ajax is a Pro-only feature loaded by the Pro addon.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
 
 	// Pro Dashboard.

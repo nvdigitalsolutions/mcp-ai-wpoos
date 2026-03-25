@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$forecast_period  = ! empty( $arguments['forecast_period'] ) ? sanitize_text_field( $arguments['forecast_period'] ) : 'monthly';
 		$periods_ahead    = isset( $arguments['periods_ahead'] ) ? absint( $arguments['periods_ahead'] ) : 3;

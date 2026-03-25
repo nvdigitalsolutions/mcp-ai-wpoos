@@ -823,10 +823,15 @@ class WP_MCP_AI_Shortcode {
 				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
 			}
 
-			// Enqueue embedded LLM client scripts if this assistant uses embedded provider.
-			// Scripts are already registered in register_assets(), just enqueue them here.
+			// Enqueue embedded LLM client scripts if this assistant uses the client-side WebLLM provider.
+			// Server-side GGUF models share the 'embedded' provider key but are served by llama.cpp on
+			// the server — they do not need the WebLLM browser scripts.
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
-			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
+			$is_embedded_server_model = 'embedded' === $assistant_provider
+				&& ! empty( $assistant_model )
+				&& class_exists( 'WP_MCP_AI_Embedded_Client' )
+				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( $assistant_model );
+			$needs_embedded_provider  = $this->is_embedded_provider_available( $assistant_provider ) && ! $is_embedded_server_model;
 
 			// Parse additional_tools from the shortcode attribute early so it can be used for:
 			// 1. Embedded provider tool definition resolution (added to $tool_slugs_to_include below).
@@ -987,6 +992,13 @@ class WP_MCP_AI_Shortcode {
 				$config['model'] = $assistant_model;
 			}
 
+			// Flag server-side GGUF models so chat.js routes them to the REST API
+			// instead of the client-side WebLLM path. Both share provider='embedded',
+			// but GGUF models are run by llama.cpp on the server.
+			if ( $is_embedded_server_model ) {
+				$config['isEmbeddedServer'] = true;
+			}
+
 			// Add assistant defaults (system_prompt, temperature) for client-side execution.
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
@@ -994,6 +1006,13 @@ class WP_MCP_AI_Shortcode {
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+			}
+
+			// Pass max_tokens from the orchestration layer so the embedded client-side
+			// model respects the same token budget as server-side providers instead of
+			// falling back to a hardcoded default.
+			if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				$config['max_tokens'] = WP_MCP_AI_Resource_Manager::instance()->get_max_tokens();
 			}
 
 			// Add base knowledge (memory files and vector store) for embedded provider.

@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Export data or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$data_type  = sanitize_text_field( $arguments['data_type'] );
 		$format     = ! empty( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'json';
 		$start_date = ! empty( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );

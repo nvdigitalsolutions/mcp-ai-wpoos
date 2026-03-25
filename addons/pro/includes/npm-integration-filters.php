@@ -20,6 +20,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Get the map of document generation packages to their pre-packed bundle files.
+ *
+ * @return array Map of package name => relative path to bundle within WP_MCP_AI_PRO_PATH.
+ */
+function wp_mcp_ai_doc_gen_bundle_map() {
+	return array(
+		'pdfkit'  => 'bin/generate-pdf.bundle.js',
+		'docx'    => 'bin/generate-word.bundle.js',
+		'exceljs' => 'bin/generate-excel.bundle.js',
+	);
+}
+
+/**
+ * Get the list of Cornerstone3D package names.
+ *
+ * These are loaded at runtime via the esm.sh CDN by imaging-viewer.js.
+ *
+ * @return array List of @cornerstonejs/* package names.
+ */
+function wp_mcp_ai_cornerstone_package_names() {
+	return array(
+		'@cornerstonejs/core',
+		'@cornerstonejs/tools',
+		'@cornerstonejs/dicom-image-loader',
+	);
+}
+
+/**
  * Check if an NPM package is available
  *
  * Checks for package availability in CDN (via CDN Loader), vendor directory,
@@ -47,6 +75,21 @@ function wp_mcp_ai_is_npm_package_available( $package_name ) {
 	$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
 	if ( is_dir( $node_modules_path ) || file_exists( $node_modules_path . '/package.json' ) ) {
 		return true;
+	}
+
+	// Check for document generation packages bundled into Node.js scripts.
+	$doc_gen_bundles = wp_mcp_ai_doc_gen_bundle_map();
+	if ( isset( $doc_gen_bundles[ $package_name ] ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . $doc_gen_bundles[ $package_name ] ) ) {
+			return true;
+		}
+	}
+
+	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
+			return true;
+		}
 	}
 
 	return false;
@@ -96,6 +139,37 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 				$package_name
 			),
 		);
+	}
+
+	// Check for document generation packages bundled into Node.js scripts.
+	$doc_gen_bundles = wp_mcp_ai_doc_gen_bundle_map();
+	if ( isset( $doc_gen_bundles[ $package_name ] ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . $doc_gen_bundles[ $package_name ] ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'bundled',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Pre-packed)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
+	}
+
+	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'cdn',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Pre-packed / CDN)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
 	}
 
 	// Not available.

@@ -12,7 +12,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 require_once __DIR__ . '/domain/class-wp-mcp-ai-pattern-constants.php';

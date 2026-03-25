@@ -1345,6 +1345,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'gif-encoder'                       => 'gif-encoder/lib/GIFEncoder.js',
 				'video-stitch'                      => 'video-stitch/index.js',
 				'subtitle'                          => 'subtitle/dist/index.js',
+				// Remotion video generation packages.
+				'remotion'                          => 'remotion/dist/cjs/index.js',
+				'@remotion/bundler'                 => '@remotion/bundler/dist/index.js',
+				'@remotion/renderer'                => '@remotion/renderer/dist/index.js',
 				// CRM & Email Marketing Toolkit packages (Phase 2).
 				'nodemailer'                        => 'nodemailer/lib/nodemailer.js',
 				'validator'                         => 'validator/index.js',
@@ -1357,8 +1361,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				// Document generation packages.
 				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
 				'pdf-parse'                         => 'pdf-parse/index.js',
+				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
+				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
+				// docx ships only package.json in vendor; detected via bin/generate-word.bundle.js below.
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
+				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
@@ -1401,15 +1409,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			);
 			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
 				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
+				// wp-scripts builds src/workflow-builder/index.jsx → build/workflow-builder/index.jsx.js.
 				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.jsx.js';
 					if ( file_exists( $workflow_build_path ) ) {
 						return true;
 					}
 				}
 				// Priority 2: Check base build directory (legacy/development location).
 				// NOTE: This should be moved to pro addon directory as per project standards.
-				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.jsx.js';
 				if ( file_exists( $legacy_workflow_build_path ) ) {
 					return true;
 				}
@@ -1423,11 +1432,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
-			// Check for document generation packages bundled into local scripts.
+			// Check for document generation and video packages bundled into bin/ scripts.
+			// pdfkit and exceljs are detected via pro_vendor_packages above.
+			// docx ships only package.json in vendor, so we detect it via its bin bundle.
 			$script_bundled_packages = array(
-				'pdfkit'  => 'generate-pdf.bundle.js',
-				'docx'    => 'generate-word.bundle.js',
-				'exceljs' => 'generate-excel.bundle.js',
+				'docx'          => 'generate-word.bundle.js',
+				'@remotion/cli' => 'remotion-render.bundle.js',
 			);
 			if ( isset( $script_bundled_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$script_path = WP_MCP_AI_PRO_PATH . 'bin/' . $script_bundled_packages[ $package ];
@@ -1547,8 +1557,33 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( $embedded_client_path );
 			}
 
+			// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+			// These packages are pre-packed/CDN-loaded; availability is indicated by
+			// the presence of the imaging-viewer.js entry-point script.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && function_exists( 'wp_mcp_ai_cornerstone_package_names' ) ) {
+				$cornerstone_packages = wp_mcp_ai_cornerstone_package_names();
+			} else {
+				$cornerstone_packages = array(
+					'@cornerstonejs/core',
+					'@cornerstonejs/tools',
+					'@cornerstonejs/dicom-image-loader',
+				);
+			}
+			if ( in_array( $package, $cornerstone_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if imaging-viewer.js exists (CDN-loads Cornerstone3D at runtime).
+				$imaging_viewer_path = WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js';
+				if ( file_exists( $imaging_viewer_path ) ) {
+					return true;
+				}
+				// Priority 2: Check pro node_modules (development).
+				$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				return false;
+			}
+
 			// Check for pdf-parse package (Pro addon).
-			// This package is used for PDF text extraction via Node.js service.
 			if ( 'pdf-parse' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if it's in Pro addon's vendor directory (production).
 				$pdf_parse_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-parse/lib/pdf-parse.js';

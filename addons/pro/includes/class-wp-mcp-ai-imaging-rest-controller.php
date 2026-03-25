@@ -92,12 +92,17 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_studies' ),
 					'permission_callback' => array( $this, 'can_view_imaging' ),
 					'args'                => array(
-						'per_page' => array(
-							'default'           => 20,
+						'per_page'  => array(
+							'default'           => 100,
+							'type'              => 'integer',
+							'minimum'           => 1,
+							'maximum'           => 500,
 							'sanitize_callback' => 'absint',
 						),
-						'page'     => array(
+						'page'      => array(
 							'default'           => 1,
+							'type'              => 'integer',
+							'minimum'           => 1,
 							'sanitize_callback' => 'absint',
 						),
 						'modality'  => array(
@@ -320,8 +325,8 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_studies( WP_REST_Request $request ) {
-		$per_page = $request->get_param( 'per_page' );
-		$page     = $request->get_param( 'page' );
+		$per_page = max( 1, (int) $request->get_param( 'per_page' ) );
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
 
 		$filters = array(
 			'modality'  => $request->get_param( 'modality' ),
@@ -341,9 +346,11 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 
 		return new WP_REST_Response(
 			array(
-				'studies' => $studies,
-				'total'   => $result['total'],
-				'page'    => $page,
+				'studies'     => $studies,
+				'total'       => $result['total'],
+				'total_pages' => $result['pages'],
+				'page'        => $page,
+				'per_page'    => $per_page,
 			),
 			200
 		);
@@ -360,12 +367,14 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	 */
 	public function get_stats( WP_REST_Request $request ) {
 		// Total study count.
-		$count_query = new WP_Query(
+		$count_query   = new WP_Query(
 			array(
-				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => 1,
-				'fields'         => 'ids',
+				'post_type'        => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'      => 'publish',
+				'posts_per_page'   => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => true,
+				'no_found_rows'    => false,
 			)
 		);
 		$total_studies = $count_query->found_posts;
@@ -373,10 +382,11 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		// Group by modality.
 		$modality_posts = get_posts(
 			array(
-				'post_type'      => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
+				'post_type'        => WP_MCP_AI_Imaging_Study_CPT::POST_TYPE,
+				'post_status'      => 'publish',
+				'posts_per_page'   => -1,
+				'fields'           => 'ids',
+				'suppress_filters' => true,
 			)
 		);
 
@@ -452,7 +462,13 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'imaging_not_found', __( 'Study not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'study_viewed', array( 'study_id' => $study_uid, 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_viewed',
+			array(
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
 
 		return new WP_REST_Response( $this->format_study( $post ), 200 );
 	}
@@ -482,8 +498,8 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		foreach ( $series as $s ) {
 			$instances = array();
 			foreach ( isset( $s['instances'] ) ? $s['instances'] : array() as $inst ) {
-				$iuid    = isset( $inst['sop_instance_uid'] ) ? sanitize_text_field( $inst['sop_instance_uid'] ) : '';
-				$token   = $this->generate_instance_token( $iuid );
+				$iuid     = isset( $inst['sop_instance_uid'] ) ? sanitize_text_field( $inst['sop_instance_uid'] ) : '';
+				$token    = $this->generate_instance_token( $iuid );
 				$file_url = rest_url(
 					$this->namespace . '/' . $this->rest_base . '/instances/' . rawurlencode( $iuid ) . '/file?token=' . rawurlencode( $token )
 				);
@@ -503,14 +519,20 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'study_manifest_viewed', array( 'study_id' => $study_uid, 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'study_manifest_viewed',
+			array(
+				'study_id' => $study_uid,
+				'user_id'  => get_current_user_id(),
+			)
+		);
 
 		return new WP_REST_Response(
 			array(
-				'studyId'    => $study_uid,
-				'studyDate'  => get_post_meta( $post->ID, '_imaging_study_date', true ),
-				'modality'   => get_post_meta( $post->ID, '_imaging_modality', true ),
-				'series'     => $manifest_series,
+				'studyId'   => $study_uid,
+				'studyDate' => get_post_meta( $post->ID, '_imaging_study_date', true ),
+				'modality'  => get_post_meta( $post->ID, '_imaging_modality', true ),
+				'series'    => $manifest_series,
 			),
 			200
 		);
@@ -548,7 +570,21 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			return new WP_Error( 'imaging_invalid_path', __( 'Invalid file path.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 
-		WP_MCP_AI_Imaging_Audit_Log::log( 'instance_file_accessed', array( 'instance_uid' => $instance_uid, 'user_id' => get_current_user_id() ) );
+		WP_MCP_AI_Imaging_Audit_Log::log(
+			'instance_file_accessed',
+			array(
+				'instance_uid' => $instance_uid,
+				'user_id'      => get_current_user_id(),
+			)
+		);
+
+		// Flush and discard any output buffered by WordPress core or third-party
+		// plugins before we send binary DICOM data.  Any buffered text prepended
+		// to the response body would corrupt the DICOM preamble and cause the
+		// image loader (Cornerstone3D) to fail with a parse error.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
 
 		// Stream file in chunks to handle large DICOM files (up to 256 MB) efficiently.
 		$file_size = filesize( $file_path );
@@ -601,11 +637,18 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		foreach ( $uploaded_files as $file ) {
 			$result = $this->process_uploaded_file( $file, $storage_root );
 			if ( is_wp_error( $result ) ) {
-				$results[] = array( 'error' => $result->get_error_message(), 'file' => sanitize_text_field( $file['name'] ) );
+				$results[] = array(
+					'error' => $result->get_error_message(),
+					'file'  => sanitize_text_field( $file['name'] ),
+				);
 				continue;
 			}
 			$study_post_id = $result['study_post_id'];
-			$results[]     = array( 'success' => true, 'file' => sanitize_text_field( $file['name'] ), 'instance_uid' => $result['instance_uid'] );
+			$results[]     = array(
+				'success'      => true,
+				'file'         => sanitize_text_field( $file['name'] ),
+				'instance_uid' => $result['instance_uid'],
+			);
 		}
 
 		// If no files were stored successfully, return a descriptive error instead of a
@@ -813,7 +856,13 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 			)
 		);
 
-		return new WP_REST_Response( array( 'deleted' => true, 'study_id' => $study_uid ), 200 );
+		return new WP_REST_Response(
+			array(
+				'deleted'  => true,
+				'study_id' => $study_uid,
+			),
+			200
+		);
 	}
 
 	// =========================================================================
@@ -830,9 +879,9 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	private function format_study( WP_Post $post ) {
-		$series_json   = get_post_meta( $post->ID, '_imaging_series', true );
-		$series        = json_decode( $series_json, true );
-		$series_count  = is_array( $series ) ? count( $series ) : 0;
+		$series_json    = get_post_meta( $post->ID, '_imaging_series', true );
+		$series         = json_decode( $series_json, true );
+		$series_count   = is_array( $series ) ? count( $series ) : 0;
 		$instance_count = 0;
 		if ( is_array( $series ) ) {
 			foreach ( $series as $s ) {
@@ -841,17 +890,17 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		}
 
 		return array(
-			'id'          => $post->ID,
-			'study_uid'   => get_post_meta( $post->ID, '_imaging_study_instance_uid', true ),
-			'patient_id'  => get_post_meta( $post->ID, '_imaging_patient_id', true ),
-			'modality'    => get_post_meta( $post->ID, '_imaging_modality', true ),
-			'study_date'  => get_post_meta( $post->ID, '_imaging_study_date', true ),
-			'description' => get_post_meta( $post->ID, '_imaging_study_description', true ),
-			'status'      => get_post_meta( $post->ID, '_imaging_status', true ),
-			'series_count'  => $series_count,
+			'id'             => $post->ID,
+			'study_uid'      => get_post_meta( $post->ID, '_imaging_study_instance_uid', true ),
+			'patient_id'     => get_post_meta( $post->ID, '_imaging_patient_id', true ),
+			'modality'       => get_post_meta( $post->ID, '_imaging_modality', true ),
+			'study_date'     => get_post_meta( $post->ID, '_imaging_study_date', true ),
+			'description'    => get_post_meta( $post->ID, '_imaging_study_description', true ),
+			'status'         => get_post_meta( $post->ID, '_imaging_status', true ),
+			'series_count'   => $series_count,
 			'instance_count' => $instance_count,
-			'created'     => get_the_date( 'c', $post ),
-			'links'       => array(
+			'created'        => get_the_date( 'c', $post ),
+			'links'          => array(
 				'manifest' => rest_url( $this->namespace . '/' . $this->rest_base . '/studies/' . rawurlencode( get_post_meta( $post->ID, '_imaging_study_instance_uid', true ) ) . '/manifest' ),
 			),
 		);
@@ -932,6 +981,30 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Produce a filesystem-safe directory/filename component from a DICOM UID.
+	 *
+	 * DICOM UIDs consist exclusively of ASCII digits (0–9) and dots (.).  Both
+	 * are safe on every major filesystem.  We therefore retain them unchanged and
+	 * replace any other character (which should never appear in a conformant UID)
+	 * with an underscore.
+	 *
+	 * We deliberately avoid sanitize_file_name() here.  That function applies a
+	 * filterable hook (`sanitize_file_name`) that third-party plugins can override
+	 * to strip dots or transform the string.  Stripping dots would collapse
+	 * distinct UIDs — e.g. "1.2.3.4.56" and "1.2.3.4.5.6" both become
+	 * "1234_56" — causing separate studies to share the same on-disk directory,
+	 * so only the first study's CPT post is ever created and the remaining studies
+	 * remain invisible in the study browser.
+	 *
+	 * @param string $uid Raw DICOM UID value (StudyInstanceUID / SeriesInstanceUID /
+	 *                    SOPInstanceUID).
+	 * @return string Filesystem-safe string with only digits and dots retained.
+	 */
+	private function sanitize_uid_for_path( $uid ) {
+		return preg_replace( '/[^0-9.]/', '_', (string) $uid );
+	}
+
+	/**
 	 * Get or create the protected DICOM storage root directory.
 	 *
 	 * The directory lives inside the WordPress uploads folder at
@@ -1006,11 +1079,21 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		// (per DICOM PS 3.10 and IHE Radiology Technical Framework).
 		// Each series gets its own subdirectory so multi-series studies are
 		// organised correctly on disk.
-		$series_dir_name = '' !== $series_uid ? sanitize_file_name( $series_uid ) : self::UNGROUPED_SERIES_DIR;
-		$study_dir       = $storage_root . sanitize_file_name( $study_uid ) . '/';
+		//
+		// We use sanitize_uid_for_path() instead of sanitize_file_name() because
+		// sanitize_file_name() applies a filterable hook that third-party plugins can
+		// override (e.g. to strip dots).  DICOM UIDs differ only in their numeric
+		// segments separated by dots; stripping dots collapses distinct UIDs such as
+		// "1.2.3.4.56" and "1.2.3.4.5.6" to the same directory name, causing separate
+		// studies to share a folder and preventing all but one CPT post from appearing
+		// in the study browser.  sanitize_uid_for_path() retains every digit and dot
+		// while replacing any non-UID character with an underscore, making the
+		// transformation deterministic regardless of active plugins.
+		$series_dir_name = '' !== $series_uid ? $this->sanitize_uid_for_path( $series_uid ) : self::UNGROUPED_SERIES_DIR;
+		$study_dir       = $storage_root . $this->sanitize_uid_for_path( $study_uid ) . '/';
 		$series_dir      = $study_dir . $series_dir_name . '/';
 		wp_mkdir_p( $series_dir );
-		$dest_path = $series_dir . sanitize_file_name( $instance_uid ) . '.dcm';
+		$dest_path = $series_dir . $this->sanitize_uid_for_path( $instance_uid ) . '.dcm';
 
 		if ( ! move_uploaded_file( $tmp_path, $dest_path ) ) {
 			return new WP_Error( 'imaging_move_failed', __( 'Failed to store DICOM file.', 'mcp-ai-wpoos-pro' ) );
@@ -1076,7 +1159,7 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$normalized = array();
 		if ( isset( $files['name'] ) && is_array( $files['name'] ) ) {
 			foreach ( $files['name'] as $idx => $name ) {
-				$tmp = isset( $files['tmp_name'][ $idx ] ) ? $files['tmp_name'][ $idx ] : '';
+				$tmp          = isset( $files['tmp_name'][ $idx ] ) ? $files['tmp_name'][ $idx ] : '';
 				$normalized[] = array(
 					'name'     => sanitize_text_field( $name ),
 					'type'     => isset( $files['type'][ $idx ] ) ? sanitize_mime_type( $files['type'][ $idx ] ) : '',

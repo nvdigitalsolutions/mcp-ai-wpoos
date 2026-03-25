@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$funnel_type              = ! empty( $arguments['funnel_type'] ) ? sanitize_text_field( $arguments['funnel_type'] ) : 'checkout';
 		$custom_steps             = ! empty( $arguments['custom_steps'] ) ? $arguments['custom_steps'] : array();

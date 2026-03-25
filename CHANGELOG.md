@@ -39,6 +39,47 @@
 - **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
 - **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
 
+### Added
+- **NPM Packages – Zero-Config Publish for All 9 Packages (March 2026)** (PR #4364): All nine standalone NPM packages extracted from the oOS chat UI are now automatically published to the NPM registry via GitHub Actions.
+  - **9 packages** under the `@nvdigitalsolutions` scope, all at `v0.1.0-alpha.1`:
+    - `nvoos-storage` — Async JSON via Web Worker (zero dependencies)
+    - `nvoos-markdown` — XSS-safe markdown renderer (peer deps: `marked`, `dompurify`)
+    - `nvoos-events` — SSE client + job event bus (peer dep: `@microsoft/fetch-event-source`)
+    - `nvoos-http-client` — HTTP client with automatic retry/backoff (peer dep: `ky`)
+    - `nvoos-clipboard` — Clipboard copy with Clipboard API / `execCommand` fallback (zero dependencies)
+    - `nvoos-offline-sync` — IndexedDB offline-first sync with auto server sync on reconnect (zero dependencies)
+    - `nvoos-slash-commands` — Slash command system with fuzzy-search autocomplete (zero dependencies)
+    - `nvoos-audio` — Browser audio I/O: TTS, STT, translation, voice chat with VAD (zero dependencies)
+    - `nvoos-dom-batcher` — RAF DOM batcher, scroll batcher, and UI utilities for high-frequency streaming UIs (zero dependencies)
+  - **Two GitHub Actions workflows**:
+    - `.github/workflows/npm-publish.yml` — Publishes stable releases on `v*.*.*` tags or `workflow_dispatch`
+    - `.github/workflows/npm-publish-alpha.yml` — Publishes alpha pre-releases on `v*.*.*-alpha.*` tags
+  - **Single source of truth**: Both workflows share a single `PACKAGES` environment variable; adding a new package requires updating only that one line.
+  - **CI steps per package**: version bump → `node adapt-for-npm.js` build → `node --check` syntax validation → publish (or dry-run)
+  - **Setup**: requires only an `NPM_TOKEN` secret in repository settings; no per-package configuration needed.
+  - See [`packages/README.md`](packages/README.md) and [`packages/QUICK_START.md`](packages/QUICK_START.md) for installation and usage.
+
+
+## [1.1.5] - 2026-03-24
+
+### Changed
+- **Telemetry Opt-In (March 24, 2026)**: Activation tracking is now disabled by default (opt-in model). Users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking. Setting renamed from `disable_activation_tracking` → `enable_activation_tracking`. Complies with WordPress.org Guideline 7 & 9.
+- **Tool Registry (March 24, 2026)**: Removed Pro add-on license gating from base tool registry. All tools included in the plugin ZIP are now always registered; runtime availability is controlled by each tool's `is_available()` method (dependency check, not license gate). Complies with WordPress.org Guideline 5.
+- **Settings Sanitization (March 24, 2026)**: `sanitize_settings_callback` now recursively sanitizes nested array settings using `sanitize_textarea_field()` for strings and `esc_url_raw()` for URL values. Complies with WordPress.org Guideline 6.
+- **`WP_MCP_AI_BASE_VERSION` default (March 24, 2026)**: Changed from `true` to `false` so full base tool set loads by default without requiring any `wp-config.php` define.
+
+### Fixed
+- **15 Dead URLs in readme.txt (March 24, 2026)**: Fixed 15 broken external service documentation links (ReliefWeb, remove.bg, Plaid, Mubert, GDACS, NV Digital Terms, GitHub releases, Tavily, Exa.ai, GoQR privacy). All verified working after fix.
+
+### Dependencies
+- **symfony/cache** updated from v6.4.34 to v6.4.35
+- **symfony/validator** updated from v6.4.34 to v6.4.35
+- **addons/pro/vendor**: Removed stale gitlinks; populated all 6 previously-empty vendor directories with real package files
+- Production classmap autoloader regenerated (686 entries)
+
+### Documentation
+- Added `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
+- Added `docs/03-wp-org-compliance.md` — compliance change log for this PR
 
 ## [1.1.4] - 2026-03-15
 

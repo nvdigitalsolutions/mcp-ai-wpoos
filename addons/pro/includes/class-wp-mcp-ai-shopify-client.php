@@ -1057,7 +1057,13 @@ query GetLocations($first: Int!) {
 		 *
 		 * @param string $query   Search query string, e.g. 'wireless headphones'.
 		 * @param int    $limit   Maximum number of results to return (1–100). Default 20.
-		 * @param array  $filters Optional additional query parameters (e.g. min_price, max_price, categories).
+		 * @param array  $filters Optional additional query parameters. Supported keys include:
+		 *                        - shop_ids: Shopify Shop GID (gid://shopify/Shop/12345) or bare numeric ID,
+		 *                          comma-separated for multiple stores. Filters results to specific merchants.
+		 *                        - min_price, max_price: price range filters.
+		 *                        - categories: comma-separated taxonomy category IDs.
+		 *                        - country_code: ISO 3166-1 alpha-2 shipping destination, e.g. 'US'.
+		 *                        - ships_from: ISO 3166-1 alpha-2 merchant location (ship-from country), e.g. 'US'.
 		 * @return array|WP_Error Decoded response array or WP_Error on failure.
 		 */
 		public function catalog_search( $query, $limit = 20, array $filters = array() ) {

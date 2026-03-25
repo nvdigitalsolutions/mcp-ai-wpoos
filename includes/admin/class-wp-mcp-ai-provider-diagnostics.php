@@ -539,6 +539,122 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<?php esc_html_e( 'Embedded LLM runs small language models directly in the user\'s browser using WebGPU/WebAssembly. Models are loaded from CDN on-demand. Fully private, no server resources or API calls required.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
+
+					<!-- Server-Side LLM (llama.cpp / GGUF) -->
+					<?php
+					$embedded_client   = class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null;
+					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array( 'found' => false, 'path' => '', 'platform' => '', 'message' => '' );
+					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array( 'found' => false, 'libs' => array(), 'bin_dir' => '' );
+					$downloaded_models = $embedded_client ? $embedded_client->get_downloaded_models() : array();
+					$available_models  = $embedded_client ? $embedded_client->get_available_models() : array();
+					$server_model_slug = isset( $settings['embedded_server_model'] ) ? $settings['embedded_server_model'] : '';
+					$server_binary_ok  = ! empty( $server_binary['found'] );
+					$server_ready      = $server_binary_ok && ! empty( $downloaded_models );
+					?>
+					<hr style="margin: 20px 0;">
+					<h3><?php esc_html_e( 'Server-Side LLM (llama.cpp / GGUF Models)', 'mcp-ai-wpoos' ); ?></h3>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'llama-cli Binary', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $server_binary_ok ) : ?>
+										<span style="color: green;">&#10003; <?php esc_html_e( 'Installed', 'mcp-ai-wpoos' ); ?></span>
+										<?php if ( ! empty( $server_binary['platform'] ) ) : ?>
+											<code><?php echo esc_html( $server_binary['platform'] ); ?></code>
+										<?php endif; ?>
+									<?php else : ?>
+										<span style="color: orange;">&#9888; <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<?php if ( $server_binary_ok && ! empty( $server_binary['path'] ) ) : ?>
+							<tr>
+								<th><?php esc_html_e( 'Binary Path', 'mcp-ai-wpoos' ); ?></th>
+								<td><code><?php echo esc_html( $server_binary['path'] ); ?></code></td>
+							</tr>
+							<?php endif; ?>
+							<tr>
+								<th><?php esc_html_e( 'Shared Libraries', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( $shared_libs['found'] ) : ?>
+										<span style="color: green;">&#10003; <?php echo (int) count( $shared_libs['libs'] ); ?> <?php esc_html_e( 'file(s) present', 'mcp-ai-wpoos' ); ?></span>
+										<ul style="margin: 5px 0 0 0; padding-left: 20px;">
+											<?php foreach ( $shared_libs['libs'] as $lib ) : ?>
+												<li><code><?php echo esc_html( $lib ); ?></code></li>
+											<?php endforeach; ?>
+										</ul>
+									<?php elseif ( $server_binary_ok ) : ?>
+										<span style="color: orange;">&#9888; <?php esc_html_e( 'No shared libraries found alongside binary', 'mcp-ai-wpoos' ); ?></span>
+										<p class="description" style="margin: 4px 0 0 0;">
+											<?php esc_html_e( 'On Linux, shared libraries (e.g. libllama.so, libmtmd.so.0) must be placed in the same directory as llama-cli. Copy the lib*.so* files from the llama.cpp release archive into that directory.', 'mcp-ai-wpoos' ); ?>
+										</p>
+									<?php else : ?>
+										<span style="color: #666;">&#8212; <?php esc_html_e( 'N/A (binary not installed)', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Downloaded GGUF Models', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $downloaded_models ) ) : ?>
+										<span style="color: green;"><?php echo (int) count( $downloaded_models ); ?> <?php esc_html_e( 'model(s)', 'mcp-ai-wpoos' ); ?></span>
+										<ul style="margin: 5px 0 0 0; padding-left: 20px;">
+											<?php foreach ( $downloaded_models as $slug => $model ) : ?>
+												<li><code><?php echo esc_html( $model['name'] ); ?></code></li>
+											<?php endforeach; ?>
+										</ul>
+									<?php else : ?>
+										<span style="color: orange;">&#9888; <?php esc_html_e( 'No models downloaded', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Server Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $server_model_slug ) && isset( $available_models[ $server_model_slug ] ) ) : ?>
+										<code><?php echo esc_html( $available_models[ $server_model_slug ]['name'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Auto (uses first downloaded model)', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Model Type', 'mcp-ai-wpoos' ); ?></th>
+								<td><?php esc_html_e( 'GGUF (Server-side, runs on the web server via llama.cpp)', 'mcp-ai-wpoos' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="embedded_server-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-secondary test-provider"
+						data-provider="embedded_server"
+						<?php echo esc_attr( ! $server_ready ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Server-Side LLM', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( ! $server_binary_ok ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Download the llama-cli binary in the Embedded LLM settings to enable server-side inference.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php elseif ( empty( $downloaded_models ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Download a GGUF model in the Embedded LLM settings to enable server-side inference.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Server-side embedded LLM runs GGUF models directly on the web server using the llama.cpp binary. No external API calls are made.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
 				</div>
 				<?php endif; ?>
 
@@ -742,6 +858,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<li><?php esc_html_e( 'Verify API key restrictions (if any) allow requests from your server', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
 						</li>
+						<li>
+							<strong><?php esc_html_e( 'Server-side embedded LLM fails:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul>
+								<li><?php esc_html_e( 'Ensure the Pro addon is active (server-side embedded LLM is a Pro feature)', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Download the llama-cli binary in Settings → NV oOS → Providers → Embedded LLM', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Download at least one GGUF model from the Embedded LLM settings page', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Verify proc_open() is not disabled on your server (required for llama.cpp)', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check server RAM: Qwen2 0.5B needs ~2GB, Granite 2B needs ~4GB, Phi-3 Mini needs ~6GB', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						</li>
 					</ul>
 
 					<h3><?php esc_html_e( 'Useful Links:', 'mcp-ai-wpoos' ); ?></h3>
@@ -881,6 +1007,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'embedded':
 					self::test_embedded( $settings );
+					break;
+
+				case 'embedded_server':
+					self::test_embedded_server( $settings );
 					break;
 
 				case 'google_maps':
@@ -1440,6 +1570,79 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
 							__( 'Model Type', 'mcp-ai-wpoos' )        => __( 'WebLLM (Client-side)', 'mcp-ai-wpoos' ),
 							__( 'Runtime', 'mcp-ai-wpoos' )           => __( 'Browser (WebGPU/WebAssembly)', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test server-side embedded LLM (llama.cpp / GGUF) connection.
+		 *
+		 * Verifies that the llama-cli binary is installed and operational.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_embedded_server( $settings ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Server-side embedded LLM is only available in the Pro version.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded LLM client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client        = new WP_MCP_AI_Embedded_Client();
+				$binary_status = $client->get_binary_status();
+
+				if ( empty( $binary_status['found'] ) ) {
+					wp_send_json_error(
+						array(
+							'message' => __( 'llama-cli binary not found. Please download the binary in Settings > NV oOS > Providers > Embedded LLM.', 'mcp-ai-wpoos' ),
+							'details' => array(
+								__( 'Platform', 'mcp-ai-wpoos' ) => isset( $binary_status['platform'] ) ? $binary_status['platform'] : '',
+							),
+						)
+					);
+					return;
+				}
+
+				$connection = $client->test_connection();
+
+				if ( is_wp_error( $connection ) ) {
+					wp_send_json_error( array( 'message' => $connection->get_error_message() ) );
+					return;
+				}
+
+				$downloaded        = $client->get_downloaded_models();
+				$model_count       = count( $downloaded );
+				$available_models  = $client->get_available_models();
+				$server_model_slug = isset( $settings['embedded_server_model'] ) ? $settings['embedded_server_model'] : '';
+				$server_model_name = ! empty( $server_model_slug ) && isset( $available_models[ $server_model_slug ] )
+					? $available_models[ $server_model_slug ]['name']
+					: ( $model_count > 0 ? __( 'Auto (first downloaded)', 'mcp-ai-wpoos' ) : __( 'None', 'mcp-ai-wpoos' ) );
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Server-side embedded LLM is working!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Binary Status', 'mcp-ai-wpoos' )     => isset( $binary_status['message'] ) ? $binary_status['message'] : '',
+							__( 'Platform', 'mcp-ai-wpoos' )          => isset( $binary_status['platform'] ) ? $binary_status['platform'] : '',
+							__( 'Downloaded Models', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Active Model', 'mcp-ai-wpoos' )      => $server_model_name,
 						),
 					)
 				);

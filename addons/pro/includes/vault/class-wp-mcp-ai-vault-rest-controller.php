@@ -266,12 +266,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$folder_id = $request->get_param( 'folder_id' );
 
 		$args = array(
-			'post_type'      => 'mcp_vault_item',
-			'author'         => $user_id,
-			'posts_per_page' => min( $per_page, 100 ), // Max 100 items.
-			'paged'          => $page,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'        => 'mcp_vault_item',
+			'author'           => $user_id,
+			'posts_per_page'   => min( $per_page, 100 ), // Max 100 items.
+			'paged'            => $page,
+			'orderby'          => 'title',
+			'order'            => 'ASC',
+			'suppress_filters' => true,
+			'no_found_rows'    => false,
 		);
 
 		if ( $item_type ) {
@@ -552,11 +554,13 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$user_id = get_current_user_id();
 
 		$args = array(
-			'post_type'      => 'mcp_vault_folder',
-			'author'         => $user_id,
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'        => 'mcp_vault_folder',
+			'author'           => $user_id,
+			'posts_per_page'   => -1,
+			'orderby'          => 'title',
+			'order'            => 'ASC',
+			'suppress_filters' => true,
+			'no_found_rows'    => true,
 		);
 
 		$query = new WP_Query( $args );
@@ -681,10 +685,12 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$folder_id = $request->get_param( 'folder_id' );
 
 		$args = array(
-			'post_type'      => 'mcp_vault_item',
-			'author'         => $user_id,
-			'posts_per_page' => 50,
-			's'              => $query,
+			'post_type'        => 'mcp_vault_item',
+			'author'           => $user_id,
+			'posts_per_page'   => 50,
+			's'                => $query,
+			'suppress_filters' => true,
+			'no_found_rows'    => true,
 		);
 
 		if ( $item_type ) {

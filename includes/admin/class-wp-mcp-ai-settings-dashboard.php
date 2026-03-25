@@ -121,7 +121,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Reorder submenu items to ensure proper menu order.
 		 *
-		 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
+		 * Ensures Getting Started appears first, followed by General Settings,
+		 * Orchestration Dashboard, and Task Plans.
 		 * This method reorganizes the submenu items under the main NV oOS menu to maintain
 		 * a logical and consistent navigation structure.
 		 *
@@ -138,17 +139,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			$main_submenu = $submenu[ self::PAGE_SLUG ];
 
-			// Define desired order: General Settings (0), Orchestration (10), Task Plans (20).
-			$ordered_items         = array();
-			$general_settings_item = null;
-			$orchestration_item    = null;
-			$task_plans_item       = null;
-			$other_items           = array();
+			// Define desired order: Getting Started (0), General Settings (10), Orchestration (20), Task Plans (30).
+			$ordered_items          = array();
+			$getting_started_item   = null;
+			$general_settings_item  = null;
+			$orchestration_item     = null;
+			$task_plans_item        = null;
+			$other_items            = array();
 
 			// Categorize menu items.
 			foreach ( $main_submenu as $item ) {
-				// General Settings (the main dashboard page).
-				if ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+				if ( isset( $item[2] ) && 'wp-mcp-ai-getting-started' === $item[2] ) {
+					// Getting Started wizard page.
+					$getting_started_item = $item;
+				} elseif ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+					// General Settings (the main dashboard page).
 					$general_settings_item = $item;
 				} elseif ( isset( $item[2] ) && false !== strpos( $item[2], 'mcp-ai-orchestration' ) ) {
 					// Orchestration Dashboard.
@@ -163,18 +168,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Rebuild menu in desired order.
+			if ( $getting_started_item ) {
+				$ordered_items[0] = $getting_started_item;
+			}
 			if ( $general_settings_item ) {
-				$ordered_items[0] = $general_settings_item;
+				$ordered_items[10] = $general_settings_item;
 			}
 			if ( $orchestration_item ) {
-				$ordered_items[10] = $orchestration_item;
+				$ordered_items[20] = $orchestration_item;
 			}
 			if ( $task_plans_item ) {
-				$ordered_items[20] = $task_plans_item;
+				$ordered_items[30] = $task_plans_item;
 			}
 
 			// Add other items after.
-			$position = 30;
+			$position = 40;
 			foreach ( $other_items as $item ) {
 				$ordered_items[ $position ] = $item;
 				++$position;
@@ -233,27 +241,74 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * those sections find no matching subtab in $_POST and return an empty array,
 		 * wiping stored API keys.
 		 *
-		 * The fix: return the input unchanged. All callers that reach update_option()
-		 * have already sanitized the data before calling it:
-		 *  - handle_save_settings() runs the full section-based sanitization with the
+		 * This callback applies a general-purpose sanitization pass that covers string
+		 * type safety while preserving the context-aware merge that all callers perform
+		 * before calling update_option():
+		 *  - handle_save_settings() runs full section-based sanitization with the
 		 *    correct $_POST context and then calls array_merge with existing settings.
 		 *  - OAuth/integration handlers (Gmail, QuickBooks, etc.) fetch the full
 		 *    existing settings, modify only their specific keys, and save the result.
 		 *
 		 * @param mixed $input Settings value passed to update_option().
-		 * @return array Settings array, preserved as-is.
+		 * @return array Sanitized settings array.
 		 */
 		public function sanitize_settings_callback( $input ) {
 			if ( ! is_array( $input ) ) {
-				// Preserve existing settings if input is invalid.
+				// Preserve existing settings if input is not a valid array.
 				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				return is_array( $existing ) ? $existing : array();
 			}
-			// Return the input unchanged. The full section-based sanitization already ran
-			// (with the correct $_POST context) before update_option() was called.
-			// Running it again here would cause subtab-aware sections to return empty arrays
-			// when $_POST does not match their tab/subtab, clearing stored provider keys.
-			return $input;
+			return $this->sanitize_settings_array_recursive( $input );
+		}
+
+		/**
+		 * Recursively sanitize a settings array.
+		 *
+		 * Applies type-appropriate sanitization to each value:
+		 * - Booleans are cast to bool.
+		 * - Integers are cast to int.
+		 * - Floats are cast to float.
+		 * - Strings that look like URLs are passed through esc_url_raw().
+		 * - All other strings use sanitize_textarea_field(), which strips HTML/PHP
+		 *   tags but PRESERVES newlines — critical for multiline settings such as
+		 *   ip_whitelist (newline-separated IPs) and textarea prompts.
+		 *   sanitize_text_field() is intentionally NOT used here because it collapses
+		 *   all whitespace including newlines, which would corrupt those values.
+		 * - Arrays are processed recursively.
+		 * - Array keys are preserved exactly as-is. sanitize_key() is intentionally
+		 *   NOT applied to keys because the settings contain camelCase and mixed-case
+		 *   keys (e.g. 'backgroundColor', 'High', 'Low') that would be corrupted by
+		 *   the lowercase conversion sanitize_key() performs.
+		 * - NULL and other scalar types are returned as-is.
+		 *
+		 * @param array $data The array to sanitize.
+		 * @return array Sanitized array with original keys preserved.
+		 */
+		private function sanitize_settings_array_recursive( array $data ) {
+			$sanitized = array();
+			foreach ( $data as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$sanitized[ $key ] = $this->sanitize_settings_array_recursive( $value );
+				} elseif ( is_bool( $value ) ) {
+					$sanitized[ $key ] = (bool) $value;
+				} elseif ( is_int( $value ) ) {
+					$sanitized[ $key ] = (int) $value;
+				} elseif ( is_float( $value ) ) {
+					$sanitized[ $key ] = (float) $value;
+				} elseif ( is_string( $value ) ) {
+					// Use esc_url_raw for values that look like URLs.
+					if ( preg_match( '/^https?:\/\//i', $value ) ) {
+						$sanitized[ $key ] = esc_url_raw( $value );
+					} else {
+						// sanitize_textarea_field strips HTML tags while preserving
+						// newlines — safe for all string types in this option.
+						$sanitized[ $key ] = sanitize_textarea_field( $value );
+					}
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+			return $sanitized;
 		}
 
 		/**

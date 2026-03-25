@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement convert_video_format logic
 		// This requires FFmpeg or similar video processing library
 

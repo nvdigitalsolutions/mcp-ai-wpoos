@@ -47,6 +47,55 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		'stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
 
 	/**
+	 * Essential WordPress post fields to retrieve via WP REST API.
+	 *
+	 * Excludes verbose fields like content (full HTML), meta, _links, yoast_head, etc.
+	 * Fields included: id, date, modified, title, slug, link, status, type,
+	 * excerpt, author, categories, tags.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const POST_FIELDS = 'id,date,modified,title,slug,link,status,type,excerpt,author,categories,tags';
+
+	/**
+	 * Essential WordPress media fields to retrieve via WP REST API.
+	 *
+	 * Excludes verbose fields like media_details (all image size variants), meta, _links.
+	 * Fields included: id, date, title, alt_text, source_url, media_type, mime_type, post.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const MEDIA_FIELDS = 'id,date,title,alt_text,source_url,media_type,mime_type,post';
+
+	/**
+	 * Essential WooCommerce order fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, fee_lines, tax_lines, refunds, _links.
+	 * Fields included: id, number, status, date_created, total, currency,
+	 * customer_id, billing, shipping, line_items, payment_method_title.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const ORDER_FIELDS = 'id,number,status,date_created,total,currency,' .
+		'customer_id,billing,shipping,line_items,payment_method_title';
+
+	/**
+	 * Essential WooCommerce customer fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, _links, avatar_url.
+	 * Fields included: id, date_created, email, first_name, last_name,
+	 * username, billing, shipping, orders_count, total_spent.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const CUSTOMER_FIELDS = 'id,date_created,email,first_name,last_name,' .
+		'username,billing,shipping,orders_count,total_spent';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -481,6 +530,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::POST_FIELDS,
 		);
 
 		if ( ! empty( $arguments['search'] ) ) {
@@ -599,6 +649,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::MEDIA_FIELDS,
 		);
 
 		$endpoint = 'wp/v2/media';
@@ -1262,6 +1313,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::ORDER_FIELDS,
 		);
 
 		if ( ! empty( $arguments['status'] ) ) {
@@ -1370,6 +1422,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::CUSTOMER_FIELDS,
 		);
 
 		$endpoint = 'wc/v3/customers';
