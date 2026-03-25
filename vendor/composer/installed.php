@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-email-guidelines-issues',
-        'version' => 'dev-copilot/fix-email-guidelines-issues',
-        'reference' => '77036a5e07ae0f7abd0b1e1f3bf3a77fb46fd8a5',
+        'pretty_version' => 'dev-copilot/update-compliance-document',
+        'version' => 'dev-copilot/update-compliance-document',
+        'reference' => '7ccaa14a18d106c8fbc2e2eb375f77a40be4398a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-email-guidelines-issues',
-            'version' => 'dev-copilot/fix-email-guidelines-issues',
-            'reference' => '77036a5e07ae0f7abd0b1e1f3bf3a77fb46fd8a5',
+            'pretty_version' => 'dev-copilot/update-compliance-document',
+            'version' => 'dev-copilot/update-compliance-document',
+            'reference' => '7ccaa14a18d106c8fbc2e2eb375f77a40be4398a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
