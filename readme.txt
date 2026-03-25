@@ -270,6 +270,62 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.6 - March 2026 =
+
+**New: NV oOS Canvas Addon**
+
+* New standalone `nvoos-canvas` WordPress plugin distributes the platform-specific canvas npm binary (Linux-only, ~50 MB compressed) as a separate, optional install
+* CI builds and commits `nvoos-canvas-linux-x64.zip` and `nvoos-canvas-linux-arm64.zip` to `build/`
+* OCR service detects canvas via `NVOOS_CANVAS_PATH` env var; falls back to node_modules if addon absent
+* Canvas admin install hint updated to `npm install canvas@2` with EACCES workaround for shared hosts
+* New `canvas-service.js` Node.js service supports `generate` (canvas spec) and `chart` (Chart.js) actions
+
+**Embedded LLM (Pro Addon)**
+
+* Moved `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` from `includes/` to `addons/pro/includes/`
+* Base plugin language model router uses `class_exists()` guard and falls back when Pro is absent
+* Added Gemma 2 2B Instruct (`gemma-2-2b-it-q4_k_m`) as 4th server-side GGUF model; set `gemma-2-2b-it-q4f16_1-MLC` as client-side WebLLM default
+* `create_soname_symlinks()` creates SONAME symlinks after extraction; falls back to `copy()` when `symlink()` is blocked (e.g., Cloudways)
+* `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check to auto-repair missing SONAMEs
+* `sanitise_binary_filename()` uses `[A-Za-z0-9._-]` allowlist to preserve `.so.X.Y.Z`-style filenames
+* `build_inference_command()` prepends `LD_LIBRARY_PATH` for reliable shared library resolution
+* `test_connection()` uses stderr fallback for llama.cpp builds b8479+ that write `--version` to stderr
+* Provider diagnostic page now shows resolved binary path and all co-located shared library filenames
+* Fixed fatal `E_ERROR` when `symlink()` is in `disable_functions` on provider diagnostic page
+* Added Re-install llama.cpp Binary button in embedded provider settings
+* Added `WP_MCP_AI_Logger` integration to all key embedded client operations
+
+**Embedded Chat Client — Streaming Fixes**
+
+* `chat.js` now uses native `fetch + ReadableStream` for SSE (bypasses Ky's 30 s AbortController timeout)
+* `send_sse_headers()` disables `zlib.output_compression`, calls `ob_end_clean()`, uses `wp_die()` — fixes ERR_HTTP2_PROTOCOL_ERROR on HTTP/2 connections
+* `max_tokens` injected from `WP_MCP_AI_Resource_Manager` into shortcode config (no more hardcoded 2048 fallback)
+* Elementor widget now always emits `enable_streaming` attribute so disabling streaming takes effect
+* `disableForm()` scoped to input area and send button only — message bubble buttons remain clickable during streaming
+* `WebLLMFunctionCallingClient` class definition deferred inside `waitForDependencies().then()` for reliable dependency resolution
+
+**New Email Integrations (Pro)**
+
+* New tool `send_mailgun_email` — transactional email via Mailgun API (US/EU regions; tags as array o:tag fields)
+* New tools `send_brevo_email`, `manage_brevo_contacts`, `get_brevo_statistics` — Brevo email marketing and CRM via api-key header auth
+
+**New WP-CLI Command Groups (Pro)**
+
+* `wp mcp-ai pro status` — Pro addon version, license, and active toolkit summary
+* `wp mcp-ai toolkit list/enable/disable` — manage Pro toolkits from CLI
+* `wp mcp-ai connection list/get/test/delete` — manage Chat Channel connections
+* `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries
+* `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries
+
+**Bug Fixes**
+
+* Fixed "tool_call_id did not have response messages" error: orphaned assistant `tool_calls` messages filtered out before next turn when `max_iterations` is reached
+* Fixed DICOM UID filesystem paths: `sanitize_uid_for_path()` used instead of `sanitize_file_name()` to preserve dots in UIDs
+* Added `WP_MCP_AI_Logger` to all 5 Ollama client methods — all concrete AI chat clients now fully logged
+* Fixed Pro Workflow Builder webpack config (correct output path/entry name) and CI auto-commit of built assets
+* Regenerated production classmap autoloader; removed stale gitlinks in `addons/pro/vendor/`
+* Confirmed Pro addon is a genuine extension: no base plugin tools are gated behind a license check
+
 = 1.1.5 - March 2026 =
 
 **WordPress.org Compliance**
