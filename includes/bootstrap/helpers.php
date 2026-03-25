@@ -31,16 +31,19 @@ if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
-	 * Check if base version mode is enabled.
+	 * Check if the private/custom base-mode entry point is active.
 	 *
-	 * Full version is enabled by default, providing all available tools.
-	 * Base version mode is only active if explicitly set to true in wp-config.php:
-	 * define( 'WP_MCP_AI_BASE_VERSION', true );
+	 * Returns true only when WP_MCP_AI_BASE_VERSION is explicitly set to true,
+	 * which happens via mcp-ai-wpoos-base.php. That entry point is excluded from
+	 * the WordPress.org distribution ZIP (.distignore) so it never fires for
+	 * WordPress.org users — all tools are always available there.
 	 *
-	 * Base version mode limits the plugin to core tools only, excluding tools that require
-	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
+	 * This function is NOT used to gate AI tools. It is used solely by internal
+	 * helpers that need to conditionally show settings for Pro addon features
+	 * (e.g. Site Creator, JetEngine CPT AI) that are provided by the Pro addon
+	 * and are absent from a private base-only build.
 	 *
-	 * @return bool Whether base version mode is active.
+	 * @return bool True only when the private base-mode entry point is active.
 	 */
 	function wp_mcp_ai_is_base_version() {
 		return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;

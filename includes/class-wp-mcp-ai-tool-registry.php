@@ -1177,17 +1177,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
-		 * Determine if the plugin is running in base (PHP 7.4+) mode.
+		 * Check whether the private/custom base-mode entry point is active.
 		 *
-		 * The base version is PHP 7.4+ compatible and includes all tools whose
-		 * code ships in the main plugin. The Pro addon requires PHP 8.1+ and
-		 * adds genuinely new tools using modern PHP features.
+		 * Returns true only when mcp-ai-wpoos-base.php has been used as the entry
+		 * point (which sets WP_MCP_AI_BASE_VERSION = true). That file is excluded
+		 * from the WordPress.org distribution ZIP (.distignore).
 		 *
-		 * Extended tools (WooCommerce, JetEngine, etc.) are always attempted;
-		 * they self-report unavailability via is_available() when their required
-		 * third-party plugins are not active.
+		 * This method is NOT used to gate any tools in this registry — all tools
+		 * in includes/tools/ are always registered regardless of this flag.
+		 * The $is_base_version value is passed to the wp_mcp_ai_default_tools
+		 * filter solely for backward compatibility with any third-party code
+		 * that reads it.
 		 *
-		 * @return bool True when the WP_MCP_AI_BASE_VERSION constant is set to true.
+		 * @return bool True only when the private base-mode entry point is active.
 		 */
 		protected function is_base_version() {
 			/**
@@ -1354,9 +1356,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-is-valid.php',
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
-				// Deep Research tool (Pro).
+				// Deep Research tool.
 				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
-				// Excel and Spreadsheet Tools - Pro feature for AI-powered formula generation.
+				// Excel and Spreadsheet Tools - AI-powered formula generation.
 				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
 			);
 
@@ -1409,27 +1411,28 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_List_All_Import_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php',
 				'WP_MCP_AI_Tool_Trigger_All_Import'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php',
 				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
-				// Advanced graphic editing tool (Pro).
+				// Advanced graphic editing tool.
 				'WP_MCP_AI_Tool_Graphic_Editor_Plus'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php',
 				// Project Management tools moved to Pro addon.
 			);
 
-			// Pro tools (only loaded when not in base version mode).
-			// NOTE: Architect Agent tools (manage_files, execute_shell_command, git_operations, search_codebase)
-			// are now loaded via the Architect Agent Toolkit (addons/pro/includes/architect-agent-toolkit-init.php).
+			// Pro addon tools are loaded exclusively by the Pro addon (addons/pro/).
+			// The Pro addon adds genuinely new tools that require PHP 8.1+ features.
 			$pro_tools = array();
 
 			// All tools shipped in this plugin are always attempted.
 			// Extended tools self-report unavailability via is_available() when their
 			// required third-party plugins (WooCommerce, JetEngine, etc.) are not active.
-			// The Pro addon (addons/pro/) contributes genuinely NEW tools that require PHP 8.1+.
+			// The Pro addon (addons/pro/) contributes entirely NEW tools — it does not
+			// gate or unlock any tool already present in includes/tools/.
 			$default_tools = array_merge( $base_tools, $extended_tools, $pro_tools );
 
 			/**
 			 * Filter the list of default tools to load.
 			 *
-			 * @param array $default_tools Array of tool class names and file paths.
-			 * @param bool  $is_base_version Whether base version mode is enabled.
+			 * @param array $default_tools    Array of tool class names and file paths.
+			 * @param bool  $is_base_version  Whether the private base-mode entry point is
+			 *                                active (always false on WordPress.org installs).
 			 */
 			$default_tools = apply_filters( 'wp_mcp_ai_default_tools', $default_tools, $is_base_version );
 

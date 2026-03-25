@@ -19,11 +19,11 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them.
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
-**Pro Addon (PHP 8.1+ required):** A separate plugin that adds **genuinely new** tools built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers). It does not unlock, gate, or restrict any functionality that already exists in the base plugin. Pro-only capabilities include advanced multi-agent orchestration, autonomous research pipelines, project management toolkits, vault/secret management, real-time collaboration features, and specialist toolsets (Shopify catalog, medical imaging, CRM integrations, and more).
+**Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
-The PHP version is the definitive differentiator: if your server runs PHP 7.4–8.0 you get the full base feature set; PHP 8.1+ unlocks the Pro addon's additional tools on top.
+**How they relate:** The base plugin is complete and fully functional on its own. The Pro addon sits alongside it to add more tools — the same way a second plugin would. No tool in `includes/tools/` is hidden, locked, or limited without the Pro addon.
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
@@ -264,7 +264,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 165+ base tools for content, media, research, and operations
+4. **Tool Registry** - 200+ tools for content, media, research, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 

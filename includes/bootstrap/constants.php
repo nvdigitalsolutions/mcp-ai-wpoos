@@ -26,23 +26,27 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 }
 
 /**
- * Base version mode flag.
+ * Base version mode flag — legacy/backward-compatibility only.
  *
- * The base plugin supports PHP 7.4+ and ships all tools in includes/tools/.
- * Every tool included in the base plugin is available to site owners without
- * restriction — tools for optional third-party plugins (WooCommerce, JetEngine,
- * etc.) are present but self-report as unavailable via is_available() when
- * those plugins are not installed.
+ * This constant previously restricted the tool registry to a subset of tools.
+ * That restriction has been removed: all tools in includes/tools/ are always
+ * attempted on every installation; tools for optional third-party plugins
+ * (WooCommerce, JetEngine, etc.) self-report as unavailable via is_available()
+ * when those plugins are not installed.
  *
- * The Pro addon requires PHP 8.1+ and adds genuinely NEW tools that leverage
- * modern PHP features (enums, readonly properties, fibers, named arguments).
- * It does not "unlock" functionality that already exists in the base plugin.
+ * The constant is preserved so that:
+ *  1. Third-party code relying on the wp_mcp_ai_base_version filter continues to work.
+ *  2. The wp_mcp_ai_is_base_version() helper can still be used by callers that
+ *     need to detect the private/custom build entry point (mcp-ai-wpoos-base.php).
+ *     That entry point is excluded from the WordPress.org distribution ZIP via
+ *     .distignore so it never fires for WordPress.org users.
  *
- * NOTE: This constant no longer affects which tools are registered. All tools
- * in includes/tools/ are always attempted, with is_available() determining
- * runtime availability. The constant is preserved for backward compatibility
- * with any filters or third-party code that reads it, and for the WordPress.org
- * build entry point (mcp-ai-wpoos-base.php) which sets it to true.
+ * The Pro addon (addons/pro/) is a genuine extension — it adds brand-new tools
+ * that do not exist in the base plugin. It does NOT unlock or gate any tool that
+ * is already present in includes/tools/.
+ *
+ * @var bool False = all base tools always load (default). True = private/custom
+ *           build mode set by mcp-ai-wpoos-base.php (excluded from WP.org ZIP).
  */
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 	define( 'WP_MCP_AI_BASE_VERSION', false );

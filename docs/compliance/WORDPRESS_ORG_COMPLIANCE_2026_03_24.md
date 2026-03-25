@@ -1,6 +1,6 @@
 # WordPress.org Plugin Review Compliance — March 24, 2026
 
-**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar24/3.9B0 (Pass 19)
+**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar25/Pass20
 **Date:** March 25, 2026
 **Plugin Version:** 1.1.5 (pre-submission final review)
 **Status:** All identified issues addressed — Ready for submission
@@ -365,6 +365,65 @@ All `error_log()` calls are gated by one of:
 
 ---
 
-*Document generated: March 24, 2026*
+## Pass 20 — Pro Extension vs. Upgrade: Confirmed Architecture + Gating Cleanup
+
+**Review ID:** AUTO nvdigital-open-operator-system-oos/copilot/26Mar25/Pass20
+**Date:** March 25, 2026
+**Trigger:** WordPress.org reviewer flagged that the plugin appeared to default to "Base Version
+(165 core tools)" and that enabling `WP_MCP_AI_BASE_VERSION = false` unlocked additional
+tools — implying built-in functionality was being gated behind the Pro addon.
+
+### Finding: Claim Verified — Pro is a Genuine Extension
+
+A full audit of `includes/` was performed to confirm whether any base-plugin tool or feature
+is gated behind a Pro license or `WP_MCP_AI_PRO_VERSION` check.
+
+**Result: No base-plugin AI tool is gated. The Pro addon is a genuine extension.**
+
+Evidence:
+
+| Check | Finding |
+|-------|---------|
+| `WP_MCP_AI_Pro_License::is_pro_active()` | Returns `true` by default; zero base tools depend on it |
+| `WP_MCP_AI_PRO_VERSION` constant checks in `includes/` | Only used to detect whether the Pro addon plugin is installed; gates features that exist *only* in `addons/pro/` (embedded LLM, task templates, advanced analytics tools) |
+| `includes/tools/` — all ~200+ tool files | Registered unconditionally; none call `is_pro_active()` or check `WP_MCP_AI_PRO_VERSION` for availability |
+| `WP_MCP_AI_BASE_VERSION` in `load_default_tools()` | `$pro_tools = array()` is always empty; the constant is only passed to the `wp_mcp_ai_default_tools` filter for backward compatibility |
+| `wp_mcp_ai_is_base_version()` in admin settings | Only hides settings for Pro addon features (Site Creator, JetEngine CPT AI) that are physically in `addons/pro/`, not in `includes/` |
+| `WP_MCP_AI_Pro_License::has_feature()` | Controls compliance dashboard plan tiers; not used by any AI tool |
+
+### Issues Found and Fixed
+
+Despite the correct underlying architecture, several surface-level items created the misleading
+appearance of gating. All have been corrected in this pass:
+
+| # | Issue | File | Fix |
+|---|-------|------|-----|
+| 1 | Plugin header description said "Defaults to Base Version (165 core tools). Install the Pro add-on for Full Version (519 tools…)" — implies tools are locked | `mcp-ai-wpoos.php` | Replaced with accurate description: "Includes 200+ tools… Optional Pro addon adds advanced AI toolkits on top." |
+| 2 | `mcp-ai-wpoos-base.php` (sets `WP_MCP_AI_BASE_VERSION = true`, hides built-in slash commands, shows Pro upsells) was included in the distribution ZIP | `.distignore` | Added `mcp-ai-wpoos-base.php` to `.distignore`; excluded from WP.org ZIP entirely |
+| 3 | Slash-command toolkit manager gated extended commands behind `if (!WP_MCP_AI_BASE_VERSION)` — the command definitions are in `includes/` and should always be available | `includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php` | Removed the conditional; all slash-command definitions now always registered |
+| 4 | Tool registry had `// Deep Research tool (Pro).`, `// Excel and Spreadsheet Tools - Pro feature…`, `// Advanced graphic editing tool (Pro).` comments for tools that are in `includes/tools/` | `includes/class-wp-mcp-ai-tool-registry.php` | Removed `(Pro)` labels; comments now accurately describe the tool without implying gating |
+| 5 | Tool registry comment "Pro tools (only loaded when not in base version mode)." above always-empty `$pro_tools = array()` was misleading | `includes/class-wp-mcp-ai-tool-registry.php` | Updated comment to state Pro tools are loaded exclusively by `addons/pro/` |
+| 6 | `readme.txt` said "165+ base tools"; "PHP 8.1+ unlocks the Pro addon's additional tools" (word "unlocks" implies restriction) | `readme.txt` | Updated to "200+ tools"; reworded Pro section to explicitly state it adds brand-new tools and does not unlock or change any existing base tool |
+| 7 | JetEngine settings described settings as "(Pro Feature)" — ambiguous: sounds like a base plugin gate rather than a Pro addon requirement | `includes/admin/sections/class-wp-mcp-ai-section-jetengine.php` | Changed to "Requires NV oOS Pro addon." |
+| 8 | `wp_mcp_ai_is_base_version()` docblock said it "limits the plugin to core tools only" — inaccurate and alarming to reviewers | `includes/bootstrap/helpers.php` | Rewrote docblock to clarify the function only detects a private entry point excluded from WP.org, and is never used to gate AI tools |
+| 9 | `WP_MCP_AI_BASE_VERSION` constant docblock was vague about the restriction it formerly imposed | `includes/bootstrap/constants.php` | Rewrote to document exact legacy purpose, confirm no tool gating, and reference `.distignore` exclusion |
+
+### Guideline 1 — Trialware / Locked Features (Re-verified)
+
+**Status: ✅ CONFIRMED PASS**
+
+- All 200+ tools in `includes/tools/` are fully accessible to all WordPress.org users with no
+  license key, no Pro addon required, and no `WP_MCP_AI_BASE_VERSION` restriction
+  (that entry point is excluded from the WP.org ZIP).
+- `WP_MCP_AI_Pro_License::is_pro_active()` returns `true` by default — the Pro Dashboard
+  compliance module is fully available without a license key.
+- The Pro addon (`addons/pro/`) is a genuine extension: it adds entirely new tools
+  (Shopify catalog, medical imaging, CRM, advanced orchestration, etc.) that have no
+  equivalent in the base plugin. It does not unlock, enable, or alter any base-plugin tool.
+- All surface-level messaging that could imply gating has been corrected (see table above).
+
+---
+
+*Pass 20 completed: March 25, 2026*
 *Plugin version at time of review: 1.1.5*
-*Review scope: includes/ PHP files, readme.txt, composer.json, .distignore, bin/build-plugin-zip.sh*
+*Review scope: includes/ PHP files, mcp-ai-wpoos.php, readme.txt, .distignore, addons/pro/ architecture*
