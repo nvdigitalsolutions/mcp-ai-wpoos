@@ -1,10 +1,15 @@
-# NV oOS App Plugin — Complete Distribution Bundle Proposal
+# NV oOS Canvas Addon & Distribution — Proposal
 
 **Date:** March 2026  
-**Version:** 1.0  
-**Status:** Proposal  
+**Version:** 2.0 (updated from v1.0 — architecture revised based on stakeholder feedback)  
+**Status:** ✅ Implemented  
 **Author:** NV Digital Solutions  
-**Related Docs:** [`docs/architecture/canvas-packaging-analysis.md`](../architecture/canvas-packaging-analysis.md), [`addons/pro/SIZE_BREAKDOWN.md`](../../addons/pro/SIZE_BREAKDOWN.md)
+**Related Docs:** [`docs/architecture/canvas-packaging-analysis.md`](../architecture/canvas-packaging-analysis.md), [`addons/pro/SIZE_BREAKDOWN.md`](../../addons/pro/SIZE_BREAKDOWN.md), [`addons/canvas/README.md`](../../addons/canvas/README.md)
+
+> **Architecture Update (v2.0):** Based on stakeholder feedback, the "App plugin" umbrella concept (v1.0)  
+> has been superseded. The adopted architecture is:  
+> **Base + Pro = complete installation. Canvas = separate optional addon ZIP.**  
+> The canvas addon (`nvoos-canvas`) has been implemented in `addons/canvas/`.
 
 ---
 

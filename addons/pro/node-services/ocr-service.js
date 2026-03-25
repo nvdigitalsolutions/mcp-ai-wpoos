@@ -60,8 +60,18 @@ try {
 	}
 	
 	// Load Canvas
+	// Discovery order:
+	//   1. NVOOS_CANVAS_PATH env var — set by PHP when the NV oOS Canvas Addon is
+	//      active. Points to the addon's assets/canvas/ directory which contains
+	//      the platform-specific native binary (canvas.node).
+	//   2. Bundled vendor directory (assets/vendor/canvas/) — JS wrapper only;
+	//      no native binaries. Fails gracefully if binary is missing.
+	//   3. node_modules/canvas — available when the developer runs npm install.
 	try {
-		if (vendorExists) {
+		const canvasAddonPath = process.env.NVOOS_CANVAS_PATH || '';
+		if (canvasAddonPath && fs.existsSync(canvasAddonPath)) {
+			canvas = require(canvasAddonPath);
+		} else if (vendorExists) {
 			const canvasPath = path.join(vendorPath, 'canvas');
 			if (fs.existsSync(canvasPath)) {
 				canvas = require(canvasPath);

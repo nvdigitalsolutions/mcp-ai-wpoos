@@ -1,0 +1,242 @@
+# NV oOS Canvas Addon — Platform-Specific Build
+#
+# Produces platform-specific distribution ZIPs of the NV oOS Canvas Addon plugin.
+# Each ZIP contains the canvas npm package's native binaries pre-compiled for
+# a specific Linux platform, plus the JS wrapper code. Users install whichever
+# ZIP matches their server platform.
+#
+# Outputs:
+#   nvoos-canvas-linux-x64-v{version}.zip    (~50 MB, for Ubuntu/Debian/etc.)
+#   nvoos-canvas-linux-arm64-v{version}.zip  (~50 MB, for ARM64/Graviton/etc.)
+#
+# Triggered by:
+#   - Manual workflow_dispatch with version input
+#   - Push to a tag matching "canvas-v*.*.*"
+
+name: Build Canvas Addon
+
+on:
+  push:
+    tags:
+      - 'canvas-v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Canvas addon version (e.g. 1.0.0)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create a GitHub Release with the artifacts'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build platform-specific canvas addon ZIPs
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            runner: ubuntu-22.04
+            node-arch: x64
+            artifact-suffix: linux-x64
+
+          - platform: linux-arm64
+            runner: ubuntu-22.04   # Uses QEMU for ARM64 cross-compilation
+            node-arch: arm64
+            artifact-suffix: linux-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Extract version from tag (canvas-v1.0.0 → 1.0.0)
+            VERSION="${GITHUB_REF_NAME#canvas-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact=nvoos-canvas-${{ matrix.artifact-suffix }}-v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # ARM64 builds run in a QEMU-emulated container so the canvas binary
+      # is compiled for the correct architecture.
+      - name: Set up QEMU (ARM64 only)
+        if: matrix.node-arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Node.js ${{ matrix.node-arch }}
+        if: matrix.node-arch == 'x64'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install canvas dependencies (system libraries)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            libcairo2-dev \
+            libpango1.0-dev \
+            libjpeg-dev \
+            libgif-dev \
+            librsvg2-dev \
+            pkg-config
+
+      - name: Install canvas@2 (x64 native)
+        if: matrix.node-arch == 'x64'
+        working-directory: addons/canvas
+        run: npm install canvas@2
+
+      - name: Install canvas@2 (arm64 via QEMU Docker)
+        if: matrix.node-arch == 'arm64'
+        # Node 20 is used here to compile the native binary against a recent,
+        # widely-supported Node ABI. The compiled canvas.node is compatible with
+        # any Node 18+ runtime because canvas@2 uses NAN (Native Abstractions for
+        # Node.js) which targets stable ABI ranges, not a single Node version.
+        # The addon's package.json engine requirement (>=18.17.0) reflects the
+        # minimum runtime version, not the build-time version.
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD/addons/canvas:/work" \
+            -w /work \
+            node:20-bookworm \
+            bash -c "apt-get update -qq && \
+                     apt-get install -y --no-install-recommends \
+                       build-essential libcairo2-dev libpango1.0-dev \
+                       libjpeg-dev libgif-dev librsvg2-dev pkg-config && \
+                     npm install canvas@2"
+
+      - name: Run copy-canvas.js
+        if: matrix.node-arch == 'x64'
+        working-directory: addons/canvas
+        run: node scripts/copy-canvas.js
+
+      - name: Run copy-canvas.js (arm64 — node_modules installed by Docker)
+        if: matrix.node-arch == 'arm64'
+        working-directory: addons/canvas
+        run: node scripts/copy-canvas.js
+
+      - name: Verify binary
+        run: |
+          BINARY="addons/canvas/assets/canvas/build/Release/canvas.node"
+          if [ ! -f "$BINARY" ]; then
+            echo "❌ canvas.node not found at $BINARY"
+            exit 1
+          fi
+          SIZE=$(du -sh "$BINARY" | cut -f1)
+          echo "✅ canvas.node present — $SIZE"
+          file "$BINARY"
+
+      - name: Assemble addon directory for ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          mkdir -p "dist/${ARTIFACT}/nvoos-canvas"
+
+          # Copy plugin source (exclude build scripts and node_modules)
+          rsync -a --exclude='node_modules/' --exclude='scripts/' \
+            addons/canvas/ "dist/${ARTIFACT}/nvoos-canvas/"
+
+          # Remove the .gitkeep placeholder that was overwritten by real binary
+          rm -f "dist/${ARTIFACT}/nvoos-canvas/assets/canvas/build/Release/.gitkeep"
+
+          echo "📁 Plugin directory contents:"
+          find "dist/${ARTIFACT}/nvoos-canvas" -type f | sort
+
+      - name: Create ZIP
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          cd "dist/${ARTIFACT}"
+          zip -r "../../${ARTIFACT}.zip" nvoos-canvas/
+          cd ../..
+          SIZE=$(du -sh "${ARTIFACT}.zip" | cut -f1)
+          echo "📦 ${ARTIFACT}.zip — ${SIZE}"
+
+      - name: Generate SHA-256 checksum
+        run: |
+          ARTIFACT="${{ steps.version.outputs.artifact }}"
+          sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          cat "${ARTIFACT}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: |
+            ${{ steps.version.outputs.artifact }}.zip
+            ${{ steps.version.outputs.artifact }}.zip.sha256
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Create a GitHub Release (optional)
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-22.04
+    if: inputs.create_release == true || startsWith(github.ref, 'refs/tags/canvas-v')
+
+    steps:
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF_NAME#canvas-v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: canvas-v${{ steps.version.outputs.version }}
+          name: "NV oOS Canvas Addon v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS Canvas Addon v${{ steps.version.outputs.version }}
+
+            Platform-specific canvas native binaries for Tesseract PDF OCR.
+
+            ### Downloads
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | Linux x64 | `nvoos-canvas-linux-x64-v${{ steps.version.outputs.version }}.zip` | Ubuntu, Debian, CentOS, most cloud VPS |
+            | Linux ARM64 | `nvoos-canvas-linux-arm64-v${{ steps.version.outputs.version }}.zip` | AWS Graviton, Raspberry Pi |
+
+            ### Checksums
+
+            See the `.sha256` files attached to this release.
+
+            ### Requirements
+
+            - NV oOS Base Plugin active
+            - NV oOS Pro Addon active
+            - Node.js ≥ 18.17.0 on the server
+            - Linux server (Windows/macOS: use AI Vision OCR instead — no canvas needed)
+          files: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          draft: false
+          prerelease: false
