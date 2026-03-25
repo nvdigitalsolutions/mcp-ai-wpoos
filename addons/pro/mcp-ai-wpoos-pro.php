@@ -150,6 +150,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $pro_providers_file;
 		}
 
+		// Load Node Package install hints helper (used by multiple settings pages).
+		$node_hints_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-hints.php';
+		if ( file_exists( $node_hints_file ) ) {
+			require_once $node_hints_file;
+		}
+
 		// Load Pro Packages Settings Page (Node.js package status).
 		$pro_packages_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php';
 		if ( file_exists( $pro_packages_page ) ) {

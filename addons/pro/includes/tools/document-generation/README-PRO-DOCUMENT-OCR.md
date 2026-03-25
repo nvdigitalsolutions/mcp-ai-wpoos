@@ -302,9 +302,11 @@ Built on international AI standards:
 For Tesseract-based PDF OCR (fallback when AI providers are unavailable), the **canvas** npm package is required but NOT included in the plugin distribution (to reduce size by ~50MB).
 
 To enable Tesseract PDF OCR:
-1. Install Node.js on your server (v18 or v20)
+1. Install Node.js on your server (v18.17.0+ or v20.9.0+)
 2. Navigate to the plugin directory: `cd wp-content/plugins/mcp-ai-wpoos-pro/`
-3. Install canvas: `npm install canvas`
+3. Install canvas: `npm install canvas@2`
+   > **Important**: Use `canvas@2` — `canvas@3+` requires Node.js `>=20.9.0` and will fail on Node 18.x or Node 20.x versions earlier than 20.9.0.
+   > **On shared hosts (e.g. Cloudways)**: If you get `EACCES: permission denied` creating `node_modules`, first run `mkdir node_modules && chmod 775 node_modules`, then retry.
 4. Install system dependencies (Linux):
    ```bash
    apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev librsvg2-dev
