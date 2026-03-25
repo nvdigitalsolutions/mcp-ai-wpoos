@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-compliance-document',
-        'version' => 'dev-copilot/update-compliance-document',
-        'reference' => '7ccaa14a18d106c8fbc2e2eb375f77a40be4398a',
+        'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
+        'version' => 'dev-copilot/remove-hidden-files-base-zip',
+        'reference' => 'db7b8e68ac93393abed8a6518e60e2369cd59483',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-compliance-document',
-            'version' => 'dev-copilot/update-compliance-document',
-            'reference' => '7ccaa14a18d106c8fbc2e2eb375f77a40be4398a',
+            'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
+            'version' => 'dev-copilot/remove-hidden-files-base-zip',
+            'reference' => 'db7b8e68ac93393abed8a6518e60e2369cd59483',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
