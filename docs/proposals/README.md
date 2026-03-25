@@ -1,8 +1,8 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** January 30, 2026  
-**Total Proposals:** 64 files  
-**Completed:** 18 (28%) | **In Progress:** 6 (9%) | **Pending:** 40 (63%)
+**Last Updated:** March 2026  
+**Total Proposals:** 65 files  
+**Completed:** 18 (28%) | **In Progress:** 6 (9%) | **Pending:** 41 (63%)
 
 📊 **[View Complete Status Tracking →](PROPOSALS_COMPLETION_STATUS.md)**
 
@@ -25,6 +25,7 @@ This directory contains proposals, research, and implementation status for major
 - **Ralph Wiggum CCT Orchestration** - Awaiting implementation resources
 
 ### ⏳ High Priority Pending
+- **NV oOS App Plugin Distribution** - New proposal (March 2026): separate app plugin bundling base+pro+canvas for platform-specific distribution → [NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md](./NVOOS_APP_PLUGIN_DISTRIBUTION_PROPOSAL.md)
 - **Toolkit Enhancement (Extended Features)** - High ROI proposal ready for approval
 - **Firefly III Integration** - Comprehensive proposal ready for review
 - **WordPress Core Integration Enhancement** - Planning phase (0% complete)
