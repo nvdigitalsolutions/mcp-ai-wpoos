@@ -109,12 +109,27 @@ PHP
 fi
 
 SQLITE_PLUGIN_DIR="$WP_PATH/wp-content/plugins/sqlite-database-integration"
+LOCAL_SQLITE_PLUGIN_SRC="$ROOT_DIR/tests/fixtures/sqlite-database-integration"
+
 if [[ ! -d "$SQLITE_PLUGIN_DIR" ]]; then
-  echo "Installing SQLite integration plugin..."
-  SQLITE_ZIP="$WORK_DIR/sqlite-database-integration.zip"
-  curl -fsSL "https://downloads.wordpress.org/plugin/sqlite-database-integration.latest-stable.zip" -o "$SQLITE_ZIP"
-  unzip -qo "$SQLITE_ZIP" -d "$WP_PATH/wp-content/plugins"
-  rm -f "$SQLITE_ZIP"
+  if [[ -d "$LOCAL_SQLITE_PLUGIN_SRC" ]]; then
+    echo "Installing SQLite integration plugin from local fixtures..."
+    mkdir -p "$WP_PATH/wp-content/plugins"
+    cp -R "$LOCAL_SQLITE_PLUGIN_SRC" "$SQLITE_PLUGIN_DIR"
+  else
+    echo "Downloading SQLite integration plugin from wordpress.org..."
+    SQLITE_ZIP="$WORK_DIR/sqlite-database-integration.zip"
+    if ! curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors \
+        "https://downloads.wordpress.org/plugin/sqlite-database-integration.latest-stable.zip" \
+        -o "$SQLITE_ZIP"; then
+      echo "ERROR: Failed to download the SQLite integration plugin (all retries exhausted)." >&2
+      echo "To remove this network dependency, commit a copy of the plugin to:" >&2
+      echo "  tests/fixtures/sqlite-database-integration/" >&2
+      exit 1
+    fi
+    unzip -qo "$SQLITE_ZIP" -d "$WP_PATH/wp-content/plugins"
+    rm -f "$SQLITE_ZIP"
+  fi
 fi
 
 if [[ ! -f "$WP_PATH/wp-content/db.php" ]]; then
