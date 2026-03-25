@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
         'version' => 'dev-copilot/remove-hidden-files-base-zip',
-        'reference' => 'cd4a04d790092279e31070aec01821e00a904657',
+        'reference' => 'e202d204f9ce219e8a63375a759ce6578aef8cc7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
             'version' => 'dev-copilot/remove-hidden-files-base-zip',
-            'reference' => 'cd4a04d790092279e31070aec01821e00a904657',
+            'reference' => 'e202d204f9ce219e8a63375a759ce6578aef8cc7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
