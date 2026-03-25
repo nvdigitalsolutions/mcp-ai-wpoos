@@ -728,16 +728,4 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 
 		return $sanitized;
 	}
-
-	/**
-	 * Get install hint for the canvas npm package.
-	 *
-	 * Returns a concise, translatable install hint used wherever canvas is listed
-	 * as an optional dependency across settings pages.
-	 *
-	 * @return string Translated install hint.
-	 */
-	public static function get_canvas_install_hint() {
-		return __( 'Run: npm install canvas@2 (v3+ requires Node >=20.9.0; canvas@2 supports Node 18/20.x). Requires system libs (cairo, pango). EACCES on shared hosts: mkdir node_modules && chmod 775 node_modules first.', 'mcp-ai-wpoos-pro' );
-	}
 }
