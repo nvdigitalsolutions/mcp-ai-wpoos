@@ -15,7 +15,9 @@
 .wordpress-org
 
 # Development configuration
+.bmad
 .codex
+.context
 .devcontainer
 .eslintrc.json
 .eslintignore
@@ -25,6 +27,7 @@
 .codecov.yml
 phpcs.xml.dist
 CODEOWNERS
+MAINTAINER_MAP.md
 
 # Build tools and dependencies
 node_modules
@@ -41,6 +44,8 @@ cosmos.config.json
 cosmos.webpack.config.js
 webpack.config.js
 webpack.config.tma-builder.js
+webpack.config.tma.js
+webpack.config.workflow.js
 tsconfig.json
 .npmrc
 
