@@ -5,56 +5,6 @@
 **Plugin Version:** 1.1.5 (pre-submission final review)
 **Status:** All identified issues addressed — Ready for submission
 
----
-
-## Pass 18 — Pre-Submission Final Review
-
-Pass 18 is a dedicated final sweep of the base plugin before WordPress.org submission.
-It incorporates all fixes from Pass 17 and adds one additional fix discovered during the
-final review.
-
-| # | Issue | Severity | Status |
-|---|-------|----------|--------|
-| 1 | 29 bare `phpcs:ignore` annotations in `class-wp-mcp-ai-embedded-client.php` — missing `--` justification text | MEDIUM | ✅ Fixed in Pass 18 |
-| 2 | 1 bare `phpcs:disable` in `mcp-ai-wpoos.php` plugin header — missing `--` justification text | LOW | ✅ Fixed in Pass 18 |
-
-### Issue 1 — Bare `phpcs:ignore` in Embedded Client
-
-**File:** `includes/class-wp-mcp-ai-embedded-client.php`
-
-The compliance document for Pass 17 stated "0 bare phpcs:disable or phpcs:ignore lines" but
-a final scan revealed 29 `phpcs:ignore` annotations in the embedded LLM client that did not
-include a `--` justification comment. All WordPress.org review guidelines and the project's
-own PHPCS compliance policy require every suppression to explain *why* the rule does not
-apply.
-
-The 29 instances were concentrated in four areas:
-- Binary/model file downloads: `file_put_contents`, `rename`, `chmod`, `unlink` (temp cleanup)
-- Status checks: `glob`, `is_writable`
-- SONAME symlink management: `symlink`, `file_get_contents`, `file_put_contents`
-- Runtime environment: `getenv` for `LD_LIBRARY_PATH` construction
-
-**Fix:** Justification text added after `--` on all 29 lines explaining why the
-WordPress-preferred API (WP_Filesystem) is not usable in each specific context (binary
-management at CLI/cron level, no HTTP context, no initialized WP_Filesystem object
-available).
-
-### Issue 2 — Bare `phpcs:disable` in Main Plugin Header
-
-**File:** `mcp-ai-wpoos.php`
-
-The `@package` block in the main plugin header contained:
-```
- * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
-```
-without a `--` justification comment.
-
-**Fix:** Justification appended:
-```
- * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Main plugin entry point; file is intentionally named after the plugin slug, not a class.
-```
-
----
 
 ## Pass 17 — Summary of Changes
 
