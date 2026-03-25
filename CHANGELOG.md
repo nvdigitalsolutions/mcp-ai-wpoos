@@ -3,80 +3,6 @@
 
 ## [Unreleased]
 
-### Added
-- **NV oOS Canvas Addon — Platform-Specific ZIP for Tesseract PDF OCR (March 25, 2026)** (PR #4441, #4442): The `canvas` npm package (Linux-only native binary, ~50 MB compressed) is now distributed as a separate, optional `nvoos-canvas` WordPress plugin rather than being bundled in the Pro ZIP.
-  - New standalone plugin in `addons/canvas/` — installs the platform-specific binary alongside the Pro addon.
-  - CI builds `nvoos-canvas-linux-x64.zip` and `nvoos-canvas-linux-arm64.zip` via `build-canvas-addon.yml` and commits them to `build/`.
-  - OCR service auto-detects the Canvas Addon path via `NVOOS_CANVAS_PATH` environment variable; falls back to `node_modules` if the addon is absent.
-  - Base + Pro ZIP remains unchanged at ~33 MB; canvas is a post-install optional step only needed for Tesseract PDF OCR on Linux servers.
-
-- **Five New Pro WP-CLI Command Groups (March 23, 2026)** (PR #4418):
-  - `wp mcp-ai pro status` — display Pro addon version, license, and active toolkit summary.
-  - `wp mcp-ai toolkit list/enable/disable` — manage Pro toolkits from the command line.
-  - `wp mcp-ai connection list/get/test/delete` — manage Chat Channel connection entries.
-  - `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries.
-  - `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries.
-  - Shared base class `WP_MCP_AI_Pro_CLI_Base_Command` with assertion helpers.
-  - Tests added in `addons/pro/tests/test-wp-cli-pro-commands.php`.
-
-- **Mailgun Email Integration (March 22, 2026)** (PR #4408):
-  - New Pro tool `send_mailgun_email` — sends transactional emails via the Mailgun API.
-  - Supports US and EU region endpoints (`api.mailgun.net` / `api.eu.mailgun.net`).
-  - Tags passed as separate `o:tag` form fields (array, not comma-separated string) per Mailgun requirements.
-  - Admin settings: `mailgun_api_key`, `mailgun_domain`, `mailgun_region`, `mailgun_from_email`, `mailgun_from_name`.
-
-- **Brevo Email & CRM Integration (March 22, 2026)** (PR #4408):
-  - Three new Pro tools under the `enable_email_toolkit` guard:
-    - `send_brevo_email` — send transactional emails via Brevo `api-key` header auth.
-    - `manage_brevo_contacts` — create, update, and list contacts in Brevo lists.
-    - `get_brevo_statistics` — retrieve campaign and contact statistics.
-  - Admin settings: `brevo_api_key`, `brevo_from_email`, `brevo_from_name`, `brevo_webhook_secret`.
-
-### Changed
-- **Embedded LLM Server-Side Client — Moved to Pro Addon (March 25, 2026)** (PR #4433, #4434): `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` relocated from `includes/` to `addons/pro/includes/`. The base plugin's language model router uses a `class_exists()` guard and falls back gracefully when Pro is absent.
-  - `enable_embedded` field in the Pro Providers section now shows `disabled = true` with the label "Auto-enabled with Pro" rather than a manual toggle.
-
-- **Embedded LLM — Added Gemma 2B Instruct Model (March 24, 2026)** (PR #4428): Added `gemma-2-2b-it-q4_k_m` as the fourth server-side GGUF model and set `gemma-2-2b-it-q4f16_1-MLC` as the new client-side WebLLM default model. Fixed server-side chat routing that was silently dropping assistant global `embedded_server_model` settings.
-
-- **WP.org Compliance — Pro Addon is a Genuine Extension (March 25, 2026)** (PR #4435): Resolved nine surface-level items that could give the impression that the Pro addon "unlocks" base plugin features. Confirmed architecture: all tools in `includes/tools/` register unconditionally and are never gated behind a license check.
-
-### Fixed
-- **Embedded LLM — Shared Library Loading Failures (March 22–23, 2026)** (PR #4414, #4416):
-  - `extract_binary_from_archive()` now uses `sanitise_binary_filename()` (allowlist `[A-Za-z0-9._-]`) instead of `sanitize_file_name()`, preserving `.so.0.9.8`-style shared-library filenames.
-  - `build_inference_command()` prepends `LD_LIBRARY_PATH` so co-located `.so` files are found at runtime.
-  - `create_soname_symlinks()` creates `lib*.so.X → lib*.so.X.Y.Z` and `lib*.so → lib*.so.X` symlinks after extraction; falls back to `copy()` when `symlink()` is blocked (e.g., Cloudways).
-  - `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check, auto-repairing missing SONAMEs on existing installs.
-
-- **Embedded LLM — Provider Diagnostic Page Enhancements (March 23, 2026)** (PR #4415, #4417):
-  - Diagnostic page now shows the resolved llama-cli binary path and the names of all co-located shared libraries.
-  - `get_shared_libs_status()` added: scans binary directory for `lib*.so*` files, returns `found`, `libs`, and `bin_dir`.
-  - Fixed fatal `E_ERROR` when `symlink()` is listed in `disable_functions` — replaced `symlink()` call with `is_callable()` guard.
-
-- **Embedded LLM — `test_connection()` False "No Output" Error (March 23, 2026)** (PR #4419): llama.cpp builds b8479+ write `--version` output to stderr instead of stdout. `run_binary()` now accepts `$use_stderr_fallback = true`; `test_connection()` uses it so the binary is correctly detected on modern builds.
-
-- **Embedded LLM — SSE Streaming Fixes (March 22–24, 2026)** (PR #4420, #4421, #4422, #4423, #4425):
-  - Client-side: `chat.js` no longer uses Ky for SSE requests; switches to native `fetch + ReadableStream` to avoid Ky's 30 s AbortController timeout killing slow llama-cli inference.
-  - Server-side: `send_sse_headers()` now sets `zlib.output_compression Off`, calls `ob_end_clean()`, and uses `wp_die()` instead of bare `exit()` to avoid PHP-FPM/nginx HTTP/2 `RST_STREAM`.
-  - Elementor widget: `enable_streaming` attribute is now always emitted (as `"true"` or `"false"`) so the shortcode correctly respects the toggle in both states.
-  - `max_tokens` is now injected from `WP_MCP_AI_Resource_Manager` into the PHP-side shortcode config so the WebLLM path no longer falls back to a hardcoded `2048`.
-
-- **Embedded LLM — WebLLM Function-Calling Client (March 24, 2026)** (PR #4427): Deferred `WebLLMFunctionCallingClient` class definition inside `waitForDependencies().then()` so `extends window.WP_MCP_AI_EmbeddedLLM` evaluates after the dependency is confirmed available.
-
-- **Chat UI — Message Bubble Interactions During Streaming (March 24, 2026)** (PR #4426): `disableForm()` now scopes its disable/enable sweep to only the input area and send button, not all buttons in the widget — copy, speech, save, and delete buttons on already-rendered messages remain clickable during streaming.
-
-- **Agentic Loop — Orphaned `tool_calls` Error (March 24, 2026)** (PR #4430): When `max_iterations` is reached while the LLM still has pending tool calls, the stored assistant message with `tool_calls` is now filtered out of the history before the next turn. This fixes the OpenAI error "An assistant message with 'tool_calls' must be followed by tool messages…" that appeared for `vision_object_localization` and any tool hitting the iteration limit.
-
-- **Embedded LLM — Logger Integration for Ollama Client (March 24, 2026)** (PR #4429): Added `WP_MCP_AI_Logger` calls to all 5 previously-unlogged methods in `WP_MCP_AI_Ollama_Client` (`chat`, `create_embedding`, `list_models`, `generate`, `show_model_info`). All concrete chat clients now have full logging coverage.
-
-- **DICOM Imaging — UID Filesystem Path Sanitization (March 22, 2026)** (PR #4406): DICOM UIDs are now sanitized with `sanitize_uid_for_path()` (`preg_replace('/[^0-9.]/', '_', $uid)`) instead of `sanitize_file_name()`. `sanitize_file_name()` applies a filterable hook that can strip dots, collapsing distinct UIDs to the same directory.
-
-- **Pro Workflow Builder — Pre-packed Assets and CI Gaps (March 25, 2026)** (PR #4443):
-  - `webpack.config.workflow.js` now writes output to `addons/pro/build/workflow-builder/` with the entry named `workflow-builder` (matching the PHP loader expectation).
-  - `package.json` `build:workflow`/`start:workflow` scripts updated to use the config file instead of inline `--output-path`, preventing `@wordpress/scripts` from deriving filenames from the entry filename.
-  - CI build workflow now commits freshly-built `workflow-builder` and `tma-woo-shop` artifacts on every run.
-
-- **Re-install llama.cpp Binary Button (March 23, 2026)** (PR #4412): Added a **Re-install llama.cpp Binary** button to the embedded provider settings page for easy re-download after a failed or partial extraction.
-
 ### Changed
 - **Quick Tool Selection Presets – Full 760-Tool Coverage (March 16, 2026)**: Expanded the Quick Tool Selection Presets on the assistant CPT edit page from ~527 covered tools to all 760 available tools, ensuring every registered tool can be applied via a preset without requiring manual search.
   - **New preset**: `📋 Registration & Compliance` (44 tools) — end-to-end regulated product/permit workflow: registration lifecycle (create/approve/renew/submit), document expiry tracking, regulatory submissions, compliance certificates, authority submission, NMRA/MOHAP sync, import duty/HS code
@@ -134,15 +60,87 @@
   - See [`packages/README.md`](packages/README.md) and [`packages/QUICK_START.md`](packages/QUICK_START.md) for installation and usage.
 
 
-## [1.1.5] - 2026-03-24
+## [1.1.5] - 2026-03-25
+
+### Added
+- **NV oOS Canvas Addon — Platform-Specific ZIP for Tesseract PDF OCR (March 25, 2026)** (PR #4441, #4442): The `canvas` npm package (Linux-only native binary, ~50 MB compressed) is now distributed as a separate, optional `nvoos-canvas` WordPress plugin rather than being bundled in the Pro ZIP.
+  - New standalone plugin in `addons/canvas/` — installs the platform-specific binary alongside the Pro addon.
+  - CI builds `nvoos-canvas-linux-x64.zip` and `nvoos-canvas-linux-arm64.zip` via `build-canvas-addon.yml` and commits them to `build/`.
+  - OCR service auto-detects the Canvas Addon path via `NVOOS_CANVAS_PATH` environment variable; falls back to `node_modules` if the addon is absent.
+  - Base + Pro ZIP remains unchanged at ~33 MB; canvas is a post-install optional step only needed for Tesseract PDF OCR on Linux servers.
+
+- **Five New Pro WP-CLI Command Groups (March 23, 2026)** (PR #4418):
+  - `wp mcp-ai pro status` — display Pro addon version, license, and active toolkit summary.
+  - `wp mcp-ai toolkit list/enable/disable` — manage Pro toolkits from the command line.
+  - `wp mcp-ai connection list/get/test/delete` — manage Chat Channel connection entries.
+  - `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries.
+  - `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries.
+  - Shared base class `WP_MCP_AI_Pro_CLI_Base_Command` with assertion helpers.
+  - Tests added in `addons/pro/tests/test-wp-cli-pro-commands.php`.
+
+- **Mailgun Email Integration (March 22, 2026)** (PR #4408):
+  - New Pro tool `send_mailgun_email` — sends transactional emails via the Mailgun API.
+  - Supports US and EU region endpoints (`api.mailgun.net` / `api.eu.mailgun.net`).
+  - Tags passed as separate `o:tag` form fields (array, not comma-separated string) per Mailgun requirements.
+  - Admin settings: `mailgun_api_key`, `mailgun_domain`, `mailgun_region`, `mailgun_from_email`, `mailgun_from_name`.
+
+- **Brevo Email & CRM Integration (March 22, 2026)** (PR #4408):
+  - Three new Pro tools under the `enable_email_toolkit` guard:
+    - `send_brevo_email` — send transactional emails via Brevo `api-key` header auth.
+    - `manage_brevo_contacts` — create, update, and list contacts in Brevo lists.
+    - `get_brevo_statistics` — retrieve campaign and contact statistics.
+  - Admin settings: `brevo_api_key`, `brevo_from_email`, `brevo_from_name`, `brevo_webhook_secret`.
 
 ### Changed
+- **Embedded LLM Server-Side Client — Moved to Pro Addon (March 25, 2026)** (PR #4433, #4434): `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` relocated from `includes/` to `addons/pro/includes/`. The base plugin's language model router uses a `class_exists()` guard and falls back gracefully when Pro is absent.
+  - `enable_embedded` field in the Pro Providers section now shows `disabled = true` with the label "Auto-enabled with Pro" rather than a manual toggle.
+
+- **Embedded LLM — Added Gemma 2B Instruct Model (March 24, 2026)** (PR #4428): Added `gemma-2-2b-it-q4_k_m` as the fourth server-side GGUF model and set `gemma-2-2b-it-q4f16_1-MLC` as the new client-side WebLLM default model. Fixed server-side chat routing that was silently dropping assistant global `embedded_server_model` settings.
+
+- **WP.org Compliance — Pro Addon is a Genuine Extension (March 25, 2026)** (PR #4435): Resolved nine surface-level items that could give the impression that the Pro addon "unlocks" base plugin features. Confirmed architecture: all tools in `includes/tools/` register unconditionally and are never gated behind a license check.
+
 - **Telemetry Opt-In (March 24, 2026)**: Activation tracking is now disabled by default (opt-in model). Users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking. Setting renamed from `disable_activation_tracking` → `enable_activation_tracking`. Complies with WordPress.org Guideline 7 & 9.
 - **Tool Registry (March 24, 2026)**: Removed Pro add-on license gating from base tool registry. All tools included in the plugin ZIP are now always registered; runtime availability is controlled by each tool's `is_available()` method (dependency check, not license gate). Complies with WordPress.org Guideline 5.
 - **Settings Sanitization (March 24, 2026)**: `sanitize_settings_callback` now recursively sanitizes nested array settings using `sanitize_textarea_field()` for strings and `esc_url_raw()` for URL values. Complies with WordPress.org Guideline 6.
 - **`WP_MCP_AI_BASE_VERSION` default (March 24, 2026)**: Changed from `true` to `false` so full base tool set loads by default without requiring any `wp-config.php` define.
 
 ### Fixed
+- **Embedded LLM — Shared Library Loading Failures (March 22–23, 2026)** (PR #4414, #4416):
+  - `extract_binary_from_archive()` now uses `sanitise_binary_filename()` (allowlist `[A-Za-z0-9._-]`) instead of `sanitize_file_name()`, preserving `.so.0.9.8`-style shared-library filenames.
+  - `build_inference_command()` prepends `LD_LIBRARY_PATH` so co-located `.so` files are found at runtime.
+  - `create_soname_symlinks()` creates `lib*.so.X → lib*.so.X.Y.Z` and `lib*.so → lib*.so.X` symlinks after extraction; falls back to `copy()` when `symlink()` is blocked (e.g., Cloudways).
+  - `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check, auto-repairing missing SONAMEs on existing installs.
+
+- **Embedded LLM — Provider Diagnostic Page Enhancements (March 23, 2026)** (PR #4415, #4417):
+  - Diagnostic page now shows the resolved llama-cli binary path and the names of all co-located shared libraries.
+  - `get_shared_libs_status()` added: scans binary directory for `lib*.so*` files, returns `found`, `libs`, and `bin_dir`.
+  - Fixed fatal `E_ERROR` when `symlink()` is listed in `disable_functions` — replaced `symlink()` call with `is_callable()` guard.
+
+- **Embedded LLM — `test_connection()` False "No Output" Error (March 23, 2026)** (PR #4419): llama.cpp builds b8479+ write `--version` output to stderr instead of stdout. `run_binary()` now accepts `$use_stderr_fallback = true`; `test_connection()` uses it so the binary is correctly detected on modern builds.
+
+- **Embedded LLM — SSE Streaming Fixes (March 22–24, 2026)** (PR #4420, #4421, #4422, #4423, #4425):
+  - Client-side: `chat.js` no longer uses Ky for SSE requests; switches to native `fetch + ReadableStream` to avoid Ky's 30 s AbortController timeout killing slow llama-cli inference.
+  - Server-side: `send_sse_headers()` now sets `zlib.output_compression Off`, calls `ob_end_clean()`, and uses `wp_die()` instead of bare `exit()` to avoid PHP-FPM/nginx HTTP/2 `RST_STREAM`.
+  - Elementor widget: `enable_streaming` attribute is now always emitted (as `"true"` or `"false"`) so the shortcode correctly respects the toggle in both states.
+  - `max_tokens` is now injected from `WP_MCP_AI_Resource_Manager` into the PHP-side shortcode config so the WebLLM path no longer falls back to a hardcoded `2048`.
+
+- **Embedded LLM — WebLLM Function-Calling Client (March 24, 2026)** (PR #4427): Deferred `WebLLMFunctionCallingClient` class definition inside `waitForDependencies().then()` so `extends window.WP_MCP_AI_EmbeddedLLM` evaluates after the dependency is confirmed available.
+
+- **Chat UI — Message Bubble Interactions During Streaming (March 24, 2026)** (PR #4426): `disableForm()` now scopes its disable/enable sweep to only the input area and send button, not all buttons in the widget — copy, speech, save, and delete buttons on already-rendered messages remain clickable during streaming.
+
+- **Agentic Loop — Orphaned `tool_calls` Error (March 24, 2026)** (PR #4430): When `max_iterations` is reached while the LLM still has pending tool calls, the stored assistant message with `tool_calls` is now filtered out of the history before the next turn. This fixes the OpenAI error "An assistant message with 'tool_calls' must be followed by tool messages…" that appeared for `vision_object_localization` and any tool hitting the iteration limit.
+
+- **Embedded LLM — Logger Integration for Ollama Client (March 24, 2026)** (PR #4429): Added `WP_MCP_AI_Logger` calls to all 5 previously-unlogged methods in `WP_MCP_AI_Ollama_Client` (`chat`, `create_embedding`, `list_models`, `generate`, `show_model_info`). All concrete chat clients now have full logging coverage.
+
+- **DICOM Imaging — UID Filesystem Path Sanitization (March 22, 2026)** (PR #4406): DICOM UIDs are now sanitized with `sanitize_uid_for_path()` (`preg_replace('/[^0-9.]/', '_', $uid)`) instead of `sanitize_file_name()`. `sanitize_file_name()` applies a filterable hook that can strip dots, collapsing distinct UIDs to the same directory.
+
+- **Pro Workflow Builder — Pre-packed Assets and CI Gaps (March 25, 2026)** (PR #4443):
+  - `webpack.config.workflow.js` now writes output to `addons/pro/build/workflow-builder/` with the entry named `workflow-builder` (matching the PHP loader expectation).
+  - `package.json` `build:workflow`/`start:workflow` scripts updated to use the config file instead of inline `--output-path`, preventing `@wordpress/scripts` from deriving filenames from the entry filename.
+  - CI build workflow now commits freshly-built `workflow-builder` and `tma-woo-shop` artifacts on every run.
+
+- **Re-install llama.cpp Binary Button (March 23, 2026)** (PR #4412): Added a **Re-install llama.cpp Binary** button to the embedded provider settings page for easy re-download after a failed or partial extraction.
+
 - **15 Dead URLs in readme.txt (March 24, 2026)**: Fixed 15 broken external service documentation links (ReliefWeb, remove.bg, Plaid, Mubert, GDACS, NV Digital Terms, GitHub releases, Tavily, Exa.ai, GoQR privacy). All verified working after fix.
 
 ### Dependencies

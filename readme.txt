@@ -270,7 +270,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= 1.1.6 - March 2026 =
+= 1.1.5 - March 2026 =
 
 **New: NV oOS Canvas Addon**
 
@@ -317,6 +317,14 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries
 * `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries
 
+**WordPress.org Compliance**
+
+* Telemetry opt-in: activation tracking is now disabled by default; users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking (Guideline 7)
+* Removed Pro add-on gating from base tool registry; all base plugin tools load without license checks (Guideline 5)
+* Improved `sanitize_settings_callback` to recursively sanitize nested array settings using `sanitize_textarea_field()` and `esc_url_raw()` (Guideline 6)
+* Fixed 15 broken external service URLs in readme.txt (Guideline 2)
+* Confirmed Pro addon is a genuine extension: no base plugin tools are gated behind a license check
+
 **Bug Fixes**
 
 * Fixed "tool_call_id did not have response messages" error: orphaned assistant `tool_calls` messages filtered out before next turn when `max_iterations` is reached
@@ -324,16 +332,6 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * Added `WP_MCP_AI_Logger` to all 5 Ollama client methods — all concrete AI chat clients now fully logged
 * Fixed Pro Workflow Builder webpack config (correct output path/entry name) and CI auto-commit of built assets
 * Regenerated production classmap autoloader; removed stale gitlinks in `addons/pro/vendor/`
-* Confirmed Pro addon is a genuine extension: no base plugin tools are gated behind a license check
-
-= 1.1.5 - March 2026 =
-
-**WordPress.org Compliance**
-
-* Telemetry opt-in: activation tracking is now disabled by default; users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking (Guideline 7)
-* Removed Pro add-on gating from base tool registry; all base plugin tools load without license checks (Guideline 5)
-* Improved `sanitize_settings_callback` to recursively sanitize nested array settings using `sanitize_textarea_field()` and `esc_url_raw()` (Guideline 6)
-* Fixed 15 broken external service URLs in readme.txt (Guideline 2)
 
 **Dependencies**
 
