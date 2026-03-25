@@ -669,10 +669,48 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	 * @return array Test result.
 	 */
 	protected function test_canvas() {
-		return array(
-			'success' => true,
-			'message' => __( 'Canvas package is installed and available.', 'mcp-ai-wpoos-pro' ),
-		);
+		try {
+			if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+				$status = wp_mcp_ai_get_npm_package_status( 'canvas' );
+				if ( $status['available'] ) {
+					return array(
+						'success' => true,
+						'message' => sprintf(
+							/* translators: %s: Package source (vendor or node_modules) */
+							__( 'Canvas is installed and available from %s.', 'mcp-ai-wpoos-pro' ),
+							$status['source']
+						),
+					);
+				}
+				return array(
+					'success' => false,
+					'message' => __( 'Canvas package is not installed. Run: npm install canvas@2', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Fallback: check node_modules directly.
+			$canvas_path = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+			if ( is_dir( $canvas_path ) ) {
+				return array(
+					'success' => true,
+					'message' => __( 'Canvas package found in node_modules.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			return array(
+				'success' => false,
+				'message' => __( 'Canvas package is not installed. Run: npm install canvas@2', 'mcp-ai-wpoos-pro' ),
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: Error message */
+					__( 'Canvas test failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				),
+			);
+		}
 	}
 
 	/**

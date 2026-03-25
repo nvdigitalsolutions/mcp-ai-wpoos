@@ -1488,12 +1488,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for OCR packages used by Node.js services.
-			// These packages (tesseract.js, pdfjs-dist, canvas) are dependencies for node-services.
+			// These packages (tesseract.js, pdfjs-dist) are dependencies for node-services.
 			// They're bundled with the plugin in node-services directory for serverless OCR operations.
 			$ocr_node_packages = array(
 				'tesseract.js',
 				'pdfjs-dist',
-				'canvas',
 			);
 			if ( in_array( $package, $ocr_node_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if Node.js OCR service exists (production).
@@ -1513,6 +1512,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// If none exist, return false (not installed).
+				return false;
+			}
+
+			// Check for canvas: optional npm package for server-side image generation.
+			// canvas@2 must be installed by the user (npm install canvas@2).
+			if ( 'canvas' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: canvas-service.js present AND canvas in node_modules.
+				$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+				$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+				if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
+				// Priority 2: canvas in node_modules without service file.
+				if ( is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
 				return false;
 			}
 
