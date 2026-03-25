@@ -48,7 +48,7 @@ Size increase: <1% (essentially unchanged)
 
 **What you get:**
 - Canvas JavaScript wrapper code ready to use
-- On activation, run `npm install canvas` to build native binaries for correct platform
+- On activation, run `npm install canvas@2` to build native binaries for correct platform (use `canvas@2`; canvas v3+ requires Node >=20.9.0)
 - Clean separation between code (portable) and binaries (platform-specific)
 
 **Advantages:**
@@ -148,9 +148,11 @@ So you gain nothing by bundling binaries - users STILL need to install system li
 - Best quality OCR results
 
 **For 5% needing Tesseract PDF OCR:**
-1. Install Node.js on server (if not already present)
+1. Install Node.js on server (if not already present; v18.17.0+ or v20.9.0+ recommended)
 2. Navigate to plugin directory
-3. Run: `npm install canvas`
+3. Run: `npm install canvas@2`
+   > **Use `canvas@2`** — canvas v3+ requires Node.js `>=20.9.0` and fails on Node 18.x or Node 20.x < 20.9.0.
+   > **On shared hosts (e.g. Cloudways)**: If you get `EACCES: permission denied` creating `node_modules`, run `mkdir node_modules && chmod 775 node_modules` first, then retry.
 4. Install system dependencies (one-time setup)
 
 **Benefits:**
@@ -198,7 +200,7 @@ function wp_mcp_ai_install_canvas() {
     $plugin_dir = plugin_dir_path(__FILE__);
     $pro_dir = $plugin_dir . 'addons/pro';
     
-    exec("cd $pro_dir && npm install canvas 2>&1", $output, $return);
+    exec("cd $pro_dir && npm install canvas@2 2>&1", $output, $return);
     
     if ($return === 0) {
         update_option('wp_mcp_ai_canvas_installed', true);

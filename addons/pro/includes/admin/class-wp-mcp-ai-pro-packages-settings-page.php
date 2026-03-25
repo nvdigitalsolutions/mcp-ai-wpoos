@@ -304,7 +304,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
 				'testable'     => true,
-				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+				'install_hint' => self::get_canvas_install_hint(),
 			),
 
 			// Document Generation.

@@ -431,8 +431,10 @@ For performance and size optimization, these packages are loaded from jsDelivr C
 - **Installation Required**: 
   ```bash
   cd addons/pro
-  npm install canvas
+  npm install canvas@2
   ```
+  > **Note**: `canvas@3+` requires Node.js `>=20.9.0`. Use `canvas@2` for compatibility with Node 18.x and Node 20.x (prior to 20.9.0).  
+  > **Permission issues on shared hosts (e.g. Cloudways)**: If you get `EACCES: permission denied` creating `node_modules`, run `mkdir node_modules && chmod 775 node_modules` first, then retry `npm install canvas@2`.
 - **System Requirements**: 
   - Linux: `libcairo2-dev`, `libpango1.0-dev`, `libjpeg-dev`, `libgif-dev`, `librsvg2-dev`
   - macOS: `cairo`, `pango` (via Homebrew)
@@ -448,7 +450,7 @@ Native binaries are:
 - **Node version-specific**: Node 18 binaries won't work on Node 20/22/24
 - **System library-dependent**: Require matching Cairo/Pango versions
 
-Including pre-compiled binaries would only work for ONE specific configuration (e.g., Ubuntu 22.04 + Node 20 + x64) and fail for all other deployments. The `npm install canvas` approach guarantees compatibility by compiling for your exact environment.
+Including pre-compiled binaries would only work for ONE specific configuration (e.g., Ubuntu 22.04 + Node 20 + x64) and fail for all other deployments. The `npm install canvas@2` approach guarantees compatibility by compiling for your exact environment.
 
 To install system-dependent and CDN packages:
 1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
