@@ -103,9 +103,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 				'enable_embedded'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable client-side embedded language models', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Auto-enabled with Pro - client-side embedded language models', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache.', 'mcp-ai-wpoos' ),
 					'default'        => true,
+					'disabled'       => true,
 				),
 				'embedded_model'            => array(
 					'type'        => 'select',
