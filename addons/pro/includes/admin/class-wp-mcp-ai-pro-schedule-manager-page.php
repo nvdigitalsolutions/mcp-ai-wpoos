@@ -1,0 +1,97 @@
+<?php
+/**
+ * Pro Schedule Manager Admin Page
+ *
+ * Registers a standalone admin page for the Pro Schedule Manager under the
+ * NV oOS Pro Dashboard menu, mirroring the pattern used by the Pro Workflow
+ * Builder page.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
+	/**
+	 * Standalone admin page for the Pro Schedule Manager.
+	 *
+	 * Registers the page under the NV oOS Pro Dashboard submenu and delegates
+	 * rendering to the existing WP_MCP_AI_Section_Schedule_Manager section
+	 * class so that all AJAX handlers and HTML remain in a single place.
+	 *
+	 * @since 1.0.0
+	 */
+	class WP_MCP_AI_Pro_Schedule_Manager_Page {
+
+		/**
+		 * Admin page slug.
+		 */
+		const PAGE_SLUG = 'nvoos-pro-schedule-manager';
+
+		/**
+		 * Constructor.
+		 */
+		public function __construct() {
+			// Priority 26: parent nvoos-pro-dashboard menu registers at priority 25.
+			add_action( 'admin_menu', array( $this, 'register_page' ), 26 );
+		}
+
+		/**
+		 * Register the admin submenu page.
+		 *
+		 * @return void
+		 */
+		public function register_page() {
+			add_submenu_page(
+				'nvoos-pro-dashboard',
+				__( 'Pro Schedule Manager', 'mcp-ai-wpoos-pro' ),
+				__( 'Schedule Manager', 'mcp-ai-wpoos-pro' ),
+				'manage_options',
+				self::PAGE_SLUG,
+				array( $this, 'render_page' )
+			);
+		}
+
+		/**
+		 * Render the page.
+		 *
+		 * Delegates to the section class so that all markup and PHP logic live
+		 * in a single place.
+		 *
+		 * @return void
+		 */
+		public function render_page() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
+			}
+			?>
+			<div class="wrap">
+				<h1>
+					<span class="dashicons dashicons-clock" style="font-size:28px;width:28px;height:28px;vertical-align:middle;margin-right:8px;color:#2271b1;"></span>
+					<?php esc_html_e( 'Pro Schedule Manager', 'mcp-ai-wpoos-pro' ); ?>
+					<span style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;margin-left:10px;text-transform:uppercase;letter-spacing:.5px;">PRO</span>
+				</h1>
+
+				<?php
+				// Use the container-managed section instance so that we share the
+				// same object (and its registered AJAX handlers).
+				if ( function_exists( 'wp_mcp_ai_container' ) ) {
+					$section = wp_mcp_ai_container()->get( 'section.schedule_manager' );
+					if ( $section instanceof WP_MCP_AI_Settings_Section ) {
+						$section->render();
+					}
+				}
+				?>
+			</div>
+			<?php
+		}
+	}
+}
+
+// Instantiate the page — mirrors the workflow-builder pattern.
+if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+	new WP_MCP_AI_Pro_Schedule_Manager_Page();
+}

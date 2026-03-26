@@ -181,6 +181,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		if ( file_exists( $schedule_manager_file ) ) {
 			require_once $schedule_manager_file;
 		}
+
+		// Load Pro Schedule Manager standalone admin page (registers under NV oOS Pro Dashboard menu).
+		$schedule_manager_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-manager-page.php';
+		if ( file_exists( $schedule_manager_page ) ) {
+			require_once $schedule_manager_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 

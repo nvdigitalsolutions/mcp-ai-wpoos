@@ -107,23 +107,41 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Enqueue JavaScript and CSS on the settings dashboard.
+	 * Enqueue JavaScript and CSS on the settings dashboard or standalone page.
+	 *
+	 * Assets are loaded on:
+	 * - The main NV oOS settings dashboard when the Orchestration tab is active.
+	 * - The dedicated standalone Schedule Manager page (nvoos-pro-schedule-manager).
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
+		// Build the standalone page hook from known constants rather than relying on a
+		// global instance variable.  WordPress generates submenu hooks as:
+		//   {sanitized_parent_menu_title}_page_{page_slug}
+		// WP_MCP_AI_Pro_Dashboard::SANITIZED_MENU_TITLE = 'nv-oos-pro'.
+		$standalone_hook = '';
+		if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) && class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
+			$standalone_hook = WP_MCP_AI_Pro_Dashboard::SANITIZED_MENU_TITLE . '_page_' . WP_MCP_AI_Pro_Schedule_Manager_Page::PAGE_SLUG;
+		}
+
+		$is_standalone = ( '' !== $standalone_hook && $hook === $standalone_hook );
+
 		$is_dashboard = ( false !== strpos( $hook, 'wp-mcp-ai-dashboard' ) )
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			|| ( isset( $_GET['page'] ) && 'wp-mcp-ai-dashboard' === sanitize_text_field( wp_unslash( $_GET['page'] ) ) );
 
-		if ( ! $is_dashboard ) {
+		if ( ! $is_dashboard && ! $is_standalone ) {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking tab for script enqueue only.
-		$is_tab = ! isset( $_GET['tab'] ) || 'orchestration' === sanitize_text_field( wp_unslash( $_GET['tab'] ) );
-		if ( ! $is_tab ) {
-			return;
+		// On the main settings dashboard, only enqueue when the Orchestration tab is active.
+		if ( $is_dashboard && ! $is_standalone ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking tab for script enqueue only.
+			$is_tab = ! isset( $_GET['tab'] ) || 'orchestration' === sanitize_text_field( wp_unslash( $_GET['tab'] ) );
+			if ( ! $is_tab ) {
+				return;
+			}
 		}
 
 		wp_enqueue_style(
