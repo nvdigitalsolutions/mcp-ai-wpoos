@@ -464,14 +464,21 @@
 .wp-mcp-ai-sm-channels-checkboxes {
 display: flex;
 flex-wrap: wrap;
-gap: 8px 16px;
+gap: 8px 16px; /* Chrome 84+, Firefox 63+, Safari 14.1+ */
 margin-top: 4px;
+}
+
+/* Fallback spacing for browsers that do not support flex gap */
+.wp-mcp-ai-sm-channels-checkboxes .wp-mcp-ai-sm-channel-label {
+margin-right: 16px;
+margin-bottom: 8px;
 }
 
 .wp-mcp-ai-sm-channel-label {
 display: flex;
 align-items: center;
-gap: 4px;
+gap: 4px; /* Chrome 84+, Firefox 63+, Safari 14.1+ */
+margin-right: 4px;
 font-weight: 500;
 cursor: pointer;
 }

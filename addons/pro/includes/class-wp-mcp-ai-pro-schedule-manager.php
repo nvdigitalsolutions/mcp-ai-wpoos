@@ -1273,11 +1273,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return;
 			}
 
-			/* translators: 1: schedule name, 2: site name, 3: error message */
+			/* translators: 1: site name, 2: schedule name, 3: error message */
 			$message = sprintf(
-				__( '\u26a0\ufe0f [%2$s] Scheduled Task Failed: *%1$s*\nError: %3$s', 'mcp-ai-wpoos-pro' ),
-				$schedule['name'],
+				__( '\u26a0\ufe0f [%1$s] Scheduled Task Failed: *%2$s*\nError: %3$s', 'mcp-ai-wpoos-pro' ),
 				get_bloginfo( 'name' ),
+				$schedule['name'],
 				$error_msg
 			);
 

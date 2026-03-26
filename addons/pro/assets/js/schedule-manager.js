@@ -377,6 +377,24 @@
 			return hasError ? null : steps;
 		},
 
+		/**
+		 * Collect failure-notification channel selections and credentials.
+		 *
+		 * @return {Object|null} { channels: string[], credentials: Object } or null if none selected.
+		 */
+		collectNotifyChannels: function () {
+			const channels = $( '.sm-notify-channel:checked' ).map( function () { return $( this ).val(); } ).get();
+			if ( ! channels.length ) {
+				return null;
+			}
+			const raw         = $( '#sm-notify-channel-credentials' ).val().trim();
+			let   credentials = {};
+			if ( raw ) {
+				try { credentials = JSON.parse( raw ); } catch ( e ) { /* ignore malformed creds */ }
+			}
+			return { channels: channels, credentials: credentials };
+		},
+
 		/** ------------------------------------------------------------------ *
 		 *  Create schedule
 		 * ------------------------------------------------------------------ */
@@ -495,32 +513,13 @@
 					}
 				}
 				data.broadcast_config = { message: bcMsg, channels: bcChannels, credentials: bcCreds };
-
-				// Collect notification channels.
-				const notifyChannels = $( '.sm-notify-channel:checked' ).map( function () { return $( this ).val(); } ).get();
-				if ( notifyChannels.length ) {
-					const notifyCredsRaw = $( '#sm-notify-channel-credentials' ).val().trim();
-					let notifyCreds = {};
-					if ( notifyCredsRaw ) {
-						try { notifyCreds = JSON.parse( notifyCredsRaw ); } catch ( e ) { /* ignore */ }
-					}
-					data.notify_channels             = notifyChannels;
-					data.notify_channel_credentials  = notifyCreds;
-				}
 			}
 
-			// Collect notification channels for non-broadcast types too.
-			if ( 'channel_broadcast' !== type ) {
-				const notifyChannels = $( '.sm-notify-channel:checked' ).map( function () { return $( this ).val(); } ).get();
-				if ( notifyChannels.length ) {
-					const notifyCredsRaw = $( '#sm-notify-channel-credentials' ).val().trim();
-					let notifyCreds = {};
-					if ( notifyCredsRaw ) {
-						try { notifyCreds = JSON.parse( notifyCredsRaw ); } catch ( e ) { /* ignore */ }
-					}
-					data.notify_channels             = notifyChannels;
-					data.notify_channel_credentials  = notifyCreds;
-				}
+			// Collect failure-notification channels (applies to all schedule types).
+			const notifyChannelData = this.collectNotifyChannels();
+			if ( notifyChannelData ) {
+				data.notify_channels            = notifyChannelData.channels;
+				data.notify_channel_credentials = notifyChannelData.credentials;
 			}
 
 			return data;
