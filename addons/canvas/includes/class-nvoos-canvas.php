@@ -158,7 +158,11 @@ class NV_oOS_Canvas {
 	 * @return void
 	 */
 	public static function check_pro_plugin() {
-		if ( ! class_exists( 'WP_MCP_AI_OCR_Service' ) && current_user_can( 'manage_options' ) ) {
+		// Use WP_MCP_AI_PRO_VERSION (defined at the top of the Pro addon entry point)
+		// rather than class_exists( 'WP_MCP_AI_OCR_Service' ), because the OCR service
+		// class is loaded lazily (only when the OCR tools execute) and therefore is
+		// never present at plugins_loaded time — even when Pro is fully active.
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) && current_user_can( 'manage_options' ) ) {
 			add_action(
 				'admin_notices',
 				function () {
