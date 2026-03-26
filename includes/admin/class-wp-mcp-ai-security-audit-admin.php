@@ -187,8 +187,9 @@ class WP_MCP_AI_Security_Audit_Admin {
 									<?php endif; ?>
 								</td>
 								<td>
-									<a href="<?php echo esc_url( get_edit_post_link( $audit->ID ) ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+									<a href="<?php echo esc_url( get_edit_post_link( $audit->ID ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 									</a>
 								</td>
 							</tr>

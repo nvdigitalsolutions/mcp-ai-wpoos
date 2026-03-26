@@ -250,8 +250,9 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			<!-- Command Help Display -->
 			<div id="command-help-display" class="command-help-box" style="display: none;">
 				<h3><?php esc_html_e( 'Command Help', 'mcp-ai-wpoos' ); ?></h3>
-				<button type="button" class="button button-small close-help" style="float: right;">
-					<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
+				<button type="button" class="button button-small close-help" style="float: right;" title="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 				<div id="command-help-content"></div>
 			</div>
@@ -411,11 +412,13 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 									</span>
 								</td>
 								<td>
-									<button type="button" class="button button-small view-workflow" data-workflow="<?php echo esc_attr( $workflow['slug'] ); ?>">
-										<?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?>
+									<button type="button" class="button button-small view-workflow" data-workflow="<?php echo esc_attr( $workflow['slug'] ); ?>" title="<?php esc_attr_e( 'View', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?></span>
 									</button>
-									<button type="button" class="button button-primary button-small execute-workflow" data-workflow="<?php echo esc_attr( $workflow['slug'] ); ?>">
-										<?php esc_html_e( 'Execute', 'mcp-ai-wpoos' ); ?>
+									<button type="button" class="button button-primary button-small execute-workflow" data-workflow="<?php echo esc_attr( $workflow['slug'] ); ?>" title="<?php esc_attr_e( 'Execute', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-controls-play" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Execute', 'mcp-ai-wpoos' ); ?></span>
 									</button>
 								</td>
 							</tr>
@@ -427,8 +430,9 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			<!-- Workflow Details Display -->
 			<div id="workflow-details-display" class="workflow-details-box" style="display: none;">
 				<h3><?php esc_html_e( 'Workflow Details', 'mcp-ai-wpoos' ); ?></h3>
-				<button type="button" class="button button-small close-details" style="float: right;">
-					<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
+				<button type="button" class="button button-small close-details" style="float: right;" title="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 				<div id="workflow-details-content"></div>
 			</div>
@@ -436,8 +440,9 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			<!-- Workflow Execution Output -->
 			<div id="workflow-execution-output" class="workflow-execution-box" style="display: none;">
 				<h3><?php esc_html_e( 'Workflow Execution', 'mcp-ai-wpoos' ); ?></h3>
-				<button type="button" class="button button-small close-execution" style="float: right;">
-					<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
+				<button type="button" class="button button-small close-execution" style="float: right;" title="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 				<div id="workflow-execution-content"></div>
 			</div>
@@ -462,9 +467,9 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 					<span class="dashicons dashicons-update"></span>
 					<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
 				</button>
-				<button type="button" class="button button-secondary" id="clear-history">
-					<span class="dashicons dashicons-trash"></span>
-					<?php esc_html_e( 'Clear History', 'mcp-ai-wpoos' ); ?>
+				<button type="button" class="button button-secondary" id="clear-history" title="<?php esc_attr_e( 'Clear History', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Clear History', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 			</div>
 
@@ -510,8 +515,9 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			<!-- History Details Display -->
 			<div id="history-details-display" class="history-details-box" style="display: none;">
 				<h3><?php esc_html_e( 'Execution Details', 'mcp-ai-wpoos' ); ?></h3>
-				<button type="button" class="button button-small close-history-details" style="float: right;">
-					<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
+				<button type="button" class="button button-small close-history-details" style="float: right;" title="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 				<div id="history-details-content"></div>
 			</div>

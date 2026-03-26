@@ -3156,8 +3156,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										</div>
 									</div>
 								</div>
-								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small">
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 								</a>
 							</div>
 							
@@ -3956,8 +3957,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										<?php endif; ?>
 									</div>
 								</div>
-								<a href="<?php echo esc_url( $team['edit_url'] ); ?>" class="button button-small">
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( $team['edit_url'] ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 								</a>
 							</div>
 							

@@ -431,8 +431,9 @@ class WP_MCP_AI_Reg_Document_Page {
 							<span class="expiry-badge <?php echo esc_attr( $is_expired ? 'expired' : 'expiring' ); ?>">
 								<?php echo $is_expired ? esc_html__( 'EXPIRED', 'mcp-ai-wpoos-pro' ) : esc_html__( 'EXPIRING SOON', 'mcp-ai-wpoos-pro' ); ?>
 							</span>
-							<a href="<?php echo esc_url( get_edit_post_link() ); ?>" class="button button-small">
-								<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( get_edit_post_link() ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 							</a>
 						</div>
 					</li>
@@ -555,8 +556,9 @@ class WP_MCP_AI_Reg_Document_Page {
 							</div>
 						</div>
 						<div>
-							<a href="<?php echo esc_url( get_edit_post_link() ); ?>" class="button button-small">
-								<?php esc_html_e( 'View', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( get_edit_post_link() ); ?>" class="button button-small" title="<?php esc_attr_e( 'View', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'View', 'mcp-ai-wpoos-pro' ); ?></span>
 							</a>
 						</div>
 					</li>

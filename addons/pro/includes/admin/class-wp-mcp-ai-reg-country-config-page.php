@@ -76,8 +76,9 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 										<?php echo esc_html( $country['reg_count'] ); ?>
 									</td>
 									<td>
-										<a href="<?php echo esc_url( get_edit_post_link( $country['id'] ) ); ?>" class="button button-small">
-											<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+										<a href="<?php echo esc_url( get_edit_post_link( $country['id'] ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+											<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+											<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 										</a>
 									</td>
 								</tr>
