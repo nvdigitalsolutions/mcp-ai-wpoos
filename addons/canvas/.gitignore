@@ -3,6 +3,10 @@
 assets/canvas/build/Release/*.node
 assets/canvas/build/Release/*.so*
 
+# Build artifacts from native compilation (not needed at runtime)
+assets/canvas/build/Release/obj.target/
+assets/canvas/build/Release/.deps/
+
 # npm install artifacts (not part of the distribution ZIP)
 node_modules/
 

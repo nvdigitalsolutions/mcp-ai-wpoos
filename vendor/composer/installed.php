@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
-        'version' => 'dev-copilot/remove-hidden-files-base-zip',
-        'reference' => 'e202d204f9ce219e8a63375a759ce6578aef8cc7',
+        'pretty_version' => 'dev-copilot/build-canvas-plugin',
+        'version' => 'dev-copilot/build-canvas-plugin',
+        'reference' => '0e5bec2a9876ec5510f629e58bd8e7053aba4708',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/remove-hidden-files-base-zip',
-            'version' => 'dev-copilot/remove-hidden-files-base-zip',
-            'reference' => 'e202d204f9ce219e8a63375a759ce6578aef8cc7',
+            'pretty_version' => 'dev-copilot/build-canvas-plugin',
+            'version' => 'dev-copilot/build-canvas-plugin',
+            'reference' => '0e5bec2a9876ec5510f629e58bd8e7053aba4708',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
