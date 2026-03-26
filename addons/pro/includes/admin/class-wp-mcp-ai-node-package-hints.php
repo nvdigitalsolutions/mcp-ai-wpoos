@@ -21,13 +21,14 @@ class WP_MCP_AI_Node_Package_Hints {
 	/**
 	 * Get install hint for the canvas npm package.
 	 *
-	 * Explains the correct version to install, the Node.js engine constraint
-	 * introduced in canvas v3, and the EACCES permission workaround needed on
-	 * shared hosting environments such as Cloudways.
+	 * Canvas is now distributed as the separate NV oOS Canvas Addon WordPress
+	 * plugin, which bundles pre-compiled native binaries for Linux x64 and
+	 * linux-arm64. Install that plugin to enable canvas support without
+	 * needing Node.js or system-level build tools on your server.
 	 *
 	 * @return string Translated install hint.
 	 */
 	public static function get_canvas_install_hint() {
-		return __( 'Run: npm install canvas@2 (v3+ requires Node >=20.9.0; canvas@2 supports Node 18/20.x). Requires system libs (cairo, pango). EACCES on shared hosts: mkdir node_modules && chmod 775 node_modules first.', 'mcp-ai-wpoos-pro' );
+		return __( 'Install the NV oOS Canvas Addon plugin to enable canvas support with pre-compiled binaries (no npm or system libs required).', 'mcp-ai-wpoos-pro' );
 	}
 }
