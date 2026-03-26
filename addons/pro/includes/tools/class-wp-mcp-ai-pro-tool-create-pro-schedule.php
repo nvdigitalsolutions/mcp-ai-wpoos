@@ -49,10 +49,54 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'schedule_type'     => array(
+					'type'        => 'string',
+					'enum'        => array( 'task', 'workflow', 'assistant_run' ),
+					'description' => __( 'Type of schedule: "task" (WP action hook), "workflow" (tool chain), or "assistant_run" (AI assistant). Defaults to "task".', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'task',
+				),
 				'hook'              => array(
 					'type'        => 'string',
-					'description' => __( 'WordPress action hook to fire when the schedule runs.', 'mcp-ai-wpoos-pro' ),
-					'minLength'   => 1,
+					'description' => __( 'WordPress action hook to fire (required for "task" type).', 'mcp-ai-wpoos-pro' ),
+				),
+				'workflow_steps'    => array(
+					'type'        => 'array',
+					'description' => __( 'Ordered list of tool calls for "workflow" type. Each step: {tool_slug, arguments, label}.', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'tool_slug' => array(
+								'type'        => 'string',
+								'description' => __( 'Registered tool slug to call at this step.', 'mcp-ai-wpoos-pro' ),
+							),
+							'arguments' => array(
+								'type'        => 'object',
+								'description' => __( 'Arguments to pass to the tool.', 'mcp-ai-wpoos-pro' ),
+							),
+							'label'     => array(
+								'type'        => 'string',
+								'description' => __( 'Optional human-readable label for this step.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'assistant_config'  => array(
+					'type'        => 'object',
+					'description' => __( 'Configuration for "assistant_run" type.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'assistant_id' => array(
+							'type'        => 'integer',
+							'description' => __( 'Post ID of the NV oOS assistant to run.', 'mcp-ai-wpoos-pro' ),
+						),
+						'message'      => array(
+							'type'        => 'string',
+							'description' => __( 'Message to send to the assistant.', 'mcp-ai-wpoos-pro' ),
+						),
+						'context'      => array(
+							'type'        => 'object',
+							'description' => __( 'Optional extra context passed to the assistant run action.', 'mcp-ai-wpoos-pro' ),
+						),
+					),
 				),
 				'name'              => array(
 					'type'        => 'string',
@@ -75,7 +119,7 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				'args'              => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Optional positional arguments passed to the action hook.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Optional positional arguments passed to the action hook (task type only).', 'mcp-ai-wpoos-pro' ),
 				),
 				'enabled'           => array(
 					'type'        => 'boolean',
@@ -117,7 +161,6 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'default'     => 300,
 				),
 			),
-			'required'             => array( 'hook' ),
 			'additionalProperties' => false,
 		);
 	}

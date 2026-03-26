@@ -46,6 +46,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		const MAX_HISTORY_PER_SCHEDULE = 50;
 
 		/**
+		 * Supported schedule types.
+		 */
+		const TYPE_TASK          = 'task';
+		const TYPE_WORKFLOW      = 'workflow';
+		const TYPE_ASSISTANT_RUN = 'assistant_run';
+
+		/**
 		 * Bootstrap hooks for the schedule manager.
 		 */
 		public static function init() {
@@ -121,19 +128,72 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Create or update a named schedule.
 		 *
-		 * @param array $data  Schedule data. Required keys: hook, schedule. Optional: name, description,
-		 *                     args, timestamp, enabled, priority, tags, notify_on_failure, notify_email,
-		 *                     max_retries, retry_delay.
+		 * @param array $data  Schedule data. Required keys: hook (for task type) or schedule_type. Optional: name,
+		 *                     description, schedule_type, workflow_steps, assistant_config, args, timestamp,
+		 *                     enabled, priority, tags, notify_on_failure, notify_email, max_retries, retry_delay.
 		 * @param int   $user_id WordPress user performing the action.
 		 * @return string|WP_Error Schedule ID on success, WP_Error on failure.
 		 */
 		public static function create_schedule( array $data, $user_id = 0 ) {
-			$hook     = isset( $data['hook'] ) ? sanitize_key( $data['hook'] ) : '';
-			$schedule = isset( $data['schedule'] ) ? sanitize_key( $data['schedule'] ) : 'single';
+			// Determine schedule type.
+			$valid_types   = array( self::TYPE_TASK, self::TYPE_WORKFLOW, self::TYPE_ASSISTANT_RUN );
+			$schedule_type = isset( $data['schedule_type'] ) && in_array( $data['schedule_type'], $valid_types, true )
+				? $data['schedule_type']
+				: self::TYPE_TASK;
 
-			if ( '' === $hook ) {
-				return new WP_Error( 'missing_hook', __( 'A hook name is required to create a schedule.', 'mcp-ai-wpoos-pro' ) );
+			// For tasks, a hook is required. For workflows/assistant_run, we use a synthetic hook.
+			if ( self::TYPE_TASK === $schedule_type ) {
+				$hook = isset( $data['hook'] ) ? sanitize_key( $data['hook'] ) : '';
+				if ( '' === $hook ) {
+					return new WP_Error( 'missing_hook', __( 'A hook name is required for task-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+			} elseif ( self::TYPE_WORKFLOW === $schedule_type ) {
+				// Validate workflow steps.
+				$workflow_steps = isset( $data['workflow_steps'] ) && is_array( $data['workflow_steps'] )
+					? $data['workflow_steps']
+					: array();
+				if ( empty( $workflow_steps ) ) {
+					return new WP_Error( 'missing_workflow_steps', __( 'At least one workflow step is required for workflow-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				// Sanitize each step.
+				$sanitized_steps = array();
+				foreach ( $workflow_steps as $step ) {
+					if ( ! is_array( $step ) || empty( $step['tool_slug'] ) ) {
+						continue;
+					}
+					$sanitized_steps[] = array(
+						'tool_slug' => sanitize_key( $step['tool_slug'] ),
+						'arguments' => isset( $step['arguments'] ) && is_array( $step['arguments'] ) ? $step['arguments'] : array(),
+						'label'     => isset( $step['label'] ) ? sanitize_text_field( $step['label'] ) : '',
+					);
+				}
+				if ( empty( $sanitized_steps ) ) {
+					return new WP_Error( 'invalid_workflow_steps', __( 'No valid workflow steps were provided.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$data['workflow_steps'] = $sanitized_steps;
+				$hook                   = 'wp_mcp_ai_pro_workflow_run';
+			} elseif ( self::TYPE_ASSISTANT_RUN === $schedule_type ) {
+				// Validate assistant config.
+				$assistant_config = isset( $data['assistant_config'] ) && is_array( $data['assistant_config'] )
+					? $data['assistant_config']
+					: array();
+				if ( empty( $assistant_config['assistant_id'] ) ) {
+					return new WP_Error( 'missing_assistant_id', __( 'An assistant_id is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( empty( $assistant_config['message'] ) ) {
+					return new WP_Error( 'missing_assistant_message', __( 'A message is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$data['assistant_config'] = array(
+					'assistant_id' => absint( $assistant_config['assistant_id'] ),
+					'message'      => sanitize_textarea_field( $assistant_config['message'] ),
+					'context'      => isset( $assistant_config['context'] ) && is_array( $assistant_config['context'] )
+						? $assistant_config['context']
+						: array(),
+				);
+				$hook = 'wp_mcp_ai_pro_assistant_run';
 			}
+
+			$schedule = isset( $data['schedule'] ) ? sanitize_key( $data['schedule'] ) : 'single';
 
 			// Validate interval unless single.
 			if ( 'single' !== $schedule ) {
@@ -147,9 +207,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				}
 			}
 
-			$timestamp = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : time() + 60;
+			// Capture current time once for consistent comparisons throughout this method.
+			$now       = time();
+			$timestamp = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : $now + 60;
 
-			if ( $timestamp < time() ) {
+			if ( $timestamp < $now ) {
 				return new WP_Error( 'past_timestamp', __( 'Schedule timestamp must be in the future.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -164,7 +226,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$notify_email = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
 			$tags         = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
 
-			$schedule_id = self::generate_id( $hook, $args );
+			// Use a unique ID that incorporates schedule type for workflow/assistant to avoid collisions.
+			$id_key      = self::TYPE_TASK === $schedule_type
+				? array( 'hook' => $hook, 'args' => $args )
+				: array( 'type' => $schedule_type, 'name' => $name, 'ts' => $timestamp );
+			$schedule_id = md5( wp_json_encode( $id_key ) );
 
 			$existing = self::get_schedule( $schedule_id );
 
@@ -172,8 +238,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'id'                => $schedule_id,
 				'name'              => $name,
 				'description'       => $description,
+				'schedule_type'     => $schedule_type,
 				'hook'              => $hook,
 				'args'              => $args,
+				'workflow_steps'    => isset( $data['workflow_steps'] ) ? $data['workflow_steps'] : array(),
+				'assistant_config'  => isset( $data['assistant_config'] ) ? $data['assistant_config'] : array(),
 				'schedule'          => $schedule,
 				'timestamp'         => $timestamp,
 				'enabled'           => $enabled,
@@ -506,8 +575,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 		/**
 		 * Prune old history entries to stay within the ring-buffer limit.
+		 *
+		 * Rate-limited to run at most once per hour via a transient to avoid
+		 * iterating all history on every page load.
 		 */
 		public static function maybe_prune_history() {
+			// Run at most once per hour.
+			if ( get_transient( 'wp_mcp_ai_pro_sm_prune_lock' ) ) {
+				return;
+			}
+
 			$history = self::load_history();
 			$changed = false;
 
@@ -521,6 +598,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			if ( $changed ) {
 				self::save_history( $history );
 			}
+
+			set_transient( 'wp_mcp_ai_pro_sm_prune_lock', 1, HOUR_IN_SECONDS );
 		}
 
 		// -------------------------------------------------------------------------
@@ -530,8 +609,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Central dispatcher called by WP cron.
 		 *
-		 * Executes the schedule's action hook, records the result, handles retry
-		 * logic, and sends failure notifications.
+		 * Routes to the correct execution method based on schedule_type:
+		 * - task:          fires the configured WP action hook
+		 * - workflow:      executes a sequence of tool calls via the tool registry
+		 * - assistant_run: fires a scheduled AI assistant with a configured message
+		 *
+		 * Records the result, handles retry logic, and sends failure notifications.
 		 *
 		 * @param string $schedule_id Schedule ID to dispatch.
 		 * @return bool True on success, false on failure.
@@ -548,25 +631,48 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return false;
 			}
 
-			$hook      = (string) $schedule['hook'];
-			$args      = isset( $schedule['args'] ) && is_array( $schedule['args'] ) ? $schedule['args'] : array();
-			$start     = microtime( true );
-			$error_msg = '';
-			$success   = true;
+			$schedule_type = isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : self::TYPE_TASK;
+			$start         = microtime( true );
+			$error_msg     = '';
+			$success       = true;
 
 			try {
-				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook name is admin-configured and sanitized.
-				do_action_ref_array( $hook, $args );
+				switch ( $schedule_type ) {
+					case self::TYPE_WORKFLOW:
+						$result = self::dispatch_workflow( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						}
+						break;
+
+					case self::TYPE_ASSISTANT_RUN:
+						$result = self::dispatch_assistant_run( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						}
+						break;
+
+					case self::TYPE_TASK:
+					default:
+						$hook = (string) $schedule['hook'];
+						$args = isset( $schedule['args'] ) && is_array( $schedule['args'] ) ? $schedule['args'] : array();
+						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook name is user-supplied and sanitized with sanitize_key() during schedule creation. Only users with manage_options can create task schedules.
+						do_action_ref_array( $hook, $args );
+						break;
+				}
 			} catch ( Throwable $e ) {
 				$success   = false;
 				$error_msg = $e->getMessage();
 
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_error(
-						'Pro schedule exception: ' . $hook,
+						'Pro schedule exception: ' . $schedule['name'],
 						array(
-							'schedule_id' => $schedule_id,
-							'error'       => $error_msg,
+							'schedule_id'   => $schedule_id,
+							'schedule_type' => $schedule_type,
+							'error'         => $error_msg,
 						)
 					);
 				}
@@ -583,13 +689,146 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				self::handle_failure( $schedule_id, $schedule, $error_msg );
 			} else {
 				// Success: reset retry counter.
-				$schedules                                   = self::load_schedules();
-				$schedules[ $schedule_id ]['retry_count']   = 0;
+				$schedules                                    = self::load_schedules();
+				$schedules[ $schedule_id ]['retry_count']    = 0;
 				$schedules[ $schedule_id ]['last_run_status'] = 'success';
 				self::save_schedules( $schedules );
 			}
 
 			return $success;
+		}
+
+		/**
+		 * Execute a workflow schedule: runs each tool step in sequence.
+		 *
+		 * Each step's result is available to subsequent steps via a shared context
+		 * array under the `previous_results` key. If any step returns a WP_Error,
+		 * execution stops and the error is returned.
+		 *
+		 * @param array  $schedule    Schedule record.
+		 * @param string $schedule_id Schedule ID (for context).
+		 * @return true|WP_Error
+		 */
+		protected static function dispatch_workflow( array $schedule, $schedule_id ) {
+			$steps = isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array();
+
+			if ( empty( $steps ) ) {
+				return new WP_Error( 'no_workflow_steps', __( 'No workflow steps defined.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				return new WP_Error( 'no_registry', __( 'Tool registry is not available.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$registry         = WP_MCP_AI_Tool_Registry::get_instance();
+			$previous_results = array();
+
+			$context = array(
+				'schedule_id'      => $schedule_id,
+				'schedule_name'    => $schedule['name'],
+				'source'           => 'pro_schedule_manager',
+				'user_id'          => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+			);
+
+			foreach ( $steps as $step_index => $step ) {
+				$tool_slug = isset( $step['tool_slug'] ) ? (string) $step['tool_slug'] : '';
+				$arguments = isset( $step['arguments'] ) && is_array( $step['arguments'] ) ? $step['arguments'] : array();
+				$label     = isset( $step['label'] ) && $step['label'] ? $step['label'] : $tool_slug;
+
+				if ( '' === $tool_slug ) {
+					return new WP_Error(
+						'empty_tool_slug',
+						/* translators: %d: step number */
+						sprintf( __( 'Workflow step %d has no tool_slug.', 'mcp-ai-wpoos-pro' ), $step_index + 1 )
+					);
+				}
+
+				$step_context                      = $context;
+				$step_context['workflow_step']     = $step_index;
+				$step_context['previous_results']  = $previous_results;
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'info',
+						sprintf( 'Workflow step %d starting: %s', $step_index + 1, $label ),
+						array( 'schedule_id' => $schedule_id )
+					);
+				}
+
+				$result = $registry->execute_tool( $tool_slug, $arguments, $step_context );
+
+				if ( is_wp_error( $result ) ) {
+					return new WP_Error(
+						'workflow_step_failed',
+						sprintf(
+							/* translators: 1: step number, 2: tool slug, 3: error message */
+							__( 'Workflow step %1$d (%2$s) failed: %3$s', 'mcp-ai-wpoos-pro' ),
+							$step_index + 1,
+							$tool_slug,
+							$result->get_error_message()
+						)
+					);
+				}
+
+				$previous_results[ $step_index ] = array(
+					'tool_slug' => $tool_slug,
+					'label'     => $label,
+					'result'    => $result,
+				);
+			}
+
+			/**
+			 * Fires after all workflow steps complete successfully.
+			 *
+			 * @param string $schedule_id      Schedule ID.
+			 * @param array  $schedule         Schedule record.
+			 * @param array  $previous_results All step results keyed by step index.
+			 */
+			do_action( 'wp_mcp_ai_pro_workflow_completed', $schedule_id, $schedule, $previous_results );
+
+			return true;
+		}
+
+		/**
+		 * Execute an assistant_run schedule.
+		 *
+		 * Fires the `wp_mcp_ai_pro_scheduled_assistant_run` action so that listeners
+		 * can process the configured assistant and message asynchronously. The action
+		 * passes the full schedule config; integrators are responsible for hooking in.
+		 *
+		 * @param array  $schedule    Schedule record.
+		 * @param string $schedule_id Schedule ID.
+		 * @return true|WP_Error
+		 */
+		protected static function dispatch_assistant_run( array $schedule, $schedule_id ) {
+			$config = isset( $schedule['assistant_config'] ) && is_array( $schedule['assistant_config'] )
+				? $schedule['assistant_config']
+				: array();
+
+			if ( empty( $config['assistant_id'] ) || empty( $config['message'] ) ) {
+				return new WP_Error( 'invalid_assistant_config', __( 'Assistant run is missing assistant_id or message.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			/**
+			 * Fires when a scheduled assistant run is dispatched.
+			 *
+			 * @param int    $assistant_id Assistant post ID.
+			 * @param string $message      Message to send.
+			 * @param array  $context      Additional context (schedule_id, schedule_name, extra context array).
+			 */
+			do_action(
+				'wp_mcp_ai_pro_scheduled_assistant_run',
+				(int) $config['assistant_id'],
+				(string) $config['message'],
+				array(
+					'schedule_id'   => $schedule_id,
+					'schedule_name' => $schedule['name'],
+					'context'       => isset( $config['context'] ) ? $config['context'] : array(),
+					'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+				)
+			);
+
+			return true;
 		}
 
 		// -------------------------------------------------------------------------
