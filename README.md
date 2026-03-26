@@ -269,6 +269,23 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (March 2026)
 
+### Pro Schedule Manager — Full Cron-Backed Scheduler with AI Tools & Admin UI (March 26, 2026) ⭐ **NEW**
+
+**Five schedule types, Symfony Cache/Validator, MJML email, ical + CSV export, chart.js sparkline** (PR branch `copilot/create-pro-schedule-manager`).
+
+- ✅ **5 schedule types**: `task` (WP action hook), `workflow` (Tool Registry chain), `assistant_run` (fires `wp_mcp_ai_pro_scheduled_assistant_run`), `channel_broadcast` (Telegram/Slack/Discord/Teams/Messenger/WhatsApp), `workflow_builder` (runs a saved Pro Workflow Builder DAG).
+- ✅ **Symfony Cache** — `load_schedules()` / `load_history()` cached via `WP_MCP_AI_Cache_Helper` (300 s / 60 s TTL); invalidated on every write.
+- ✅ **Symfony Validator** — `notify_email` validated with `Constraints\Email`; returns `WP_Error` on invalid address before anything is persisted.
+- ✅ **MJML email** — failure notifications compile a responsive MJML template via `WP_MCP_AI_MJML_Service`; falls back to inline HTML → Nodemailer → `wp_mail`.
+- ✅ **iCalendar export** — `get_schedules_ical()` + `ajax_export_ical` AJAX; "Export to Calendar (.ics)" toolbar button; uses `wp_mcp_ai_ics_generate_calendar` filter (ical-generator Node service) with pure-PHP RFC 5545 fallback.
+- ✅ **CSV history export** — `get_history_csv()` + `ajax_export_history_csv` AJAX; "Export CSV" button in history modal; uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM) with `fputcsv` fallback.
+- ✅ **chart.js sparkline** — stacked bar chart (green = success, red = failure) in run-history modal via `WP_MCP_AI_Chart_JS_Helper`; destroyed on modal close.
+- ✅ **Retry logic** — 0–5 retries with configurable delay (≥ 60 s); failure notification (email + optional channel alert) after all retries exhausted.
+- ✅ **JetEngine CCT persistence** — each run written to `WP_MCP_AI_Execution_History_CCT` when JetEngine is active.
+- ✅ **6 new AI tools** — `create_pro_schedule`, `update_pro_schedule`, `delete_pro_schedule`, `list_pro_schedules`, `get_schedule_run_history`, `schedule_channel_broadcast`.
+- ✅ **Full admin UI** — schedule table with enable toggles + manual trigger + "Export to Calendar" button; type-switching create form; run-history modal with chart + Export CSV; edit modal.
+- [Pro Schedule Manager →](docs/features/pro-schedule-manager.md)
+
 ### NV oOS Canvas Addon — Platform-Specific ZIP for Tesseract PDF OCR (March 25, 2026) ⭐ **NEW**
 
 **Canvas native binaries are now distributed as a separate, optional WordPress plugin — the Pro ZIP stays lean** (PR #4441, #4442).
