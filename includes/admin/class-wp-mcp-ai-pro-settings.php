@@ -1363,7 +1363,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'pdf-parse'                         => 'pdf-parse/index.js',
 				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
 				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
-				// docx ships only package.json in vendor; detected via bin/generate-word.bundle.js below.
+				// docx ships only package.json in vendor (no standalone runtime file).
+				// Detecting via package.json presence is sufficient; the library is bundled
+				// into bin/generate-word.bundle.js which is checked as a secondary fallback below.
+				'docx'                              => 'docx/package.json',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
@@ -1434,7 +1437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for document generation and video packages bundled into bin/ scripts.
 			// pdfkit and exceljs are detected via pro_vendor_packages above.
-			// docx ships only package.json in vendor, so we detect it via its bin bundle.
+			// docx vendor directory holds only package.json; the bin bundle is a secondary fallback.
 			$script_bundled_packages = array(
 				'docx'          => 'generate-word.bundle.js',
 				'@remotion/cli' => 'remotion-render.bundle.js',
