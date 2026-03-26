@@ -1,4 +1,4 @@
-/* global wpMcpAiScheduleManager, wp */
+/* global wpMcpAiScheduleManager */
 /**
  * Pro Schedule Manager — Admin UI
  *
@@ -243,34 +243,34 @@
 
 			// Name.
 			row += '<td class="column-name">';
-			row += '<strong>' + wp.escapeHtml( s.name ) + '</strong>';
+			row += '<strong>' + SM.esc( s.name ) + '</strong>';
 			if ( s.description ) {
-				row += '<p class="description">' + wp.escapeHtml( s.description ) + '</p>';
+				row += '<p class="description">' + SM.esc( s.description ) + '</p>';
 			}
 			row += '</td>';
 
 			// Type badge.
 			row += '<td class="column-type">';
 			row += '<span class="wp-mcp-ai-sm-badge wp-mcp-ai-sm-badge-' + s.schedule_type + '">';
-			row += wp.escapeHtml( typeLabel );
+			row += SM.esc( typeLabel );
 			row += '</span></td>';
 
 			// Interval.
-			row += '<td class="column-schedule">' + wp.escapeHtml( s.schedule ) + '</td>';
+			row += '<td class="column-schedule">' + SM.esc( s.schedule ) + '</td>';
 
 			// Next run.
-			row += '<td class="column-next-run">' + wp.escapeHtml( nextRun ) + '</td>';
+			row += '<td class="column-next-run">' + SM.esc( nextRun ) + '</td>';
 
 			// Last status.
 			row += '<td class="column-last-status">';
 			row += '<span class="wp-mcp-ai-sm-status ' + statusClass + '">';
-			row += wp.escapeHtml( statusLabel );
+			row += SM.esc( statusLabel );
 			if ( 'failure' === s.last_run_status && s.last_error ) {
-				row += ' <abbr title="' + wp.escapeHtml( s.last_error ) + '">(?)</abbr>';
+				row += ' <abbr title="' + SM.esc( s.last_error ) + '">(?)</abbr>';
 			}
 			row += '</span>';
 			if ( s.last_run_time ) {
-				row += '<br><small>' + wp.escapeHtml( s.last_run_time ) + '</small>';
+				row += '<br><small>' + SM.esc( s.last_run_time ) + '</small>';
 			}
 			row += '</td>';
 
@@ -743,11 +743,11 @@
 						const cls = 'success' === entry.status ? 'wp-mcp-ai-sm-status-success' : 'wp-mcp-ai-sm-status-failure';
 						const dur = entry.duration ? ' (' + parseFloat( entry.duration ).toFixed( 3 ) + 's)' : '';
 						const errHtml = entry.error
-							? '<br><small class="wp-mcp-ai-sm-error-text">' + wp.escapeHtml( entry.error ) + '</small>'
+							? '<br><small class="wp-mcp-ai-sm-error-text">' + SM.esc( entry.error ) + '</small>'
 							: '';
 						return '<tr><td class="' + cls + '">' +
-							wp.escapeHtml( entry.status ) + '</td>' +
-							'<td>' + wp.escapeHtml( entry.time ) + dur + errHtml + '</td></tr>';
+							SM.esc( entry.status ) + '</td>' +
+							'<td>' + SM.esc( entry.time ) + dur + errHtml + '</td></tr>';
 					} );
 
 					$body.html(
