@@ -761,6 +761,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'start_time'    => isset( $run['start_time'] ) ? wp_date( 'Y-m-d H:i:s', $run['start_time'] ) : '',
 					'duration_s'    => isset( $run['duration'] ) ? $run['duration'] : '',
 					'error'         => isset( $run['error'] ) ? $run['error'] : '',
+					'action_log'    => isset( $run['action_log'] ) && is_array( $run['action_log'] ) ? wp_json_encode( $run['action_log'] ) : '',
 				);
 			}
 
@@ -782,7 +783,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Pure-PHP fputcsv fallback.
 			$handle = fopen( 'php://temp', 'r+' );
-			fputcsv( $handle, array( 'schedule_name', 'schedule_id', 'status', 'start_time', 'duration_s', 'error' ) );
+			fputcsv( $handle, array( 'schedule_name', 'schedule_id', 'status', 'start_time', 'duration_s', 'error', 'action_log' ) );
 			foreach ( $rows as $row ) {
 				fputcsv( $handle, array_values( $row ) );
 			}
@@ -866,6 +867,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$start         = microtime( true );
 			$error_msg     = '';
 			$success       = true;
+			$action_log    = array( 'type' => $schedule_type );
 
 			try {
 				switch ( $schedule_type ) {
@@ -874,6 +876,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						if ( is_wp_error( $result ) ) {
 							$success   = false;
 							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['steps'] = is_array( $result ) ? $result : array();
 						}
 						break;
 
@@ -882,6 +886,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						if ( is_wp_error( $result ) ) {
 							$success   = false;
 							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['assistant'] = is_array( $result ) ? $result : array();
 						}
 						break;
 
@@ -890,6 +896,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						if ( is_wp_error( $result ) ) {
 							$success   = false;
 							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['broadcast'] = is_array( $result ) ? $result : array();
 						}
 						break;
 
@@ -898,6 +906,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						if ( is_wp_error( $result ) ) {
 							$success   = false;
 							$error_msg = $result->get_error_message();
+						} else {
+							$action_log['workflow_builder_id'] = isset( $schedule['workflow_builder_id'] ) ? $schedule['workflow_builder_id'] : '';
 						}
 						break;
 
@@ -907,6 +917,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						$args = isset( $schedule['args'] ) && is_array( $schedule['args'] ) ? $schedule['args'] : array();
 						// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook name is user-supplied and sanitized with sanitize_key() during schedule creation. Only users with manage_options can create task schedules.
 						do_action_ref_array( $hook, $args );
+						$action_log['hook'] = $hook;
+						$action_log['args'] = $args;
 						break;
 				}
 			} catch ( Throwable $e ) {
@@ -929,7 +941,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$duration = round( $end - $start, 3 );
 
 			// Record run result.
-			self::record_run( $schedule_id, $success, $duration, $error_msg );
+			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
 
 			// Handle retry logic on failure.
 			if ( ! $success ) {
@@ -954,7 +966,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 *
 		 * @param array  $schedule    Schedule record.
 		 * @param string $schedule_id Schedule ID (for context).
-		 * @return true|WP_Error
+		 * @return array|WP_Error Step results keyed by step index on success, WP_Error on failure.
 		 */
 		protected static function dispatch_workflow( array $schedule, $schedule_id ) {
 			$steps = isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array();
@@ -1038,7 +1050,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$previous_results[ $step_index ] = array(
 					'tool_slug' => $tool_slug,
 					'label'     => $label,
-					'result'    => $result,
+					'result'    => is_string( $result ) ? wp_trim_words( $result, 80, '…' ) : $result,
 					'duration'  => $step_dur,
 				);
 			}
@@ -1052,7 +1064,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			 */
 			do_action( 'wp_mcp_ai_pro_workflow_completed', $schedule_id, $schedule, $previous_results );
 
-			return true;
+			return $previous_results;
 		}
 
 		/**
@@ -1064,7 +1076,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 *
 		 * @param array  $schedule    Schedule record.
 		 * @param string $schedule_id Schedule ID.
-		 * @return true|WP_Error
+		 * @return array|WP_Error Info array describing the dispatched run on success, WP_Error on failure.
 		 */
 		protected static function dispatch_assistant_run( array $schedule, $schedule_id ) {
 			$config = isset( $schedule['assistant_config'] ) && is_array( $schedule['assistant_config'] )
@@ -1094,7 +1106,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				)
 			);
 
-			return true;
+			return array(
+				'assistant_id' => (int) $config['assistant_id'],
+				'message'      => wp_trim_words( (string) $config['message'], 60, '…' ),
+			);
 		}
 
 		/**
@@ -1107,7 +1122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 *
 		 * @param array  $schedule    Schedule record.
 		 * @param string $schedule_id Schedule ID.
-		 * @return true|WP_Error
+		 * @return array|WP_Error Broadcast summary array on success, WP_Error on failure.
 		 */
 		protected static function dispatch_channel_broadcast( array $schedule, $schedule_id ) {
 			$config = isset( $schedule['broadcast_config'] ) && is_array( $schedule['broadcast_config'] )
@@ -1123,6 +1138,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'schedule_name' => $schedule['name'],
 				'source'        => 'pro_schedule_manager',
 				'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+			);
+
+			$broadcast_log = array(
+				'channels' => (array) $config['channels'],
+				'message'  => wp_trim_words( (string) $config['message'], 60, '…' ),
 			);
 
 			// Attempt to use the registered unified_channel_broadcast tool when available.
@@ -1167,9 +1187,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 								)
 							);
 						}
+						$broadcast_log['summary'] = $summary;
 					}
 
-					return true;
+					return $broadcast_log;
 				}
 			}
 
@@ -1191,7 +1212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$context
 			);
 
-			return true;
+			return $broadcast_log;
 		}
 
 		// -------------------------------------------------------------------------
@@ -1255,8 +1276,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @param bool   $success     Whether the run succeeded.
 		 * @param float  $duration    Run duration in seconds.
 		 * @param string $error_msg   Error message if failed.
+		 * @param array  $action_log  Structured log of the action taken during this run.
 		 */
-		protected static function record_run( $schedule_id, $success, $duration, $error_msg = '' ) {
+		protected static function record_run( $schedule_id, $success, $duration, $error_msg = '', $action_log = array() ) {
 			$history = self::load_history();
 
 			if ( ! isset( $history[ $schedule_id ] ) || ! is_array( $history[ $schedule_id ] ) ) {
@@ -1268,6 +1290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'start_time' => time(),
 				'duration'   => $duration,
 				'error'      => $error_msg,
+				'action_log' => is_array( $action_log ) ? $action_log : array(),
 			);
 
 			// Trim to ring buffer limit.
