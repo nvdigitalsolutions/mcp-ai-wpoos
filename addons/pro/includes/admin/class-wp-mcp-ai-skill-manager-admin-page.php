@@ -292,12 +292,15 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 						<td><?php echo esc_html( $skill['license'] ); ?></td>
 						<td class="skill-actions">
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=editor&edit=' . rawurlencode( $skill['name'] ) ) ); ?>"
-							   class="button button-small">
-								<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+							   class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 							</a>
 							<button type="button" class="button button-small button-link-delete skill-delete-btn"
-							        data-skill="<?php echo esc_attr( $skill['name'] ); ?>">
-								<?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>
+							        data-skill="<?php echo esc_attr( $skill['name'] ); ?>"
+							        title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></span>
 							</button>
 						</td>
 					</tr>

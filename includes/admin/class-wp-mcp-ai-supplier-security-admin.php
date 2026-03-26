@@ -217,11 +217,13 @@ class WP_MCP_AI_Supplier_Security_Admin {
 									</span>
 								</td>
 								<td>
-									<button type="button" class="button button-small wp-mcp-ai-view-supplier" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>">
-										<?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?>
+									<button type="button" class="button button-small wp-mcp-ai-view-supplier" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>" title="<?php esc_attr_e( 'View', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?></span>
 									</button>
-									<button type="button" class="button button-small wp-mcp-ai-record-incident" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>">
-										<?php esc_html_e( 'Incident', 'mcp-ai-wpoos' ); ?>
+									<button type="button" class="button button-small wp-mcp-ai-record-incident" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>" title="<?php esc_attr_e( 'Incident', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Incident', 'mcp-ai-wpoos' ); ?></span>
 									</button>
 								</td>
 							</tr>

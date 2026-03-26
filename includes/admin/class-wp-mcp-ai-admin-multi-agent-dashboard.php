@@ -700,9 +700,9 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 							</div>
 
 							<div class="agent-actions">
-								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $agent['id'] . '&action=edit' ) ); ?>" class="button button-small">
-									<span class="dashicons dashicons-edit"></span>
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $agent['id'] . '&action=edit' ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 								</a>
 								<button
 									type="button"
@@ -712,9 +712,10 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 									data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $this->get_assistant_tool_shortcuts( $agent['id'] ) ) ); ?>"
 									data-provider="<?php echo esc_attr( $agent['provider'] ); ?>"
 									data-model="<?php echo esc_attr( $agent['model'] ); ?>"
+									title="<?php esc_attr_e( 'Test', 'mcp-ai-wpoos' ); ?>"
 								>
-									<span class="dashicons dashicons-admin-tools"></span>
-									<?php esc_html_e( 'Test', 'mcp-ai-wpoos' ); ?>
+									<span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Test', 'mcp-ai-wpoos' ); ?></span>
 								</button>
 							</div>
 						</div>

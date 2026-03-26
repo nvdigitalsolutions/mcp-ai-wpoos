@@ -394,8 +394,10 @@ chmod +x <?php echo esc_html( $bin_dir_path ); ?>/llama-cli
 					<?php if ( $is_downloaded ) : ?>
 					<button type="button"
 						class="button button-small wp-mcp-ai-delete-model"
-						data-model-slug="<?php echo esc_attr( $slug ); ?>">
-						<?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?>
+						data-model-slug="<?php echo esc_attr( $slug ); ?>"
+						title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<?php else : ?>
 					<button type="button"

@@ -476,8 +476,9 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 								<td><?php echo esc_html( ! empty( $skill['version'] ) ? $skill['version'] : '—' ); ?></td>
 								<td><?php echo esc_html( ! empty( $skill['license'] ) ? $skill['license'] : '—' ); ?></td>
 								<td>
-									<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-skill-manager&tab=editor&edit=' . rawurlencode( $skill['name'] ) ) ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-skill-manager&tab=editor&edit=' . rawurlencode( $skill['name'] ) ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 									</a>
 								</td>
 							</tr>
