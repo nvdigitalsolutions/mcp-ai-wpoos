@@ -159,6 +159,11 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 					'minimum'     => 0,
 					'default'     => 0,
 				),
+				'export_xlsx'        => array(
+					'type'        => 'boolean',
+					'description' => __( 'Export full amortization schedule as an XLSX file URL (requires phpoffice/phpspreadsheet).', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
 			),
 			'required'   => array( 'loan_amount', 'interest_rate' ),
 		);
@@ -282,6 +287,110 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		// ── XLSX amortization schedule export ─────────────────────────────────
+		if ( ! empty( $arguments['export_xlsx'] ) ) {
+			$xlsx_result = $this->export_amortization_xlsx(
+				$loan_amount,
+				$interest_rate,
+				$loan_term_years,
+				$monthly_payment
+			);
+			if ( ! is_wp_error( $xlsx_result ) ) {
+				$result['amortization_xlsx'] = $xlsx_result;
+			} else {
+				$result['amortization_xlsx_error'] = $xlsx_result->get_error_message();
+			}
+		}
+
 		return $result;
+	}
+
+	/**
+	 * Generate a full amortization schedule and save it as an XLSX file.
+	 *
+	 * Uses phpoffice/phpspreadsheet (included in Pro vendor directory).
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param float $loan_amount     Original loan principal.
+	 * @param float $interest_rate   Annual interest rate (percentage).
+	 * @param int   $loan_term_years Loan term in years.
+	 * @param float $monthly_payment Computed monthly payment.
+	 * @return string|WP_Error Public URL to the generated XLSX, or WP_Error on failure.
+	 */
+	private function export_amortization_xlsx( $loan_amount, $interest_rate, $loan_term_years, $monthly_payment ) {
+		$autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+		if ( ! file_exists( $autoload ) ) {
+			return new WP_Error(
+				'phpspreadsheet_missing',
+				__( 'phpoffice/phpspreadsheet vendor autoloader not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		require_once $autoload;
+
+		if ( ! class_exists( '\PhpOffice\PhpSpreadsheet\Spreadsheet' ) ) {
+			return new WP_Error(
+				'phpspreadsheet_missing',
+				__( 'PhpSpreadsheet class not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$sheet       = $spreadsheet->getActiveSheet();
+		$sheet->setTitle( 'Amortization Schedule' );
+
+		// Header row.
+		$headers = array(
+			'A1' => __( 'Payment #', 'mcp-ai-wpoos-pro' ),
+			'B1' => __( 'Payment', 'mcp-ai-wpoos-pro' ),
+			'C1' => __( 'Principal', 'mcp-ai-wpoos-pro' ),
+			'D1' => __( 'Interest', 'mcp-ai-wpoos-pro' ),
+			'E1' => __( 'Balance', 'mcp-ai-wpoos-pro' ),
+		);
+		foreach ( $headers as $cell => $label ) {
+			$sheet->setCellValue( $cell, $label );
+		}
+
+		// Bold headers.
+		$sheet->getStyle( 'A1:E1' )->getFont()->setBold( true );
+
+		$monthly_rate = ( $interest_rate / 100 ) / 12;
+		$balance      = $loan_amount;
+		$num_payments = $loan_term_years * 12;
+		$row          = 2;
+
+		for ( $i = 1; $i <= $num_payments; $i++ ) {
+			$interest_payment  = $balance * $monthly_rate;
+			$principal_payment = $monthly_payment - $interest_payment;
+			$balance           = max( 0, $balance - $principal_payment );
+
+			$sheet->setCellValue( 'A' . $row, $i );
+			$sheet->setCellValue( 'B' . $row, round( $monthly_payment, 2 ) );
+			$sheet->setCellValue( 'C' . $row, round( $principal_payment, 2 ) );
+			$sheet->setCellValue( 'D' . $row, round( $interest_payment, 2 ) );
+			$sheet->setCellValue( 'E' . $row, round( $balance, 2 ) );
+			++$row;
+		}
+
+		// Auto-size columns.
+		foreach ( array( 'A', 'B', 'C', 'D', 'E' ) as $col ) {
+			$sheet->getColumnDimension( $col )->setAutoSize( true );
+		}
+
+		// Save to uploads directory.
+		$upload_dir = wp_upload_dir();
+		$dir        = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/exports/';
+		wp_mkdir_p( $dir );
+
+		$filename = 'amortization-' . uniqid( '', true ) . '.xlsx';
+		$filepath = $dir . $filename;
+
+		$writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter( $spreadsheet, 'Xlsx' );
+		$writer->save( $filepath );
+
+		$public_url = trailingslashit( $upload_dir['baseurl'] ) . 'mcp-ai-wpoos/exports/' . $filename;
+
+		return $public_url;
 	}
 }
