@@ -390,7 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
 
-				// Base64-encoded images for Ollama vision models (e.g. llava).
+				// Base64-encoded images for Ollama vision models (e.g., llava).
 				$images = array();
 
 				if ( is_array( $content ) ) {
@@ -613,7 +613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		 *     Message segment of type input_image / image_url.
 		 *
 		 *     @type int    $attachment_id Optional. WordPress attachment post ID (fastest path).
-		 *     @type array  $image_url     Optional. Array with 'url' key (e.g. from OpenAI-style content).
+		 *     @type array  $image_url     Optional. Array with 'url' key (e.g., from OpenAI-style content).
 		 *     @type string $url           Optional. Direct image URL fallback.
 		 *     @type string $file_name     Optional. Filename for logging context.
 		 * }

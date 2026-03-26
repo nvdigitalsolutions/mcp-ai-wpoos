@@ -2512,13 +2512,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @param array $segment {
 		 *     Image segment of type input_image / image_url / image_file.
 		 *
-		 *     @type string $file_id       Optional. Gemini File API name (e.g. "files/abc123") or OpenAI file ID.
+		 *     @type string $file_id       Optional. Gemini File API name (e.g., "files/abc123") or OpenAI file ID.
 		 *     @type string $file_uri      Optional. Full Gemini File API URI.
 		 *     @type string $uri           Optional. Alias for file_uri.
 		 *     @type int    $attachment_id Optional. WordPress attachment post ID for local file reads.
 		 *     @type array  $image_url     Optional. Array with 'url' key for remote image download.
 		 *     @type string $url           Optional. Direct image URL fallback.
-		 *     @type string $mime_type     Optional. MIME type of the image (e.g. "image/jpeg").
+		 *     @type string $mime_type     Optional. MIME type of the image (e.g., "image/jpeg").
 		 *     @type string $mimeType      Optional. Camel-case alias for mime_type.
 		 * }
 		 * @return array|null Gemini inlineData or fileData part, or null if unable to build one.
@@ -2531,7 +2531,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$mime_type = sanitize_mime_type( $segment['mimeType'] );
 			}
 
-			// 1. Check for a Gemini File API name (e.g. "files/abc123").
+			// 1. Check for a Gemini File API name (e.g., "files/abc123").
 			if ( ! empty( $segment['file_id'] ) ) {
 				$file_id = sanitize_text_field( wp_unslash( $segment['file_id'] ) );
 
