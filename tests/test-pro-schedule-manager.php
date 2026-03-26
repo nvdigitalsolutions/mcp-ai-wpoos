@@ -3,13 +3,15 @@
  * Tests for WP_MCP_AI_Pro_Schedule_Manager.
  *
  * Covers:
- * - Creating task, workflow, and assistant_run schedules
+ * - Creating task, workflow, assistant_run, and channel_broadcast schedules
  * - Validation (missing hook, past timestamp, invalid interval)
+ * - Validation of channel_broadcast config (missing message, channels, credentials)
  * - Enabling/disabling schedules
  * - Execution history recording
  * - Run-history ring buffer
  * - Retry counting on failure dispatch
  * - Deleting schedules clears WP cron and history
+ * - notify_channels field stored and retrieved
  *
  * @package WP_MCP_AI_Pro
  */
@@ -551,5 +553,186 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'wp_mcp_ai_every_30_minutes', $schedules );
 		$this->assertArrayHasKey( 'wp_mcp_ai_weekly', $schedules );
 		$this->assertArrayHasKey( 'wp_mcp_ai_monthly', $schedules );
+	}
+
+	// -------------------------------------------------------------------------
+	// Channel Broadcast schedule
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test creating a valid channel_broadcast schedule.
+	 */
+	public function test_create_channel_broadcast_schedule_returns_id() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'channel_broadcast',
+				'name'             => 'Daily Telegram Digest',
+				'schedule'         => 'single',
+				'timestamp'        => time() + 120,
+				'broadcast_config' => array(
+					'message'     => 'Good morning team!',
+					'channels'    => array( 'telegram' ),
+					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+		$this->assertNotEmpty( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'channel_broadcast', $schedule['schedule_type'] );
+		$this->assertSame( 'Good morning team!', $schedule['broadcast_config']['message'] );
+		$this->assertContains( 'telegram', $schedule['broadcast_config']['channels'] );
+	}
+
+	/**
+	 * Test that missing message in broadcast_config returns WP_Error.
+	 */
+	public function test_create_channel_broadcast_missing_message_returns_error() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'channel_broadcast',
+				'timestamp'        => time() + 120,
+				'broadcast_config' => array(
+					'channels'    => array( 'telegram' ),
+					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_broadcast_message', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that missing channels returns WP_Error.
+	 */
+	public function test_create_channel_broadcast_missing_channels_returns_error() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'channel_broadcast',
+				'timestamp'        => time() + 120,
+				'broadcast_config' => array(
+					'message'     => 'Hello',
+					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_broadcast_channels', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that only valid channel slugs are accepted.
+	 */
+	public function test_create_channel_broadcast_invalid_channels_only_returns_error() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'channel_broadcast',
+				'timestamp'        => time() + 120,
+				'broadcast_config' => array(
+					'message'     => 'Hello',
+					'channels'    => array( 'invalid_channel', 'another_bad_one' ),
+					'credentials' => array( 'invalid_channel' => array() ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'invalid_broadcast_channels', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that mixed valid and invalid channels are sanitized to only valid ones.
+	 */
+	public function test_create_channel_broadcast_mixed_channels_filters_invalid() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'channel_broadcast',
+				'timestamp'        => time() + 120,
+				'broadcast_config' => array(
+					'message'     => 'Hi',
+					'channels'    => array( 'slack', 'invalid_xyz', 'discord' ),
+					'credentials' => array(
+						'slack'   => array( 'token' => 'T', 'channel' => '#general' ),
+						'discord' => array( 'webhook_url' => 'https://discord.com/api/webhooks/test' ),
+					),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertCount( 2, $schedule['broadcast_config']['channels'] );
+		$this->assertContains( 'slack', $schedule['broadcast_config']['channels'] );
+		$this->assertContains( 'discord', $schedule['broadcast_config']['channels'] );
+		$this->assertNotContains( 'invalid_xyz', $schedule['broadcast_config']['channels'] );
+	}
+
+	/**
+	 * Test that notify_channels and notify_channel_credentials are stored.
+	 */
+	public function test_notify_channels_stored_on_create() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'              => 'task',
+				'hook'                       => 'my_hook',
+				'timestamp'                  => time() + 120,
+				'notify_on_failure'          => true,
+				'notify_channels'            => array( 'telegram', 'slack' ),
+				'notify_channel_credentials' => array(
+					'telegram' => array( 'token' => 'T', 'chat_id' => '1' ),
+					'slack'    => array( 'token' => 'S', 'channel' => '#alerts' ),
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertContains( 'telegram', $schedule['notify_channels'] );
+		$this->assertContains( 'slack', $schedule['notify_channels'] );
+		$this->assertArrayHasKey( 'telegram', $schedule['notify_channel_credentials'] );
+	}
+
+	/**
+	 * Test that notify_channels can be updated via update_schedule.
+	 */
+	public function test_notify_channels_updated_via_update_schedule() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'my_hook2',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array(
+				'notify_channels' => array( 'discord' ),
+			),
+			$this->admin_id
+		);
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertContains( 'discord', $schedule['notify_channels'] );
+	}
+
+	/**
+	 * Test TYPE_CHANNEL_BROADCAST constant is defined.
+	 */
+	public function test_type_channel_broadcast_constant_is_defined() {
+		$this->assertSame( 'channel_broadcast', WP_MCP_AI_Pro_Schedule_Manager::TYPE_CHANNEL_BROADCAST );
 	}
 }

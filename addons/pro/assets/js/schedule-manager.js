@@ -61,9 +61,11 @@
 				self.switchTypePanel( $( this ).val() );
 			} );
 
-			// Notify on failure toggle.
+			// Notify on failure toggle — show email field and channel notification rows.
 			$( document ).on( 'change', '#sm-notify-on-failure', function () {
-				$( '#sm-notify-email-wrap' ).toggle( $( this ).is( ':checked' ) );
+				const checked = $( this ).is( ':checked' );
+				$( '#sm-notify-email-wrap' ).toggle( checked );
+				$( '#sm-notify-channels-row' ).toggle( checked );
 			} );
 
 			// Add workflow step.
@@ -198,9 +200,16 @@
 
 		buildRow: function ( s ) {
 			const strings   = wpMcpAiScheduleManager.strings;
-			const typeLabel = s.schedule_type === 'workflow'
-				? strings.typeWorkflow
-				: ( s.schedule_type === 'assistant_run' ? strings.typeAssistant : strings.typeTask );
+			let typeLabel;
+			if ( s.schedule_type === 'workflow' ) {
+				typeLabel = strings.typeWorkflow;
+			} else if ( s.schedule_type === 'assistant_run' ) {
+				typeLabel = strings.typeAssistant;
+			} else if ( s.schedule_type === 'channel_broadcast' ) {
+				typeLabel = strings.typeBroadcast || 'Channel Broadcast';
+			} else {
+				typeLabel = strings.typeTask;
+			}
 
 			const statusClass = 'wp-mcp-ai-sm-status-' + ( s.last_run_status || 'never' );
 			let statusLabel;
@@ -461,6 +470,57 @@
 					return null;
 				}
 				data.assistant_config = { assistant_id: assistantId, message: assistantMsg };
+			} else if ( 'channel_broadcast' === type ) {
+				const bcMsg      = $( '#sm-broadcast-message' ).val().trim();
+				const bcChannels = $( '.sm-broadcast-channel:checked' ).map( function () { return $( this ).val(); } ).get();
+				const bcCredsRaw = $( '#sm-broadcast-credentials' ).val().trim();
+				let bcCreds    = {};
+
+				if ( ! bcMsg ) {
+					$( '#wp-mcp-ai-sm-create-msg' ).text( 'A broadcast message is required.' ).addClass( 'error' );
+					return null;
+				}
+				if ( ! bcChannels.length ) {
+					$( '#wp-mcp-ai-sm-create-msg' ).text( 'Select at least one broadcast channel.' ).addClass( 'error' );
+					return null;
+				}
+				if ( bcCredsRaw ) {
+					try {
+						bcCreds = JSON.parse( bcCredsRaw );
+						$( '#sm-broadcast-credentials' ).removeClass( 'wp-mcp-ai-sm-field-error' );
+					} catch ( e ) {
+						$( '#sm-broadcast-credentials' ).addClass( 'wp-mcp-ai-sm-field-error' ).attr( 'title', 'Invalid JSON: ' + e.message );
+						$( '#wp-mcp-ai-sm-create-msg' ).text( 'Broadcast credentials contain invalid JSON.' ).addClass( 'error' );
+						return null;
+					}
+				}
+				data.broadcast_config = { message: bcMsg, channels: bcChannels, credentials: bcCreds };
+
+				// Collect notification channels.
+				const notifyChannels = $( '.sm-notify-channel:checked' ).map( function () { return $( this ).val(); } ).get();
+				if ( notifyChannels.length ) {
+					const notifyCredsRaw = $( '#sm-notify-channel-credentials' ).val().trim();
+					let notifyCreds = {};
+					if ( notifyCredsRaw ) {
+						try { notifyCreds = JSON.parse( notifyCredsRaw ); } catch ( e ) { /* ignore */ }
+					}
+					data.notify_channels             = notifyChannels;
+					data.notify_channel_credentials  = notifyCreds;
+				}
+			}
+
+			// Collect notification channels for non-broadcast types too.
+			if ( 'channel_broadcast' !== type ) {
+				const notifyChannels = $( '.sm-notify-channel:checked' ).map( function () { return $( this ).val(); } ).get();
+				if ( notifyChannels.length ) {
+					const notifyCredsRaw = $( '#sm-notify-channel-credentials' ).val().trim();
+					let notifyCreds = {};
+					if ( notifyCredsRaw ) {
+						try { notifyCreds = JSON.parse( notifyCredsRaw ); } catch ( e ) { /* ignore */ }
+					}
+					data.notify_channels             = notifyChannels;
+					data.notify_channel_credentials  = notifyCreds;
+				}
 			}
 
 			return data;
@@ -468,12 +528,14 @@
 
 		resetCreateForm: function () {
 			$( '#sm-name, #sm-description, #sm-hook, #sm-tags, #sm-assistant-message' ).val( '' );
+			$( '#sm-broadcast-message, #sm-broadcast-credentials, #sm-notify-channel-credentials' ).val( '' );
+			$( '.sm-broadcast-channel, .sm-notify-channel' ).prop( 'checked', false );
 			$( '#sm-priority' ).val( '5' );
 			$( '#sm-max-retries' ).val( '0' );
 			$( '#sm-retry-delay' ).val( '300' );
 			$( '#sm-enabled' ).prop( 'checked', true );
 			$( '#sm-notify-on-failure' ).prop( 'checked', false );
-			$( '#sm-notify-email-wrap' ).hide();
+			$( '#sm-notify-email-wrap, #sm-notify-channels-row' ).hide();
 			$( '#sm-workflow-steps' ).empty();
 			$( '#sm-type' ).val( 'task' ).trigger( 'change' );
 			$( '#sm-schedule' ).val( 'single' );

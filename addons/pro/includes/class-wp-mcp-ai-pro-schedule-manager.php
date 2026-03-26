@@ -7,9 +7,13 @@
  * - Per-schedule enable/disable toggle
  * - Execution history (ring buffer, last 50 runs per schedule)
  * - Retry logic with configurable attempts and delay
- * - Admin email notifications on failure
+ * - Admin email notifications on failure (wp_mail + Nodemailer HTML when available)
+ * - Channel notifications via unified_channel_broadcast tool (Slack, Teams, Discord, Telegram, etc.)
  * - Priority ordering for schedule creation UI
  * - Central dispatcher hook for auditable execution
+ * - channel_broadcast schedule type: send a message to chat channels on a schedule
+ * - Execution History CCT integration when JetEngine is available
+ * - Per-step tool-execution logging via WP_MCP_AI_Logger::log_tool_execution()
  *
  * @package WP_MCP_AI_Pro
  * @since   1.0.0
@@ -48,9 +52,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Supported schedule types.
 		 */
-		const TYPE_TASK          = 'task';
-		const TYPE_WORKFLOW      = 'workflow';
-		const TYPE_ASSISTANT_RUN = 'assistant_run';
+		const TYPE_TASK              = 'task';
+		const TYPE_WORKFLOW          = 'workflow';
+		const TYPE_ASSISTANT_RUN     = 'assistant_run';
+		const TYPE_CHANNEL_BROADCAST = 'channel_broadcast';
 
 		/**
 		 * Bootstrap hooks for the schedule manager.
@@ -128,15 +133,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Create or update a named schedule.
 		 *
-		 * @param array $data  Schedule data. Required keys: hook (for task type) or schedule_type. Optional: name,
-		 *                     description, schedule_type, workflow_steps, assistant_config, args, timestamp,
-		 *                     enabled, priority, tags, notify_on_failure, notify_email, max_retries, retry_delay.
+		 * @param array $data  Schedule data. Required keys depend on schedule_type:
+		 *                     - task:              hook (string, required)
+		 *                     - workflow:          workflow_steps (array, required)
+		 *                     - assistant_run:     assistant_config (array with assistant_id + message, required)
+		 *                     - channel_broadcast: broadcast_config (array with message + channels + credentials, required)
+		 *                     Optional for all: name, description, schedule, timestamp, enabled, priority, tags,
+		 *                     notify_on_failure, notify_email, notify_channels, max_retries, retry_delay.
 		 * @param int   $user_id WordPress user performing the action.
 		 * @return string|WP_Error Schedule ID on success, WP_Error on failure.
 		 */
 		public static function create_schedule( array $data, $user_id = 0 ) {
 			// Determine schedule type.
-			$valid_types   = array( self::TYPE_TASK, self::TYPE_WORKFLOW, self::TYPE_ASSISTANT_RUN );
+			$valid_types   = array( self::TYPE_TASK, self::TYPE_WORKFLOW, self::TYPE_ASSISTANT_RUN, self::TYPE_CHANNEL_BROADCAST );
 			$schedule_type = isset( $data['schedule_type'] ) && in_array( $data['schedule_type'], $valid_types, true )
 				? $data['schedule_type']
 				: self::TYPE_TASK;
@@ -191,6 +200,40 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						: array(),
 				);
 				$hook = 'wp_mcp_ai_pro_assistant_run';
+			} elseif ( self::TYPE_CHANNEL_BROADCAST === $schedule_type ) {
+				// Validate channel broadcast config.
+				$broadcast_config = isset( $data['broadcast_config'] ) && is_array( $data['broadcast_config'] )
+					? $data['broadcast_config']
+					: array();
+
+				if ( empty( $broadcast_config['message'] ) ) {
+					return new WP_Error( 'missing_broadcast_message', __( 'A message is required for channel_broadcast-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( empty( $broadcast_config['channels'] ) || ! is_array( $broadcast_config['channels'] ) ) {
+					return new WP_Error( 'missing_broadcast_channels', __( 'At least one channel is required for channel_broadcast-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				if ( empty( $broadcast_config['credentials'] ) || ! is_array( $broadcast_config['credentials'] ) ) {
+					return new WP_Error( 'missing_broadcast_credentials', __( 'Channel credentials are required for channel_broadcast-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$allowed_channels = array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' );
+				$sanitized_chans  = array();
+				foreach ( $broadcast_config['channels'] as $chan ) {
+					$chan = sanitize_key( $chan );
+					if ( in_array( $chan, $allowed_channels, true ) ) {
+						$sanitized_chans[] = $chan;
+					}
+				}
+				if ( empty( $sanitized_chans ) ) {
+					return new WP_Error( 'invalid_broadcast_channels', __( 'No valid channels were provided. Supported: telegram, slack, discord, teams, messenger, whatsapp.', 'mcp-ai-wpoos-pro' ) );
+				}
+
+				$data['broadcast_config'] = array(
+					'message'     => sanitize_textarea_field( $broadcast_config['message'] ),
+					'channels'    => $sanitized_chans,
+					'credentials' => $broadcast_config['credentials'],
+				);
+				$hook = 'wp_mcp_ai_pro_channel_broadcast';
 			}
 
 			$schedule = isset( $data['schedule'] ) ? sanitize_key( $data['schedule'] ) : 'single';
@@ -222,9 +265,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$retry_delay  = isset( $data['retry_delay'] ) ? max( 60, (int) $data['retry_delay'] ) : 300;
 			$name         = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $hook;
 			$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
-			$notify       = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
-			$notify_email = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
-			$tags         = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
+			$notify          = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
+			$notify_email    = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
+			// notify_channels: array of channel slugs (telegram, slack, etc.) to send failure alerts via unified_channel_broadcast.
+			$notify_channels             = isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] )
+				? array_map( 'sanitize_key', $data['notify_channels'] )
+				: array();
+			// notify_channel_credentials: credentials object keyed by channel slug, passed to unified_channel_broadcast.
+			$notify_channel_credentials  = isset( $data['notify_channel_credentials'] ) && is_array( $data['notify_channel_credentials'] )
+				? $data['notify_channel_credentials']
+				: array();
+			$tags            = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
 
 			// Use a unique ID that incorporates schedule type for workflow/assistant to avoid collisions.
 			$id_key      = self::TYPE_TASK === $schedule_type
@@ -243,13 +294,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'args'              => $args,
 				'workflow_steps'    => isset( $data['workflow_steps'] ) ? $data['workflow_steps'] : array(),
 				'assistant_config'  => isset( $data['assistant_config'] ) ? $data['assistant_config'] : array(),
+				'broadcast_config'  => isset( $data['broadcast_config'] ) ? $data['broadcast_config'] : array(),
 				'schedule'          => $schedule,
 				'timestamp'         => $timestamp,
 				'enabled'           => $enabled,
 				'priority'          => $priority,
 				'tags'              => $tags,
-				'notify_on_failure' => $notify,
-				'notify_email'      => $notify_email,
+				'notify_on_failure'  => $notify,
+				'notify_email'       => $notify_email,
+				'notify_channels'             => $notify_channels,
+				'notify_channel_credentials'  => $notify_channel_credentials,
 				'max_retries'       => $max_retries,
 				'retry_delay'       => $retry_delay,
 				'retry_count'       => 0,
@@ -339,6 +393,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 			if ( isset( $data['notify_email'] ) ) {
 				$updated['notify_email'] = sanitize_email( $data['notify_email'] );
+			}
+			if ( isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] ) ) {
+				$updated['notify_channels'] = array_map( 'sanitize_key', $data['notify_channels'] );
+			}
+			if ( isset( $data['notify_channel_credentials'] ) && is_array( $data['notify_channel_credentials'] ) ) {
+				$updated['notify_channel_credentials'] = $data['notify_channel_credentials'];
+			}
+			if ( isset( $data['broadcast_config'] ) && is_array( $data['broadcast_config'] ) ) {
+				// Allow updating the broadcast message / channels in update_schedule.
+				$updated['broadcast_config'] = $data['broadcast_config'];
 			}
 			if ( isset( $data['max_retries'] ) ) {
 				$updated['max_retries'] = max( 0, min( 5, (int) $data['max_retries'] ) );
@@ -654,6 +718,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						}
 						break;
 
+					case self::TYPE_CHANNEL_BROADCAST:
+						$result = self::dispatch_channel_broadcast( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						}
+						break;
+
 					case self::TYPE_TASK:
 					default:
 						$hook = (string) $schedule['hook'];
@@ -755,7 +827,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					);
 				}
 
-				$result = $registry->execute_tool( $tool_slug, $arguments, $step_context );
+				$step_start = microtime( true );
+				$result     = $registry->execute_tool( $tool_slug, $arguments, $step_context );
+				$step_dur   = round( microtime( true ) - $step_start, 3 );
+
+				// Log individual tool execution using the dedicated logger method.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_tool_execution(
+						$tool_slug,
+						$arguments,
+						$result,
+						array_merge(
+							$step_context,
+							array(
+								'step_label'    => $label,
+								'step_duration' => $step_dur,
+							)
+						)
+					);
+				}
 
 				if ( is_wp_error( $result ) ) {
 					return new WP_Error(
@@ -774,6 +864,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'tool_slug' => $tool_slug,
 					'label'     => $label,
 					'result'    => $result,
+					'duration'  => $step_dur,
 				);
 			}
 
@@ -826,6 +917,103 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'context'       => isset( $config['context'] ) ? $config['context'] : array(),
 					'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
 				)
+			);
+
+			return true;
+		}
+
+		/**
+		 * Execute a channel_broadcast schedule.
+		 *
+		 * Calls the unified_channel_broadcast tool (when the Chat Channels Toolkit is
+		 * active) to deliver the configured message to one or more chat platforms.
+		 * Falls back to firing the `wp_mcp_ai_pro_channel_broadcast` action so that
+		 * integrators can handle the broadcast themselves when the tool is not loaded.
+		 *
+		 * @param array  $schedule    Schedule record.
+		 * @param string $schedule_id Schedule ID.
+		 * @return true|WP_Error
+		 */
+		protected static function dispatch_channel_broadcast( array $schedule, $schedule_id ) {
+			$config = isset( $schedule['broadcast_config'] ) && is_array( $schedule['broadcast_config'] )
+				? $schedule['broadcast_config']
+				: array();
+
+			if ( empty( $config['message'] ) || empty( $config['channels'] ) || empty( $config['credentials'] ) ) {
+				return new WP_Error( 'invalid_broadcast_config', __( 'Channel broadcast is missing message, channels, or credentials.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$context = array(
+				'schedule_id'   => $schedule_id,
+				'schedule_name' => $schedule['name'],
+				'source'        => 'pro_schedule_manager',
+				'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+			);
+
+			// Attempt to use the registered unified_channel_broadcast tool when available.
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'unified_channel_broadcast' );
+				if ( $tool ) {
+					$result = $tool->execute(
+						array(
+							'message'     => $config['message'],
+							'channels'    => $config['channels'],
+							'credentials' => $config['credentials'],
+						),
+						$context
+					);
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_tool_execution(
+							'unified_channel_broadcast',
+							array(
+								'message'  => $config['message'],
+								'channels' => $config['channels'],
+							),
+							$result,
+							$context
+						);
+					}
+
+					if ( is_wp_error( $result ) ) {
+						return $result;
+					}
+
+					// Partial failure: if all channels failed, treat as error.
+					if ( is_array( $result ) && isset( $result['summary'] ) ) {
+						$summary = $result['summary'];
+						if ( 0 === (int) $summary['successful_channels'] ) {
+							return new WP_Error(
+								'broadcast_all_failed',
+								sprintf(
+									/* translators: %d: number of failed channels */
+									__( 'Channel broadcast failed on all %d channel(s).', 'mcp-ai-wpoos-pro' ),
+									(int) $summary['total_channels']
+								)
+							);
+						}
+					}
+
+					return true;
+				}
+			}
+
+			/**
+			 * Fires when a scheduled channel broadcast is dispatched but the
+			 * unified_channel_broadcast tool is not available (e.g. Chat Channels
+			 * Toolkit is disabled). Integrators can hook here to handle the send.
+			 *
+			 * @param string $message     Message text to broadcast.
+			 * @param array  $channels    Channel slugs to broadcast to.
+			 * @param array  $credentials Channel credentials keyed by channel slug.
+			 * @param array  $context     Schedule context (schedule_id, schedule_name, user_id).
+			 */
+			do_action(
+				'wp_mcp_ai_pro_channel_broadcast',
+				(string) $config['message'],
+				(array) $config['channels'],
+				(array) $config['credentials'],
+				$context
 			);
 
 			return true;
@@ -914,6 +1102,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			self::save_history( $history );
 
+			// Persist to JetEngine Execution History CCT when available.
+			self::maybe_persist_cct_history( $schedule_id, $success, $duration, $error_msg );
+
 			// Update the schedule record with last run meta.
 			$schedules = self::load_schedules();
 			if ( isset( $schedules[ $schedule_id ] ) ) {
@@ -970,15 +1161,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedules[ $schedule_id ]['retry_count'] = 0;
 				self::save_schedules( $schedules );
 
-				// Send failure notification.
-				if ( ! empty( $schedule['notify_on_failure'] ) && ! empty( $schedule['notify_email'] ) ) {
-					self::send_failure_notification( $schedule, $error_msg );
+				// Send failure notification (email and/or channel).
+				if ( ! empty( $schedule['notify_on_failure'] ) ) {
+					if ( ! empty( $schedule['notify_email'] ) ) {
+						self::send_failure_notification( $schedule, $error_msg );
+					}
+					if ( ! empty( $schedule['notify_channels'] ) && is_array( $schedule['notify_channels'] ) ) {
+						self::send_channel_failure_notification( $schedule, $error_msg );
+					}
 				}
 			}
 		}
 
 		/**
-		 * Send an admin email on schedule failure.
+		 * Send an admin failure notification email.
+		 *
+		 * Prefers the pro Nodemailer service for HTML email when available;
+		 * falls back to plain-text wp_mail().
 		 *
 		 * @param array  $schedule  Schedule record.
 		 * @param string $error_msg Error message.
@@ -992,31 +1191,143 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedule['name']
 			);
 
-			$body  = sprintf(
-				/* translators: %s: schedule name */
-				__( 'The scheduled task "%s" has failed.', 'mcp-ai-wpoos-pro' ),
-				$schedule['name']
-			);
-			$body .= "\n\n";
-			$body .= sprintf(
-				/* translators: %s: hook name */
-				__( 'Hook: %s', 'mcp-ai-wpoos-pro' ),
-				$schedule['hook']
-			);
-			$body .= "\n";
-			$body .= sprintf(
-				/* translators: %s: error message */
-				__( 'Error: %s', 'mcp-ai-wpoos-pro' ),
+			$manage_url = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' );
+			$type_label = isset( $schedule['schedule_type'] ) ? ucfirst( str_replace( '_', ' ', $schedule['schedule_type'] ) ) : 'Task';
+
+			// Build plain-text body (always used as fallback).
+			$plain  = sprintf( __( 'The scheduled task "%s" has failed.', 'mcp-ai-wpoos-pro' ), $schedule['name'] );
+			$plain .= "\n\n";
+			$plain .= sprintf( __( 'Type: %s', 'mcp-ai-wpoos-pro' ), $type_label );
+			$plain .= "\n";
+			$plain .= sprintf( __( 'Error: %s', 'mcp-ai-wpoos-pro' ), $error_msg );
+			$plain .= "\n\n";
+			$plain .= sprintf( __( 'Manage schedules: %s', 'mcp-ai-wpoos-pro' ), $manage_url );
+
+			// Try Nodemailer for a richer HTML email when the service is available.
+			if ( class_exists( 'WP_MCP_AI_Nodemailer_Service' ) ) {
+				$nodemailer = new WP_MCP_AI_Nodemailer_Service();
+				if ( $nodemailer->is_available() ) {
+					$html = '<html><body style="font-family:sans-serif;color:#333">';
+					$html .= '<h2 style="color:#cc1818">' . esc_html( $schedule['name'] ) . ' — Failed</h2>';
+					$html .= '<table cellpadding="6" style="border-collapse:collapse;width:100%">';
+					$html .= '<tr><td><strong>' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( get_bloginfo( 'name' ) ) . '</td></tr>';
+					$html .= '<tr><td><strong>' . esc_html__( 'Type', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $type_label ) . '</td></tr>';
+					if ( ! empty( $schedule['description'] ) ) {
+						$html .= '<tr><td><strong>' . esc_html__( 'Description', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $schedule['description'] ) . '</td></tr>';
+					}
+					$html .= '<tr><td><strong>' . esc_html__( 'Error', 'mcp-ai-wpoos-pro' ) . '</strong></td><td style="color:#cc1818">' . esc_html( $error_msg ) . '</td></tr>';
+					$html .= '</table>';
+					$html .= '<p><a href="' . esc_url( $manage_url ) . '">' . esc_html__( 'Manage Schedules', 'mcp-ai-wpoos-pro' ) . '</a></p>';
+					$html .= '</body></html>';
+
+					$result = $nodemailer->send_email(
+						array(
+							'to'      => $to,
+							'subject' => $subject,
+							'html'    => $html,
+							'text'    => $plain,
+						)
+					);
+
+					if ( ! is_wp_error( $result ) ) {
+						return;
+					}
+
+					// Log that Nodemailer failed and fall through to wp_mail.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event( 'warning', 'Nodemailer failed for schedule notification, falling back to wp_mail.', array( 'error' => $result->get_error_message() ) );
+					}
+				}
+			}
+
+			// Fallback: plain-text wp_mail().
+			wp_mail( $to, $subject, $plain );
+		}
+
+		/**
+		 * Send a failure notification to one or more chat channels via
+		 * the unified_channel_broadcast tool.
+		 *
+		 * The schedule must have a `notify_channels` array of slugs (e.g. ['telegram','slack'])
+		 * and a `notify_channel_credentials` map of credentials keyed by channel slug.
+		 *
+		 * @param array  $schedule  Schedule record.
+		 * @param string $error_msg Error message.
+		 */
+		protected static function send_channel_failure_notification( array $schedule, $error_msg ) {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				return;
+			}
+
+			$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'unified_channel_broadcast' );
+			if ( ! $tool ) {
+				return;
+			}
+
+			$channels    = $schedule['notify_channels'];
+			$credentials = isset( $schedule['notify_channel_credentials'] ) && is_array( $schedule['notify_channel_credentials'] )
+				? $schedule['notify_channel_credentials']
+				: array();
+
+			if ( empty( $credentials ) ) {
+				return;
+			}
+
+			/* translators: 1: schedule name, 2: site name, 3: error message */
+			$message = sprintf(
+				__( '\u26a0\ufe0f [%2$s] Scheduled Task Failed: *%1$s*\nError: %3$s', 'mcp-ai-wpoos-pro' ),
+				$schedule['name'],
+				get_bloginfo( 'name' ),
 				$error_msg
 			);
-			$body .= "\n\n";
-			$body .= sprintf(
-				/* translators: %s: admin URL */
-				__( 'Manage schedules: %s', 'mcp-ai-wpoos-pro' ),
-				admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' )
+
+			$tool->execute(
+				array(
+					'message'     => $message,
+					'channels'    => $channels,
+					'credentials' => $credentials,
+				),
+				array( 'source' => 'pro_schedule_manager_notification' )
+			);
+		}
+
+		/**
+		 * Persist a run record to the JetEngine Execution History CCT when available.
+		 *
+		 * Uses the same CCT as the Ralph orchestration layer so that schedule runs
+		 * appear in the execution history JetEngine listing alongside autonomous sessions.
+		 *
+		 * @param string $schedule_id Schedule ID (used as session_id in CCT).
+		 * @param bool   $success     Whether the run succeeded.
+		 * @param float  $duration    Duration in seconds.
+		 * @param string $error_msg   Error message on failure.
+		 */
+		protected static function maybe_persist_cct_history( $schedule_id, $success, $duration, $error_msg ) {
+			if ( ! class_exists( 'WP_MCP_AI_Execution_History_CCT' ) ) {
+				return;
+			}
+
+			// Rely on the JetEngine CCT module being available.
+			if ( ! function_exists( 'jet_engine' ) ) {
+				return;
+			}
+
+			$engine = jet_engine();
+			if ( empty( $engine->cct ) || empty( $engine->cct->manager ) ) {
+				return;
+			}
+
+			$item_data = array(
+				'cct_slug'     => WP_MCP_AI_Execution_History_CCT::SLUG,
+				'session_id'   => $schedule_id,
+				'tool_name'    => 'pro_schedule_manager',
+				'success'      => $success ? '1' : '0',
+				'error_message' => (string) $error_msg,
+				'duration_ms'  => (int) round( $duration * 1000 ),
+				'executed_at'  => current_time( 'mysql' ),
 			);
 
-			wp_mail( $to, $subject, $body );
+			$engine->cct->manager->insert_item( $item_data );
 		}
 
 		/**

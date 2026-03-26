@@ -456,3 +456,33 @@
 	border-color: #cc1818 !important;
 	box-shadow: 0 0 0 1px #cc1818 !important;
 }
+
+/* ============================================================
+   Channel Broadcast type
+   ============================================================ */
+
+.wp-mcp-ai-sm-channels-checkboxes {
+display: flex;
+flex-wrap: wrap;
+gap: 8px 16px;
+margin-top: 4px;
+}
+
+.wp-mcp-ai-sm-channel-label {
+display: flex;
+align-items: center;
+gap: 4px;
+font-weight: 500;
+cursor: pointer;
+}
+
+.wp-mcp-ai-sm-channel-label input[type="checkbox"] {
+margin: 0;
+}
+
+/* type badge for channel_broadcast */
+.wp-mcp-ai-sm-type-badge.type-channel_broadcast {
+background: #f0f6fc;
+color: #1565c0;
+border: 1px solid #90caf9;
+}

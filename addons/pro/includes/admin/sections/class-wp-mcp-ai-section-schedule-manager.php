@@ -169,6 +169,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'typeTask'        => __( 'Task', 'mcp-ai-wpoos-pro' ),
 					'typeWorkflow'    => __( 'Workflow', 'mcp-ai-wpoos-pro' ),
 					'typeAssistant'   => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
+					'typeBroadcast'   => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
 					'statusNever'     => __( 'Never run', 'mcp-ai-wpoos-pro' ),
 					'statusSuccess'   => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'statusFailure'   => __( 'Failed', 'mcp-ai-wpoos-pro' ),
@@ -220,6 +221,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<option value="task"><?php esc_html_e( 'Task', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="workflow"><?php esc_html_e( 'Workflow', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
 					<select id="wp-mcp-ai-sm-filter-status" class="wp-mcp-ai-sm-filter">
 						<option value=""><?php esc_html_e( 'All Statuses', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -331,6 +333,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 								<option value="task"><?php esc_html_e( 'Task (WP Hook)', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="workflow"><?php esc_html_e( 'Workflow (Tool Chain)', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
 							</select>
 						</div>
 					</div>
@@ -416,6 +419,35 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						</div>
 					</div>
 
+					<!-- Channel Broadcast panel -->
+					<div class="wp-mcp-ai-sm-type-panel" id="sm-panel-channel_broadcast" style="display:none;">
+						<div class="wp-mcp-ai-sm-form-row">
+							<div class="wp-mcp-ai-sm-form-group full-width">
+								<label for="sm-broadcast-message"><?php esc_html_e( 'Message', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+								<textarea id="sm-broadcast-message" rows="3" class="large-text" placeholder="<?php esc_attr_e( 'Your scheduled broadcast messageâ¦', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
+								<p class="description"><?php esc_html_e( 'Markdown is supported on Telegram, Slack, and Discord.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+						</div>
+						<div class="wp-mcp-ai-sm-form-row">
+							<div class="wp-mcp-ai-sm-form-group full-width">
+								<label><?php esc_html_e( 'Channels', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+								<div class="wp-mcp-ai-sm-channels-checkboxes">
+									<?php foreach ( array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' ) as $ch ) { ?>
+										<label class="wp-mcp-ai-sm-channel-label"><input type="checkbox" class="sm-broadcast-channel" value="<?php echo esc_attr( $ch ); ?>"> <?php echo esc_html( ucfirst( $ch ) ); ?></label>
+									<?php } ?>
+								</div>
+								<p class="description"><?php esc_html_e( 'Credentials must be provided for each selected channel.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+						</div>
+						<div class="wp-mcp-ai-sm-form-row">
+							<div class="wp-mcp-ai-sm-form-group full-width">
+								<label for="sm-broadcast-credentials"><?php esc_html_e( 'Credentials (JSON)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+								<textarea id="sm-broadcast-credentials" rows="4" class="large-text code" placeholder='<?php esc_attr_e( '{"telegram":{"token":"BOT_TOKEN","chat_id":"CHAT_ID"},"slack":{"token":"BOT_TOKEN","channel":"#general"}}', 'mcp-ai-wpoos-pro' ); ?>'></textarea>
+								<p class="description"><?php esc_html_e( 'Credentials keyed by channel slug (same shape as unified_channel_broadcast tool).', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+						</div>
+					</div>
+
 					<!-- Row: Priority + Tags -->
 					<div class="wp-mcp-ai-sm-form-row">
 						<div class="wp-mcp-ai-sm-form-group">
@@ -446,12 +478,28 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<div class="wp-mcp-ai-sm-form-group">
 							<label class="wp-mcp-ai-sm-toggle-label">
 								<input type="checkbox" id="sm-notify-on-failure">
-								<?php esc_html_e( 'Email on failure', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( 'Notify on failure', 'mcp-ai-wpoos-pro' ); ?>
 							</label>
 						</div>
 						<div class="wp-mcp-ai-sm-form-group" id="sm-notify-email-wrap" style="display:none;">
 							<label for="sm-notify-email"><?php esc_html_e( 'Notification Email', 'mcp-ai-wpoos-pro' ); ?></label>
 							<input type="email" id="sm-notify-email" class="regular-text" value="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>">
+						</div>
+					</div>
+					<!-- Row: Channel notifications -->
+					<div class="wp-mcp-ai-sm-form-row" id="sm-notify-channels-row" style="display:none;">
+						<div class="wp-mcp-ai-sm-form-group full-width">
+							<label><?php esc_html_e( 'Notify Channels (optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<div class="wp-mcp-ai-sm-channels-checkboxes">
+								<?php foreach ( array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' ) as $ch ) { ?>
+									<label class="wp-mcp-ai-sm-channel-label"><input type="checkbox" class="sm-notify-channel" value="<?php echo esc_attr( $ch ); ?>"> <?php echo esc_html( ucfirst( $ch ) ); ?></label>
+								<?php } ?>
+							</div>
+							<div class="wp-mcp-ai-sm-form-group full-width" style="margin-top:8px;">
+								<label for="sm-notify-channel-credentials"><?php esc_html_e( 'Channel Credentials (JSON)', 'mcp-ai-wpoos-pro' ); ?></label>
+								<textarea id="sm-notify-channel-credentials" rows="3" class="large-text code" placeholder='<?php esc_attr_e( '{"telegram":{"token":"…","chat_id":"…"}}', 'mcp-ai-wpoos-pro' ); ?>'></textarea>
+							</div>
+							<p class="description"><?php esc_html_e( 'When notify_on_failure is enabled, a failure alert will also be broadcast to the selected channels.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</div>
 					</div>
 
@@ -525,8 +573,10 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'run_count'       => (int) $schedule['run_count'],
 				'next_run'        => $next_run ? wp_date( 'Y-m-d H:i:s', $next_run ) : null,
 				'created_at'      => wp_date( 'Y-m-d H:i:s', $schedule['created_at'] ),
-				'workflow_steps'  => isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array(),
-				'assistant_config' => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
+				'workflow_steps'             => isset( $schedule['workflow_steps'] ) ? $schedule['workflow_steps'] : array(),
+				'assistant_config'           => isset( $schedule['assistant_config'] ) ? $schedule['assistant_config'] : array(),
+				'broadcast_config'           => isset( $schedule['broadcast_config'] ) ? $schedule['broadcast_config'] : array(),
+				'notify_channels'            => isset( $schedule['notify_channels'] ) ? $schedule['notify_channels'] : array(),
 			);
 		}
 

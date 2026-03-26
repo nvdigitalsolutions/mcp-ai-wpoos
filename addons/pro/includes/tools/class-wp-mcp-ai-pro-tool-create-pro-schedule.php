@@ -51,8 +51,8 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'schedule_type'     => array(
 					'type'        => 'string',
-					'enum'        => array( 'task', 'workflow', 'assistant_run' ),
-					'description' => __( 'Type of schedule: "task" (WP action hook), "workflow" (tool chain), or "assistant_run" (AI assistant). Defaults to "task".', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'task', 'workflow', 'assistant_run', 'channel_broadcast' ),
+					'description' => __( 'Type: "task" (WP hook), "workflow" (tool chain), "assistant_run" (AI assistant), "channel_broadcast" (Slack/Telegram/Discord/etc.). Defaults to "task".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'task',
 				),
 				'hook'              => array(
@@ -140,12 +140,46 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 				),
 				'notify_on_failure' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Send an admin email when the schedule fails. Defaults to false.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Send a failure notification (email and/or channel) when the schedule fails. Defaults to false.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'notify_email'      => array(
 					'type'        => 'string',
 					'description' => __( 'Email address for failure notifications. Defaults to admin email.', 'mcp-ai-wpoos-pro' ),
+				),
+				'notify_channels'   => array(
+					'type'        => 'array',
+					'items'       => array(
+						'type' => 'string',
+						'enum' => array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' ),
+					),
+					'description' => __( 'Chat channel slugs to notify on failure (requires notify_channel_credentials).', 'mcp-ai-wpoos-pro' ),
+				),
+				'notify_channel_credentials' => array(
+					'type'        => 'object',
+					'description' => __( 'Per-channel credentials for failure channel notifications (same shape as unified_channel_broadcast credentials).', 'mcp-ai-wpoos-pro' ),
+				),
+				'broadcast_config'  => array(
+					'type'        => 'object',
+					'description' => __( 'Required for "channel_broadcast" type. Provide message, channels array, and credentials.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'message'     => array(
+							'type'        => 'string',
+							'description' => __( 'Message text to broadcast to the configured channels.', 'mcp-ai-wpoos-pro' ),
+						),
+						'channels'    => array(
+							'type'        => 'array',
+							'items'       => array(
+								'type' => 'string',
+								'enum' => array( 'telegram', 'slack', 'discord', 'teams', 'messenger', 'whatsapp' ),
+							),
+							'description' => __( 'Channel slugs to broadcast to.', 'mcp-ai-wpoos-pro' ),
+						),
+						'credentials' => array(
+							'type'        => 'object',
+							'description' => __( 'Per-channel credentials object (see unified_channel_broadcast tool for shape).', 'mcp-ai-wpoos-pro' ),
+						),
+					),
 				),
 				'max_retries'       => array(
 					'type'        => 'integer',
