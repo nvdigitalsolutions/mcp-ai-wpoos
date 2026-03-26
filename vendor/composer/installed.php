@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-pro-schedule-manager',
-        'version' => 'dev-copilot/create-pro-schedule-manager',
-        'reference' => '6876ede1bfa151f3405f068d3350680b0df5ba25',
+        'pretty_version' => 'dev-copilot/review-attach-button-chat-ui',
+        'version' => 'dev-copilot/review-attach-button-chat-ui',
+        'reference' => '7ddbe30cd6dfe190cc9b02739361b2a7ccdb6a71',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-pro-schedule-manager',
-            'version' => 'dev-copilot/create-pro-schedule-manager',
-            'reference' => '6876ede1bfa151f3405f068d3350680b0df5ba25',
+            'pretty_version' => 'dev-copilot/review-attach-button-chat-ui',
+            'version' => 'dev-copilot/review-attach-button-chat-ui',
+            'reference' => '7ddbe30cd6dfe190cc9b02739361b2a7ccdb6a71',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
