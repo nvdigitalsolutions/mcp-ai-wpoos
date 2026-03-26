@@ -172,9 +172,19 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 		}
 	}
 
-	// Check for canvas: available when the canvas-service.js file exists AND
-	// the canvas npm package is installed in node_modules (optional dependency).
+	// Check for canvas: prefer the NV oOS Canvas Addon plugin (pre-compiled
+	// binaries), then fall back to canvas-service.js + node_modules.
 	if ( 'canvas' === $package_name ) {
+		// Priority 1: NV oOS Canvas Addon plugin provides pre-compiled binaries.
+		if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+			return array(
+				'available' => true,
+				'source'    => 'canvas-addon',
+				'message'   => __( 'canvas (NV oOS Canvas Addon)', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Priority 2: canvas-service.js present AND canvas in node_modules.
 		$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
 		$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
 		if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
@@ -675,8 +685,8 @@ function wp_mcp_ai_yfinance_health_check_handler( $result, $params ) {
 /**
  * Generate an image using the canvas npm package (server-side).
  *
- * Handles the `wp_mcp_ai_canvas_generate_image` filter. The canvas npm
- * package must be installed: npm install canvas@2
+ * Handles the `wp_mcp_ai_canvas_generate_image` filter. Requires the
+ * NV oOS Canvas Addon plugin, or canvas installed via npm install canvas@2.
  *
  * @param array|false $result Result from a previous filter handler (pass-through).
  * @param array       $params {

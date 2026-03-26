@@ -1515,16 +1515,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
-			// Check for canvas: optional npm package for server-side image generation.
-			// canvas@2 must be installed by the user (npm install canvas@2).
+			// Check for canvas: prefer the NV oOS Canvas Addon plugin, then fall
+			// back to canvas-service.js + node_modules.
 			if ( 'canvas' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				// Priority 1: canvas-service.js present AND canvas in node_modules.
+				// Priority 1: NV oOS Canvas Addon plugin.
+				if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+					return true;
+				}
+				// Priority 2: canvas-service.js present AND canvas in node_modules.
 				$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
 				$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
 				if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
 					return true;
 				}
-				// Priority 2: canvas in node_modules without service file.
+				// Priority 3: canvas in node_modules without service file.
 				if ( is_dir( $canvas_npm_path ) ) {
 					return true;
 				}

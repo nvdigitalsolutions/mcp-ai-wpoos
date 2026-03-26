@@ -688,7 +688,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				}
 				return array(
 					'success' => false,
-					'message' => __( 'Canvas package is not installed. Run: npm install canvas@2', 'mcp-ai-wpoos-pro' ),
+					'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 
@@ -703,7 +703,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 			return array(
 				'success' => false,
-				'message' => __( 'Canvas package is not installed. Run: npm install canvas@2', 'mcp-ai-wpoos-pro' ),
+				'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
 			);
 		} catch ( Exception $e ) {
 			return array(
