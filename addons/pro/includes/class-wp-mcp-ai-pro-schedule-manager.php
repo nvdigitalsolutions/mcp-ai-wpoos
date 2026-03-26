@@ -1,0 +1,866 @@
+<?php
+/**
+ * Pro Schedule Manager for NV oOS.
+ *
+ * Extends the base cron manager with pro-grade scheduling features:
+ * - Named schedules with descriptions and tags
+ * - Per-schedule enable/disable toggle
+ * - Execution history (ring buffer, last 50 runs per schedule)
+ * - Retry logic with configurable attempts and delay
+ * - Admin email notifications on failure
+ * - Priority ordering for schedule creation UI
+ * - Central dispatcher hook for auditable execution
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
+	/**
+	 * Manages pro-level scheduled tasks with extended tracking and control.
+	 */
+	class WP_MCP_AI_Pro_Schedule_Manager {
+
+		/**
+		 * Option key for storing pro schedules.
+		 */
+		const SCHEDULES_OPTION = 'wp_mcp_ai_pro_schedules';
+
+		/**
+		 * Option key for storing execution history (ring buffer per schedule).
+		 */
+		const HISTORY_OPTION = 'wp_mcp_ai_pro_schedule_history';
+
+		/**
+		 * Central dispatcher cron hook.
+		 */
+		const DISPATCH_HOOK = 'wp_mcp_ai_pro_schedule_exec';
+
+		/**
+		 * Maximum history entries stored per schedule.
+		 */
+		const MAX_HISTORY_PER_SCHEDULE = 50;
+
+		/**
+		 * Bootstrap hooks for the schedule manager.
+		 */
+		public static function init() {
+			// Central dispatcher: all managed schedules call this hook with schedule ID as argument.
+			add_action( self::DISPATCH_HOOK, array( __CLASS__, 'dispatch' ), 10, 1 );
+
+			// Register custom cron intervals used by pro schedules.
+			add_filter( 'cron_schedules', array( __CLASS__, 'register_custom_intervals' ) );
+
+			// Prune stale schedules on init.
+			add_action( 'init', array( __CLASS__, 'maybe_prune_history' ) );
+		}
+
+		// -------------------------------------------------------------------------
+		// Custom intervals
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Add custom cron intervals to WordPress.
+		 *
+		 * @param array $schedules Existing registered schedules.
+		 * @return array Modified schedules with pro intervals.
+		 */
+		public static function register_custom_intervals( $schedules ) {
+			$custom = array(
+				'wp_mcp_ai_every_5_minutes'  => array(
+					'interval' => 5 * MINUTE_IN_SECONDS,
+					'display'  => __( 'Every 5 Minutes', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_every_15_minutes' => array(
+					'interval' => 15 * MINUTE_IN_SECONDS,
+					'display'  => __( 'Every 15 Minutes', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_every_30_minutes' => array(
+					'interval' => 30 * MINUTE_IN_SECONDS,
+					'display'  => __( 'Every 30 Minutes', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_every_2_hours'    => array(
+					'interval' => 2 * HOUR_IN_SECONDS,
+					'display'  => __( 'Every 2 Hours', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_every_6_hours'    => array(
+					'interval' => 6 * HOUR_IN_SECONDS,
+					'display'  => __( 'Every 6 Hours', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_every_12_hours'   => array(
+					'interval' => 12 * HOUR_IN_SECONDS,
+					'display'  => __( 'Every 12 Hours', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_weekly'           => array(
+					'interval' => WEEK_IN_SECONDS,
+					'display'  => __( 'Once Weekly', 'mcp-ai-wpoos-pro' ),
+				),
+				'wp_mcp_ai_monthly'          => array(
+					'interval' => 30 * DAY_IN_SECONDS,
+					'display'  => __( 'Once Monthly (30 days)', 'mcp-ai-wpoos-pro' ),
+				),
+			);
+
+			foreach ( $custom as $key => $config ) {
+				if ( ! isset( $schedules[ $key ] ) ) {
+					$schedules[ $key ] = $config;
+				}
+			}
+
+			return $schedules;
+		}
+
+		// -------------------------------------------------------------------------
+		// CRUD
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Create or update a named schedule.
+		 *
+		 * @param array $data  Schedule data. Required keys: hook, schedule. Optional: name, description,
+		 *                     args, timestamp, enabled, priority, tags, notify_on_failure, notify_email,
+		 *                     max_retries, retry_delay.
+		 * @param int   $user_id WordPress user performing the action.
+		 * @return string|WP_Error Schedule ID on success, WP_Error on failure.
+		 */
+		public static function create_schedule( array $data, $user_id = 0 ) {
+			$hook     = isset( $data['hook'] ) ? sanitize_key( $data['hook'] ) : '';
+			$schedule = isset( $data['schedule'] ) ? sanitize_key( $data['schedule'] ) : 'single';
+
+			if ( '' === $hook ) {
+				return new WP_Error( 'missing_hook', __( 'A hook name is required to create a schedule.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Validate interval unless single.
+			if ( 'single' !== $schedule ) {
+				$valid_schedules = array_keys( wp_get_schedules() );
+				if ( ! in_array( $schedule, $valid_schedules, true ) ) {
+					return new WP_Error(
+						'invalid_schedule',
+						/* translators: %s: schedule interval slug */
+						sprintf( __( 'The schedule interval "%s" is not registered.', 'mcp-ai-wpoos-pro' ), $schedule )
+					);
+				}
+			}
+
+			$timestamp = isset( $data['timestamp'] ) ? absint( $data['timestamp'] ) : time() + 60;
+
+			if ( $timestamp < time() ) {
+				return new WP_Error( 'past_timestamp', __( 'Schedule timestamp must be in the future.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$args         = isset( $data['args'] ) && is_array( $data['args'] ) ? $data['args'] : array();
+			$enabled      = isset( $data['enabled'] ) ? (bool) $data['enabled'] : true;
+			$priority     = isset( $data['priority'] ) ? max( 1, min( 10, (int) $data['priority'] ) ) : 5;
+			$max_retries  = isset( $data['max_retries'] ) ? max( 0, min( 5, (int) $data['max_retries'] ) ) : 0;
+			$retry_delay  = isset( $data['retry_delay'] ) ? max( 60, (int) $data['retry_delay'] ) : 300;
+			$name         = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $hook;
+			$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
+			$notify       = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
+			$notify_email = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
+			$tags         = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
+
+			$schedule_id = self::generate_id( $hook, $args );
+
+			$existing = self::get_schedule( $schedule_id );
+
+			$record = array(
+				'id'                => $schedule_id,
+				'name'              => $name,
+				'description'       => $description,
+				'hook'              => $hook,
+				'args'              => $args,
+				'schedule'          => $schedule,
+				'timestamp'         => $timestamp,
+				'enabled'           => $enabled,
+				'priority'          => $priority,
+				'tags'              => $tags,
+				'notify_on_failure' => $notify,
+				'notify_email'      => $notify_email,
+				'max_retries'       => $max_retries,
+				'retry_delay'       => $retry_delay,
+				'retry_count'       => 0,
+				'last_run_status'   => $existing ? $existing['last_run_status'] : 'never',
+				'last_run_time'     => $existing ? $existing['last_run_time'] : 0,
+				'last_run_duration' => $existing ? $existing['last_run_duration'] : 0,
+				'last_error'        => $existing ? $existing['last_error'] : '',
+				'run_count'         => $existing ? $existing['run_count'] : 0,
+				'created_at'        => $existing ? $existing['created_at'] : time(),
+				'created_by'        => $existing ? $existing['created_by'] : (int) $user_id,
+				'updated_at'        => time(),
+				'updated_by'        => (int) $user_id,
+			);
+
+			// Unschedule any existing WP cron event for this schedule.
+			self::unschedule_wp_cron( $schedule_id );
+
+			// Schedule the new WP cron event if enabled.
+			if ( $enabled ) {
+				$scheduled = self::schedule_wp_cron( $schedule_id, $schedule, $timestamp );
+				if ( is_wp_error( $scheduled ) ) {
+					return $scheduled;
+				}
+			}
+
+			$schedules                 = self::load_schedules();
+			$schedules[ $schedule_id ] = $record;
+			self::save_schedules( $schedules );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'info',
+					'Pro schedule created: ' . $name,
+					array(
+						'schedule_id' => $schedule_id,
+						'hook'        => $hook,
+						'schedule'    => $schedule,
+						'enabled'     => $enabled,
+						'user_id'     => $user_id,
+					)
+				);
+			}
+
+			return $schedule_id;
+		}
+
+		/**
+		 * Update an existing named schedule.
+		 *
+		 * @param string $schedule_id Schedule ID to update.
+		 * @param array  $data        Fields to update.
+		 * @param int    $user_id     WordPress user performing the action.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		public static function update_schedule( $schedule_id, array $data, $user_id = 0 ) {
+			$schedule_id = (string) $schedule_id;
+			$existing    = self::get_schedule( $schedule_id );
+
+			if ( ! $existing ) {
+				return new WP_Error(
+					'not_found',
+					/* translators: %s: schedule ID */
+					sprintf( __( 'Schedule "%s" not found.', 'mcp-ai-wpoos-pro' ), $schedule_id )
+				);
+			}
+
+			// Merge updated fields.
+			$updated = $existing;
+
+			if ( isset( $data['name'] ) ) {
+				$updated['name'] = sanitize_text_field( $data['name'] );
+			}
+			if ( isset( $data['description'] ) ) {
+				$updated['description'] = sanitize_textarea_field( $data['description'] );
+			}
+			if ( isset( $data['enabled'] ) ) {
+				$updated['enabled'] = (bool) $data['enabled'];
+			}
+			if ( isset( $data['priority'] ) ) {
+				$updated['priority'] = max( 1, min( 10, (int) $data['priority'] ) );
+			}
+			if ( isset( $data['tags'] ) && is_array( $data['tags'] ) ) {
+				$updated['tags'] = array_map( 'sanitize_text_field', $data['tags'] );
+			}
+			if ( isset( $data['notify_on_failure'] ) ) {
+				$updated['notify_on_failure'] = (bool) $data['notify_on_failure'];
+			}
+			if ( isset( $data['notify_email'] ) ) {
+				$updated['notify_email'] = sanitize_email( $data['notify_email'] );
+			}
+			if ( isset( $data['max_retries'] ) ) {
+				$updated['max_retries'] = max( 0, min( 5, (int) $data['max_retries'] ) );
+			}
+			if ( isset( $data['retry_delay'] ) ) {
+				$updated['retry_delay'] = max( 60, (int) $data['retry_delay'] );
+			}
+			if ( isset( $data['schedule'] ) ) {
+				$new_schedule = sanitize_key( $data['schedule'] );
+				if ( 'single' !== $new_schedule ) {
+					$valid = array_keys( wp_get_schedules() );
+					if ( ! in_array( $new_schedule, $valid, true ) ) {
+						return new WP_Error(
+							'invalid_schedule',
+							/* translators: %s: schedule interval slug */
+							sprintf( __( 'The schedule interval "%s" is not registered.', 'mcp-ai-wpoos-pro' ), $new_schedule )
+						);
+					}
+				}
+				$updated['schedule'] = $new_schedule;
+			}
+			if ( isset( $data['timestamp'] ) ) {
+				$ts = absint( $data['timestamp'] );
+				if ( $ts < time() ) {
+					return new WP_Error( 'past_timestamp', __( 'Schedule timestamp must be in the future.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$updated['timestamp'] = $ts;
+			}
+
+			$updated['updated_at'] = time();
+			$updated['updated_by'] = (int) $user_id;
+
+			// Re-schedule WP cron.
+			self::unschedule_wp_cron( $schedule_id );
+
+			if ( $updated['enabled'] ) {
+				$ts        = isset( $updated['timestamp'] ) ? $updated['timestamp'] : time() + 60;
+				$scheduled = self::schedule_wp_cron( $schedule_id, $updated['schedule'], $ts );
+				if ( is_wp_error( $scheduled ) ) {
+					return $scheduled;
+				}
+			}
+
+			$schedules                 = self::load_schedules();
+			$schedules[ $schedule_id ] = $updated;
+			self::save_schedules( $schedules );
+
+			return true;
+		}
+
+		/**
+		 * Delete a named schedule and its WP cron event.
+		 *
+		 * @param string $schedule_id Schedule ID to remove.
+		 * @return bool Whether the schedule was found and removed.
+		 */
+		public static function delete_schedule( $schedule_id ) {
+			$schedule_id = (string) $schedule_id;
+			$schedules   = self::load_schedules();
+
+			if ( ! isset( $schedules[ $schedule_id ] ) ) {
+				return false;
+			}
+
+			self::unschedule_wp_cron( $schedule_id );
+
+			unset( $schedules[ $schedule_id ] );
+			self::save_schedules( $schedules );
+
+			// Clean up history.
+			$history = self::load_history();
+			unset( $history[ $schedule_id ] );
+			self::save_history( $history );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'info', 'Pro schedule deleted: ' . $schedule_id );
+			}
+
+			return true;
+		}
+
+		/**
+		 * Get a single named schedule by ID.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @return array|null Schedule record or null if not found.
+		 */
+		public static function get_schedule( $schedule_id ) {
+			$schedules = self::load_schedules();
+			$id        = (string) $schedule_id;
+			return isset( $schedules[ $id ] ) ? $schedules[ $id ] : null;
+		}
+
+		/**
+		 * Get all named schedules.
+		 *
+		 * @param array $filters Optional. 'enabled' (bool), 'tag' (string), 'hook' (string).
+		 * @return array Keyed by schedule ID.
+		 */
+		public static function get_schedules( array $filters = array() ) {
+			$schedules = self::load_schedules();
+
+			if ( isset( $filters['enabled'] ) ) {
+				$want_enabled = (bool) $filters['enabled'];
+				$schedules    = array_filter(
+					$schedules,
+					function ( $s ) use ( $want_enabled ) {
+						return (bool) $s['enabled'] === $want_enabled;
+					}
+				);
+			}
+
+			if ( ! empty( $filters['tag'] ) ) {
+				$tag       = sanitize_text_field( $filters['tag'] );
+				$schedules = array_filter(
+					$schedules,
+					function ( $s ) use ( $tag ) {
+						return in_array( $tag, (array) $s['tags'], true );
+					}
+				);
+			}
+
+			if ( ! empty( $filters['hook'] ) ) {
+				$hook      = sanitize_key( $filters['hook'] );
+				$schedules = array_filter(
+					$schedules,
+					function ( $s ) use ( $hook ) {
+						return $s['hook'] === $hook;
+					}
+				);
+			}
+
+			// Sort by priority (lower number = higher priority) then by name.
+			uasort(
+				$schedules,
+				function ( $a, $b ) {
+					$pa = isset( $a['priority'] ) ? (int) $a['priority'] : 5;
+					$pb = isset( $b['priority'] ) ? (int) $b['priority'] : 5;
+					if ( $pa !== $pb ) {
+						return $pa - $pb;
+					}
+					return strcmp( (string) $a['name'], (string) $b['name'] );
+				}
+			);
+
+			return $schedules;
+		}
+
+		/**
+		 * Toggle a schedule's enabled state.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param bool   $enabled     Whether the schedule should be enabled.
+		 * @param int    $user_id     User performing the action.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		public static function toggle_schedule( $schedule_id, $enabled, $user_id = 0 ) {
+			return self::update_schedule( $schedule_id, array( 'enabled' => $enabled ), $user_id );
+		}
+
+		/**
+		 * Manually trigger a named schedule (bypasses cron, runs synchronously).
+		 *
+		 * @param string $schedule_id Schedule ID to trigger.
+		 * @param int    $user_id     User performing the action.
+		 * @return bool|WP_Error True on success, WP_Error on failure.
+		 */
+		public static function trigger_now( $schedule_id, $user_id = 0 ) {
+			$schedule = self::get_schedule( $schedule_id );
+
+			if ( ! $schedule ) {
+				return new WP_Error(
+					'not_found',
+					/* translators: %s: schedule ID */
+					sprintf( __( 'Schedule "%s" not found.', 'mcp-ai-wpoos-pro' ), $schedule_id )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'info',
+					'Pro schedule manually triggered: ' . $schedule['name'],
+					array(
+						'schedule_id' => $schedule_id,
+						'user_id'     => $user_id,
+					)
+				);
+			}
+
+			return self::dispatch( $schedule_id );
+		}
+
+		// -------------------------------------------------------------------------
+		// Execution history
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Get execution history for a schedule.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $limit       Maximum entries to return (default: 20).
+		 * @return array Array of run records, newest first.
+		 */
+		public static function get_run_history( $schedule_id, $limit = 20 ) {
+			$history = self::load_history();
+			$id      = (string) $schedule_id;
+
+			if ( ! isset( $history[ $id ] ) || ! is_array( $history[ $id ] ) ) {
+				return array();
+			}
+
+			$runs = $history[ $id ];
+
+			// Newest first.
+			$runs = array_reverse( $runs );
+
+			if ( $limit > 0 ) {
+				$runs = array_slice( $runs, 0, (int) $limit );
+			}
+
+			return $runs;
+		}
+
+		/**
+		 * Clear run history for a schedule.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 */
+		public static function clear_run_history( $schedule_id ) {
+			$history = self::load_history();
+			unset( $history[ (string) $schedule_id ] );
+			self::save_history( $history );
+		}
+
+		/**
+		 * Prune old history entries to stay within the ring-buffer limit.
+		 */
+		public static function maybe_prune_history() {
+			$history = self::load_history();
+			$changed = false;
+
+			foreach ( $history as $id => $runs ) {
+				if ( is_array( $runs ) && count( $runs ) > self::MAX_HISTORY_PER_SCHEDULE ) {
+					$history[ $id ] = array_slice( $runs, - self::MAX_HISTORY_PER_SCHEDULE );
+					$changed        = true;
+				}
+			}
+
+			if ( $changed ) {
+				self::save_history( $history );
+			}
+		}
+
+		// -------------------------------------------------------------------------
+		// Dispatcher
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Central dispatcher called by WP cron.
+		 *
+		 * Executes the schedule's action hook, records the result, handles retry
+		 * logic, and sends failure notifications.
+		 *
+		 * @param string $schedule_id Schedule ID to dispatch.
+		 * @return bool True on success, false on failure.
+		 */
+		public static function dispatch( $schedule_id ) {
+			$schedule_id = (string) $schedule_id;
+			$schedule    = self::get_schedule( $schedule_id );
+
+			if ( ! $schedule ) {
+				return false;
+			}
+
+			if ( empty( $schedule['enabled'] ) ) {
+				return false;
+			}
+
+			$hook      = (string) $schedule['hook'];
+			$args      = isset( $schedule['args'] ) && is_array( $schedule['args'] ) ? $schedule['args'] : array();
+			$start     = microtime( true );
+			$error_msg = '';
+			$success   = true;
+
+			try {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- Hook name is admin-configured and sanitized.
+				do_action_ref_array( $hook, $args );
+			} catch ( Throwable $e ) {
+				$success   = false;
+				$error_msg = $e->getMessage();
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Pro schedule exception: ' . $hook,
+						array(
+							'schedule_id' => $schedule_id,
+							'error'       => $error_msg,
+						)
+					);
+				}
+			}
+
+			$end      = microtime( true );
+			$duration = round( $end - $start, 3 );
+
+			// Record run result.
+			self::record_run( $schedule_id, $success, $duration, $error_msg );
+
+			// Handle retry logic on failure.
+			if ( ! $success ) {
+				self::handle_failure( $schedule_id, $schedule, $error_msg );
+			} else {
+				// Success: reset retry counter.
+				$schedules                                   = self::load_schedules();
+				$schedules[ $schedule_id ]['retry_count']   = 0;
+				$schedules[ $schedule_id ]['last_run_status'] = 'success';
+				self::save_schedules( $schedules );
+			}
+
+			return $success;
+		}
+
+		// -------------------------------------------------------------------------
+		// Internal helpers
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Schedule a WP cron event for the central dispatcher.
+		 *
+		 * @param string $schedule_id Schedule ID (passed as arg to dispatcher).
+		 * @param string $interval    WP cron interval slug, or 'single'.
+		 * @param int    $timestamp   Unix timestamp for first execution.
+		 * @return true|WP_Error
+		 */
+		protected static function schedule_wp_cron( $schedule_id, $interval, $timestamp ) {
+			$args = array( $schedule_id );
+
+			if ( 'single' === $interval ) {
+				$result = wp_schedule_single_event( $timestamp, self::DISPATCH_HOOK, $args );
+			} else {
+				// Check not already scheduled.
+				if ( wp_next_scheduled( self::DISPATCH_HOOK, $args ) ) {
+					return true; // Already scheduled, no-op.
+				}
+				$result = wp_schedule_event( $timestamp, $interval, self::DISPATCH_HOOK, $args );
+			}
+
+			if ( false === $result ) {
+				return new WP_Error(
+					'schedule_failed',
+					/* translators: %s: hook name */
+					sprintf( __( 'Failed to schedule WP cron event for "%s".', 'mcp-ai-wpoos-pro' ), $schedule_id )
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Remove any existing WP cron events for a schedule.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 */
+		protected static function unschedule_wp_cron( $schedule_id ) {
+			$args = array( (string) $schedule_id );
+
+			// Clear recurring events.
+			wp_clear_scheduled_hook( self::DISPATCH_HOOK, $args );
+
+			// Also remove any pending one-time events.
+			$timestamp = wp_next_scheduled( self::DISPATCH_HOOK, $args );
+			if ( $timestamp ) {
+				wp_unschedule_event( $timestamp, self::DISPATCH_HOOK, $args );
+			}
+		}
+
+		/**
+		 * Record a single run result into the history ring buffer.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param bool   $success     Whether the run succeeded.
+		 * @param float  $duration    Run duration in seconds.
+		 * @param string $error_msg   Error message if failed.
+		 */
+		protected static function record_run( $schedule_id, $success, $duration, $error_msg = '' ) {
+			$history = self::load_history();
+
+			if ( ! isset( $history[ $schedule_id ] ) || ! is_array( $history[ $schedule_id ] ) ) {
+				$history[ $schedule_id ] = array();
+			}
+
+			$history[ $schedule_id ][] = array(
+				'status'     => $success ? 'success' : 'failure',
+				'start_time' => time(),
+				'duration'   => $duration,
+				'error'      => $error_msg,
+			);
+
+			// Trim to ring buffer limit.
+			if ( count( $history[ $schedule_id ] ) > self::MAX_HISTORY_PER_SCHEDULE ) {
+				$history[ $schedule_id ] = array_slice( $history[ $schedule_id ], - self::MAX_HISTORY_PER_SCHEDULE );
+			}
+
+			self::save_history( $history );
+
+			// Update the schedule record with last run meta.
+			$schedules = self::load_schedules();
+			if ( isset( $schedules[ $schedule_id ] ) ) {
+				$schedules[ $schedule_id ]['last_run_status']   = $success ? 'success' : 'failure';
+				$schedules[ $schedule_id ]['last_run_time']     = time();
+				$schedules[ $schedule_id ]['last_run_duration'] = $duration;
+				$schedules[ $schedule_id ]['last_error']        = $success ? '' : $error_msg;
+				$schedules[ $schedule_id ]['run_count']         = ( (int) $schedules[ $schedule_id ]['run_count'] ) + 1;
+				self::save_schedules( $schedules );
+			}
+		}
+
+		/**
+		 * Handle a failed schedule execution: retry or notify.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param array  $schedule    Schedule record.
+		 * @param string $error_msg   Error message.
+		 */
+		protected static function handle_failure( $schedule_id, array $schedule, $error_msg ) {
+			$max_retries = (int) $schedule['max_retries'];
+			$retry_count = (int) $schedule['retry_count'];
+			$retry_delay = (int) $schedule['retry_delay'];
+
+			// Update status to failure.
+			$schedules                                   = self::load_schedules();
+			$schedules[ $schedule_id ]['last_run_status'] = 'failure';
+
+			if ( $max_retries > 0 && $retry_count < $max_retries ) {
+				// Schedule a retry.
+				$schedules[ $schedule_id ]['retry_count'] = $retry_count + 1;
+				self::save_schedules( $schedules );
+
+				$retry_at = time() + $retry_delay;
+				self::schedule_wp_cron( $schedule_id, 'single', $retry_at );
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'warning',
+						sprintf(
+							'Pro schedule retry %d/%d scheduled: %s',
+							$retry_count + 1,
+							$max_retries,
+							$schedule['name']
+						),
+						array(
+							'schedule_id' => $schedule_id,
+							'retry_at'    => $retry_at,
+						)
+					);
+				}
+			} else {
+				// Max retries reached or no retries configured.
+				$schedules[ $schedule_id ]['retry_count'] = 0;
+				self::save_schedules( $schedules );
+
+				// Send failure notification.
+				if ( ! empty( $schedule['notify_on_failure'] ) && ! empty( $schedule['notify_email'] ) ) {
+					self::send_failure_notification( $schedule, $error_msg );
+				}
+			}
+		}
+
+		/**
+		 * Send an admin email on schedule failure.
+		 *
+		 * @param array  $schedule  Schedule record.
+		 * @param string $error_msg Error message.
+		 */
+		protected static function send_failure_notification( array $schedule, $error_msg ) {
+			$to      = $schedule['notify_email'];
+			$subject = sprintf(
+				/* translators: 1: site name, 2: schedule name */
+				__( '[%1$s] Scheduled Task Failed: %2$s', 'mcp-ai-wpoos-pro' ),
+				get_bloginfo( 'name' ),
+				$schedule['name']
+			);
+
+			$body  = sprintf(
+				/* translators: %s: schedule name */
+				__( 'The scheduled task "%s" has failed.', 'mcp-ai-wpoos-pro' ),
+				$schedule['name']
+			);
+			$body .= "\n\n";
+			$body .= sprintf(
+				/* translators: %s: hook name */
+				__( 'Hook: %s', 'mcp-ai-wpoos-pro' ),
+				$schedule['hook']
+			);
+			$body .= "\n";
+			$body .= sprintf(
+				/* translators: %s: error message */
+				__( 'Error: %s', 'mcp-ai-wpoos-pro' ),
+				$error_msg
+			);
+			$body .= "\n\n";
+			$body .= sprintf(
+				/* translators: %s: admin URL */
+				__( 'Manage schedules: %s', 'mcp-ai-wpoos-pro' ),
+				admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' )
+			);
+
+			wp_mail( $to, $subject, $body );
+		}
+
+		/**
+		 * Generate a stable ID for a schedule.
+		 *
+		 * @param string $hook Hook name.
+		 * @param array  $args Arguments.
+		 * @return string MD5 hash identifier.
+		 */
+		protected static function generate_id( $hook, array $args ) {
+			return md5( wp_json_encode( array( 'hook' => $hook, 'args' => $args ) ) );
+		}
+
+		/**
+		 * Load all schedules from the options table.
+		 *
+		 * @return array Schedules keyed by ID.
+		 */
+		protected static function load_schedules() {
+			$data = get_option( self::SCHEDULES_OPTION, array() );
+			return is_array( $data ) ? $data : array();
+		}
+
+		/**
+		 * Persist schedules to the options table.
+		 *
+		 * @param array $schedules Schedules array to store.
+		 */
+		protected static function save_schedules( array $schedules ) {
+			$existing = get_option( self::SCHEDULES_OPTION, null );
+
+			if ( null === $existing ) {
+				add_option( self::SCHEDULES_OPTION, $schedules, '', 'no' );
+			} else {
+				update_option( self::SCHEDULES_OPTION, $schedules );
+			}
+		}
+
+		/**
+		 * Load execution history from the options table.
+		 *
+		 * @return array History keyed by schedule ID.
+		 */
+		protected static function load_history() {
+			$data = get_option( self::HISTORY_OPTION, array() );
+			return is_array( $data ) ? $data : array();
+		}
+
+		/**
+		 * Persist execution history to the options table.
+		 *
+		 * @param array $history History array to store.
+		 */
+		protected static function save_history( array $history ) {
+			$existing = get_option( self::HISTORY_OPTION, null );
+
+			if ( null === $existing ) {
+				add_option( self::HISTORY_OPTION, $history, '', 'no' );
+			} else {
+				update_option( self::HISTORY_OPTION, $history );
+			}
+		}
+
+		/**
+		 * Get the next scheduled time for a schedule.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @return int|false Next timestamp or false if not scheduled.
+		 */
+		public static function get_next_run_time( $schedule_id ) {
+			return wp_next_scheduled( self::DISPATCH_HOOK, array( (string) $schedule_id ) );
+		}
+
+		/**
+		 * Unschedule all pro managed cron events (for plugin deactivation).
+		 */
+		public static function deactivate() {
+			$schedules = self::load_schedules();
+			foreach ( array_keys( $schedules ) as $schedule_id ) {
+				self::unschedule_wp_cron( $schedule_id );
+			}
+		}
+	}
+
+	WP_MCP_AI_Pro_Schedule_Manager::init();
+}
