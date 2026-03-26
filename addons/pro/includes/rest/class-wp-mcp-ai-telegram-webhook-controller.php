@@ -675,6 +675,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// retry_count incremented each time the job is rescheduled due to a 429.
 		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 		$tg_conv_type         = in_array( $chat_type, array( 'group', 'supergroup' ), true ) ? 'group' : 'dm';
+		// WordPress attachment sideloaded from a Telegram media message (photo,
+		// document, video, etc.). When set, the message content array will include
+		// the actual file so vision models can see images and the AI can reference
+		// document context, rather than receiving only a plain-text description.
+		$wp_attachment_id   = isset( $args['wp_attachment_id'] ) ? absint( $args['wp_attachment_id'] ) : 0;
+		$wp_attachment_mime = isset( $args['wp_attachment_mime'] ) ? sanitize_text_field( $args['wp_attachment_mime'] ) : '';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -752,15 +758,60 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$history_for_chat = array_slice( $history_for_chat, -( $max_history - 1 ) );
 		}
 
-		$messages = array_merge(
-			$history_for_chat,
-			array(
+		// When a sideloaded WordPress attachment is available, build a multipart
+		// message content array so the AI can see/process the actual file:
+		// - images   → 'input_image' segment → vision models analyse the photo
+		// - documents / audio / video → 'input_file' segment → file context
+		// The text part carries the metadata summary + any user caption.
+		// The history transient always stores the plain-text form so prior turns
+		// remain compact and do not require a special segment normaliser.
+		if ( $wp_attachment_id ) {
+			$is_image           = 0 === strpos( $wp_attachment_mime, 'image/' );
+			$attachment_segment = array(
+				'type'          => $is_image ? 'input_image' : 'input_file',
+				'attachment_id' => $wp_attachment_id,
+			);
+
+			if ( ! $is_image ) {
+				// Provide a display_name for file-type segments so the AI receives
+				// the original filename rather than a numeric attachment ID.
+				$attached_file = get_attached_file( $wp_attachment_id );
+				if ( $attached_file ) {
+					$display_name = basename( $attached_file );
+					if ( '' !== $display_name ) {
+						$attachment_segment['display_name'] = $display_name;
+					}
+				}
+			}
+
+			$user_content = array( $attachment_segment );
+			if ( '' !== $message_text ) {
+				$user_content[] = array(
+					'type' => 'text',
+					'text' => $message_text,
+				);
+			}
+
+			$messages = array_merge(
+				$history_for_chat,
 				array(
-					'role'    => 'user',
-					'content' => $message_text,
-				),
-			)
-		);
+					array(
+						'role'    => 'user',
+						'content' => $user_content,
+					),
+				)
+			);
+		} else {
+			$messages = array_merge(
+				$history_for_chat,
+				array(
+					array(
+						'role'    => 'user',
+						'content' => $message_text,
+					),
+				)
+			);
+		}
 		// --- End conversation history ---
 
 		// Call the internal chat REST endpoint.
@@ -3899,6 +3950,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				array(
 					'assistant_id'        => $assistant_id,
 					'message_text'        => $ai_msg_text,
+					// Pass the sideloaded attachment so the AI reply job can build
+					// a multipart message content array (input_image / input_file)
+					// and the assistant can actually see/process the uploaded file.
+					'wp_attachment_id'    => $attachment_id,
+					'wp_attachment_mime'  => $mime_type,
 					'chat_id'             => $chat_id,
 					'from_id'             => $from_id,
 					'connection_id'       => $connection_id,
@@ -4112,6 +4168,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'name'     => sanitize_file_name( $original_filename ),
 			'tmp_name' => $tmp_file,
 		);
+
+		// Setting the 'type' key passes a MIME hint to wp_handle_sideload() so
+		// that WordPress file-type validation does not reject files whose
+		// extensions are absent or ambiguous (common with Telegram's opaque
+		// file paths like photos/file_0 or documents/file_10).
+		if ( '' !== $mime_type ) {
+			$file_array['type'] = $mime_type;
+		}
 
 		// Sideload: move the temp file into the uploads directory, create an
 		// attachment post, and generate image sub-sizes. Post ID 0 means the
