@@ -89,6 +89,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 		$type                = ! empty( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : 'all';
 		$include_values      = isset( $arguments['include_values'] ) ? (bool) $arguments['include_values'] : true;
 		$include_maintenance = isset( $arguments['include_maintenance'] ) ? (bool) $arguments['include_maintenance'] : true;
+		$export_xlsx         = ! empty( $arguments['export_xlsx'] );
 
 		// Build query args.
 		$query_args = array(
@@ -166,7 +167,7 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 			wp_reset_postdata();
 		}
 
-		return array(
+		$result = array(
 			'success'       => true,
 			'total_items'   => count( $equipment_items ),
 			'total_value'   => $include_values ? $total_value : null,
@@ -175,6 +176,18 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 			'equipment'     => $equipment_items,
 			'report_date'   => current_time( 'Y-m-d H:i:s' ),
 		);
+
+		// ── XLSX export ────────────────────────────────────────────────────────
+		if ( $export_xlsx ) {
+			$xlsx = $this->export_inventory_xlsx( $equipment_items, $include_values );
+			if ( is_wp_error( $xlsx ) ) {
+				$result['inventory_xlsx_error'] = $xlsx->get_error_message();
+			} else {
+				$result['inventory_xlsx'] = $xlsx;
+			}
+		}
+
+		return $result;
 	}
 
 	/**
