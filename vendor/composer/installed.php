@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
         'version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
-        'reference' => '4c9bc164b4b1a5b635cefb129378ef38cb960070',
+        'reference' => 'ebc76cf0b9e21dfd96f85b453e454117941b61a0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
             'version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
-            'reference' => '4c9bc164b4b1a5b635cefb129378ef38cb960070',
+            'reference' => 'ebc76cf0b9e21dfd96f85b453e454117941b61a0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
