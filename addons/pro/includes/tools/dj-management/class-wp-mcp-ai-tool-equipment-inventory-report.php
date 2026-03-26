@@ -67,6 +67,11 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 					'description' => __( 'Include maintenance information (optional, defaults to true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
+				'export_xlsx'         => array(
+					'type'        => 'boolean',
+					'description' => __( 'Export the inventory list as an XLSX file URL (requires phpoffice/phpspreadsheet).', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
 			),
 			'additionalProperties' => false,
 		);
@@ -170,6 +175,72 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 			'equipment'     => $equipment_items,
 			'report_date'   => current_time( 'Y-m-d H:i:s' ),
 		);
+	}
+
+	/**
+	 * Export equipment inventory to XLSX using phpoffice/phpspreadsheet.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $equipment_items List of equipment items.
+	 * @param bool  $include_values  Whether to include purchase values.
+	 * @return string|WP_Error Public file URL or WP_Error on failure.
+	 */
+	private function export_inventory_xlsx( array $equipment_items, $include_values ) {
+		$autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+		if ( ! file_exists( $autoload ) ) {
+			return new WP_Error( 'phpspreadsheet_missing', __( 'phpoffice/phpspreadsheet vendor autoloader not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+		require_once $autoload;
+		if ( ! class_exists( '\PhpOffice\PhpSpreadsheet\Spreadsheet' ) ) {
+			return new WP_Error( 'phpspreadsheet_missing', __( 'PhpSpreadsheet class not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+		$sheet       = $spreadsheet->getActiveSheet();
+		$sheet->setTitle( 'Equipment Inventory' );
+
+		$headers = array( __( 'Name', 'mcp-ai-wpoos-pro' ), __( 'Type', 'mcp-ai-wpoos-pro' ), __( 'Status', 'mcp-ai-wpoos-pro' ), __( 'Serial #', 'mcp-ai-wpoos-pro' ) );
+		if ( $include_values ) {
+			$headers[] = __( 'Purchase Price', 'mcp-ai-wpoos-pro' );
+		}
+		$headers[] = __( 'Last Maintenance', 'mcp-ai-wpoos-pro' );
+
+		$col = 'A';
+		foreach ( $headers as $header ) {
+			$sheet->setCellValue( $col . '1', $header );
+			++$col;
+		}
+		$sheet->getStyle( 'A1:' . chr( ord( 'A' ) + count( $headers ) - 1 ) . '1' )->getFont()->setBold( true );
+
+		$row = 2;
+		foreach ( $equipment_items as $item ) {
+			$col = 'A';
+			$sheet->setCellValue( $col++ . $row, $item['name'] ?? '' );
+			$sheet->setCellValue( $col++ . $row, $item['type'] ?? '' );
+			$sheet->setCellValue( $col++ . $row, $item['status'] ?? '' );
+			$sheet->setCellValue( $col++ . $row, $item['serial_number'] ?? '' );
+			if ( $include_values ) {
+				$sheet->setCellValue( $col++ . $row, $item['purchase_price'] ?? '' );
+			}
+			$sheet->setCellValue( $col . $row, $item['last_maintenance'] ?? '' );
+			++$row;
+		}
+
+		foreach ( range( 'A', chr( ord( 'A' ) + count( $headers ) - 1 ) ) as $c ) {
+			$sheet->getColumnDimension( $c )->setAutoSize( true );
+		}
+
+		$upload_dir = wp_upload_dir();
+		$dir        = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/exports/';
+		wp_mkdir_p( $dir );
+		$filename = 'dj-inventory-' . uniqid( '', true ) . '.xlsx';
+		$filepath = $dir . $filename;
+
+		$writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter( $spreadsheet, 'Xlsx' );
+		$writer->save( $filepath );
+
+		return trailingslashit( $upload_dir['baseurl'] ) . 'mcp-ai-wpoos/exports/' . $filename;
 	}
 
 	/**
