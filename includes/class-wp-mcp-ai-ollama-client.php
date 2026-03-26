@@ -390,13 +390,58 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
 
+				// Base64-encoded images for Ollama vision models (e.g. llava).
+				$images = array();
+
 				if ( is_array( $content ) ) {
 					$text_parts = array();
 					foreach ( $content as $segment ) {
 						if ( is_string( $segment ) ) {
 							$text_parts[] = $segment;
-						} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
-							$text_parts[] = $segment['text'];
+						} elseif ( is_array( $segment ) ) {
+							$seg_type = isset( $segment['type'] ) ? $segment['type'] : '';
+
+							if ( isset( $segment['text'] ) ) {
+								$text_parts[] = $segment['text'];
+							} elseif ( 'input_image' === $seg_type || 'image_url' === $seg_type || 'image_file' === $seg_type ) {
+								// Try to supply image data for Ollama vision models.
+								$b64 = $this->get_image_base64_from_segment( $segment );
+								if ( '' !== $b64 ) {
+									$images[] = $b64;
+								} else {
+									// Fallback: include a URL reference in the text.
+									$img_url = '';
+									if ( ! empty( $segment['image_url']['url'] ) ) {
+										$img_url = $segment['image_url']['url'];
+									} elseif ( ! empty( $segment['url'] ) ) {
+										$img_url = $segment['url'];
+									}
+									if ( '' !== $img_url ) {
+										$img_name     = ! empty( $segment['file_name'] ) ? $segment['file_name'] : 'Image';
+										$text_parts[] = '[' . $img_name . ': ' . esc_url_raw( $img_url ) . ']';
+									}
+								}
+							} elseif ( 'input_file' === $seg_type || 'file' === $seg_type ) {
+								// Include a reference to the file in the text.
+								$file_name = '';
+								if ( ! empty( $segment['display_name'] ) ) {
+									$file_name = $segment['display_name'];
+								} elseif ( ! empty( $segment['file_name'] ) ) {
+									$file_name = $segment['file_name'];
+								} elseif ( ! empty( $segment['name'] ) ) {
+									$file_name = $segment['name'];
+								}
+								if ( '' !== $file_name ) {
+									$file_name = sanitize_text_field( $file_name );
+								} else {
+									$file_name = 'File';
+								}
+								if ( ! empty( $segment['url'] ) ) {
+									$text_parts[] = '[File: ' . $file_name . ' - ' . esc_url_raw( $segment['url'] ) . ']';
+								} else {
+									$text_parts[] = '[File: ' . $file_name . ']';
+								}
+							}
 						}
 					}
 					$content = implode( "\n", $text_parts );
@@ -413,10 +458,16 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					$role      = 'user';
 				}
 
-				$ollama_messages[] = array(
+				$ollama_message = array(
 					'role'    => $role,
 					'content' => $content,
 				);
+
+				if ( ! empty( $images ) ) {
+					$ollama_message['images'] = $images;
+				}
+
+				$ollama_messages[] = $ollama_message;
 			}
 
 			// Check if streaming is requested via options.
@@ -549,6 +600,75 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			return $payload;
+		}
+
+		/**
+		 * Get base64-encoded image data from a message segment for Ollama vision models.
+		 *
+		 * Reads from the local WordPress attachment file when an attachment_id is
+		 * available (fastest path), then falls back to downloading the image from
+		 * the URL provided in the segment.
+		 *
+		 * @param array $segment {
+		 *     Message segment of type input_image / image_url.
+		 *
+		 *     @type int    $attachment_id Optional. WordPress attachment post ID (fastest path).
+		 *     @type array  $image_url     Optional. Array with 'url' key (e.g. from OpenAI-style content).
+		 *     @type string $url           Optional. Direct image URL fallback.
+		 *     @type string $file_name     Optional. Filename for logging context.
+		 * }
+		 * @return string Base64-encoded image data, or empty string on failure.
+		 */
+		protected function get_image_base64_from_segment( array $segment ) {
+			// Prefer local file read via attachment_id (fastest, no HTTP overhead).
+			if ( ! empty( $segment['attachment_id'] ) ) {
+				$attachment_id = absint( $segment['attachment_id'] );
+				$file_path     = get_attached_file( $attachment_id );
+				if ( $file_path && file_exists( $file_path ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local file; not a remote URL.
+					$data = file_get_contents( $file_path );
+					if ( false !== $data && '' !== $data ) {
+						// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary image for Ollama API.
+						return base64_encode( $data );
+					}
+				}
+			}
+
+			// Fall back to downloading from URL if available.
+			$url = '';
+			if ( ! empty( $segment['image_url']['url'] ) ) {
+				$url = esc_url_raw( $segment['image_url']['url'] );
+			} elseif ( ! empty( $segment['url'] ) ) {
+				$url = esc_url_raw( $segment['url'] );
+			}
+
+			if ( '' === $url ) {
+				return '';
+			}
+
+			$response = wp_remote_get(
+				$url,
+				array( 'timeout' => 30 )
+			);
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Ollama: failed to download image for vision model.',
+					array(
+						'url'   => $url,
+						'error' => $response->get_error_message(),
+					)
+				);
+				return '';
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			if ( '' === $body ) {
+				return '';
+			}
+
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary image for Ollama API.
+			return base64_encode( $body );
 		}
 
 		/**
