@@ -56,6 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		const TYPE_WORKFLOW          = 'workflow';
 		const TYPE_ASSISTANT_RUN     = 'assistant_run';
 		const TYPE_CHANNEL_BROADCAST = 'channel_broadcast';
+		const TYPE_WORKFLOW_BUILDER  = 'workflow_builder';
 
 		/**
 		 * Bootstrap hooks for the schedule manager.
@@ -145,7 +146,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 */
 		public static function create_schedule( array $data, $user_id = 0 ) {
 			// Determine schedule type.
-			$valid_types   = array( self::TYPE_TASK, self::TYPE_WORKFLOW, self::TYPE_ASSISTANT_RUN, self::TYPE_CHANNEL_BROADCAST );
+			$valid_types   = array( self::TYPE_TASK, self::TYPE_WORKFLOW, self::TYPE_ASSISTANT_RUN, self::TYPE_CHANNEL_BROADCAST, self::TYPE_WORKFLOW_BUILDER );
 			$schedule_type = isset( $data['schedule_type'] ) && in_array( $data['schedule_type'], $valid_types, true )
 				? $data['schedule_type']
 				: self::TYPE_TASK;
@@ -234,6 +235,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					'credentials' => $broadcast_config['credentials'],
 				);
 				$hook = 'wp_mcp_ai_pro_channel_broadcast';
+			} elseif ( self::TYPE_WORKFLOW_BUILDER === $schedule_type ) {
+				// Validate workflow builder reference.
+				$workflow_builder_id = isset( $data['workflow_builder_id'] ) ? sanitize_key( $data['workflow_builder_id'] ) : '';
+				if ( '' === $workflow_builder_id ) {
+					return new WP_Error( 'missing_workflow_builder_id', __( 'A workflow_builder_id is required for workflow_builder-type schedules.', 'mcp-ai-wpoos-pro' ) );
+				}
+				// Verify the workflow exists in the Pro Workflow Builder option store.
+				$saved_workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
+				if ( ! is_array( $saved_workflows ) || ! isset( $saved_workflows[ $workflow_builder_id ] ) ) {
+					return new WP_Error( 'workflow_builder_not_found', __( 'The specified Workflow Builder workflow was not found.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$data['workflow_builder_id'] = $workflow_builder_id;
+				$hook                        = 'wp_mcp_ai_pro_workflow_builder_run';
 			}
 
 			$schedule = isset( $data['schedule'] ) ? sanitize_key( $data['schedule'] ) : 'single';
@@ -265,8 +279,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$retry_delay  = isset( $data['retry_delay'] ) ? max( 60, (int) $data['retry_delay'] ) : 300;
 			$name         = isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $hook;
 			$description  = isset( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
+
 			$notify          = isset( $data['notify_on_failure'] ) ? (bool) $data['notify_on_failure'] : false;
 			$notify_email    = isset( $data['notify_email'] ) ? sanitize_email( $data['notify_email'] ) : get_option( 'admin_email' );
+
+			// Symfony Validator: enforce RFC-compliant email when a custom address is supplied.
+			if ( $notify && isset( $data['notify_email'] ) && '' !== $data['notify_email']
+				&& class_exists( 'Symfony\Component\Validator\Validation' )
+			) {
+				$validator  = \Symfony\Component\Validator\Validation::createValidator();
+				$violations = $validator->validate(
+					$notify_email,
+					array( new \Symfony\Component\Validator\Constraints\Email(
+						array( 'message' => 'The notify_email "{{ value }}" is not a valid email address.' )
+					) )
+				);
+				if ( count( $violations ) > 0 ) {
+					return new WP_Error(
+						'invalid_notify_email',
+						(string) $violations->get( 0 )->getMessage()
+					);
+				}
+			}
 			// notify_channels: array of channel slugs (telegram, slack, etc.) to send failure alerts via unified_channel_broadcast.
 			$notify_channels             = isset( $data['notify_channels'] ) && is_array( $data['notify_channels'] )
 				? array_map( 'sanitize_key', $data['notify_channels'] )
@@ -294,7 +328,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'args'              => $args,
 				'workflow_steps'    => isset( $data['workflow_steps'] ) ? $data['workflow_steps'] : array(),
 				'assistant_config'  => isset( $data['assistant_config'] ) ? $data['assistant_config'] : array(),
-				'broadcast_config'  => isset( $data['broadcast_config'] ) ? $data['broadcast_config'] : array(),
+				'broadcast_config'      => isset( $data['broadcast_config'] ) ? $data['broadcast_config'] : array(),
+				'workflow_builder_id'   => isset( $data['workflow_builder_id'] ) ? $data['workflow_builder_id'] : '',
 				'schedule'          => $schedule,
 				'timestamp'         => $timestamp,
 				'enabled'           => $enabled,
@@ -627,6 +662,138 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Export all enabled schedules as an RFC 5545 iCalendar (.ics) string.
+		 *
+		 * Each enabled schedule becomes a VEVENT whose DTSTART is the next WP-cron
+		 * run time (or now() for single/one-shot schedules that have already fired).
+		 * Uses the `wp_mcp_ai_ics_generate_calendar` filter so the Pro ical-generator
+		 * Node.js service can produce a fully compliant file when available.
+		 *
+		 * @param array $filters Optional. Same filter keys as get_schedules().
+		 * @return string ICS content string.
+		 */
+		public static function get_schedules_ical( array $filters = array() ) {
+			$filters['enabled'] = true;
+			$schedules          = self::get_schedules( $filters );
+
+			$events = array();
+			foreach ( $schedules as $schedule ) {
+				$next = self::get_next_run_time( $schedule['id'] );
+				$ts   = $next ? (int) $next : time();
+
+				$events[] = array(
+					'title'       => $schedule['name'],
+					'description' => isset( $schedule['description'] ) ? $schedule['description'] : '',
+					'start'       => $ts,
+					'end'         => $ts + 300, // 5-minute duration placeholder.
+					'uid'         => 'nvoos-schedule-' . $schedule['id'] . '@' . wp_parse_url( get_home_url(), PHP_URL_HOST ),
+					'type'        => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
+				);
+			}
+
+			// Allow the ical-generator Node.js service to produce a compliant ICS.
+			$result = apply_filters(
+				'wp_mcp_ai_ics_generate_calendar',
+				false,
+				array(
+					'calendar_name' => get_bloginfo( 'name' ) . ' — Schedules',
+					'events'        => $events,
+				)
+			);
+
+			if ( is_array( $result ) && ! empty( $result['content'] ) ) {
+				return $result['content'];
+			}
+
+			// Pure-PHP RFC 5545 fallback.
+			$crlf = "\r\n";
+			$ics   = 'BEGIN:VCALENDAR' . $crlf;
+			$ics  .= 'VERSION:2.0' . $crlf;
+			$ics  .= 'PRODID:-//NV Digital Solutions//NV oOS Schedule Manager//EN' . $crlf;
+			$ics  .= 'CALSCALE:GREGORIAN' . $crlf;
+			$ics  .= 'X-WR-CALNAME:' . str_replace( array( "\r", "\n" ), ' ', get_bloginfo( 'name' ) ) . ' Schedules' . $crlf;
+
+			foreach ( $events as $event ) {
+				$dt_start  = gmdate( 'Ymd\THis\Z', $event['start'] );
+				$dt_end    = gmdate( 'Ymd\THis\Z', $event['end'] );
+				$dt_stamp  = gmdate( 'Ymd\THis\Z' );
+				$summary   = str_replace( array( "\r", "\n", ',' ), array( ' ', ' ', '\,' ), $event['title'] );
+				$desc_raw  = trim( $event['description'] . ' [' . strtoupper( $event['type'] ) . ']' );
+				$desc      = str_replace( array( "\r", "\n", ',' ), array( ' ', '\n', '\,' ), $desc_raw );
+
+				$ics .= 'BEGIN:VEVENT' . $crlf;
+				$ics .= 'UID:' . $event['uid'] . $crlf;
+				$ics .= 'DTSTAMP:' . $dt_stamp . $crlf;
+				$ics .= 'DTSTART:' . $dt_start . $crlf;
+				$ics .= 'DTEND:' . $dt_end . $crlf;
+				$ics .= 'SUMMARY:' . $summary . $crlf;
+				if ( $desc ) {
+					$ics .= 'DESCRIPTION:' . $desc . $crlf;
+				}
+				$ics .= 'END:VEVENT' . $crlf;
+			}
+
+			$ics .= 'END:VCALENDAR' . $crlf;
+
+			return $ics;
+		}
+
+		/**
+		 * Export run history for a schedule as a CSV string.
+		 *
+		 * Uses WP_MCP_AI_Contact_Importer_Service (csv-stringify NPM package) when
+		 * available; falls back to a pure-PHP fputcsv implementation.
+		 *
+		 * @param string $schedule_id Schedule ID.
+		 * @param int    $limit       Maximum rows (0 = all). Default 50.
+		 * @return string CSV content.
+		 */
+		public static function get_history_csv( $schedule_id, $limit = 50 ) {
+			$schedule = self::get_schedule( $schedule_id );
+			$runs     = self::get_run_history( $schedule_id, $limit );
+
+			$rows = array();
+			foreach ( $runs as $run ) {
+				$rows[] = array(
+					'schedule_name' => $schedule ? $schedule['name'] : $schedule_id,
+					'schedule_id'   => $schedule_id,
+					'status'        => $run['status'],
+					'start_time'    => isset( $run['start_time'] ) ? wp_date( 'Y-m-d H:i:s', $run['start_time'] ) : '',
+					'duration_s'    => isset( $run['duration'] ) ? $run['duration'] : '',
+					'error'         => isset( $run['error'] ) ? $run['error'] : '',
+				);
+			}
+
+			// Try csv-stringify via WP_MCP_AI_Contact_Importer_Service.
+			$service_path = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-contact-importer-service.php'
+				: '';
+			if ( $service_path && file_exists( $service_path ) && ! class_exists( 'WP_MCP_AI_Contact_Importer_Service' ) ) {
+				require_once $service_path;
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Contact_Importer_Service' ) ) {
+				$svc    = new WP_MCP_AI_Contact_Importer_Service();
+				$result = $svc->generate_csv( $rows, array( 'header' => true, 'delimiter' => ',' ) );
+				if ( ! is_wp_error( $result ) && is_string( $result ) ) {
+					return $result;
+				}
+			}
+
+			// Pure-PHP fputcsv fallback.
+			$handle = fopen( 'php://temp', 'r+' );
+			fputcsv( $handle, array( 'schedule_name', 'schedule_id', 'status', 'start_time', 'duration_s', 'error' ) );
+			foreach ( $rows as $row ) {
+				fputcsv( $handle, array_values( $row ) );
+			}
+			rewind( $handle );
+			$csv = stream_get_contents( $handle );
+			fclose( $handle );
+
+			return $csv;
+		}
+
+		/**
 		 * Clear run history for a schedule.
 		 *
 		 * @param string $schedule_id Schedule ID.
@@ -720,6 +887,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 					case self::TYPE_CHANNEL_BROADCAST:
 						$result = self::dispatch_channel_broadcast( $schedule, $schedule_id );
+						if ( is_wp_error( $result ) ) {
+							$success   = false;
+							$error_msg = $result->get_error_message();
+						}
+						break;
+
+					case self::TYPE_WORKFLOW_BUILDER:
+						$result = self::dispatch_workflow_builder( $schedule, $schedule_id );
 						if ( is_wp_error( $result ) ) {
 							$success   = false;
 							$error_msg = $result->get_error_message();
@@ -1203,23 +1378,78 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$plain .= "\n\n";
 			$plain .= sprintf( __( 'Manage schedules: %s', 'mcp-ai-wpoos-pro' ), $manage_url );
 
-			// Try Nodemailer for a richer HTML email when the service is available.
+			// ── MJML: compile a responsive HTML email template ───────────────────
+			$html = null;
+			if ( class_exists( 'WP_MCP_AI_MJML_Service' ) ) {
+				$mjml_service = new WP_MCP_AI_MJML_Service();
+				if ( $mjml_service->is_available() ) {
+					$desc_row = '';
+					if ( ! empty( $schedule['description'] ) ) {
+						$desc_row = '<mj-section padding="0 24px"><mj-column><mj-text font-size="14px" color="#555">'
+							. '<strong>' . esc_html__( 'Description', 'mcp-ai-wpoos-pro' ) . ':</strong> '
+							. esc_html( $schedule['description'] )
+							. '</mj-text></mj-column></mj-section>';
+					}
+
+					$mjml_src  = '<mjml><mj-head>';
+					$mjml_src .= '<mj-attributes><mj-all font-family="Arial, sans-serif" /></mj-attributes>';
+					$mjml_src .= '</mj-head><mj-body background-color="#f4f4f4">';
+
+					// Header.
+					$mjml_src .= '<mj-section background-color="#cc1818" padding="20px 24px">';
+					$mjml_src .= '<mj-column><mj-text font-size="20px" color="#ffffff" font-weight="bold">';
+					/* translators: %s: schedule name */
+					$mjml_src .= esc_html( sprintf( __( '⚠ %s — Failed', 'mcp-ai-wpoos-pro' ), $schedule['name'] ) );
+					$mjml_src .= '</mj-text></mj-column></mj-section>';
+
+					// Details table.
+					$mjml_src .= '<mj-section background-color="#ffffff" padding="20px 24px">';
+					$mjml_src .= '<mj-column>';
+					$mjml_src .= '<mj-table font-size="14px" cell-padding="6px 10px">';
+					$mjml_src .= '<tr style="background:#f9f9f9"><td><strong>' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( get_bloginfo( 'name' ) ) . '</td></tr>';
+					$mjml_src .= '<tr><td><strong>' . esc_html__( 'Type', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $type_label ) . '</td></tr>';
+					$mjml_src .= '<tr style="background:#f9f9f9;color:#cc1818"><td><strong>' . esc_html__( 'Error', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $error_msg ) . '</td></tr>';
+					$mjml_src .= '</mj-table>';
+					$mjml_src .= '</mj-column></mj-section>';
+
+					$mjml_src .= $desc_row;
+
+					// CTA button.
+					$mjml_src .= '<mj-section background-color="#ffffff" padding="0 24px 20px">';
+					$mjml_src .= '<mj-column>';
+					$mjml_src .= '<mj-button background-color="#2271b1" color="#ffffff" href="' . esc_url( $manage_url ) . '">';
+					$mjml_src .= esc_html__( 'Manage Schedules', 'mcp-ai-wpoos-pro' );
+					$mjml_src .= '</mj-button></mj-column></mj-section>';
+
+					$mjml_src .= '</mj-body></mjml>';
+
+					$compiled = $mjml_service->compile( $mjml_src, array( 'minify' => true ) );
+					if ( ! is_wp_error( $compiled ) && ! empty( $compiled ) ) {
+						$html = $compiled;
+					}
+				}
+			}
+
+			// ── Fallback HTML (no MJML) ──────────────────────────────────────────
+			if ( null === $html ) {
+				$html  = '<html><body style="font-family:sans-serif;color:#333">';
+				$html .= '<h2 style="color:#cc1818">' . esc_html( $schedule['name'] ) . ' — Failed</h2>';
+				$html .= '<table cellpadding="6" style="border-collapse:collapse;width:100%">';
+				$html .= '<tr><td><strong>' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( get_bloginfo( 'name' ) ) . '</td></tr>';
+				$html .= '<tr><td><strong>' . esc_html__( 'Type', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $type_label ) . '</td></tr>';
+				if ( ! empty( $schedule['description'] ) ) {
+					$html .= '<tr><td><strong>' . esc_html__( 'Description', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $schedule['description'] ) . '</td></tr>';
+				}
+				$html .= '<tr><td><strong>' . esc_html__( 'Error', 'mcp-ai-wpoos-pro' ) . '</strong></td><td style="color:#cc1818">' . esc_html( $error_msg ) . '</td></tr>';
+				$html .= '</table>';
+				$html .= '<p><a href="' . esc_url( $manage_url ) . '">' . esc_html__( 'Manage Schedules', 'mcp-ai-wpoos-pro' ) . '</a></p>';
+				$html .= '</body></html>';
+			}
+
+			// ── Nodemailer (HTML + plain-text) ───────────────────────────────────
 			if ( class_exists( 'WP_MCP_AI_Nodemailer_Service' ) ) {
 				$nodemailer = new WP_MCP_AI_Nodemailer_Service();
 				if ( $nodemailer->is_available() ) {
-					$html = '<html><body style="font-family:sans-serif;color:#333">';
-					$html .= '<h2 style="color:#cc1818">' . esc_html( $schedule['name'] ) . ' — Failed</h2>';
-					$html .= '<table cellpadding="6" style="border-collapse:collapse;width:100%">';
-					$html .= '<tr><td><strong>' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( get_bloginfo( 'name' ) ) . '</td></tr>';
-					$html .= '<tr><td><strong>' . esc_html__( 'Type', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $type_label ) . '</td></tr>';
-					if ( ! empty( $schedule['description'] ) ) {
-						$html .= '<tr><td><strong>' . esc_html__( 'Description', 'mcp-ai-wpoos-pro' ) . '</strong></td><td>' . esc_html( $schedule['description'] ) . '</td></tr>';
-					}
-					$html .= '<tr><td><strong>' . esc_html__( 'Error', 'mcp-ai-wpoos-pro' ) . '</strong></td><td style="color:#cc1818">' . esc_html( $error_msg ) . '</td></tr>';
-					$html .= '</table>';
-					$html .= '<p><a href="' . esc_url( $manage_url ) . '">' . esc_html__( 'Manage Schedules', 'mcp-ai-wpoos-pro' ) . '</a></p>';
-					$html .= '</body></html>';
-
 					$result = $nodemailer->send_email(
 						array(
 							'to'      => $to,
@@ -1233,15 +1463,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						return;
 					}
 
-					// Log that Nodemailer failed and fall through to wp_mail.
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-						WP_MCP_AI_Logger::log_event( 'warning', 'Nodemailer failed for schedule notification, falling back to wp_mail.', array( 'error' => $result->get_error_message() ) );
+						WP_MCP_AI_Logger::log_event(
+							'warning',
+							'Nodemailer failed for schedule notification, falling back to wp_mail.',
+							array( 'error' => $result->get_error_message() )
+						);
 					}
 				}
 			}
 
-			// Fallback: plain-text wp_mail().
-			wp_mail( $to, $subject, $plain );
+			// ── Final fallback: wp_mail with HTML headers ────────────────────────
+			wp_mail(
+				$to,
+				$subject,
+				$html,
+				array( 'Content-Type: text/html; charset=UTF-8' )
+			);
 		}
 
 		/**
@@ -1347,12 +1585,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @return array Schedules keyed by ID.
 		 */
 		protected static function load_schedules() {
-			$data = get_option( self::SCHEDULES_OPTION, array() );
-			return is_array( $data ) ? $data : array();
+			// Try Symfony-backed WP_MCP_AI_Cache_Helper (APCu / Redis / Filesystem).
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cached = WP_MCP_AI_Cache_Helper::get( 'pro_schedules' );
+				if ( false !== $cached && is_array( $cached ) ) {
+					return $cached;
+				}
+			}
+
+			$data      = get_option( self::SCHEDULES_OPTION, array() );
+			$schedules = is_array( $data ) ? $data : array();
+
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				WP_MCP_AI_Cache_Helper::set( 'pro_schedules', $schedules, 300 );
+			}
+
+			return $schedules;
 		}
 
 		/**
-		 * Persist schedules to the options table.
+		 * Persist schedules to the options table and invalidate the cache.
 		 *
 		 * @param array $schedules Schedules array to store.
 		 */
@@ -1364,6 +1616,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			} else {
 				update_option( self::SCHEDULES_OPTION, $schedules );
 			}
+
+			// Invalidate Symfony-backed cache so the next read re-fetches from DB.
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+				WP_MCP_AI_Cache_Helper::delete( 'pro_schedules' );
+			}
 		}
 
 		/**
@@ -1372,12 +1629,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 * @return array History keyed by schedule ID.
 		 */
 		protected static function load_history() {
-			$data = get_option( self::HISTORY_OPTION, array() );
-			return is_array( $data ) ? $data : array();
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cached = WP_MCP_AI_Cache_Helper::get( 'pro_schedule_history' );
+				if ( false !== $cached && is_array( $cached ) ) {
+					return $cached;
+				}
+			}
+
+			$data    = get_option( self::HISTORY_OPTION, array() );
+			$history = is_array( $data ) ? $data : array();
+
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				// Short TTL: history updates every run, so 60 s avoids stale data.
+				WP_MCP_AI_Cache_Helper::set( 'pro_schedule_history', $history, 60 );
+			}
+
+			return $history;
 		}
 
 		/**
-		 * Persist execution history to the options table.
+		 * Persist execution history to the options table and invalidate the cache.
 		 *
 		 * @param array $history History array to store.
 		 */
@@ -1388,6 +1659,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				add_option( self::HISTORY_OPTION, $history, '', 'no' );
 			} else {
 				update_option( self::HISTORY_OPTION, $history );
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+				WP_MCP_AI_Cache_Helper::delete( 'pro_schedule_history' );
 			}
 		}
 

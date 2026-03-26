@@ -123,6 +123,17 @@
 			$( document ).on( 'click', '#wp-mcp-ai-sm-clear-history-btn', function () {
 				self.clearHistory( self.activeId );
 			} );
+
+			// Export run history as CSV.
+			$( document ).on( 'click', '#wp-mcp-ai-sm-export-csv-btn', function () {
+				self.exportHistoryCsv( self.activeId );
+			} );
+
+			// Export all schedules as iCal.
+			$( document ).on( 'click', '#wp-mcp-ai-sm-export-ical', function ( e ) {
+				e.preventDefault();
+				self.exportIcal();
+			} );
 		},
 
 		/** ------------------------------------------------------------------ *
@@ -644,13 +655,19 @@
 		/** ------------------------------------------------------------------ *
 		 *  History modal
 		 * ------------------------------------------------------------------ */
+
+		/** @type {Chart|null} Active Chart.js instance for the history sparkline. */
+		_historyChart: null,
+
 		openHistoryModal: function ( id ) {
 			this.activeId = id;
 
-			const $modal = $( '#wp-mcp-ai-sm-history-modal' );
-			const $body  = $( '#wp-mcp-ai-sm-history-body' );
+			const $modal     = $( '#wp-mcp-ai-sm-history-modal' );
+			const $body      = $( '#wp-mcp-ai-sm-history-body' );
+			const $chartWrap = $modal.find( '.wp-mcp-ai-sm-history-chart-wrap' );
 
 			$body.html( '<span class="spinner is-active"></span>' );
+			$chartWrap.hide();
 			$modal.fadeIn( 200 );
 
 			this.ajax(
@@ -668,6 +685,60 @@
 						return;
 					}
 
+					// ── chart.js sparkline ─────────────────────────────────
+					if ( typeof window.Chart !== 'undefined' ) {
+						const labels  = history.map( function ( e ) { return e.time ? e.time.slice( 0, 16 ) : ''; } ).reverse();
+						const success = history.map( function ( e ) { return 'success' === e.status ? 1 : 0; } ).reverse();
+						const failure = history.map( function ( e ) { return 'failure' === e.status || 'failed' === e.status ? 1 : 0; } ).reverse();
+
+						// Destroy previous chart instance before re-creating.
+						if ( SM._historyChart ) {
+							SM._historyChart.destroy();
+							SM._historyChart = null;
+						}
+
+						const canvas = document.getElementById( 'wp-mcp-ai-sm-history-chart' );
+						if ( canvas ) {
+							SM._historyChart = new window.Chart( canvas, {
+								type: 'bar',
+								data: {
+									labels: labels,
+									datasets: [
+										{
+											label: wpMcpAiScheduleManager.strings.chartSuccess,
+											data: success,
+											backgroundColor: 'rgba(70,185,100,0.75)',
+											borderColor: 'rgba(70,185,100,1)',
+											borderWidth: 1,
+										},
+										{
+											label: wpMcpAiScheduleManager.strings.chartFailure,
+											data: failure,
+											backgroundColor: 'rgba(220,60,60,0.75)',
+											borderColor: 'rgba(220,60,60,1)',
+											borderWidth: 1,
+										},
+									],
+								},
+								options: {
+									responsive: true,
+									maintainAspectRatio: false,
+									plugins: {
+										legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+										tooltip: { mode: 'index', intersect: false },
+									},
+									scales: {
+										x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } },
+										y: { stacked: true, min: 0, max: 1, ticks: { stepSize: 1 } },
+									},
+								},
+							} );
+						}
+
+						$chartWrap.show();
+					}
+
+					// ── run history table ──────────────────────────────────
 					const rows = history.map( function ( entry ) {
 						const cls = 'success' === entry.status ? 'wp-mcp-ai-sm-status-success' : 'wp-mcp-ai-sm-status-failure';
 						const dur = entry.duration ? ' (' + parseFloat( entry.duration ).toFixed( 3 ) + 's)' : '';
@@ -703,6 +774,84 @@
 						return;
 					}
 					self.openHistoryModal( id );
+				}
+			);
+		},
+
+		/**
+		 * Export run history for the active schedule as a CSV file.
+		 * Uses the csv-stringify-backed PHP endpoint; triggers a browser download.
+		 *
+		 * @param {string} id Schedule ID.
+		 */
+		exportHistoryCsv: function ( id ) {
+			if ( ! id ) {
+				return;
+			}
+
+			this.ajax(
+				'wp_mcp_ai_sm_export_history_csv',
+				{ schedule_id: id },
+				function ( err, data ) {
+					if ( err ) {
+						alert( err );
+						return;
+					}
+
+					try {
+						const bytes    = atob( data.csv );
+						const arr      = new Uint8Array( bytes.length );
+						for ( let i = 0; i < bytes.length; i++ ) {
+							arr[ i ] = bytes.charCodeAt( i );
+						}
+						const blob = new Blob( [ arr ], { type: 'text/csv;charset=utf-8;' } );
+						const url  = URL.createObjectURL( blob );
+						const a    = document.createElement( 'a' );
+						a.href     = url;
+						a.download = data.filename || ( 'schedule-history-' + id + '.csv' );
+						document.body.appendChild( a );
+						a.click();
+						document.body.removeChild( a );
+						URL.revokeObjectURL( url );
+					} catch ( ex ) {
+						alert( wpMcpAiScheduleManager.strings.error );
+					}
+				}
+			);
+		},
+
+		/**
+		 * Export all enabled schedules as an iCalendar (.ics) file.
+		 * Uses the ical-generator-backed PHP endpoint; triggers a browser download.
+		 */
+		exportIcal: function () {
+			this.ajax(
+				'wp_mcp_ai_sm_export_ical',
+				{},
+				function ( err, data ) {
+					if ( err ) {
+						alert( err );
+						return;
+					}
+
+					try {
+						const bytes = atob( data.ics );
+						const arr   = new Uint8Array( bytes.length );
+						for ( let i = 0; i < bytes.length; i++ ) {
+							arr[ i ] = bytes.charCodeAt( i );
+						}
+						const blob = new Blob( [ arr ], { type: 'text/calendar;charset=utf-8;' } );
+						const url  = URL.createObjectURL( blob );
+						const a    = document.createElement( 'a' );
+						a.href     = url;
+						a.download = data.filename || 'nvoos-schedules.ics';
+						document.body.appendChild( a );
+						a.click();
+						document.body.removeChild( a );
+						URL.revokeObjectURL( url );
+					} catch ( ex ) {
+						alert( wpMcpAiScheduleManager.strings.error );
+					}
 				}
 			);
 		},
@@ -831,6 +980,12 @@
 		closeModals: function () {
 			$( '.wp-mcp-ai-sm-modal' ).fadeOut( 150 );
 			this.activeId = null;
+
+			// Destroy chart.js instance when the history modal closes.
+			if ( SM._historyChart ) {
+				SM._historyChart.destroy();
+				SM._historyChart = null;
+			}
 		},
 
 		/** Safe HTML escape */

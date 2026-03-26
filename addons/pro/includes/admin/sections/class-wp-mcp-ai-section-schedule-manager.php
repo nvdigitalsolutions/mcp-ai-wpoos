@@ -40,6 +40,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		add_action( 'wp_ajax_wp_mcp_ai_sm_trigger_schedule',   array( $this, 'ajax_trigger_schedule' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_get_history',        array( $this, 'ajax_get_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_clear_history',      array( $this, 'ajax_clear_history' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_export_history_csv', array( $this, 'ajax_export_history_csv' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_export_ical',        array( $this, 'ajax_export_ical' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -131,10 +133,23 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			WP_MCP_AI_PRO_VERSION
 		);
 
+		// chart.js — used for the run-history sparkline in the history modal.
+		if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+			WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+		} elseif ( file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' ) ) {
+			wp_enqueue_script(
+				'chartjs',
+				WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js',
+				array(),
+				filemtime( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' ),
+				true
+			);
+		}
+
 		wp_enqueue_script(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/js/schedule-manager.js',
-			array( 'jquery', 'wp-util' ),
+			array( 'jquery', 'wp-util', 'chartjs' ),
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
@@ -178,6 +193,11 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'disabled'        => __( 'Disabled', 'mcp-ai-wpoos-pro' ),
 					'addStep'         => __( '+ Add Step', 'mcp-ai-wpoos-pro' ),
 					'removeStep'      => __( 'Remove', 'mcp-ai-wpoos-pro' ),
+					'exportCsv'       => __( 'Export CSV', 'mcp-ai-wpoos-pro' ),
+					'exportIcal'      => __( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ),
+					'exportIcalTitle' => __( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ),
+					'chartSuccess'    => __( 'Success', 'mcp-ai-wpoos-pro' ),
+					'chartFailure'    => __( 'Failure', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -232,6 +252,10 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<span class="dashicons dashicons-update"></span>
 						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
+					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>">
+						<span class="dashicons dashicons-calendar-alt"></span>
+						<?php esc_html_e( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
 				</div>
 			</div>
 
@@ -268,12 +292,19 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<h4 id="wp-mcp-ai-sm-history-modal-title"><?php esc_html_e( 'Run History', 'mcp-ai-wpoos-pro' ); ?></h4>
 						<button type="button" class="wp-mcp-ai-sm-modal-close" aria-label="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos-pro' ); ?>">&times;</button>
 					</div>
+					<div class="wp-mcp-ai-sm-history-chart-wrap" style="padding:12px 16px 0;display:none;">
+						<canvas id="wp-mcp-ai-sm-history-chart" height="60" aria-label="<?php esc_attr_e( 'Run history chart', 'mcp-ai-wpoos-pro' ); ?>" role="img"></canvas>
+					</div>
 					<div class="wp-mcp-ai-sm-modal-body" id="wp-mcp-ai-sm-history-body">
 						<span class="spinner is-active"></span>
 					</div>
 					<div class="wp-mcp-ai-sm-modal-footer">
 						<button type="button" class="button button-link-delete" id="wp-mcp-ai-sm-clear-history-btn">
 							<?php esc_html_e( 'Clear History', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<button type="button" class="button" id="wp-mcp-ai-sm-export-csv-btn">
+							<span class="dashicons dashicons-download" style="margin-top:3px;"></span>
+							<?php esc_html_e( 'Export CSV', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
 						<button type="button" class="button" id="wp-mcp-ai-sm-history-modal-close-btn">
 							<?php esc_html_e( 'Close', 'mcp-ai-wpoos-pro' ); ?>
@@ -820,5 +851,65 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		WP_MCP_AI_Pro_Schedule_Manager::clear_run_history( $schedule_id );
 
 		wp_send_json_success( array( 'message' => __( 'History cleared.', 'mcp-ai-wpoos-pro' ) ) );
+	}
+
+	/**
+	 * AJAX: Export run history for a schedule as a CSV download.
+	 *
+	 * Uses WP_MCP_AI_Pro_Schedule_Manager::get_history_csv() which leverages the
+	 * csv-stringify NPM package via WP_MCP_AI_Contact_Importer_Service when
+	 * available, falling back to pure-PHP fputcsv.
+	 */
+	public function ajax_export_history_csv() {
+		if ( ! $this->verify_request() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
+
+		if ( ! $schedule_id ) {
+			wp_send_json_error( array( 'message' => __( 'Missing schedule_id.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$csv      = WP_MCP_AI_Pro_Schedule_Manager::get_history_csv( $schedule_id, 50 );
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $schedule_id );
+		$filename = 'schedule-history-' . sanitize_file_name( $schedule_id ) . '-' . gmdate( 'Ymd-His' ) . '.csv';
+
+		// Return as base64 data URI so JS can trigger a browser download without a full page load.
+		wp_send_json_success(
+			array(
+				'csv'      => base64_encode( $csv ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- safe transport encoding
+				'filename' => $filename,
+				'name'     => $schedule ? $schedule['name'] : $schedule_id,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: Export all enabled schedules as an iCalendar (.ics) file download.
+	 *
+	 * Uses WP_MCP_AI_Pro_Schedule_Manager::get_schedules_ical() which invokes the
+	 * ical-generator Node.js service via wp_mcp_ai_ics_generate_calendar filter
+	 * when available, falling back to a pure-PHP RFC 5545 implementation.
+	 */
+	public function ajax_export_ical() {
+		if ( ! $this->verify_request() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+
+		$ics      = WP_MCP_AI_Pro_Schedule_Manager::get_schedules_ical();
+		$filename = 'nvoos-schedules-' . gmdate( 'Ymd-His' ) . '.ics';
+
+		wp_send_json_success(
+			array(
+				'ics'      => base64_encode( $ics ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- safe transport encoding
+				'filename' => $filename,
+			)
+		);
 	}
 }
