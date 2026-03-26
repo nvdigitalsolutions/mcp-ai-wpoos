@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/build-canvas-plugin',
-        'version' => 'dev-copilot/build-canvas-plugin',
-        'reference' => '0e5bec2a9876ec5510f629e58bd8e7053aba4708',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
+        'version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
+        'reference' => 'ebc76cf0b9e21dfd96f85b453e454117941b61a0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/build-canvas-plugin',
-            'version' => 'dev-copilot/build-canvas-plugin',
-            'reference' => '0e5bec2a9876ec5510f629e58bd8e7053aba4708',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
+            'version' => 'dev-copilot/rebuild-all-zips-with-script-bcb0165c-5a8c-46cd-87bf-22af3764311f',
+            'reference' => 'ebc76cf0b9e21dfd96f85b453e454117941b61a0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
