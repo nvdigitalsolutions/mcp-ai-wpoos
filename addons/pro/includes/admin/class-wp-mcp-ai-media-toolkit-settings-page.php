@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settings-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-hints.php';
 
 /**
  * Media Toolkit Settings Page Class
@@ -768,7 +769,7 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				'label'        => 'Canvas',
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
-				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+				'install_hint' => WP_MCP_AI_Node_Package_Hints::get_canvas_install_hint(),
 			),
 
 			// Data Visualization.

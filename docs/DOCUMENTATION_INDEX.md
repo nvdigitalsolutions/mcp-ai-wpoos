@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 19, 2026  
-**Plugin Version:** 1.1.4  
+**Last Updated:** March 26, 2026  
+**Plugin Version:** 1.1.5  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
@@ -1101,6 +1101,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[features/pro-schedule-manager.md](features/pro-schedule-manager.md)** ⭐ **NEW (Mar 2026)** | **Pro Schedule Manager** — 5 schedule types (task / workflow / assistant_run / channel_broadcast / workflow_builder), Symfony Cache & Validator, MJML email, ical + CSV export, chart.js sparkline, retry logic, JetEngine CCT history, 6 AI tools, full admin UI | Developers/Admins |
 | **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
 | [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |

@@ -150,6 +150,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $pro_providers_file;
 		}
 
+		// Load Node Package install hints helper (used by multiple settings pages).
+		$node_hints_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-hints.php';
+		if ( file_exists( $node_hints_file ) ) {
+			require_once $node_hints_file;
+		}
+
 		// Load Pro Packages Settings Page (Node.js package status).
 		$pro_packages_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php';
 		if ( file_exists( $pro_packages_page ) ) {
@@ -168,6 +174,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		if ( file_exists( $workflow_builder_file ) ) {
 			require_once $workflow_builder_file;
 			// Note: Class instantiates itself at the bottom of the file.
+		}
+
+		// Load Pro Schedule Manager section.
+		$schedule_manager_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
+		if ( file_exists( $schedule_manager_file ) ) {
+			require_once $schedule_manager_file;
 		}
 	}
 }
@@ -721,6 +733,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_All_Export'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-export.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php',
 			'WP_MCP_AI_Pro_Tool_Delete_All_Import'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-import.php',
+			// Pro Schedule Manager tools.
+			'WP_MCP_AI_Pro_Tool_Create_Pro_Schedule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_Update_Pro_Schedule'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-update-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_Delete_Pro_Schedule'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-delete-pro-schedule.php',
+			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
+			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
 			// iSAMS School Management System tool.
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
@@ -1700,6 +1719,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['estimate_construction_cost']     = 'external-tools';
 			$pro_tools['generate_construction_timeline'] = 'external-tools';
 		}
+
+		// Pro Schedule Manager tools — always available (no toolkit gate).
+		$pro_tools['create_pro_schedule']      = 'wordpress-core';
+		$pro_tools['update_pro_schedule']      = 'wordpress-core';
+		$pro_tools['delete_pro_schedule']      = 'wordpress-core';
+		$pro_tools['list_pro_schedules']       = 'wordpress-core';
+		$pro_tools['get_schedule_run_history']      = 'wordpress-core';
+		$pro_tools['schedule_channel_broadcast']    = 'wordpress-core';
 
 		/**
 		 * Filter the Pro tool group assignments.

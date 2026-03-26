@@ -172,6 +172,30 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 		}
 	}
 
+	// Check for canvas: prefer the NV oOS Canvas Addon plugin (pre-compiled
+	// binaries), then fall back to canvas-service.js + node_modules.
+	if ( 'canvas' === $package_name ) {
+		// Priority 1: NV oOS Canvas Addon plugin provides pre-compiled binaries.
+		if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+			return array(
+				'available' => true,
+				'source'    => 'canvas-addon',
+				'message'   => __( 'canvas (NV oOS Canvas Addon)', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Priority 2: canvas-service.js present AND canvas in node_modules.
+		$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+		$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+		if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'node_modules',
+				'message'   => __( 'canvas (Installed)', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+	}
+
 	// Not available.
 	return array(
 		'available' => false,
@@ -654,6 +678,130 @@ function wp_mcp_ai_yfinance_health_check_handler( $result, $params ) {
 
 /**
  * ============================================================================
+ * CANVAS FILTER HANDLERS
+ * ============================================================================
+ */
+
+/**
+ * Generate an image using the canvas npm package (server-side).
+ *
+ * Handles the `wp_mcp_ai_canvas_generate_image` filter. Requires the
+ * NV oOS Canvas Addon plugin, or canvas installed via npm install canvas@2.
+ *
+ * @param array|false $result Result from a previous filter handler (pass-through).
+ * @param array       $params {
+ *     Image generation parameters.
+ *
+ *     @type string $output     Absolute path for the output PNG file (required).
+ *     @type int    $width      Canvas width in pixels (default 800).
+ *     @type int    $height     Canvas height in pixels (default 600).
+ *     @type string $background CSS background colour (default #ffffff).
+ *     @type array  $commands   Drawing commands array (optional).
+ * }
+ * @return array|WP_Error Result array with 'output_path', 'width', 'height' on success.
+ */
+function wp_mcp_ai_canvas_generate_image_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'generate', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || empty( $result_data['success'] ) ) {
+		return new WP_Error(
+			'canvas_generate_failed',
+			isset( $result_data['error'] ) ? $result_data['error'] : __( 'Canvas image generation failed.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return array(
+		'output_path' => $result_data['output_path'],
+		'width'       => $result_data['width'],
+		'height'      => $result_data['height'],
+	);
+}
+
+/**
+ * Render a Chart.js configuration to a PNG image using canvas.
+ *
+ * Handles the `wp_mcp_ai_chartjs_generate_image` filter. Both the canvas
+ * and chart.js npm packages must be available.
+ *
+ * @param array|false $result Result from a previous filter handler (pass-through).
+ * @param array       $config Chart.js configuration array with 'type', 'data', and 'options' keys.
+ * @return array|WP_Error Result array with 'url', 'path', 'width', 'height' on success.
+ */
+function wp_mcp_ai_chartjs_generate_image_handler( $result, $config ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+
+	// Canvas service file must exist.
+	if ( ! file_exists( $service_file ) ) {
+		return false;
+	}
+
+	// Canvas npm package must be installed.
+	$canvas_npm_path = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+	if ( ! is_dir( $canvas_npm_path ) ) {
+		return false;
+	}
+
+	// Build a temporary output path inside the WordPress uploads directory.
+	$upload_dir  = wp_upload_dir();
+	if ( ! empty( $upload_dir['error'] ) ) {
+		return new WP_Error( 'canvas_upload_dir', $upload_dir['error'] );
+	}
+	$output_dir  = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/charts/';
+	if ( ! wp_mkdir_p( $output_dir ) ) {
+		return new WP_Error( 'canvas_dir_failed', __( 'Failed to create chart output directory.', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	$filename    = 'chart-' . wp_generate_uuid4() . '.png';
+	$output_path = $output_dir . $filename;
+	$output_url  = trailingslashit( $upload_dir['baseurl'] ) . 'mcp-ai-wpoos/charts/' . $filename;
+
+	$params = array(
+		'output' => $output_path,
+		'width'  => 800,
+		'height' => 400,
+		'config' => $config,
+	);
+
+	$output = wp_mcp_ai_exec_node_service( $service_file, 'render_chart', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || empty( $result_data['success'] ) ) {
+		return new WP_Error(
+			'chartjs_render_failed',
+			isset( $result_data['error'] ) ? $result_data['error'] : __( 'Chart image rendering failed.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return array(
+		'url'    => $output_url,
+		'path'   => $output_path,
+		'width'  => $result_data['width'],
+		'height' => $result_data['height'],
+	);
+}
+
+/**
+ * ============================================================================
  * REGISTRATION FUNCTIONS
  * ============================================================================
  */
@@ -695,6 +843,14 @@ function wp_mcp_ai_register_yfinance_filters() {
 }
 
 /**
+ * Register canvas filter handlers
+ */
+function wp_mcp_ai_register_canvas_filters() {
+	add_filter( 'wp_mcp_ai_canvas_generate_image', 'wp_mcp_ai_canvas_generate_image_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_chartjs_generate_image', 'wp_mcp_ai_chartjs_generate_image_handler', 10, 2 );
+}
+
+/**
  * Register all NPM package filter handlers
  *
  * Call this function to enable all NPM package integrations at once.
@@ -704,6 +860,7 @@ function wp_mcp_ai_register_all_npm_filters() {
 	wp_mcp_ai_register_mjml_filters();
 	wp_mcp_ai_register_ffmpeg_filters();
 	wp_mcp_ai_register_yfinance_filters();
+	wp_mcp_ai_register_canvas_filters();
 }
 
 /**

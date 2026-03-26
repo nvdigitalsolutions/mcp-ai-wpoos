@@ -1363,7 +1363,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'pdf-parse'                         => 'pdf-parse/index.js',
 				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
 				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
-				// docx ships only package.json in vendor; detected via bin/generate-word.bundle.js below.
+				// docx ships only package.json in vendor (no standalone runtime file).
+				// Detecting via package.json presence is sufficient; the library is bundled
+				// into bin/generate-word.bundle.js which is checked as a secondary fallback below.
+				'docx'                              => 'docx/package.json',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
@@ -1434,7 +1437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for document generation and video packages bundled into bin/ scripts.
 			// pdfkit and exceljs are detected via pro_vendor_packages above.
-			// docx ships only package.json in vendor, so we detect it via its bin bundle.
+			// docx vendor directory holds only package.json; the bin bundle is a secondary fallback.
 			$script_bundled_packages = array(
 				'docx'          => 'generate-word.bundle.js',
 				'@remotion/cli' => 'remotion-render.bundle.js',
@@ -1488,12 +1491,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for OCR packages used by Node.js services.
-			// These packages (tesseract.js, pdfjs-dist, canvas) are dependencies for node-services.
+			// These packages (tesseract.js, pdfjs-dist) are dependencies for node-services.
 			// They're bundled with the plugin in node-services directory for serverless OCR operations.
 			$ocr_node_packages = array(
 				'tesseract.js',
 				'pdfjs-dist',
-				'canvas',
 			);
 			if ( in_array( $package, $ocr_node_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if Node.js OCR service exists (production).
@@ -1513,6 +1515,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// If none exist, return false (not installed).
+				return false;
+			}
+
+			// Check for canvas: prefer the NV oOS Canvas Addon plugin, then fall
+			// back to canvas-service.js + node_modules.
+			if ( 'canvas' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: NV oOS Canvas Addon plugin.
+				if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+					return true;
+				}
+				// Priority 2: canvas-service.js present AND canvas in node_modules.
+				$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+				$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+				if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
+				// Priority 3: canvas in node_modules without service file.
+				if ( is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
 				return false;
 			}
 
