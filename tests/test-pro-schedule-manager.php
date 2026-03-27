@@ -1166,4 +1166,234 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Pro_Schedule_Manager::get_scheduled_run_max_agentic_iterations( 15 );
 		$this->assertSame( 15, $result );
 	}
+
+	// -------------------------------------------------------------------------
+	// Init / hook registration
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that the dispatch hook is registered after init() runs.
+	 *
+	 * This verifies the root-cause fix: init() must be called (outside is_admin)
+	 * so that wp_mcp_ai_pro_schedule_exec is handled during WP cron.
+	 */
+	public function test_dispatch_hook_is_registered() {
+		$this->assertNotFalse(
+			has_action( 'wp_mcp_ai_pro_schedule_exec', array( 'WP_MCP_AI_Pro_Schedule_Manager', 'dispatch' ) ),
+			'The wp_mcp_ai_pro_schedule_exec action should be registered by init().'
+		);
+	}
+
+	/**
+	 * Test that custom cron intervals are registered after init().
+	 */
+	public function test_custom_cron_intervals_registered_filter() {
+		$this->assertNotFalse(
+			has_filter( 'cron_schedules', array( 'WP_MCP_AI_Pro_Schedule_Manager', 'register_custom_intervals' ) ),
+			'The cron_schedules filter should be registered by init().'
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Workflow Builder schedule type
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test creating a workflow_builder schedule.
+	 */
+	public function test_create_workflow_builder_schedule() {
+		// Seed a workflow in the option store.
+		update_option(
+			'wp_mcp_ai_pro_workflows',
+			array(
+				'my_wf' => array(
+					'id'    => 'my_wf',
+					'name'  => 'My Workflow',
+					'nodes' => array(
+						array(
+							'id'       => 'trigger-1',
+							'type'     => 'trigger',
+							'position' => array( 'x' => 0, 'y' => 0 ),
+							'data'     => array( 'label' => 'Start', 'config' => array() ),
+						),
+					),
+					'edges' => array(),
+				),
+			)
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'      => 'workflow_builder',
+				'name'               => 'WB Test',
+				'schedule'           => 'single',
+				'timestamp'          => time() + 120,
+				'workflow_builder_id' => 'my_wf',
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'workflow_builder', $schedule['schedule_type'] );
+		$this->assertSame( 'my_wf', $schedule['workflow_builder_id'] );
+
+		delete_option( 'wp_mcp_ai_pro_workflows' );
+	}
+
+	/**
+	 * Test that workflow_builder dispatch works with a simple trigger-only workflow.
+	 */
+	public function test_dispatch_workflow_builder_trigger_only() {
+		// Seed a minimal workflow.
+		update_option(
+			'wp_mcp_ai_pro_workflows',
+			array(
+				'simple_wf' => array(
+					'id'    => 'simple_wf',
+					'name'  => 'Simple WF',
+					'nodes' => array(
+						array(
+							'id'       => 'trigger-1',
+							'type'     => 'trigger',
+							'position' => array( 'x' => 0, 'y' => 0 ),
+							'data'     => array( 'label' => 'Start', 'config' => array() ),
+						),
+					),
+					'edges' => array(),
+				),
+			)
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'      => 'workflow_builder',
+				'name'               => 'Dispatch WB Test',
+				'schedule'           => 'single',
+				'timestamp'          => time() + 120,
+				'workflow_builder_id' => 'simple_wf',
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
+		$this->assertTrue( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'success', $schedule['last_run_status'] );
+
+		delete_option( 'wp_mcp_ai_pro_workflows' );
+	}
+
+	/**
+	 * Test that workflow_builder dispatch fails when workflow is missing.
+	 */
+	public function test_dispatch_workflow_builder_missing_workflow_returns_failure() {
+		// Create schedule pointing to a workflow that doesn't exist.
+		// We need to seed the workflow first to pass validation, then delete it.
+		update_option(
+			'wp_mcp_ai_pro_workflows',
+			array(
+				'temp_wf' => array(
+					'id'    => 'temp_wf',
+					'name'  => 'Temp WF',
+					'nodes' => array(
+						array(
+							'id'       => 'trigger-1',
+							'type'     => 'trigger',
+							'position' => array( 'x' => 0, 'y' => 0 ),
+							'data'     => array( 'label' => 'Start', 'config' => array() ),
+						),
+					),
+					'edges' => array(),
+				),
+			)
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'      => 'workflow_builder',
+				'name'               => 'Missing WF',
+				'schedule'           => 'single',
+				'timestamp'          => time() + 120,
+				'workflow_builder_id' => 'temp_wf',
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		// Delete the workflow so dispatch can't find it.
+		delete_option( 'wp_mcp_ai_pro_workflows' );
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
+		$this->assertFalse( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'failure', $schedule['last_run_status'] );
+	}
+
+	/**
+	 * Test that workflow_builder dispatch fires completion action hook.
+	 */
+	public function test_dispatch_workflow_builder_fires_completion_action() {
+		update_option(
+			'wp_mcp_ai_pro_workflows',
+			array(
+				'action_wf' => array(
+					'id'    => 'action_wf',
+					'name'  => 'Action WF',
+					'nodes' => array(
+						array(
+							'id'       => 'trigger-1',
+							'type'     => 'trigger',
+							'position' => array( 'x' => 0, 'y' => 0 ),
+							'data'     => array( 'label' => 'Start', 'config' => array() ),
+						),
+					),
+					'edges' => array(),
+				),
+			)
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'      => 'workflow_builder',
+				'name'               => 'Action Hook WB',
+				'schedule'           => 'single',
+				'timestamp'          => time() + 120,
+				'workflow_builder_id' => 'action_wf',
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$fired = false;
+		add_action(
+			'wp_mcp_ai_pro_workflow_builder_completed',
+			function ( $sid, $sched, $wf_id, $results ) use ( &$fired ) {
+				$fired = true;
+				$this->assertSame( 'action_wf', $wf_id );
+				$this->assertArrayHasKey( 'trigger-1', $results );
+			},
+			10,
+			4
+		);
+
+		WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
+		$this->assertTrue( $fired, 'The wp_mcp_ai_pro_workflow_builder_completed action should fire.' );
+
+		delete_option( 'wp_mcp_ai_pro_workflows' );
+	}
+
+	/**
+	 * Test TYPE_WORKFLOW_BUILDER constant is defined.
+	 */
+	public function test_type_workflow_builder_constant_is_defined() {
+		$this->assertSame( 'workflow_builder', WP_MCP_AI_Pro_Schedule_Manager::TYPE_WORKFLOW_BUILDER );
+	}
 }
