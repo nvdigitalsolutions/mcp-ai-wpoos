@@ -306,13 +306,13 @@
 
 			// Actions (icon-only buttons with title tooltips).
 			row += '<td class="column-actions">';
-			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '" title="Run">' +
+			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '" title="Run" aria-label="Run">' +
 				'&#9654;</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '" title="Edit">' +
+			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '" title="Edit" aria-label="Edit">' +
 				'&#9998;</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '" title="History">' +
+			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '" title="History" aria-label="History">' +
 				'&#128203;</button> ';
-			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '" title="Delete">' +
+			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '" title="Delete" aria-label="Delete">' +
 				'&#10005;</button>';
 			row += '</td></tr>';
 
