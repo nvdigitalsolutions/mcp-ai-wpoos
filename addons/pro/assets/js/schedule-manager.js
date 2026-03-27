@@ -148,15 +148,24 @@
 				data
 			);
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] AJAX →', action, data );
+
 			$.post( wpMcpAiScheduleManager.ajaxUrl, data )
 				.done( function ( response ) {
 					if ( response.success ) {
+						// eslint-disable-next-line no-console
+						console.log( '[NV oOS Schedule Manager] AJAX ← OK', action, response.data );
 						callback( null, response.data );
 					} else {
+						// eslint-disable-next-line no-console
+						console.warn( '[NV oOS Schedule Manager] AJAX ← FAIL', action, response.data );
 						callback( ( response.data && response.data.message ) || wpMcpAiScheduleManager.strings.error );
 					}
 				} )
-				.fail( function () {
+				.fail( function ( jqXHR, textStatus, errorThrown ) {
+					// eslint-disable-next-line no-console
+					console.error( '[NV oOS Schedule Manager] AJAX ← ERROR', action, textStatus, errorThrown );
 					callback( wpMcpAiScheduleManager.strings.error );
 				} );
 		},
@@ -168,6 +177,9 @@
 			const self   = this;
 			const $tbody = $( '#wp-mcp-ai-sm-tbody' );
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Loading schedules…' );
+
 			$tbody.html(
 				'<tr class="wp-mcp-ai-sm-loading-row"><td colspan="8"><span class="spinner is-active"></span> ' +
 				wpMcpAiScheduleManager.strings.loading + '</td></tr>'
@@ -175,9 +187,14 @@
 
 			this.ajax( 'wp_mcp_ai_sm_get_schedules', {}, function ( err, data ) {
 				if ( err ) {
+					// eslint-disable-next-line no-console
+					console.error( '[NV oOS Schedule Manager] Failed to load schedules:', err );
 					$tbody.html( '<tr><td colspan="8" class="wp-mcp-ai-sm-error">' + err + '</td></tr>' );
 					return;
 				}
+
+				// eslint-disable-next-line no-console
+				console.log( '[NV oOS Schedule Manager] Loaded', ( data.schedules || [] ).length, 'schedules' );
 
 				self.schedules = {};
 				( data.schedules || [] ).forEach( function ( s ) {
@@ -421,6 +438,9 @@
 				return;
 			}
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Creating schedule:', type, data );
+
 			$btn.prop( 'disabled', true ).text( strings.saving );
 			$msg.text( '' ).removeClass( 'error success' );
 
@@ -432,9 +452,14 @@
 					setTimeout( function () { $btn.text( 'Create Schedule' ); }, 2000 );
 
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Create failed:', err );
 						$msg.text( err ).addClass( 'error' );
 						return;
 					}
+
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Created schedule:', result );
 
 					$msg.text( result.message ).addClass( 'success' );
 					self.resetCreateForm();
@@ -582,16 +607,23 @@
 		toggleSchedule: function ( id, enabled ) {
 			const self = this;
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Toggle schedule', id, 'enabled=' + enabled );
+
 			this.ajax(
 				'wp_mcp_ai_sm_toggle_schedule',
 				{ schedule_id: id, enabled: enabled ? '1' : '0' },
 				function ( err ) {
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Toggle failed:', id, err );
 						alert( err );
 						// Revert UI.
 						$( '[data-sm-id="' + id + '"].wp-mcp-ai-sm-enable-toggle' ).prop( 'checked', ! enabled );
 						return;
 					}
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Toggle success:', id, 'enabled=' + enabled );
 					$( 'tr[data-sm-id="' + id + '"]' ).attr( 'data-sm-enabled', enabled ? '1' : '0' );
 					if ( self.schedules[ id ] ) {
 						self.schedules[ id ].enabled = enabled;
@@ -609,6 +641,9 @@
 			const $row = $( 'tr[data-sm-id="' + id + '"]' );
 			$row.addClass( 'wp-mcp-ai-sm-running' );
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Triggering schedule:', id );
+
 			this.ajax(
 				'wp_mcp_ai_sm_trigger_schedule',
 				{ schedule_id: id },
@@ -616,9 +651,14 @@
 					$row.removeClass( 'wp-mcp-ai-sm-running' );
 
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Trigger failed:', id, err );
 						alert( err );
 						return;
 					}
+
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, _data );
 
 					// Reload to show updated status.
 					self.loadSchedules();

@@ -320,6 +320,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Get settings for conditional loading.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
+		// Load the core Schedule Manager class on every request (including WP cron)
+		// so its init() method registers the central dispatcher hook and custom cron
+		// intervals. Without this, wp-cron.php silently drops scheduled events because
+		// add_action( 'wp_mcp_ai_pro_schedule_exec', ... ) is never registered.
+		$schedule_manager_core = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+		if ( file_exists( $schedule_manager_core ) ) {
+			require_once $schedule_manager_core;
+		}
+
 		// Load Pro admin sections.
 		// Performance section is only loaded in admin context.
 		if ( is_admin() ) {
