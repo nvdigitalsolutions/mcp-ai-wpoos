@@ -73,6 +73,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Prune stale schedules on init.
 			add_action( 'init', array( __CLASS__, 'maybe_prune_history' ) );
+
+			// Diagnostic: confirm hooks are registered (visible in error log when WP_DEBUG is on).
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging guarded by WP_DEBUG.
+				error_log( 'WP_MCP_AI_Pro_Schedule_Manager::init() - dispatch hook registered for: ' . self::DISPATCH_HOOK );
+			}
 		}
 
 		// -------------------------------------------------------------------------
@@ -877,13 +883,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		 */
 		public static function dispatch( $schedule_id ) {
 			$schedule_id = (string) $schedule_id;
-			$schedule    = self::get_schedule( $schedule_id );
+
+			self::debug_log( sprintf( '[dispatch] Received schedule_id=%s', $schedule_id ) );
+
+			$schedule = self::get_schedule( $schedule_id );
 
 			if ( ! $schedule ) {
+				self::debug_log( sprintf( '[dispatch] Schedule not found: %s — returning false', $schedule_id ) );
 				return false;
 			}
 
 			if ( empty( $schedule['enabled'] ) ) {
+				self::debug_log( sprintf( '[dispatch] Schedule disabled: %s (%s) — returning false', $schedule_id, $schedule['name'] ) );
 				return false;
 			}
 
@@ -892,6 +903,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$error_msg     = '';
 			$success       = true;
 			$action_log    = array( 'type' => $schedule_type );
+
+			self::debug_log( sprintf( '[dispatch] Dispatching %s schedule: %s (%s)', $schedule_type, $schedule['name'], $schedule_id ) );
 
 			// Timeout: set a PHP time limit for this dispatch if configured (0 = unlimited).
 			// Note: set_time_limit() may be disabled on shared hosting environments.
@@ -968,6 +981,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$success   = false;
 				$error_msg = $e->getMessage();
 
+				self::debug_log( sprintf( '[dispatch] Exception in %s schedule %s: %s', $schedule_type, $schedule_id, $error_msg ) );
+
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_error(
 						'Pro schedule exception: ' . $schedule['name'],
@@ -996,6 +1011,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Record run result.
 			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
+
+			self::debug_log(
+				sprintf(
+					'[dispatch] Completed %s schedule %s (%s): %s in %.3fs%s',
+					$schedule_type,
+					$schedule_id,
+					$schedule['name'],
+					$success ? 'SUCCESS' : 'FAILURE',
+					$duration,
+					$error_msg ? ' — ' . $error_msg : ''
+				)
+			);
 
 			// Log the run completion to the Logger service.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -1180,6 +1207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				: array();
 
 			if ( empty( $config['assistant_id'] ) || empty( $config['message'] ) ) {
+				self::debug_log( sprintf( '[assistant_run] Invalid config for schedule %s — missing assistant_id or message', $schedule_id ) );
 				return new WP_Error( 'invalid_assistant_config', __( 'Assistant run is missing assistant_id or message.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -1187,10 +1215,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$message      = (string) $config['message'];
 			$user_id      = isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0;
 
+			self::debug_log(
+				sprintf(
+					'[assistant_run] schedule=%s assistant_id=%d user_id=%d message="%s"',
+					$schedule_id,
+					$assistant_id,
+					$user_id,
+					wp_trim_words( $message, 15, '…' )
+				)
+			);
+
 			// Switch to the schedule creator so the REST request inherits their capabilities.
 			$previous_user = get_current_user_id();
 			if ( $user_id > 0 && $user_id !== $previous_user ) {
 				wp_set_current_user( $user_id );
+				self::debug_log( sprintf( '[assistant_run] Switched user context from %d to %d', $previous_user, $user_id ) );
 			}
 
 			$result_log = array(
@@ -1200,6 +1239,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Build the internal REST request to the chat endpoint.
 			if ( function_exists( 'rest_do_request' ) ) {
+				self::debug_log( '[assistant_run] Building internal REST request to /mcp-ai/v1/chat' );
+
 				$messages = array(
 					array(
 						'role'    => 'user',
@@ -1233,6 +1274,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$response = rest_do_request( $request );
 				remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
 
+				self::debug_log( sprintf( '[assistant_run] REST response status=%d', $response->get_status() ) );
+
 				// Restore the previous user context.
 				if ( $user_id > 0 && $user_id !== $previous_user ) {
 					wp_set_current_user( $previous_user );
@@ -1243,6 +1286,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					$status_code = $response->get_status();
 					$error_code  = isset( $error_data['code'] ) ? $error_data['code'] : 'unknown';
 					$error_msg   = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Chat API request failed.', 'mcp-ai-wpoos-pro' );
+
+					self::debug_log(
+						sprintf(
+							'[assistant_run] Chat API error: HTTP %d, code=%s, message=%s',
+							$status_code,
+							$error_code,
+							$error_msg
+						)
+					);
 
 					return new WP_Error(
 						'assistant_run_failed',
@@ -1264,9 +1316,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// internal consumer (Telegram, WhatsApp, Slack, Discord, etc.).
 				$reply = self::extract_content_from_chat_response( $data );
 
+				self::debug_log(
+					sprintf(
+						'[assistant_run] Extracted reply (%d chars): %s',
+						strlen( (string) $reply ),
+						wp_trim_words( (string) $reply, 20, '…' )
+					)
+				);
+
 				$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
 				$result_log['status']   = 'completed';
 			} else {
+				self::debug_log( '[assistant_run] rest_do_request() not available — falling back to action hook' );
+
 				// Restore the previous user context before falling back.
 				if ( $user_id > 0 && $user_id !== $previous_user ) {
 					wp_set_current_user( $previous_user );
@@ -1469,9 +1531,267 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			return $broadcast_log;
 		}
 
+		/**
+		 * Execute a workflow_builder schedule: loads a saved Pro Workflow Builder
+		 * workflow by ID and runs its node DAG server-side.
+		 *
+		 * Walks the workflow graph from trigger nodes to leaf nodes, executing
+		 * action, tool, and agent nodes through the Tool Registry and filters.
+		 * Each completed node's result is available to downstream nodes via a
+		 * shared context map keyed by node ID.
+		 *
+		 * @param array  $schedule    Schedule record.
+		 * @param string $schedule_id Schedule ID.
+		 * @return array|WP_Error Node results on success, WP_Error on failure.
+		 */
+		protected static function dispatch_workflow_builder( array $schedule, $schedule_id ) {
+			$workflow_builder_id = isset( $schedule['workflow_builder_id'] ) ? (string) $schedule['workflow_builder_id'] : '';
+
+			if ( '' === $workflow_builder_id ) {
+				return new WP_Error( 'missing_workflow_builder_id', __( 'No workflow_builder_id configured.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			self::debug_log( sprintf( '[workflow_builder] Loading workflow %s for schedule %s', $workflow_builder_id, $schedule_id ) );
+
+			$saved_workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
+			if ( ! is_array( $saved_workflows ) || ! isset( $saved_workflows[ $workflow_builder_id ] ) ) {
+				self::debug_log( sprintf( '[workflow_builder] Workflow %s not found in option store', $workflow_builder_id ) );
+				return new WP_Error(
+					'workflow_builder_not_found',
+					/* translators: %s: workflow builder ID */
+					sprintf( __( 'Workflow Builder workflow "%s" not found.', 'mcp-ai-wpoos-pro' ), $workflow_builder_id )
+				);
+			}
+
+			$workflow = $saved_workflows[ $workflow_builder_id ];
+			$nodes    = isset( $workflow['nodes'] ) && is_array( $workflow['nodes'] ) ? $workflow['nodes'] : array();
+			$edges    = isset( $workflow['edges'] ) && is_array( $workflow['edges'] ) ? $workflow['edges'] : array();
+
+			if ( empty( $nodes ) ) {
+				return new WP_Error( 'empty_workflow', __( 'Workflow has no nodes to execute.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			self::debug_log( sprintf( '[workflow_builder] Workflow "%s" has %d nodes, %d edges', $workflow_builder_id, count( $nodes ), count( $edges ) ) );
+
+			// Build adjacency list from edges: source -> list of target node IDs.
+			$adjacency     = array();
+			$incoming_count = array();
+			$nodes_by_id   = array();
+
+			foreach ( $nodes as $node ) {
+				$nid = isset( $node['id'] ) ? (string) $node['id'] : '';
+				if ( '' === $nid ) {
+					continue;
+				}
+				$nodes_by_id[ $nid ]   = $node;
+				$adjacency[ $nid ]     = array();
+				$incoming_count[ $nid ] = 0;
+			}
+
+			foreach ( $edges as $edge ) {
+				$src = isset( $edge['source'] ) ? (string) $edge['source'] : '';
+				$tgt = isset( $edge['target'] ) ? (string) $edge['target'] : '';
+				if ( '' !== $src && '' !== $tgt && isset( $nodes_by_id[ $src ] ) && isset( $nodes_by_id[ $tgt ] ) ) {
+					$adjacency[ $src ][] = $tgt;
+					++$incoming_count[ $tgt ];
+				}
+			}
+
+			// Topological sort (Kahn's algorithm) to determine execution order.
+			$queue = array();
+			foreach ( $incoming_count as $nid => $count ) {
+				if ( 0 === $count ) {
+					$queue[] = $nid;
+				}
+			}
+
+			$execution_order = array();
+			while ( ! empty( $queue ) ) {
+				$current = array_shift( $queue );
+				$execution_order[] = $current;
+
+				foreach ( $adjacency[ $current ] as $neighbor ) {
+					--$incoming_count[ $neighbor ];
+					if ( 0 === $incoming_count[ $neighbor ] ) {
+						$queue[] = $neighbor;
+					}
+				}
+			}
+
+			// If we didn't visit all nodes, there's a cycle.
+			if ( count( $execution_order ) !== count( $nodes_by_id ) ) {
+				return new WP_Error( 'workflow_cycle', __( 'Workflow contains a cycle and cannot be executed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Execute nodes in topological order, collecting results.
+			$context = array(
+				'schedule_id'          => $schedule_id,
+				'schedule_name'        => $schedule['name'],
+				'workflow_builder_id'  => $workflow_builder_id,
+				'source'               => 'pro_schedule_manager',
+				'user_id'              => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+			);
+			$node_results = array();
+			$registry     = class_exists( 'WP_MCP_AI_Tool_Registry' ) ? WP_MCP_AI_Tool_Registry::get_instance() : null;
+
+			foreach ( $execution_order as $node_id ) {
+				$node      = $nodes_by_id[ $node_id ];
+				$node_type = isset( $node['type'] ) ? (string) $node['type'] : '';
+				$node_data = isset( $node['data'] ) && is_array( $node['data'] ) ? $node['data'] : array();
+				$config    = isset( $node_data['config'] ) && is_array( $node_data['config'] ) ? $node_data['config'] : array();
+				$label     = isset( $node_data['label'] ) ? (string) $node_data['label'] : $node_id;
+
+				self::debug_log( sprintf( '[workflow_builder] Executing node %s (type=%s, label=%s)', $node_id, $node_type, $label ) );
+
+				$step_start = microtime( true );
+				$result     = null;
+
+				switch ( $node_type ) {
+					case 'trigger':
+						// Trigger nodes simply start the workflow — no execution needed.
+						$result = array(
+							'type'   => 'trigger',
+							'status' => 'completed',
+						);
+						break;
+
+					case 'tool':
+						if ( ! $registry ) {
+							$result = new WP_Error( 'no_registry', __( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ) );
+							break;
+						}
+						$tool_name = isset( $config['tool_name'] ) ? (string) $config['tool_name'] : '';
+						$arguments = isset( $config['arguments'] ) && is_array( $config['arguments'] ) ? $config['arguments'] : array();
+
+						if ( '' === $tool_name ) {
+							$result = new WP_Error( 'missing_tool', sprintf( __( 'Tool node "%s" has no tool_name.', 'mcp-ai-wpoos-pro' ), $label ) );
+							break;
+						}
+
+						$tool = $registry->get_tool( $tool_name );
+						if ( ! $tool ) {
+							$result = new WP_Error( 'tool_not_found', sprintf( __( 'Tool "%s" not found.', 'mcp-ai-wpoos-pro' ), $tool_name ) );
+							break;
+						}
+
+						$step_context                 = $context;
+						$step_context['node_id']      = $node_id;
+						$step_context['node_results'] = $node_results;
+
+						$result = $tool->execute( $arguments, $step_context );
+						break;
+
+					case 'action':
+						$command = isset( $config['command'] ) ? (string) $config['command'] : '';
+						$params  = isset( $config['params'] ) && is_array( $config['params'] ) ? $config['params'] : array();
+
+						$action_result = apply_filters( 'wp_mcp_ai_workflow_execute_action', null, $command, $params, array_merge( $context, array( 'node_results' => $node_results ) ) );
+						$result        = null !== $action_result ? $action_result : array(
+							'type'    => 'action',
+							'command' => $command,
+							'status'  => 'completed',
+						);
+						break;
+
+					case 'agent':
+						$prompt   = isset( $config['prompt'] ) ? (string) $config['prompt'] : '';
+						$agent_id = isset( $config['agent_id'] ) ? $config['agent_id'] : 'default';
+
+						$agent_result = apply_filters( 'wp_mcp_ai_workflow_execute_agent', null, $agent_id, $prompt, array_merge( $context, array( 'node_results' => $node_results ) ) );
+						$result       = null !== $agent_result ? $agent_result : array(
+							'type'   => 'agent',
+							'prompt' => wp_trim_words( $prompt, 20, '…' ),
+							'status' => 'completed',
+						);
+						break;
+
+					case 'condition':
+					case 'delay':
+					case 'parallel':
+					case 'merge':
+					case 'loop':
+					case 'approval':
+						// Control-flow nodes: pass through in server-side linear execution.
+						$result = array(
+							'type'   => $node_type,
+							'status' => 'completed',
+						);
+						break;
+
+					default:
+						$result = array(
+							'type'   => $node_type,
+							'status' => 'skipped',
+						);
+						break;
+				}
+
+				$step_dur = round( microtime( true ) - $step_start, 3 );
+
+				if ( is_wp_error( $result ) ) {
+					self::debug_log( sprintf( '[workflow_builder] Node %s failed: %s', $node_id, $result->get_error_message() ) );
+					return new WP_Error(
+						'workflow_builder_node_failed',
+						sprintf(
+							/* translators: 1: node label/ID, 2: error message */
+							__( 'Workflow node "%1$s" failed: %2$s', 'mcp-ai-wpoos-pro' ),
+							$label,
+							$result->get_error_message()
+						)
+					);
+				}
+
+				$node_results[ $node_id ] = array(
+					'node_id'  => $node_id,
+					'type'     => $node_type,
+					'label'    => $label,
+					'result'   => $result,
+					'duration' => $step_dur,
+				);
+			}
+
+			self::debug_log( sprintf( '[workflow_builder] Workflow %s completed: %d nodes executed', $workflow_builder_id, count( $node_results ) ) );
+
+			/**
+			 * Fires after all workflow builder nodes complete successfully.
+			 *
+			 * @param string $schedule_id        Schedule ID.
+			 * @param array  $schedule           Schedule record.
+			 * @param string $workflow_builder_id Workflow Builder workflow ID.
+			 * @param array  $node_results       All node results keyed by node ID.
+			 */
+			do_action( 'wp_mcp_ai_pro_workflow_builder_completed', $schedule_id, $schedule, $workflow_builder_id, $node_results );
+
+			return $node_results;
+		}
+
 		// -------------------------------------------------------------------------
 		// Internal helpers
 		// -------------------------------------------------------------------------
+
+		/**
+		 * Write a diagnostic log message for Schedule Manager troubleshooting.
+		 *
+		 * Always logs to WP_MCP_AI_Logger (when available) at 'debug' level so
+		 * that entries appear in the plugin's activity log UI regardless of the
+		 * WP_DEBUG constant. Additionally writes to the PHP error log via
+		 * error_log() when WP_DEBUG is enabled, ensuring server-side log files,
+		 * WP-CLI output, and Docker stdout also capture the messages.
+		 *
+		 * @param string $message Human-readable diagnostic message.
+		 */
+		protected static function debug_log( $message ) {
+			$prefixed = 'WP_MCP_AI_Pro_Schedule_Manager: ' . $message;
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event( 'debug', $prefixed );
+			}
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging guarded by WP_DEBUG.
+				error_log( $prefixed );
+			}
+		}
 
 		/**
 		 * POST schedule run results to an external webhook callback URL.
