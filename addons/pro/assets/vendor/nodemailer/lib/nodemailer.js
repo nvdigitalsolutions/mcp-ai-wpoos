@@ -8,6 +8,7 @@ const SendmailTransport = require('./sendmail-transport');
 const StreamTransport = require('./stream-transport');
 const JSONTransport = require('./json-transport');
 const SESTransport = require('./ses-transport');
+const errors = require('./errors');
 const nmfetch = require('./fetch');
 const packageData = require('../package.json');
 
@@ -19,9 +20,7 @@ const ETHEREAL_CACHE = ['true', 'yes', 'y', '1'].includes((process.env.ETHEREAL_
 let testAccount = false;
 
 module.exports.createTransport = function (transporter, defaults) {
-    let urlConfig;
     let options;
-    let mailer;
 
     if (
         // provided transporter is a configuration object, not transporter plugin
@@ -29,7 +28,8 @@ module.exports.createTransport = function (transporter, defaults) {
         // provided transporter looks like a connection url
         (typeof transporter === 'string' && /^(smtps?|direct):/i.test(transporter))
     ) {
-        if ((urlConfig = typeof transporter === 'string' ? transporter : transporter.url)) {
+        const urlConfig = typeof transporter === 'string' ? transporter : transporter.url;
+        if (urlConfig) {
             // parse a configuration URL into configuration options
             options = shared.parseConnectionUrl(urlConfig);
         } else {
@@ -46,10 +46,10 @@ module.exports.createTransport = function (transporter, defaults) {
             transporter = new JSONTransport(options);
         } else if (options.SES) {
             if (options.SES.ses && options.SES.aws) {
-                let error = new Error(
+                const error = new Error(
                     'Using legacy SES configuration, expecting @aws-sdk/client-sesv2, see https://nodemailer.com/transports/ses/'
                 );
-                error.code = 'LegacyConfig';
+                error.code = errors.ECONFIG;
                 throw error;
             }
             transporter = new SESTransport(options);
@@ -58,9 +58,7 @@ module.exports.createTransport = function (transporter, defaults) {
         }
     }
 
-    mailer = new Mailer(transporter, options, defaults);
-
-    return mailer;
+    return new Mailer(transporter, options, defaults);
 };
 
 module.exports.createTestAccount = function (apiUrl, callback) {
@@ -84,11 +82,11 @@ module.exports.createTestAccount = function (apiUrl, callback) {
 
     apiUrl = apiUrl || ETHEREAL_API;
 
-    let chunks = [];
+    const chunks = [];
     let chunklen = 0;
 
-    let requestHeaders = {};
-    let requestBody = {
+    const requestHeaders = {};
+    const requestBody = {
         requestor: packageData.name,
         version: packageData.version
     };
@@ -97,7 +95,7 @@ module.exports.createTestAccount = function (apiUrl, callback) {
         requestHeaders.Authorization = 'Bearer ' + ETHEREAL_API_KEY;
     }
 
-    let req = nmfetch(apiUrl + '/user', {
+    const req = nmfetch(apiUrl + '/user', {
         contentType: 'application/json',
         method: 'POST',
         headers: requestHeaders,
@@ -115,16 +113,12 @@ module.exports.createTestAccount = function (apiUrl, callback) {
     req.once('error', err => callback(err));
 
     req.once('end', () => {
-        let res = Buffer.concat(chunks, chunklen);
+        const res = Buffer.concat(chunks, chunklen);
         let data;
-        let err;
         try {
             data = JSON.parse(res.toString());
         } catch (E) {
-            err = E;
-        }
-        if (err) {
-            return callback(err);
+            return callback(E);
         }
         if (data.status !== 'success' || data.error) {
             return callback(new Error(data.error || 'Request failed'));
@@ -142,7 +136,7 @@ module.exports.getTestMessageUrl = function (info) {
         return false;
     }
 
-    let infoProps = new Map();
+    const infoProps = new Map();
     info.response.replace(/\[([^\]]+)\]$/, (m, props) => {
         props.replace(/\b([A-Z0-9]+)=([^\s]+)/g, (m, key, value) => {
             infoProps.set(key, value);
