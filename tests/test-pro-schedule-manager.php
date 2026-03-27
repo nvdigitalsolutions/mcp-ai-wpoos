@@ -87,17 +87,17 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	public function test_create_task_schedule_stores_record() {
 		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
 			array(
-				'schedule_type'   => 'task',
-				'hook'            => 'my_test_hook',
-				'name'            => 'Test Task',
-				'description'     => 'Does something',
-				'schedule'        => 'single',
-				'timestamp'       => time() + 120,
-				'priority'        => 3,
-				'tags'            => array( 'cleanup', 'daily' ),
+				'schedule_type'     => 'task',
+				'hook'              => 'my_test_hook',
+				'name'              => 'Test Task',
+				'description'       => 'Does something',
+				'schedule'          => 'single',
+				'timestamp'         => time() + 120,
+				'priority'          => 3,
+				'tags'              => array( 'cleanup', 'daily' ),
 				'notify_on_failure' => true,
-				'max_retries'     => 2,
-				'retry_delay'     => 120,
+				'max_retries'       => 2,
+				'retry_delay'       => 120,
 			),
 			$this->admin_id
 		);
@@ -154,8 +154,16 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 				'schedule'       => 'single',
 				'timestamp'      => time() + 120,
 				'workflow_steps' => array(
-					array( 'tool_slug' => 'web_search',    'arguments' => array( 'query' => 'test' ), 'label' => 'Search' ),
-					array( 'tool_slug' => 'create_post',   'arguments' => array(), 'label' => 'Publish' ),
+					array(
+						'tool_slug' => 'web_search',
+						'arguments' => array( 'query' => 'test' ),
+						'label'     => 'Search',
+					),
+					array(
+						'tool_slug' => 'create_post',
+						'arguments' => array(),
+						'label'     => 'Publish',
+					),
 				),
 			),
 			$this->admin_id
@@ -319,7 +327,10 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 
 		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
 			$id,
-			array( 'name' => 'Updated', 'priority' => 2 ),
+			array(
+				'name'     => 'Updated',
+				'priority' => 2,
+			),
 			$this->admin_id
 		);
 
@@ -509,11 +520,23 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	 */
 	public function test_get_schedules_returns_all() {
 		WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
-			array( 'schedule_type' => 'task', 'hook' => 'hook_a', 'schedule' => 'single', 'timestamp' => time() + 100, 'tags' => array( 'a' ) ),
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'hook_a',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 100,
+				'tags'          => array( 'a' ),
+			),
 			$this->admin_id
 		);
 		WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
-			array( 'schedule_type' => 'task', 'hook' => 'hook_b', 'schedule' => 'single', 'timestamp' => time() + 200, 'tags' => array( 'b' ) ),
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'hook_b',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 200,
+				'tags'          => array( 'b' ),
+			),
 			$this->admin_id
 		);
 
@@ -526,11 +549,23 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	 */
 	public function test_get_schedules_filters_by_tag() {
 		WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
-			array( 'schedule_type' => 'task', 'hook' => 'hook_a', 'schedule' => 'single', 'timestamp' => time() + 100, 'tags' => array( 'report' ) ),
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'hook_a',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 100,
+				'tags'          => array( 'report' ),
+			),
 			$this->admin_id
 		);
 		WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
-			array( 'schedule_type' => 'task', 'hook' => 'hook_b', 'schedule' => 'single', 'timestamp' => time() + 200, 'tags' => array( 'cleanup' ) ),
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'hook_b',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 200,
+				'tags'          => array( 'cleanup' ),
+			),
 			$this->admin_id
 		);
 
@@ -572,7 +607,12 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 				'broadcast_config' => array(
 					'message'     => 'Good morning team!',
 					'channels'    => array( 'telegram' ),
-					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+					'credentials' => array(
+						'telegram' => array(
+							'token'   => 'BOT',
+							'chat_id' => '123',
+						),
+					),
 				),
 			),
 			$this->admin_id
@@ -597,7 +637,12 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 				'timestamp'        => time() + 120,
 				'broadcast_config' => array(
 					'channels'    => array( 'telegram' ),
-					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+					'credentials' => array(
+						'telegram' => array(
+							'token'   => 'BOT',
+							'chat_id' => '123',
+						),
+					),
 				),
 			),
 			$this->admin_id
@@ -617,7 +662,12 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 				'timestamp'        => time() + 120,
 				'broadcast_config' => array(
 					'message'     => 'Hello',
-					'credentials' => array( 'telegram' => array( 'token' => 'BOT', 'chat_id' => '123' ) ),
+					'credentials' => array(
+						'telegram' => array(
+							'token'   => 'BOT',
+							'chat_id' => '123',
+						),
+					),
 				),
 			),
 			$this->admin_id
@@ -660,7 +710,10 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 					'message'     => 'Hi',
 					'channels'    => array( 'slack', 'invalid_xyz', 'discord' ),
 					'credentials' => array(
-						'slack'   => array( 'token' => 'T', 'channel' => '#general' ),
+						'slack'   => array(
+							'token'   => 'T',
+							'channel' => '#general',
+						),
 						'discord' => array( 'webhook_url' => 'https://discord.com/api/webhooks/test' ),
 					),
 				),
@@ -688,8 +741,14 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 				'notify_on_failure'          => true,
 				'notify_channels'            => array( 'telegram', 'slack' ),
 				'notify_channel_credentials' => array(
-					'telegram' => array( 'token' => 'T', 'chat_id' => '1' ),
-					'slack'    => array( 'token' => 'S', 'channel' => '#alerts' ),
+					'telegram' => array(
+						'token'   => 'T',
+						'chat_id' => '1',
+					),
+					'slack'    => array(
+						'token'   => 'S',
+						'channel' => '#alerts',
+					),
 				),
 			),
 			$this->admin_id
@@ -734,5 +793,257 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	 */
 	public function test_type_channel_broadcast_constant_is_defined() {
 		$this->assertSame( 'channel_broadcast', WP_MCP_AI_Pro_Schedule_Manager::TYPE_CHANNEL_BROADCAST );
+	}
+
+	// -------------------------------------------------------------------------
+	// Timeout field
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that timeout field is stored on schedule creation.
+	 */
+	public function test_create_schedule_stores_timeout() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'timeout_hook',
+				'name'          => 'Timeout Test',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+				'timeout'       => 60,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 60, $schedule['timeout'] );
+	}
+
+	/**
+	 * Test that timeout defaults to zero when not provided.
+	 */
+	public function test_create_schedule_timeout_defaults_to_zero() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'no_timeout_hook',
+				'name'          => 'No Timeout',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 0, $schedule['timeout'] );
+	}
+
+	/**
+	 * Test that timeout can be updated.
+	 */
+	public function test_update_schedule_timeout() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'upd_timeout_hook',
+				'name'          => 'Update Timeout',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'timeout' => 120 ),
+			$this->admin_id
+		);
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 120, $schedule['timeout'] );
+	}
+
+	/**
+	 * Test that negative timeout is clamped to zero.
+	 */
+	public function test_negative_timeout_clamped_to_zero() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'neg_timeout_hook',
+				'name'          => 'Neg Timeout',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+				'timeout'       => -10,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 0, $schedule['timeout'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Callback URL field
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that callback_url is stored on schedule creation.
+	 */
+	public function test_create_schedule_stores_callback_url() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'cb_hook',
+				'name'          => 'Callback Test',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+				'callback_url'  => 'https://example.com/webhook',
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'https://example.com/webhook', $schedule['callback_url'] );
+	}
+
+	/**
+	 * Test that callback_url defaults to empty string when not provided.
+	 */
+	public function test_create_schedule_callback_url_defaults_to_empty() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'no_cb_hook',
+				'name'          => 'No Callback',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( '', $schedule['callback_url'] );
+	}
+
+	/**
+	 * Test that callback_url can be updated.
+	 */
+	public function test_update_schedule_callback_url() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'upd_cb_hook',
+				'name'          => 'Update CB',
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id );
+
+		WP_MCP_AI_Pro_Schedule_Manager::update_schedule(
+			$id,
+			array( 'callback_url' => 'https://hooks.example.com/run' ),
+			$this->admin_id
+		);
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'https://hooks.example.com/run', $schedule['callback_url'] );
+	}
+
+	// -------------------------------------------------------------------------
+	// dispatch_assistant_run calls chat endpoint
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that assistant_run dispatch requires both assistant_id and message.
+	 */
+	public function test_dispatch_assistant_run_missing_config_returns_error() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'assistant_run',
+				'name'             => 'Incomplete AR',
+				'schedule'         => 'single',
+				'timestamp'        => time() + 120,
+				'assistant_config' => array(
+					'assistant_id' => 99,
+					'message'      => 'Test',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		// Now manually corrupt the config to test validation.
+		$schedules                            = get_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, array() );
+		$schedules[ $id ]['assistant_config'] = array();
+		update_option( WP_MCP_AI_Pro_Schedule_Manager::SCHEDULES_OPTION, $schedules );
+
+		// Dispatch should fail due to missing assistant_id/message.
+		$result = WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
+		$this->assertFalse( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'failure', $schedule['last_run_status'] );
+	}
+
+	/**
+	 * Test that assistant_run fires the do_action hook on dispatch.
+	 */
+	public function test_dispatch_assistant_run_fires_action_hook() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+			)
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type'    => 'assistant_run',
+				'name'             => 'Action Hook Test',
+				'schedule'         => 'single',
+				'timestamp'        => time() + 120,
+				'assistant_config' => array(
+					'assistant_id' => $assistant_id,
+					'message'      => 'Run the report.',
+				),
+			),
+			$this->admin_id
+		);
+
+		$this->assertNotWPError( $id );
+
+		$fired = false;
+		add_action(
+			'wp_mcp_ai_pro_scheduled_assistant_run',
+			function ( $aid, $msg, $ctx ) use ( &$fired, $assistant_id ) {
+				$fired = true;
+				$this->assertSame( $assistant_id, $aid );
+				$this->assertSame( 'Run the report.', $msg );
+				$this->assertArrayHasKey( 'schedule_id', $ctx );
+				$this->assertArrayHasKey( 'response', $ctx );
+			},
+			10,
+			3
+		);
+
+		WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
+		$this->assertTrue( $fired, 'The wp_mcp_ai_pro_scheduled_assistant_run action should fire.' );
 	}
 }
