@@ -979,11 +979,13 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		$all_entries = WP_MCP_AI_Logger::get_recent_error_messages( 50 );
 
-		// Filter to only schedule-related error entries.
+		// Filter to only schedule-related error entries by checking message
+		// content and context for a schedule_id key.
 		$entries = array();
 		foreach ( $all_entries as $entry ) {
-			$msg = isset( $entry['message'] ) ? $entry['message'] : '';
-			if ( stripos( $msg, 'schedule' ) !== false ) {
+			$msg         = isset( $entry['message'] ) ? $entry['message'] : '';
+			$has_context = isset( $entry['context']['schedule_id'] ) || isset( $entry['context']['event'] );
+			if ( stripos( $msg, 'schedule' ) !== false || $has_context ) {
 				$entries[] = $entry;
 			}
 			if ( count( $entries ) >= 20 ) {
