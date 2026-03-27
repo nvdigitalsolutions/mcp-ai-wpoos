@@ -211,8 +211,17 @@ Each record contains:
     'duration'   => 0.456,      // seconds (float)
     'error'      => '',         // error message or empty string
     'start_time' => 1745000000, // Unix timestamp
+    'action_log' => [           // type-specific execution summary (array)
+        'type'       => 'workflow',  // schedule type
+        // workflow:        'steps'            => [ [ 'tool_slug', 'label', 'result', 'duration' ], … ]
+        // assistant_run:   'assistant_id'     => 42, 'message' => '…'
+        // channel_broadcast: 'channels'       => ['telegram', …], 'message' => '…'
+        // task:            'hook'             => 'my_hook', 'args' => [ … ]
+    ],
 ]
 ```
+
+The `action_log` field captures a trimmed summary of what the schedule actually did during each run. It is stored alongside the other fields and exposed in the admin UI as an expandable **View Log** panel in the run-history modal. It is also included as a JSON column in the CSV export.
 
 Retrieve history:
 
@@ -245,7 +254,7 @@ Export run history as CSV:
 $csv = WP_MCP_AI_Pro_Schedule_Manager::get_history_csv( $schedule_id, 50 );
 ```
 
-Uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM package) when available; falls back to pure-PHP `fputcsv`. In the admin UI click **Export CSV** in the run-history modal footer.
+Uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM package) when available; falls back to pure-PHP `fputcsv`. The export includes an `action_log` column containing a JSON-encoded summary of what the schedule did. In the admin UI click **Export CSV** in the run-history modal footer.
 
 ---
 
@@ -314,7 +323,7 @@ Inline JSON validation highlights invalid fields before the form can be submitte
 ### Run History Modal
 
 - **chart.js stacked bar chart** — one bar per run (up to 20 shown), stacked green/red for success/failure.
-- **History table** — status, timestamp, duration, error message.
+- **History table** — status, timestamp, duration, error message, and a **View Log** toggle button that expands an inline JSON panel showing the `action_log` summary for that run.
 - **Export CSV** button — triggers in-browser download.
 - **Clear History** button — wipes all run records for the schedule.
 
