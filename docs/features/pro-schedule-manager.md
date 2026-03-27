@@ -193,6 +193,10 @@ When `timeout > 0`, the dispatcher calls `set_time_limit()` before execution and
 the actual duration afterwards. Runs exceeding the limit are marked as failed with a
 descriptive error message.
 
+> **Note:** `set_time_limit()` may be disabled on shared hosting environments. As a
+> fallback, the post-execution duration check will still mark long-running tasks as
+> failed (best-effort enforcement).
+
 ---
 
 ## Webhook Callback

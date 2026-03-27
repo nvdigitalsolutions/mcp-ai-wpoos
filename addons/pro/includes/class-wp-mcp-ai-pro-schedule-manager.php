@@ -894,6 +894,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$action_log    = array( 'type' => $schedule_type );
 
 			// Timeout: set a PHP time limit for this dispatch if configured (0 = unlimited).
+			// Note: set_time_limit() may be disabled on shared hosting environments.
+			// As a fallback, the duration is also checked post-execution and the run is
+			// marked as failed if it exceeded the timeout (best-effort enforcement).
 			$timeout = isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0;
 			if ( $timeout > 0 ) {
 				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- set_time_limit may be disabled on some hosts.
@@ -1197,6 +1200,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				);
 
 				$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+				// Nonce ensures the REST permissions_check succeeds for internal requests
+				// (same pattern as WP_MCP_AI_Pro_CPT_AI_Integration::send_to_ai).
 				$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 				$request->set_body_params(
 					array(
@@ -1219,10 +1224,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				}
 
 				if ( $response->is_error() ) {
-					$error_data = $response->get_data();
-					$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Chat API request failed.', 'mcp-ai-wpoos-pro' );
+					$error_data  = $response->get_data();
+					$status_code = $response->get_status();
+					$error_code  = isset( $error_data['code'] ) ? $error_data['code'] : 'unknown';
+					$error_msg   = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Chat API request failed.', 'mcp-ai-wpoos-pro' );
 
-					return new WP_Error( 'assistant_run_failed', $error_msg );
+					return new WP_Error(
+						'assistant_run_failed',
+						sprintf(
+							/* translators: 1: HTTP status code, 2: error code, 3: error message */
+							__( 'Chat API error (HTTP %1$d, %2$s): %3$s', 'mcp-ai-wpoos-pro' ),
+							$status_code,
+							$error_code,
+							$error_msg
+						)
+					);
 				}
 
 				$data = $response->get_data();
@@ -1419,15 +1435,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				)
 			);
 
-			if ( is_wp_error( $response ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_error(
-					'Pro schedule webhook callback failed',
-					array(
-						'schedule_id'  => $schedule_id,
-						'callback_url' => $callback_url,
-						'error'        => $response->get_error_message(),
-					)
+			if ( is_wp_error( $response ) ) {
+				$err_msg = sprintf(
+					'Pro schedule webhook callback failed for %s to %s: %s',
+					$schedule_id,
+					$callback_url,
+					$response->get_error_message()
 				);
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Pro schedule webhook callback failed',
+						array(
+							'schedule_id'  => $schedule_id,
+							'callback_url' => $callback_url,
+							'error'        => $response->get_error_message(),
+						)
+					);
+				} else {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Fallback when Logger is unavailable.
+					error_log( $err_msg );
+				}
 			}
 		}
 
