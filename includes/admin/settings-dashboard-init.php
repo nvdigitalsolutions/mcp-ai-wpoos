@@ -168,10 +168,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		}
 
 		// Pro Schedule Manager section is only available with Pro addon.
-		$schedule_manager_section = $container->get( 'section.schedule_manager' );
-		if ( null !== $schedule_manager_section ) {
-			WP_MCP_AI_Settings_Registry::register_section( $schedule_manager_section );
-		}
+		// Instantiate via container so that its AJAX handlers remain registered,
+		// but do NOT register it with the Settings Registry — it has its own
+		// dedicated page at nvoos-pro-schedule-manager.
+		$container->get( 'section.schedule_manager' );
 
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.

@@ -747,11 +747,12 @@
 							: '';
 						let logHtml = '';
 						if ( entry.action_log && typeof entry.action_log === 'object' && Object.keys( entry.action_log ).length ) {
-							const logId = 'sm-log-' + idx;
+							const logId   = 'sm-log-' + idx;
+							const logBody = SM.formatActionLog( entry.action_log );
 							logHtml = '<br><button type="button" class="button button-small wp-mcp-ai-sm-log-toggle" data-target="' + logId + '">' +
 								wpMcpAiScheduleManager.strings.viewLog + '</button>' +
-								'<pre id="' + logId + '" class="wp-mcp-ai-sm-action-log" style="display:none;">' +
-								SM.esc( JSON.stringify( entry.action_log, null, 2 ) ) + '</pre>';
+								'<div id="' + logId + '" class="wp-mcp-ai-sm-action-log-wrap" style="display:none;">' +
+								logBody + '</div>';
 						}
 						return '<tr><td class="' + cls + '">' +
 							SM.esc( entry.status ) + '</td>' +
@@ -1007,6 +1008,80 @@
 				SM._historyChart.destroy();
 				SM._historyChart = null;
 			}
+		},
+
+		/**
+		 * Format an action_log object from a schedule run into human-readable HTML.
+		 *
+		 * The format depends on the schedule type stored in action_log.type:
+		 * - task:             shows hook name and args.
+		 * - workflow:         shows each step with tool slug, duration and result preview.
+		 * - assistant_run:    shows assistant ID and message preview.
+		 * - channel_broadcast: shows channels and message preview.
+		 * - workflow_builder: shows the workflow builder ID.
+		 * Falls back to a formatted JSON <pre> for unrecognised shapes.
+		 *
+		 * @param {Object} log action_log object from the history entry.
+		 * @return {string} Safe HTML string.
+		 */
+		formatActionLog: function ( log ) {
+			if ( ! log || typeof log !== 'object' ) {
+				return '';
+			}
+
+			const type = log.type || '';
+			let html   = '<div class="wp-mcp-ai-sm-action-log">';
+
+			if ( 'task' === type ) {
+				html += '<p><strong>Hook:</strong> ' + this.esc( log.hook || '' ) + '</p>';
+				if ( log.args && Object.keys( log.args ).length ) {
+					html += '<pre class="wp-mcp-ai-sm-log-pre">' + this.esc( JSON.stringify( log.args, null, 2 ) ) + '</pre>';
+				}
+			} else if ( 'workflow' === type ) {
+				const steps              = log.steps;
+				const RESULT_PREVIEW_MAX = 120;
+				if ( steps && typeof steps === 'object' ) {
+					html += '<table class="wp-mcp-ai-sm-log-steps"><thead><tr><th>#</th><th>Tool</th><th>Duration</th><th>Result Preview</th></tr></thead><tbody>';
+					$.each( steps, function ( idx, step ) {
+						const num    = parseInt( idx, 10 ) + 1;
+						const tool   = step.tool_slug || step.label || ( '#' + num );
+						const dur    = step.duration ? parseFloat( step.duration ).toFixed( 3 ) + 's' : '—';
+						const result = step.result !== undefined
+							? ( typeof step.result === 'object' ? JSON.stringify( step.result ).slice( 0, RESULT_PREVIEW_MAX ) : String( step.result ).slice( 0, RESULT_PREVIEW_MAX ) )
+							: '';
+						html += '<tr><td>' + SM.esc( num ) + '</td><td>' + SM.esc( tool ) + '</td><td>' + SM.esc( dur ) + '</td><td>' + SM.esc( result ) + '</td></tr>';
+					} );
+					html += '</tbody></table>';
+				} else {
+					html += '<p><em>No step data.</em></p>';
+				}
+			} else if ( 'assistant_run' === type ) {
+				const ast = log.assistant || {};
+				html += '<p><strong>Assistant ID:</strong> ' + this.esc( String( ast.assistant_id || '' ) ) + '</p>';
+				if ( ast.message ) {
+					html += '<p><strong>Message:</strong> ' + this.esc( ast.message ) + '</p>';
+				}
+			} else if ( 'channel_broadcast' === type ) {
+				const bc = log.broadcast || {};
+				if ( bc.channels ) {
+					html += '<p><strong>Channels:</strong> ' + this.esc( [].concat( bc.channels ).join( ', ' ) ) + '</p>';
+				}
+				if ( bc.message ) {
+					html += '<p><strong>Message:</strong> ' + this.esc( bc.message ) + '</p>';
+				}
+				if ( bc.summary ) {
+					html += '<p><strong>Sent:</strong> ' + this.esc( String( bc.summary.successful_channels || 0 ) ) +
+						' / ' + this.esc( String( bc.summary.total_channels || 0 ) ) + ' channels</p>';
+				}
+			} else if ( 'workflow_builder' === type ) {
+				html += '<p><strong>Workflow Builder ID:</strong> ' + this.esc( String( log.workflow_builder_id || '' ) ) + '</p>';
+			} else {
+				// Fallback: formatted JSON.
+				html += '<pre class="wp-mcp-ai-sm-log-pre">' + this.esc( JSON.stringify( log, null, 2 ) ) + '</pre>';
+			}
+
+			html += '</div>';
+			return html;
 		},
 
 		/** Safe HTML escape */
