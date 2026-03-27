@@ -277,13 +277,11 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<option value="enabled"><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="disabled"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
-					<button type="button" class="button" id="wp-mcp-ai-sm-refresh">
+					<button type="button" class="button" id="wp-mcp-ai-sm-refresh" title="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>" aria-label="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-update"></span>
-						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
-					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>">
+					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>" aria-label="<?php esc_attr_e( 'Export to Calendar', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-calendar-alt"></span>
-						<?php esc_html_e( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				</div>
 			</div>
@@ -966,9 +964,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	/**
 	 * Render the error & activity logging table if logging is enabled.
 	 *
-	 * Mirrors the identical section rendered on the General and Advanced
-	 * settings tabs so that schedule-related errors are visible without
-	 * navigating away from the Schedule Manager.
+	 * Only shows schedule-related error entries so that operators can
+	 * troubleshoot schedule issues without noise from unrelated events.
 	 */
 	private function render_logging_table() {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -978,13 +975,27 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			return;
 		}
 
-		$entries = WP_MCP_AI_Logger::get_recent_error_messages();
+		$all_entries = WP_MCP_AI_Logger::get_recent_error_messages( 50 );
+
+		// Filter to only schedule-related error entries by checking message
+		// content and context for a schedule_id key.
+		$entries = array();
+		foreach ( $all_entries as $entry ) {
+			$msg         = isset( $entry['message'] ) ? $entry['message'] : '';
+			$has_context = isset( $entry['context']['schedule_id'] ) || isset( $entry['context']['event'] );
+			if ( stripos( $msg, 'schedule' ) !== false || $has_context ) {
+				$entries[] = $entry;
+			}
+			if ( count( $entries ) >= 20 ) {
+				break;
+			}
+		}
 		?>
 		<div class="wp-mcp-ai-error-log-section" style="margin-top: 30px;">
-			<h3><?php esc_html_e( 'Recent Error & Activity Log', 'mcp-ai-wpoos' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos' ); ?></p>
+			<h3><?php esc_html_e( 'Schedule Error Log', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Recent schedule-related error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php if ( empty( $entries ) ) : ?>
-				<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'mcp-ai-wpoos' ); ?></p>
+				<p class="description"><?php esc_html_e( 'No schedule-related error or warning messages have been recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php else : ?>
 				<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
 					<?php
@@ -1082,9 +1093,9 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	}
 
 	/**
-	 * Render the recent activity log if logging is enabled.
+	 * Render a dedicated activity log scoped to schedule events.
 	 *
-	 * Shows tool executions, API requests, and other activity entries that
+	 * Only shows entries with the 'schedule_run' event type, which
 	 * are recorded by WP_MCP_AI_Logger, giving schedule operators quick
 	 * visibility into what happened during recent schedule runs.
 	 */
@@ -1096,13 +1107,13 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			return;
 		}
 
-		$entries = WP_MCP_AI_Logger::get_recent_activity_entries( 20 );
+		$entries = WP_MCP_AI_Logger::get_recent_activity_entries( 20, array( 'schedule_run' ) );
 		?>
 		<div class="wp-mcp-ai-activity-log-section" style="margin-top: 30px;">
-			<h3><?php esc_html_e( 'Recent Activity Log', 'mcp-ai-wpoos' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'Recent tool executions, API requests, and system events (most recent first).', 'mcp-ai-wpoos' ); ?></p>
+			<h3><?php esc_html_e( 'Schedule Activity Log', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Recent schedule executions, triggers, and retries (most recent first).', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php if ( empty( $entries ) ) : ?>
-				<p class="description"><?php esc_html_e( 'No activity has been recorded yet.', 'mcp-ai-wpoos' ); ?></p>
+				<p class="description"><?php esc_html_e( 'No schedule activity has been recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php else : ?>
 				<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
 					<?php

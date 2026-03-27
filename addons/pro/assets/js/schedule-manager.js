@@ -304,16 +304,16 @@
 			row += '<span class="wp-mcp-ai-sm-slider"></span>';
 			row += '</label></td>';
 
-			// Actions.
+			// Actions (icon-only buttons with title tooltips).
 			row += '<td class="column-actions">';
-			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '">' +
-				'&#9654; Run</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '">' +
-				'&#9998; Edit</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '">' +
-				'&#128203; History</button> ';
-			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '">' +
-				'&#10005; Delete</button>';
+			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '" title="Run" aria-label="Run">' +
+				'&#9654;</button> ';
+			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '" title="Edit" aria-label="Edit">' +
+				'&#9998;</button> ';
+			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '" title="History" aria-label="History">' +
+				'&#128203;</button> ';
+			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '" title="Delete" aria-label="Delete">' +
+				'&#10005;</button>';
 			row += '</td></tr>';
 
 			return row;
