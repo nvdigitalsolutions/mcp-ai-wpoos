@@ -390,9 +390,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
-					'info',
+					'schedule_run',
 					'Pro schedule created: ' . $name,
 					array(
+						'event'       => 'schedule_created',
 						'schedule_id' => $schedule_id,
 						'hook'        => $hook,
 						'schedule'    => $schedule,
@@ -543,7 +544,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			self::save_history( $history );
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log_event( 'info', 'Pro schedule deleted: ' . $schedule_id );
+				WP_MCP_AI_Logger::log_event( 'schedule_run', 'Pro schedule deleted: ' . $schedule_id, array( 'event' => 'schedule_deleted' ) );
 			}
 
 			return true;
@@ -648,9 +649,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
-					'info',
+					'schedule_run',
 					'Pro schedule manually triggered: ' . $schedule['name'],
 					array(
+						'event'       => 'schedule_triggered',
 						'schedule_id' => $schedule_id,
 						'user_id'     => $user_id,
 					)
@@ -1979,7 +1981,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
-						'warning',
+						'schedule_run',
 						sprintf(
 							'Pro schedule retry %d/%d scheduled: %s',
 							$retry_count + 1,
@@ -1987,6 +1989,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							$schedule['name']
 						),
 						array(
+							'event'       => 'schedule_retry',
 							'schedule_id' => $schedule_id,
 							'retry_at'    => $retry_at,
 						)

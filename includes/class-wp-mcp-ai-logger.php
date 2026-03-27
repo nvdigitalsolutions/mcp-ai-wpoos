@@ -792,6 +792,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'lm_studio_completion_response',
 					'openai_external_action_request',
 					'openai_external_action_response',
+					'schedule_run',
 				)
 			);
 
