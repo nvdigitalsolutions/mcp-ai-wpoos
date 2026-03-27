@@ -1046,4 +1046,124 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 		WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
 		$this->assertTrue( $fired, 'The wp_mcp_ai_pro_scheduled_assistant_run action should fire.' );
 	}
+
+	// -------------------------------------------------------------------------
+	// extract_content_from_chat_response
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that extract_content_from_chat_response returns the assistant message
+	 * from the standard /mcp-ai/v1/chat response structure (data.choices[0].message.content).
+	 */
+	public function test_extract_content_from_chat_response_data_choices() {
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Hello from the scheduler!',
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$content = WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( $response_data );
+		$this->assertSame( 'Hello from the scheduler!', $content );
+	}
+
+	/**
+	 * Test extraction falls back to top-level choices when 'data' key is absent.
+	 */
+	public function test_extract_content_from_chat_response_fallback_choices() {
+		$response_data = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => 'Fallback reply.',
+					),
+				),
+			),
+		);
+
+		$content = WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( $response_data );
+		$this->assertSame( 'Fallback reply.', $content );
+	}
+
+	/**
+	 * Test that extraction returns empty string for non-array input.
+	 */
+	public function test_extract_content_from_chat_response_non_array() {
+		$this->assertSame( '', WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( 'string' ) );
+		$this->assertSame( '', WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( null ) );
+	}
+
+	/**
+	 * Test that extraction returns empty string when choices are empty.
+	 */
+	public function test_extract_content_from_chat_response_empty_choices() {
+		$response_data = array(
+			'data' => array(
+				'choices' => array(),
+			),
+		);
+
+		$this->assertSame( '', WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( $response_data ) );
+	}
+
+	/**
+	 * Test that extraction returns empty string when content is null (tool_calls loop).
+	 */
+	public function test_extract_content_from_chat_response_null_content() {
+		$response_data = array(
+			'data' => array(
+				'choices' => array(
+					array(
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => null,
+						),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+			),
+		);
+
+		$this->assertSame( '', WP_MCP_AI_Pro_Schedule_Manager::extract_content_from_chat_response( $response_data ) );
+	}
+
+	// -------------------------------------------------------------------------
+	// get_scheduled_run_max_agentic_iterations
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test default iteration cap is DEFAULT_MAX_AGENTIC_ITERATIONS when base default of 5 is passed.
+	 */
+	public function test_scheduled_run_max_agentic_iterations_default() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::get_scheduled_run_max_agentic_iterations( 5 );
+		$this->assertSame( WP_MCP_AI_Pro_Schedule_Manager::DEFAULT_MAX_AGENTIC_ITERATIONS, $result );
+	}
+
+	/**
+	 * Test that per-assistant config overrides the default.
+	 */
+	public function test_scheduled_run_max_agentic_iterations_per_assistant() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::get_scheduled_run_max_agentic_iterations(
+			5,
+			array( 'max_agentic_iterations' => 25 )
+		);
+		$this->assertSame( 25, $result );
+	}
+
+	/**
+	 * Test that an admin setting (higher than base 5) is honoured.
+	 */
+	public function test_scheduled_run_max_agentic_iterations_admin_setting() {
+		$result = WP_MCP_AI_Pro_Schedule_Manager::get_scheduled_run_max_agentic_iterations( 15 );
+		$this->assertSame( 15, $result );
+	}
 }
