@@ -869,6 +869,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$success       = true;
 			$action_log    = array( 'type' => $schedule_type );
 
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_schedule_run(
+					'schedule_run_start',
+					$schedule_id,
+					$schedule['name'],
+					$schedule_type
+				);
+			}
+
 			try {
 				switch ( $schedule_type ) {
 					case self::TYPE_WORKFLOW:
@@ -942,6 +951,33 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 
 			// Record run result.
 			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
+
+			// Log the run completion to the Logger service.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				if ( $success ) {
+					WP_MCP_AI_Logger::log_schedule_run(
+						'schedule_run_complete',
+						$schedule_id,
+						$schedule['name'],
+						$schedule_type,
+						array(
+							'duration'   => $duration,
+							'action_log' => $action_log,
+						)
+					);
+				} else {
+					WP_MCP_AI_Logger::log_schedule_run(
+						'schedule_run_failed',
+						$schedule_id,
+						$schedule['name'],
+						$schedule_type,
+						array(
+							'duration' => $duration,
+							'error'    => $error_msg,
+						)
+					);
+				}
+			}
 
 			// Handle retry logic on failure.
 			if ( ! $success ) {
