@@ -277,13 +277,11 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<option value="enabled"><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="disabled"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
-					<button type="button" class="button" id="wp-mcp-ai-sm-refresh">
+					<button type="button" class="button" id="wp-mcp-ai-sm-refresh" title="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-update"></span>
-						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-calendar-alt"></span>
-						<?php esc_html_e( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				</div>
 			</div>
