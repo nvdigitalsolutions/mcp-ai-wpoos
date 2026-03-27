@@ -144,11 +144,14 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			}
 		}
 
+		$css_path    = WP_MCP_AI_PRO_PATH . 'assets/css/schedule-manager.css';
+		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_PRO_VERSION;
+
 		wp_enqueue_style(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/css/schedule-manager.css',
 			array(),
-			WP_MCP_AI_PRO_VERSION
+			$css_version
 		);
 
 		// chart.js — used for the run-history sparkline in the history modal.
@@ -164,11 +167,14 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			);
 		}
 
+		$js_path    = WP_MCP_AI_PRO_PATH . 'assets/js/schedule-manager.js';
+		$js_version = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_PRO_VERSION;
+
 		wp_enqueue_script(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/js/schedule-manager.js',
 			array( 'jquery', 'wp-util', 'chartjs' ),
-			WP_MCP_AI_PRO_VERSION,
+			$js_version,
 			true
 		);
 
