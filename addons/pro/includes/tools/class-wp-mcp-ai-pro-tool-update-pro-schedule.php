@@ -105,6 +105,16 @@ class WP_MCP_AI_Pro_Tool_Update_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'New retry delay in seconds. Minimum 60.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 60,
 				),
+				'timeout'           => array(
+					'type'        => 'integer',
+					'description' => __( 'New maximum execution time in seconds. 0 = no limit.', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+				),
+				'callback_url'      => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'New external webhook callback URL. Empty string to remove.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'schedule_id' ),
 			'additionalProperties' => false,
