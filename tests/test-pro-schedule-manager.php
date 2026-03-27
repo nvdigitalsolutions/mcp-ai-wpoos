@@ -1372,13 +1372,15 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $id );
 
-		$fired = false;
+		$fired      = false;
+		$captured_wf_id   = null;
+		$captured_results = null;
 		add_action(
 			'wp_mcp_ai_pro_workflow_builder_completed',
-			function ( $sid, $sched, $wf_id, $results ) use ( &$fired ) {
-				$fired = true;
-				$this->assertSame( 'action_wf', $wf_id );
-				$this->assertArrayHasKey( 'trigger-1', $results );
+			function ( $sid, $sched, $wf_id, $results ) use ( &$fired, &$captured_wf_id, &$captured_results ) {
+				$fired            = true;
+				$captured_wf_id   = $wf_id;
+				$captured_results = $results;
 			},
 			10,
 			4
@@ -1386,6 +1388,8 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 
 		WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id );
 		$this->assertTrue( $fired, 'The wp_mcp_ai_pro_workflow_builder_completed action should fire.' );
+		$this->assertSame( 'action_wf', $captured_wf_id );
+		$this->assertArrayHasKey( 'trigger-1', $captured_results );
 
 		delete_option( 'wp_mcp_ai_pro_workflows' );
 	}

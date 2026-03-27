@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			// Diagnostic: confirm hooks are registered (visible in error log when WP_DEBUG is on).
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging guarded by WP_DEBUG.
-				error_log( 'WP_MCP_AI_Pro_Schedule_Manager::init() — dispatch hook registered for: ' . self::DISPATCH_HOOK );
+				error_log( 'WP_MCP_AI_Pro_Schedule_Manager::init() - dispatch hook registered for: ' . self::DISPATCH_HOOK );
 			}
 		}
 
@@ -1694,9 +1694,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						break;
 
 					case 'agent':
-						$prompt = isset( $config['prompt'] ) ? (string) $config['prompt'] : '';
+						$prompt   = isset( $config['prompt'] ) ? (string) $config['prompt'] : '';
+						$agent_id = isset( $config['agent_id'] ) ? $config['agent_id'] : 'default';
 
-						$agent_result = apply_filters( 'wp_mcp_ai_workflow_execute_agent', null, isset( $config['agent_id'] ) ? $config['agent_id'] : 'default', $prompt, array_merge( $context, array( 'node_results' => $node_results ) ) );
+						$agent_result = apply_filters( 'wp_mcp_ai_workflow_execute_agent', null, $agent_id, $prompt, array_merge( $context, array( 'node_results' => $node_results ) ) );
 						$result       = null !== $agent_result ? $agent_result : array(
 							'type'   => 'agent',
 							'prompt' => wp_trim_words( $prompt, 20, '…' ),
@@ -1771,10 +1772,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Write a diagnostic log message for Schedule Manager troubleshooting.
 		 *
-		 * Logs to WP_MCP_AI_Logger (when available) and additionally to the PHP
-		 * error log via error_log() when WP_DEBUG is enabled. This dual output
-		 * ensures that schedule dispatches are traceable both in the plugin's
-		 * activity log UI and in server-side log files / WP-CLI / Docker stdout.
+		 * Always logs to WP_MCP_AI_Logger (when available) at 'debug' level so
+		 * that entries appear in the plugin's activity log UI regardless of the
+		 * WP_DEBUG constant. Additionally writes to the PHP error log via
+		 * error_log() when WP_DEBUG is enabled, ensuring server-side log files,
+		 * WP-CLI output, and Docker stdout also capture the messages.
 		 *
 		 * @param string $message Human-readable diagnostic message.
 		 */
