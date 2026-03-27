@@ -216,6 +216,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'exportIcalTitle' => __( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ),
 					'chartSuccess'    => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'chartFailure'    => __( 'Failure', 'mcp-ai-wpoos-pro' ),
+					'viewLog'         => __( 'View Log', 'mcp-ai-wpoos-pro' ),
+					'hideLog'         => __( 'Hide Log', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -837,10 +839,11 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		$formatted = array_map(
 			function ( $entry ) {
 				return array(
-					'status'   => $entry['status'],
-					'time'     => wp_date( 'Y-m-d H:i:s', $entry['start_time'] ),
-					'duration' => $entry['duration'],
-					'error'    => $entry['error'],
+					'status'     => $entry['status'],
+					'time'       => wp_date( 'Y-m-d H:i:s', $entry['start_time'] ),
+					'duration'   => $entry['duration'],
+					'error'      => $entry['error'],
+					'action_log' => isset( $entry['action_log'] ) && is_array( $entry['action_log'] ) ? $entry['action_log'] : array(),
 				);
 			},
 			$history

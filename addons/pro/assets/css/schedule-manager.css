@@ -493,3 +493,18 @@ background: #f0f6fc;
 color: #1565c0;
 border: 1px solid #90caf9;
 }
+
+/* Action log pre-formatted display in history modal */
+.wp-mcp-ai-sm-action-log {
+background: #f6f7f7;
+border: 1px solid #ddd;
+border-radius: 3px;
+font-size: 11px;
+line-height: 1.5;
+margin: 6px 0 0;
+max-height: 240px;
+overflow: auto;
+padding: 8px;
+white-space: pre-wrap;
+word-break: break-all;
+}

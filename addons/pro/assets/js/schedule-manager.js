@@ -739,22 +739,43 @@
 					}
 
 					// ── run history table ──────────────────────────────────
-					const rows = history.map( function ( entry ) {
+					const rows = history.map( function ( entry, idx ) {
 						const cls = 'success' === entry.status ? 'wp-mcp-ai-sm-status-success' : 'wp-mcp-ai-sm-status-failure';
 						const dur = entry.duration ? ' (' + parseFloat( entry.duration ).toFixed( 3 ) + 's)' : '';
 						const errHtml = entry.error
 							? '<br><small class="wp-mcp-ai-sm-error-text">' + SM.esc( entry.error ) + '</small>'
 							: '';
+						let logHtml = '';
+						if ( entry.action_log && typeof entry.action_log === 'object' && Object.keys( entry.action_log ).length ) {
+							const logId = 'sm-log-' + idx;
+							logHtml = '<br><button type="button" class="button button-small wp-mcp-ai-sm-log-toggle" data-target="' + logId + '">' +
+								wpMcpAiScheduleManager.strings.viewLog + '</button>' +
+								'<pre id="' + logId + '" class="wp-mcp-ai-sm-action-log" style="display:none;">' +
+								SM.esc( JSON.stringify( entry.action_log, null, 2 ) ) + '</pre>';
+						}
 						return '<tr><td class="' + cls + '">' +
 							SM.esc( entry.status ) + '</td>' +
-							'<td>' + SM.esc( entry.time ) + dur + errHtml + '</td></tr>';
+							'<td>' + SM.esc( entry.time ) + dur + errHtml + logHtml + '</td></tr>';
 					} );
 
-					$body.html(
-						'<table class="widefat striped"><thead><tr>' +
+					const $table = $( '<table class="widefat striped"><thead><tr>' +
 						'<th>Status</th><th>Time / Error</th></tr></thead><tbody>' +
-						rows.join( '' ) + '</tbody></table>'
-					);
+						rows.join( '' ) + '</tbody></table>' );
+
+					// Toggle log visibility on button click.
+					$table.on( 'click', '.wp-mcp-ai-sm-log-toggle', function () {
+						const targetId = $( this ).data( 'target' );
+						const $pre = $( '#' + targetId );
+						if ( $pre.is( ':visible' ) ) {
+							$pre.hide();
+							$( this ).text( wpMcpAiScheduleManager.strings.viewLog );
+						} else {
+							$pre.show();
+							$( this ).text( wpMcpAiScheduleManager.strings.hideLog );
+						}
+					} );
+
+					$body.html( $table );
 				}
 			);
 		},
