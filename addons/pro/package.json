@@ -80,7 +80,8 @@
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
 		"basic-ftp": ">=5.2.0",
-		"undici": ">=7.24.0"
+		"undici": ">=7.24.0",
+		"picomatch@^2": "2.3.2"
 	},
 	"keywords": [
 		"wordpress",
