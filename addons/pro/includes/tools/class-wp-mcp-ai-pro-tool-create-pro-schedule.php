@@ -194,6 +194,17 @@ class WP_MCP_AI_Pro_Tool_Create_Pro_Schedule implements WP_MCP_AI_Tool_Interface
 					'minimum'     => 60,
 					'default'     => 300,
 				),
+				'timeout'           => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum execution time in seconds. Runs exceeding this are marked as failed. 0 = no limit. Defaults to 0.', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+					'default'     => 0,
+				),
+				'callback_url'      => array(
+					'type'        => 'string',
+					'format'      => 'uri',
+					'description' => __( 'External webhook URL that receives a POST with run results on completion or failure.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'additionalProperties' => false,
 		);

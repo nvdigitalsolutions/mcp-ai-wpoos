@@ -458,6 +458,8 @@
 				notify_email:     $( '#sm-notify-email' ).val().trim(),
 				max_retries:      parseInt( $( '#sm-max-retries' ).val(), 10 ) || 0,
 				retry_delay:      parseInt( $( '#sm-retry-delay' ).val(), 10 ) || 300,
+				timeout:          parseInt( $( '#sm-timeout' ).val(), 10 ) || 0,
+				callback_url:     $( '#sm-callback-url' ).val().trim(),
 				tags:             $( '#sm-tags' ).val().split( ',' ).map( function ( t ) { return t.trim(); } ).filter( Boolean ),
 			};
 
@@ -911,6 +913,8 @@
 			html += this.editRow( 'Tags', '<input type="text" id="edit-tags" class="regular-text" value="' + this.esc( ( schedule.tags || [] ).join( ', ' ) ) + '">' );
 			html += this.editRow( 'Max Retries', '<input type="number" id="edit-max-retries" class="small-text" min="0" max="5" value="' + parseInt( schedule.max_retries, 10 ) + '">' );
 			html += this.editRow( 'Retry Delay (s)', '<input type="number" id="edit-retry-delay" class="small-text" min="60" value="' + parseInt( schedule.retry_delay, 10 ) + '">' );
+			html += this.editRow( 'Timeout (s)', '<input type="number" id="edit-timeout" class="small-text" min="0" value="' + parseInt( schedule.timeout || 0, 10 ) + '"><br><span class="description">0 = no limit</span>' );
+			html += this.editRow( 'Webhook Callback URL', '<input type="url" id="edit-callback-url" class="regular-text" value="' + this.esc( schedule.callback_url || '' ) + '" placeholder="https://example.com/webhook">' );
 			html += this.editRow(
 				'Failure Email',
 				'<label><input type="checkbox" id="edit-notify" ' + ( schedule.notify_on_failure ? 'checked' : '' ) + '> Send email on failure</label>' +
@@ -964,6 +968,8 @@
 				tags:             $( '#edit-tags' ).val().split( ',' ).map( function ( t ) { return t.trim(); } ).filter( Boolean ),
 				max_retries:      parseInt( $( '#edit-max-retries' ).val(), 10 ) || 0,
 				retry_delay:      parseInt( $( '#edit-retry-delay' ).val(), 10 ) || 300,
+				timeout:          parseInt( $( '#edit-timeout' ).val(), 10 ) || 0,
+				callback_url:     $( '#edit-callback-url' ).val().trim(),
 				notify_on_failure: $( '#edit-notify' ).is( ':checked' ),
 				notify_email:     $( '#edit-notify-email' ).val().trim(),
 			};

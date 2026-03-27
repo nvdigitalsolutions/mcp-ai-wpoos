@@ -20,7 +20,7 @@ It supports five first-class schedule types, execution history with a success/fa
 |------|-------------|
 | `task` | Fires a WP action hook with optional arguments |
 | `workflow` | Executes an ordered chain of AI tool calls via the Tool Registry; each step receives previous results in context |
-| `assistant_run` | Fires `wp_mcp_ai_pro_scheduled_assistant_run` — triggers any NV oOS assistant with a configured message |
+| `assistant_run` | Sends a message to an NV oOS assistant via the internal `/mcp-ai/v1/chat` REST endpoint and stores the AI response in the action log |
 | `channel_broadcast` | Delivers a recurring message to Telegram, Slack, Discord, Teams, Messenger, or WhatsApp via `unified_channel_broadcast` |
 | `workflow_builder` | References a saved **Pro Workflow Builder** workflow by ID and runs its full DAG server-side |
 
@@ -183,6 +183,51 @@ On failure the schedule re-queues itself via `wp_schedule_single_event()` after 
 
 ---
 
+## Timeout
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `timeout` | `0` | Seconds; 0 = no limit |
+
+When `timeout > 0`, the dispatcher calls `set_time_limit()` before execution and checks
+the actual duration afterwards. Runs exceeding the limit are marked as failed with a
+descriptive error message.
+
+> **Note:** `set_time_limit()` may be disabled on shared hosting environments. As a
+> fallback, the post-execution duration check will still mark long-running tasks as
+> failed (best-effort enforcement).
+
+---
+
+## Webhook Callback
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `callback_url` | `''` | Empty = disabled |
+
+When a valid HTTPS URL is configured, the dispatcher POSTs a JSON payload to it after
+every run (success **and** failure). The request is non-blocking (`blocking => false`)
+so it does not delay the cron cycle.
+
+**Payload shape:**
+
+```json
+{
+  "event": "schedule.run.success",
+  "schedule_id": "abc123",
+  "schedule_name": "Daily Report",
+  "schedule_type": "assistant_run",
+  "status": "success",
+  "duration": 1.234,
+  "error": "",
+  "action_log": { ... },
+  "timestamp": "2026-03-27T12:00:00+00:00",
+  "site_url": "https://example.com"
+}
+```
+
+---
+
 ## JetEngine CCT Persistence
 
 When JetEngine is active, every run is written to `WP_MCP_AI_Execution_History_CCT`, making runs visible alongside orchestration history in JetEngine admin listings:
@@ -334,7 +379,7 @@ Inline JSON validation highlights invalid fields before the form can be submitte
 | Hook | Type | When |
 |------|------|------|
 | `wp_mcp_ai_pro_workflow_completed` | Action | After all workflow steps succeed |
-| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | When an `assistant_run` schedule fires |
+| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | After an `assistant_run` schedule completes (includes `response` key in context) |
 | `wp_mcp_ai_pro_channel_broadcast` | Action | Fallback when `unified_channel_broadcast` tool is unavailable |
 | `wp_mcp_ai_ics_generate_calendar` | Filter | Override ICS generation (e.g. ical-generator Node service) |
 

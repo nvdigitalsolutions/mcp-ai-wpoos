@@ -7,10 +7,13 @@
  * - Per-schedule enable/disable toggle
  * - Execution history (ring buffer, last 50 runs per schedule)
  * - Retry logic with configurable attempts and delay
+ * - Per-schedule timeout enforcement (industry-standard hung-task protection)
+ * - Webhook callback URL (POST run results to external systems on completion/failure)
  * - Admin email notifications on failure (wp_mail + Nodemailer HTML when available)
  * - Channel notifications via unified_channel_broadcast tool (Slack, Teams, Discord, Telegram, etc.)
  * - Priority ordering for schedule creation UI
  * - Central dispatcher hook for auditable execution
+ * - assistant_run schedule type: sends message to AI assistant via internal REST chat endpoint
  * - channel_broadcast schedule type: send a message to chat channels on a schedule
  * - Execution History CCT integration when JetEngine is available
  * - Per-step tool-execution logging via WP_MCP_AI_Logger::log_tool_execution()
@@ -311,6 +314,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				: array();
 			$tags            = isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array();
 
+			// timeout: maximum execution time in seconds (0 = no limit). Industry-standard safeguard against hung tasks.
+			$timeout = isset( $data['timeout'] ) ? max( 0, (int) $data['timeout'] ) : 0;
+
+			// callback_url: external webhook URL that receives a POST with run results on completion/failure.
+			$callback_url = isset( $data['callback_url'] ) ? esc_url_raw( $data['callback_url'] ) : '';
+			if ( $callback_url && ! wp_http_validate_url( $callback_url ) ) {
+				return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
+			}
+
 			// Use a unique ID that incorporates schedule type for workflow/assistant to avoid collisions.
 			$id_key      = self::TYPE_TASK === $schedule_type
 				? array( 'hook' => $hook, 'args' => $args )
@@ -335,6 +347,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				'enabled'           => $enabled,
 				'priority'          => $priority,
 				'tags'              => $tags,
+				'timeout'           => $timeout,
+				'callback_url'      => $callback_url,
 				'notify_on_failure'  => $notify,
 				'notify_email'       => $notify_email,
 				'notify_channels'             => $notify_channels,
@@ -444,6 +458,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 			if ( isset( $data['retry_delay'] ) ) {
 				$updated['retry_delay'] = max( 60, (int) $data['retry_delay'] );
+			}
+			if ( isset( $data['timeout'] ) ) {
+				$updated['timeout'] = max( 0, (int) $data['timeout'] );
+			}
+			if ( isset( $data['callback_url'] ) ) {
+				$url = esc_url_raw( $data['callback_url'] );
+				if ( '' !== $url && ! wp_http_validate_url( $url ) ) {
+					return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
+				}
+				$updated['callback_url'] = $url;
 			}
 			if ( isset( $data['schedule'] ) ) {
 				$new_schedule = sanitize_key( $data['schedule'] );
@@ -869,6 +893,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$success       = true;
 			$action_log    = array( 'type' => $schedule_type );
 
+			// Timeout: set a PHP time limit for this dispatch if configured (0 = unlimited).
+			// Note: set_time_limit() may be disabled on shared hosting environments.
+			// As a fallback, the duration is also checked post-execution and the run is
+			// marked as failed if it exceeded the timeout (best-effort enforcement).
+			$timeout = isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0;
+			if ( $timeout > 0 ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- set_time_limit may be disabled on some hosts.
+				@set_time_limit( $timeout );
+			}
+
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_schedule_run(
 					'schedule_run_start',
@@ -949,6 +983,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$end      = microtime( true );
 			$duration = round( $end - $start, 3 );
 
+			// Timeout enforcement: if the run exceeded the configured timeout, mark as failed.
+			if ( $success && $timeout > 0 && $duration > $timeout ) {
+				$success   = false;
+				$error_msg = sprintf(
+					/* translators: 1: actual duration, 2: allowed timeout */
+					__( 'Schedule execution exceeded timeout (%1$.1fs > %2$ds).', 'mcp-ai-wpoos-pro' ),
+					$duration,
+					$timeout
+				);
+			}
+
 			// Record run result.
 			self::record_run( $schedule_id, $success, $duration, $error_msg, $action_log );
 
@@ -988,6 +1033,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$schedules[ $schedule_id ]['retry_count']    = 0;
 				$schedules[ $schedule_id ]['last_run_status'] = 'success';
 				self::save_schedules( $schedules );
+			}
+
+			// Webhook callback: POST run results to the external callback URL if configured.
+			$callback_url = isset( $schedule['callback_url'] ) ? $schedule['callback_url'] : '';
+			if ( '' !== $callback_url ) {
+				self::fire_webhook_callback( $callback_url, $schedule_id, $schedule, $success, $duration, $error_msg, $action_log );
 			}
 
 			return $success;
@@ -1106,13 +1157,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		/**
 		 * Execute an assistant_run schedule.
 		 *
-		 * Fires the `wp_mcp_ai_pro_scheduled_assistant_run` action so that listeners
-		 * can process the configured assistant and message asynchronously. The action
-		 * passes the full schedule config; integrators are responsible for hooking in.
+		 * Sends the configured message to the assistant via the internal REST chat
+		 * endpoint (`/mcp-ai/v1/chat`) and returns the AI response. Falls back to
+		 * firing the `wp_mcp_ai_pro_scheduled_assistant_run` action when the REST
+		 * infrastructure is unavailable so that custom listeners can still react.
 		 *
 		 * @param array  $schedule    Schedule record.
 		 * @param string $schedule_id Schedule ID.
-		 * @return array|WP_Error Info array describing the dispatched run on success, WP_Error on failure.
+		 * @return array|WP_Error Result array with assistant response on success, WP_Error on failure.
 		 */
 		protected static function dispatch_assistant_run( array $schedule, $schedule_id ) {
 			$config = isset( $schedule['assistant_config'] ) && is_array( $schedule['assistant_config'] )
@@ -1123,29 +1175,117 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				return new WP_Error( 'invalid_assistant_config', __( 'Assistant run is missing assistant_id or message.', 'mcp-ai-wpoos-pro' ) );
 			}
 
+			$assistant_id = (int) $config['assistant_id'];
+			$message      = (string) $config['message'];
+			$user_id      = isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0;
+
+			// Switch to the schedule creator so the REST request inherits their capabilities.
+			$previous_user = get_current_user_id();
+			if ( $user_id > 0 && $user_id !== $previous_user ) {
+				wp_set_current_user( $user_id );
+			}
+
+			$result_log = array(
+				'assistant_id' => $assistant_id,
+				'message'      => wp_trim_words( $message, 60, '…' ),
+			);
+
+			// Build the internal REST request to the chat endpoint.
+			if ( function_exists( 'rest_do_request' ) ) {
+				$messages = array(
+					array(
+						'role'    => 'user',
+						'content' => $message,
+					),
+				);
+
+				$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+				// Nonce ensures the REST permissions_check succeeds for internal requests
+				// (same pattern as WP_MCP_AI_Pro_CPT_AI_Integration::send_to_ai).
+				$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+				$request->set_body_params(
+					array(
+						'assistant_id' => $assistant_id,
+						'messages'     => $messages,
+						'stream'       => false,
+						'context'      => array(
+							'source'        => 'pro_schedule_manager',
+							'schedule_id'   => $schedule_id,
+							'schedule_name' => isset( $schedule['name'] ) ? $schedule['name'] : '',
+						),
+					)
+				);
+
+				$response = rest_do_request( $request );
+
+				// Restore the previous user context.
+				if ( $user_id > 0 && $user_id !== $previous_user ) {
+					wp_set_current_user( $previous_user );
+				}
+
+				if ( $response->is_error() ) {
+					$error_data  = $response->get_data();
+					$status_code = $response->get_status();
+					$error_code  = isset( $error_data['code'] ) ? $error_data['code'] : 'unknown';
+					$error_msg   = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Chat API request failed.', 'mcp-ai-wpoos-pro' );
+
+					return new WP_Error(
+						'assistant_run_failed',
+						sprintf(
+							/* translators: 1: HTTP status code, 2: error code, 3: error message */
+							__( 'Chat API error (HTTP %1$d, %2$s): %3$s', 'mcp-ai-wpoos-pro' ),
+							$status_code,
+							$error_code,
+							$error_msg
+						)
+					);
+				}
+
+				$data = $response->get_data();
+
+				// Extract the assistant reply from the response.
+				$reply = '';
+				if ( isset( $data['content'] ) ) {
+					$reply = $data['content'];
+				} elseif ( isset( $data['choices'][0]['message']['content'] ) ) {
+					$reply = $data['choices'][0]['message']['content'];
+				}
+
+				$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
+				$result_log['status']   = 'completed';
+			} else {
+				// Restore the previous user context before falling back.
+				if ( $user_id > 0 && $user_id !== $previous_user ) {
+					wp_set_current_user( $previous_user );
+				}
+
+				$result_log['status'] = 'delegated';
+			}
+
 			/**
-			 * Fires when a scheduled assistant run is dispatched.
+			 * Fires after a scheduled assistant run has been dispatched.
+			 *
+			 * Integrators can hook here to perform post-processing on the assistant
+			 * response (e.g. forwarding the reply to a channel or storing results).
 			 *
 			 * @param int    $assistant_id Assistant post ID.
-			 * @param string $message      Message to send.
-			 * @param array  $context      Additional context (schedule_id, schedule_name, extra context array).
+			 * @param string $message      Message that was sent.
+			 * @param array  $context      Context including schedule_id, schedule_name, response, and user_id.
 			 */
 			do_action(
 				'wp_mcp_ai_pro_scheduled_assistant_run',
-				(int) $config['assistant_id'],
-				(string) $config['message'],
+				$assistant_id,
+				$message,
 				array(
 					'schedule_id'   => $schedule_id,
-					'schedule_name' => $schedule['name'],
+					'schedule_name' => isset( $schedule['name'] ) ? $schedule['name'] : '',
 					'context'       => isset( $config['context'] ) ? $config['context'] : array(),
-					'user_id'       => isset( $schedule['created_by'] ) ? (int) $schedule['created_by'] : 0,
+					'user_id'       => $user_id,
+					'response'      => isset( $result_log['response'] ) ? $result_log['response'] : '',
 				)
 			);
 
-			return array(
-				'assistant_id' => (int) $config['assistant_id'],
-				'message'      => wp_trim_words( (string) $config['message'], 60, '…' ),
-			);
+			return $result_log;
 		}
 
 		/**
@@ -1254,6 +1394,70 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		// -------------------------------------------------------------------------
 		// Internal helpers
 		// -------------------------------------------------------------------------
+
+		/**
+		 * POST schedule run results to an external webhook callback URL.
+		 *
+		 * The payload follows a common webhook structure used by industry-standard
+		 * task schedulers (Airflow, Temporal, AWS Step Functions) so that external
+		 * systems can integrate easily.
+		 *
+		 * @param string $callback_url External URL to POST to.
+		 * @param string $schedule_id  Schedule ID.
+		 * @param array  $schedule     Schedule record.
+		 * @param bool   $success      Whether the run succeeded.
+		 * @param float  $duration     Run duration in seconds.
+		 * @param string $error_msg    Error message if failed.
+		 * @param array  $action_log   Structured action log from the run.
+		 */
+		protected static function fire_webhook_callback( $callback_url, $schedule_id, array $schedule, $success, $duration, $error_msg, array $action_log ) {
+			$payload = array(
+				'event'         => $success ? 'schedule.run.success' : 'schedule.run.failure',
+				'schedule_id'   => $schedule_id,
+				'schedule_name' => isset( $schedule['name'] ) ? $schedule['name'] : '',
+				'schedule_type' => isset( $schedule['schedule_type'] ) ? $schedule['schedule_type'] : 'task',
+				'status'        => $success ? 'success' : 'failure',
+				'duration'      => $duration,
+				'error'         => $error_msg,
+				'action_log'    => $action_log,
+				'timestamp'     => gmdate( 'c' ),
+				'site_url'      => home_url(),
+			);
+
+			$response = wp_remote_post(
+				$callback_url,
+				array(
+					'body'      => wp_json_encode( $payload ),
+					'headers'   => array( 'Content-Type' => 'application/json' ),
+					'timeout'   => 15,
+					'blocking'  => false,
+					'sslverify' => true,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$err_msg = sprintf(
+					'Pro schedule webhook callback failed for %s to %s: %s',
+					$schedule_id,
+					$callback_url,
+					$response->get_error_message()
+				);
+
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Pro schedule webhook callback failed',
+						array(
+							'schedule_id'  => $schedule_id,
+							'callback_url' => $callback_url,
+							'error'        => $response->get_error_message(),
+						)
+					);
+				} else {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Fallback when Logger is unavailable.
+					error_log( $err_msg );
+				}
+			}
+		}
 
 		/**
 		 * Schedule a WP cron event for the central dispatcher.

@@ -530,6 +530,20 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						</div>
 					</div>
 
+					<!-- Row: Timeout + Webhook -->
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-timeout"><?php esc_html_e( 'Timeout (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="number" id="sm-timeout" value="0" min="0" class="small-text">
+							<p class="description"><?php esc_html_e( '0 = no limit. Runs exceeding this are marked as failed.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-callback-url"><?php esc_html_e( 'Webhook Callback URL', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="url" id="sm-callback-url" class="regular-text" placeholder="https://example.com/webhook">
+							<p class="description"><?php esc_html_e( 'Receives a POST with run results on completion or failure.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+					</div>
+
 					<!-- Row: Notifications -->
 					<div class="wp-mcp-ai-sm-form-row">
 						<div class="wp-mcp-ai-sm-form-group">
@@ -624,6 +638,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'notify_email'    => $schedule['notify_email'],
 				'max_retries'     => (int) $schedule['max_retries'],
 				'retry_delay'     => (int) $schedule['retry_delay'],
+				'timeout'         => isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0,
+				'callback_url'    => isset( $schedule['callback_url'] ) ? $schedule['callback_url'] : '',
 				'last_run_status' => $schedule['last_run_status'],
 				'last_run_time'   => $schedule['last_run_time'] ? wp_date( 'Y-m-d H:i:s', $schedule['last_run_time'] ) : null,
 				'last_error'      => $schedule['last_error'],
