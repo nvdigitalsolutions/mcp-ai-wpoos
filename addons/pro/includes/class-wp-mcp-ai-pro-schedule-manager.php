@@ -1155,6 +1155,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Default maximum agentic loop iterations for scheduled assistant runs.
+		 *
+		 * Matches the Telegram auto-reply default so tool-calling assistants can
+		 * complete multi-step workflows (search → analyse → respond, etc.).
+		 */
+		const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
+
+		/**
 		 * Execute an assistant_run schedule.
 		 *
 		 * Sends the configured message to the assistant via the internal REST chat
@@ -1216,7 +1224,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					)
 				);
 
+				// Raise the agentic-loop iteration cap so that multi-step tool
+				// workflows (search → analyse → respond, etc.) can run to completion.
+				// Without this, the /mcp-ai/v1/chat endpoint defaults to 5 iterations
+				// and the final content remains null when a second tool round is needed.
+				// Same pattern used by the Telegram auto-reply handler.
+				add_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10, 2 );
 				$response = rest_do_request( $request );
+				remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
 
 				// Restore the previous user context.
 				if ( $user_id > 0 && $user_id !== $previous_user ) {
@@ -1244,12 +1259,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$data = $response->get_data();
 
 				// Extract the assistant reply from the response.
-				$reply = '';
-				if ( isset( $data['content'] ) ) {
-					$reply = $data['content'];
-				} elseif ( isset( $data['choices'][0]['message']['content'] ) ) {
-					$reply = $data['choices'][0]['message']['content'];
-				}
+				// The /mcp-ai/v1/chat endpoint wraps the raw LLM response under a
+				// 'data' key. This matches the extraction pattern used by every other
+				// internal consumer (Telegram, WhatsApp, Slack, Discord, etc.).
+				$reply = self::extract_content_from_chat_response( $data );
 
 				$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
 				$result_log['status']   = 'completed';
@@ -1286,6 +1299,71 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			);
 
 			return $result_log;
+		}
+
+		/**
+		 * Filter callback: raise the agentic iteration cap for scheduled assistant runs.
+		 *
+		 * Priority order:
+		 * 1. Per-assistant config (highest priority).
+		 * 2. Admin setting (filter_max_agentic_iterations) applied by an earlier filter.
+		 * 3. Schedule manager default (self::DEFAULT_MAX_AGENTIC_ITERATIONS).
+		 *
+		 * @param int   $default_max      Current maximum (may include admin setting).
+		 * @param array $assistant_config Assistant configuration array.
+		 * @return int Maximum iterations to allow.
+		 */
+		public static function get_scheduled_run_max_agentic_iterations( $default_max, $assistant_config = array() ) {
+			// Per-assistant override takes highest priority.
+			if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
+				return absint( $assistant_config['max_agentic_iterations'] );
+			}
+
+			// If an admin setting or earlier filter has already raised the cap above
+			// the hard-coded /chat endpoint base of 5, honour that value.
+			if ( $default_max > 5 ) {
+				return $default_max;
+			}
+
+			return self::DEFAULT_MAX_AGENTIC_ITERATIONS;
+		}
+
+		/**
+		 * Extract the assistant reply text from a /mcp-ai/v1/chat REST response.
+		 *
+		 * The chat endpoint wraps the raw LLM response under a 'data' key. This
+		 * helper normalises the response structure and extracts the first non-empty
+		 * assistant content, matching the pattern used by every other internal
+		 * consumer (Telegram, WhatsApp, Slack, Discord, Google Chat, etc.).
+		 *
+		 * @param mixed $response_data Data returned by WP_REST_Response::get_data().
+		 * @return string Assistant reply text, or empty string if not found.
+		 */
+		public static function extract_content_from_chat_response( $response_data ) {
+			if ( ! is_array( $response_data ) ) {
+				return '';
+			}
+
+			// Normalise: the endpoint wraps the raw LLM response under 'data'.
+			$llm_data = isset( $response_data['data'] ) && is_array( $response_data['data'] )
+				? $response_data['data']
+				: $response_data;
+
+			$choices = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] )
+				? $llm_data['choices']
+				: array();
+
+			if ( empty( $choices ) ) {
+				return '';
+			}
+
+			$first = reset( $choices );
+
+			if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
+				return trim( $first['message']['content'] );
+			}
+
+			return '';
 		}
 
 		/**
