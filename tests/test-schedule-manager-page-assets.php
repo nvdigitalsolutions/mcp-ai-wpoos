@@ -133,6 +133,73 @@ class Test_Schedule_Manager_Page_Assets extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify the container re-population logic used in the separate-plugin scenario.
+	 *
+	 * When the base plugin loads before the Pro addon, the container singleton
+	 * for 'section.schedule_manager' is resolved to null (class not loaded yet).
+	 * PHP's isset() returns false for null, so the next get() call re-runs the
+	 * factory.  After the Pro addon loads the section class, a subsequent get()
+	 * call MUST return a real instance.
+	 */
+	public function test_container_resolves_section_after_class_loaded() {
+		if ( ! function_exists( 'wp_mcp_ai_container' ) ) {
+			$this->markTestSkipped( 'Container not available' );
+		}
+
+		$container = wp_mcp_ai_container();
+
+		// In the test environment, tests/bootstrap.php loads the full plugin
+		// via wp_mcp_ai_manually_load_plugin() on muplugins_loaded, which
+		// triggers loader.php → addons/pro/mcp-ai-wpoos-pro.php, making the
+		// section class available before any test runs.
+		$section = $container->get( 'section.schedule_manager' );
+
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Section_Schedule_Manager',
+			$section,
+			'Container should return a real section instance when the class is available.'
+		);
+	}
+
+	/**
+	 * Verify that render_page produces output when the container has a valid section.
+	 */
+	public function test_render_page_produces_output_with_valid_section() {
+		if ( ! function_exists( 'wp_mcp_ai_container' ) ) {
+			$this->markTestSkipped( 'Container not available' );
+		}
+
+		$container = wp_mcp_ai_container();
+
+		// The container must already hold a real instance (loaded by the Pro
+		// bootstrap).  Assert this rather than silently fixing it up — if this
+		// fails, the Pro load-admin-sections fix is not working.
+		$section = $container->get( 'section.schedule_manager' );
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Section_Schedule_Manager',
+			$section,
+			'Container should already hold a real section instance from the Pro bootstrap.'
+		);
+
+		$page = new WP_MCP_AI_Pro_Schedule_Manager_Page();
+
+		ob_start();
+		$page->render_page();
+		$output = ob_get_clean();
+
+		$this->assertNotEmpty(
+			$output,
+			'render_page() should produce non-empty output when the container has a valid section.'
+		);
+
+		$this->assertStringContainsString(
+			'Pro Schedule Manager',
+			$output,
+			'render_page() output should contain the page title.'
+		);
+	}
+
+	/**
 	 * Clean up after each test.
 	 */
 	public function tearDown(): void {

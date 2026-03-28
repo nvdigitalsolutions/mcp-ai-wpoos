@@ -182,6 +182,24 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $schedule_manager_file;
 		}
 
+		// In the base + pro separate-plugin scenario the base plugin's
+		// settings-dashboard-init.php already called
+		// $container->get( 'section.schedule_manager' ) before the Pro class
+		// file was loaded, so the factory returned null.  Because PHP's isset()
+		// returns false for null, the container will re-run the factory on the
+		// next get() call — but nothing triggers that call during AJAX requests,
+		// meaning the section's AJAX handlers are never registered.
+		//
+		// Force the container to resolve the singleton now that the class file
+		// is loaded so the section constructor registers its AJAX hooks and the
+		// standalone admin page can render and enqueue assets.
+		if (
+			function_exists( 'wp_mcp_ai_container' ) &&
+			class_exists( 'WP_MCP_AI_Section_Schedule_Manager' )
+		) {
+			wp_mcp_ai_container()->get( 'section.schedule_manager' );
+		}
+
 		// Load Pro Schedule Manager standalone admin page (registers under NV oOS Pro Dashboard menu).
 		$schedule_manager_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-manager-page.php';
 		if ( file_exists( $schedule_manager_page ) ) {
