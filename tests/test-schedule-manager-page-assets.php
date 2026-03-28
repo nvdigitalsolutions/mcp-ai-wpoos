@@ -148,8 +148,10 @@ class Test_Schedule_Manager_Page_Assets extends WP_UnitTestCase {
 
 		$container = wp_mcp_ai_container();
 
-		// The section class IS loaded in the test environment (bootstrap loads
-		// the full plugin). Verify that get() returns a real instance.
+		// In the test environment, tests/bootstrap.php loads the full plugin
+		// via wp_mcp_ai_manually_load_plugin() on muplugins_loaded, which
+		// triggers loader.php → addons/pro/mcp-ai-wpoos-pro.php, making the
+		// section class available before any test runs.
 		$section = $container->get( 'section.schedule_manager' );
 
 		$this->assertInstanceOf(
@@ -169,11 +171,15 @@ class Test_Schedule_Manager_Page_Assets extends WP_UnitTestCase {
 
 		$container = wp_mcp_ai_container();
 
-		// Ensure the container has a real section instance.
+		// The container must already hold a real instance (loaded by the Pro
+		// bootstrap).  Assert this rather than silently fixing it up — if this
+		// fails, the Pro load-admin-sections fix is not working.
 		$section = $container->get( 'section.schedule_manager' );
-		if ( ! ( $section instanceof WP_MCP_AI_Section_Schedule_Manager ) ) {
-			$container->set( 'section.schedule_manager', new WP_MCP_AI_Section_Schedule_Manager() );
-		}
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Section_Schedule_Manager',
+			$section,
+			'Container should already hold a real section instance from the Pro bootstrap.'
+		);
 
 		$page = new WP_MCP_AI_Pro_Schedule_Manager_Page();
 
