@@ -33,9 +33,9 @@
 		// Activate the selected tab.
 		$tab.attr( 'aria-selected', 'true' ).attr( 'tabindex', '0' ).addClass( 'is-active' );
 
-		// Show the associated panel.
+		// Show the associated panel using a safe attribute selector.
 		const panelId = $tab.attr( 'aria-controls' );
-		$( '#' + panelId ).removeAttr( 'hidden' ).addClass( 'is-active' );
+		$( document.getElementById( panelId ) ).removeAttr( 'hidden' ).addClass( 'is-active' );
 
 		// Move focus to the activated tab.
 		$tab.focus();
@@ -244,22 +244,44 @@
 		const code  = $btn.data( 'shortcode' );
 		const $feedback = $btn.find( '.wp-mcp-ai-copy-feedback' );
 
-		if ( navigator.clipboard && navigator.clipboard.writeText ) {
-			navigator.clipboard.writeText( code ).then( function() {
-				$feedback.text( wpMcpAiWizard.i18n.copied ).addClass( 'is-visible' );
-				setTimeout( function() {
-					$feedback.removeClass( 'is-visible' );
-				}, 2000 );
-			} );
-		} else {
-			// Fallback for older browsers.
-			const $temp = $( '<textarea>' ).val( code ).appendTo( 'body' ).select();
-			document.execCommand( 'copy' );
-			$temp.remove();
-			$feedback.text( wpMcpAiWizard.i18n.copied ).addClass( 'is-visible' );
+		/**
+		 * Show a temporary success/failure message in the feedback element.
+		 *
+		 * @param {string}  msg     Text to show.
+		 * @param {boolean} success Whether the operation succeeded.
+		 */
+		const showFeedback = function( msg, success ) {
+			$feedback
+				.text( msg )
+				.toggleClass( 'is-visible', true )
+				.toggleClass( 'is-error', ! success );
 			setTimeout( function() {
-				$feedback.removeClass( 'is-visible' );
+				$feedback.removeClass( 'is-visible is-error' );
 			}, 2000 );
+		};
+
+		if ( navigator.clipboard && navigator.clipboard.writeText ) {
+			navigator.clipboard.writeText( code ).then(
+				function() {
+					showFeedback( wpMcpAiWizard.i18n.copied, true );
+				},
+				function() {
+					showFeedback( wpMcpAiWizard.i18n.copyFailed, false );
+				}
+			);
+		} else {
+			// Fallback for older browsers using deprecated execCommand.
+			try {
+				const $temp = $( '<textarea>' ).val( code ).appendTo( 'body' ).select();
+				const ok    = document.execCommand( 'copy' );
+				$temp.remove();
+				showFeedback(
+					ok ? wpMcpAiWizard.i18n.copied : wpMcpAiWizard.i18n.copyFailed,
+					ok
+				);
+			} catch ( _err ) {
+				showFeedback( wpMcpAiWizard.i18n.copyFailed, false );
+			}
 		}
 	} );
 

@@ -252,6 +252,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						'completed'        => __( 'Setup Complete ✓', 'mcp-ai-wpoos' ),
 						'setupComplete'    => __( 'Setup marked complete!', 'mcp-ai-wpoos' ),
 						'copied'           => __( 'Copied!', 'mcp-ai-wpoos' ),
+						'copyFailed'       => __( 'Copy failed — please select and copy manually.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -323,9 +324,9 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			);
 			?>
 			<div class="wp-mcp-ai-wizard-header">
-				<div class="wp-mcp-ai-wizard-logo">
+				<div class="wp-mcp-ai-wizard-logo" aria-label="<?php esc_attr_e( 'NV oOS — Open Operator System', 'mcp-ai-wpoos' ); ?>">
 					<span class="dashicons dashicons-format-chat" aria-hidden="true"></span>
-					<span class="wp-mcp-ai-wizard-brand">NV oOS</span>
+					<span class="wp-mcp-ai-wizard-brand" aria-hidden="true">NV oOS</span>
 				</div>
 
 				<nav class="wp-mcp-ai-wizard-steps" aria-label="<?php esc_attr_e( 'Setup progress', 'mcp-ai-wpoos' ); ?>">
@@ -1990,6 +1991,9 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			}
 			.wp-mcp-ai-copy-feedback.is-visible {
 				opacity: 1;
+			}
+			.wp-mcp-ai-copy-feedback.is-error {
+				background: #dc3232;
 			}
 
 			/* Completion section (step 4) */
