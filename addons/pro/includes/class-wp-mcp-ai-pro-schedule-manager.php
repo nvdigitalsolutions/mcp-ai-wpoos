@@ -327,8 +327,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			$timeout = isset( $data['timeout'] ) ? max( 0, (int) $data['timeout'] ) : 0;
 
 			// callback_url: external webhook URL that receives a POST with run results on completion/failure.
+			// Validate with filter_var() rather than wp_http_validate_url() because
+			// the latter performs DNS resolution, which fails for intranet hosts and
+			// in CI/test environments where DNS is unavailable.
 			$callback_url = isset( $data['callback_url'] ) ? esc_url_raw( $data['callback_url'] ) : '';
-			if ( $callback_url && ! wp_http_validate_url( $callback_url ) ) {
+			if ( $callback_url && ! filter_var( $callback_url, FILTER_VALIDATE_URL ) ) {
 				return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -474,7 +477,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			}
 			if ( isset( $data['callback_url'] ) ) {
 				$url = esc_url_raw( $data['callback_url'] );
-				if ( '' !== $url && ! wp_http_validate_url( $url ) ) {
+				if ( '' !== $url && ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
 					return new WP_Error( 'invalid_callback_url', __( 'The callback URL is not a valid HTTP(S) URL.', 'mcp-ai-wpoos-pro' ) );
 				}
 				$updated['callback_url'] = $url;
@@ -1315,17 +1318,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 						)
 					);
 
-					return new WP_Error(
-						'assistant_run_failed',
-						sprintf(
-							/* translators: 1: HTTP status code, 2: error code, 3: error message */
-							__( 'Chat API error (HTTP %1$d, %2$s): %3$s', 'mcp-ai-wpoos-pro' ),
-							$status_code,
-							$error_code,
-							$error_msg
-						)
+					$result_log['status']   = 'error';
+					$result_log['response'] = sprintf(
+						/* translators: 1: HTTP status code, 2: error code, 3: error message */
+						__( 'Chat API error (HTTP %1$d, %2$s): %3$s', 'mcp-ai-wpoos-pro' ),
+						$status_code,
+						$error_code,
+						$error_msg
 					);
-				}
+				} else {
 
 				$data = $response->get_data();
 
@@ -1399,6 +1400,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 							'agentic_msgs'  => $agentic_messages_count,
 						)
 					);
+				}
 				}
 			} else {
 				self::debug_log( '[assistant_run] rest_do_request() not available — falling back to action hook' );

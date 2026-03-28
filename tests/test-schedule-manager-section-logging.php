@@ -92,8 +92,8 @@ class Test_Schedule_Manager_Section_Logging extends WP_UnitTestCase {
 		$section->render();
 		$output = ob_get_clean();
 
-		$this->assertStringContainsString( 'No error or warning messages have been recorded yet.', $output );
-		$this->assertStringContainsString( 'No activity has been recorded yet.', $output );
+		$this->assertStringContainsString( 'No schedule-related error or warning messages have been recorded yet.', $output );
+		$this->assertStringContainsString( 'No schedule activity has been recorded yet.', $output );
 	}
 
 	/**

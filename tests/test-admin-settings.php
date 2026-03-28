@@ -1034,6 +1034,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that the admin settings script enqueues jquery-ui-sortable dependency.
+	 *
+	 * Note: The legacy admin_enqueue_scripts hook is intentionally disabled in
+	 * the constructor (replaced by WP_MCP_AI_Settings_Dashboard), so we invoke
+	 * enqueue_admin_assets() directly instead of relying on do_action().
 	 */
 	public function test_admin_settings_script_enqueues_sortable_dependency() {
 		// Create an admin user and set as current user.
@@ -1046,8 +1050,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Set the current screen to the settings page.
 		set_current_screen( 'settings_page_wp-mcp-ai-settings' );
 
-		// Trigger the enqueue_admin_assets method.
-		do_action( 'admin_enqueue_scripts', 'settings_page_wp-mcp-ai-settings' );
+		// Call enqueue_admin_assets directly — the admin_enqueue_scripts hook
+		// is disabled in the constructor because the legacy settings page has
+		// been replaced by WP_MCP_AI_Settings_Dashboard.
+		$admin_settings->enqueue_admin_assets( 'settings_page_wp-mcp-ai-settings' );
 
 		// Check if the admin settings script is enqueued.
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-admin-settings', 'enqueued' ) );
