@@ -761,13 +761,16 @@ class WP_MCP_AI_Tool_Financial_Report_Generator implements WP_MCP_AI_Tool_Interf
 	/**
 	 * Convert basic Markdown to HTML.
 	 *
+	 * All captured content is escaped via esc_html() to prevent XSS,
+	 * since report data may originate from user input.
+	 *
 	 * @since 1.1.0
 	 *
 	 * @param string $markdown Markdown content.
 	 * @return string HTML content.
 	 */
 	private function markdown_to_html( $markdown ) {
-		$html = $markdown;
+		$html = esc_html( $markdown );
 
 		// Convert headers.
 		$html = preg_replace( '/^### (.+)$/m', '<h3>$1</h3>', $html );

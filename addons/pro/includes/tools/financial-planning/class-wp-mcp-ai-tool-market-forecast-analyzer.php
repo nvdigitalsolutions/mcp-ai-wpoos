@@ -379,7 +379,7 @@ class WP_MCP_AI_Tool_Market_Forecast_Analyzer implements WP_MCP_AI_Tool_Interfac
 		}
 
 		$denominator = ( $n * $sum_xx ) - ( $sum_x * $sum_x );
-		if ( 0.0 === $denominator ) {
+		if ( abs( $denominator ) < 0.0001 ) {
 			$slope     = 0;
 			$intercept = $sum_y / $n;
 		} else {

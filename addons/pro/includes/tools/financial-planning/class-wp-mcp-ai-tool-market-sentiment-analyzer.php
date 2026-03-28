@@ -200,18 +200,31 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 		);
 
 		if ( $include_aggregate && $count > 0 ) {
-			$avg_score = $total_score / $count;
-			$avg_conf  = $total_conf / $count;
+			$avg_score      = $total_score / $count;
+			$avg_conf       = $total_conf / $count;
+			$positive_count = 0;
+			$negative_count = 0;
+			$neutral_count  = 0;
+
+			foreach ( $results as $r ) {
+				if ( 'positive' === $r['label'] ) {
+					++$positive_count;
+				} elseif ( 'negative' === $r['label'] ) {
+					++$negative_count;
+				} else {
+					++$neutral_count;
+				}
+			}
 
 			$response['aggregate'] = array(
 				'average_score'      => round( $avg_score, 4 ),
 				'average_confidence' => round( $avg_conf, 4 ),
 				'overall_label'      => $this->score_to_label( $avg_score ),
 				'texts_analyzed'     => $count,
-				'positive_count'     => count( array_filter( $results, function ( $r ) { return 'positive' === $r['label']; } ) ),
-				'negative_count'     => count( array_filter( $results, function ( $r ) { return 'negative' === $r['label']; } ) ),
-				'neutral_count'      => count( array_filter( $results, function ( $r ) { return 'neutral' === $r['label']; } ) ),
-				'summary'            => $this->generate_aggregate_summary( $results, $avg_score ),
+				'positive_count'     => $positive_count,
+				'negative_count'     => $negative_count,
+				'neutral_count'      => $neutral_count,
+				'summary'            => $this->generate_aggregate_summary( $count, $avg_score, $positive_count, $negative_count ),
 			);
 		}
 
@@ -461,19 +474,18 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * Generate an aggregate summary from analysis results.
+	 * Generate an aggregate summary from pre-computed counts.
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param array $results   Array of per-text analysis results.
-	 * @param float $avg_score Average sentiment score.
+	 * @param int   $count          Total number of texts analyzed.
+	 * @param float $avg_score      Average sentiment score.
+	 * @param int   $positive_count Number of positive texts.
+	 * @param int   $negative_count Number of negative texts.
 	 * @return string Human-readable summary.
 	 */
-	private function generate_aggregate_summary( $results, $avg_score ) {
-		$count    = count( $results );
-		$label    = $this->score_to_label( $avg_score );
-		$positive = count( array_filter( $results, function ( $r ) { return 'positive' === $r['label']; } ) );
-		$negative = count( array_filter( $results, function ( $r ) { return 'negative' === $r['label']; } ) );
+	private function generate_aggregate_summary( $count, $avg_score, $positive_count, $negative_count ) {
+		$label = $this->score_to_label( $avg_score );
 
 		return sprintf(
 			/* translators: 1: text count, 2: overall label, 3: avg score, 4: positive count, 5: negative count */
@@ -481,8 +493,8 @@ class WP_MCP_AI_Tool_Market_Sentiment_Analyzer implements WP_MCP_AI_Tool_Interfa
 			$count,
 			$label,
 			number_format( $avg_score, 3 ),
-			$positive,
-			$negative
+			$positive_count,
+			$negative_count
 		);
 	}
 }

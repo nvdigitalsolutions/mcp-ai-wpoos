@@ -353,13 +353,13 @@ class WP_MCP_AI_Tool_Financial_Search implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		switch ( $source ) {
 			case 'sec_edgar':
-				$url = 'https://efts.sec.gov/LATEST/search-index?q=' . $encoded_query . '&dateRange=custom&startdt=&enddt=';
+				$edgar_args = array( 'q' => $query );
 				if ( ! empty( $date_param ) ) {
-					$start_date = gmdate( 'Y-m-d', current_time( 'timestamp' ) - ( intval( $date_param ) * DAY_IN_SECONDS ) );
-					$end_date   = gmdate( 'Y-m-d', current_time( 'timestamp' ) );
-					$url        = 'https://efts.sec.gov/LATEST/search-index?q=' . $encoded_query . '&dateRange=custom&startdt=' . $start_date . '&enddt=' . $end_date;
+					$edgar_args['dateRange'] = 'custom';
+					$edgar_args['startdt']   = gmdate( 'Y-m-d', current_time( 'timestamp' ) - ( intval( $date_param ) * DAY_IN_SECONDS ) );
+					$edgar_args['enddt']     = gmdate( 'Y-m-d', current_time( 'timestamp' ) );
 				}
-				return $url;
+				return add_query_arg( $edgar_args, 'https://efts.sec.gov/LATEST/search-index' );
 
 			case 'yahoo_finance':
 				return 'https://finance.yahoo.com/lookup?s=' . $encoded_query;

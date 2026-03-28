@@ -277,7 +277,7 @@ class WP_MCP_AI_Tool_Investment_Signal_Tracker implements WP_MCP_AI_Tool_Interfa
 			$direction = 'neutral';
 		}
 
-		$signal_id = 'sig_' . current_time( 'timestamp' ) . '_' . wp_rand( 1000, 9999 );
+		$signal_id = 'sig_' . wp_generate_uuid4();
 
 		$signal = array(
 			'signal_id'          => $signal_id,
