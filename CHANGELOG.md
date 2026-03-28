@@ -3,6 +3,19 @@
 
 ## [Unreleased]
 
+### Added
+- **Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026)**: Complete code review and enhancement of the Getting Started wizard (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`).
+  - **8 use-case presets** with comprehensive tool lists, system prompts, and temperatures: Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools).
+  - **Assistant seeding**: Selecting presets in Step 3 now creates fully-configured `mcp_ai_assistant` CPT posts with tools, system prompt, provider, model, and temperature — users get a working system out of the box.
+  - **First assistant auto-default**: The first seeded assistant is automatically set as the site's default assistant.
+  - **Copy-to-clipboard**: Shortcode display on Step 4 includes a copy button with accessible feedback.
+  - **Explicit wizard completion**: Step 4 no longer marks the wizard as complete on page render; users must click "Mark Setup Complete" to finalize.
+  - **External JavaScript**: All inline `<script>` blocks extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n strings, improving CSP compliance and cacheability.
+  - **WCAG 2.1 accessibility**: WAI-ARIA `tablist`/`tab`/`tabpanel` pattern for provider tabs with keyboard navigation (Arrow keys, Home, End), `aria-current="step"` progress indicators, `aria-live="polite"` regions for dynamic feedback, `focus-visible` outlines.
+  - **New filter**: `wp_mcp_ai_onboarding_presets` — third-party addons can add or modify onboarding presets.
+  - **New action**: `wp_mcp_ai_onboarding_presets_seeded` — fires after preset assistants are created.
+  - **22 PHPUnit tests** covering presets structure, assistant seeding, duplicate prevention, model resolution, and masked key detection.
+
 ### Changed
 - **Quick Tool Selection Presets – Full 760-Tool Coverage (March 16, 2026)**: Expanded the Quick Tool Selection Presets on the assistant CPT edit page from ~527 covered tools to all 760 available tools, ensuring every registered tool can be applied via a preset without requiring manual search.
   - **New preset**: `📋 Registration & Compliance` (44 tools) — end-to-end regulated product/permit workflow: registration lifecycle (create/approve/renew/submit), document expiry tracking, regulatory submissions, compliance certificates, authority submission, NMRA/MOHAP sync, import duty/HS code
