@@ -4,10 +4,11 @@ const http = require('http');
 const https = require('https');
 const urllib = require('url');
 const zlib = require('zlib');
-const PassThrough = require('stream').PassThrough;
+const { PassThrough } = require('stream');
 const Cookies = require('./cookies');
 const packageData = require('../../package.json');
 const net = require('net');
+const errors = require('../errors');
 
 const MAX_REDIRECTS = 5;
 
@@ -32,16 +33,16 @@ function nmfetch(url, options) {
         options.cookie = false;
     }
 
-    let fetchRes = options.fetchRes;
-    let parsed = urllib.parse(url);
+    const fetchRes = options.fetchRes;
+    const parsed = urllib.parse(url);
     let method = (options.method || '').toString().trim().toUpperCase() || 'GET';
     let finished = false;
     let cookies;
     let body;
 
-    let handler = parsed.protocol === 'https:' ? https : http;
+    const handler = parsed.protocol === 'https:' ? https : http;
 
-    let headers = {
+    const headers = {
         'accept-encoding': 'gzip,deflate',
         'user-agent': 'nodemailer/' + packageData.version
     };
@@ -76,7 +77,7 @@ function nmfetch(url, options) {
                     return;
                 }
                 finished = true;
-                err.type = 'FETCH';
+                err.code = errors.EFETCH;
                 err.sourceUrl = url;
                 fetchRes.emit('error', err);
             });
@@ -89,7 +90,7 @@ function nmfetch(url, options) {
                     body = Buffer.from(
                         Object.keys(options.body)
                             .map(key => {
-                                let value = options.body[key].toString().trim();
+                                const value = options.body[key].toString().trim();
                                 return encodeURIComponent(key) + '=' + encodeURIComponent(value);
                             })
                             .join('&')
@@ -99,7 +100,7 @@ function nmfetch(url, options) {
                         return;
                     }
                     finished = true;
-                    E.type = 'FETCH';
+                    E.code = errors.EFETCH;
                     E.sourceUrl = url;
                     fetchRes.emit('error', E);
                     return;
@@ -116,7 +117,7 @@ function nmfetch(url, options) {
     }
 
     let req;
-    let reqOptions = {
+    const reqOptions = {
         method,
         host: parsed.hostname,
         path: parsed.path,
@@ -127,9 +128,7 @@ function nmfetch(url, options) {
     };
 
     if (options.tls) {
-        Object.keys(options.tls).forEach(key => {
-            reqOptions[key] = options.tls[key];
-        });
+        Object.assign(reqOptions, options.tls);
     }
 
     if (
@@ -147,7 +146,7 @@ function nmfetch(url, options) {
     } catch (E) {
         finished = true;
         setImmediate(() => {
-            E.type = 'FETCH';
+            E.code = errors.EFETCH;
             E.sourceUrl = url;
             fetchRes.emit('error', E);
         });
@@ -161,8 +160,8 @@ function nmfetch(url, options) {
             }
             finished = true;
             req.abort();
-            let err = new Error('Request Timeout');
-            err.type = 'FETCH';
+            const err = new Error('Request Timeout');
+            err.code = errors.EFETCH;
             err.sourceUrl = url;
             fetchRes.emit('error', err);
         });
@@ -173,7 +172,7 @@ function nmfetch(url, options) {
             return;
         }
         finished = true;
-        err.type = 'FETCH';
+        err.code = errors.EFETCH;
         err.sourceUrl = url;
         fetchRes.emit('error', err);
     });
@@ -203,8 +202,8 @@ function nmfetch(url, options) {
             options.redirects++;
             if (options.redirects > options.maxRedirects) {
                 finished = true;
-                let err = new Error('Maximum redirect count exceeded');
-                err.type = 'FETCH';
+                const err = new Error('Maximum redirect count exceeded');
+                err.code = errors.EFETCH;
                 err.sourceUrl = url;
                 fetchRes.emit('error', err);
                 req.abort();
@@ -221,8 +220,8 @@ function nmfetch(url, options) {
 
         if (res.statusCode >= 300 && !options.allowErrorResponse) {
             finished = true;
-            let err = new Error('Invalid status code ' + res.statusCode);
-            err.type = 'FETCH';
+            const err = new Error('Invalid status code ' + res.statusCode);
+            err.code = errors.EFETCH;
             err.sourceUrl = url;
             fetchRes.emit('error', err);
             req.abort();
@@ -234,7 +233,7 @@ function nmfetch(url, options) {
                 return;
             }
             finished = true;
-            err.type = 'FETCH';
+            err.code = errors.EFETCH;
             err.sourceUrl = url;
             fetchRes.emit('error', err);
             req.abort();
@@ -247,7 +246,7 @@ function nmfetch(url, options) {
                     return;
                 }
                 finished = true;
-                err.type = 'FETCH';
+                err.code = errors.EFETCH;
                 err.sourceUrl = url;
                 fetchRes.emit('error', err);
                 req.abort();
@@ -262,12 +261,11 @@ function nmfetch(url, options) {
             try {
                 if (typeof body.pipe === 'function') {
                     return body.pipe(req);
-                } else {
-                    req.write(body);
                 }
+                req.write(body);
             } catch (err) {
                 finished = true;
-                err.type = 'FETCH';
+                err.code = errors.EFETCH;
                 err.sourceUrl = url;
                 fetchRes.emit('error', err);
                 return;
