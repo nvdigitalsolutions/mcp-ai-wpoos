@@ -158,7 +158,7 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 
 		if ( isset( $_POST['business_hours'] ) && is_array( $_POST['business_hours'] ) ) {
 			$sanitized_hours = array();
-			foreach ( wp_unslash( $_POST['business_hours'] ) as $day => $hours ) {
+			foreach ( wp_unslash( $_POST['business_hours'] ) as $day => $hours ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array elements sanitized individually below.
 				$sanitized_hours[ sanitize_key( $day ) ] = sanitize_text_field( $hours );
 			}
 			update_post_meta( $post_id, '_place_business_hours', $sanitized_hours );

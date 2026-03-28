@@ -233,7 +233,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		$total_points = 0;
 
 		if ( isset( $_POST['wp_mcp_ai_questions'] ) && is_array( $_POST['wp_mcp_ai_questions'] ) ) {
-			foreach ( wp_unslash( $_POST['wp_mcp_ai_questions'] ) as $question_data ) {
+			foreach ( wp_unslash( $_POST['wp_mcp_ai_questions'] ) as $question_data ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array elements sanitized individually below.
 				// Validate question text.
 				if ( empty( $question_data['question'] ) ) {
 					continue;
