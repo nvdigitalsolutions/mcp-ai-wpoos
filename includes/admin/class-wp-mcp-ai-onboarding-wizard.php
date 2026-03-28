@@ -460,29 +460,29 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 * Step 2: AI Provider connection.
 		 */
 		private function render_step_provider() {
-			$settings            = get_option( 'wp_mcp_ai_settings', array() );
-			$openai_key          = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
-			$anthropic_key       = ! empty( $settings['anthropic_api_key'] ) ? '••••••••••••••••' : '';
-			$gemini_key          = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
-			$huggingface_key     = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
-			$ollama_url          = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
-			$lm_studio_url       = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
-			$cloudflare_token    = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
-			$cloudflare_acct_id  = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
-			$test_nonce          = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
-			$nonce               = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+			$settings           = get_option( 'wp_mcp_ai_settings', array() );
+			$openai_key         = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
+			$anthropic_key      = ! empty( $settings['anthropic_api_key'] ) ? '••••••••••••••••' : '';
+			$gemini_key         = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
+			$huggingface_key    = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
+			$ollama_url         = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
+			$lm_studio_url      = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
+			$cloudflare_token   = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
+			$cloudflare_acct_id = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
+			$test_nonce         = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$nonce              = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
 
 			// Providers definition for the tab loop.
-			$providers = array(
-				'openai'     => array(
+			$providers     = array(
+				'openai'      => array(
 					'label'    => 'OpenAI',
 					'icon_img' => WP_MCP_AI_URL . 'assets/images/openai-logo.svg',
 				),
-				'anthropic'  => array(
+				'anthropic'   => array(
 					'label'    => '🤖 Anthropic',
 					'icon_img' => '',
 				),
-				'gemini'     => array(
+				'gemini'      => array(
 					'label'    => 'Google Gemini',
 					'icon_img' => WP_MCP_AI_URL . 'assets/images/gemini-logo.svg',
 				),
@@ -490,15 +490,15 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'label'    => '🤗 Hugging Face',
 					'icon_img' => '',
 				),
-				'ollama'     => array(
+				'ollama'      => array(
 					'label'    => '🦙 Ollama (Local)',
 					'icon_img' => '',
 				),
-				'lm_studio'  => array(
+				'lm_studio'   => array(
 					'label'    => '🖥️ LM Studio',
 					'icon_img' => '',
 				),
-				'cloudflare' => array(
+				'cloudflare'  => array(
 					'label'    => '☁️ Cloudflare',
 					'icon_img' => '',
 				),
@@ -1194,8 +1194,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'  => __( 'Presets saved.', 'mcp-ai-wpoos' ),
-					'created'  => $created,
+					'message' => __( 'Presets saved.', 'mcp-ai-wpoos' ),
+					'created' => $created,
 				)
 			);
 		}
@@ -1276,7 +1276,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		public function get_presets() {
 			$defaults = array(
-				'content_creator'   => array(
+				'content_creator'  => array(
 					'label'         => __( 'Content Creator / Blogger', 'mcp-ai-wpoos' ),
 					'icon'          => '✍️',
 					'description'   => __( 'Write, edit, and publish blog posts with AI-powered SEO, image generation, and internal linking.', 'mcp-ai-wpoos' ),
@@ -1298,7 +1298,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.7,
 					'assistant'     => __( 'Content Writer', 'mcp-ai-wpoos' ),
 				),
-				'customer_support'  => array(
+				'customer_support' => array(
 					'label'         => __( 'Customer Support Bot', 'mcp-ai-wpoos' ),
 					'icon'          => '🎧',
 					'description'   => __( 'Answer FAQs, search your knowledge base, send emails, and assist visitors with a friendly support persona.', 'mcp-ai-wpoos' ),
@@ -1316,7 +1316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.3,
 					'assistant'     => __( 'Support Assistant', 'mcp-ai-wpoos' ),
 				),
-				'ecommerce'         => array(
+				'ecommerce'        => array(
 					'label'         => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
 					'icon'          => '🛒',
 					'description'   => __( 'Write product descriptions, manage WooCommerce products, analyze competitors, and assist shoppers.', 'mcp-ai-wpoos' ),
@@ -1337,7 +1337,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.5,
 					'assistant'     => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
 				),
-				'seo_research'      => array(
+				'seo_research'     => array(
 					'label'         => __( 'SEO & Research', 'mcp-ai-wpoos' ),
 					'icon'          => '🔍',
 					'description'   => __( 'Deep research, SEO audits, content optimization, keyword analysis, and competitive intelligence.', 'mcp-ai-wpoos' ),
@@ -1359,7 +1359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.3,
 					'assistant'     => __( 'SEO & Research Analyst', 'mcp-ai-wpoos' ),
 				),
-				'developer'         => array(
+				'developer'        => array(
 					'label'         => __( 'Developer Copilot', 'mcp-ai-wpoos' ),
 					'icon'          => '💻',
 					'description'   => __( 'Site health monitoring, security checks, cron management, system logs, and environment diagnostics.', 'mcp-ai-wpoos' ),
@@ -1381,7 +1381,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.2,
 					'assistant'     => __( 'Developer Copilot', 'mcp-ai-wpoos' ),
 				),
-				'media_creative'    => array(
+				'media_creative'   => array(
 					'label'         => __( 'Media & Creative Studio', 'mcp-ai-wpoos' ),
 					'icon'          => '🎨',
 					'description'   => __( 'Generate images, analyze visuals, create charts, produce audio/speech, and manage your media library.', 'mcp-ai-wpoos' ),
@@ -1402,7 +1402,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.8,
 					'assistant'     => __( 'Creative Studio', 'mcp-ai-wpoos' ),
 				),
-				'site_admin'        => array(
+				'site_admin'       => array(
 					'label'         => __( 'Site Administrator', 'mcp-ai-wpoos' ),
 					'icon'          => '🛡️',
 					'description'   => __( 'Full site management: security monitoring, email, caching, user audits, and scheduled task automation.', 'mcp-ai-wpoos' ),
@@ -1425,7 +1425,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					'temperature'   => 0.2,
 					'assistant'     => __( 'Site Administrator', 'mcp-ai-wpoos' ),
 				),
-				'general'           => array(
+				'general'          => array(
 					'label'         => __( 'General Purpose', 'mcp-ai-wpoos' ),
 					'icon'          => '🤖',
 					'description'   => __( 'A well-rounded assistant with content, research, media, and site management tools for everyday tasks.', 'mcp-ai-wpoos' ),
@@ -1561,12 +1561,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 			// Provider-specific fallbacks.
 			$fallbacks = array(
-				'openai'     => 'gpt-4.1',
-				'anthropic'  => 'claude-sonnet-4-6',
-				'gemini'     => 'gemini-2.5-flash',
-				'ollama'     => 'llama3',
-				'lm_studio'  => 'local',
-				'cloudflare' => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'openai'      => 'gpt-4.1',
+				'anthropic'   => 'claude-sonnet-4-6',
+				'gemini'      => 'gemini-2.5-flash',
+				'ollama'      => 'llama3',
+				'lm_studio'   => 'local',
+				'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
 				'huggingface' => 'meta-llama/Llama-3-8B-Instruct',
 			);
 
