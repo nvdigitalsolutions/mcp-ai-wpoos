@@ -310,7 +310,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
 				<a
 					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"
-					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded CSS class. ?>"
 				>
 					<?php echo esc_html( $tab_title ); ?>
 				</a>

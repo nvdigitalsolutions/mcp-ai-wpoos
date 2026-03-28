@@ -337,7 +337,7 @@ border-radius: 4px;
 			$entity_url = add_query_arg( 'entity', $entity_slug, $base_url );
 			$is_active  = ( $this->current_entity === $entity_slug );
 			?>
-<a href="<?php echo esc_url( $entity_url ); ?>" class="<?php echo $is_active ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $entity_url ); ?>" class="<?php echo $is_active ? 'active' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded CSS class. ?>">
 			<?php echo esc_html( $entity_label ); ?>
 </a>
 <?php endforeach; ?>
