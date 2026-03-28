@@ -1,9 +1,10 @@
 'use strict';
 
-const Stream = require('stream').Stream;
+const { Stream } = require('stream');
 const nmfetch = require('../fetch');
 const crypto = require('crypto');
 const shared = require('../shared');
+const errors = require('../errors');
 
 /**
  * XOAUTH2 access_token generator for Gmail.
@@ -41,11 +42,13 @@ class XOAuth2 extends Stream {
 
         if (options && options.serviceClient) {
             if (!options.privateKey || !options.user) {
-                setImmediate(() => this.emit('error', new Error('Options "privateKey" and "user" are required for service account!')));
+                const err = new Error('Options "privateKey" and "user" are required for service account!');
+                err.code = errors.EOAUTH2;
+                setImmediate(() => this.emit('error', err));
                 return;
             }
 
-            let serviceRequestTimeout = Math.min(Math.max(Number(this.options.serviceRequestTimeout) || 0, 0), 3600);
+            const serviceRequestTimeout = Math.min(Math.max(Number(this.options.serviceRequestTimeout) || 0, 0), 3600);
             this.options.serviceRequestTimeout = serviceRequestTimeout || 5 * 60;
         }
 
@@ -69,7 +72,7 @@ class XOAuth2 extends Stream {
         if (this.options.expires && Number(this.options.expires)) {
             this.expires = this.options.expires;
         } else {
-            let timeout = Math.max(Number(this.options.timeout) || 0, 0);
+            const timeout = Math.max(Number(this.options.timeout) || 0, 0);
             this.expires = (timeout && Date.now() + timeout * 1000) || 0;
         }
 
@@ -120,7 +123,9 @@ class XOAuth2 extends Stream {
                 'Cannot renew access token for %s: No refresh mechanism available',
                 this.options.user
             );
-            return callback(new Error("Can't create new access token for user"));
+            const err = new Error("Can't create new access token for user");
+            err.code = errors.EOAUTH2;
+            return callback(err);
         }
 
         // If renewal already in progress, queue this request instead of starting another
@@ -205,8 +210,8 @@ class XOAuth2 extends Stream {
         let loggedUrlOptions;
         if (this.options.serviceClient) {
             // service account - https://developers.google.com/identity/protocols/OAuth2ServiceAccount
-            let iat = Math.floor(Date.now() / 1000); // unix time
-            let tokenData = {
+            const iat = Math.floor(Date.now() / 1000); // unix time
+            const tokenData = {
                 iss: this.options.serviceClient,
                 scope: this.options.scope || 'https://mail.google.com/',
                 sub: this.options.user,
@@ -218,7 +223,9 @@ class XOAuth2 extends Stream {
             try {
                 token = this.jwtSignRS256(tokenData);
             } catch (_err) {
-                return callback(new Error("Can't generate token. Check your auth options"));
+                const err = new Error("Can't generate token. Check your auth options");
+                err.code = errors.EOAUTH2;
+                return callback(err);
             }
 
             urlOptions = {
@@ -232,7 +239,9 @@ class XOAuth2 extends Stream {
             };
         } else {
             if (!this.options.refreshToken) {
-                return callback(new Error("Can't create new access token for user"));
+                const err = new Error("Can't create new access token for user");
+                err.code = errors.EOAUTH2;
+                return callback(err);
             }
 
             // web app - https://developers.google.com/identity/protocols/OAuth2WebServer
@@ -251,10 +260,8 @@ class XOAuth2 extends Stream {
             };
         }
 
-        Object.keys(this.options.customParams).forEach(key => {
-            urlOptions[key] = this.options.customParams[key];
-            loggedUrlOptions[key] = this.options.customParams[key];
-        });
+        Object.assign(urlOptions, this.options.customParams);
+        Object.assign(loggedUrlOptions, this.options.customParams);
 
         this.logger.debug(
             {
@@ -289,17 +296,15 @@ class XOAuth2 extends Stream {
                     'Response: %s',
                     (body || '').toString()
                 );
-                return callback(new Error('Invalid authentication response'));
+                const err = new Error('Invalid authentication response');
+                err.code = errors.EOAUTH2;
+                return callback(err);
             }
 
-            let logData = {};
-            Object.keys(data).forEach(key => {
-                if (key !== 'access_token') {
-                    logData[key] = data[key];
-                } else {
-                    logData[key] = (data[key] || '').toString().substr(0, 6) + '...';
-                }
-            });
+            const logData = Object.assign({}, data);
+            if (logData.access_token) {
+                logData.access_token = (logData.access_token || '').toString().substr(0, 6) + '...';
+            }
 
             this.logger.debug(
                 {
@@ -320,7 +325,9 @@ class XOAuth2 extends Stream {
                 if (data.error_uri) {
                     errorMessage += ' (' + data.error_uri + ')';
                 }
-                return callback(new Error(errorMessage));
+                const err = new Error(errorMessage);
+                err.code = errors.EOAUTH2;
+                return callback(err);
             }
 
             if (data.access_token) {
@@ -328,7 +335,9 @@ class XOAuth2 extends Stream {
                 return callback(null, this.accessToken);
             }
 
-            return callback(new Error('No access token'));
+            const err = new Error('No access token');
+            err.code = errors.EOAUTH2;
+            return callback(err);
         });
     }
 
@@ -339,7 +348,7 @@ class XOAuth2 extends Stream {
      * @return {String} Base64 encoded token for IMAP or SMTP login
      */
     buildXOAuth2Token(accessToken) {
-        let authData = ['user=' + (this.options.user || ''), 'auth=Bearer ' + (accessToken || this.accessToken), '', ''];
+        const authData = ['user=' + (this.options.user || ''), 'auth=Bearer ' + (accessToken || this.accessToken), '', ''];
         return Buffer.from(authData.join('\x01'), 'utf-8').toString('base64');
     }
 
@@ -358,10 +367,10 @@ class XOAuth2 extends Stream {
     postRequest(url, payload, params, callback) {
         let returned = false;
 
-        let chunks = [];
+        const chunks = [];
         let chunklen = 0;
 
-        let req = nmfetch(url, {
+        const req = nmfetch(url, {
             method: 'post',
             headers: params.customHeaders,
             body: payload,
@@ -419,7 +428,7 @@ class XOAuth2 extends Stream {
      */
     jwtSignRS256(payload) {
         payload = ['{"alg":"RS256","typ":"JWT"}', JSON.stringify(payload)].map(val => this.toBase64URL(val)).join('.');
-        let signature = crypto.createSign('RSA-SHA256').update(payload).sign(this.options.privateKey);
+        const signature = crypto.createSign('RSA-SHA256').update(payload).sign(this.options.privateKey);
         return payload + '.' + this.toBase64URL(signature);
     }
 }

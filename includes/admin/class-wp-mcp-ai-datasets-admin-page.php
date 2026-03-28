@@ -228,22 +228,25 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 				<div class="dataset-card-footer">
 					<button type="button" class="button button-primary wp-mcp-ai-dataset-preview"
-							data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>">
-						<span class="dashicons dashicons-visibility"></span>
-						<?php esc_html_e( 'Preview', 'mcp-ai-wpoos' ); ?>
+							data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>"
+							title="<?php esc_attr_e( 'Preview', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Preview', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 
 					<button type="button" class="button wp-mcp-ai-dataset-copy-code"
-							data-code="<?php echo esc_attr( $dataset['example'] ); ?>">
-						<span class="dashicons dashicons-clipboard"></span>
-						<?php esc_html_e( 'Copy Code', 'mcp-ai-wpoos' ); ?>
+							data-code="<?php echo esc_attr( $dataset['example'] ); ?>"
+							title="<?php esc_attr_e( 'Copy Code', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Copy Code', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 
 					<a href="https://huggingface.co/datasets/<?php echo esc_attr( $dataset['dataset'] ); ?>"
 						target="_blank"
-						class="button">
-						<span class="dashicons dashicons-external"></span>
-						<?php esc_html_e( 'View on HF', 'mcp-ai-wpoos' ); ?>
+						class="button"
+						title="<?php esc_attr_e( 'View on HF', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-external" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'View on HF', 'mcp-ai-wpoos' ); ?></span>
 					</a>
 				</div>
 			</div>

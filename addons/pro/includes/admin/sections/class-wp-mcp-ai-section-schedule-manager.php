@@ -107,30 +107,60 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Enqueue JavaScript and CSS on the settings dashboard.
+	 * Enqueue JavaScript and CSS on the settings dashboard or standalone page.
+	 *
+	 * Assets are loaded on:
+	 * - The main NV oOS settings dashboard when the Orchestration tab is active.
+	 * - The dedicated standalone Schedule Manager page (nvoos-pro-schedule-manager).
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
+		// Build the standalone page hook from known constants rather than relying on a
+		// global instance variable.  WordPress generates submenu hooks as:
+		//   {sanitized_parent_menu_title}_page_{page_slug}
+		// WP_MCP_AI_Pro_Dashboard::SANITIZED_MENU_TITLE = 'nv-oos-pro'.
+		$standalone_hook = '';
+		if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) && class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
+			$standalone_hook = WP_MCP_AI_Pro_Dashboard::SANITIZED_MENU_TITLE . '_page_' . WP_MCP_AI_Pro_Schedule_Manager_Page::PAGE_SLUG;
+		}
+
+		$is_standalone = ( '' !== $standalone_hook && $hook === $standalone_hook );
+
+		// Fallback: check $_GET['page'] for the standalone page slug.  This
+		// covers edge cases where the hook suffix may differ from the computed
+		// value (e.g. translated menu titles or timing differences in the
+		// base + pro separate-plugin loading order).
+		if ( ! $is_standalone && class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			$is_standalone = isset( $_GET['page'] ) && WP_MCP_AI_Pro_Schedule_Manager_Page::PAGE_SLUG === sanitize_text_field( wp_unslash( $_GET['page'] ) );
+		}
+
 		$is_dashboard = ( false !== strpos( $hook, 'wp-mcp-ai-dashboard' ) )
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			|| ( isset( $_GET['page'] ) && 'wp-mcp-ai-dashboard' === sanitize_text_field( wp_unslash( $_GET['page'] ) ) );
 
-		if ( ! $is_dashboard ) {
+		if ( ! $is_dashboard && ! $is_standalone ) {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking tab for script enqueue only.
-		$is_tab = ! isset( $_GET['tab'] ) || 'orchestration' === sanitize_text_field( wp_unslash( $_GET['tab'] ) );
-		if ( ! $is_tab ) {
-			return;
+		// On the main settings dashboard, only enqueue when the Orchestration tab is active.
+		if ( $is_dashboard && ! $is_standalone ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking tab for script enqueue only.
+			$is_tab = ! isset( $_GET['tab'] ) || 'orchestration' === sanitize_text_field( wp_unslash( $_GET['tab'] ) );
+			if ( ! $is_tab ) {
+				return;
+			}
 		}
+
+		$css_path    = WP_MCP_AI_PRO_PATH . 'assets/css/schedule-manager.css';
+		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_PRO_VERSION;
 
 		wp_enqueue_style(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/css/schedule-manager.css',
 			array(),
-			WP_MCP_AI_PRO_VERSION
+			$css_version
 		);
 
 		// chart.js — used for the run-history sparkline in the history modal.
@@ -146,11 +176,14 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			);
 		}
 
+		$js_path    = WP_MCP_AI_PRO_PATH . 'assets/js/schedule-manager.js';
+		$js_version = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_PRO_VERSION;
+
 		wp_enqueue_script(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/js/schedule-manager.js',
 			array( 'jquery', 'wp-util', 'chartjs' ),
-			WP_MCP_AI_PRO_VERSION,
+			$js_version,
 			true
 		);
 
@@ -185,6 +218,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'typeWorkflow'    => __( 'Workflow', 'mcp-ai-wpoos-pro' ),
 					'typeAssistant'   => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
 					'typeBroadcast'   => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
+					'typeBuilder'     => __( 'Workflow Builder', 'mcp-ai-wpoos-pro' ),
+					'selectWorkflow'  => __( 'Please select a saved workflow.', 'mcp-ai-wpoos-pro' ),
 					'statusNever'     => __( 'Never run', 'mcp-ai-wpoos-pro' ),
 					'statusSuccess'   => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'statusFailure'   => __( 'Failed', 'mcp-ai-wpoos-pro' ),
@@ -198,6 +233,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'exportIcalTitle' => __( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ),
 					'chartSuccess'    => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'chartFailure'    => __( 'Failure', 'mcp-ai-wpoos-pro' ),
+					'viewLog'         => __( 'View Log', 'mcp-ai-wpoos-pro' ),
+					'hideLog'         => __( 'Hide Log', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -224,7 +261,10 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			<?php $this->render_create_form(); ?>
 
 		</div><!-- .wp-mcp-ai-schedule-manager -->
+
 		<?php
+		$this->render_logging_table();
+		$this->render_activity_log();
 	}
 
 	/**
@@ -242,19 +282,18 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<option value="workflow"><?php esc_html_e( 'Workflow', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="workflow_builder"><?php esc_html_e( 'Workflow Builder', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
 					<select id="wp-mcp-ai-sm-filter-status" class="wp-mcp-ai-sm-filter">
 						<option value=""><?php esc_html_e( 'All Statuses', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="enabled"><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="disabled"><?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
-					<button type="button" class="button" id="wp-mcp-ai-sm-refresh">
+					<button type="button" class="button" id="wp-mcp-ai-sm-refresh" title="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>" aria-label="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-update"></span>
-						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
-					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>">
+					<a href="#" class="button" id="wp-mcp-ai-sm-export-ical" title="<?php esc_attr_e( 'Download all enabled schedules as an iCalendar file', 'mcp-ai-wpoos-pro' ); ?>" aria-label="<?php esc_attr_e( 'Export to Calendar', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-calendar-alt"></span>
-						<?php esc_html_e( 'Export to Calendar (.ics)', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				</div>
 			</div>
@@ -365,6 +404,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 								<option value="workflow"><?php esc_html_e( 'Workflow (Tool Chain)', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="workflow_builder"><?php esc_html_e( 'Workflow Builder', 'mcp-ai-wpoos-pro' ); ?></option>
 							</select>
 						</div>
 					</div>
@@ -479,6 +519,49 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						</div>
 					</div>
 
+					<!-- Workflow Builder panel -->
+					<div class="wp-mcp-ai-sm-type-panel" id="sm-panel-workflow_builder" style="display:none;">
+						<div class="wp-mcp-ai-sm-form-row">
+							<div class="wp-mcp-ai-sm-form-group full-width">
+								<label for="sm-workflow-builder-id"><?php esc_html_e( 'Saved Workflow', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+								<?php
+								$saved_workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
+								if ( ! is_array( $saved_workflows ) ) {
+									$saved_workflows = array();
+								}
+								?>
+								<select id="sm-workflow-builder-id">
+									<option value=""><?php esc_html_e( '— Select a saved workflow —', 'mcp-ai-wpoos-pro' ); ?></option>
+									<?php foreach ( $saved_workflows as $wf_id => $wf ) : ?>
+										<option value="<?php echo esc_attr( $wf_id ); ?>">
+											<?php echo esc_html( ! empty( $wf['name'] ) ? $wf['name'] : $wf_id ); ?>
+											<?php
+											$node_count = isset( $wf['nodes'] ) && is_array( $wf['nodes'] ) ? count( $wf['nodes'] ) : 0;
+											$edge_count = isset( $wf['edges'] ) && is_array( $wf['edges'] ) ? count( $wf['edges'] ) : 0;
+											/* translators: %1$d: number of nodes, %2$d: number of edges */
+											printf( esc_html__( '(%1$d nodes, %2$d edges)', 'mcp-ai-wpoos-pro' ), (int) $node_count, (int) $edge_count );
+											?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<?php if ( empty( $saved_workflows ) ) : ?>
+									<p class="description">
+										<?php
+										printf(
+											/* translators: %s: URL to Pro Workflow Builder page */
+											esc_html__( 'No saved workflows found. %1$sCreate one in the Pro Workflow Builder%2$s first.', 'mcp-ai-wpoos-pro' ),
+											'<a href="' . esc_url( admin_url( 'admin.php?page=nvoos-pro-workflow-builder' ) ) . '">',
+											'</a>'
+										);
+										?>
+									</p>
+								<?php else : ?>
+									<p class="description"><?php esc_html_e( 'Select a workflow created in the Pro Workflow Builder. It will be executed according to the schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+
 					<!-- Row: Priority + Tags -->
 					<div class="wp-mcp-ai-sm-form-row">
 						<div class="wp-mcp-ai-sm-form-group">
@@ -501,6 +584,20 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<div class="wp-mcp-ai-sm-form-group">
 							<label for="sm-retry-delay"><?php esc_html_e( 'Retry Delay (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
 							<input type="number" id="sm-retry-delay" value="300" min="60" class="small-text">
+						</div>
+					</div>
+
+					<!-- Row: Timeout + Webhook -->
+					<div class="wp-mcp-ai-sm-form-row">
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-timeout"><?php esc_html_e( 'Timeout (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="number" id="sm-timeout" value="0" min="0" class="small-text">
+							<p class="description"><?php esc_html_e( '0 = no limit. Runs exceeding this are marked as failed.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+						<div class="wp-mcp-ai-sm-form-group">
+							<label for="sm-callback-url"><?php esc_html_e( 'Webhook Callback URL', 'mcp-ai-wpoos-pro' ); ?></label>
+							<input type="url" id="sm-callback-url" class="regular-text" placeholder="https://example.com/webhook">
+							<p class="description"><?php esc_html_e( 'Receives a POST with run results on completion or failure.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</div>
 					</div>
 
@@ -598,6 +695,8 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'notify_email'    => $schedule['notify_email'],
 				'max_retries'     => (int) $schedule['max_retries'],
 				'retry_delay'     => (int) $schedule['retry_delay'],
+				'timeout'         => isset( $schedule['timeout'] ) ? (int) $schedule['timeout'] : 0,
+				'callback_url'    => isset( $schedule['callback_url'] ) ? $schedule['callback_url'] : '',
 				'last_run_status' => $schedule['last_run_status'],
 				'last_run_time'   => $schedule['last_run_time'] ? wp_date( 'Y-m-d H:i:s', $schedule['last_run_time'] ) : null,
 				'last_error'      => $schedule['last_error'],
@@ -624,7 +723,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via verify_request().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above via verify_request(); value is JSON decoded below.
 		$raw = isset( $_POST['schedule'] ) ? wp_unslash( $_POST['schedule'] ) : '{}';
 
 		if ( is_string( $raw ) ) {
@@ -668,7 +767,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above; value is JSON decoded below.
 		$raw = isset( $_POST['schedule'] ) ? wp_unslash( $_POST['schedule'] ) : '{}';
 
 		if ( is_string( $raw ) ) {
@@ -819,10 +918,11 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		$formatted = array_map(
 			function ( $entry ) {
 				return array(
-					'status'   => $entry['status'],
-					'time'     => wp_date( 'Y-m-d H:i:s', $entry['start_time'] ),
-					'duration' => $entry['duration'],
-					'error'    => $entry['error'],
+					'status'     => $entry['status'],
+					'time'       => wp_date( 'Y-m-d H:i:s', $entry['start_time'] ),
+					'duration'   => $entry['duration'],
+					'error'      => $entry['error'],
+					'action_log' => isset( $entry['action_log'] ) && is_array( $entry['action_log'] ) ? $entry['action_log'] : array(),
 				);
 			},
 			$history
@@ -911,5 +1011,218 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'filename' => $filename,
 			)
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Logging
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Render the error & activity logging table if logging is enabled.
+	 *
+	 * Only shows schedule-related error entries so that operators can
+	 * troubleshoot schedule issues without noise from unrelated events.
+	 */
+	private function render_logging_table() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		// Only show the logging table if logging is enabled.
+		if ( empty( $settings['enable_logging'] ) ) {
+			return;
+		}
+
+		$all_entries = WP_MCP_AI_Logger::get_recent_error_messages( 50 );
+
+		// Filter to only schedule-related error entries by checking message
+		// content and context for a schedule_id key.
+		$entries = array();
+		foreach ( $all_entries as $entry ) {
+			$msg         = isset( $entry['message'] ) ? $entry['message'] : '';
+			$has_context = isset( $entry['context']['schedule_id'] ) || isset( $entry['context']['event'] );
+			if ( stripos( $msg, 'schedule' ) !== false || $has_context ) {
+				$entries[] = $entry;
+			}
+			if ( count( $entries ) >= 20 ) {
+				break;
+			}
+		}
+		?>
+		<div class="wp-mcp-ai-error-log-section" style="margin-top: 30px;">
+			<h3><?php esc_html_e( 'Schedule Error Log', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Recent schedule-related error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php if ( empty( $entries ) ) : ?>
+				<p class="description"><?php esc_html_e( 'No schedule-related error or warning messages have been recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
+					<?php
+					foreach ( $entries as $entry ) :
+						$timestamp = '';
+
+						if ( ! empty( $entry['timestamp'] ) ) {
+							$timestamp = get_date_from_gmt(
+								$entry['timestamp'],
+								get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
+							);
+						}
+
+						$type_label    = strtoupper( $entry['type'] );
+						$message_label = $entry['message'];
+						$context_label = '';
+
+						if ( isset( $entry['context'] ) && ! empty( $entry['context'] ) ) {
+							$options = 0;
+
+							if ( defined( 'JSON_PRETTY_PRINT' ) ) {
+								$options |= JSON_PRETTY_PRINT;
+							}
+
+							if ( defined( 'JSON_UNESCAPED_SLASHES' ) ) {
+								$options |= JSON_UNESCAPED_SLASHES;
+							}
+
+							$context_json = wp_json_encode( $entry['context'], $options );
+
+							if ( false !== $context_json ) {
+								$context_label = $context_json;
+							}
+						}
+						?>
+						<li style="background: #f9f9f9; padding: 15px; margin-bottom: 10px; border-left: 3px solid #dc3232; border-radius: 3px;">
+							<?php if ( ! empty( $timestamp ) ) : ?>
+								<span class="wp-mcp-ai-log-preview__time" style="color: #666; font-size: 0.9em;"><?php echo esc_html( $timestamp ); ?></span>
+								&mdash;
+							<?php endif; ?>
+							<span class="wp-mcp-ai-log-preview__type" style="font-weight: bold; color: #dc3232;"><?php echo esc_html( $type_label ); ?></span>:
+							<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
+							<?php if ( '' !== $context_label ) : ?>
+								<details class="wp-mcp-ai-log-preview__context" style="margin-top: 10px;">
+									<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'mcp-ai-wpoos' ); ?></summary>
+									<pre style="background: #fff; padding: 10px; margin-top: 10px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em;"><?php echo esc_html( $context_label ); ?></pre>
+								</details>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+			<?php
+			$log_file_path    = WP_MCP_AI_Logger::get_log_file_path();
+			$log_file_exists  = WP_MCP_AI_Logger::does_log_file_exist();
+			$log_file_size    = WP_MCP_AI_Logger::get_log_file_size();
+			$log_size_display = '';
+
+			if ( null !== $log_file_size ) {
+				$log_size_display = function_exists( 'size_format' )
+				? size_format( $log_file_size, 2 )
+				: $log_file_size . ' bytes';
+			}
+			?>
+			<div class="wp-mcp-ai-log-meta" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 3px;">
+				<?php if ( '' !== $log_file_path ) : ?>
+					<p class="description">
+						<?php
+						if ( $log_file_exists ) {
+							if ( '' === $log_size_display ) {
+								$log_size_display = __( 'Unknown size', 'mcp-ai-wpoos' );
+							}
+
+							printf(
+								/* translators: 1: Path to the PHP error log. 2: Human readable size. */
+								esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+								'<code>' . esc_html( $log_file_path ) . '</code>',
+								esc_html( $log_size_display )
+							);
+						} else {
+							printf(
+								/* translators: %s: Path to the PHP error log. */
+								esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+								'<code>' . esc_html( $log_file_path ) . '</code>'
+							);
+						}
+						?>
+					</p>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'mcp-ai-wpoos' ); ?></p>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render a dedicated activity log scoped to schedule events.
+	 *
+	 * Only shows entries with the 'schedule_run' event type, which
+	 * are recorded by WP_MCP_AI_Logger, giving schedule operators quick
+	 * visibility into what happened during recent schedule runs.
+	 */
+	private function render_activity_log() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		// Only show the activity log if logging is enabled.
+		if ( empty( $settings['enable_logging'] ) ) {
+			return;
+		}
+
+		$entries = WP_MCP_AI_Logger::get_recent_activity_entries( 20, array( 'schedule_run' ) );
+		?>
+		<div class="wp-mcp-ai-activity-log-section" style="margin-top: 30px;">
+			<h3><?php esc_html_e( 'Schedule Activity Log', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Recent schedule executions, triggers, and retries (most recent first).', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php if ( empty( $entries ) ) : ?>
+				<p class="description"><?php esc_html_e( 'No schedule activity has been recorded yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
+					<?php
+					foreach ( $entries as $entry ) :
+						$timestamp = '';
+
+						if ( ! empty( $entry['timestamp'] ) ) {
+							$timestamp = get_date_from_gmt(
+								$entry['timestamp'],
+								get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
+							);
+						}
+
+						$type_label    = ! empty( $entry['type'] ) ? strtoupper( $entry['type'] ) : 'INFO';
+						$message_label = ! empty( $entry['message'] ) ? $entry['message'] : '';
+						$context_label = '';
+
+						if ( isset( $entry['context'] ) && ! empty( $entry['context'] ) ) {
+							$options = 0;
+
+							if ( defined( 'JSON_PRETTY_PRINT' ) ) {
+								$options |= JSON_PRETTY_PRINT;
+							}
+
+							if ( defined( 'JSON_UNESCAPED_SLASHES' ) ) {
+								$options |= JSON_UNESCAPED_SLASHES;
+							}
+
+							$context_json = wp_json_encode( $entry['context'], $options );
+
+							if ( false !== $context_json ) {
+								$context_label = $context_json;
+							}
+						}
+						?>
+						<li style="background: #f9f9f9; padding: 15px; margin-bottom: 10px; border-left: 3px solid #2271b1; border-radius: 3px;">
+							<?php if ( ! empty( $timestamp ) ) : ?>
+								<span class="wp-mcp-ai-log-preview__time" style="color: #666; font-size: 0.9em;"><?php echo esc_html( $timestamp ); ?></span>
+								&mdash;
+							<?php endif; ?>
+							<span class="wp-mcp-ai-log-preview__type" style="font-weight: bold; color: #2271b1;"><?php echo esc_html( $type_label ); ?></span>:
+							<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
+							<?php if ( '' !== $context_label ) : ?>
+								<details class="wp-mcp-ai-log-preview__context" style="margin-top: 10px;">
+									<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'mcp-ai-wpoos' ); ?></summary>
+									<pre style="background: #fff; padding: 10px; margin-top: 10px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em;"><?php echo esc_html( $context_label ); ?></pre>
+								</details>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+		</div>
+		<?php
 	}
 }

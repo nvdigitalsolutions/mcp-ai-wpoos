@@ -7,6 +7,7 @@
 const net = require('net');
 const tls = require('tls');
 const urllib = require('url');
+const errors = require('../errors');
 
 /**
  * Establishes proxied connection to destinationPort
@@ -21,18 +22,14 @@ const urllib = require('url');
  * @param {Function} callback Callback to run with the rocket object once connection is established
  */
 function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
-    let proxy = urllib.parse(proxyUrl);
+    const proxy = urllib.parse(proxyUrl);
 
-    // create a socket connection to the proxy server
-    let options;
-    let connect;
-    let socket;
-
-    options = {
+    const options = {
         host: proxy.hostname,
         port: Number(proxy.port) ? Number(proxy.port) : proxy.protocol === 'https:' ? 443 : 80
     };
 
+    let connect;
     if (proxy.protocol === 'https:') {
         // we can use untrusted proxies as long as we verify actual SMTP certificates
         options.rejectUnauthorized = false;
@@ -41,10 +38,12 @@ function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
         connect = net.connect.bind(net);
     }
 
+    let socket;
+
     // Error harness for initial connection. Once connection is established, the responsibility
     // to handle errors is passed to whoever uses this socket
     let finished = false;
-    let tempSocketErr = err => {
+    const tempSocketErr = err => {
         if (finished) {
             return;
         }
@@ -57,8 +56,8 @@ function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
         callback(err);
     };
 
-    let timeoutErr = () => {
-        let err = new Error('Proxy socket timed out');
+    const timeoutErr = () => {
+        const err = new Error('Proxy socket timed out');
         err.code = 'ETIMEDOUT';
         tempSocketErr(err);
     };
@@ -68,7 +67,7 @@ function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
             return;
         }
 
-        let reqHeaders = {
+        const reqHeaders = {
             Host: destinationHost + ':' + destinationPort,
             Connection: 'close'
         };
@@ -92,7 +91,7 @@ function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
         );
 
         let headers = '';
-        let onSocketData = chunk => {
+        const onSocketData = chunk => {
             let match;
             let remainder;
 
@@ -121,7 +120,9 @@ function httpProxyClient(proxyUrl, destinationPort, destinationHost, callback) {
                     } catch (_E) {
                         // ignore
                     }
-                    return callback(new Error('Invalid response from proxy' + ((match && ': ' + match[1]) || '')));
+                    const err = new Error('Invalid response from proxy' + ((match && ': ' + match[1]) || ''));
+                    err.code = errors.EPROXY;
+                    return callback(err);
                 }
 
                 socket.removeListener('error', tempSocketErr);

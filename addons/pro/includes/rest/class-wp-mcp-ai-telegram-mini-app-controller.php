@@ -494,10 +494,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			return $user_id;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			: '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) ? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) : '';
 
 		if ( '' === $raw_token ) {
 			return $user_id;
@@ -547,10 +545,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			return $result;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			: '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) ? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) : '';
 
 		if ( '' === $raw_token ) {
 			return $result;

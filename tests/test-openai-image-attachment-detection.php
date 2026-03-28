@@ -311,7 +311,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 	/**
 	 * Test that non-image segments are left unchanged.
 	 */
-	public function test_convert_image_files_to_image_url_preserves_non_images() {
+	public function test_convert_image_files_to_image_url_converts_input_file_to_file_type() {
 		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
 
 		$messages = array(
@@ -344,9 +344,10 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Hello', $converted[0]['content'][0]['text'] );
 
-		// Input file segment should be unchanged.
-		$this->assertSame( 'input_file', $converted[0]['content'][1]['type'] );
-		$this->assertSame( 'file-pdf-123', $converted[0]['content'][1]['file_id'] );
+		// input_file with a valid OpenAI file_id must be converted to Chat Completions 'file' type.
+		$this->assertSame( 'file', $converted[0]['content'][1]['type'] );
+		$this->assertArrayHasKey( 'file', $converted[0]['content'][1] );
+		$this->assertSame( 'file-pdf-123', $converted[0]['content'][1]['file']['file_id'] );
 	}
 
 	/**
@@ -708,5 +709,137 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $converted[1]['content'] );
 		$this->assertSame( 'text', $converted[1]['content'][0]['type'] );
 		$this->assertSame( 'What is in this image?', $converted[1]['content'][0]['text'] );
+	}
+
+	/**
+	 * Test that input_file with OpenAI file_id resolved via attachment_lookup is converted.
+	 */
+	public function test_convert_image_files_to_image_url_converts_input_file_via_lookup() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'    => 'input_file',
+						'file_id' => 'wp-attachment-42',
+					),
+				),
+			),
+		);
+
+		// Lookup resolves the internal ID to a real OpenAI file ID.
+		$attachment_lookup = array(
+			'wp-attachment-42' => array(
+				'id'      => 'wp-attachment-42',
+				'file_id' => 'file-resolved-456',
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'file', $segment['type'], 'Should be converted to Chat Completions file type' );
+		$this->assertArrayHasKey( 'file', $segment );
+		$this->assertSame( 'file-resolved-456', $segment['file']['file_id'] );
+	}
+
+	/**
+	 * Test that input_file with a non-OpenAI ID falls back to a text reference.
+	 */
+	public function test_convert_image_files_to_image_url_input_file_text_fallback_for_local_id() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'         => 'input_file',
+						'file_id'      => 'local-42-abcd1234',
+						'display_name' => 'report.pdf',
+					),
+				),
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, array() );
+
+		$this->assertIsArray( $converted );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'text', $segment['type'], 'Should fall back to text reference for non-OpenAI IDs' );
+		$this->assertStringContainsString( 'report.pdf', $segment['text'] );
+	}
+
+	/**
+	 * Test that input_file with no file_id and no fallback name is silently dropped.
+	 */
+	public function test_convert_image_files_to_image_url_input_file_without_id_and_name_is_dropped() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Hello',
+					),
+					array(
+						'type' => 'input_file',
+						// No file_id, no file_name, no display_name.
+					),
+				),
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, array() );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertIsArray( $converted[0]['content'] );
+		// Only the text segment should remain; the bare input_file is silently dropped.
+		$this->assertCount( 1, $converted[0]['content'] );
+		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
+		$this->assertSame( 'Hello', $converted[0]['content'][0]['text'] );
+	}
+
+	/**
+	 * Test that input_file with file_name fallback uses file_name before display_name.
+	 */
+	public function test_convert_image_files_to_image_url_input_file_prefers_file_name_for_fallback() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'         => 'input_file',
+						'file_id'      => 'gemini-files-abc',
+						'file_name'    => 'contract.pdf',
+						'display_name' => 'old-display-name.pdf',
+					),
+				),
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, array() );
+
+		$this->assertIsArray( $converted );
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'text', $segment['type'] );
+		// file_name should take priority over display_name.
+		$this->assertStringContainsString( 'contract.pdf', $segment['text'] );
+		$this->assertStringNotContainsString( 'old-display-name.pdf', $segment['text'] );
 	}
 }

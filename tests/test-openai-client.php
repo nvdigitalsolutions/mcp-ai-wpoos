@@ -1580,9 +1580,15 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure tool role messages are emitted as output_text segments for Responses API requests.
+	 * Ensure non-image file attachments with tool calls in conversation use Chat Completions
+	 * and convert input_file segments to the 'file' content type (GPT-4.1+).
+	 *
+	 * When a conversation history contains tool_calls/tool messages, the Responses API
+	 * cannot be used (it does not support the tool_calls/tool_call_id mechanism).
+	 * The client must fall back to Chat Completions and translate 'input_file' →
+	 * {"type":"file","file":{"file_id":"file-xxx"}}.
 	 */
-	public function test_responses_payload_uses_output_text_for_tool_segments() {
+	public function test_chat_completions_converts_input_file_to_file_type_when_tool_calls_present() {
 		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -1600,8 +1606,17 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 				'headers'  => array(),
 				'body'     => wp_json_encode(
 					array(
-						'id'     => 'resp-test',
-						'output' => array(),
+						'id'      => 'chatcmpl-test',
+						'choices' => array(
+							array(
+								'index'         => 0,
+								'message'       => array(
+									'role'    => 'assistant',
+									'content' => 'Summary.',
+								),
+								'finish_reason' => 'stop',
+							),
+						),
 					)
 				),
 				'response' => array(
@@ -1665,21 +1680,35 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $filter_callback, 10 );
 
 		$this->assertNotEmpty( $captured_request );
-		$this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+		// With tool calls in conversation history, Chat Completions API must be used.
+		$this->assertSame( WP_MCP_AI_OpenAI_Client::CHAT_COMPLETIONS_ENDPOINT, $captured_request['url'] );
 
 		$payload = json_decode( $captured_request['args']['body'], true );
 
 		$this->assertIsArray( $payload );
-		$this->assertArrayHasKey( 'input', $payload );
+		$this->assertArrayHasKey( 'messages', $payload );
 
-		$this->assertSame( 'output_text', $payload['input'][0]['content'][0]['type'] );
-		$this->assertSame( 'Inspecting your PDF…', $payload['input'][0]['content'][0]['text'] );
+		// Find the user message (index 2 after tool messages are preserved).
+		$user_message = null;
+		foreach ( $payload['messages'] as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$user_message = $msg;
+				break;
+			}
+		}
 
-		$this->assertSame( 'output_text', $payload['input'][1]['content'][0]['type'] );
-		$this->assertSame( 'Processed attachment contents.', $payload['input'][1]['content'][0]['text'] );
+		$this->assertNotNull( $user_message, 'User message must be present in Chat Completions payload' );
+		$this->assertIsArray( $user_message['content'] );
 
-		$this->assertSame( 'input_text', $payload['input'][2]['content'][0]['type'] );
-		$this->assertSame( 'Summarise the findings.', $payload['input'][2]['content'][0]['text'] );
+		// The text segment should be preserved.
+		$this->assertSame( 'text', $user_message['content'][0]['type'] );
+		$this->assertSame( 'Summarise the findings.', $user_message['content'][0]['text'] );
+
+		// The input_file segment must be converted to the Chat Completions 'file' content type.
+		$this->assertSame( 'file', $user_message['content'][1]['type'], 'input_file must be converted to file type for Chat Completions' );
+		$this->assertArrayHasKey( 'file', $user_message['content'][1] );
+		$this->assertSame( 'file-789', $user_message['content'][1]['file']['file_id'] );
 	}
 
 	/**
@@ -2286,7 +2315,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, $response['image'] );
 		$this->assertSame( 'png', $response['format'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
-		$this->assertSame( 'gpt-image-1', $response['model'] );
+		$this->assertSame( 'gpt-image-1.5', $response['model'] );
 		$this->assertSame( 'Binary payload', $response['prompt'] );
 		$this->assertSame( 0, $response['created'] );
 		$this->assertSame( '', $response['revised_prompt'] );

@@ -42,7 +42,7 @@
 		"mathjs": "^12.3.0",
 		"mjml": "^5.0.0-alpha.10",
 		"node-ensure": "^0.0.0",
-		"nodemailer": "^7.0.12",
+		"nodemailer": "^8.0.4",
 		"p-queue": "^8.0.1",
 		"pdf-lib": "^1.17.1",
 		"pdf-parse": "^1.1.4",
@@ -80,7 +80,11 @@
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
 		"basic-ftp": ">=5.2.0",
-		"undici": ">=7.24.0"
+		"undici": ">=7.24.0",
+		"picomatch@^2": "2.3.2",
+		"mailparser": {
+			"nodemailer": ">=8.0.4"
+		}
 	},
 	"keywords": [
 		"wordpress",

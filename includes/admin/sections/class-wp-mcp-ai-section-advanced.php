@@ -2227,8 +2227,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 													</td>
 													<td><?php echo esc_html( $last_verify_display ); ?></td>
 													<td>
-														<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-															<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+														<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+															<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+															<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 														</a>
 													</td>
 												</tr>

@@ -20,7 +20,7 @@ It supports five first-class schedule types, execution history with a success/fa
 |------|-------------|
 | `task` | Fires a WP action hook with optional arguments |
 | `workflow` | Executes an ordered chain of AI tool calls via the Tool Registry; each step receives previous results in context |
-| `assistant_run` | Fires `wp_mcp_ai_pro_scheduled_assistant_run` — triggers any NV oOS assistant with a configured message |
+| `assistant_run` | Sends a message to an NV oOS assistant via the internal `/mcp-ai/v1/chat` REST endpoint with full **agentic workflow** support — tool-calling agents can iterate autonomously, and the action log captures tool results, intermediate messages, and the final reply |
 | `channel_broadcast` | Delivers a recurring message to Telegram, Slack, Discord, Teams, Messenger, or WhatsApp via `unified_channel_broadcast` |
 | `workflow_builder` | References a saved **Pro Workflow Builder** workflow by ID and runs its full DAG server-side |
 
@@ -183,6 +183,51 @@ On failure the schedule re-queues itself via `wp_schedule_single_event()` after 
 
 ---
 
+## Timeout
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `timeout` | `0` | Seconds; 0 = no limit |
+
+When `timeout > 0`, the dispatcher calls `set_time_limit()` before execution and checks
+the actual duration afterwards. Runs exceeding the limit are marked as failed with a
+descriptive error message.
+
+> **Note:** `set_time_limit()` may be disabled on shared hosting environments. As a
+> fallback, the post-execution duration check will still mark long-running tasks as
+> failed (best-effort enforcement).
+
+---
+
+## Webhook Callback
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `callback_url` | `''` | Empty = disabled |
+
+When a valid HTTPS URL is configured, the dispatcher POSTs a JSON payload to it after
+every run (success **and** failure). The request is non-blocking (`blocking => false`)
+so it does not delay the cron cycle.
+
+**Payload shape:**
+
+```json
+{
+  "event": "schedule.run.success",
+  "schedule_id": "abc123",
+  "schedule_name": "Daily Report",
+  "schedule_type": "assistant_run",
+  "status": "success",
+  "duration": 1.234,
+  "error": "",
+  "action_log": { ... },
+  "timestamp": "2026-03-27T12:00:00+00:00",
+  "site_url": "https://example.com"
+}
+```
+
+---
+
 ## JetEngine CCT Persistence
 
 When JetEngine is active, every run is written to `WP_MCP_AI_Execution_History_CCT`, making runs visible alongside orchestration history in JetEngine admin listings:
@@ -211,8 +256,17 @@ Each record contains:
     'duration'   => 0.456,      // seconds (float)
     'error'      => '',         // error message or empty string
     'start_time' => 1745000000, // Unix timestamp
+    'action_log' => [           // type-specific execution summary (array)
+        'type'       => 'workflow',  // schedule type
+        // workflow:        'steps'            => [ [ 'tool_slug', 'label', 'result', 'duration' ], … ]
+        // assistant_run:   'assistant_id'     => 42, 'message' => '…'
+        // channel_broadcast: 'channels'       => ['telegram', …], 'message' => '…'
+        // task:            'hook'             => 'my_hook', 'args' => [ … ]
+    ],
 ]
 ```
+
+The `action_log` field captures a trimmed summary of what the schedule actually did during each run. It is stored alongside the other fields and exposed in the admin UI as an expandable **View Log** panel in the run-history modal. It is also included as a JSON column in the CSV export.
 
 Retrieve history:
 
@@ -245,7 +299,7 @@ Export run history as CSV:
 $csv = WP_MCP_AI_Pro_Schedule_Manager::get_history_csv( $schedule_id, 50 );
 ```
 
-Uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM package) when available; falls back to pure-PHP `fputcsv`. In the admin UI click **Export CSV** in the run-history modal footer.
+Uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM package) when available; falls back to pure-PHP `fputcsv`. The export includes an `action_log` column containing a JSON-encoded summary of what the schedule did. In the admin UI click **Export CSV** in the run-history modal footer.
 
 ---
 
@@ -314,7 +368,7 @@ Inline JSON validation highlights invalid fields before the form can be submitte
 ### Run History Modal
 
 - **chart.js stacked bar chart** — one bar per run (up to 20 shown), stacked green/red for success/failure.
-- **History table** — status, timestamp, duration, error message.
+- **History table** — status, timestamp, duration, error message, and a **View Log** toggle button that expands an inline JSON panel showing the `action_log` summary for that run.
 - **Export CSV** button — triggers in-browser download.
 - **Clear History** button — wipes all run records for the schedule.
 
@@ -325,7 +379,7 @@ Inline JSON validation highlights invalid fields before the form can be submitte
 | Hook | Type | When |
 |------|------|------|
 | `wp_mcp_ai_pro_workflow_completed` | Action | After all workflow steps succeed |
-| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | When an `assistant_run` schedule fires |
+| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | After an `assistant_run` schedule completes (context includes `response`, `tool_results_count`, `agentic_messages_count`, `is_agentic`, `tool_calls`) |
 | `wp_mcp_ai_pro_channel_broadcast` | Action | Fallback when `unified_channel_broadcast` tool is unavailable |
 | `wp_mcp_ai_ics_generate_calendar` | Filter | Override ICS generation (e.g. ical-generator Node service) |
 
@@ -340,6 +394,65 @@ WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context 
 ```
 
 where `$context` includes `step_label` and `step_duration` (seconds). Duration is also stored in `previous_results` so downstream steps can access it.
+
+---
+
+## Agentic Workflow Support (assistant_run)
+
+The `assistant_run` schedule type supports full agentic workflows — assistants that autonomously call tools (search, create, analyse, etc.) before producing a final text reply. This matches the industry-standard **ReAct** (Reasoning + Acting) pattern used by OpenAI, LangChain, and AutoGPT.
+
+### How It Works
+
+1. The scheduler sends the configured message to the assistant via the internal `/mcp-ai/v1/chat` REST endpoint.
+2. The `wp_mcp_ai_max_agentic_iterations` filter is raised (default: 10, per-schedule override available) so tool-calling loops can run to completion.
+3. After the request completes, the response is inspected using a two-pass extraction algorithm matching every channel webhook controller (Telegram, Slack, Discord, etc.):
+   - **Pass 1**: Scan all choices, preferring `finish_reason=stop` (final answer) over `tool_calls`.
+   - **Pass 2**: Fall back to `agentic_tool_messages` when the loop exhausted its iteration cap before producing a final text reply.
+4. Tool results, intermediate agentic messages, and the extracted reply are all captured in the action log.
+
+### Configuring Max Agentic Iterations
+
+Set `max_agentic_iterations` in the `assistant_config` to control how many tool-call rounds the agent can perform:
+
+```php
+$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule( [
+    'schedule_type'    => 'assistant_run',
+    'name'             => 'Deep Research Report',
+    'schedule'         => 'wp_mcp_ai_weekly',
+    'timestamp'        => strtotime( 'next Monday 03:00' ),
+    'assistant_config' => [
+        'assistant_id'           => 42,
+        'message'                => 'Research competitors and generate a detailed report.',
+        'max_agentic_iterations' => 25,  // Allow up to 25 tool-call rounds
+    ],
+], get_current_user_id() );
+```
+
+Priority order:
+1. Per-schedule `assistant_config.max_agentic_iterations` (highest)
+2. Per-assistant config from the assistant post
+3. Admin setting (`wp_mcp_ai_max_agentic_iterations` filter)
+4. Schedule manager default (10)
+
+### Action Log Fields
+
+When an agentic workflow runs, the `action_log` includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_agentic` | `bool` | `true` when the assistant used tools |
+| `tool_results_count` | `int` | Number of tool call results |
+| `agentic_messages_count` | `int` | Number of intermediate assistant messages |
+| `tool_calls` | `array` | Summary of each tool call (`name`, `tool_call_id`) |
+| `response` | `string` | Extracted final reply (or last agentic message) |
+
+### Content Extraction
+
+The `extract_content_from_chat_response()` method now handles:
+
+- **OpenAI / Anthropic**: Plain string `content` in choices
+- **Gemini / Ollama**: Array-segment content (`[{ type: "text", text: "..." }]`) via `resolve_content_to_string()`
+- **Agentic fallback**: When choices have `null` content (iteration cap reached), falls back to the last `agentic_tool_messages` entry with non-empty text
 
 ---
 

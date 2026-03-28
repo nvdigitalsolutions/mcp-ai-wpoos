@@ -542,7 +542,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 14. 💰 Financial Planning Toolkit
 
 **Setting**: `enable_financial_planner_toolkit`  
-**Tools**: 24 professional tools  
+**Tools**: 32 professional tools  
 **Status**: Pro addon required (✅ Fully Implemented)
 
 **Features**:
@@ -569,6 +569,14 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Tax estimation
 - College savings (529 plan) calculator
 - Insurance needs analysis
+- Real-time financial news aggregation from multiple sources
+- Stock ticker search and OHLCV data retrieval via YFinance
+- Market sentiment analysis with keyword scoring (-1.0 to +1.0)
+- Time-series market forecasting (linear regression, moving average, exponential smoothing)
+- Investment signal tracking and evolution evaluation
+- Financial logic chain visualization (Mermaid diagrams)
+- Professional financial report generation (6 report types)
+- Specialized multi-source financial web search
 
 **Tool Categories**:
 - **Retirement Planning**: Calculators, IRA/Roth, withdrawal strategies, social security, pensions (5 tools)
@@ -577,6 +585,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - **Debt Management**: Debt payoff, mortgage calculator, credit score tracking (3 tools)
 - **Goal Planning**: Savings goals, emergency fund (2 tools)
 - **Financial Literacy**: Health score, tax estimator, college savings, insurance (4 tools)
+- **Market Analysis & Research**: News aggregation, stock data, sentiment analysis, forecasting, signal tracking, logic visualization, report generation, financial search (8 tools)
 
 **Use Cases**:
 - Financial advisors (educational purposes)
@@ -1183,7 +1192,7 @@ Toolkits that create custom post types:
 - ✅ Architectural Design Toolkit (16 tools)
 - ✅ Calendar Booking Toolkit (15 tools)
 - ✅ DJ Management Toolkit (18 tools)
-- ✅ Financial Planning Toolkit (24 tools - fully implemented)
+- ✅ Financial Planning Toolkit (32 tools - fully implemented)
 - ✅ Video Production Toolkit (12 tools)
 - ✅ Multilingual Content Toolkit (10 tools)
 - ✅ Advanced Analytics Toolkit (12 tools - fully implemented)

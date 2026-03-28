@@ -602,9 +602,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		$nodejs_version = $this->get_nodejs_version();
 
 		?>
-		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $this->check_nodejs_available() ? '#46b450' : '#dc3232'; ?>; margin: 20px 0;">
+		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $this->check_nodejs_available() ? '#46b450' : '#dc3232'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded color hex values. ?>; margin: 20px 0;">
 			<h4 style="margin-top: 0;">
-				<?php echo $this->check_nodejs_available() ? '✅' : '❌'; ?>
+				<?php echo $this->check_nodejs_available() ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded emoji indicators. ?>
 				<?php esc_html_e( 'Node.js Runtime', 'mcp-ai-wpoos-pro' ); ?>
 			</h4>
 			

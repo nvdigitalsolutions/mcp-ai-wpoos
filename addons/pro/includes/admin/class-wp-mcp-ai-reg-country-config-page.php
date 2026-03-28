@@ -76,8 +76,9 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 										<?php echo esc_html( $country['reg_count'] ); ?>
 									</td>
 									<td>
-										<a href="<?php echo esc_url( get_edit_post_link( $country['id'] ) ); ?>" class="button button-small">
-											<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+										<a href="<?php echo esc_url( get_edit_post_link( $country['id'] ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+											<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+											<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 										</a>
 									</td>
 								</tr>
@@ -306,6 +307,7 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 			$registration_counts = $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- result of $wpdb->prepare() below.
 				$wpdb->prepare(
 					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders built from array_fill with %d only.
 					"SELECT pm.meta_value as country_id, COUNT(*) as total
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
@@ -313,6 +315,7 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 					AND pm.meta_key = 'country_id'
 					AND pm.meta_value IN ($placeholders)
 					GROUP BY pm.meta_value",
+					// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					...$country_ids
 				),
 				ARRAY_A

@@ -861,6 +861,7 @@ function wp_mcp_ai_register_all_npm_filters() {
 	wp_mcp_ai_register_ffmpeg_filters();
 	wp_mcp_ai_register_yfinance_filters();
 	wp_mcp_ai_register_canvas_filters();
+	wp_mcp_ai_register_language_filters();
 }
 
 /**
@@ -1180,3 +1181,179 @@ function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = arr
  * @since 1.3.0
  */
 add_filter( 'wp_mcp_ai_generate_qr_code', 'wp_mcp_ai_generate_qr_code', 10, 3 );
+
+// =============================================================================
+// LANGUAGE DETECTION FILTER HANDLERS (franc + iso-639-1)
+// =============================================================================
+
+/**
+ * Detect language of text using the franc Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result (false = not yet handled).
+ * @param array       $params Parameters including 'text'.
+ * @return false|array Detection result or false on failure.
+ */
+function wp_mcp_ai_lang_detect_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/lang-detect-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'detect', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Look up ISO 639-1 language code info using the lang-detect Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'code'.
+ * @return false|array Language info or false on failure.
+ */
+function wp_mcp_ai_lang_code_info_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/lang-detect-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'validate_code', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Format / validate a phone number using the phone-format Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'phone' and 'country_code'.
+ * @return false|array Formatted phone data or false on failure.
+ */
+function wp_mcp_ai_phone_format_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/phone-format-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'format', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Validate a phone number using libphonenumber-js via Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|bool|WP_Error $result Existing result.
+ * @param array               $params Parameters including 'phone' and 'country'.
+ * @return false|bool|WP_Error Validation result or false if Node.js unavailable.
+ */
+function wp_mcp_ai_validator_phone_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/phone-format-service.js';
+	$output       = wp_mcp_ai_exec_node_service(
+		$service_file,
+		'validate',
+		array(
+			'phone'        => isset( $params['phone'] ) ? $params['phone'] : '',
+			'country_code' => isset( $params['country'] ) ? $params['country'] : 'US',
+		),
+		10
+	);
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result']['valid'] ) ) {
+		if ( ! $data['result']['valid'] ) {
+			return new WP_Error(
+				'invalid_phone',
+				__( 'Invalid phone number.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Translate text using the google-translate-api-x Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'text', 'target_language', 'source_language'.
+ * @return false|array Translation result or false on failure.
+ */
+function wp_mcp_ai_translate_text_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/translate-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'translate', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Register language detection filter handlers.
+ *
+ * @since 1.4.0
+ */
+function wp_mcp_ai_register_language_filters() {
+	add_filter( 'wp_mcp_ai_lang_detect', 'wp_mcp_ai_lang_detect_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_lang_code_info', 'wp_mcp_ai_lang_code_info_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_phone_format', 'wp_mcp_ai_phone_format_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_validator_phone', 'wp_mcp_ai_validator_phone_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_translate_text', 'wp_mcp_ai_translate_text_handler', 10, 2 );
+}

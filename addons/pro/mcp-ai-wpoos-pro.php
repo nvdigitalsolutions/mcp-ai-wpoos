@@ -181,6 +181,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		if ( file_exists( $schedule_manager_file ) ) {
 			require_once $schedule_manager_file;
 		}
+
+		// In the base + pro separate-plugin scenario the base plugin's
+		// settings-dashboard-init.php already called
+		// $container->get( 'section.schedule_manager' ) before the Pro class
+		// file was loaded, so the factory returned null.  Because PHP's isset()
+		// returns false for null, the container will re-run the factory on the
+		// next get() call — but nothing triggers that call during AJAX requests,
+		// meaning the section's AJAX handlers are never registered.
+		//
+		// Force the container to resolve the singleton now that the class file
+		// is loaded so the section constructor registers its AJAX hooks and the
+		// standalone admin page can render and enqueue assets.
+		if (
+			function_exists( 'wp_mcp_ai_container' ) &&
+			class_exists( 'WP_MCP_AI_Section_Schedule_Manager' )
+		) {
+			wp_mcp_ai_container()->get( 'section.schedule_manager' );
+		}
+
+		// Load Pro Schedule Manager standalone admin page (registers under NV oOS Pro Dashboard menu).
+		$schedule_manager_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-manager-page.php';
+		if ( file_exists( $schedule_manager_page ) ) {
+			require_once $schedule_manager_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
@@ -312,6 +337,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Get settings for conditional loading.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// Load the core Schedule Manager class on every request (including WP cron)
+		// so its init() method registers the central dispatcher hook and custom cron
+		// intervals. Without this, wp-cron.php silently drops scheduled events because
+		// add_action( 'wp_mcp_ai_pro_schedule_exec', ... ) is never registered.
+		$schedule_manager_core = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+		if ( file_exists( $schedule_manager_core ) ) {
+			require_once $schedule_manager_core;
+		}
 
 		// Load Pro admin sections.
 		// Performance section is only loaded in admin context.
@@ -771,8 +805,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add AI CPT Management tools if enabled.
 		if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 			$cpt_research_tools = array(
-				'WP_MCP_AI_Tool_Research_Post' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-post.php',
-				'WP_MCP_AI_Tool_Research_Page' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-page.php',
+				'WP_MCP_AI_Tool_Research_Post'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-post.php',
+				'WP_MCP_AI_Tool_Research_Page'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-page.php',
+				'WP_MCP_AI_Tool_Research_Blog_Post' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-blog-post.php',
 			);
 			$pro_tools          = array_merge( $pro_tools, $cpt_research_tools );
 		}
@@ -1132,6 +1167,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Tax_Estimator'             => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-estimator.php',
 				'WP_MCP_AI_Tool_College_Savings_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-college-savings-calculator.php',
 				'WP_MCP_AI_Tool_Insurance_Needs_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-insurance-needs-analyzer.php',
+				// Market Analysis & Research tools (inspired by Awesome-finance-skills).
+				'WP_MCP_AI_Tool_Financial_News_Aggregator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-news-aggregator.php',
+				'WP_MCP_AI_Tool_Stock_Data_Fetcher'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-stock-data-fetcher.php',
+				'WP_MCP_AI_Tool_Market_Sentiment_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-sentiment-analyzer.php',
+				'WP_MCP_AI_Tool_Market_Forecast_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-forecast-analyzer.php',
+				'WP_MCP_AI_Tool_Investment_Signal_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-investment-signal-tracker.php',
+				'WP_MCP_AI_Tool_Financial_Logic_Visualizer' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-logic-visualizer.php',
+				'WP_MCP_AI_Tool_Financial_Report_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-report-generator.php',
+				'WP_MCP_AI_Tool_Financial_Search'          => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-search.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}

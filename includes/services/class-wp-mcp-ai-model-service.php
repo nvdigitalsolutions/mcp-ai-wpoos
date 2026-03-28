@@ -710,24 +710,18 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
-	 * Get default model for provider
+	 * Get default model for provider.
+	 *
+	 * Returns the stable default model for the given provider.
+	 * Use get_provider_default_models_by_lane() for lane-specific defaults.
 	 *
 	 * @param string $provider Provider name.
 	 * @return string Default model ID.
 	 */
 	public function get_default_model_for_provider( $provider ) {
-		$defaults = array(
-			'openai'      => 'gpt-4.1',
-			'anthropic'   => 'claude-sonnet-4-6',
-			'gemini'      => 'gemini-2.5-flash',
-			'huggingface' => 'meta-llama/Llama-3.3-70B-Instruct',
-			'ollama'      => 'llama4',
-			'lm_studio'   => 'meta-llama/llama-4-scout-17b-16e-instruct',
-			'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
-			'embedded'    => 'gemma-2-2b-it-q4f16_1-MLC',
-		);
+		$lanes = $this->get_provider_default_models_by_lane( $provider );
 
-		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
+		$default = isset( $lanes['stable'] ) ? $lanes['stable'] : '';
 
 		/**
 		 * Filter default model for provider.
@@ -738,5 +732,79 @@ class WP_MCP_AI_Model_Service {
 		 * @param string $provider Provider name.
 		 */
 		return apply_filters( 'wp_mcp_ai_default_model_for_provider', $default, $provider );
+	}
+
+	/**
+	 * Get provider default models organized by lane.
+	 *
+	 * Returns an associative array of default models for each lane:
+	 * - stable:  Proven production default.
+	 * - latest:  Current recommended / preview model.
+	 * - budget:  Cost-effective / fast alternative.
+	 * - vision:  Default model for vision tasks (if applicable).
+	 * - image:   Default model for image generation (if applicable).
+	 * - audio_in:  Default model for speech-to-text (if applicable).
+	 * - audio_out: Default model for text-to-speech (if applicable).
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $provider Provider name.
+	 * @return array Associative array of lane => model ID.
+	 */
+	public function get_provider_default_models_by_lane( $provider ) {
+		$provider_lanes = array(
+			'openai'      => array(
+				'stable'    => 'gpt-4.1',
+				'latest'    => 'gpt-5.4',
+				'budget'    => 'gpt-5.4-mini',
+				'vision'    => 'gpt-4.1',
+				'image'     => 'gpt-image-1.5',
+				'audio_in'  => 'gpt-4o-mini-transcribe',
+				'audio_out' => 'gpt-4o-mini-tts',
+			),
+			'anthropic'   => array(
+				'stable' => 'claude-sonnet-4-6',
+				'latest' => 'claude-opus-4-6',
+				'budget' => 'claude-haiku-4-5',
+				'vision' => 'claude-sonnet-4-6',
+			),
+			'gemini'      => array(
+				'stable' => 'gemini-2.5-flash',
+				'latest' => 'gemini-2.5-pro',
+				'budget' => 'gemini-2.5-flash',
+				'vision' => 'gemini-2.5-flash',
+				'image'  => 'gemini-2.5-flash-image',
+			),
+			'huggingface' => array(
+				'stable' => 'meta-llama/Llama-3.3-70B-Instruct',
+			),
+			'ollama'      => array(
+				'stable' => 'llama4',
+			),
+			'lm_studio'   => array(
+				'stable' => 'meta-llama/llama-4-scout-17b-16e-instruct',
+			),
+			'cloudflare'  => array(
+				'stable' => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'latest' => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'budget' => '@cf/meta/llama-3.2-3b-instruct',
+				'image'  => '@cf/black-forest-labs/flux-2-dev',
+			),
+			'embedded'    => array(
+				'stable' => 'gemma-2-2b-it-q4f16_1-MLC',
+			),
+		);
+
+		$lanes = isset( $provider_lanes[ $provider ] ) ? $provider_lanes[ $provider ] : array();
+
+		/**
+		 * Filter provider default models by lane.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array  $lanes    Associative array of lane => model ID.
+		 * @param string $provider Provider name.
+		 */
+		return apply_filters( 'wp_mcp_ai_provider_default_models_by_lane', $lanes, $provider );
 	}
 }

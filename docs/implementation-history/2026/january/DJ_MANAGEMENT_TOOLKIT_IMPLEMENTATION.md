@@ -28,6 +28,7 @@ Successfully implemented 18 professional tools for comprehensive DJ business man
    - Slug: `equipment_inventory_report`
    - Generates comprehensive inventory reports
    - Features: Filter by status/type, value calculations, status/type breakdowns
+   - **XLSX export**: Pass `export_xlsx: true` to receive a public download URL for a full inventory spreadsheet (requires `phpoffice/phpspreadsheet` in Pro vendor). The URL is returned as `inventory_xlsx` in the response; any error is surfaced as `inventory_xlsx_error`.
 
 4. **class-wp-mcp-ai-tool-reserve-equipment.php**
    - Slug: `reserve_equipment`
@@ -83,6 +84,7 @@ Successfully implemented 18 professional tools for comprehensive DJ business man
     - Slug: `send_event_confirmation`
     - Sends booking confirmations via email
     - Features: Timeline inclusion, custom messages, status updates
+    - **Enhanced email delivery** (v1.4.0): Four-tier delivery — MJML responsive HTML compiled email → Nodemailer SMTP → `wp_mail` HTML → `wp_mail` plain-text fallback. Response includes `send_method` key indicating which tier was used.
 
 14. **class-wp-mcp-ai-tool-track-event-payments.php**
     - Slug: `track_event_payments`

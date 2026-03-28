@@ -50,14 +50,14 @@
 	table-layout: fixed;
 }
 
-.wp-mcp-ai-sm-table .column-name     { width: 22%; }
+.wp-mcp-ai-sm-table .column-name     { width: 10%; }
 .wp-mcp-ai-sm-table .column-type     { width: 10%; }
 .wp-mcp-ai-sm-table .column-schedule { width: 10%; }
 .wp-mcp-ai-sm-table .column-next-run { width: 13%; }
 .wp-mcp-ai-sm-table .column-last-status { width: 13%; }
 .wp-mcp-ai-sm-table .column-runs     { width: 5%; text-align: center; }
 .wp-mcp-ai-sm-table .column-enabled  { width: 7%; text-align: center; }
-.wp-mcp-ai-sm-table .column-actions  { width: 20%; }
+.wp-mcp-ai-sm-table .column-actions  { width: 12%; }
 
 .wp-mcp-ai-sm-table .column-name .description {
 	color: #646970;
@@ -492,4 +492,59 @@ margin: 0;
 background: #f0f6fc;
 color: #1565c0;
 border: 1px solid #90caf9;
+}
+
+/* Action log pre-formatted display in history modal */
+.wp-mcp-ai-sm-action-log {
+background: #f6f7f7;
+border: 1px solid #ddd;
+border-radius: 3px;
+font-size: 12px;
+line-height: 1.5;
+margin: 6px 0 0;
+max-height: 320px;
+overflow: auto;
+padding: 8px 10px;
+}
+
+.wp-mcp-ai-sm-action-log p {
+margin: 2px 0 4px;
+}
+
+.wp-mcp-ai-sm-action-log .wp-mcp-ai-sm-log-pre {
+background: #f0f0f0;
+border: 1px solid #e0e0e0;
+border-radius: 3px;
+font-size: 11px;
+margin: 4px 0;
+max-height: 160px;
+overflow: auto;
+padding: 6px;
+white-space: pre-wrap;
+word-break: break-all;
+}
+
+/* Workflow steps table inside action log */
+.wp-mcp-ai-sm-log-steps {
+border-collapse: collapse;
+font-size: 11px;
+width: 100%;
+}
+
+.wp-mcp-ai-sm-log-steps th,
+.wp-mcp-ai-sm-log-steps td {
+border: 1px solid #ddd;
+padding: 3px 6px;
+text-align: left;
+vertical-align: top;
+}
+
+.wp-mcp-ai-sm-log-steps th {
+background: #e8e8e8;
+font-weight: 600;
+}
+
+/* Wrapper div for the action log panel */
+.wp-mcp-ai-sm-action-log-wrap {
+margin-top: 6px;
 }

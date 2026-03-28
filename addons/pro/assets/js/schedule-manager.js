@@ -1,4 +1,4 @@
-/* global wpMcpAiScheduleManager, wp */
+/* global wpMcpAiScheduleManager */
 /**
  * Pro Schedule Manager — Admin UI
  *
@@ -148,15 +148,24 @@
 				data
 			);
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] AJAX →', action, data );
+
 			$.post( wpMcpAiScheduleManager.ajaxUrl, data )
 				.done( function ( response ) {
 					if ( response.success ) {
+						// eslint-disable-next-line no-console
+						console.log( '[NV oOS Schedule Manager] AJAX ← OK', action, response.data );
 						callback( null, response.data );
 					} else {
+						// eslint-disable-next-line no-console
+						console.warn( '[NV oOS Schedule Manager] AJAX ← FAIL', action, response.data );
 						callback( ( response.data && response.data.message ) || wpMcpAiScheduleManager.strings.error );
 					}
 				} )
-				.fail( function () {
+				.fail( function ( jqXHR, textStatus, errorThrown ) {
+					// eslint-disable-next-line no-console
+					console.error( '[NV oOS Schedule Manager] AJAX ← ERROR', action, textStatus, errorThrown );
 					callback( wpMcpAiScheduleManager.strings.error );
 				} );
 		},
@@ -168,6 +177,9 @@
 			const self   = this;
 			const $tbody = $( '#wp-mcp-ai-sm-tbody' );
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Loading schedules…' );
+
 			$tbody.html(
 				'<tr class="wp-mcp-ai-sm-loading-row"><td colspan="8"><span class="spinner is-active"></span> ' +
 				wpMcpAiScheduleManager.strings.loading + '</td></tr>'
@@ -175,9 +187,14 @@
 
 			this.ajax( 'wp_mcp_ai_sm_get_schedules', {}, function ( err, data ) {
 				if ( err ) {
+					// eslint-disable-next-line no-console
+					console.error( '[NV oOS Schedule Manager] Failed to load schedules:', err );
 					$tbody.html( '<tr><td colspan="8" class="wp-mcp-ai-sm-error">' + err + '</td></tr>' );
 					return;
 				}
+
+				// eslint-disable-next-line no-console
+				console.log( '[NV oOS Schedule Manager] Loaded', ( data.schedules || [] ).length, 'schedules' );
 
 				self.schedules = {};
 				( data.schedules || [] ).forEach( function ( s ) {
@@ -243,34 +260,34 @@
 
 			// Name.
 			row += '<td class="column-name">';
-			row += '<strong>' + wp.escapeHtml( s.name ) + '</strong>';
+			row += '<strong>' + SM.esc( s.name ) + '</strong>';
 			if ( s.description ) {
-				row += '<p class="description">' + wp.escapeHtml( s.description ) + '</p>';
+				row += '<p class="description">' + SM.esc( s.description ) + '</p>';
 			}
 			row += '</td>';
 
 			// Type badge.
 			row += '<td class="column-type">';
 			row += '<span class="wp-mcp-ai-sm-badge wp-mcp-ai-sm-badge-' + s.schedule_type + '">';
-			row += wp.escapeHtml( typeLabel );
+			row += SM.esc( typeLabel );
 			row += '</span></td>';
 
 			// Interval.
-			row += '<td class="column-schedule">' + wp.escapeHtml( s.schedule ) + '</td>';
+			row += '<td class="column-schedule">' + SM.esc( s.schedule ) + '</td>';
 
 			// Next run.
-			row += '<td class="column-next-run">' + wp.escapeHtml( nextRun ) + '</td>';
+			row += '<td class="column-next-run">' + SM.esc( nextRun ) + '</td>';
 
 			// Last status.
 			row += '<td class="column-last-status">';
 			row += '<span class="wp-mcp-ai-sm-status ' + statusClass + '">';
-			row += wp.escapeHtml( statusLabel );
+			row += SM.esc( statusLabel );
 			if ( 'failure' === s.last_run_status && s.last_error ) {
-				row += ' <abbr title="' + wp.escapeHtml( s.last_error ) + '">(?)</abbr>';
+				row += ' <abbr title="' + SM.esc( s.last_error ) + '">(?)</abbr>';
 			}
 			row += '</span>';
 			if ( s.last_run_time ) {
-				row += '<br><small>' + wp.escapeHtml( s.last_run_time ) + '</small>';
+				row += '<br><small>' + SM.esc( s.last_run_time ) + '</small>';
 			}
 			row += '</td>';
 
@@ -287,16 +304,16 @@
 			row += '<span class="wp-mcp-ai-sm-slider"></span>';
 			row += '</label></td>';
 
-			// Actions.
+			// Actions (icon-only buttons with title tooltips).
 			row += '<td class="column-actions">';
-			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '">' +
-				'&#9654; Run</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '">' +
-				'&#9998; Edit</button> ';
-			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '">' +
-				'&#128203; History</button> ';
-			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '">' +
-				'&#10005; Delete</button>';
+			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '" title="Run" aria-label="Run">' +
+				'&#9654;</button> ';
+			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '" title="Edit" aria-label="Edit">' +
+				'&#9998;</button> ';
+			row += '<button type="button" class="button button-small" data-sm-action="history" data-sm-id="' + s.id + '" title="History" aria-label="History">' +
+				'&#128203;</button> ';
+			row += '<button type="button" class="button button-small button-link-delete" data-sm-action="delete" data-sm-id="' + s.id + '" title="Delete" aria-label="Delete">' +
+				'&#10005;</button>';
 			row += '</td></tr>';
 
 			return row;
@@ -421,6 +438,9 @@
 				return;
 			}
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Creating schedule:', type, data );
+
 			$btn.prop( 'disabled', true ).text( strings.saving );
 			$msg.text( '' ).removeClass( 'error success' );
 
@@ -432,9 +452,14 @@
 					setTimeout( function () { $btn.text( 'Create Schedule' ); }, 2000 );
 
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Create failed:', err );
 						$msg.text( err ).addClass( 'error' );
 						return;
 					}
+
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Created schedule:', result );
 
 					$msg.text( result.message ).addClass( 'success' );
 					self.resetCreateForm();
@@ -458,6 +483,8 @@
 				notify_email:     $( '#sm-notify-email' ).val().trim(),
 				max_retries:      parseInt( $( '#sm-max-retries' ).val(), 10 ) || 0,
 				retry_delay:      parseInt( $( '#sm-retry-delay' ).val(), 10 ) || 300,
+				timeout:          parseInt( $( '#sm-timeout' ).val(), 10 ) || 0,
+				callback_url:     $( '#sm-callback-url' ).val().trim(),
 				tags:             $( '#sm-tags' ).val().split( ',' ).map( function ( t ) { return t.trim(); } ).filter( Boolean ),
 			};
 
@@ -524,6 +551,13 @@
 					}
 				}
 				data.broadcast_config = { message: bcMsg, channels: bcChannels, credentials: bcCreds };
+			} else if ( 'workflow_builder' === type ) {
+				const wbId = $( '#sm-workflow-builder-id' ).val();
+				if ( ! wbId ) {
+					$( '#wp-mcp-ai-sm-create-msg' ).text( wpMcpAiScheduleManager.strings.selectWorkflow || 'Please select a saved workflow.' ).addClass( 'error' );
+					return null;
+				}
+				data.workflow_builder_id = wbId;
 			}
 
 			// Collect failure-notification channels (applies to all schedule types).
@@ -547,6 +581,7 @@
 			$( '#sm-notify-on-failure' ).prop( 'checked', false );
 			$( '#sm-notify-email-wrap, #sm-notify-channels-row' ).hide();
 			$( '#sm-workflow-steps' ).empty();
+			$( '#sm-workflow-builder-id' ).val( '' );
 			$( '#sm-type' ).val( 'task' ).trigger( 'change' );
 			$( '#sm-schedule' ).val( 'single' );
 			$( '#sm-timestamp' ).val( '' );
@@ -580,16 +615,23 @@
 		toggleSchedule: function ( id, enabled ) {
 			const self = this;
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Toggle schedule', id, 'enabled=' + enabled );
+
 			this.ajax(
 				'wp_mcp_ai_sm_toggle_schedule',
 				{ schedule_id: id, enabled: enabled ? '1' : '0' },
 				function ( err ) {
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Toggle failed:', id, err );
 						alert( err );
 						// Revert UI.
 						$( '[data-sm-id="' + id + '"].wp-mcp-ai-sm-enable-toggle' ).prop( 'checked', ! enabled );
 						return;
 					}
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Toggle success:', id, 'enabled=' + enabled );
 					$( 'tr[data-sm-id="' + id + '"]' ).attr( 'data-sm-enabled', enabled ? '1' : '0' );
 					if ( self.schedules[ id ] ) {
 						self.schedules[ id ].enabled = enabled;
@@ -607,6 +649,9 @@
 			const $row = $( 'tr[data-sm-id="' + id + '"]' );
 			$row.addClass( 'wp-mcp-ai-sm-running' );
 
+			// eslint-disable-next-line no-console
+			console.log( '[NV oOS Schedule Manager] Triggering schedule:', id );
+
 			this.ajax(
 				'wp_mcp_ai_sm_trigger_schedule',
 				{ schedule_id: id },
@@ -614,9 +659,14 @@
 					$row.removeClass( 'wp-mcp-ai-sm-running' );
 
 					if ( err ) {
+						// eslint-disable-next-line no-console
+						console.error( '[NV oOS Schedule Manager] Trigger failed:', id, err );
 						alert( err );
 						return;
 					}
+
+					// eslint-disable-next-line no-console
+					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, _data );
 
 					// Reload to show updated status.
 					self.loadSchedules();
@@ -739,22 +789,44 @@
 					}
 
 					// ── run history table ──────────────────────────────────
-					const rows = history.map( function ( entry ) {
+					const rows = history.map( function ( entry, idx ) {
 						const cls = 'success' === entry.status ? 'wp-mcp-ai-sm-status-success' : 'wp-mcp-ai-sm-status-failure';
 						const dur = entry.duration ? ' (' + parseFloat( entry.duration ).toFixed( 3 ) + 's)' : '';
 						const errHtml = entry.error
-							? '<br><small class="wp-mcp-ai-sm-error-text">' + wp.escapeHtml( entry.error ) + '</small>'
+							? '<br><small class="wp-mcp-ai-sm-error-text">' + SM.esc( entry.error ) + '</small>'
 							: '';
+						let logHtml = '';
+						if ( entry.action_log && typeof entry.action_log === 'object' && Object.keys( entry.action_log ).length ) {
+							const logId   = 'sm-log-' + idx;
+							const logBody = SM.formatActionLog( entry.action_log );
+							logHtml = '<br><button type="button" class="button button-small wp-mcp-ai-sm-log-toggle" data-target="' + logId + '">' +
+								wpMcpAiScheduleManager.strings.viewLog + '</button>' +
+								'<div id="' + logId + '" class="wp-mcp-ai-sm-action-log-wrap" style="display:none;">' +
+								logBody + '</div>';
+						}
 						return '<tr><td class="' + cls + '">' +
-							wp.escapeHtml( entry.status ) + '</td>' +
-							'<td>' + wp.escapeHtml( entry.time ) + dur + errHtml + '</td></tr>';
+							SM.esc( entry.status ) + '</td>' +
+							'<td>' + SM.esc( entry.time ) + dur + errHtml + logHtml + '</td></tr>';
 					} );
 
-					$body.html(
-						'<table class="widefat striped"><thead><tr>' +
+					const $table = $( '<table class="widefat striped"><thead><tr>' +
 						'<th>Status</th><th>Time / Error</th></tr></thead><tbody>' +
-						rows.join( '' ) + '</tbody></table>'
-					);
+						rows.join( '' ) + '</tbody></table>' );
+
+					// Toggle log visibility on button click.
+					$table.on( 'click', '.wp-mcp-ai-sm-log-toggle', function () {
+						const targetId = $( this ).data( 'target' );
+						const $pre = $( '#' + targetId );
+						if ( $pre.is( ':visible' ) ) {
+							$pre.hide();
+							$( this ).text( wpMcpAiScheduleManager.strings.viewLog );
+						} else {
+							$pre.show();
+							$( this ).text( wpMcpAiScheduleManager.strings.hideLog );
+						}
+					} );
+
+					$body.html( $table );
 				}
 			);
 		},
@@ -889,6 +961,8 @@
 			html += this.editRow( 'Tags', '<input type="text" id="edit-tags" class="regular-text" value="' + this.esc( ( schedule.tags || [] ).join( ', ' ) ) + '">' );
 			html += this.editRow( 'Max Retries', '<input type="number" id="edit-max-retries" class="small-text" min="0" max="5" value="' + parseInt( schedule.max_retries, 10 ) + '">' );
 			html += this.editRow( 'Retry Delay (s)', '<input type="number" id="edit-retry-delay" class="small-text" min="60" value="' + parseInt( schedule.retry_delay, 10 ) + '">' );
+			html += this.editRow( 'Timeout (s)', '<input type="number" id="edit-timeout" class="small-text" min="0" value="' + parseInt( schedule.timeout || 0, 10 ) + '"><br><span class="description">0 = no limit</span>' );
+			html += this.editRow( 'Webhook Callback URL', '<input type="url" id="edit-callback-url" class="regular-text" value="' + this.esc( schedule.callback_url || '' ) + '" placeholder="https://example.com/webhook">' );
 			html += this.editRow(
 				'Failure Email',
 				'<label><input type="checkbox" id="edit-notify" ' + ( schedule.notify_on_failure ? 'checked' : '' ) + '> Send email on failure</label>' +
@@ -942,6 +1016,8 @@
 				tags:             $( '#edit-tags' ).val().split( ',' ).map( function ( t ) { return t.trim(); } ).filter( Boolean ),
 				max_retries:      parseInt( $( '#edit-max-retries' ).val(), 10 ) || 0,
 				retry_delay:      parseInt( $( '#edit-retry-delay' ).val(), 10 ) || 300,
+				timeout:          parseInt( $( '#edit-timeout' ).val(), 10 ) || 0,
+				callback_url:     $( '#edit-callback-url' ).val().trim(),
 				notify_on_failure: $( '#edit-notify' ).is( ':checked' ),
 				notify_email:     $( '#edit-notify-email' ).val().trim(),
 			};
@@ -986,6 +1062,80 @@
 				SM._historyChart.destroy();
 				SM._historyChart = null;
 			}
+		},
+
+		/**
+		 * Format an action_log object from a schedule run into human-readable HTML.
+		 *
+		 * The format depends on the schedule type stored in action_log.type:
+		 * - task:             shows hook name and args.
+		 * - workflow:         shows each step with tool slug, duration and result preview.
+		 * - assistant_run:    shows assistant ID and message preview.
+		 * - channel_broadcast: shows channels and message preview.
+		 * - workflow_builder: shows the workflow builder ID.
+		 * Falls back to a formatted JSON <pre> for unrecognised shapes.
+		 *
+		 * @param {Object} log action_log object from the history entry.
+		 * @return {string} Safe HTML string.
+		 */
+		formatActionLog: function ( log ) {
+			if ( ! log || typeof log !== 'object' ) {
+				return '';
+			}
+
+			const type = log.type || '';
+			let html   = '<div class="wp-mcp-ai-sm-action-log">';
+
+			if ( 'task' === type ) {
+				html += '<p><strong>Hook:</strong> ' + this.esc( log.hook || '' ) + '</p>';
+				if ( log.args && Object.keys( log.args ).length ) {
+					html += '<pre class="wp-mcp-ai-sm-log-pre">' + this.esc( JSON.stringify( log.args, null, 2 ) ) + '</pre>';
+				}
+			} else if ( 'workflow' === type ) {
+				const steps              = log.steps;
+				const RESULT_PREVIEW_MAX = 120;
+				if ( steps && typeof steps === 'object' ) {
+					html += '<table class="wp-mcp-ai-sm-log-steps"><thead><tr><th>#</th><th>Tool</th><th>Duration</th><th>Result Preview</th></tr></thead><tbody>';
+					$.each( steps, function ( idx, step ) {
+						const num    = parseInt( idx, 10 ) + 1;
+						const tool   = step.tool_slug || step.label || ( '#' + num );
+						const dur    = step.duration ? parseFloat( step.duration ).toFixed( 3 ) + 's' : '—';
+						const result = step.result !== undefined
+							? ( typeof step.result === 'object' ? JSON.stringify( step.result ).slice( 0, RESULT_PREVIEW_MAX ) : String( step.result ).slice( 0, RESULT_PREVIEW_MAX ) )
+							: '';
+						html += '<tr><td>' + SM.esc( num ) + '</td><td>' + SM.esc( tool ) + '</td><td>' + SM.esc( dur ) + '</td><td>' + SM.esc( result ) + '</td></tr>';
+					} );
+					html += '</tbody></table>';
+				} else {
+					html += '<p><em>No step data.</em></p>';
+				}
+			} else if ( 'assistant_run' === type ) {
+				const ast = log.assistant || {};
+				html += '<p><strong>Assistant ID:</strong> ' + this.esc( String( ast.assistant_id || '' ) ) + '</p>';
+				if ( ast.message ) {
+					html += '<p><strong>Message:</strong> ' + this.esc( ast.message ) + '</p>';
+				}
+			} else if ( 'channel_broadcast' === type ) {
+				const bc = log.broadcast || {};
+				if ( bc.channels ) {
+					html += '<p><strong>Channels:</strong> ' + this.esc( [].concat( bc.channels ).join( ', ' ) ) + '</p>';
+				}
+				if ( bc.message ) {
+					html += '<p><strong>Message:</strong> ' + this.esc( bc.message ) + '</p>';
+				}
+				if ( bc.summary ) {
+					html += '<p><strong>Sent:</strong> ' + this.esc( String( bc.summary.successful_channels || 0 ) ) +
+						' / ' + this.esc( String( bc.summary.total_channels || 0 ) ) + ' channels</p>';
+				}
+			} else if ( 'workflow_builder' === type ) {
+				html += '<p><strong>Workflow Builder ID:</strong> ' + this.esc( String( log.workflow_builder_id || '' ) ) + '</p>';
+			} else {
+				// Fallback: formatted JSON.
+				html += '<pre class="wp-mcp-ai-sm-log-pre">' + this.esc( JSON.stringify( log, null, 2 ) ) + '</pre>';
+			}
+
+			html += '</div>';
+			return html;
 		},
 
 		/** Safe HTML escape */

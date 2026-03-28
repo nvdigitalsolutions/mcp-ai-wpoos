@@ -3072,14 +3072,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
-				// When using Chat Completions API, convert input_image segments to image_url format.
+				// When using Chat Completions API, convert input_image segments to image_url format
+				// and input_file segments to the 'file' content type (supported by GPT-4.1 and newer models).
+				// This is necessary because Chat Completions API doesn't support input_image/input_file types natively.
+				// Always build the attachment lookup so that input_file segments can also be resolved.
 
-				// This is necessary because Chat Completions API doesn't support input_image type.
-
-				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
+				if ( ! empty( $attachments ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				}
-				// Always run conversion to handle input_image segments from conversation history.
+				// Always run conversion to handle segments from conversation history.
 
 				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
@@ -4869,6 +4870,67 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								'attachment_id' => $attachment_id,
 							)
 						);
+						continue;
+					}
+
+					// Convert input_file segments to the Chat Completions 'file' content type.
+					// The Chat Completions API does not support the 'input_file' type natively, so we convert
+					// it to {"type":"file","file":{"file_id":"file-xxx"}} when an OpenAI file_id is available.
+					// This ensures file context is passed to the model even when Responses API cannot be used
+					// (e.g., because the conversation history contains tool_calls/tool messages).
+
+					if ( 'input_file' === $type ) {
+						$file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
+
+						// Resolve the OpenAI file_id from the attachment lookup when available.
+
+						if ( '' !== $file_id && isset( $attachment_lookup[ $file_id ] ) ) {
+							$lookup_entry = $attachment_lookup[ $file_id ];
+
+							if ( isset( $lookup_entry['file_id'] ) && '' !== (string) $lookup_entry['file_id'] ) {
+								$file_id = (string) $lookup_entry['file_id'];
+							}
+						}
+
+						// If we have a genuine OpenAI file ID, emit the 'file' content type.
+						// OpenAI file IDs always start with 'file-'.
+
+						if ( '' !== $file_id && 0 === strpos( $file_id, 'file-' ) ) {
+							$converted_segments[] = array(
+								'type' => 'file',
+								'file' => array( 'file_id' => $file_id ),
+							);
+							continue;
+						}
+
+						// No usable file_id — include a plain-text reference so the model at least knows
+						// a file was part of the prompt (graceful fallback for local-only or non-OpenAI IDs).
+
+						$fallback_name = '';
+						if ( isset( $segment['file_name'] ) && '' !== (string) $segment['file_name'] ) {
+							$fallback_name = sanitize_text_field( (string) $segment['file_name'] );
+						} elseif ( isset( $segment['display_name'] ) && '' !== (string) $segment['display_name'] ) {
+							$fallback_name = sanitize_text_field( (string) $segment['display_name'] );
+						}
+
+						if ( '' !== $fallback_name ) {
+							$converted_segments[] = array(
+								'type' => 'text',
+								'text' => sprintf(
+									/* translators: %s: filename of the attached document */
+									__( '[Attached file: %s]', 'mcp-ai-wpoos' ),
+									$fallback_name
+								),
+							);
+						} else {
+							WP_MCP_AI_Logger::log_error(
+								'Skipping input_file segment without a usable OpenAI file_id for Chat Completions API.',
+								array(
+									'file_id' => isset( $segment['file_id'] ) ? $segment['file_id'] : '',
+								)
+							);
+						}
+
 						continue;
 					}
 

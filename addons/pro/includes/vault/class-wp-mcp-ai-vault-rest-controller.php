@@ -234,8 +234,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			$cache_key = 'vault_rl_u_' . $user_id;
 		} else {
 			// Validate the IP before using it as a cache key.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated with filter_var immediately below.
-			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated with filter_var immediately below.
 			$ip        = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
 			$cache_key = 'vault_rl_g_' . md5( $ip );
 		}
