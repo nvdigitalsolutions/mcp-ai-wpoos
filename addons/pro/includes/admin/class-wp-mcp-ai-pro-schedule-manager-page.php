@@ -32,11 +32,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-schedule-manager';
 
 		/**
+		 * Actual WordPress hook name returned by add_submenu_page().
+		 *
+		 * Stored during register_page() so enqueue_assets() can compare against
+		 * the real hook (which uses sanitize_title(menu_title) as prefix, not the
+		 * raw parent slug).
+		 *
+		 * @var string
+		 */
+		private $page_hook = '';
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
 			// Priority 26: parent nvoos-pro-dashboard menu registers at priority 25.
 			add_action( 'admin_menu', array( $this, 'register_page' ), 26 );
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		}
 
 		/**
@@ -45,7 +57,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 		 * @return void
 		 */
 		public function register_page() {
-			add_submenu_page(
+			$this->page_hook = add_submenu_page(
 				'nvoos-pro-dashboard',
 				__( 'Pro Schedule Manager', 'mcp-ai-wpoos-pro' ),
 				__( 'Schedule Manager', 'mcp-ai-wpoos-pro' ),
@@ -53,6 +65,43 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_page' )
 			);
+		}
+
+		/**
+		 * Enqueue assets for the standalone Schedule Manager page.
+		 *
+		 * Ensures CSS/JS load even when the section instance was not created
+		 * early enough to register its own admin_enqueue_scripts hook (e.g. in the
+		 * base + pro separate-plugin scenario where the Pro addon loads after the
+		 * base plugin's settings-dashboard-init.php has already run).
+		 *
+		 * @param string $hook Current admin page hook.
+		 * @return void
+		 */
+		public function enqueue_assets( $hook ) {
+			// Use the actual page hook stored when add_submenu_page() was called.
+			$is_page = ! empty( $this->page_hook ) && $hook === $this->page_hook;
+
+			// Fallback: check $_GET['page'] for additional safety (covers edge
+			// cases where the hook suffix may differ from the computed value).
+			if ( ! $is_page ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+				$is_page = isset( $_GET['page'] ) && self::PAGE_SLUG === sanitize_text_field( wp_unslash( $_GET['page'] ) );
+			}
+
+			if ( ! $is_page ) {
+				return;
+			}
+
+			// Resolve the section via the DI container and delegate asset enqueuing.
+			// By the time admin_enqueue_scripts fires the Pro class file has been
+			// loaded, so the container factory will return a real instance.
+			if ( function_exists( 'wp_mcp_ai_container' ) ) {
+				$section = wp_mcp_ai_container()->get( 'section.schedule_manager' );
+				if ( $section instanceof WP_MCP_AI_Settings_Section && is_callable( array( $section, 'enqueue_assets' ) ) ) {
+					$section->enqueue_assets( $hook );
+				}
+			}
 		}
 
 		/**
