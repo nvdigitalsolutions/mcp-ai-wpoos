@@ -98,7 +98,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 			// loaded, so the container factory will return a real instance.
 			if ( function_exists( 'wp_mcp_ai_container' ) ) {
 				$section = wp_mcp_ai_container()->get( 'section.schedule_manager' );
-				if ( $section instanceof WP_MCP_AI_Settings_Section && is_callable( array( $section, 'enqueue_assets' ) ) ) {
+				if ( $section instanceof WP_MCP_AI_Section_Schedule_Manager ) {
 					$section->enqueue_assets( $hook );
 				}
 			}
