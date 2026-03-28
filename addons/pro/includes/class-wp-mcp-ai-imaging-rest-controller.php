@@ -599,7 +599,7 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 		$fh = fopen( $file_path, 'rb' );
 		if ( $fh ) {
 			while ( ! feof( $fh ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPress.Security.EscapeOutput.OutputNotEscaped -- Binary DICOM data sent with validated Content-Type header.
 				echo fread( $fh, 65536 ); // 64 KB chunks.
 			}
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose

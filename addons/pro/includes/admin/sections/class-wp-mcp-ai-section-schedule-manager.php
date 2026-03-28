@@ -539,7 +539,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 											$node_count = isset( $wf['nodes'] ) && is_array( $wf['nodes'] ) ? count( $wf['nodes'] ) : 0;
 											$edge_count = isset( $wf['edges'] ) && is_array( $wf['edges'] ) ? count( $wf['edges'] ) : 0;
 											/* translators: %1$d: number of nodes, %2$d: number of edges */
-											printf( esc_html__( '(%1$d nodes, %2$d edges)', 'mcp-ai-wpoos-pro' ), $node_count, $edge_count );
+											printf( esc_html__( '(%1$d nodes, %2$d edges)', 'mcp-ai-wpoos-pro' ), (int) $node_count, (int) $edge_count );
 											?>
 										</option>
 									<?php endforeach; ?>
@@ -723,7 +723,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via verify_request().
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above via verify_request(); value is JSON decoded below.
 		$raw = isset( $_POST['schedule'] ) ? wp_unslash( $_POST['schedule'] ) : '{}';
 
 		if ( is_string( $raw ) ) {
@@ -767,7 +767,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		$schedule_id = isset( $_POST['schedule_id'] ) ? sanitize_text_field( wp_unslash( $_POST['schedule_id'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above; value is JSON decoded below.
 		$raw = isset( $_POST['schedule'] ) ? wp_unslash( $_POST['schedule'] ) : '{}';
 
 		if ( is_string( $raw ) ) {

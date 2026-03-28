@@ -279,6 +279,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 		$current_workflow = isset( $_GET['workflow'] ) ? sanitize_key( $_GET['workflow'] ) : 'quick-import'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$base_url         = add_query_arg(
 			array(
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page slug for link construction.
 				'page'   => sanitize_key( $_GET['page'] ?? '' ),
 				'entity' => $this->current_entity,
 			),
@@ -335,6 +336,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 
 		$base_url = add_query_arg(
 			array(
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page slug for link construction.
 				'page' => sanitize_key( $_GET['page'] ?? '' ),
 			),
 			admin_url( 'admin.php' )

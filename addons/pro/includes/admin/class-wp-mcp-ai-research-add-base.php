@@ -324,6 +324,7 @@ border-radius: 4px;
 
 		$base_url = add_query_arg(
 			array(
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page slug for link construction.
 				'page' => sanitize_key( $_GET['page'] ?? '' ),
 				'tab'  => 'research',
 			),
@@ -693,6 +694,7 @@ border-radius: 4px;
 
 		// Handle save (create new item).
 		if ( isset( $_POST['action'] ) && 'save' === $_POST['action'] ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array data; individual fields sanitized by the data store.
 			$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
 			$result    = $store->create_item( $item_data );
 
@@ -717,6 +719,7 @@ border-radius: 4px;
 		// Handle update.
 		if ( isset( $_POST['action'] ) && 'update' === $_POST['action'] ) {
 			$item_id   = isset( $_POST['item_id'] ) ? absint( $_POST['item_id'] ) : 0;
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array data; individual fields sanitized by the data store.
 			$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
 
 			if ( ! $item_id ) {
