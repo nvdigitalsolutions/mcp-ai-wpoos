@@ -1461,10 +1461,10 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Validate an enum parameter.
 	 *
-	 * @param array  $arguments  Arguments array.
-	 * @param string $key           Argument key.
-	 * @param array  $allowed       Allowed values.
-	 * @param string $fallback_val  Default / fallback value.
+	 * @param array  $arguments    Arguments array.
+	 * @param string $key          Argument key.
+	 * @param array  $allowed      Allowed values.
+	 * @param string $fallback_val Default / fallback value.
 	 * @return string Validated value.
 	 */
 	protected function validate_enum( $arguments, $key, $allowed, $fallback_val ) {
