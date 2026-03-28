@@ -869,60 +869,73 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-file-service-factory.php';
 				}
 
-				$upload = WP_MCP_AI_File_Service_Factory::upload_file(
-					$file_path,
-					$mime_type,
-					$this->provider,
-					array(
-						'purpose'       => $purpose,
-						'filename'      => wp_basename( $file_path ),
-						'display_name'  => get_the_title( $attachment ),
-						'attachment_id' => $attachment_id,
-					)
-				);
-
-				if ( is_wp_error( $upload ) ) {
-					return $upload;
-				}
-
-				// Extract file ID based on provider.
-				$file_id = '';
-				if ( 'openai' === $this->provider && isset( $upload['id'] ) ) {
-					$file_id = sanitize_text_field( $upload['id'] );
-				} elseif ( in_array( $this->provider, array( 'gemini', 'google' ), true ) ) {
-					// Gemini returns 'name' field which includes the URI.
-					if ( isset( $upload['name'] ) ) {
-						$file_id = sanitize_text_field( $upload['name'] );
-					} elseif ( isset( $upload['uri'] ) ) {
-						$file_id = sanitize_text_field( $upload['uri'] );
-					}
-				}
-
-				if ( '' === $file_id ) {
-					return new WP_Error(
-						'wp_mcp_ai_file_upload_missing_id',
-						sprintf(
-							/* translators: %s: provider name */
-							__( '%s did not return a file identifier.', 'mcp-ai-wpoos' ),
-							ucfirst( $this->provider )
+				// Providers without a remote File API (e.g. Ollama) use a local
+				// reference so the attachment URL can still be passed to the model.
+				if ( ! WP_MCP_AI_File_Service_Factory::provider_supports_files( $this->provider ) ) {
+					$file_id  = 'local-' . $attachment_id . '-' . substr( $file_hash, 0, 8 );
+					$metadata = array(
+						'file_id'    => $file_id,
+						'provider'   => $this->provider,
+						'created_at' => time(),
+						'status'     => 'local',
+					);
+				} else {
+					$upload = WP_MCP_AI_File_Service_Factory::upload_file(
+						$file_path,
+						$mime_type,
+						$this->provider,
+						array(
+							'purpose'       => $purpose,
+							'filename'      => wp_basename( $file_path ),
+							'display_name'  => get_the_title( $attachment ),
+							'attachment_id' => $attachment_id,
 						)
 					);
-				}
 
-				$metadata = array(
-					'file_id'    => $file_id,
-					'provider'   => $this->provider,
-					'created_at' => isset( $upload['created_at'] ) ? (int) $upload['created_at'] : time(),
-					'status'     => isset( $upload['status'] ) ? $upload['status'] : ( isset( $upload['state'] ) ? $upload['state'] : '' ),
-				);
-
-				// Store provider-specific metadata.
-				if ( 'gemini' === $this->provider || 'google' === $this->provider ) {
-					if ( isset( $upload['uri'] ) ) {
-						$metadata['uri'] = $upload['uri'];
+					if ( is_wp_error( $upload ) ) {
+						return $upload;
 					}
-					if ( isset( $upload['mimeType'] ) ) {
-						$metadata['mime_type'] = $upload['mimeType'];
+
+					// Extract file ID based on provider.
+					$file_id = '';
+					if ( 'openai' === $this->provider && isset( $upload['id'] ) ) {
+						$file_id = sanitize_text_field( $upload['id'] );
+					} elseif ( in_array( $this->provider, array( 'gemini', 'google' ), true ) ) {
+						// Gemini File Service returns 'file_name' (e.g. "files/abc123").
+						if ( isset( $upload['file_name'] ) ) {
+							$file_id = sanitize_text_field( $upload['file_name'] );
+						} elseif ( isset( $upload['file_uri'] ) ) {
+							$file_id = sanitize_text_field( $upload['file_uri'] );
+						}
+					}
+
+					if ( '' === $file_id ) {
+						return new WP_Error(
+							'wp_mcp_ai_file_upload_missing_id',
+							sprintf(
+								/* translators: %s: provider name */
+								__( '%s did not return a file identifier.', 'mcp-ai-wpoos' ),
+								ucfirst( $this->provider )
+							)
+						);
+					}
+
+					$metadata = array(
+						'file_id'    => $file_id,
+						'provider'   => $this->provider,
+						'created_at' => isset( $upload['created_at'] ) ? (int) $upload['created_at'] : time(),
+						'status'     => isset( $upload['status'] ) ? $upload['status'] : ( isset( $upload['state'] ) ? $upload['state'] : '' ),
+					);
+
+					// Store provider-specific metadata.
+					if ( in_array( $this->provider, array( 'gemini', 'google' ), true ) ) {
+						// Gemini File Service returns 'file_uri' for the full URI.
+						if ( isset( $upload['file_uri'] ) ) {
+							$metadata['uri'] = $upload['file_uri'];
+						}
+						if ( isset( $upload['mime_type'] ) ) {
+							$metadata['mime_type'] = $upload['mime_type'];
+						}
 					}
 				}
 			}
@@ -1596,7 +1609,9 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			$file_id = (string) $metadata['file_id'];
 
-			$looks_remote = 0 === strpos( $file_id, 'file-' );
+			// OpenAI file IDs start with 'file-'.
+			// Gemini file names look like 'files/abc123'.
+			$looks_remote = 0 === strpos( $file_id, 'file-' ) || 0 === strpos( $file_id, 'files/' );
 			/**
 			 * Filter whether cached OpenAI metadata should be considered remote.
 			 *

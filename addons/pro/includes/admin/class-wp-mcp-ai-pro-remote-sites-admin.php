@@ -623,7 +623,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					? array_map( 'sanitize_key', wp_unslash( $_POST['telegram_disabled_commands'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
 					: array(),
 				'command_descriptions' => ( isset( $_POST['telegram_command_descriptions'] ) && is_array( $_POST['telegram_command_descriptions'] ) )
-					? array_map( 'sanitize_text_field', array_map( 'wp_unslash', $_POST['telegram_command_descriptions'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
+					? array_map( 'sanitize_text_field', wp_unslash( $_POST['telegram_command_descriptions'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
 					: array(),
 				// Mini App settings.
 				'enable_mini_app'              => ! empty( $_POST['telegram_enable_mini_app'] ),
@@ -685,7 +685,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// iCloud per-service settings.
 				'icloud_default_folder_id' => isset( $_POST['icloud_default_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['icloud_default_folder_id'] ) ) : '',
 				// Shopify-specific fields.
-				'shopify_api_version' => 'shopify' === $connection_type && isset( $_POST['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $_POST['shopify_api_version'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				'shopify_api_version' => 'shopify' === $connection_type && isset( $_POST['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', sanitize_text_field( wp_unslash( $_POST['shopify_api_version'] ) ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shopify_api_version'] ) )
 					: ( 'shopify' === $connection_type ? '2025-01' : '' ),
 				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
@@ -1057,14 +1057,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 							</td>
 							<td>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>">
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 								</a> |
-								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'test', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'test_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>">
-									<?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>
+								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'test', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'test_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>" title="<?php esc_attr_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?></span>
 								</a> |
-								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'delete', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'delete_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'mcp-ai-wpoos-pro' ); ?>');" style="color: #b32d2e;">
-									<?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>
+								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'delete', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'delete_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'mcp-ai-wpoos-pro' ); ?>');" style="color: #b32d2e;" title="<?php esc_attr_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>">
+									<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></span>
 								</a>
 							</td>
 						</tr>
@@ -2210,10 +2213,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="telegram_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $tg_assistants as $tg_assistant ) :
-								$tg_is_selected = in_array( $tg_assistant->ID, $tg_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>"<?php echo $tg_is_selected; ?>>
+							<?php foreach ( $tg_assistants as $tg_assistant ) : ?>
+								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>"<?php selected( in_array( $tg_assistant->ID, $tg_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $tg_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3041,10 +3042,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $wa_assistants as $wa_assistant ) :
-								$is_selected = in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>"<?php echo $is_selected; ?>>
+							<?php foreach ( $wa_assistants as $wa_assistant ) : ?>
+								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>"<?php selected( in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $wa_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3272,10 +3271,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="slack_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $sl_assistants as $sl_assistant ) :
-								$sl_is_selected = in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>"<?php echo $sl_is_selected; ?>>
+							<?php foreach ( $sl_assistants as $sl_assistant ) : ?>
+								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>"<?php selected( in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $sl_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3441,10 +3438,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="discord_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $ds_assistants as $ds_assistant ) :
-								$ds_is_selected = in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>"<?php echo $ds_is_selected; ?>>
+							<?php foreach ( $ds_assistants as $ds_assistant ) : ?>
+								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>"<?php selected( in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $ds_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3780,10 +3775,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="teams_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $ms_assistants as $ms_assistant ) :
-								$ms_is_selected = in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>"<?php echo $ms_is_selected; ?>>
+							<?php foreach ( $ms_assistants as $ms_assistant ) : ?>
+								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>"<?php selected( in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $ms_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -4043,10 +4036,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="messenger_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $msng_assistants as $msng_assistant ) :
-								$msng_is_selected = in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>"<?php echo $msng_is_selected; ?>>
+							<?php foreach ( $msng_assistants as $msng_assistant ) : ?>
+								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>"<?php selected( in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $msng_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -4432,10 +4423,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="google_chat_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $gc_assistants as $gc_assistant ) :
-								$gc_is_selected = in_array( $gc_assistant->ID, $gc_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>"<?php echo $gc_is_selected; ?>>
+							<?php foreach ( $gc_assistants as $gc_assistant ) : ?>
+								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>"<?php selected( in_array( $gc_assistant->ID, $gc_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $gc_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -4670,10 +4659,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="twitter_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $tw_assistants as $tw_assistant ) :
-								$tw_is_selected = in_array( $tw_assistant->ID, $tw_saved_assistant_ids, true ) ? 'selected="selected"' : '';
-								?>
-								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>"<?php echo $tw_is_selected; ?>>
+							<?php foreach ( $tw_assistants as $tw_assistant ) : ?>
+								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>"<?php selected( in_array( $tw_assistant->ID, $tw_saved_assistant_ids, true ) ); ?>>
 									<?php echo esc_html( $tw_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>

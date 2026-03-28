@@ -279,6 +279,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 		$current_workflow = isset( $_GET['workflow'] ) ? sanitize_key( $_GET['workflow'] ) : 'quick-import'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$base_url         = add_query_arg(
 			array(
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page slug for link construction.
 				'page'   => sanitize_key( $_GET['page'] ?? '' ),
 				'entity' => $this->current_entity,
 			),
@@ -335,6 +336,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 
 		$base_url = add_query_arg(
 			array(
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page slug for link construction.
 				'page' => sanitize_key( $_GET['page'] ?? '' ),
 			),
 			admin_url( 'admin.php' )
@@ -587,7 +589,12 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 								</td>
 								<td><?php echo esc_html( $quality_score['status'] ); ?></td>
 								<td>
-									<a href="#" class="button button-small"><?php esc_html_e( 'Review', 'mcp-ai-wpoos-pro' ); ?></a>
+									<a href="#"
+									   class="button button-small"
+									   title="<?php esc_attr_e( 'Review', 'mcp-ai-wpoos-pro' ); ?>">
+										<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Review', 'mcp-ai-wpoos-pro' ); ?></span>
+									</a>
 								</td>
 							</tr>
 						<?php endforeach; ?>

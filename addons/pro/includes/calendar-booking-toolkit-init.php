@@ -19,10 +19,17 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-app
 require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-service-cpt.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-staff-cpt.php';
 
-// Load Calendar Booking admin pages (always load so menu items appear when CPT is registered).
+// Load Calendar Booking admin pages only when the toolkit is enabled.
 if ( is_admin() ) {
-	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-calendar-booking-research-page.php';
-	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-calendar-booking-settings-page.php';
+	$settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$is_enabled    = ! empty( $settings['enable_calendar_booking_toolkit'] );
+	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-calendar-booking-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-calendar-booking-settings-page.php';
+	}
 }
 
 // Tools will be implemented in Phase 2.6.

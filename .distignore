@@ -15,7 +15,9 @@
 .wordpress-org
 
 # Development configuration
+.bmad
 .codex
+.context
 .devcontainer
 .eslintrc.json
 .eslintignore
@@ -25,6 +27,7 @@
 .codecov.yml
 phpcs.xml.dist
 CODEOWNERS
+MAINTAINER_MAP.md
 
 # Build tools and dependencies
 node_modules
@@ -41,6 +44,8 @@ cosmos.config.json
 cosmos.webpack.config.js
 webpack.config.js
 webpack.config.tma-builder.js
+webpack.config.tma.js
+webpack.config.workflow.js
 tsconfig.json
 .npmrc
 
@@ -127,6 +132,10 @@ shared
 
 # Specific exclusions for this plugin
 # Note: test-capability-flags-integration.php moved to bin/ which is already excluded
+# mcp-ai-wpoos-base.php is a restricted-mode entry point for private/custom builds only;
+# it sets WP_MCP_AI_BASE_VERSION=true which hides built-in tools and shows Pro upsells.
+# Excluded from WP.org distribution to ensure all included tools are always available.
+mcp-ai-wpoos-base.php
 mcp-diagnostic-debug.php
 test-storage-service.html
 examples

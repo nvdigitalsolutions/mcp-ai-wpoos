@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-toolkit-settings-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-hints.php';
 
 /**
  * Pro Packages Settings Page Class
@@ -35,6 +36,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 
 		// Add AJAX handler for package testing.
 		add_action( 'wp_ajax_wp_mcp_ai_test_pro_package', array( $this, 'ajax_test_package' ) );
+
+		// Add AJAX handler for Canvas addon installation.
+		add_action( 'wp_ajax_wp_mcp_ai_install_canvas_addon', array( $this, 'ajax_install_canvas_addon' ) );
 	}
 
 	/**
@@ -67,6 +71,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				<p><?php esc_html_e( 'View the status and availability of Node.js packages used by Pro features. These packages enable advanced functionality like image processing, document generation, and data visualization.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
+			<?php $this->render_canvas_addon_section(); ?>
 			<?php $this->render_nodejs_status(); ?>
 			<?php $this->render_packages_table(); ?>
 		</div>
@@ -81,9 +86,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		$nodejs_version   = $this->get_nodejs_version();
 
 		?>
-		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; ?>; margin: 20px 0;">
+		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded color hex values. ?>; margin: 20px 0;">
 			<h3 style="margin-top: 0;">
-				<?php echo $nodejs_available ? '✅' : '❌'; ?>
+				<?php echo $nodejs_available ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded emoji indicators. ?>
 				<?php esc_html_e( 'Node.js Runtime', 'mcp-ai-wpoos-pro' ); ?>
 			</h3>
 			
@@ -304,7 +309,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
 				'testable'     => true,
-				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+				'install_hint' => WP_MCP_AI_Node_Package_Hints::get_canvas_install_hint(),
 			),
 
 			// Document Generation.
@@ -518,7 +523,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
 				<a
 					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"
-					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded CSS class. ?>"
 				>
 					<?php echo esc_html( $tab_title ); ?>
 				</a>
@@ -668,10 +673,48 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	 * @return array Test result.
 	 */
 	protected function test_canvas() {
-		return array(
-			'success' => true,
-			'message' => __( 'Canvas package is installed and available.', 'mcp-ai-wpoos-pro' ),
-		);
+		try {
+			if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+				$status = wp_mcp_ai_get_npm_package_status( 'canvas' );
+				if ( $status['available'] ) {
+					return array(
+						'success' => true,
+						'message' => sprintf(
+							/* translators: %s: Package source (vendor or node_modules) */
+							__( 'Canvas is installed and available from %s.', 'mcp-ai-wpoos-pro' ),
+							$status['source']
+						),
+					);
+				}
+				return array(
+					'success' => false,
+					'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Fallback: check node_modules directly.
+			$canvas_path = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+			if ( is_dir( $canvas_path ) ) {
+				return array(
+					'success' => true,
+					'message' => __( 'Canvas package found in node_modules.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			return array(
+				'success' => false,
+				'message' => __( 'Canvas package is not installed. Install the NV oOS Canvas Addon plugin to enable canvas support.', 'mcp-ai-wpoos-pro' ),
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: Error message */
+					__( 'Canvas test failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				),
+			);
+		}
 	}
 
 	/**
@@ -818,6 +861,319 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				),
 			);
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Canvas Addon (WordPress plugin) section.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return status information about the NV oOS Canvas Addon plugin.
+	 *
+	 * @return array {
+	 *     @type bool   $active     Whether the plugin is currently active.
+	 *     @type bool   $installed  Whether the plugin is installed (may be inactive).
+	 *     @type bool   $zip_found  Whether an install ZIP is available on disk.
+	 *     @type string $zip_path   Absolute path to the ZIP, or '' if none found.
+	 * }
+	 */
+	protected function get_canvas_addon_status() {
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugin_file = 'nvoos-canvas/nvoos-canvas.php';
+		$active      = is_plugin_active( $plugin_file );
+		$installed   = file_exists( WP_PLUGIN_DIR . '/' . $plugin_file );
+		$zip_path    = $this->get_canvas_zip_path();
+		$zip_found   = ! empty( $zip_path ) && file_exists( $zip_path );
+
+		return array(
+			'active'    => $active,
+			'installed' => $installed,
+			'zip_found' => $zip_found,
+			'zip_path'  => $zip_path,
+		);
+	}
+
+	/**
+	 * Locate the canvas addon ZIP that matches the current server platform.
+	 *
+	 * Looks inside the main plugin's build/ directory for a file matching
+	 * nvoos-canvas-linux-{arch}-v*.zip, returning the newest version found.
+	 *
+	 * @return string Absolute path to the ZIP, or '' if not found.
+	 */
+	protected function get_canvas_zip_path() {
+		if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+			return '';
+		}
+
+		// Map uname -m to the slug used in ZIP filenames.
+		$machine = php_uname( 'm' );
+		if ( false !== strpos( $machine, 'aarch64' ) || false !== strpos( $machine, 'arm64' ) ) {
+			$arch = 'arm64';
+		} else {
+			$arch = 'x64';
+		}
+
+		$pattern = WP_MCP_AI_PATH . 'build/nvoos-canvas-linux-' . $arch . '-v*.zip';
+		$matches = glob( $pattern );
+
+		if ( ! empty( $matches ) ) {
+			usort( $matches, 'strnatcmp' );
+			return end( $matches );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Render the Canvas Addon status card with a one-click install button.
+	 */
+	protected function render_canvas_addon_section() {
+		$canvas = $this->get_canvas_addon_status();
+
+		$status_color = $canvas['active'] ? '#46b450' : ( $canvas['installed'] ? '#f0b849' : '#dc3232' );
+		if ( $canvas['active'] ) {
+			$status_icon  = '✅';
+			$status_label = __( 'Active', 'mcp-ai-wpoos-pro' );
+		} elseif ( $canvas['installed'] ) {
+			$status_icon  = '⚠️';
+			$status_label = __( 'Installed (Inactive)', 'mcp-ai-wpoos-pro' );
+		} else {
+			$status_icon  = '❌';
+			$status_label = __( 'Not Installed', 'mcp-ai-wpoos-pro' );
+		}
+		?>
+		<div class="canvas-addon-status" style="background:#fff;border:1px solid #ddd;border-left:4px solid <?php echo esc_attr( $status_color ); ?>;padding:20px;margin:20px 0;">
+			<h3 style="margin-top:0;">
+				🖼️ <?php esc_html_e( 'NV oOS Canvas Addon', 'mcp-ai-wpoos-pro' ); ?>
+				<span style="font-weight:normal;font-size:14px;color:<?php echo esc_attr( $status_color ); ?>;margin-left:10px;">
+					<?php echo esc_html( $status_icon . ' ' . $status_label ); ?>
+				</span>
+			</h3>
+
+			<p><?php esc_html_e( 'PDF OCR with Tesseract requires the canvas library. The NV oOS Canvas Addon provides pre-compiled native binaries bundled for your platform — no system library installation required.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+			<?php if ( $canvas['active'] ) : ?>
+				<?php if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) : ?>
+					<p style="color:#46b450;margin:0;">
+						<strong><?php esc_html_e( '✅ Canvas is active and ready. Tesseract PDF OCR is enabled.', 'mcp-ai-wpoos-pro' ); ?></strong>
+					</p>
+					<?php if ( class_exists( 'NV_oOS_Canvas' ) ) : ?>
+						<p style="font-size:12px;color:#666;margin-top:6px;">
+							<?php
+							printf(
+								/* translators: %s: Platform label e.g. linux-x64 (Node 20) */
+								esc_html__( 'Platform: %s', 'mcp-ai-wpoos-pro' ),
+								esc_html( NV_oOS_Canvas::get_platform_label() )
+							);
+							?>
+						</p>
+					<?php endif; ?>
+				<?php else : ?>
+					<p style="color:#f0b849;">
+						<?php esc_html_e( '⚠️ Plugin is active but native binaries are missing. Re-install the canvas addon ZIP for your platform.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+				<?php endif; ?>
+
+			<?php else : ?>
+				<div style="background:#f9f9f9;padding:12px;border-radius:3px;margin:10px 0;">
+					<p style="margin:0 0 8px;"><strong><?php esc_html_e( 'One-click install will:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<ol style="margin:0 0 0 20px;padding:0;">
+						<li><?php esc_html_e( 'Install the NV oOS Canvas WordPress plugin', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Provide pre-compiled canvas native binaries for your platform (no system libraries needed)', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Activate the plugin and enable Tesseract PDF OCR', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ol>
+				</div>
+
+				<?php if ( $canvas['installed'] ) : ?>
+					<button
+						type="button"
+						id="wp-mcp-ai-install-canvas-btn"
+						class="button button-primary"
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_install_canvas_addon' ) ); ?>"
+					>
+						<span class="dashicons dashicons-yes" style="margin-top:3px;"></span>
+						<?php esc_html_e( 'Activate Canvas', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				<?php elseif ( $canvas['zip_found'] ) : ?>
+					<button
+						type="button"
+						id="wp-mcp-ai-install-canvas-btn"
+						class="button button-primary"
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_install_canvas_addon' ) ); ?>"
+					>
+						<span class="dashicons dashicons-download" style="margin-top:3px;"></span>
+						<?php esc_html_e( 'Install Canvas', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+					<p style="color:#666;font-size:12px;margin-top:6px;">
+						<?php
+						printf(
+							/* translators: %s: ZIP filename */
+							esc_html__( 'ZIP found: %s', 'mcp-ai-wpoos-pro' ),
+							esc_html( basename( $canvas['zip_path'] ) )
+						);
+						?>
+					</p>
+				<?php else : ?>
+					<a
+						href="<?php echo esc_url( admin_url( 'plugin-install.php?tab=upload' ) ); ?>"
+						class="button button-primary"
+					>
+						<span class="dashicons dashicons-upload" style="margin-top:3px;"></span>
+						<?php esc_html_e( 'Upload Canvas Plugin', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<p style="color:#666;font-size:12px;margin-top:6px;">
+						<?php esc_html_e( 'Download the canvas ZIP for your platform from the NV oOS releases and upload via Plugins → Add New → Upload Plugin.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+				<?php endif; ?>
+
+				<div id="wp-mcp-ai-canvas-install-result" style="display:none;margin-top:10px;"></div>
+
+				<p style="color:#666;font-size:12px;margin-bottom:0;margin-top:8px;">
+					<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php esc_html_e( 'The canvas addon includes platform-specific native binaries. No Node.js or system library installation required.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			<?php endif; ?>
+		</div>
+
+		<?php if ( ! $canvas['active'] && ( $canvas['installed'] || $canvas['zip_found'] ) ) : ?>
+		<script type="text/javascript">
+		jQuery( document ).ready( function( $ ) {
+			$( '#wp-mcp-ai-install-canvas-btn' ).on( 'click', function( e ) {
+				e.preventDefault();
+				var $button = $( this );
+				var $result = $( '#wp-mcp-ai-canvas-install-result' );
+				var nonce   = $button.data( 'nonce' );
+
+				$button.prop( 'disabled', true );
+				$button.find( '.dashicons' )
+					.removeClass( 'dashicons-download dashicons-yes' )
+					.addClass( 'dashicons-update' )
+					.css( 'animation', 'rotation 2s infinite linear' );
+				$result.hide().html( '' );
+
+				$.ajax( {
+					url:     ajaxurl,
+					type:    'POST',
+					timeout: 120000,
+					data: {
+						action: 'wp_mcp_ai_install_canvas_addon',
+						nonce:  nonce
+					},
+					success: function( response ) {
+						if ( response.success ) {
+							$result.html( '<span style="color:green;font-weight:bold;">✅ ' + response.data.message + '</span>' ).show();
+							setTimeout( function() { location.reload(); }, 2000 );
+						} else {
+							$result.html( '<span style="color:red;">✗ ' + response.data.message + '</span>' ).show();
+							$button.prop( 'disabled', false );
+							$button.find( '.dashicons' )
+								.removeClass( 'dashicons-update' )
+								.addClass( 'dashicons-download dashicons-yes' )
+								.css( 'animation', '' );
+						}
+					},
+					error: function() {
+						$result.html( '<span style="color:red;">✗ <?php echo esc_js( __( 'Installation failed — network error.', 'mcp-ai-wpoos-pro' ) ); ?></span>' ).show();
+						$button.prop( 'disabled', false );
+						$button.find( '.dashicons' )
+							.removeClass( 'dashicons-update' )
+							.addClass( 'dashicons-download dashicons-yes' )
+							.css( 'animation', '' );
+					}
+				} );
+			} );
+		} );
+		</script>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * AJAX handler — install and activate the NV oOS Canvas Addon plugin.
+	 */
+	public function ajax_install_canvas_addon() {
+		// Verify nonce.
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wp_mcp_ai_install_canvas_addon' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Require install_plugins capability.
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$canvas = $this->get_canvas_addon_status();
+
+		// Already active — nothing to do.
+		if ( $canvas['active'] ) {
+			wp_send_json_success( array( 'message' => __( 'Canvas addon is already installed and active.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Installed but inactive — just activate.
+		if ( $canvas['installed'] ) {
+			if ( ! function_exists( 'activate_plugin' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			$activated = activate_plugin( 'nvoos-canvas/nvoos-canvas.php' );
+			if ( is_wp_error( $activated ) ) {
+				wp_send_json_error( array( 'message' => $activated->get_error_message() ) );
+			}
+			wp_send_json_success( array( 'message' => __( 'Canvas addon activated successfully.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// ZIP not available.
+		if ( ! $canvas['zip_found'] ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Canvas addon ZIP not found. Please upload the nvoos-canvas plugin ZIP manually via Plugins → Add New → Upload Plugin.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Install from the bundled ZIP.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
+
+		WP_Filesystem();
+
+		$skin     = new WP_Ajax_Upgrader_Skin();
+		$upgrader = new Plugin_Upgrader( $skin );
+		$result   = $upgrader->install( $canvas['zip_path'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		if ( ! $result ) {
+			$errors = $skin->get_errors();
+			$msg    = is_wp_error( $errors ) && $errors->has_errors()
+				? $errors->get_error_message()
+				: __( 'Installation failed. Check file permissions.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+
+		// Activate after successful install.
+		$activated = activate_plugin( 'nvoos-canvas/nvoos-canvas.php' );
+		if ( is_wp_error( $activated ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: Error message */
+						__( 'Canvas addon installed but activation failed: %s', 'mcp-ai-wpoos-pro' ),
+						$activated->get_error_message()
+					),
+				)
+			);
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Canvas addon installed and activated successfully.', 'mcp-ai-wpoos-pro' ) ) );
 	}
 
 	/**

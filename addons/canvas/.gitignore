@@ -1,0 +1,17 @@
+# Native canvas binaries — platform-specific, added by CI build pipeline
+# These are NOT committed to git; they are added when building the platform ZIP.
+assets/canvas/build/Release/*.node
+assets/canvas/build/Release/*.so*
+
+# Build artifacts from native compilation (not needed at runtime)
+assets/canvas/build/Release/obj.target/
+assets/canvas/build/Release/.deps/
+
+# npm install artifacts (not part of the distribution ZIP)
+node_modules/
+
+# Build pipeline output
+platform.json
+
+# npm lock — only kept in the pro addon
+package-lock.json

@@ -265,20 +265,24 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						?>
 					</td>
 					<td class="wp-mcp-ai-tool-actions">
-						<button type="button" class="button button-small wp-mcp-ai-edit-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-							<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+						<button type="button" class="button button-small wp-mcp-ai-edit-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+							<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+							<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 						</button>
 						<div class="wp-mcp-ai-edit-actions" style="display: none;">
-							<button type="button" class="button button-small button-primary wp-mcp-ai-save-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-								<?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?>
+							<button type="button" class="button button-small button-primary wp-mcp-ai-save-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" title="<?php esc_attr_e( 'Save', 'mcp-ai-wpoos' ); ?>">
+								<span class="dashicons dashicons-saved" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?></span>
 							</button>
-							<button type="button" class="button button-small wp-mcp-ai-cancel-edit" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-								<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?>
+							<button type="button" class="button button-small wp-mcp-ai-cancel-edit" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" title="<?php esc_attr_e( 'Cancel', 'mcp-ai-wpoos' ); ?>">
+								<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+								<span class="screen-reader-text"><?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?></span>
 							</button>
 							<?php if ( $has_custom_flags || $force_sync ) : ?>
 								<br>
-								<button type="button" class="button button-small button-link-delete wp-mcp-ai-reset-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" style="margin-top: 5px;">
-									<?php esc_html_e( 'Reset to Default', 'mcp-ai-wpoos' ); ?>
+								<button type="button" class="button button-small button-link-delete wp-mcp-ai-reset-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" style="margin-top: 5px;" title="<?php esc_attr_e( 'Reset to Default', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-image-rotate" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Reset to Default', 'mcp-ai-wpoos' ); ?></span>
 								</button>
 							<?php endif; ?>
 						</div>

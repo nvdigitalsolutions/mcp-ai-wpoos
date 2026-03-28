@@ -122,10 +122,10 @@ These packages are excluded from the ZIP but loaded from CDN (jsDelivr) for opti
 ### System-Dependent Packages
 
 These packages require system-level dependencies and are excluded from the ZIP:
-- **canvas** (~2-50MB) - Requires libvips (Linux) or Cairo (macOS/Windows) for PDF OCR
+- **canvas** (~2-50MB) - Requires libcairo (Linux) or Cairo (macOS/Windows) for PDF OCR. Use `canvas@2` — canvas v3+ requires Node.js `>=20.9.0`.
 - **facebook-nodejs-business-sdk** (~28MB) - Large SDK excluded by default
 
-**Note**: Canvas requires system-level libraries to be installed on the server. It cannot be bundled effectively as it needs to compile native bindings for the specific platform.
+**Note**: Canvas requires system-level libraries to be installed on the server. It cannot be bundled effectively as it needs to compile native bindings for the specific platform. Always install with `npm install canvas@2` to avoid Node.js engine compatibility issues with canvas v3+.
 
 ### How Excluded Packages Work
 

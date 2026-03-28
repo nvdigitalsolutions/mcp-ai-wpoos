@@ -1041,8 +1041,24 @@ class WP_MCP_AI_OCR_Service {
 		);
 
 		// Execute Node.js service with timeout protection.
+		// Pass NVOOS_CANVAS_PATH if the Canvas Addon is active so the Node.js
+		// process can load the platform-specific canvas native binary for PDF OCR.
+		// Security note: $canvas_dir is sourced from nvoos_canvas_get_dir() which
+		// returns plugin_dir_path() — a server-controlled constant, not user input.
+		// escapeshellarg() is applied as an additional defence-in-depth measure.
+		$canvas_env = '';
+		if ( function_exists( 'nvoos_canvas_get_dir' ) ) {
+			$canvas_dir = nvoos_canvas_get_dir();
+			// Verify the path is within the WordPress plugins directory before use.
+			if ( '' !== $canvas_dir && false !== realpath( $canvas_dir ) &&
+				0 === strpos( realpath( $canvas_dir ), realpath( WP_PLUGIN_DIR ) ) ) {
+				$canvas_env = 'NVOOS_CANVAS_PATH=' . escapeshellarg( $canvas_dir ) . ' ';
+			}
+		}
+
 		$cmd = sprintf(
-			'node %s image %s 2>&1',
+			'%snode %s image %s 2>&1',
+			$canvas_env,
 			escapeshellarg( $service_path ),
 			escapeshellarg( $args )
 		);

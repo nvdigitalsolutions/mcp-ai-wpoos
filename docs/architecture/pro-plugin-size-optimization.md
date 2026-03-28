@@ -134,7 +134,7 @@ rsync -av --quiet addons/pro/ "build/${PRO_SLUG}/" \
 - **Primary OCR methods unaffected:** OpenAI GPT-4o Vision, Anthropic Claude 3.5, Google Gemini
 - **Solution for users needing Tesseract PDF OCR:**
   1. Install Node.js on server
-  2. Run `npm install canvas` in plugin directory
+  2. Run `npm install canvas@2` in plugin directory (use `canvas@2`; canvas v3+ requires Node >=20.9.0)
   3. Install system dependencies: `apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev`
 
 #### Old pdf.js Versions Removed

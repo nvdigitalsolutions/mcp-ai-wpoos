@@ -2438,11 +2438,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
 
-				// Handle file segments.
+				// Handle file segments (video/audio uploaded via Gemini File API).
 				if ( 'file' === $type || 'input_file' === $type ) {
 					$file_part = $this->format_file_part( $segment );
 					if ( null !== $file_part ) {
 						$file_parts[] = $file_part;
+					}
+				}
+
+				// Handle image segments – use inlineData (base64) or fileData (Gemini File API).
+				if ( 'input_image' === $type || 'image_url' === $type || 'image_file' === $type ) {
+					$image_part = $this->format_image_part( $segment );
+					if ( null !== $image_part ) {
+						$file_parts[] = $image_part;
 					}
 				}
 			}
@@ -2490,6 +2498,139 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'mimeType' => $mime_type,
 				),
 			);
+		}
+
+		/**
+		 * Format an image segment as a Gemini inlineData or fileData part.
+		 *
+		 * Priority order:
+		 * 1. Gemini File API name (file_id starting with "files/") -- fileData
+		 * 2. Explicit Gemini file URI (file_uri / uri) -- fileData
+		 * 3. Local WordPress attachment file (via attachment_id) -- inlineData
+		 * 4. Remote image URL (image_url.url / url) -- inlineData via HTTP download
+		 *
+		 * @param array $segment {
+		 *     Image segment of type input_image / image_url / image_file.
+		 *
+		 *     @type string $file_id       Optional. Gemini File API name (e.g., "files/abc123") or OpenAI file ID.
+		 *     @type string $file_uri      Optional. Full Gemini File API URI.
+		 *     @type string $uri           Optional. Alias for file_uri.
+		 *     @type int    $attachment_id Optional. WordPress attachment post ID for local file reads.
+		 *     @type array  $image_url     Optional. Array with 'url' key for remote image download.
+		 *     @type string $url           Optional. Direct image URL fallback.
+		 *     @type string $mime_type     Optional. MIME type of the image (e.g., "image/jpeg").
+		 *     @type string $mimeType      Optional. Camel-case alias for mime_type.
+		 * }
+		 * @return array|null Gemini inlineData or fileData part, or null if unable to build one.
+		 */
+		protected function format_image_part( array $segment ) {
+			$mime_type = '';
+			if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+				$mime_type = sanitize_mime_type( $segment['mime_type'] );
+			} elseif ( isset( $segment['mimeType'] ) && '' !== $segment['mimeType'] ) {
+				$mime_type = sanitize_mime_type( $segment['mimeType'] );
+			}
+
+			// 1. Check for a Gemini File API name (e.g., "files/abc123").
+			if ( ! empty( $segment['file_id'] ) ) {
+				$file_id = sanitize_text_field( wp_unslash( $segment['file_id'] ) );
+
+				if ( 0 === strpos( $file_id, 'files/' ) ) {
+					// Construct the full Gemini File API URI from the name.
+					$file_uri = 'https://generativelanguage.googleapis.com/v1beta/' . rawurlencode( $file_id );
+
+					if ( empty( $mime_type ) ) {
+						// Without a MIME type Gemini rejects the request.
+						return null;
+					}
+
+					return array(
+						'fileData' => array(
+							'fileUri'  => $file_uri,
+							'mimeType' => $mime_type,
+						),
+					);
+				}
+			}
+
+			// 2. Explicit Gemini file URI already stored in the segment.
+			$file_uri = '';
+			if ( ! empty( $segment['file_uri'] ) ) {
+				$file_uri = esc_url_raw( $segment['file_uri'] );
+			} elseif ( ! empty( $segment['uri'] ) ) {
+				$file_uri = esc_url_raw( $segment['uri'] );
+			}
+
+			if ( '' !== $file_uri && false !== strpos( $file_uri, 'generativelanguage.googleapis.com' ) ) {
+				if ( ! empty( $mime_type ) ) {
+					return array(
+						'fileData' => array(
+							'fileUri'  => $file_uri,
+							'mimeType' => $mime_type,
+						),
+					);
+				}
+			}
+
+			// 3. Read binary data from the local WordPress attachment (fastest path).
+			if ( ! empty( $segment['attachment_id'] ) ) {
+				$attachment_id = absint( $segment['attachment_id'] );
+				$file_path     = get_attached_file( $attachment_id );
+
+				if ( $file_path && file_exists( $file_path ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local file; not a remote URL.
+					$data = file_get_contents( $file_path );
+
+					if ( false !== $data && '' !== $data ) {
+						if ( empty( $mime_type ) ) {
+							$mime_type = get_post_mime_type( $attachment_id );
+						}
+						$mime_type = $mime_type ? sanitize_mime_type( $mime_type ) : '';
+
+						if ( '' !== $mime_type ) {
+							return array(
+								'inlineData' => array(
+									// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary image for Gemini inlineData.
+									'data'     => base64_encode( $data ),
+									'mimeType' => $mime_type,
+								),
+							);
+						}
+					}
+				}
+			}
+
+			// 4. Download from URL as a last resort.
+			$url = '';
+			if ( ! empty( $segment['image_url'] ) && is_array( $segment['image_url'] ) && ! empty( $segment['image_url']['url'] ) ) {
+				$url = esc_url_raw( $segment['image_url']['url'] );
+			} elseif ( ! empty( $segment['url'] ) ) {
+				$url = esc_url_raw( $segment['url'] );
+			}
+
+			if ( '' !== $url ) {
+				$download = $this->download_image_from_url( $url, array() );
+
+				if ( ! is_wp_error( $download ) && ! empty( $download['body'] ) ) {
+					if ( empty( $mime_type ) && ! empty( $download['content_type'] ) ) {
+						$ct_parts  = explode( ';', $download['content_type'] );
+						$raw_ct    = strtolower( trim( $ct_parts[0] ) );
+						$mime_type = sanitize_mime_type( $raw_ct );
+					}
+
+					if ( '' !== $mime_type ) {
+						return array(
+							'inlineData' => array(
+								// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding downloaded image for Gemini inlineData.
+								'data'     => base64_encode( $download['body'] ),
+								'mimeType' => $mime_type,
+							),
+						);
+					}
+				}
+			}
+
+			return null;
 		}
 
 		/**

@@ -56,6 +56,37 @@ node pdf-extract-service.js extract '{"filePath":"/path/to/document.pdf","maxPag
 node pdf-extract-service.js metadata '{"filePath":"/path/to/document.pdf"}'
 ```
 
+### 5. canvas-service.js
+Provides server-side image generation and manipulation using the optional
+[canvas](https://www.npmjs.com/package/canvas) npm package (HTML5 Canvas API for Node.js).
+
+**Installation (optional):**
+```bash
+# canvas@2 supports Node 18/20.x; canvas@3 requires Node >=20.9.0
+npm install canvas@2
+
+# On shared hosts (EACCES permission error):
+mkdir node_modules && chmod 775 node_modules
+npm install canvas@2
+
+# Requires system libraries:
+# Ubuntu/Debian: sudo apt-get install libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+# macOS (Homebrew): brew install cairo pango
+```
+
+**Usage:**
+```bash
+# Generate an image from drawing commands
+node canvas-service.js generate '{"output":"/tmp/out.png","width":800,"height":600,"background":"#ffffff","commands":[{"type":"text","text":"Hello World","x":50,"y":100,"font":"48px sans-serif","color":"#000000"}]}'
+
+# Render a Chart.js configuration to PNG (also requires chart.js)
+node canvas-service.js render_chart '{"output":"/tmp/chart.png","width":800,"height":400,"config":{"type":"bar","data":{"labels":["A","B","C"],"datasets":[{"label":"Values","data":[1,2,3]}]}}}'
+```
+
+**WordPress filters:**
+- `wp_mcp_ai_canvas_generate_image` – Generate an image from drawing commands.
+- `wp_mcp_ai_chartjs_generate_image` – Render a Chart.js configuration to a PNG file.
+
 ## Integration with WordPress
 
 These services are called via WordPress filters. See `docs/NPM_INTEGRATION_GUIDE.md` in the parent directory for complete integration examples.

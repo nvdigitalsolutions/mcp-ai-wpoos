@@ -902,6 +902,8 @@ window.wpMcpAiSaveExpandedState = function() {
         initTokenUsageHandlers();
         initProviderPriorityList();
         initEmbeddedModelManagement();
+        initLlamaBinaryDownload();
+        initLlamaReinstallButton();
         
         log('All admin handlers initialized successfully');
     });
@@ -1078,43 +1080,41 @@ window.wpMcpAiSaveExpandedState = function() {
             $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
+                timeout: 600000, // 10 minutes timeout for large downloads
                 data: {
                     action: 'wp_mcp_ai_download_embedded_model',
                     nonce: nonce,
                     model: modelSlug
                 }
             }, {
-                context: 'embedded-model-download',
-                showGlobalError: true,
-                timeout: 600000 // 10 minutes timeout for large downloads
-            })
-            .done(function(response) {
-                log('Download successful', response);
-                
-                if (response.success) {
-                    const modelName = $row.data('model-name') || modelSlug;
-                    
-                    // Show success message with model identifier
-                    alert('Model downloaded successfully!\n\n' +
-                          'Model: ' + modelName + '\n' +
-                          'Model Identifier: ' + modelSlug + '\n\n' +
-                          'Use this identifier when configuring assistants with the Embedded provider.');
-                    
-                    // Reload the page to show the updated table with usage instructions
-                    window.location.reload();
-                } else {
+                success: function(response) {
+                    log('Download successful', response);
+
+                    if (response.success) {
+                        const modelName = $row.data('model-name') || modelSlug;
+
+                        // Show success message with model identifier
+                        alert('Model downloaded successfully!\n\n' +
+                              'Model: ' + modelName + '\n' +
+                              'Model Identifier: ' + modelSlug + '\n\n' +
+                              'Use this identifier when configuring assistants with the Embedded provider.');
+
+                        // Reload the page to show the updated table with usage instructions
+                        window.location.reload();
+                    } else {
+                        $btn.prop('disabled', false).text('Download');
+                        $row.find('.wp-mcp-ai-model-status')
+                            .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
+                        alert('Download failed: ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function() {
+                    log('Download failed');
                     $btn.prop('disabled', false).text('Download');
                     $row.find('.wp-mcp-ai-model-status')
                         .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
-                    alert('Download failed: ' + (response.data || 'Unknown error'));
+                    alert('Download failed. Please check your connection and try again.');
                 }
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                log('Download failed', { status: textStatus, error: errorThrown });
-                $btn.prop('disabled', false).text('Download');
-                $row.find('.wp-mcp-ai-model-status')
-                    .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
-                alert('Download failed. Please check your connection and try again.');
             });
         });
         
@@ -1155,30 +1155,129 @@ window.wpMcpAiSaveExpandedState = function() {
                     model: modelSlug
                 }
             }, {
-                context: 'embedded-model-delete',
-                showGlobalError: true
-            })
-            .done(function(response) {
-                log('Delete successful', response);
-                
-                if (response.success) {
-                    alert('Model deleted successfully!');
-                    
-                    // Reload the page to show the updated table
-                    window.location.reload();
-                } else {
+                success: function(response) {
+                    log('Delete successful', response);
+
+                    if (response.success) {
+                        alert('Model deleted successfully!');
+
+                        // Reload the page to show the updated table
+                        window.location.reload();
+                    } else {
+                        $btn.prop('disabled', false).text('Delete');
+                        alert('Delete failed: ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function() {
+                    log('Delete failed');
                     $btn.prop('disabled', false).text('Delete');
-                    alert('Delete failed: ' + (response.data || 'Unknown error'));
+                    alert('Delete failed. Please check your connection and try again.');
                 }
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                log('Delete failed', { status: textStatus, error: errorThrown });
-                $btn.prop('disabled', false).text('Delete');
-                alert('Delete failed. Please check your connection and try again.');
             });
         });
         
         log('Embedded model management initialized');
+    }
+
+    /**
+     * Initialize the llama.cpp binary download button.
+     */
+    function initLlamaBinaryDownload() {
+        const $btn = $('#wp-mcp-ai-download-binary');
+
+        if ($btn.length === 0) {
+            return;
+        }
+
+        const $container = $btn.closest('.wp-mcp-ai-embedded-model-management');
+        const nonce = $container.data('nonce');
+        const $status = $('#wp-mcp-ai-binary-download-status');
+
+        $btn.on('click', function(e) {
+            e.preventDefault();
+
+            if (!confirm('This will download the llama.cpp runtime binary from GitHub (the download may take a few minutes depending on your connection speed) and install it to your server. Continue?')) {
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Downloading...');
+            $status.show().html('<span class="dashicons dashicons-update dashicons-spin"></span> Downloading from GitHub...');
+
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                timeout: 300000, // 5 minutes for binary download
+                data: {
+                    action: 'wp_mcp_ai_download_llama_binary',
+                    nonce: nonce
+                }
+            }, {
+                success: function(response) {
+                    if (response.success) {
+                        $status.html('<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span> Installed successfully. Reloading...');
+                        setTimeout(function() { window.location.reload(); }, 1500);
+                    } else {
+                        $btn.prop('disabled', false).text('Download llama.cpp Binary');
+                        $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> ' + (response.data || 'Download failed.'));
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Download llama.cpp Binary');
+                    $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> Request failed. Please try again or install manually.');
+                }
+            });
+        });
+
+        log('llama.cpp binary download button initialized');
+    }
+
+    function initLlamaReinstallButton() {
+        const $btn = $('#wp-mcp-ai-reinstall-binary');
+
+        if ($btn.length === 0) {
+            return;
+        }
+
+        const $container = $btn.closest('.wp-mcp-ai-embedded-model-management');
+        const nonce = $container.data('nonce');
+        const $status = $('#wp-mcp-ai-binary-reinstall-status');
+
+        $btn.on('click', function(e) {
+            e.preventDefault();
+
+            if (!confirm('This will re-download and re-install the llama.cpp runtime binary from GitHub, replacing the current installation. Shared libraries (e.g. libmtmd.so.0) will also be restored. Continue?')) {
+                return;
+            }
+
+            $btn.prop('disabled', true).text('Re-installing...');
+            $status.show().html('<span class="dashicons dashicons-update dashicons-spin"></span> Downloading from GitHub...');
+
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                timeout: 300000, // 5 minutes for binary download
+                data: {
+                    action: 'wp_mcp_ai_download_llama_binary',
+                    nonce: nonce
+                }
+            }, {
+                success: function(response) {
+                    if (response.success) {
+                        $status.html('<span class="dashicons dashicons-yes-alt" style="color:#46b450;"></span> Re-installed successfully. Reloading...');
+                        setTimeout(function() { window.location.reload(); }, 1500);
+                    } else {
+                        $btn.prop('disabled', false).text('Re-install llama.cpp Binary');
+                        $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> ' + (response.data || 'Re-install failed.'));
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).text('Re-install llama.cpp Binary');
+                    $status.html('<span class="dashicons dashicons-warning" style="color:#d63638;"></span> Request failed. Please try again or install manually.');
+                }
+            });
+        });
+
+        log('llama.cpp binary reinstall button initialized');
     }
 
 })(jQuery);

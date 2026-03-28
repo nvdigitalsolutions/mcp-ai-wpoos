@@ -185,7 +185,7 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 							: 'cpt';
 						?>
 						<p>
-							<strong><?php echo 'cct' === $storage_type ? __( 'JetEngine CCT', 'mcp-ai-wpoos-pro' ) : __( 'WordPress CPT', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<strong><?php echo esc_html( 'cct' === $storage_type ? __( 'JetEngine CCT', 'mcp-ai-wpoos-pro' ) : __( 'WordPress CPT', 'mcp-ai-wpoos-pro' ) ); ?></strong>
 							<?php if ( 'cct' === $storage_type ) : ?>
 								<br /><span style="color: green;">✓ Using JetEngine Custom Content Types for enhanced performance</span>
 							<?php else : ?>

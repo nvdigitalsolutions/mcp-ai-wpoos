@@ -152,7 +152,7 @@ class WP_MCP_AI_Project_Metabox {
 
 		// Save status.
 		if ( isset( $_POST['project_status'] ) ) {
-			$status         = sanitize_key( $_POST['project_status'] );
+			$status         = sanitize_key( wp_unslash( $_POST['project_status'] ) );
 			$valid_statuses = array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $post_id, '_project_status', $status );
@@ -161,7 +161,7 @@ class WP_MCP_AI_Project_Metabox {
 
 		// Save start date.
 		if ( isset( $_POST['project_start_date'] ) ) {
-			$start_date = sanitize_text_field( $_POST['project_start_date'] );
+			$start_date = sanitize_text_field( wp_unslash( $_POST['project_start_date'] ) );
 			if ( empty( $start_date ) || self::validate_date( $start_date ) ) {
 				update_post_meta( $post_id, '_project_start_date', $start_date );
 			}
@@ -169,7 +169,7 @@ class WP_MCP_AI_Project_Metabox {
 
 		// Save end date.
 		if ( isset( $_POST['project_end_date'] ) ) {
-			$end_date = sanitize_text_field( $_POST['project_end_date'] );
+			$end_date = sanitize_text_field( wp_unslash( $_POST['project_end_date'] ) );
 			if ( empty( $end_date ) || self::validate_date( $end_date ) ) {
 				update_post_meta( $post_id, '_project_end_date', $end_date );
 			}

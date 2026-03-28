@@ -1580,9 +1580,15 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure tool role messages are emitted as output_text segments for Responses API requests.
+	 * Ensure non-image file attachments with tool calls in conversation use Chat Completions
+	 * and convert input_file segments to the 'file' content type (GPT-4.1+).
+	 *
+	 * When a conversation history contains tool_calls/tool messages, the Responses API
+	 * cannot be used (it does not support the tool_calls/tool_call_id mechanism).
+	 * The client must fall back to Chat Completions and translate 'input_file' →
+	 * {"type":"file","file":{"file_id":"file-xxx"}}.
 	 */
-	public function test_responses_payload_uses_output_text_for_tool_segments() {
+	public function test_chat_completions_converts_input_file_to_file_type_when_tool_calls_present() {
 		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$defaults['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -1600,8 +1606,17 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 				'headers'  => array(),
 				'body'     => wp_json_encode(
 					array(
-						'id'     => 'resp-test',
-						'output' => array(),
+						'id'      => 'chatcmpl-test',
+						'choices' => array(
+							array(
+								'index'         => 0,
+								'message'       => array(
+									'role'    => 'assistant',
+									'content' => 'Summary.',
+								),
+								'finish_reason' => 'stop',
+							),
+						),
 					)
 				),
 				'response' => array(
@@ -1665,21 +1680,35 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', $filter_callback, 10 );
 
 		$this->assertNotEmpty( $captured_request );
-		$this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+		// With tool calls in conversation history, Chat Completions API must be used.
+		$this->assertSame( WP_MCP_AI_OpenAI_Client::CHAT_COMPLETIONS_ENDPOINT, $captured_request['url'] );
 
 		$payload = json_decode( $captured_request['args']['body'], true );
 
 		$this->assertIsArray( $payload );
-		$this->assertArrayHasKey( 'input', $payload );
+		$this->assertArrayHasKey( 'messages', $payload );
 
-		$this->assertSame( 'output_text', $payload['input'][0]['content'][0]['type'] );
-		$this->assertSame( 'Inspecting your PDF…', $payload['input'][0]['content'][0]['text'] );
+		// Find the user message (index 2 after tool messages are preserved).
+		$user_message = null;
+		foreach ( $payload['messages'] as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$user_message = $msg;
+				break;
+			}
+		}
 
-		$this->assertSame( 'output_text', $payload['input'][1]['content'][0]['type'] );
-		$this->assertSame( 'Processed attachment contents.', $payload['input'][1]['content'][0]['text'] );
+		$this->assertNotNull( $user_message, 'User message must be present in Chat Completions payload' );
+		$this->assertIsArray( $user_message['content'] );
 
-		$this->assertSame( 'input_text', $payload['input'][2]['content'][0]['type'] );
-		$this->assertSame( 'Summarise the findings.', $payload['input'][2]['content'][0]['text'] );
+		// The text segment should be preserved.
+		$this->assertSame( 'text', $user_message['content'][0]['type'] );
+		$this->assertSame( 'Summarise the findings.', $user_message['content'][0]['text'] );
+
+		// The input_file segment must be converted to the Chat Completions 'file' content type.
+		$this->assertSame( 'file', $user_message['content'][1]['type'], 'input_file must be converted to file type for Chat Completions' );
+		$this->assertArrayHasKey( 'file', $user_message['content'][1] );
+		$this->assertSame( 'file-789', $user_message['content'][1]['file']['file_id'] );
 	}
 
 	/**
@@ -2286,7 +2315,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, $response['image'] );
 		$this->assertSame( 'png', $response['format'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
-		$this->assertSame( 'gpt-image-1', $response['model'] );
+		$this->assertSame( 'gpt-image-1.5', $response['model'] );
 		$this->assertSame( 'Binary payload', $response['prompt'] );
 		$this->assertSame( 0, $response['created'] );
 		$this->assertSame( '', $response['revised_prompt'] );
@@ -2792,5 +2821,338 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'o3' ) );
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'claude-sonnet-4-6' ) );
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gemini-3-pro-preview' ) );
+	}
+}
+
+/**
+ * Exposes the protected filter_tool_messages_for_payload() method for unit testing.
+ */
+class WP_MCP_AI_Testable_OpenAI_Client extends WP_MCP_AI_OpenAI_Client {
+
+	/**
+	 * Proxy that makes filter_tool_messages_for_payload() publicly callable.
+	 *
+	 * @param array $messages Input messages.
+	 * @return array Filtered messages.
+	 */
+	public function public_filter_tool_messages( array $messages ) {
+		return $this->filter_tool_messages_for_payload( $messages );
+	}
+}
+
+/**
+ * Tests for WP_MCP_AI_OpenAI_Client::filter_tool_messages_for_payload().
+ *
+ * These tests cover the bug where an assistant message with tool_calls that is
+ * never followed by the corresponding tool-response messages (because the agentic
+ * loop hit max_iterations before executing them) was included in filtered output.
+ * When that orphaned assistant message was later sent back to OpenAI in the next
+ * turn's conversation history, OpenAI returned:
+ *   "An assistant message with 'tool_calls' must be followed by tool messages
+ *    responding to each 'tool_call_id'."
+ */
+class WP_MCP_AI_Filter_Tool_Messages_Test extends WP_UnitTestCase {
+
+	/** @var WP_MCP_AI_Testable_OpenAI_Client */
+	private $client;
+
+	public function setUp(): void {
+		parent::setUp();
+		$this->client = new WP_MCP_AI_Testable_OpenAI_Client();
+	}
+
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
+	private function user_msg( $text = 'Hello' ) {
+		return array( 'role' => 'user', 'content' => $text );
+	}
+
+	private function system_msg( $text = 'You are an assistant.' ) {
+		return array( 'role' => 'system', 'content' => $text );
+	}
+
+	private function assistant_msg( $text = 'Sure.' ) {
+		return array( 'role' => 'assistant', 'content' => $text );
+	}
+
+	private function assistant_with_tool_calls( array $tool_ids, $text = null ) {
+		$tool_calls = array();
+		foreach ( $tool_ids as $id => $name ) {
+			$tool_calls[] = array(
+				'id'       => $id,
+				'type'     => 'function',
+				'function' => array( 'name' => $name, 'arguments' => '{}' ),
+			);
+		}
+		$msg = array( 'role' => 'assistant', 'tool_calls' => $tool_calls );
+		if ( null !== $text ) {
+			$msg['content'] = $text;
+		}
+		return $msg;
+	}
+
+	private function tool_msg( $call_id, $name = 'some_tool', $content = '{"result":"ok"}' ) {
+		return array(
+			'role'         => 'tool',
+			'tool_call_id' => $call_id,
+			'name'         => $name,
+			'content'      => $content,
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Tests – valid sequences that should be preserved
+	// -------------------------------------------------------------------------
+
+	/**
+	 * A fully-resolved single tool call group is kept unchanged.
+	 */
+	public function test_complete_single_tool_call_group_is_kept() {
+		$messages = array(
+			$this->user_msg( 'Analyse this image.' ),
+			$this->assistant_with_tool_calls( array( 'call_AAA' => 'vision_object_localization' ) ),
+			$this->tool_msg( 'call_AAA', 'vision_object_localization' ),
+			$this->assistant_msg( 'The image contains a cat.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		$this->assertCount( 4, $filtered );
+		$this->assertSame( 'user', $filtered[0]['role'] );
+		$this->assertSame( 'assistant', $filtered[1]['role'] );
+		$this->assertArrayHasKey( 'tool_calls', $filtered[1] );
+		$this->assertSame( 'tool', $filtered[2]['role'] );
+		$this->assertSame( 'assistant', $filtered[3]['role'] );
+	}
+
+	/**
+	 * Multiple consecutive fully-resolved groups across turns are kept.
+	 */
+	public function test_multiple_complete_groups_across_turns_are_kept() {
+		$messages = array(
+			$this->user_msg( 'Turn 1' ),
+			$this->assistant_with_tool_calls( array( 'call_T1' => 'get_time' ) ),
+			$this->tool_msg( 'call_T1', 'get_time' ),
+			$this->assistant_msg( 'It is noon.' ),
+			$this->user_msg( 'Turn 2' ),
+			$this->assistant_with_tool_calls( array( 'call_T2' => 'get_weather' ) ),
+			$this->tool_msg( 'call_T2', 'get_weather' ),
+			$this->assistant_msg( 'It is sunny.' ),
+			$this->user_msg( 'Turn 3' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		$this->assertCount( 9, $filtered );
+	}
+
+	/**
+	 * A group with parallel tool calls (all answered) is kept.
+	 */
+	public function test_parallel_tool_calls_all_answered_is_kept() {
+		$messages = array(
+			$this->user_msg(),
+			$this->assistant_with_tool_calls(
+				array(
+					'call_P1' => 'tool_alpha',
+					'call_P2' => 'tool_beta',
+				)
+			),
+			$this->tool_msg( 'call_P1', 'tool_alpha' ),
+			$this->tool_msg( 'call_P2', 'tool_beta' ),
+			$this->assistant_msg( 'Done.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		$this->assertCount( 5, $filtered );
+	}
+
+	// -------------------------------------------------------------------------
+	// Tests – the fix: orphaned tool_calls groups must be dropped
+	// -------------------------------------------------------------------------
+
+	/**
+	 * An assistant message whose tool_calls were never answered (loop hit
+	 * max_iterations) is removed when the next user message arrives.
+	 *
+	 * This is the root scenario reported in the vision_object_localization bug:
+	 *   1. Turn 1: agentic loop executed the tool, but the *final* LLM response
+	 *      still had tool_calls (max_iterations reached without the model stopping).
+	 *   2. The JS client stored that orphaned assistant-with-tool_calls message.
+	 *   3. Turn 2: the conversation including the orphaned message is sent back
+	 *      to OpenAI → "tool_call_ids did not have response messages" error.
+	 */
+	public function test_orphaned_tool_calls_before_user_message_are_dropped() {
+		$messages = array(
+			$this->user_msg( 'Previous turn user message.' ),
+			// Properly answered pair from the agentic loop iteration.
+			$this->assistant_with_tool_calls( array( 'call_LOOP' => 'vision_object_localization' ) ),
+			$this->tool_msg( 'call_LOOP', 'vision_object_localization', '{"objects":[]}' ),
+			// Orphaned final assistant message: the last LLM response still wanted
+			// to call a tool but max_iterations was reached without executing it.
+			$this->assistant_with_tool_calls( array( 'call_ORPHAN' => 'vision_object_localization' ) ),
+			// Next turn.
+			$this->user_msg( 'New user message.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		// The orphaned assistant message must be absent.
+		$roles = array_column( $filtered, 'role' );
+		$this->assertNotContains(
+			'call_ORPHAN',
+			array_map(
+				function ( $m ) {
+					if ( isset( $m['tool_calls'][0]['id'] ) ) {
+						return $m['tool_calls'][0]['id'];
+					}
+					return '';
+				},
+				$filtered
+			),
+			'Orphaned tool_call_id call_ORPHAN must not be present in filtered output.'
+		);
+
+		// The valid pair (call_LOOP) and surrounding messages must be kept.
+		$this->assertSame( 'user', $filtered[0]['role'], 'Previous turn user message preserved.' );
+		$this->assertSame( 'assistant', $filtered[1]['role'], 'Answered assistant message preserved.' );
+		$this->assertSame( 'tool', $filtered[2]['role'], 'Tool result for call_LOOP preserved.' );
+		$this->assertSame( 'user', $filtered[3]['role'], 'New user message preserved.' );
+		$this->assertCount( 4, $filtered );
+	}
+
+	/**
+	 * When two consecutive assistant-with-tool_calls messages both lack tool
+	 * responses, both are dropped before the eventual user message.
+	 */
+	public function test_two_consecutive_orphaned_assistant_messages_are_both_dropped() {
+		$messages = array(
+			$this->user_msg( 'First user message.' ),
+			$this->assistant_with_tool_calls( array( 'call_A' => 'tool_a' ) ),
+			// call_A never answered → second assistant comes along.
+			$this->assistant_with_tool_calls( array( 'call_B' => 'tool_b' ) ),
+			// call_B never answered either.
+			$this->user_msg( 'Second user message.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		// Neither orphaned assistant message should appear.
+		foreach ( $filtered as $msg ) {
+			$this->assertArrayNotHasKey( 'tool_calls', $msg, 'No orphaned tool_calls should remain.' );
+		}
+		// Both user messages should survive.
+		$roles = array_column( $filtered, 'role' );
+		$this->assertSame( array( 'user', 'user' ), $roles );
+	}
+
+	/**
+	 * Valid conversation history before an orphaned group is preserved while
+	 * only the orphaned group is removed.
+	 */
+	public function test_valid_history_before_orphaned_group_is_preserved() {
+		$messages = array(
+			$this->system_msg(),
+			$this->user_msg( 'Turn 1' ),
+			$this->assistant_with_tool_calls( array( 'call_OK' => 'some_tool' ) ),
+			$this->tool_msg( 'call_OK', 'some_tool' ),
+			$this->assistant_msg( 'Done with turn 1.' ),
+			$this->user_msg( 'Turn 2' ),
+			// Orphaned group: loop hit max_iterations, tool never executed.
+			$this->assistant_with_tool_calls( array( 'call_ORPHAN2' => 'vision_object_localization' ) ),
+			$this->user_msg( 'Turn 3 (new message).' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		// The orphaned assistant message must be gone.
+		foreach ( $filtered as $msg ) {
+			if ( isset( $msg['tool_calls'] ) ) {
+				$ids = array_column( $msg['tool_calls'], 'id' );
+				$this->assertNotContains( 'call_ORPHAN2', $ids, 'Orphaned tool_call must be dropped.' );
+			}
+		}
+
+		// Turn 1 complete pair plus system and all user messages survive.
+		$this->assertSame( 'system', $filtered[0]['role'] );
+		$this->assertSame( 'user', $filtered[1]['role'] );   // Turn 1 user.
+		$this->assertSame( 'assistant', $filtered[2]['role'] ); // Answered assistant.
+		$this->assertSame( 'tool', $filtered[3]['role'] );   // Tool result.
+		$this->assertSame( 'assistant', $filtered[4]['role'] ); // Final assistant turn 1.
+		$this->assertSame( 'user', $filtered[5]['role'] );   // Turn 2 user.
+		$this->assertSame( 'user', $filtered[6]['role'] );   // Turn 3 user.
+		$this->assertCount( 7, $filtered );
+	}
+
+	/**
+	 * Orphaned tool messages (no matching pending assistant tool_call) are
+	 * still dropped, which is the existing behaviour that must not regress.
+	 */
+	public function test_orphaned_standalone_tool_message_is_dropped() {
+		$messages = array(
+			$this->user_msg(),
+			$this->assistant_msg( 'Hi.' ),
+			// A stray tool message with no preceding assistant tool_calls.
+			$this->tool_msg( 'call_STRAY', 'orphan_tool' ),
+			$this->user_msg( 'Follow up.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		$roles = array_column( $filtered, 'role' );
+		$this->assertNotContains( 'tool', $roles, 'Orphaned tool message must be dropped.' );
+		$this->assertCount( 3, $filtered );
+	}
+
+	/**
+	 * A partially-answered group (some tool_call_ids responded to, some not)
+	 * must be dropped entirely to avoid sending an invalid sequence to OpenAI.
+	 */
+	public function test_partially_answered_group_is_dropped_entirely() {
+		$messages = array(
+			$this->user_msg(),
+			// Parallel calls: A and B.
+			$this->assistant_with_tool_calls(
+				array(
+					'call_PA' => 'tool_alpha',
+					'call_PB' => 'tool_beta',
+				)
+			),
+			// Only A answered; B never was.
+			$this->tool_msg( 'call_PA', 'tool_alpha' ),
+			$this->user_msg( 'Next turn.' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		// The assistant message AND the partial tool response must be gone.
+		foreach ( $filtered as $msg ) {
+			$this->assertNotSame( 'tool', $msg['role'], 'Partial tool response must be dropped.' );
+			$this->assertArrayNotHasKey( 'tool_calls', $msg, 'Partially-answered assistant must be dropped.' );
+		}
+	}
+
+	/**
+	 * Inside the agentic loop (no user message at the end) a complete group is
+	 * kept so the second LLM call receives valid messages.
+	 */
+	public function test_complete_group_at_end_of_array_is_kept_for_agentic_loop() {
+		// This mirrors what filter_tool_messages_for_payload sees when called
+		// for the second OpenAI call inside the agentic loop.
+		$messages = array(
+			$this->system_msg(),
+			$this->user_msg( 'Use vision.' ),
+			$this->assistant_with_tool_calls( array( 'call_VIS' => 'vision_object_localization' ) ),
+			$this->tool_msg( 'call_VIS', 'vision_object_localization', '{"objects":["cat"]}' ),
+		);
+
+		$filtered = $this->client->public_filter_tool_messages( $messages );
+
+		$this->assertCount( 4, $filtered );
+		$this->assertSame( 'tool', $filtered[3]['role'] );
+		$this->assertSame( 'call_VIS', $filtered[3]['tool_call_id'] );
 	}
 }

@@ -628,11 +628,29 @@
      * @param {string} url - The URL to POST to.
      * @param {Object} data - Data to send as JSON.
      * @param {Object} headers - Request headers.
-     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks).
+     * @param {Object} options - Additional options (timeout, signal, state for retry callbacks, streaming).
      * @return {Promise<Response>} Promise that resolves to the response.
      */
     function postJson(url, data, headers, options) {
         options = options || {};
+
+        // For SSE streaming requests, bypass the HTTP client service (Ky) entirely and use
+        // native fetch. Ky's AbortController-based timeout can fire for long-running embedded
+        // LLM inference (visible as `timeout.ts` in the ERR_HTTP2_PROTOCOL_ERROR call stack),
+        // and its afterResponse hooks call response.clone() which tees the SSE body stream
+        // causing the readable half to stall or error. Retry logic is also wrong for SSE.
+        if (options.streaming) {
+            const fetchOptions = {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin',
+                body: JSON.stringify(data)
+            };
+            if (options.signal) {
+                fetchOptions.signal = options.signal;
+            }
+            return fetch(url, fetchOptions);
+        }
         
         // Use HTTP client service if available
         if (httpClientService && httpClientService.postJson) {
@@ -12931,8 +12949,10 @@
             disableForm(state, false);
         }
 
-        // Check if provider is embedded - run LLM client-side in browser
-        const isEmbeddedProvider = state.config.provider === 'embedded';
+        // Check if provider is embedded - run LLM client-side in browser.
+        // Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are
+        // flagged via isEmbeddedServer and must be handled by the normal REST API path.
+        const isEmbeddedProvider = state.config.provider === 'embedded' && !state.config.isEmbeddedServer;
         
         if (isEmbeddedProvider) {
             // Apply max history messages limit for the embedded path.
@@ -13112,7 +13132,9 @@
             state.config.messagesEndpoint,
             payload,
             headers,
-            { state: state }
+            // streaming: true bypasses the Ky HTTP client in favour of native fetch.
+            // Ky's timeout and afterResponse body-clone break SSE stream reading.
+            { state: state, streaming: true }
         )
             .then(function (response) {
                 // Diagnostic logging (Separation of Concerns)
@@ -13590,7 +13612,66 @@
                         assistantId: payload.assistant_id,
                         streamCompleted: streamCompleted
                     });
-                    
+
+                    // SSE-to-non-streaming fallback:
+                    // When the stream fails before any data is received (e.g.
+                    // ERR_HTTP2_PROTOCOL_ERROR caused by the server closing the
+                    // HTTP/2 stream before PHP has flushed any body bytes), retry
+                    // the request as a plain JSON POST without the stream flag.
+                    // This mirrors how LM Studio handles responses — it sends a
+                    // complete JSON body rather than an SSE stream, so the same
+                    // non-streaming path works for all providers.
+                    const isNetworkError = error && (
+                        (error.name === 'TypeError' && error.message === 'network error') ||
+                        (error.name === 'TypeError' && typeof error.message === 'string' && error.message.toLowerCase().includes('network'))
+                    );
+                    if (isNetworkError && !streamCompleted) {
+                        if (window.console && console.warn) {
+                            console.warn('[NV oOS] SSE stream failed before receiving data, falling back to non-streaming request');
+                        }
+
+                        // Remove the incomplete streaming message element
+                        if (streamingMessageElement && streamingMessageElement.parentNode) {
+                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                            streamingMessageElement = null;
+                        }
+                        state.thinkingText = null;
+                        state.streamingContent = null;
+
+                        // Build a non-streaming payload (same as payload but without stream flag)
+                        var nonStreamPayload = Object.assign({}, payload);
+                        delete nonStreamPayload.stream;
+
+                        return postJson(
+                            state.config.messagesEndpoint,
+                            nonStreamPayload,
+                            buildJsonHeaders(state),
+                            { state: state }
+                        )
+                            .then(function (response) {
+                                return response
+                                    .json()
+                                    .catch(function () { return null; })
+                                    .then(function (data) {
+                                        if (!response.ok) { throw response; }
+                                        return data;
+                                    });
+                            })
+                            .then(function (data) {
+                                return handleChatResponse(state, data);
+                            })
+                            .then(function (result) {
+                                saveConversationToStorage(state);
+                                finalize();
+                                return result;
+                            })
+                            .catch(function (fallbackError) {
+                                handleError(state, fallbackError);
+                                restoreSubmissionState(state, submissionContext);
+                                finalize();
+                            });
+                    }
+
                     handleError(state, error);
                     restoreSubmissionState(state, submissionContext);
                     
@@ -15968,9 +16049,24 @@
 
     function disableForm(state, disabled) {
         const container = state.container;
-        const elements = container.querySelectorAll('button, textarea, input');
-        Array.prototype.forEach.call(elements, function (element) {
-            element.disabled = disabled;
+
+        // Scope to the input form and the control buttons (save/export/new-chat).
+        // Elements inside the messages list (copy, speech, individual save/delete) are
+        // intentionally left interactive so the user can act on message content while
+        // a response is streaming or processing.
+        const sections = [
+            container.querySelector('.wp-mcp-ai-chat__form'),
+            container.querySelector('.wp-mcp-ai-chat__control-buttons'),
+        ];
+
+        sections.forEach(function (section) {
+            if (!section) {
+                return;
+            }
+            const elements = section.querySelectorAll('button, textarea, input');
+            Array.prototype.forEach.call(elements, function (element) {
+                element.disabled = disabled;
+            });
         });
 
         if (disabled) {

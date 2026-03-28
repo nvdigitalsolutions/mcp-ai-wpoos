@@ -263,6 +263,50 @@ class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the embedded_server provider is recognised (not an "Unknown provider").
+	 *
+	 * Since the test environment does not have WP_MCP_AI_PRO_VERSION defined,
+	 * the handler returns a Pro-required error, not the generic "Unknown provider" error.
+	 * This proves the embedded_server case exists in the switch statement.
+	 */
+	public function test_embedded_server_provider_is_recognised() {
+		$_POST['action']   = 'wp_mcp_ai_test_provider';
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+		$_POST['provider'] = 'embedded_server';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected exception.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Embedded server test should fail when Pro is not active' );
+		$this->assertArrayHasKey( 'message', $response['data'], 'Response should contain an error message' );
+		$this->assertStringNotContainsString( 'Unknown', $response['data']['message'], 'embedded_server should be a recognised provider, not unknown' );
+	}
+
+	/**
+	 * Test that the embedded_server provider returns a Pro-required error when Pro is not active.
+	 */
+	public function test_embedded_server_test_requires_pro() {
+		$_POST['action']   = 'wp_mcp_ai_test_provider';
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+		$_POST['provider'] = 'embedded_server';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_test_provider' );
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Expected exception.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Embedded server test should fail when Pro is not active' );
+		// Error should mention Pro version requirement.
+		$this->assertStringContainsString( 'Pro', $response['data']['message'], 'Error message should mention Pro version requirement' );
+	}
+
+	/**
 	 * Test that non-admin users cannot access the diagnostic test.
 	 */
 	public function test_non_admin_cannot_access_test() {

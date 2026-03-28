@@ -276,8 +276,9 @@ trait WP_MCP_AI_Research_Page_Consolidation {
 									<?php endif; ?>
 								</td>
 								<td>
-									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 									</a>
 								</td>
 							</tr>

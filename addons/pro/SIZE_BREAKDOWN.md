@@ -67,8 +67,9 @@ The `canvas` npm package includes native binary libraries (~181MB) for Linux:
 
 **For PDF OCR support**, users should:
 1. Install Node.js on their server
-2. Run `npm install canvas` in the plugin directory (installs native binaries for their platform)
+2. Run `npm install canvas@2` in the plugin directory (use `canvas@2`; `canvas@3+` requires Node >=20.9.0 and won't install on Node 18.x or Node 20.x < 20.9.0)
 3. Install system dependencies as needed
+4. **On shared hosts (e.g. Cloudways)**: If you get `EACCES: permission denied` when creating `node_modules`, run `mkdir node_modules && chmod 775 node_modules` first, then retry `npm install canvas@2`
 
 #### Why Old pdf.js Versions Are Excluded
 

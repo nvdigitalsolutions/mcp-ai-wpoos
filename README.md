@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.4  
-**Release Date:** 2026-03-15 (March 2026 — Security hardening, chat channel fixes, TMA improvements, PDF bundling, WordPress.org compliance fixes)  
-**Latest Updates:** March 2026 - Security hardening (AES-256-GCM, ZIP bomb, HTTPS enforcement), Slack/Google Chat/Teams/Telegram channel improvements, TMA Markdown rendering, Gemini embedding-001, AI-powered product actualization, WordPress.org plugin check compliance  
+**Version:** 1.1.5  
+**Release Date:** 2026-03-24 (March 2026 — WordPress.org compliance pass 17, embedded LLM moved to Pro, new email integrations, canvas addon)  
+**Latest Updates:** March 2026 - NV oOS Canvas Addon (platform ZIPs for Tesseract PDF OCR), embedded LLM server-side client moved to Pro addon, Gemma 2B Instruct GGUF model, Mailgun + Brevo email integrations, 5 new WP-CLI command groups, SSE streaming fixes, WordPress.org compliance confirmed  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (February & March 2026)](#-latest-updates-februarymarch-2026)
+- [🆕 Latest Updates (March 2026)](#-latest-updates-march-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -267,7 +267,108 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (February–March 2026)
+## 🆕 Latest Updates (March 2026)
+
+### Pro Schedule Manager — Full Cron-Backed Scheduler with AI Tools & Admin UI (March 26, 2026) ⭐ **NEW**
+
+**Five schedule types, Symfony Cache/Validator, MJML email, ical + CSV export, chart.js sparkline** (PR branch `copilot/create-pro-schedule-manager`).
+
+- ✅ **5 schedule types**: `task` (WP action hook), `workflow` (Tool Registry chain), `assistant_run` (fires `wp_mcp_ai_pro_scheduled_assistant_run`), `channel_broadcast` (Telegram/Slack/Discord/Teams/Messenger/WhatsApp), `workflow_builder` (runs a saved Pro Workflow Builder DAG).
+- ✅ **Symfony Cache** — `load_schedules()` / `load_history()` cached via `WP_MCP_AI_Cache_Helper` (300 s / 60 s TTL); invalidated on every write.
+- ✅ **Symfony Validator** — `notify_email` validated with `Constraints\Email`; returns `WP_Error` on invalid address before anything is persisted.
+- ✅ **MJML email** — failure notifications compile a responsive MJML template via `WP_MCP_AI_MJML_Service`; falls back to inline HTML → Nodemailer → `wp_mail`.
+- ✅ **iCalendar export** — `get_schedules_ical()` + `ajax_export_ical` AJAX; "Export to Calendar (.ics)" toolbar button; uses `wp_mcp_ai_ics_generate_calendar` filter (ical-generator Node service) with pure-PHP RFC 5545 fallback.
+- ✅ **CSV history export** — `get_history_csv()` + `ajax_export_history_csv` AJAX; "Export CSV" button in history modal; uses `WP_MCP_AI_Contact_Importer_Service` (csv-stringify NPM) with `fputcsv` fallback.
+- ✅ **chart.js sparkline** — stacked bar chart (green = success, red = failure) in run-history modal via `WP_MCP_AI_Chart_JS_Helper`; destroyed on modal close.
+- ✅ **Retry logic** — 0–5 retries with configurable delay (≥ 60 s); failure notification (email + optional channel alert) after all retries exhausted.
+- ✅ **JetEngine CCT persistence** — each run written to `WP_MCP_AI_Execution_History_CCT` when JetEngine is active.
+- ✅ **6 new AI tools** — `create_pro_schedule`, `update_pro_schedule`, `delete_pro_schedule`, `list_pro_schedules`, `get_schedule_run_history`, `schedule_channel_broadcast`.
+- ✅ **Full admin UI** — schedule table with enable toggles + manual trigger + "Export to Calendar" button; type-switching create form; run-history modal with chart + Export CSV; edit modal.
+- [Pro Schedule Manager →](docs/features/pro-schedule-manager.md)
+
+### NV oOS Canvas Addon — Platform-Specific ZIP for Tesseract PDF OCR (March 25, 2026) ⭐ **NEW**
+
+**Canvas native binaries are now distributed as a separate, optional WordPress plugin — the Pro ZIP stays lean** (PR #4441, #4442).
+
+- ✅ New `addons/canvas/nvoos-canvas` standalone plugin delivers the platform-specific `canvas` npm binary (Linux-only, ~50 MB compressed).
+- ✅ Two platform ZIPs built by CI and committed to `build/`:
+  - `nvoos-canvas-linux-x64.zip` — x86-64 Linux servers
+  - `nvoos-canvas-linux-arm64.zip` — ARM64 (AWS Graviton, Raspberry Pi)
+- ✅ OCR service detects the addon path via `NVOOS_CANVAS_PATH` env var; falls back to `node_modules` if the addon is absent.
+- ✅ Base + Pro ZIP unchanged at ~33 MB; canvas is an optional post-install step, only needed for Tesseract PDF OCR on Linux servers.
+- ✅ Canvas admin install hint updated to `npm install canvas@2` (canvas v3 requires Node ≥20.9.0; v2 supports Node 18+); includes EACCES workaround for shared hosts.
+
+### Embedded LLM — Server-Side Client Moved to Pro Addon (March 25, 2026) 🔧 **UPDATED**
+
+**`WP_MCP_AI_Embedded_Client` (llama.cpp/GGUF inference) is now a Pro-only class** (PR #4433, #4434).
+
+- ✅ Relocated from `includes/` to `addons/pro/includes/` — class definitions no longer loaded by the base plugin.
+- ✅ Base plugin's language model router uses `class_exists()` guard and falls back gracefully when Pro is absent.
+- ✅ `enable_embedded` field shows "Auto-enabled with Pro" when Pro is active (no manual toggle required).
+- ✅ Tests use `markTestSkipped()` when Pro addon is absent, keeping the base test suite clean.
+
+### Embedded LLM — Gemma 2B Instruct & Shared Library Fixes (March 22–24, 2026) ⭐ **NEW**
+
+**New GGUF model + comprehensive shared library reliability improvements.**
+
+- ✅ **Gemma 2 2B Instruct** (`gemma-2-2b-it-q4_k_m`) added as the 4th server-side GGUF model; `gemma-2-2b-it-q4f16_1-MLC` set as the client-side WebLLM default.
+- ✅ **SONAME symlinks**: `create_soname_symlinks()` creates `lib*.so.X → lib*.so.X.Y.Z` and `lib*.so → lib*.so.X` symlinks after binary extraction. Falls back to `copy()` when `symlink()` is blocked (Cloudways and similar managed hosts).
+- ✅ **Auto-repair**: `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check so existing installs self-repair on the next page load.
+- ✅ **Custom filename sanitizer**: `sanitise_binary_filename()` uses `[A-Za-z0-9._-]` allowlist (not `sanitize_file_name()`) to preserve `.so.0.9.8`-style filenames that WordPress's filter could strip.
+- ✅ **LD_LIBRARY_PATH**: `build_inference_command()` prepends `LD_LIBRARY_PATH` pointing to the binary directory so co-located `.so` files are always found.
+- ✅ **`test_connection()` stderr fix**: Builds b8479+ write `--version` output to stderr; `run_binary()` now has a `$use_stderr_fallback` parameter so the binary is correctly detected.
+- ✅ **Provider diagnostic page**: Now shows the resolved llama-cli binary path and all co-located shared library filenames.
+- ✅ **Re-install button**: New **Re-install llama.cpp Binary** button in embedded provider settings for easy recovery after failed extractions.
+- [Embedded LLM Setup Guide →](docs/EMBEDDED_LLM.md)
+
+### Embedded Chat Client — SSE Streaming Reliability (March 22–24, 2026) 🔧 **FIXED**
+
+**Multiple root causes of SSE `ERR_HTTP2_PROTOCOL_ERROR` and related streaming failures resolved** (PR #4420–#4426).
+
+- ✅ **Native fetch for SSE**: `chat.js` now uses `fetch + ReadableStream` for server-side embedded requests, bypassing Ky's 30 s AbortController timeout that was killing slow llama-cli inference.
+- ✅ **PHP SSE headers**: `send_sse_headers()` now disables `zlib.output_compression`, calls `ob_end_clean()`, and uses `wp_die()` instead of bare `exit()` — prevents PHP-FPM/nginx from sending HTTP/2 `RST_STREAM` after the response.
+- ✅ **`max_tokens` from orchestration layer**: Shortcode now injects `max_tokens` from `WP_MCP_AI_Resource_Manager`; the WebLLM path no longer falls back to a hardcoded `2048`.
+- ✅ **Elementor streaming toggle**: `enable_streaming` attribute is always emitted (as `"true"` or `"false"`) so disabling streaming in the Elementor widget actually takes effect.
+- ✅ **Message bubble interactions**: `disableForm()` now only disables the input area and send button during streaming — copy, speech, save, and delete buttons on already-rendered messages stay clickable.
+- ✅ **WebLLM class definition deferred**: `WebLLMFunctionCallingClient` is now defined inside `waitForDependencies().then()` so `extends window.WP_MCP_AI_EmbeddedLLM` evaluates after the dependency loads.
+
+### Five New Pro WP-CLI Command Groups (March 23, 2026) ⭐ **NEW**
+
+**Pro addon now includes five additional WP-CLI command groups** (PR #4418).
+
+| Command | Description |
+|---------|-------------|
+| `wp mcp-ai pro status` | Display Pro addon version, license status, and active toolkit summary |
+| `wp mcp-ai toolkit list/enable/disable` | Manage Pro toolkits from the command line |
+| `wp mcp-ai connection list/get/test/delete` | Manage Chat Channel connection entries |
+| `wp mcp-ai project list/get/create/delete` | Manage AI project CPT entries |
+| `wp mcp-ai task list/get/create/complete/delete` | Manage AI task CPT entries |
+
+All commands share the `WP_MCP_AI_Pro_CLI_Base_Command` base class with assertion helpers. Tests in `addons/pro/tests/test-wp-cli-pro-commands.php`.
+
+### Mailgun & Brevo Email Integrations (March 22, 2026) ⭐ **NEW**
+
+**Two new Pro email toolkits for transactional and marketing email** (PR #4408).
+
+**Mailgun** (`send_mailgun_email`):
+- ✅ US endpoint: `api.mailgun.net/v3/{domain}/messages` | EU: `api.eu.mailgun.net/v3/{domain}/messages`
+- ✅ Tags sent as separate `o:tag` form fields (array), per Mailgun's API requirement
+- ✅ Settings: `mailgun_api_key`, `mailgun_domain`, `mailgun_region` (us/eu), `mailgun_from_email`, `mailgun_from_name`
+
+**Brevo** (formerly Sendinblue):
+- ✅ `send_brevo_email` — transactional email via `api-key` header auth
+- ✅ `manage_brevo_contacts` — create, update, and list contacts
+- ✅ `get_brevo_statistics` — campaign and contact analytics
+- ✅ Base URL: `https://api.brevo.com/v3` | Settings: `brevo_api_key`, `brevo_from_email`, `brevo_from_name`
+
+### Bug Fixes & Quality Improvements (March 22–25, 2026) 🔧
+
+- ✅ **Agentic loop — orphaned `tool_calls`** (PR #4430): Fixed OpenAI error "tool_call_id did not have response messages" that appeared when `max_iterations` was reached mid-tool-call. Orphaned assistant messages with unexecuted `tool_calls` are now filtered out of history before the next user turn.
+- ✅ **DICOM imaging — UID path sanitization** (PR #4406): `sanitize_uid_for_path()` now used for DICOM UIDs instead of WordPress's `sanitize_file_name()`, which applies a filterable hook that could strip dots and collapse distinct UIDs to the same directory.
+- ✅ **Ollama client logging** (PR #4429): Added `WP_MCP_AI_Logger` to all 5 previously-unlogged Ollama client methods. All concrete AI chat clients now have full logging coverage.
+- ✅ **Pro Workflow Builder assets** (PR #4443): Fixed `webpack.config.workflow.js` output path and entry name; fixed CI not committing freshly-built `workflow-builder` artifacts.
+- ✅ **WP.org compliance — Pro addon confirmation** (PR #4435): Nine surface-level items that implied Pro "unlocks" base features were corrected; architecture confirmed as a genuine extension (all tools in `includes/tools/` register unconditionally).
+- ✅ **Production classmap autoloader** (PR #4436): Regenerated `vendor/composer/` autoloader to match HEAD — production clones no longer require a manual `composer install` step.
 
 ### NPM Packages – Zero-Config Publish for All 9 Packages (March 2026) ⭐ **NEW**
 

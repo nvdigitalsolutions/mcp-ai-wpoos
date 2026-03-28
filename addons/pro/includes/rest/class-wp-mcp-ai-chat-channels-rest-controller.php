@@ -488,7 +488,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s",
+				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 				$contact['channel'],
 				$contact['channel_contact_id']
 			)
@@ -497,7 +497,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d",
+				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 				$contact['channel'],
 				$contact['channel_contact_id'],
 				$per_page,

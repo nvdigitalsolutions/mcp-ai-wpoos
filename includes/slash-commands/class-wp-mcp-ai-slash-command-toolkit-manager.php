@@ -103,10 +103,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		 *
 		 * @param array $commands Toolkit commands keyed by toolkit slug.
 		 */
-		// Define base version check constant if not already defined.
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-			define( 'WP_MCP_AI_BASE_VERSION', false );
-		}
 
 		// Build toolkit commands array - start with core toolkits.
 		$commands = array(
@@ -124,33 +120,35 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'ai_model_management'    => $this->get_ai_commands(),
 		);
 
-		// Add pro toolkit commands if not in base version mode.
-		if ( ! WP_MCP_AI_BASE_VERSION ) {
-			$commands = array_merge(
-				$commands,
-				array(
-					'ai_tool_builder'         => $this->get_ai_tool_builder_commands(),
-					'analytics_pro'           => $this->get_analytics_pro_commands(),
-					'architect_agent'         => $this->get_architect_agent_commands(),
-					'architectural_design'    => $this->get_architectural_design_commands(),
-					'calendar_booking'        => $this->get_calendar_booking_commands(),
-					'chat_channels'           => $this->get_chat_channels_commands(),
-					'crm'                     => $this->get_crm_commands(),
-					'dj_management'           => $this->get_dj_management_commands(),
-					'document_generation'     => $this->get_document_generation_commands(),
-					'ecommerce_pro'           => $this->get_ecommerce_pro_commands(),
-					'fantasy_football'        => $this->get_fantasy_football_commands(),
-					'financial_planner'       => $this->get_financial_planner_commands(),
-					'image_production'        => $this->get_image_production_commands(),
-					'media_pro'               => $this->get_media_pro_commands(),
-					'multilingual'            => $this->get_multilingual_commands(),
-					'regulatory_registration' => $this->get_regulatory_registration_commands(),
-					'site_creator'            => $this->get_site_creator_commands(),
-					'social_media'            => $this->get_social_media_commands(),
-					'video_production'        => $this->get_video_production_commands(),
-				)
-			);
-		}
+		// Additional toolkit slash commands for extended toolkits.
+		// All commands defined in this class are always registered regardless of which
+		// addons are installed. Commands that reference Pro addon tools are silently
+		// inert when the Pro addon is absent — the tool registry's is_available() check
+		// prevents execution of any tool whose class does not exist.
+		$commands = array_merge(
+			$commands,
+			array(
+				'ai_tool_builder'         => $this->get_ai_tool_builder_commands(),
+				'analytics_pro'           => $this->get_analytics_pro_commands(),
+				'architect_agent'         => $this->get_architect_agent_commands(),
+				'architectural_design'    => $this->get_architectural_design_commands(),
+				'calendar_booking'        => $this->get_calendar_booking_commands(),
+				'chat_channels'           => $this->get_chat_channels_commands(),
+				'crm'                     => $this->get_crm_commands(),
+				'dj_management'           => $this->get_dj_management_commands(),
+				'document_generation'     => $this->get_document_generation_commands(),
+				'ecommerce_pro'           => $this->get_ecommerce_pro_commands(),
+				'fantasy_football'        => $this->get_fantasy_football_commands(),
+				'financial_planner'       => $this->get_financial_planner_commands(),
+				'image_production'        => $this->get_image_production_commands(),
+				'media_pro'               => $this->get_media_pro_commands(),
+				'multilingual'            => $this->get_multilingual_commands(),
+				'regulatory_registration' => $this->get_regulatory_registration_commands(),
+				'site_creator'            => $this->get_site_creator_commands(),
+				'social_media'            => $this->get_social_media_commands(),
+				'video_production'        => $this->get_video_production_commands(),
+			)
+		);
 
 		$this->toolkit_commands = apply_filters(
 			'wp_mcp_ai_toolkit_commands',

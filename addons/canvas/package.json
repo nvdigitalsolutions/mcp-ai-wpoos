@@ -1,0 +1,16 @@
+{
+	"name": "nvoos-canvas-addon",
+	"version": "1.0.0",
+	"description": "Build scripts for the NV oOS Canvas Addon WordPress plugin",
+	"private": true,
+	"scripts": {
+		"build": "node scripts/copy-canvas.js",
+		"install-canvas": "npm install canvas@2"
+	},
+	"optionalDependencies": {
+		"canvas": "2.11.2"
+	},
+	"engines": {
+		"node": ">=18.17.0"
+	}
+}

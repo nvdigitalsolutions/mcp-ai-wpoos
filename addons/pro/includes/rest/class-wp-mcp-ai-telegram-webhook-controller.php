@@ -70,6 +70,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	const REPLY_CRON_HOOK = 'wp_mcp_ai_telegram_send_ai_reply';
 
 	/**
+	 * Cron hook for processing incoming Telegram media messages (photo, document,
+	 * video, audio, voice, animation, video_note). The job downloads the file,
+	 * sideloads it to the WordPress media library, sends an immediate metadata
+	 * auto-reply, and then schedules the AI reply with full file context.
+	 */
+	const MEDIA_REPLY_CRON_HOOK = 'wp_mcp_ai_telegram_media_reply';
+
+	/**
 	 * TTL in seconds for the deduplication transient used to prevent
 	 * double-processing the same update_id.
 	 */
@@ -114,6 +122,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_telegram_reply_job' ) );
+		add_action( self::MEDIA_REPLY_CRON_HOOK, array( $this, 'handle_telegram_media_job' ) );
 	}
 
 	/**
@@ -322,12 +331,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param array $message Telegram message object.
 	 */
 	protected function process_message( array $message ) {
-		if ( empty( $message['text'] ) ) {
-			// Non-text messages (photos, stickers, etc.) are not handled.
+		// ── Media detection ─────────────────────────────────────────────────────
+		// Inspect the message before the text guard so that photos, documents,
+		// videos, audio, and voice messages are processed instead of silently
+		// dropped. Industry standard: always extract the highest-resolution photo
+		// (last PhotoSize element) and obtain a file_path via getFile.
+		$media_info = $this->extract_media_info( $message );
+		$has_media  = null !== $media_info;
+
+		if ( empty( $message['text'] ) && ! $has_media ) {
+			// Non-text, non-media messages (stickers, contacts, locations, etc.)
+			// are not handled.
 			return;
 		}
 
-		$text      = (string) $message['text'];
+		// For media messages without a text body, use the caption (if any) as the
+		// message text so that all downstream checks – bot-mention detection,
+		// automation keyword rules, require_mention gates, etc. – work correctly.
+		$text      = ! empty( $message['text'] ) ? (string) $message['text'] : ( $has_media ? (string) $media_info['caption'] : '' );
 		$chat_id   = isset( $message['chat']['id'] ) ? (string) $message['chat']['id'] : '';
 		$from_id   = isset( $message['from']['id'] ) ? (string) $message['from']['id'] : '';
 		$chat_type = isset( $message['chat']['type'] ) ? (string) $message['chat']['type'] : 'private';
@@ -446,8 +467,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'channel_contact_id' => $tg_contact_id,
 					'direction'          => 'inbound',
 					'message_id'         => $tg_message_id,
-					'message_type'       => 'text',
-					'content'            => $text,
+					'message_type'       => $has_media ? $this->get_cct_message_type_for_media( $media_info['media_type'] ) : 'text',
+					'content'            => '' !== $text ? $text : ( $has_media ? $media_info['media_type'] . ' received' : '' ),
 					'raw_payload'        => $message,
 					'status'             => 'received',
 					'connection_id'      => $connection_id,
@@ -571,7 +592,43 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		do_action( 'wp_mcp_ai_telegram_auto_reply', $message, $automation_rules, $assigned_assistant_ids );
 
-		if ( ! empty( $assigned_assistant_ids ) ) {
+		if ( $has_media ) {
+			// ── Media message: dispatch media processing job ──────────────────────
+			// The job downloads the Telegram file, sideloads it to the WordPress
+			// media library, sends the user an immediate metadata auto-reply
+			// (attachment ID + URL + dimensions/duration), and then schedules the
+			// AI reply job with the full file context included. This mirrors the
+			// industry-standard pattern of acknowledging file receipt immediately
+			// and processing asynchronously to avoid webhook timeout.
+			$reply_to_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
+
+			$media_job_args = array(
+				array(
+					'file_id'             => $media_info['file_id'],
+					'media_type'          => $media_info['media_type'],
+					'original_filename'   => $media_info['original_filename'],
+					'mime_type'           => $media_info['mime_type'],
+					'file_size'           => $media_info['file_size'],
+					'width'               => $media_info['width'],
+					'height'              => $media_info['height'],
+					'duration'            => $media_info['duration'],
+					'caption'             => $media_info['caption'],
+					'message_text'        => $text, // Caption with @mention stripped.
+					'assistant_id'        => ! empty( $assigned_assistant_ids ) ? $assigned_assistant_ids[0] : 0,
+					'chat_id'             => $chat_id,
+					'from_id'             => '' !== $from_id ? $from_id : $chat_id,
+					'connection_id'       => $connection_id,
+					'chat_type'           => $chat_type,
+					'message_id'          => isset( $message['message_id'] ) ? (string) $message['message_id'] : '',
+					'reply_to_message_id' => $is_group ? $reply_to_message_id : '',
+				),
+			);
+
+			wp_schedule_single_event( time() + 1, self::MEDIA_REPLY_CRON_HOOK, $media_job_args );
+			spawn_cron();
+
+		} elseif ( ! empty( $assigned_assistant_ids ) ) {
+			// ── Text message: dispatch AI reply job as before ─────────────────────
 			$reply_to_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
 
 			$job_args = array(
@@ -618,6 +675,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// retry_count incremented each time the job is rescheduled due to a 429.
 		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 		$tg_conv_type         = in_array( $chat_type, array( 'group', 'supergroup' ), true ) ? 'group' : 'dm';
+		// WordPress attachment sideloaded from a Telegram media message (photo,
+		// document, video, etc.). When set, the message content array will include
+		// the actual file so vision models can see images and the AI can reference
+		// document context, rather than receiving only a plain-text description.
+		$wp_attachment_id   = isset( $args['wp_attachment_id'] ) ? absint( $args['wp_attachment_id'] ) : 0;
+		$wp_attachment_mime = isset( $args['wp_attachment_mime'] ) ? sanitize_text_field( $args['wp_attachment_mime'] ) : '';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -695,15 +758,60 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$history_for_chat = array_slice( $history_for_chat, -( $max_history - 1 ) );
 		}
 
-		$messages = array_merge(
-			$history_for_chat,
-			array(
+		// When a sideloaded WordPress attachment is available, build a multipart
+		// message content array so the AI can see/process the actual file:
+		// - images   → 'input_image' segment → vision models analyse the photo
+		// - documents / audio / video → 'input_file' segment → file context
+		// The text part carries the metadata summary + any user caption.
+		// The history transient always stores the plain-text form so prior turns
+		// remain compact and do not require a special segment normaliser.
+		if ( $wp_attachment_id ) {
+			$is_image           = 0 === strpos( $wp_attachment_mime, 'image/' );
+			$attachment_segment = array(
+				'type'          => $is_image ? 'input_image' : 'input_file',
+				'attachment_id' => $wp_attachment_id,
+			);
+
+			if ( ! $is_image ) {
+				// Provide a display_name for file-type segments so the AI receives
+				// the original filename rather than a numeric attachment ID.
+				$attached_file = get_attached_file( $wp_attachment_id );
+				if ( $attached_file ) {
+					$display_name = basename( $attached_file );
+					if ( '' !== $display_name ) {
+						$attachment_segment['display_name'] = $display_name;
+					}
+				}
+			}
+
+			$user_content = array( $attachment_segment );
+			if ( '' !== $message_text ) {
+				$user_content[] = array(
+					'type' => 'text',
+					'text' => $message_text,
+				);
+			}
+
+			$messages = array_merge(
+				$history_for_chat,
 				array(
-					'role'    => 'user',
-					'content' => $message_text,
-				),
-			)
-		);
+					array(
+						'role'    => 'user',
+						'content' => $user_content,
+					),
+				)
+			);
+		} else {
+			$messages = array_merge(
+				$history_for_chat,
+				array(
+					array(
+						'role'    => 'user',
+						'content' => $message_text,
+					),
+				)
+			);
+		}
 		// --- End conversation history ---
 
 		// Call the internal chat REST endpoint.
@@ -1401,7 +1509,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$id = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 				sanitize_key( $channel ),
 				sanitize_text_field( $channel_contact_id )
 			)
@@ -1865,23 +1973,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( $connection && ! empty( $connection['welcome_message'] ) ) {
 			$text = $connection['welcome_message'];
 		} else {
-			$welcome_lines = array(
-				sprintf( "👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:", $site_name ),
-				'/help – List available commands',
-				'/tools – Browse AI tools',
-				'/vectorstore – Get vector store info',
-				'/balance – Check credits',
-				'/app – Open the Mini App',
-				'/settings – Open settings',
-				'/status – Check connection status',
-				'/cancel – Reset conversation',
+			$text = sprintf(
+				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use /help to see available commands.\n\nJust type your question to get started!",
+				$site_name
 			);
-			// Append dynamically registered slash commands.
-			foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
-				$welcome_lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
-			}
-			$welcome_lines[] = "\nJust type your question to get started!";
-			$text = implode( "\n", $welcome_lines );
 		}
 
 		/**
@@ -3449,6 +3544,699 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		return ! empty( $posts ) ? (int) $posts[0] : 0;
+	}
+
+	// =========================================================================
+	// MEDIA HANDLING: extract → getFile → sideload → metadata reply → AI reply
+	// =========================================================================
+
+	/**
+	 * Extract media metadata from a Telegram message object.
+	 *
+	 * Supports all media types accepted by the Telegram Bot API:
+	 * photo, document, video, audio, voice, animation (GIF), and video_note
+	 * (circular video). Returns null for non-media messages so the caller can
+	 * distinguish text-only messages from media messages at a glance.
+	 *
+	 * Industry-standard note: for photos Telegram delivers an array of PhotoSize
+	 * objects at different resolutions. The last element is always the highest
+	 * quality and should be used per Telegram Bot API documentation.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $message Telegram message object from the webhook payload.
+	 * @return array|null Associative media-info array or null if no media found.
+	 *   Keys: file_id, media_type, original_filename, mime_type, file_size,
+	 *         width, height, duration, caption, caption_entities.
+	 */
+	protected function extract_media_info( array $message ) {
+		// Photo: array of PhotoSize objects; use the last (highest resolution).
+		if ( ! empty( $message['photo'] ) && is_array( $message['photo'] ) ) {
+			$photo = end( $message['photo'] );
+			return array(
+				'media_type'       => 'photo',
+				'file_id'          => isset( $photo['file_id'] ) ? (string) $photo['file_id'] : '',
+				'original_filename' => 'photo.jpg',
+				'mime_type'        => 'image/jpeg',
+				'file_size'        => isset( $photo['file_size'] ) ? absint( $photo['file_size'] ) : 0,
+				'width'            => isset( $photo['width'] ) ? absint( $photo['width'] ) : 0,
+				'height'           => isset( $photo['height'] ) ? absint( $photo['height'] ) : 0,
+				'duration'         => 0,
+				'caption'          => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities' => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+			);
+		}
+
+		// Document: single Document object with optional file_name and mime_type.
+		if ( ! empty( $message['document'] ) && is_array( $message['document'] ) ) {
+			$doc = $message['document'];
+			return array(
+				'media_type'        => 'document',
+				'file_id'           => isset( $doc['file_id'] ) ? (string) $doc['file_id'] : '',
+				'original_filename' => isset( $doc['file_name'] ) ? sanitize_file_name( $doc['file_name'] ) : '',
+				'mime_type'         => isset( $doc['mime_type'] ) ? sanitize_text_field( $doc['mime_type'] ) : '',
+				'file_size'         => isset( $doc['file_size'] ) ? absint( $doc['file_size'] ) : 0,
+				'width'             => 0,
+				'height'            => 0,
+				'duration'          => 0,
+				'caption'           => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities'  => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+			);
+		}
+
+		// Video.
+		if ( ! empty( $message['video'] ) && is_array( $message['video'] ) ) {
+			$video = $message['video'];
+			return array(
+				'media_type'        => 'video',
+				'file_id'           => isset( $video['file_id'] ) ? (string) $video['file_id'] : '',
+				'original_filename' => isset( $video['file_name'] ) ? sanitize_file_name( $video['file_name'] ) : 'video.mp4',
+				'mime_type'         => isset( $video['mime_type'] ) ? sanitize_text_field( $video['mime_type'] ) : 'video/mp4',
+				'file_size'         => isset( $video['file_size'] ) ? absint( $video['file_size'] ) : 0,
+				'width'             => isset( $video['width'] ) ? absint( $video['width'] ) : 0,
+				'height'            => isset( $video['height'] ) ? absint( $video['height'] ) : 0,
+				'duration'          => isset( $video['duration'] ) ? absint( $video['duration'] ) : 0,
+				'caption'           => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities'  => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+			);
+		}
+
+		// Audio (music files).
+		if ( ! empty( $message['audio'] ) && is_array( $message['audio'] ) ) {
+			$audio = $message['audio'];
+			return array(
+				'media_type'        => 'audio',
+				'file_id'           => isset( $audio['file_id'] ) ? (string) $audio['file_id'] : '',
+				'original_filename' => isset( $audio['file_name'] ) ? sanitize_file_name( $audio['file_name'] ) : 'audio.mp3',
+				'mime_type'         => isset( $audio['mime_type'] ) ? sanitize_text_field( $audio['mime_type'] ) : 'audio/mpeg',
+				'file_size'         => isset( $audio['file_size'] ) ? absint( $audio['file_size'] ) : 0,
+				'width'             => 0,
+				'height'            => 0,
+				'duration'          => isset( $audio['duration'] ) ? absint( $audio['duration'] ) : 0,
+				'caption'           => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities'  => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+			);
+		}
+
+		// Voice message (OGG audio recorded in-app).
+		if ( ! empty( $message['voice'] ) && is_array( $message['voice'] ) ) {
+			$voice = $message['voice'];
+			return array(
+				'media_type'        => 'voice',
+				'file_id'           => isset( $voice['file_id'] ) ? (string) $voice['file_id'] : '',
+				'original_filename' => 'voice.ogg',
+				'mime_type'         => isset( $voice['mime_type'] ) ? sanitize_text_field( $voice['mime_type'] ) : 'audio/ogg',
+				'file_size'         => isset( $voice['file_size'] ) ? absint( $voice['file_size'] ) : 0,
+				'width'             => 0,
+				'height'            => 0,
+				'duration'          => isset( $voice['duration'] ) ? absint( $voice['duration'] ) : 0,
+				'caption'           => '',
+				'caption_entities'  => array(),
+			);
+		}
+
+		// Animation (GIF or MP4 without audio).
+		if ( ! empty( $message['animation'] ) && is_array( $message['animation'] ) ) {
+			$animation = $message['animation'];
+			return array(
+				'media_type'        => 'animation',
+				'file_id'           => isset( $animation['file_id'] ) ? (string) $animation['file_id'] : '',
+				'original_filename' => isset( $animation['file_name'] ) ? sanitize_file_name( $animation['file_name'] ) : 'animation.gif',
+				'mime_type'         => isset( $animation['mime_type'] ) ? sanitize_text_field( $animation['mime_type'] ) : 'video/mp4',
+				'file_size'         => isset( $animation['file_size'] ) ? absint( $animation['file_size'] ) : 0,
+				'width'             => isset( $animation['width'] ) ? absint( $animation['width'] ) : 0,
+				'height'            => isset( $animation['height'] ) ? absint( $animation['height'] ) : 0,
+				'duration'          => isset( $animation['duration'] ) ? absint( $animation['duration'] ) : 0,
+				'caption'           => isset( $message['caption'] ) ? (string) $message['caption'] : '',
+				'caption_entities'  => isset( $message['caption_entities'] ) ? (array) $message['caption_entities'] : array(),
+			);
+		}
+
+		// Video note (circular video message).
+		if ( ! empty( $message['video_note'] ) && is_array( $message['video_note'] ) ) {
+			$video_note = $message['video_note'];
+			return array(
+				'media_type'        => 'video_note',
+				'file_id'           => isset( $video_note['file_id'] ) ? (string) $video_note['file_id'] : '',
+				'original_filename' => 'video_note.mp4',
+				'mime_type'         => 'video/mp4',
+				'file_size'         => isset( $video_note['file_size'] ) ? absint( $video_note['file_size'] ) : 0,
+				'width'             => isset( $video_note['length'] ) ? absint( $video_note['length'] ) : 0,
+				'height'            => isset( $video_note['length'] ) ? absint( $video_note['length'] ) : 0,
+				'duration'          => isset( $video_note['duration'] ) ? absint( $video_note['duration'] ) : 0,
+				'caption'           => '',
+				'caption_entities'  => array(),
+			);
+		}
+
+		return null; // No supported media found in this message.
+	}
+
+	/**
+	 * Map a Telegram media type to the Channel Messages CCT message_type value.
+	 *
+	 * Supported CCT message types: text, image, video, audio, document, other.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $media_type Telegram media type (photo, document, video, etc.).
+	 * @return string CCT message type.
+	 */
+	protected function get_cct_message_type_for_media( $media_type ) {
+		$map = array(
+			'photo'      => 'image',
+			'animation'  => 'image',
+			'video'      => 'video',
+			'video_note' => 'video',
+			'audio'      => 'audio',
+			'voice'      => 'audio',
+			'document'   => 'document',
+		);
+
+		return isset( $map[ $media_type ] ) ? $map[ $media_type ] : 'other';
+	}
+
+	/**
+	 * Cron callback: process an incoming Telegram media message.
+	 *
+	 * Orchestrates the full media-handling pipeline per Telegram Bot API
+	 * industry standards (2024):
+	 *
+	 * 1. Retrieve the Telegram `file_path` via `getFile`.
+	 * 2. Download the file using `download_url()` and sideload it to the
+	 *    WordPress media library with `media_handle_sideload()`.
+	 * 3. Send an immediate auto-reply to the user containing the WordPress
+	 *    attachment ID and public URL so the file can be referenced in chat.
+	 * 4. If an AI assistant is assigned, schedule the AI reply job with the
+	 *    full file context (type, attachment ID, URL, dimensions, duration,
+	 *    filename) prepended to the message text.
+	 *
+	 * Security note: the Telegram file download URL embeds the bot token and
+	 * is never surfaced to end-users. Only the public WordPress attachment URL
+	 * is shared in the reply.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by process_message(). Keys:
+	 *   file_id, media_type, original_filename, mime_type, file_size, width,
+	 *   height, duration, caption, message_text, assistant_id, chat_id, from_id,
+	 *   connection_id, chat_type, message_id, reply_to_message_id.
+	 */
+	public function handle_telegram_media_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$file_id             = isset( $args['file_id'] ) ? sanitize_text_field( $args['file_id'] ) : '';
+		$media_type          = isset( $args['media_type'] ) ? sanitize_key( $args['media_type'] ) : '';
+		$original_filename   = isset( $args['original_filename'] ) ? sanitize_file_name( $args['original_filename'] ) : '';
+		$mime_type           = isset( $args['mime_type'] ) ? sanitize_text_field( $args['mime_type'] ) : '';
+		$file_size           = isset( $args['file_size'] ) ? absint( $args['file_size'] ) : 0;
+		$width               = isset( $args['width'] ) ? absint( $args['width'] ) : 0;
+		$height              = isset( $args['height'] ) ? absint( $args['height'] ) : 0;
+		$duration            = isset( $args['duration'] ) ? absint( $args['duration'] ) : 0;
+		$caption             = isset( $args['caption'] ) ? sanitize_textarea_field( $args['caption'] ) : '';
+		$message_text        = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$assistant_id        = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$chat_id             = isset( $args['chat_id'] ) ? (string) $args['chat_id'] : '';
+		$from_id             = isset( $args['from_id'] ) ? (string) $args['from_id'] : $chat_id;
+		$connection_id       = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$chat_type           = isset( $args['chat_type'] ) ? sanitize_text_field( $args['chat_type'] ) : 'private';
+		$message_id          = isset( $args['message_id'] ) ? (string) $args['message_id'] : '';
+		$reply_to_message_id = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
+
+		if ( '' === $file_id || '' === $chat_id || '' === $connection_id ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram media job: connection not found or bot token missing.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+
+		if ( '' === $bot_token ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram media job: bot token decryption returned empty string.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_media_processing_start',
+			'Starting Telegram media file processing.',
+			array(
+				'media_type' => $media_type,
+				'mime_type'  => $mime_type,
+				'chat_id'    => substr( $chat_id, 0, 4 ) . '***',
+			)
+		);
+
+		// ── Step 1: Retrieve the Telegram file_path via getFile. ──────────────
+		// file_path is a server-side path relative to the Telegram file server.
+		// Per Telegram docs, file paths expire after about an hour so we must
+		// download the file immediately.
+		$file_path = $this->get_telegram_file_path( $bot_token, $file_id );
+
+		if ( null === $file_path ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram media job: failed to retrieve file_path from Telegram.',
+				array(
+					'media_type' => $media_type,
+					'chat_id'    => substr( $chat_id, 0, 4 ) . '***',
+				)
+			);
+			$this->send_raw_telegram_message(
+				$bot_token,
+				$chat_id,
+				__( '⚠️ File received but could not be retrieved from Telegram. Please try again.', 'mcp-ai-wpoos-pro' ),
+				$chat_type,
+				$reply_to_message_id
+			);
+			return;
+		}
+
+		// ── Step 2: Sideload the file to the WordPress media library. ─────────
+		// Build the download URL from the bot token + file_path. This URL is
+		// intentionally kept server-side and never exposed to end-users.
+		$file_url = sprintf(
+			'https://api.telegram.org/file/bot%s/%s',
+			rawurlencode( $bot_token ),
+			$file_path
+		);
+
+		$attachment_id = $this->sideload_telegram_file( $file_url, $original_filename, $mime_type, $file_size );
+
+		if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
+			$err = is_wp_error( $attachment_id ) ? $attachment_id->get_error_message() : 'unknown sideload error';
+			WP_MCP_AI_Logger::log_error(
+				'Telegram media job: file sideload to WordPress media library failed.',
+				array(
+					'media_type' => $media_type,
+					'error'      => $err,
+				)
+			);
+			$this->send_raw_telegram_message(
+				$bot_token,
+				$chat_id,
+				__( '⚠️ File received but could not be saved to the media library. Please try again.', 'mcp-ai-wpoos-pro' ),
+				$chat_type,
+				$reply_to_message_id
+			);
+			return;
+		}
+
+		// ── Step 3: Get the public WordPress attachment URL. ──────────────────
+		$attachment_url = (string) wp_get_attachment_url( $attachment_id );
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_media_sideloaded',
+			'Telegram media file sideloaded to WordPress media library.',
+			array(
+				'attachment_id' => $attachment_id,
+				'media_type'    => $media_type,
+				'chat_id'       => substr( $chat_id, 0, 4 ) . '***',
+			)
+		);
+
+		// ── Step 4: Send the metadata auto-reply. ─────────────────────────────
+		// Industry practice: acknowledge receipt immediately with structured
+		// metadata so the user can reference the file in follow-up messages.
+		$type_labels = array(
+			'photo'      => '🖼️ Image',
+			'document'   => '📄 Document',
+			'video'      => '🎬 Video',
+			'audio'      => '🎵 Audio',
+			'voice'      => '🎤 Voice message',
+			'animation'  => '🎞️ Animation',
+			'video_note' => '📹 Video note',
+		);
+		$type_label = isset( $type_labels[ $media_type ] ) ? $type_labels[ $media_type ] : '📎 File';
+
+		/**
+		 * Filter the metadata auto-reply lines sent when a Telegram user uploads a file.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string[] $lines         Lines of the reply message.
+		 * @param int      $attachment_id WordPress attachment post ID.
+		 * @param string   $attachment_url Public attachment URL.
+		 * @param array    $args          Original media job args.
+		 */
+		$reply_lines = apply_filters(
+			'wp_mcp_ai_telegram_media_metadata_reply_lines',
+			$this->build_media_metadata_reply_lines(
+				$type_label,
+				$attachment_id,
+				$attachment_url,
+				$original_filename,
+				$mime_type,
+				$width,
+				$height,
+				$duration,
+				$file_size,
+				$caption
+			),
+			$attachment_id,
+			$attachment_url,
+			$args
+		);
+
+		$reply_text = implode( "\n", (array) $reply_lines );
+		$this->send_raw_telegram_message( $bot_token, $chat_id, $reply_text, $chat_type, $reply_to_message_id );
+
+		// ── Step 5: Schedule the AI reply job with full file context. ─────────
+		// Only triggered when an AI assistant is assigned to this connection.
+		if ( $assistant_id ) {
+			// Build the AI-facing context block: file metadata + cleaned caption.
+			$ai_context_lines = array(
+				sprintf( '[%s uploaded]', ucfirst( str_replace( '_', ' ', $media_type ) ) ),
+				sprintf( '- Attachment ID: %d', $attachment_id ),
+				sprintf( '- URL: %s', $attachment_url ),
+			);
+
+			if ( '' !== $original_filename ) {
+				$ai_context_lines[] = sprintf( '- Filename: %s', $original_filename );
+			}
+			if ( '' !== $mime_type ) {
+				$ai_context_lines[] = sprintf( '- MIME type: %s', $mime_type );
+			}
+			if ( $width && $height ) {
+				$ai_context_lines[] = sprintf( '- Dimensions: %dx%d px', $width, $height );
+			}
+			if ( $duration ) {
+				$ai_context_lines[] = sprintf( '- Duration: %d seconds', $duration );
+			}
+
+			$ai_context  = implode( "\n", $ai_context_lines );
+			$ai_msg_text = '' !== $message_text
+				? $ai_context . "\n\nUser caption: " . $message_text
+				: $ai_context;
+
+			$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
+
+			$ai_job_args = array(
+				array(
+					'assistant_id'        => $assistant_id,
+					'message_text'        => $ai_msg_text,
+					// Pass the sideloaded attachment so the AI reply job can build
+					// a multipart message content array (input_image / input_file)
+					// and the assistant can actually see/process the uploaded file.
+					'wp_attachment_id'    => $attachment_id,
+					'wp_attachment_mime'  => $mime_type,
+					'chat_id'             => $chat_id,
+					'from_id'             => $from_id,
+					'connection_id'       => $connection_id,
+					'chat_type'           => $chat_type,
+					'reply_to_message_id' => $is_group ? $message_id : '',
+				),
+			);
+
+			wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $ai_job_args );
+			spawn_cron();
+		}
+	}
+
+	/**
+	 * Build the metadata reply lines for a Telegram media auto-reply.
+	 *
+	 * Extracted as a standalone method so it can be unit-tested independently
+	 * and overridden by themes/plugins via the
+	 * `wp_mcp_ai_telegram_media_metadata_reply_lines` filter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $type_label        Human-readable media type label with emoji.
+	 * @param int    $attachment_id     WordPress attachment post ID.
+	 * @param string $attachment_url    Public WordPress attachment URL.
+	 * @param string $original_filename Original filename from Telegram.
+	 * @param string $mime_type         File MIME type.
+	 * @param int    $width             Image/video width in pixels (0 if N/A).
+	 * @param int    $height            Image/video height in pixels (0 if N/A).
+	 * @param int    $duration          Audio/video duration in seconds (0 if N/A).
+	 * @param int    $file_size         File size in bytes (0 if unknown).
+	 * @param string $caption           User-supplied caption (may be empty).
+	 * @return string[] Ordered array of reply message lines.
+	 */
+	protected function build_media_metadata_reply_lines(
+		$type_label,
+		$attachment_id,
+		$attachment_url,
+		$original_filename,
+		$mime_type,
+		$width,
+		$height,
+		$duration,
+		$file_size,
+		$caption
+	) {
+		/* translators: %s: media type label, e.g. "🖼️ Image" */
+		$lines = array( sprintf( __( '%s received and saved!', 'mcp-ai-wpoos-pro' ), $type_label ), '' );
+
+		/* translators: %d: WordPress attachment post ID */
+		$lines[] = sprintf( __( '📌 Attachment ID: %d', 'mcp-ai-wpoos-pro' ), $attachment_id );
+		/* translators: %s: public attachment URL */
+		$lines[] = sprintf( __( '🔗 URL: %s', 'mcp-ai-wpoos-pro' ), esc_url( $attachment_url ) );
+
+		if ( '' !== $original_filename ) {
+			/* translators: %s: original filename */
+			$lines[] = sprintf( __( '📁 Filename: %s', 'mcp-ai-wpoos-pro' ), $original_filename );
+		}
+		if ( '' !== $mime_type ) {
+			/* translators: %s: MIME type string */
+			$lines[] = sprintf( __( '🗂️ Type: %s', 'mcp-ai-wpoos-pro' ), $mime_type );
+		}
+		if ( $width && $height ) {
+			/* translators: 1: width in pixels, 2: height in pixels */
+			$lines[] = sprintf( __( '📐 Dimensions: %1$dx%2$d px', 'mcp-ai-wpoos-pro' ), $width, $height );
+		}
+		if ( $duration ) {
+			/* translators: %d: duration in seconds */
+			$lines[] = sprintf( __( '⏱️ Duration: %d sec', 'mcp-ai-wpoos-pro' ), $duration );
+		}
+		if ( $file_size ) {
+			/* translators: %s: human-readable file size */
+			$lines[] = sprintf( __( '💾 Size: %s', 'mcp-ai-wpoos-pro' ), size_format( $file_size ) );
+		}
+		if ( '' !== $caption ) {
+			$lines[] = '';
+			/* translators: %s: user-supplied file caption */
+			$lines[] = sprintf( __( '💬 Caption: %s', 'mcp-ai-wpoos-pro' ), $caption );
+		}
+
+		$lines[] = '';
+		$lines[] = __( 'You can reference this file in your next message using the Attachment ID or URL above.', 'mcp-ai-wpoos-pro' );
+
+		return $lines;
+	}
+
+	/**
+	 * Retrieve the Telegram `file_path` for a given `file_id` via the `getFile` API.
+	 *
+	 * The returned `file_path` is a server-side relative path used to construct
+	 * the private download URL. Per Telegram's documentation, file paths are
+	 * valid for approximately one hour after retrieval, so the file must be
+	 * downloaded promptly.
+	 *
+	 * @see https://core.telegram.org/bots/api#getfile
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $bot_token Decrypted Telegram bot token.
+	 * @param string $file_id   Telegram file identifier from the message object.
+	 * @return string|null The `file_path` string, or null on failure.
+	 */
+	protected function get_telegram_file_path( $bot_token, $file_id ) {
+		$endpoint = sprintf(
+			'https://api.telegram.org/bot%s/getFile',
+			rawurlencode( $bot_token )
+		);
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 15,
+				'body'    => wp_json_encode( array( 'file_id' => $file_id ) ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_get_file_error',
+				'Telegram getFile API call failed.',
+				array( 'error' => $response->get_error_message() )
+			);
+			return null;
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $response );
+		$body      = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $http_code || empty( $body['ok'] ) || empty( $body['result']['file_path'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_get_file_error',
+				'Telegram getFile returned an unexpected response.',
+				array(
+					'http_code'   => $http_code,
+					'description' => isset( $body['description'] ) ? $body['description'] : '',
+				)
+			);
+			return null;
+		}
+
+		return (string) $body['result']['file_path'];
+	}
+
+	/**
+	 * Download a Telegram file and sideload it to the WordPress media library.
+	 *
+	 * Uses WordPress core's `download_url()` + `media_handle_sideload()` pattern,
+	 * which is the recommended way to programmatically import remote files. The
+	 * temporary file is cleaned up automatically on success, and explicitly
+	 * deleted on failure to avoid orphaned /tmp entries.
+	 *
+	 * File size is validated against Telegram's 20 MB bot download limit before
+	 * attempting the download. This avoids unnecessary network traffic for
+	 * oversized files.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $file_url          Telegram private download URL (contains bot token).
+	 * @param string $original_filename Suggested filename for the attachment.
+	 * @param string $mime_type         MIME type hint for proper extension resolution.
+	 * @param int    $file_size         Known file size in bytes (0 if unknown).
+	 * @return int|WP_Error WordPress attachment post ID on success, WP_Error on failure.
+	 */
+	protected function sideload_telegram_file( $file_url, $original_filename, $mime_type, $file_size ) {
+		// Enforce Telegram Bot API's 20 MB download limit for bots.
+		if ( $file_size && $file_size > 20 * MB_IN_BYTES ) {
+			return new WP_Error(
+				'telegram_file_too_large',
+				sprintf(
+					/* translators: %s: human-readable file size */
+					__( 'Telegram file (%s) exceeds the 20 MB bot download limit.', 'mcp-ai-wpoos-pro' ),
+					size_format( $file_size )
+				)
+			);
+		}
+
+		if ( ! function_exists( 'download_url' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'media_handle_sideload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		// When no filename was supplied, derive one from the URL path and the
+		// MIME type so the attachment gets a recognisable name in the library.
+		if ( '' === $original_filename ) {
+			$url_basename      = wp_basename( wp_parse_url( $file_url, PHP_URL_PATH ) );
+			$original_filename = '' !== $url_basename ? $url_basename : 'telegram-file';
+
+			if ( '' !== $mime_type && false === strpos( $original_filename, '.' ) ) {
+				$mime_map    = wp_get_mime_types();
+				$ext_map     = array_flip( $mime_map );
+				$type_string = isset( $ext_map[ $mime_type ] ) ? $ext_map[ $mime_type ] : '';
+				if ( '' !== $type_string ) {
+					$ext_parts = explode( '|', $type_string );
+					$original_filename .= '.' . $ext_parts[0];
+				}
+			}
+		}
+
+		// download_url() saves the remote file to a WordPress-managed temp path.
+		$tmp_file = download_url( $file_url, 60 );
+
+		if ( is_wp_error( $tmp_file ) ) {
+			return $tmp_file;
+		}
+
+		$file_array = array(
+			'name'     => sanitize_file_name( $original_filename ),
+			'tmp_name' => $tmp_file,
+		);
+
+		// Setting the 'type' key passes a MIME hint to wp_handle_sideload() so
+		// that WordPress file-type validation does not reject files whose
+		// extensions are absent or ambiguous (common with Telegram's opaque
+		// file paths like photos/file_0 or documents/file_10).
+		if ( '' !== $mime_type ) {
+			$file_array['type'] = $mime_type;
+		}
+
+		// Sideload: move the temp file into the uploads directory, create an
+		// attachment post, and generate image sub-sizes. Post ID 0 means the
+		// attachment is not associated with any specific post.
+		$attachment_id = media_handle_sideload( $file_array, 0 );
+
+		// media_handle_sideload() cleans up $tmp_file on success. On failure
+		// we must remove it to avoid leftover files in /tmp.
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $tmp_file );
+		}
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Send a plain-text message to a Telegram chat using the Bot API.
+	 *
+	 * A lightweight fire-and-forget wrapper used for immediate (non-AI) replies
+	 * such as the media metadata confirmation and error notices. Unlike
+	 * `send_command_reply()`, this method accepts an explicit bot_token so it
+	 * can be called from async cron jobs that already hold a decrypted token.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $bot_token           Decrypted Telegram bot token.
+	 * @param string $chat_id             Target Telegram chat ID.
+	 * @param string $text                Message text (plain text; no parse_mode).
+	 * @param string $chat_type           Chat type: private, group, or supergroup.
+	 * @param string $reply_to_message_id Optional message ID to thread in groups.
+	 */
+	protected function send_raw_telegram_message( $bot_token, $chat_id, $text, $chat_type = 'private', $reply_to_message_id = '' ) {
+		if ( mb_strlen( $text ) > self::MAX_MESSAGE_LENGTH ) {
+			$text = mb_substr( $text, 0, self::MAX_MESSAGE_LENGTH - 3 ) . '...';
+		}
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $bot_token ) );
+
+		$payload = array(
+			'chat_id' => $chat_id,
+			'text'    => $text,
+		);
+
+		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
+			$payload['reply_to_message_id']         = (int) $reply_to_message_id;
+			$payload['allow_sending_without_reply'] = true;
+		}
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 15,
+				'body'    => $body,
+			)
+		);
 	}
 }
 

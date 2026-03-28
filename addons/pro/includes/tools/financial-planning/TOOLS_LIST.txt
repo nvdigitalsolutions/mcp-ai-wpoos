@@ -1,4 +1,4 @@
-Created (9 tools):
+Created (24 tools - original):
 1. retirement_calculator ✓
 2. ira_roth_comparison ✓
 3. withdrawal_strategy_planner ✓
@@ -8,20 +8,28 @@ Created (9 tools):
 7. expense_tracker ✓
 8. net_worth_calculator ✓
 9. cash_flow_analyzer ✓
+10. bank_account_sync ✓
+11. portfolio_visualizer ✓
+12. asset_allocation_planner ✓
+13. investment_return_calculator ✓
+14. rebalancing_analyzer ✓
+15. tax_loss_harvesting_tracker ✓
+16. debt_payoff_calculator ✓
+17. mortgage_calculator ✓
+18. credit_score_tracker ✓
+19. savings_goal_planner ✓
+20. emergency_fund_calculator ✓
+21. financial_health_score (BONUS) ✓
+22. tax_estimator (BONUS) ✓
+23. college_savings_calculator (BONUS) ✓
+24. insurance_needs_analyzer (BONUS) ✓
 
-Remaining (15 tools):
-10. bank_account_sync
-11. portfolio_visualizer
-12. asset_allocation_planner
-13. investment_return_calculator
-14. rebalancing_analyzer
-15. tax_loss_harvesting_tracker
-16. debt_payoff_calculator
-17. mortgage_calculator
-18. credit_score_tracker
-19. savings_goal_planner
-20. emergency_fund_calculator
-21. financial_health_score (BONUS)
-22. tax_estimator (BONUS)
-23. college_savings_calculator (BONUS)
-24. insurance_needs_analyzer (BONUS)
+Market Analysis & Research (8 tools - new):
+25. financial_news_aggregator ✓
+26. stock_data_fetcher ✓
+27. market_sentiment_analyzer ✓
+28. market_forecast_analyzer ✓
+29. investment_signal_tracker ✓
+30. financial_logic_visualizer ✓
+31. financial_report_generator ✓
+32. financial_search ✓

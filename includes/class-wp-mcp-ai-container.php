@@ -705,6 +705,17 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// Pro Schedule Manager section is only available with Pro addon.
+		$this->singleton(
+			'section.schedule_manager',
+			function () {
+				if ( ! class_exists( 'WP_MCP_AI_Section_Schedule_Manager' ) ) {
+					return null;
+				}
+				return new WP_MCP_AI_Section_Schedule_Manager();
+			}
+		);
+
 		$this->singleton(
 			'section.advanced',
 			function () {

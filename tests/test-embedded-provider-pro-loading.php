@@ -81,15 +81,20 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		// Verify we're in Pro version.
 		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
-		$section = new WP_MCP_AI_Section_Providers();
-		$fields  = $section->get_fields();
+		// Skip if Pro Providers section is not loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Section_Pro_Providers not available' );
+		}
+
+		// enable_embedded lives in the Pro Providers section (moved from base with the server-side client).
+		$fields = $this->get_pro_section_fields();
 
 		// Check enable_embedded field exists.
-		$this->assertArrayHasKey( 'enable_embedded', $fields, 'enable_embedded field should exist' );
+		$this->assertArrayHasKey( 'enable_embedded', $fields, 'enable_embedded field should exist in Pro section' );
 
 		// Check it's marked as auto-enabled.
 		$this->assertTrue( $fields['enable_embedded']['default'], 'Should default to true (auto-enabled)' );
-		$this->assertTrue( $fields['enable_embedded']['disabled'], 'Should be disabled (read-only)' );
+		$this->assertTrue( $fields['enable_embedded']['disabled'], 'Should be disabled (read-only) in Pro – always available' );
 
 		// Check label indicates auto-enablement.
 		$this->assertStringContainsString(
@@ -122,9 +127,11 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		$subtabs = $method->invoke( $section );
 		$this->assertArrayHasKey( 'embedded', $subtabs, 'Step 3: Subtab should be visible' );
 
-		// Step 4: Fields show auto-enabled.
-		$fields = $section->get_fields();
-		$this->assertTrue( $fields['enable_embedded']['default'], 'Step 4: Should be auto-enabled' );
+		// Step 4: Pro Providers section fields show auto-enabled status.
+		if ( null !== $this->get_pro_section_fields() ) {
+			$pro_fields = $this->get_pro_section_fields();
+			$this->assertTrue( $pro_fields['enable_embedded']['default'], 'Step 4: Should be auto-enabled in Pro section' );
+		}
 	}
 
 	/**
@@ -147,5 +154,29 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 			$status['embedded_provider_enabled'],
 			'Embedded provider should be enabled without manual configuration'
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get field definitions from the Pro Providers section via reflection.
+	 *
+	 * Returns null when WP_MCP_AI_Section_Pro_Providers is not available.
+	 *
+	 * @return array|null
+	 */
+	private function get_pro_section_fields() {
+		if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+			return null;
+		}
+
+		$section    = new WP_MCP_AI_Section_Pro_Providers();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_fields' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $section );
 	}
 }

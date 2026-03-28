@@ -151,11 +151,14 @@ class WP_MCP_AI_Imaging_Study_CPT {
 	public static function get_by_uid( $study_uid ) {
 		$posts = get_posts(
 			array(
-				'post_type'      => self::POST_TYPE,
-				'posts_per_page' => 1,
-				'post_status'    => 'publish',
+				'post_type'        => self::POST_TYPE,
+				'posts_per_page'   => 1,
+				'post_status'      => 'publish',
+				// Suppress external SQL-level filter hooks so third-party plugins
+				// cannot narrow the meta query to a subset of posts.
+				'suppress_filters' => true,
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				'meta_query'     => array(
+				'meta_query'       => array(
 					array(
 						'key'   => '_imaging_study_instance_uid',
 						'value' => sanitize_text_field( $study_uid ),
