@@ -1,6 +1,6 @@
 # Financial Planner Toolkit - Tool Index
 
-Quick reference for all 24 financial planning tools.
+Quick reference for all 32 financial planning tools.
 
 ## Budget & Expense Tracking (4 tools)
 1. `budget_planner` - Create and manage budgets with income/expense tracking
@@ -42,23 +42,36 @@ Quick reference for all 24 financial planning tools.
 23. `college_savings_calculator` - Calculate 529 plan savings needs
 24. `insurance_needs_analyzer` - Calculate life/disability insurance needs
 
+## Market Analysis & Research (8 tools)
+Inspired by [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-skills) concepts and industry standards.
+25. `financial_news_aggregator` - Aggregate financial news from multiple RSS/API sources with trend analysis
+26. `stock_data_fetcher` - Search stock tickers and fetch OHLCV data via YFinance service
+27. `market_sentiment_analyzer` - Rule-based financial text sentiment analysis (score: -1.0 to +1.0)
+28. `market_forecast_analyzer` - Time-series forecasting (linear regression, moving average, exponential smoothing)
+29. `investment_signal_tracker` - Track investment signal evolution (strengthen/weaken/falsify)
+30. `financial_logic_visualizer` - Generate Mermaid diagrams for financial transmission chains
+31. `financial_report_generator` - Generate structured professional financial reports (6 report types)
+32. `financial_search` - Specialized multi-source financial web search (SEC EDGAR, Yahoo, Google, etc.)
+
 ---
 
 ## Tool Classification
 
 ### By Capability Flags
-- **Pro Only**: All 24 tools
-- **Computation**: 20 tools (calculators, analyzers, planners)
-- **Database Read**: 7 tools (trackers, history-based tools)
-- **Database Write**: 7 tools (trackers, history-based tools)
-- **External API**: 1 tool (bank_account_sync)
+- **Pro Only**: All 32 tools
+- **Computation**: 28 tools (calculators, analyzers, planners, forecasters)
+- **Database Read**: 9 tools (trackers, history-based tools, signal tracker)
+- **Database Write**: 9 tools (trackers, history-based tools, signal tracker)
+- **External API**: 5 tools (bank_account_sync, financial_news_aggregator, stock_data_fetcher, financial_search, market_forecast_analyzer)
 
 ### By Educational Disclaimers
-Investment tools (6, 7, 8, 9, 10) include "EDUCATIONAL ONLY" disclaimers
+Investment tools (6, 7, 8, 9, 10, 26, 27, 28, 29) include "EDUCATIONAL ONLY" disclaimers
 indicating they are not investment advice.
 
 ### By Data Persistence
 - **User Meta Storage**: expense_tracker, bank_account_sync, credit_score_tracker, savings_goal_planner
+- **WP Options Storage**: investment_signal_tracker (per-user signal data)
+- **Transient Cache**: financial_news_aggregator, stock_data_fetcher, financial_search
 - **Session/Input Only**: All calculators and analyzers
 
 ---
@@ -71,3 +84,17 @@ All tools require:
 - User capability: `edit_posts`
 
 Investment/tax tools include appropriate disclaimers.
+
+### Market Analysis Tools
+The 8 market analysis tools (25-32) bring Wall Street-grade capabilities to the toolkit,
+inspired by the [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-skills)
+project and aligned with industry standards from Gartner, Deloitte, and McKinsey:
+
+- **Real-time News**: Aggregate financial news from multiple sources with trend analysis
+- **Stock Data**: Search tickers and retrieve OHLCV data via the YFinance microservice
+- **Sentiment Analysis**: Score financial text sentiment from -1.0 (bearish) to +1.0 (bullish)
+- **Forecasting**: Statistical time-series forecasting with sentiment-aware adjustments
+- **Signal Tracking**: Create, evaluate, and track investment signals over time
+- **Logic Visualization**: Generate Mermaid diagrams showing market impact transmission chains
+- **Report Generation**: Create professional structured reports (portfolio, thesis, risk, earnings)
+- **Financial Search**: Query SEC EDGAR, Yahoo Finance, Google Finance, and more
