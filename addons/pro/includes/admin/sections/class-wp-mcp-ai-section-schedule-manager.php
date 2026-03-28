@@ -127,6 +127,15 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		$is_standalone = ( '' !== $standalone_hook && $hook === $standalone_hook );
 
+		// Fallback: check $_GET['page'] for the standalone page slug.  This
+		// covers edge cases where the hook suffix may differ from the computed
+		// value (e.g. translated menu titles or timing differences in the
+		// base + pro separate-plugin loading order).
+		if ( ! $is_standalone && class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			$is_standalone = isset( $_GET['page'] ) && WP_MCP_AI_Pro_Schedule_Manager_Page::PAGE_SLUG === sanitize_text_field( wp_unslash( $_GET['page'] ) );
+		}
+
 		$is_dashboard = ( false !== strpos( $hook, 'wp-mcp-ai-dashboard' ) )
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			|| ( isset( $_GET['page'] ) && 'wp-mcp-ai-dashboard' === sanitize_text_field( wp_unslash( $_GET['page'] ) ) );
