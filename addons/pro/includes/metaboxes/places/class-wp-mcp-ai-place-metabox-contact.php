@@ -84,7 +84,7 @@ class WP_MCP_AI_Place_Metabox_Contact extends WP_MCP_AI_Place_Metabox_Base {
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_place_contact_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_place_contact_nonce'], 'wp_mcp_ai_place_contact_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_place_contact_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_place_contact_nonce'] ) ), 'wp_mcp_ai_place_contact_nonce' ) ) {
 			return;
 		}
 
@@ -93,15 +93,15 @@ class WP_MCP_AI_Place_Metabox_Contact extends WP_MCP_AI_Place_Metabox_Base {
 		}
 
 		if ( isset( $_POST['place_phone'] ) ) {
-			update_post_meta( $post_id, '_place_phone', sanitize_text_field( $_POST['place_phone'] ) );
+			update_post_meta( $post_id, '_place_phone', sanitize_text_field( wp_unslash( $_POST['place_phone'] ) ) );
 		}
 
 		if ( isset( $_POST['place_email'] ) ) {
-			update_post_meta( $post_id, '_place_email', sanitize_email( $_POST['place_email'] ) );
+			update_post_meta( $post_id, '_place_email', sanitize_email( wp_unslash( $_POST['place_email'] ) ) );
 		}
 
 		if ( isset( $_POST['place_website'] ) ) {
-			update_post_meta( $post_id, '_place_website', esc_url_raw( $_POST['place_website'] ) );
+			update_post_meta( $post_id, '_place_website', esc_url_raw( wp_unslash( $_POST['place_website'] ) ) );
 		}
 	}
 }

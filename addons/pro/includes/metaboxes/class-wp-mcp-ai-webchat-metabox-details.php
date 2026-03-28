@@ -220,7 +220,7 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Check nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_webchat_details_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_webchat_details_nonce'], 'wp_mcp_ai_webchat_details_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_webchat_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_webchat_details_nonce'] ) ), 'wp_mcp_ai_webchat_details_nonce' ) ) {
 			return;
 		}
 
@@ -236,7 +236,7 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 
 		// Save room ID.
 		if ( isset( $_POST['wp_mcp_ai_webchat_room_id'] ) ) {
-			$room_id = sanitize_text_field( $_POST['wp_mcp_ai_webchat_room_id'] );
+			$room_id = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_webchat_room_id'] ) );
 			if ( empty( $room_id ) ) {
 				$room_id = $this->generate_room_id( $post_id );
 			}
@@ -245,7 +245,7 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 
 		// Save room status.
 		if ( isset( $_POST['wp_mcp_ai_webchat_status'] ) ) {
-			$status = sanitize_text_field( $_POST['wp_mcp_ai_webchat_status'] );
+			$status = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_webchat_status'] ) );
 			if ( ! in_array( $status, array( 'active', 'inactive', 'archived' ), true ) ) {
 				$status = 'active';
 			}
@@ -254,7 +254,7 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 
 		// Save signaling server.
 		if ( isset( $_POST['wp_mcp_ai_webchat_signaling_server'] ) ) {
-			$signaling_server = sanitize_url( $_POST['wp_mcp_ai_webchat_signaling_server'] );
+			$signaling_server = sanitize_url( wp_unslash( $_POST['wp_mcp_ai_webchat_signaling_server'] ) );
 			update_post_meta( $post_id, '_mcp_ai_webchat_signaling_server', $signaling_server );
 		}
 

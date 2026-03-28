@@ -92,7 +92,9 @@ trait WP_MCP_AI_Research_Page_Featured_Image {
 	 */
 	protected static function process_featured_image_request( $research_data, $title, $context = 'content' ) {
 		// Check if featured image generation is requested.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by the calling AJAX handler.
 		$generate_image = isset( $_POST['generate_featured_image'] ) && 'true' === $_POST['generate_featured_image'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by the calling AJAX handler.
 		$image_prompt   = isset( $_POST['image_prompt'] ) ? sanitize_text_field( wp_unslash( $_POST['image_prompt'] ) ) : '';
 
 		// Generate featured image if requested.

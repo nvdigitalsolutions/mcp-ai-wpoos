@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-financial-analysis-toolkit',
-        'version' => 'dev-copilot/enhance-financial-analysis-toolkit',
-        'reference' => '345a2a80b31794276efea536aa1098513d0fc72e',
+        'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
+        'version' => 'dev-copilot/review-pro-plugin-compliance',
+        'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-financial-analysis-toolkit',
-            'version' => 'dev-copilot/enhance-financial-analysis-toolkit',
-            'reference' => '345a2a80b31794276efea536aa1098513d0fc72e',
+            'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
+            'version' => 'dev-copilot/review-pro-plugin-compliance',
+            'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

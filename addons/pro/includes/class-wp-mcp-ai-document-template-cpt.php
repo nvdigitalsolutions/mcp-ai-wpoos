@@ -364,6 +364,7 @@ class WP_MCP_AI_Document_Template_CPT {
 
 		foreach ( $fields as $field => $sanitize_callback ) {
 			if ( isset( $_POST[ $field ] ) ) {
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via call_user_func() with the mapped callback.
 				update_post_meta( $post_id, '_' . $field, call_user_func( $sanitize_callback, wp_unslash( $_POST[ $field ] ) ) );
 			}
 		}

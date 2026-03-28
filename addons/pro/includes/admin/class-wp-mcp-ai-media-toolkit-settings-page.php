@@ -120,31 +120,31 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<tr>
 						<td><strong>Node.js</strong></td>
 						<td>Runtime</td>
-						<td><?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available (' . esc_html( $this->get_nodejs_version() ) . ')</span>' : '<span style="color: orange;">⚠ Not Detected</span>'; ?></td>
+						<td><?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available (' . esc_html( $this->get_nodejs_version() ) . ')</span>' : '<span style="color: orange;">⚠ Not Detected</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Required for local Sharp processing', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>Sharp Package</strong></td>
 						<td>NPM (Bundled)</td>
-						<td><?php echo $this->check_sharp_library_exists() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo $this->check_sharp_library_exists() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Pre-bundled for Linux x64 in assets/vendor/sharp/', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>Sharp Dependencies</strong></td>
 						<td>NPM (detect-libc, color, semver)</td>
-						<td><?php echo $this->check_sharp_dependencies_exist() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo $this->check_sharp_dependencies_exist() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Required JavaScript dependencies for Sharp', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>Platform Binaries</strong></td>
 						<td>Native (libvips)</td>
-						<td><?php echo $this->check_sharp_platform_binaries() ? '<span style="color: green;">✓ Available (' . esc_html( $this->get_detected_platform() ) . ')</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo $this->check_sharp_platform_binaries() ? '<span style="color: green;">✓ Available (' . esc_html( $this->get_detected_platform() ) . ')</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Platform-specific binaries for image processing', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>Sharp Ready</strong></td>
 						<td>Full Stack</td>
-						<td><?php echo $this->check_sharp_fully_ready() ? '<span style="color: green;">✓ Ready</span>' : '<span style="color: orange;">⚠ Incomplete</span>'; ?></td>
+						<td><?php echo $this->check_sharp_fully_ready() ? '<span style="color: green;">✓ Ready</span>' : '<span style="color: orange;">⚠ Incomplete</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'All components available for local processing', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 				</tbody>

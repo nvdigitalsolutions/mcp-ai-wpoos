@@ -183,7 +183,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Check whether this request targets one of our webhook routes.
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		if ( false !== strpos( $request_uri, '/' . $this->rest_base ) ) {
 			// Clear the error so our permission_callback handles auth instead.
 			return null;
@@ -999,7 +999,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$id = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 				sanitize_key( $channel ),
 				sanitize_text_field( $channel_contact_id )
 			)
@@ -2298,7 +2298,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$space_name = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT phone_number_id FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND phone_number_id != '' ORDER BY message_timestamp DESC LIMIT 1",
+					"SELECT phone_number_id FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND phone_number_id != '' ORDER BY message_timestamp DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 					'google_chat',
 					$channel_contact_id
 				)

@@ -935,7 +935,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 		if ( ! is_callable( $sanitize ) ) {
 			$sanitize = 'sanitize_text_field';
 		}
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Sanitized below; nonce verified in save_post_meta().
 		$value = isset( $_POST[ $key ] ) ? call_user_func( $sanitize, wp_unslash( $_POST[ $key ] ) ) : '';
 		update_post_meta( $post_id, $key, $value );
 	}
@@ -947,7 +947,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @param string $key     Meta key.
 	 */
 	private static function save_int( $post_id, $key ) {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- absint sanitizes.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- absint sanitizes; nonce verified in save_post_meta().
 		$value = isset( $_POST[ $key ] ) ? absint( $_POST[ $key ] ) : 0;
 		update_post_meta( $post_id, $key, $value );
 	}
@@ -959,7 +959,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 	 * @param string $key     Meta key.
 	 */
 	private static function save_checkbox( $post_id, $key ) {
-		$value = ! empty( $_POST[ $key ] ) ? 1 : 0; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$value = ! empty( $_POST[ $key ] ) ? 1 : 0; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Nonce verified in save_post_meta().
 		update_post_meta( $post_id, $key, $value );
 	}
 
@@ -1034,7 +1034,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 		self::save_int( $post_id, '_checkup_member_id' );
 
 		// Datetime: datetime-local inputs send YYYY-MM-DDTHH:MM; normalize to YYYY-MM-DD HH:MM.
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Sanitized below; nonce verified in save_post_meta().
 		$raw_dt = isset( $_POST['_checkup_datetime'] ) ? sanitize_text_field( wp_unslash( $_POST['_checkup_datetime'] ) ) : '';
 		if ( $raw_dt ) {
 			$raw_dt = str_replace( 'T', ' ', $raw_dt );
@@ -1100,7 +1100,7 @@ class WP_MCP_AI_Health_Wellness_Meta_Boxes {
 		self::save_text( $post_id, '_allergy_last_reaction_date' );
 
 		// Sync severity from admin form → meta and taxonomy.
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- sanitize_key sanitizes; nonce verified in save_post_meta().
 		$severity = isset( $_POST['hw_allergy_severity'] ) ? sanitize_key( $_POST['hw_allergy_severity'] ) : '';
 		if ( $severity ) {
 			update_post_meta( $post_id, '_allergy_severity', $severity );

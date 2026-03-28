@@ -634,7 +634,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflow_json = isset( $_POST['workflow'] ) ? wp_unslash( $_POST['workflow'] ) : '';
+		$workflow_json = isset( $_POST['workflow'] ) ? wp_unslash( $_POST['workflow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 		
 		if ( empty( $workflow_json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow data required.', 'mcp-ai-wpoos' ) ) );
@@ -959,7 +959,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Parse the execution context (results from previous nodes).
-		$context_json = isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '{}';
+		$context_json = isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '{}'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 		$context      = json_decode( $context_json, true );
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			$context = array();
@@ -999,7 +999,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_action_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$command = isset( $_POST['command'] ) ? sanitize_text_field( wp_unslash( $_POST['command'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
 		$params  = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
 
 		if ( empty( $command ) ) {
@@ -1048,7 +1050,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_tool_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$tool_name = isset( $_POST['tool_name'] ) ? sanitize_text_field( wp_unslash( $_POST['tool_name'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
 		$args_json = isset( $_POST['tool_arguments'] ) ? wp_unslash( $_POST['tool_arguments'] ) : '{}';
 
 		if ( empty( $tool_name ) ) {
@@ -1112,7 +1116,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_agent_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$agent_id = isset( $_POST['agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_id'] ) ) : 'default';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$prompt   = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
 
 		if ( empty( $prompt ) ) {
@@ -1219,7 +1225,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$execution_json = isset( $_POST['execution'] ) ? wp_unslash( $_POST['execution'] ) : '';
+		$execution_json = isset( $_POST['execution'] ) ? wp_unslash( $_POST['execution'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 
 		if ( empty( $execution_json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Execution data required.', 'mcp-ai-wpoos' ) ) );

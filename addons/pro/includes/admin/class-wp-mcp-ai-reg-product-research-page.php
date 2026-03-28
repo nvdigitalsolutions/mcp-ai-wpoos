@@ -695,7 +695,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Required for CSV parsing.
 		$handle = fopen( $file_path, 'r' );
 		if ( ! $handle ) {
-			throw new Exception( __( 'Unable to open file.', 'mcp-ai-wpoos-pro' ) );
+			throw new Exception( esc_html__( 'Unable to open file.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Read header row.

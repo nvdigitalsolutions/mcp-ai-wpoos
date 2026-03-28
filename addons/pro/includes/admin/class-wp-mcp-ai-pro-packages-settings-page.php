@@ -86,9 +86,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		$nodejs_version   = $this->get_nodejs_version();
 
 		?>
-		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; ?>; margin: 20px 0;">
+		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded color hex values. ?>; margin: 20px 0;">
 			<h3 style="margin-top: 0;">
-				<?php echo $nodejs_available ? '✅' : '❌'; ?>
+				<?php echo $nodejs_available ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded emoji indicators. ?>
 				<?php esc_html_e( 'Node.js Runtime', 'mcp-ai-wpoos-pro' ); ?>
 			</h3>
 			
@@ -523,7 +523,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
 				<a
 					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"
-					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded CSS class. ?>"
 				>
 					<?php echo esc_html( $tab_title ); ?>
 				</a>
