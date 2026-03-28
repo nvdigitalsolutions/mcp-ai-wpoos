@@ -203,11 +203,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 					return new WP_Error( 'missing_assistant_message', __( 'A message is required for assistant_run-type schedules.', 'mcp-ai-wpoos-pro' ) );
 				}
 				$data['assistant_config'] = array(
-					'assistant_id' => absint( $assistant_config['assistant_id'] ),
-					'message'      => sanitize_textarea_field( $assistant_config['message'] ),
-					'context'      => isset( $assistant_config['context'] ) && is_array( $assistant_config['context'] )
+					'assistant_id'           => absint( $assistant_config['assistant_id'] ),
+					'message'                => sanitize_textarea_field( $assistant_config['message'] ),
+					'context'                => isset( $assistant_config['context'] ) && is_array( $assistant_config['context'] )
 						? $assistant_config['context']
 						: array(),
+					'max_agentic_iterations' => isset( $assistant_config['max_agentic_iterations'] )
+						? max( 0, absint( $assistant_config['max_agentic_iterations'] ) )
+						: 0,
 				);
 				$hook = 'wp_mcp_ai_pro_assistant_run';
 			} elseif ( self::TYPE_CHANNEL_BROADCAST === $schedule_type ) {
@@ -1272,9 +1275,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// Without this, the /mcp-ai/v1/chat endpoint defaults to 5 iterations
 				// and the final content remains null when a second tool round is needed.
 				// Same pattern used by the Telegram auto-reply handler.
+				//
+				// Per-schedule max_agentic_iterations takes highest priority, then the
+				// per-assistant config, then the admin setting, then the default (10).
+				$schedule_max_iterations = isset( $config['max_agentic_iterations'] ) ? absint( $config['max_agentic_iterations'] ) : 0;
+				if ( $schedule_max_iterations > 0 ) {
+					$schedule_iterations_filter = function ( $default_max ) use ( $schedule_max_iterations ) {
+						return $schedule_max_iterations;
+					};
+					add_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
+				}
 				add_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10, 2 );
 				$response = rest_do_request( $request );
 				remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( __CLASS__, 'get_scheduled_run_max_agentic_iterations' ), 10 );
+				if ( $schedule_max_iterations > 0 ) {
+					remove_filter( 'wp_mcp_ai_max_agentic_iterations', $schedule_iterations_filter, 15 );
+				}
 
 				self::debug_log( sprintf( '[assistant_run] REST response status=%d', $response->get_status() ) );
 
@@ -1313,21 +1329,76 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				$data = $response->get_data();
 
 				// Extract the assistant reply from the response.
-				// The /mcp-ai/v1/chat endpoint wraps the raw LLM response under a
-				// 'data' key. This matches the extraction pattern used by every other
-				// internal consumer (Telegram, WhatsApp, Slack, Discord, etc.).
+				// Uses the industry-standard two-pass extraction (finish_reason
+				// preference + agentic_tool_messages fallback) matching every
+				// channel webhook controller (Telegram, Slack, Discord, etc.).
 				$reply = self::extract_content_from_chat_response( $data );
+
+				// Capture agentic workflow metadata from the response.
+				// When the assistant uses tools (agent workflow), the chat endpoint
+				// includes tool_results and agentic_tool_messages in the response
+				// data so consumers can inspect what the agent did.
+				$llm_data         = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+				$tool_results     = isset( $llm_data['tool_results'] ) && is_array( $llm_data['tool_results'] )
+					? $llm_data['tool_results']
+					: array();
+				$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+					? $llm_data['agentic_tool_messages']
+					: array();
+
+				$tool_results_count     = count( $tool_results );
+				$agentic_messages_count = count( $agentic_messages );
 
 				self::debug_log(
 					sprintf(
-						'[assistant_run] Extracted reply (%d chars): %s',
+						'[assistant_run] Extracted reply (%d chars), tool_results=%d, agentic_messages=%d: %s',
 						strlen( (string) $reply ),
+						$tool_results_count,
+						$agentic_messages_count,
 						wp_trim_words( (string) $reply, 20, '…' )
 					)
 				);
 
 				$result_log['response'] = wp_trim_words( (string) $reply, 120, '…' );
 				$result_log['status']   = 'completed';
+
+				// Record agentic workflow details in the action log.
+				$result_log['tool_results_count']     = $tool_results_count;
+				$result_log['agentic_messages_count'] = $agentic_messages_count;
+				$result_log['is_agentic']             = $tool_results_count > 0 || $agentic_messages_count > 0;
+
+				// Store a trimmed summary of tool calls for the action log.
+				if ( $tool_results_count > 0 ) {
+					$tool_summary = array();
+					foreach ( $tool_results as $tr ) {
+						if ( ! is_array( $tr ) ) {
+							continue;
+						}
+						$tool_summary[] = array(
+							'tool_call_id' => isset( $tr['tool_call_id'] ) ? (string) $tr['tool_call_id'] : '',
+							'name'         => isset( $tr['name'] ) ? (string) $tr['name'] : '',
+						);
+					}
+					$result_log['tool_calls'] = $tool_summary;
+				}
+
+				// Log the agentic workflow to the Logger service.
+				if ( $result_log['is_agentic'] && class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'info',
+						sprintf(
+							'Scheduled assistant run completed as agentic workflow: %d tool result(s), %d intermediate message(s)',
+							$tool_results_count,
+							$agentic_messages_count
+						),
+						array(
+							'schedule_id'   => $schedule_id,
+							'assistant_id'  => $assistant_id,
+							'tool_results'  => $tool_results_count,
+							'agentic_msgs'  => $agentic_messages_count,
+						)
+					);
+				}
 			} else {
 				self::debug_log( '[assistant_run] rest_do_request() not available — falling back to action hook' );
 
@@ -1347,18 +1418,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 			 *
 			 * @param int    $assistant_id Assistant post ID.
 			 * @param string $message      Message that was sent.
-			 * @param array  $context      Context including schedule_id, schedule_name, response, and user_id.
+			 * @param array  $context      Context including schedule_id, schedule_name, response,
+			 *                              user_id, and agentic workflow data (tool_results_count,
+			 *                              agentic_messages_count, is_agentic, tool_calls).
 			 */
 			do_action(
 				'wp_mcp_ai_pro_scheduled_assistant_run',
 				$assistant_id,
 				$message,
 				array(
-					'schedule_id'   => $schedule_id,
-					'schedule_name' => isset( $schedule['name'] ) ? $schedule['name'] : '',
-					'context'       => isset( $config['context'] ) ? $config['context'] : array(),
-					'user_id'       => $user_id,
-					'response'      => isset( $result_log['response'] ) ? $result_log['response'] : '',
+					'schedule_id'            => $schedule_id,
+					'schedule_name'          => isset( $schedule['name'] ) ? $schedule['name'] : '',
+					'context'                => isset( $config['context'] ) ? $config['context'] : array(),
+					'user_id'                => $user_id,
+					'response'               => isset( $result_log['response'] ) ? $result_log['response'] : '',
+					'tool_results_count'     => isset( $result_log['tool_results_count'] ) ? $result_log['tool_results_count'] : 0,
+					'agentic_messages_count' => isset( $result_log['agentic_messages_count'] ) ? $result_log['agentic_messages_count'] : 0,
+					'is_agentic'             => isset( $result_log['is_agentic'] ) ? $result_log['is_agentic'] : false,
+					'tool_calls'             => isset( $result_log['tool_calls'] ) ? $result_log['tool_calls'] : array(),
 				)
 			);
 
@@ -1393,12 +1470,65 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Resolve an LLM message content value to a plain-text string.
+		 *
+		 * Handles both plain string content (OpenAI/Anthropic) and array-segment
+		 * content (Gemini/Ollama). This matches the resolve_content_to_string()
+		 * pattern used by the channel webhook controllers (Telegram, Slack, etc.).
+		 *
+		 * @param mixed $content Raw value of message['content'] from the chat response.
+		 * @return string Plain-text string, or empty string when no text can be extracted.
+		 */
+		public static function resolve_content_to_string( $content ) {
+			if ( is_string( $content ) ) {
+				return trim( $content );
+			}
+
+			if ( ! is_array( $content ) ) {
+				return '';
+			}
+
+			// Array of content segments (Gemini / Ollama normalised format).
+			$parts = array();
+			foreach ( $content as $segment ) {
+				if ( ! is_array( $segment ) ) {
+					continue;
+				}
+
+				$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+				if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+					$text = trim( $segment['text'] );
+					if ( '' !== $text ) {
+						$parts[] = $text;
+					}
+				}
+			}
+
+			return implode( "\n", $parts );
+		}
+
+		/**
 		 * Extract the assistant reply text from a /mcp-ai/v1/chat REST response.
 		 *
-		 * The chat endpoint wraps the raw LLM response under a 'data' key. This
-		 * helper normalises the response structure and extracts the first non-empty
-		 * assistant content, matching the pattern used by every other internal
-		 * consumer (Telegram, WhatsApp, Slack, Discord, Google Chat, etc.).
+		 * Industry-standard agentic workflow extraction: uses a two-pass algorithm
+		 * matching the pattern used by every channel webhook controller (Telegram,
+		 * WhatsApp, Slack, Discord, Google Chat, Teams, Twitter, etc.):
+		 *
+		 * 1. **Pass 1 — Choices scan**: Iterates all choices, preferring those with
+		 *    `finish_reason = 'stop'` (the definitive final answer) over choices with
+		 *    `finish_reason = 'tool_calls'` (intermediate agentic steps). Handles both
+		 *    plain string content (OpenAI/Anthropic) and array-segment content
+		 *    (Gemini/Ollama) via {@see resolve_content_to_string()}.
+		 *
+		 * 2. **Pass 2 — Agentic fallback**: When all choices have null/empty content
+		 *    (e.g. the agentic loop exhausted its iteration cap before the model
+		 *    produced a final text reply), falls back to `agentic_tool_messages` —
+		 *    intermediate assistant messages attached to the response by the chat
+		 *    service — and returns the last one with non-empty text.
+		 *
+		 * This ensures scheduled assistant runs that perform agent workflows (tool
+		 * calling with no final text response) still capture meaningful output.
 		 *
 		 * @param mixed $response_data Data returned by WP_REST_Response::get_data().
 		 * @return string Assistant reply text, or empty string if not found.
@@ -1417,14 +1547,52 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				? $llm_data['choices']
 				: array();
 
-			if ( empty( $choices ) ) {
-				return '';
+			// --- Pass 1: scan every choice for a non-empty content value.
+			// Prefer choices whose finish_reason is 'stop' over 'tool_calls'.
+			$best_content = '';
+			foreach ( $choices as $choice ) {
+				$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
+				$content = isset( $msg['content'] ) ? self::resolve_content_to_string( $msg['content'] ) : '';
+
+				if ( '' === $content ) {
+					continue;
+				}
+
+				$finish = isset( $choice['finish_reason'] ) ? (string) $choice['finish_reason'] : '';
+
+				// A 'stop' finish is the definitive final answer — return immediately.
+				if ( 'stop' === $finish ) {
+					return $content;
+				}
+
+				// Keep as a candidate in case no 'stop' choice is found.
+				if ( '' === $best_content ) {
+					$best_content = $content;
+				}
 			}
 
-			$first = reset( $choices );
+			if ( '' !== $best_content ) {
+				return $best_content;
+			}
 
-			if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
-				return trim( $first['message']['content'] );
+			// --- Pass 2: fall back to agentic_tool_messages.
+			// When all choices have null/empty content (e.g. the agentic loop exhausted
+			// its iteration cap before the model produced a final text reply), the chat
+			// service attaches intermediate assistant messages to the response under
+			// `agentic_tool_messages`. Return the last one that contains text so the
+			// schedule log at least captures the most recent partial answer.
+			$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+				? $llm_data['agentic_tool_messages']
+				: array();
+
+			foreach ( array_reverse( $agentic_messages ) as $msg ) {
+				if ( ! is_array( $msg ) ) {
+					continue;
+				}
+				$content = isset( $msg['content'] ) ? self::resolve_content_to_string( $msg['content'] ) : '';
+				if ( '' !== $content ) {
+					return $content;
+				}
 			}
 
 			return '';

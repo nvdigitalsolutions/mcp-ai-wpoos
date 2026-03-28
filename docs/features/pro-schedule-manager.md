@@ -20,7 +20,7 @@ It supports five first-class schedule types, execution history with a success/fa
 |------|-------------|
 | `task` | Fires a WP action hook with optional arguments |
 | `workflow` | Executes an ordered chain of AI tool calls via the Tool Registry; each step receives previous results in context |
-| `assistant_run` | Sends a message to an NV oOS assistant via the internal `/mcp-ai/v1/chat` REST endpoint and stores the AI response in the action log |
+| `assistant_run` | Sends a message to an NV oOS assistant via the internal `/mcp-ai/v1/chat` REST endpoint with full **agentic workflow** support — tool-calling agents can iterate autonomously, and the action log captures tool results, intermediate messages, and the final reply |
 | `channel_broadcast` | Delivers a recurring message to Telegram, Slack, Discord, Teams, Messenger, or WhatsApp via `unified_channel_broadcast` |
 | `workflow_builder` | References a saved **Pro Workflow Builder** workflow by ID and runs its full DAG server-side |
 
@@ -379,7 +379,7 @@ Inline JSON validation highlights invalid fields before the form can be submitte
 | Hook | Type | When |
 |------|------|------|
 | `wp_mcp_ai_pro_workflow_completed` | Action | After all workflow steps succeed |
-| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | After an `assistant_run` schedule completes (includes `response` key in context) |
+| `wp_mcp_ai_pro_scheduled_assistant_run` | Action | After an `assistant_run` schedule completes (context includes `response`, `tool_results_count`, `agentic_messages_count`, `is_agentic`, `tool_calls`) |
 | `wp_mcp_ai_pro_channel_broadcast` | Action | Fallback when `unified_channel_broadcast` tool is unavailable |
 | `wp_mcp_ai_ics_generate_calendar` | Filter | Override ICS generation (e.g. ical-generator Node service) |
 
@@ -394,6 +394,65 @@ WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context 
 ```
 
 where `$context` includes `step_label` and `step_duration` (seconds). Duration is also stored in `previous_results` so downstream steps can access it.
+
+---
+
+## Agentic Workflow Support (assistant_run)
+
+The `assistant_run` schedule type supports full agentic workflows — assistants that autonomously call tools (search, create, analyse, etc.) before producing a final text reply. This matches the industry-standard **ReAct** (Reasoning + Acting) pattern used by OpenAI, LangChain, and AutoGPT.
+
+### How It Works
+
+1. The scheduler sends the configured message to the assistant via the internal `/mcp-ai/v1/chat` REST endpoint.
+2. The `wp_mcp_ai_max_agentic_iterations` filter is raised (default: 10, per-schedule override available) so tool-calling loops can run to completion.
+3. After the request completes, the response is inspected using a two-pass extraction algorithm matching every channel webhook controller (Telegram, Slack, Discord, etc.):
+   - **Pass 1**: Scan all choices, preferring `finish_reason=stop` (final answer) over `tool_calls`.
+   - **Pass 2**: Fall back to `agentic_tool_messages` when the loop exhausted its iteration cap before producing a final text reply.
+4. Tool results, intermediate agentic messages, and the extracted reply are all captured in the action log.
+
+### Configuring Max Agentic Iterations
+
+Set `max_agentic_iterations` in the `assistant_config` to control how many tool-call rounds the agent can perform:
+
+```php
+$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule( [
+    'schedule_type'    => 'assistant_run',
+    'name'             => 'Deep Research Report',
+    'schedule'         => 'wp_mcp_ai_weekly',
+    'timestamp'        => strtotime( 'next Monday 03:00' ),
+    'assistant_config' => [
+        'assistant_id'           => 42,
+        'message'                => 'Research competitors and generate a detailed report.',
+        'max_agentic_iterations' => 25,  // Allow up to 25 tool-call rounds
+    ],
+], get_current_user_id() );
+```
+
+Priority order:
+1. Per-schedule `assistant_config.max_agentic_iterations` (highest)
+2. Per-assistant config from the assistant post
+3. Admin setting (`wp_mcp_ai_max_agentic_iterations` filter)
+4. Schedule manager default (10)
+
+### Action Log Fields
+
+When an agentic workflow runs, the `action_log` includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_agentic` | `bool` | `true` when the assistant used tools |
+| `tool_results_count` | `int` | Number of tool call results |
+| `agentic_messages_count` | `int` | Number of intermediate assistant messages |
+| `tool_calls` | `array` | Summary of each tool call (`name`, `tool_call_id`) |
+| `response` | `string` | Extracted final reply (or last agentic message) |
+
+### Content Extraction
+
+The `extract_content_from_chat_response()` method now handles:
+
+- **OpenAI / Anthropic**: Plain string `content` in choices
+- **Gemini / Ollama**: Array-segment content (`[{ type: "text", text: "..." }]`) via `resolve_content_to_string()`
+- **Agentic fallback**: When choices have `null` content (iteration cap reached), falls back to the last `agentic_tool_messages` entry with non-empty text
 
 ---
 
