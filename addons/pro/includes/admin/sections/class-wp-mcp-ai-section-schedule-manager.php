@@ -210,6 +210,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'typeAssistant'   => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
 					'typeBroadcast'   => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
 					'typeBuilder'     => __( 'Workflow Builder', 'mcp-ai-wpoos-pro' ),
+					'selectWorkflow'  => __( 'Please select a saved workflow.', 'mcp-ai-wpoos-pro' ),
 					'statusNever'     => __( 'Never run', 'mcp-ai-wpoos-pro' ),
 					'statusSuccess'   => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'statusFailure'   => __( 'Failed', 'mcp-ai-wpoos-pro' ),

@@ -554,7 +554,7 @@
 			} else if ( 'workflow_builder' === type ) {
 				const wbId = $( '#sm-workflow-builder-id' ).val();
 				if ( ! wbId ) {
-					$( '#wp-mcp-ai-sm-create-msg' ).text( 'Please select a saved workflow.' ).addClass( 'error' );
+					$( '#wp-mcp-ai-sm-create-msg' ).text( wpMcpAiScheduleManager.strings.selectWorkflow || 'Please select a saved workflow.' ).addClass( 'error' );
 					return null;
 				}
 				data.workflow_builder_id = wbId;

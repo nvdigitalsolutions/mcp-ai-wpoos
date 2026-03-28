@@ -476,8 +476,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 						var $td   = $el.closest( 'td' );
 						var $strong = $td.find( 'strong' );
 						var current = $strong.text();
-						$strong.html( '<input type="text" class="mcp-ai-wf-rename-input" value="' + escHtml( current ) + '">' );
-						var $input = $strong.find( 'input' );
+						var $input = $( '<input>' ).attr( { type: 'text', 'class': 'mcp-ai-wf-rename-input' } ).val( current );
+						$strong.empty().append( $input );
 						$input.focus().select();
 						$input.on( 'blur keydown', function( ev ) {
 							if ( ev.type === 'keydown' && ev.which !== 13 && ev.which !== 27 ) { return; }
@@ -866,7 +866,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		if ( $result ) {
+		// update_option returns false both on failure and when the value is unchanged.
+		// Since we always add a new key, verify success by checking the stored data.
+		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $copy_id ] ) ) {
 			wp_send_json_success( array(
 				'message'  => __( 'Workflow duplicated successfully.', 'mcp-ai-wpoos' ),
 				'workflow' => $workflows[ $copy_id ],
@@ -924,7 +926,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
 
-		if ( $result ) {
+		// update_option returns false both on failure and when the value is unchanged.
+		// Verify success by checking the stored data contains the new key.
+		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $new_id ] ) ) {
 			wp_send_json_success( array(
 				'message'  => __( 'Workflow renamed successfully.', 'mcp-ai-wpoos' ),
 				'workflow' => $workflows[ $new_id ],
