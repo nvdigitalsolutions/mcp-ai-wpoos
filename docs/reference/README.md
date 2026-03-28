@@ -23,7 +23,7 @@ Complete tool documentation:
 
 ### [Models Reference](models/)
 AI model specifications:
-- [New AI Models 2024](models/NEW-AI-MODELS-2024.md) - Latest models
+- [New AI Models 2026](models/NEW-AI-MODELS-2026.md) - Latest models
 - [Model Rate Limits](models/MODEL-RATE-LIMITS-CCT.md) - Rate limiting
 - [Model Config Comparison](models/model-config-visual-comparison.md)
 - [Core vs Pro Features](models/FEATURE-MATRIX-CORE-PRO.md)

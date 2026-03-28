@@ -83,10 +83,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
-					'gpt-4.1'     => 'GPT-4.1 (Recommended)',
-					'gpt-4.5'     => 'GPT-4.5 (Creative)',
-					'gpt-4o'      => 'GPT-4o',
-					'gpt-4o-mini' => 'GPT-4o Mini',
+					'gpt-5.4'      => 'GPT-5.4 (Recommended)',
+					'gpt-5.4-mini' => 'GPT-5.4 Mini (Budget)',
+					'gpt-4.1'      => 'GPT-4.1 (Stable)',
+					'gpt-4.1-mini' => 'GPT-4.1 Mini',
+					'gpt-4o'       => 'GPT-4o',
+					'gpt-4o-mini'  => 'GPT-4o Mini',
 				);
 			}
 
@@ -176,7 +178,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_model'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for OpenAI requests. GPT-5.4 is the current recommended default. GPT-4.1 remains available as a proven stable option. GPT-5.4 Mini offers a budget-friendly alternative.', 'mcp-ai-wpoos' ),
 					'options'     => $openai_models,
 					'default'     => 'gpt-4.1',
 				),
@@ -201,13 +203,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1 is the latest model with quality options. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1.5 is the current state-of-the-art model. gpt-image-1 is the previous generation. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-image-1' => 'gpt-image-1 (Latest)',
-						'dall-e-3'    => 'DALL-E 3',
-						'dall-e-2'    => 'DALL-E 2',
+						'gpt-image-1.5' => 'gpt-image-1.5 (Latest)',
+						'gpt-image-1'   => 'gpt-image-1',
+						'dall-e-3'      => 'DALL-E 3',
+						'dall-e-2'      => 'DALL-E 2',
 					),
-					'default'     => 'gpt-image-1',
+					'default'     => 'gpt-image-1.5',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',
@@ -248,11 +251,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for audio transcription and translation. whisper-1 is the OpenAI Whisper model for speech-to-text.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for audio transcription. gpt-4o-mini-transcribe is the current recommended default offering superior accuracy. gpt-4o-transcribe provides highest quality. whisper-1 is the legacy Whisper model.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'whisper-1' => 'Whisper-1 (OpenAI Official)',
+						'gpt-4o-mini-transcribe' => 'GPT-4o Mini Transcribe (Recommended)',
+						'gpt-4o-transcribe'      => 'GPT-4o Transcribe (Highest Quality)',
+						'whisper-1'              => 'Whisper-1 (Legacy)',
 					),
-					'default'     => 'whisper-1',
+					'default'     => 'gpt-4o-mini-transcribe',
 				),
 				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
@@ -279,12 +284,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for text-to-speech (TTS) generation. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is the current recommended model with natural speech and voice presets. tts-1 and tts-1-hd are legacy models.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'tts-1'    => 'TTS-1 (Standard Quality)',
-						'tts-1-hd' => 'TTS-1-HD (High Quality)',
+						'gpt-4o-mini-tts' => 'GPT-4o Mini TTS (Recommended)',
+						'tts-1'           => 'TTS-1 (Legacy Standard)',
+						'tts-1-hd'        => 'TTS-1-HD (Legacy High Quality)',
 					),
-					'default'     => 'tts-1',
+					'default'     => 'gpt-4o-mini-tts',
 				),
 				'openai_speech_voice'                => array(
 					'type'        => 'select',
@@ -841,24 +847,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'cloudflare_model'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes function calling and text generation models. Llama 3.2-3B-Instruct is recommended for general use.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Llama 4 Scout 17B is the current recommended default with function calling support.', 'mcp-ai-wpoos' ),
 					'options'     => $cloudflare_models,
-					'default'     => '@cf/meta/llama-3.2-3b-instruct',
+					'default'     => '@cf/meta/llama-4-scout-17b-16e-instruct',
 				),
 				'cloudflare_image_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Flux-2 Dev offers the best balanced quality. Flux-1 Schnell is fastest. SDXL models are legacy options.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
-						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Fast)',
-						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell',
-						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev',
-						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
+						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev (Recommended)',
+						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell (Fast)',
+						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Legacy)',
+						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Legacy Fast)',
+						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
 					),
-					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+					'default'     => '@cf/black-forest-labs/flux-2-dev',
 				),
 				'cloudflare_image_width'             => array(
 					'type'        => 'number',
