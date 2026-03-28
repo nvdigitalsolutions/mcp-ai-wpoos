@@ -50,7 +50,7 @@
 	table-layout: fixed;
 }
 
-.wp-mcp-ai-sm-table .column-name     { width: 30%; }
+.wp-mcp-ai-sm-table .column-name     { width: 10%; }
 .wp-mcp-ai-sm-table .column-type     { width: 10%; }
 .wp-mcp-ai-sm-table .column-schedule { width: 10%; }
 .wp-mcp-ai-sm-table .column-next-run { width: 13%; }
