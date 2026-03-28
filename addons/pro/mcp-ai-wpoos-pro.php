@@ -1149,6 +1149,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Tax_Estimator'             => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-estimator.php',
 				'WP_MCP_AI_Tool_College_Savings_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-college-savings-calculator.php',
 				'WP_MCP_AI_Tool_Insurance_Needs_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-insurance-needs-analyzer.php',
+				// Market Analysis & Research tools (inspired by Awesome-finance-skills).
+				'WP_MCP_AI_Tool_Financial_News_Aggregator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-news-aggregator.php',
+				'WP_MCP_AI_Tool_Stock_Data_Fetcher'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-stock-data-fetcher.php',
+				'WP_MCP_AI_Tool_Market_Sentiment_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-sentiment-analyzer.php',
+				'WP_MCP_AI_Tool_Market_Forecast_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-market-forecast-analyzer.php',
+				'WP_MCP_AI_Tool_Investment_Signal_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-investment-signal-tracker.php',
+				'WP_MCP_AI_Tool_Financial_Logic_Visualizer' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-logic-visualizer.php',
+				'WP_MCP_AI_Tool_Financial_Report_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-report-generator.php',
+				'WP_MCP_AI_Tool_Financial_Search'          => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-search.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}
