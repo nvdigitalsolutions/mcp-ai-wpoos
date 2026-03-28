@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-scheduled-command-receiving',
-        'version' => 'dev-copilot/fix-scheduled-command-receiving',
-        'reference' => '5b174b9eb1733a77fb54c2bbf0fd2c38c8857809',
+        'pretty_version' => 'dev-copilot/extend-pro-workflow-builder-crud',
+        'version' => 'dev-copilot/extend-pro-workflow-builder-crud',
+        'reference' => 'b4a87b7aa3328da11c8ca3364b740ba22e5e8f9e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-scheduled-command-receiving',
-            'version' => 'dev-copilot/fix-scheduled-command-receiving',
-            'reference' => '5b174b9eb1733a77fb54c2bbf0fd2c38c8857809',
+            'pretty_version' => 'dev-copilot/extend-pro-workflow-builder-crud',
+            'version' => 'dev-copilot/extend-pro-workflow-builder-crud',
+            'reference' => 'b4a87b7aa3328da11c8ca3364b740ba22e5e8f9e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
