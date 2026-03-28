@@ -1280,6 +1280,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 				// per-assistant config, then the admin setting, then the default (10).
 				$schedule_max_iterations = isset( $config['max_agentic_iterations'] ) ? absint( $config['max_agentic_iterations'] ) : 0;
 				if ( $schedule_max_iterations > 0 ) {
+					// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Filter callback signature requires the parameter.
 					$schedule_iterations_filter = function ( $default_max ) use ( $schedule_max_iterations ) {
 						return $schedule_max_iterations;
 					};
