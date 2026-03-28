@@ -107,7 +107,8 @@
 		"flatted": ">=3.4.2",
 		"picomatch@^2": "2.3.2",
 		"picomatch@^4": "4.0.4",
-		"yaml@^1": "1.10.3"
+		"yaml@^1": "1.10.3",
+		"handlebars": ">=4.7.9"
 	},
 	"engines": {
 		"node": ">=18.17.0",
