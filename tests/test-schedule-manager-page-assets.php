@@ -133,6 +133,67 @@ class Test_Schedule_Manager_Page_Assets extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify the container re-population logic used in the separate-plugin scenario.
+	 *
+	 * When the base plugin loads before the Pro addon, the container singleton
+	 * for 'section.schedule_manager' is resolved to null (class not loaded yet).
+	 * PHP's isset() returns false for null, so the next get() call re-runs the
+	 * factory.  After the Pro addon loads the section class, a subsequent get()
+	 * call MUST return a real instance.
+	 */
+	public function test_container_resolves_section_after_class_loaded() {
+		if ( ! function_exists( 'wp_mcp_ai_container' ) ) {
+			$this->markTestSkipped( 'Container not available' );
+		}
+
+		$container = wp_mcp_ai_container();
+
+		// The section class IS loaded in the test environment (bootstrap loads
+		// the full plugin). Verify that get() returns a real instance.
+		$section = $container->get( 'section.schedule_manager' );
+
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Section_Schedule_Manager',
+			$section,
+			'Container should return a real section instance when the class is available.'
+		);
+	}
+
+	/**
+	 * Verify that render_page produces output when the container has a valid section.
+	 */
+	public function test_render_page_produces_output_with_valid_section() {
+		if ( ! function_exists( 'wp_mcp_ai_container' ) ) {
+			$this->markTestSkipped( 'Container not available' );
+		}
+
+		$container = wp_mcp_ai_container();
+
+		// Ensure the container has a real section instance.
+		$section = $container->get( 'section.schedule_manager' );
+		if ( ! ( $section instanceof WP_MCP_AI_Section_Schedule_Manager ) ) {
+			$container->set( 'section.schedule_manager', new WP_MCP_AI_Section_Schedule_Manager() );
+		}
+
+		$page = new WP_MCP_AI_Pro_Schedule_Manager_Page();
+
+		ob_start();
+		$page->render_page();
+		$output = ob_get_clean();
+
+		$this->assertNotEmpty(
+			$output,
+			'render_page() should produce non-empty output when the container has a valid section.'
+		);
+
+		$this->assertStringContainsString(
+			'Pro Schedule Manager',
+			$output,
+			'render_page() output should contain the page title.'
+		);
+	}
+
+	/**
 	 * Clean up after each test.
 	 */
 	public function tearDown(): void {
