@@ -209,6 +209,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'typeWorkflow'    => __( 'Workflow', 'mcp-ai-wpoos-pro' ),
 					'typeAssistant'   => __( 'Assistant Run', 'mcp-ai-wpoos-pro' ),
 					'typeBroadcast'   => __( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ),
+					'typeBuilder'     => __( 'Workflow Builder', 'mcp-ai-wpoos-pro' ),
 					'statusNever'     => __( 'Never run', 'mcp-ai-wpoos-pro' ),
 					'statusSuccess'   => __( 'Success', 'mcp-ai-wpoos-pro' ),
 					'statusFailure'   => __( 'Failed', 'mcp-ai-wpoos-pro' ),
@@ -271,6 +272,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 						<option value="workflow"><?php esc_html_e( 'Workflow', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="workflow_builder"><?php esc_html_e( 'Workflow Builder', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
 					<select id="wp-mcp-ai-sm-filter-status" class="wp-mcp-ai-sm-filter">
 						<option value=""><?php esc_html_e( 'All Statuses', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -392,6 +394,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 								<option value="workflow"><?php esc_html_e( 'Workflow (Tool Chain)', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="assistant_run"><?php esc_html_e( 'Assistant Run', 'mcp-ai-wpoos-pro' ); ?></option>
 								<option value="channel_broadcast"><?php esc_html_e( 'Channel Broadcast', 'mcp-ai-wpoos-pro' ); ?></option>
+								<option value="workflow_builder"><?php esc_html_e( 'Workflow Builder', 'mcp-ai-wpoos-pro' ); ?></option>
 							</select>
 						</div>
 					</div>
@@ -502,6 +505,49 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 								<label for="sm-broadcast-credentials"><?php esc_html_e( 'Credentials (JSON)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 								<textarea id="sm-broadcast-credentials" rows="4" class="large-text code" placeholder='<?php esc_attr_e( '{"telegram":{"token":"BOT_TOKEN","chat_id":"CHAT_ID"},"slack":{"token":"BOT_TOKEN","channel":"#general"}}', 'mcp-ai-wpoos-pro' ); ?>'></textarea>
 								<p class="description"><?php esc_html_e( 'Credentials keyed by channel slug (same shape as unified_channel_broadcast tool).', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Workflow Builder panel -->
+					<div class="wp-mcp-ai-sm-type-panel" id="sm-panel-workflow_builder" style="display:none;">
+						<div class="wp-mcp-ai-sm-form-row">
+							<div class="wp-mcp-ai-sm-form-group full-width">
+								<label for="sm-workflow-builder-id"><?php esc_html_e( 'Saved Workflow', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+								<?php
+								$saved_workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
+								if ( ! is_array( $saved_workflows ) ) {
+									$saved_workflows = array();
+								}
+								?>
+								<select id="sm-workflow-builder-id">
+									<option value=""><?php esc_html_e( '— Select a saved workflow —', 'mcp-ai-wpoos-pro' ); ?></option>
+									<?php foreach ( $saved_workflows as $wf_id => $wf ) : ?>
+										<option value="<?php echo esc_attr( $wf_id ); ?>">
+											<?php echo esc_html( ! empty( $wf['name'] ) ? $wf['name'] : $wf_id ); ?>
+											<?php
+											$node_count = isset( $wf['nodes'] ) && is_array( $wf['nodes'] ) ? count( $wf['nodes'] ) : 0;
+											$edge_count = isset( $wf['edges'] ) && is_array( $wf['edges'] ) ? count( $wf['edges'] ) : 0;
+											/* translators: %1$d: number of nodes, %2$d: number of edges */
+											printf( esc_html__( '(%1$d nodes, %2$d edges)', 'mcp-ai-wpoos-pro' ), $node_count, $edge_count );
+											?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<?php if ( empty( $saved_workflows ) ) : ?>
+									<p class="description">
+										<?php
+										printf(
+											/* translators: %s: URL to Pro Workflow Builder page */
+											esc_html__( 'No saved workflows found. %1$sCreate one in the Pro Workflow Builder%2$s first.', 'mcp-ai-wpoos-pro' ),
+											'<a href="' . esc_url( admin_url( 'admin.php?page=nvoos-pro-workflow-builder' ) ) . '">',
+											'</a>'
+										);
+										?>
+									</p>
+								<?php else : ?>
+									<p class="description"><?php esc_html_e( 'Select a workflow created in the Pro Workflow Builder. It will be executed according to the schedule.', 'mcp-ai-wpoos-pro' ); ?></p>
+								<?php endif; ?>
 							</div>
 						</div>
 					</div>

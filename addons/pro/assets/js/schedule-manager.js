@@ -551,6 +551,13 @@
 					}
 				}
 				data.broadcast_config = { message: bcMsg, channels: bcChannels, credentials: bcCreds };
+			} else if ( 'workflow_builder' === type ) {
+				const wbId = $( '#sm-workflow-builder-id' ).val();
+				if ( ! wbId ) {
+					$( '#wp-mcp-ai-sm-create-msg' ).text( 'Please select a saved workflow.' ).addClass( 'error' );
+					return null;
+				}
+				data.workflow_builder_id = wbId;
 			}
 
 			// Collect failure-notification channels (applies to all schedule types).
@@ -574,6 +581,7 @@
 			$( '#sm-notify-on-failure' ).prop( 'checked', false );
 			$( '#sm-notify-email-wrap, #sm-notify-channels-row' ).hide();
 			$( '#sm-workflow-steps' ).empty();
+			$( '#sm-workflow-builder-id' ).val( '' );
 			$( '#sm-type' ).val( 'task' ).trigger( 'change' );
 			$( '#sm-schedule' ).val( 'single' );
 			$( '#sm-timestamp' ).val( '' );
