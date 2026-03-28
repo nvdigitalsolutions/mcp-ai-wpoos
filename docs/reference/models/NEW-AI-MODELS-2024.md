@@ -1,102 +1,135 @@
-# New AI Models Support (2024 Update)
+# AI Model Defaults & Strategy Guide
 
-This document outlines the new AI models added to Open Operator System in response to user requests for expanded model support.
+This document describes the default model strategy for Open Operator System (NV oOS), including the default lanes system, current recommended defaults by provider, and migration guidance.
 
 ## Overview
 
-NV oOS now supports the latest AI models from OpenAI and Google Gemini, including advanced reasoning models ("thinking models") and experimental next-generation models.
+NV oOS uses a **four-lane default model strategy** to organize model recommendations across all providers:
 
-## OpenAI Models
+| Lane | Purpose | Example Use Case |
+|------|---------|-----------------|
+| **Stable** | Proven production default | Day-to-day chat, tool execution |
+| **Latest** | Current recommended / preview | Evaluating newest capabilities |
+| **Budget** | Cost-effective / fast alternative | High-volume tasks, cost-sensitive workloads |
+| **Local** | Auto-discovered from local server | Ollama, LM Studio environments |
 
-### Reasoning Models (o-series)
+Additional capability-specific lanes exist for vision, image generation, speech-to-text, and text-to-speech.
 
-These models are designed for complex problem-solving, multi-step planning, and advanced reasoning tasks. They "think" through problems more deliberately than standard models.
+## Current Default Models by Provider
 
-| Model | Context Tokens | Output Tokens | Use Cases |
-|-------|---------------|---------------|-----------|
-| `o1-2024-12-17` | 200,000 | 100,000 | Latest o1 model with improved reasoning capabilities. Best for complex analysis, multi-step problem solving, and tasks requiring deep logical reasoning. |
-| `o1-preview` | 128,000 | 32,768 | Preview version of the o1 reasoning model. Suitable for testing advanced reasoning capabilities. |
-| `o1-mini` | 128,000 | 32,768 | Lighter, faster version of o1. Good balance between reasoning capability and response speed. |
-| `o3-mini` | TBD | TBD | Upcoming compact reasoning model (placeholder for future release). |
+### OpenAI
 
-#### When to Use Reasoning Models
+| Capability | Default Model | Lane | Notes |
+|-----------|--------------|------|-------|
+| **Text/Chat (Stable)** | `gpt-4.1` | Stable | Proven production default with broad compatibility |
+| **Text/Chat (Recommended)** | `gpt-5.4` | Latest | OpenAI's current recommended default for new projects |
+| **Text/Chat (Budget)** | `gpt-5.4-mini` | Budget | Cost-optimized, suitable for routine tasks |
+| **Image Generation** | `gpt-image-1.5` | Latest | Current state-of-the-art image model |
+| **Transcription (STT)** | `gpt-4o-mini-transcribe` | Stable | Superior accuracy over legacy Whisper |
+| **Text-to-Speech** | `gpt-4o-mini-tts` | Stable | Natural speech with voice presets |
+| **Embeddings** | `text-embedding-3-small` | Stable | Best balance of performance and cost |
 
-- Complex problem-solving requiring multiple steps
-- Code review and architectural decisions
-- Research and analysis tasks
-- Planning and strategy formulation
-- Mathematical or logical puzzles
-- Technical documentation analysis
+**Legacy models still supported:**
+- `whisper-1` — Legacy Whisper model for transcription
+- `tts-1`, `tts-1-hd` — Legacy TTS models
+- `gpt-image-1` — Previous generation image model
+- `dall-e-3`, `dall-e-2` — DALL-E image models
+- `gpt-4o`, `gpt-4o-mini` — Previous generation chat models
 
-#### Performance Considerations
+### Anthropic (Claude)
 
-- Reasoning models take longer to respond (they "think" before answering)
-- Higher token costs compared to standard models
-- Best used when quality of reasoning is more important than speed
-- Not recommended for simple conversational tasks
+| Capability | Default Model | Lane | Notes |
+|-----------|--------------|------|-------|
+| **Text/Chat** | `claude-sonnet-4-6` | Stable | Best balance of intelligence and speed |
+| **Premium** | `claude-opus-4-6` | Latest | Flagship model for complex tasks |
+| **Budget** | `claude-haiku-4-5` | Budget | Fastest and most economical Claude model |
+| **Vision** | `claude-sonnet-4-6` | Stable | All Claude 4.x models support vision |
 
-### Standard Models (GPT-4o series)
+### Google Gemini
 
-| Model | Context Tokens | Output Tokens | Use Cases |
-|-------|---------------|---------------|-----------|
-| `gpt-4o` | 128,000 | 16,384 | Current flagship multimodal model. Best for production use. |
-| `gpt-4o-mini` | 128,000 | 16,384 | Cost-optimized version. Recommended for day-to-day tasks. |
+| Capability | Default Model | Lane | Notes |
+|-----------|--------------|------|-------|
+| **Text/Chat** | `gemini-2.5-flash` | Stable | Price-performance workhorse, production-ready |
+| **Premium** | `gemini-2.5-pro` | Latest | Flagship with best overall performance |
+| **Image Generation** | `gemini-2.5-flash-image` | Stable | Specialized image generation model |
+| **Video Generation** | `veo-2.0-generate-001` | Stable | Stable video generation with fewer restrictions |
+| **Video (Preview)** | `veo-3.1-generate-preview` | Latest | Latest with audio and 1080p support |
 
-### Future Models (Placeholders)
+### Cloudflare Workers AI
 
-The following models are included as placeholders for upcoming releases:
+| Capability | Default Model | Lane | Notes |
+|-----------|--------------|------|-------|
+| **Text/Chat** | `@cf/meta/llama-4-scout-17b-16e-instruct` | Stable | Function calling support, recommended default |
+| **Budget** | `@cf/meta/llama-3.2-3b-instruct` | Budget | Smaller, faster model for simple tasks |
+| **Image Generation** | `@cf/black-forest-labs/flux-2-dev` | Stable | Best balanced image quality |
+| **Image (Fast)** | `@cf/black-forest-labs/flux-1-schnell` | Budget | Fastest image generation |
 
-- `gpt-4.5-preview` - Next-generation flagship model
-- `gpt-4.5-turbo` - Turbo variant of GPT-4.5
-- `gpt-5` - Future major version
-- `gpt-5-mini` - Cost-optimized GPT-5 variant
+### Hugging Face, Ollama, LM Studio
 
-These will become available automatically when OpenAI releases them.
+These local/self-hosted providers use **discovery-based defaults** rather than hardcoded model names:
 
-## Google Gemini Models
+- **Hugging Face**: Blank until user selects a model; example suggestions shown in placeholder
+- **Ollama**: Uses whatever model is locally installed (typically `llama4` or first discovered model)
+- **LM Studio**: Uses the currently loaded local model
 
-### Gemini 2.x Series (Latest)
+## Default Lanes API
 
-| Model | Features | Use Cases |
-|-------|----------|-----------|
-| `gemini-2.0-flash-exp` | Latest experimental model from Google. Enhanced multimodal capabilities including **native video understanding**. | Testing cutting-edge features, multimodal tasks, **video analysis**, high-performance requirements. |
-| `gemini-2.5-flash` | Production-ready model with **video understanding support**. Stable and optimized for real-world use. | **Video content analysis**, video captioning, multimodal production deployments. |
-| `gemini-exp-1206` | December 2024 experimental release with **video capabilities**. | Experimental features and improvements, video processing. |
+The plugin provides a programmatic API for accessing default models by lane:
 
-### Gemini 1.5 Series (Stable)
+```php
+// Get the model service instance.
+$model_service = new WP_MCP_AI_Model_Service();
 
-| Model | Features | Use Cases |
-|-------|----------|-----------|
-| `gemini-1.5-pro` | Stable, proven performance. Large context window. | Production deployments, reliable performance requirements. |
-| `gemini-1.5-flash` | Faster responses, lower cost. | High-throughput applications, cost-sensitive deployments. |
-| `gemini-pro` | Original Gemini model. | Legacy compatibility. |
+// Get stable default for a provider.
+$default = $model_service->get_default_model_for_provider( 'openai' );
+// Returns: 'gpt-4.1'
 
-### Experimental vs Stable Models
+// Get all lanes for a provider.
+$lanes = $model_service->get_provider_default_models_by_lane( 'openai' );
+// Returns: array(
+//     'stable'    => 'gpt-4.1',
+//     'latest'    => 'gpt-5.4',
+//     'budget'    => 'gpt-5.4-mini',
+//     'vision'    => 'gpt-4.1',
+//     'image'     => 'gpt-image-1.5',
+//     'audio_in'  => 'gpt-4o-mini-transcribe',
+//     'audio_out' => 'gpt-4o-mini-tts',
+// )
+```
 
-- **Experimental models** (marked with `-exp`):
-  - Latest features and capabilities
-  - May have occasional breaking changes
-  - Best for testing and development
-  - Higher performance but less predictable
+### Filtering Defaults
 
-- **Stable models** (1.5 series):
-  - Proven reliability
-  - Consistent behavior
-  - Recommended for production
-  - Lower risk, predictable costs
+Both methods support WordPress filters for customization:
+
+```php
+// Override the stable default for a provider.
+add_filter( 'wp_mcp_ai_default_model_for_provider', function( $default, $provider ) {
+    if ( 'openai' === $provider ) {
+        return 'gpt-5.4'; // Use latest as default.
+    }
+    return $default;
+}, 10, 2 );
+
+// Override lane defaults for a provider.
+add_filter( 'wp_mcp_ai_provider_default_models_by_lane', function( $lanes, $provider ) {
+    if ( 'cloudflare' === $provider ) {
+        $lanes['stable'] = '@cf/openai/gpt-oss-120b';
+    }
+    return $lanes;
+}, 10, 2 );
+```
 
 ## Configuration
 
 ### Selecting Default Models
 
 1. Navigate to **Settings → NV oOS → AI Provider Configuration**
-2. Under **OpenAI**, select your preferred default model
-3. Under **Google Gemini**, select your preferred Gemini model
-4. Save changes
+2. Under each provider tab, select your preferred default model
+3. Save changes
 
 ### Per-Assistant Overrides
 
-You can override the default model for individual assistants:
+Override the default model for individual assistants:
 
 1. Edit an assistant (Custom Post Type)
 2. Find the model selection field
@@ -111,278 +144,74 @@ The plugin supports automatic failover between providers:
 2. Drag and drop providers to set priority
 3. System will try providers in order if one fails
 
+## Migration & Upgrade Behavior
+
+### New Installs
+
+New installations receive the latest recommended defaults automatically.
+
+### Existing Installs
+
+- **Existing saved settings are never overwritten on upgrade**
+- Admin notices may suggest newer recommended models if the saved one is deprecated
+- If a default model disappears from a provider, the fallback chain is: stable → budget → first available
+
+### Upgrading from Older Defaults
+
+If you were using older defaults, consider updating:
+
+| Old Default | New Recommended | Why |
+|-------------|----------------|-----|
+| `whisper-1` | `gpt-4o-mini-transcribe` | Superior accuracy, actively maintained |
+| `tts-1` | `gpt-4o-mini-tts` | More natural speech, better voice presets |
+| `gpt-image-1` | `gpt-image-1.5` | Current state-of-the-art for image generation |
+| `@cf/meta/llama-3.2-3b-instruct` | `@cf/meta/llama-4-scout-17b-16e-instruct` | Better quality, function calling support |
+| `@cf/stabilityai/stable-diffusion-xl-base-1.0` | `@cf/black-forest-labs/flux-2-dev` | Significantly improved image quality |
+
 ## Cost Considerations
 
-### Token Costs (Approximate)
+### Approximate Cost Tiers
 
-- **o1-series reasoning models**: 3-5x more expensive than GPT-4o
-- **gpt-4o**: Standard pricing
-- **gpt-4o-mini**: ~10x cheaper than GPT-4o
-- **Gemini 2.0**: Competitive with GPT-4o
-- **Gemini 1.5 Flash**: Most cost-effective option
+| Tier | Models | Relative Cost |
+|------|--------|--------------|
+| **Budget** | `gpt-5.4-mini`, `claude-haiku-4-5`, `gemini-2.5-flash` | $ |
+| **Standard** | `gpt-4.1`, `claude-sonnet-4-6`, `gemini-2.5-flash` | $$ |
+| **Premium** | `gpt-5.4`, `claude-opus-4-6`, `gemini-2.5-pro` | $$$ |
+| **Local** | Ollama, LM Studio models | Free (hardware cost only) |
 
 ### Optimization Tips
 
-1. Use `gpt-4o-mini` or `gemini-1.5-flash` for routine tasks
-2. Reserve reasoning models (`o1-*`) for complex problems
+1. Use budget-lane models for routine tasks
+2. Reserve premium models for complex reasoning
 3. Set per-tool model preferences for automatic optimization
 4. Monitor token usage in the admin dashboard
-
-## Migration Guide
-
-### Upgrading from Previous Versions
-
-No migration is required. The plugin automatically includes new models:
-
-1. Update NV oOS to latest version
-2. New models appear in dropdowns automatically
-3. Existing assistants continue working with current settings
-4. Test new models before changing defaults
-
-### Best Practices
-
-1. **Start with stable models**: Use `gpt-4o` or `gemini-1.5-pro` for production
-2. **Test experimental models separately**: Create dedicated test assistants
-3. **Monitor costs**: Track token usage when trying new models
-4. **Document changes**: Note which models work best for your use cases
+5. Enable high-token fallback to prevent overages
 
 ## Technical Details
 
 ### Model Recognition
 
 The plugin recognizes models by their identifier strings:
-- `o1-*`: Routing to OpenAI with reasoning optimization
-- `gpt-*`: Standard OpenAI routing
+- `gpt-*`: OpenAI routing
+- `o1-*`, `o3-*`: OpenAI reasoning models
 - `gemini-*`: Google Gemini routing
-- `claude-*`: Anthropic routing (if configured)
+- `claude-*`: Anthropic routing
+- `@cf/*`: Cloudflare Workers AI routing
+- Other patterns: Routed based on provider configuration
 
 ### Fallback Behavior
 
 When token limits are exceeded:
 1. System checks for configured fallback model
-2. Falls back to high-capacity model (default: `gemini-2.0-flash-exp`)
+2. Falls back to high-capacity model (default: `gemini-2.5-flash`)
 3. Logs fallback event for monitoring
 4. Continues request with fallback model
 
-### API Compatibility
-
-All new models use the same API endpoints:
-- OpenAI: Chat Completions API or Responses API (auto-selected)
-- Gemini: generateContent endpoint
-
-No code changes required for new models.
-
-## Troubleshooting
-
-### "Model not found" Error
-
-**Solution**: Ensure your API key has access to the model. Some models (like o1-2024-12-17) require specific API access tiers.
-
-### Slow Responses with Reasoning Models
-
-**Expected**: Reasoning models take longer to respond. This is by design - they're "thinking" through the problem.
-
-**Solution**: Use reasoning models only when needed. For faster responses, use standard models.
-
-### Unexpected Costs
-
-**Solution**: 
-- Check which model is being used (admin logs)
-- Set per-tool model preferences to control costs
-- Use token budget management features
-- Enable high-token fallback to prevent overages
-
-## Future Updates
-
-The plugin is designed to automatically support new models as they're released:
-
-- New model identifiers work without code changes
-- CCT (Custom Content Type) integration allows dynamic model management
-- Filter hooks available for custom model routing
-
-## Support
-
-For issues or questions about new models:
-
-1. Check this documentation
-2. Review admin error logs
-3. Test with known-working models
-4. Open issue on GitHub with model identifier and error details
-
-## Video Understanding Capabilities
-
-### Overview
-
-NV oOS includes **foundational support** for AI models with video understanding capabilities. The tool infrastructure is in place, with full implementation planned for a future release.
-
-**Current Status:** Phase 1 Complete (Foundation & Architecture)
-**Next Phase:** Gemini File API Integration (2-3 weeks)
-**Full Documentation:** See `VIDEO_ANALYSIS_ROADMAP.md` for complete implementation plan
-
-### Current Implementation
-
-**What's Available:**
-- ✅ Video analysis tool registered (`analyze_video`)
-- ✅ Video caption tool registered (`generate_video_caption`)
-- ✅ Parameter validation and permissions
-- ✅ Tool discovery via MCP protocol
-- ✅ Comprehensive documentation
-
-**Current Limitation:**
-Video analysis tools return a helpful error message explaining that full implementation requires Gemini File API integration, which is planned for the next phase.
-
-### Planned Features (Next Phase)
-
-When fully implemented, the tools will support:
-
-**Supported Models:**
-- `gemini-2.0-flash-exp` - Gemini's latest experimental model with full video support
-- `gemini-2.5-flash` - Production-ready Gemini model with video capabilities
-- `gemini-exp-1206` - December 2024 experimental release with video features
-
-**Supported video formats:**
-- MP4 (video/mp4)
-- QuickTime (video/quicktime)
-
-### Planned Video Analysis Tools
-
-#### 1. Analyze Video (`analyze_video`)
-
-Will analyze video content to extract detailed information:
-
-```php
-// Planned API usage
-POST /wp-json/mcp-ai/v1/tools
-{
-  "tool": "analyze_video",
-  "arguments": {
-    "attachment_id": 123,  // WordPress video attachment ID
-    "prompt": "What products are shown in this video?",  // Optional specific question
-    "context": "Product demonstration video"  // Optional context
-  }
-}
-```
-
-**Planned Features:**
-- Comprehensive video analysis including subjects, actions, setting, and mood
-- Custom prompts for specific analysis tasks
-- Context-aware analysis
-- Automatic routing to video-capable models
-
-#### 2. Generate Video Caption (`generate_video_caption`)
-
-Will create concise, descriptive captions for videos:
-
-```php
-// Planned API usage
-POST /wp-json/mcp-ai/v1/tools
-{
-  "tool": "generate_video_caption",
-  "arguments": {
-    "video_url": "https://example.com/video.mp4",  // Public video URL
-    "max_length": 150,  // Optional, default 200, range 50-500
-    "context": "Tutorial video"  // Optional context
-  }
-}
-```
-
-**Planned Features:**
-- Configurable caption length (50-500 characters)
-- Context-aware caption generation
-- Automatic truncation to specified length
-- Ideal for video thumbnails and accessibility
-
-### Implementation Approach (SoC-Compliant)
-
-The full implementation will follow Separation of Concerns principles:
-
-**Service Layer Architecture:**
-```
-WP_MCP_AI_Tool_Analyze_Video (Presentation)
-           ↓
-WP_MCP_AI_Video_Analysis_Service (Business Logic)
-           ↓
-WP_MCP_AI_Gemini_File_Service (File Management)
-           ↓
-WP_MCP_AI_Gemini_Client (External API)
-```
-
-**New Services (Planned):**
-1. `WP_MCP_AI_Gemini_File_Service` - Handles Gemini File API uploads/cleanup
-2. `WP_MCP_AI_Video_Analysis_Service` - Orchestrates video analysis workflow
-3. `WP_MCP_AI_Video_Frame_Extractor_Service` - Frame extraction for OpenAI (future)
-
-This architecture:
-- ✅ Separates presentation from business logic
-- ✅ Makes tools testable with mock services
-- ✅ Enables service reuse across multiple tools
-- ✅ Follows established patterns from Phases 1-3 refactoring
-
-### Current Workaround
-
-Users can prepare for video analysis by:
-
-1. Adding videos to WordPress media library
-2. Using the `attachment_id` parameter (preferred over `video_url`)
-3. Ensuring Gemini API key is configured
-4. Monitoring the roadmap for full implementation
-
-### Timeline
-
-- **Phase 1 (Complete):** Tool foundation and architecture
-- **Phase 2 (Next - 2-3 weeks):** Gemini File API integration
-- **Phase 3 (Future):** OpenAI frame extraction support
-- **Phase 4 (Future):** Enhanced features (timestamps, scenes, audio)
-
-### Usage Requirements (When Implemented)
-
-**API Keys:**
-- Google Gemini API key required (video analysis uses Gemini models)
-- Configure at: Settings → NV oOS → AI Provider Configuration
-
-**User Permissions:**
-- `upload_files` capability required
-- Standard WordPress media permissions apply
-
-**Model Selection:**
-- Video tools will automatically use Gemini 2.0+ models
-- Falls back to latest video-capable model if default is not compatible
-
-### Technical Details
-
-**Gemini File API Process:**
-1. Upload video file to Gemini File API
-2. Poll for processing completion
-3. Reference file in generation request
-4. Automatic cleanup after analysis
-
-**SoC-Compliant Architecture:**
-- Services handle business logic (file uploads, processing)
-- Clients handle API communication
-- Tools orchestrate the workflow
-- Repositories manage data storage
-
-For complete technical details, see `VIDEO_ANALYSIS_ROADMAP.md`
-
-### Cost Considerations
-
-Video analysis will be more expensive than image analysis due to:
-- Larger input size (video frames vs single image)
-- Longer processing time
-- Higher token consumption
-
-**Planned Optimization tips:**
-1. Use `gemini-2.5-flash` for production (more cost-effective)
-2. Keep videos under 60 seconds when possible
-3. Use specific prompts to reduce output tokens
-4. Monitor token usage in admin dashboard
-5. Set appropriate caption length limits
-
 ## References
 
-- [OpenAI Models Documentation](https://platform.openai.com/docs/models)
+- [OpenAI Models Documentation](https://developers.openai.com/api/docs/models)
+- [Anthropic Claude Models](https://platform.claude.com/docs/en/about-claude/models/overview)
 - [Google Gemini Models](https://ai.google.dev/models/gemini)
-- [Gemini Video Understanding Guide](https://ai.google.dev/gemini-api/docs/vision)
-- [NV oOS Model Selector Code](../../../includes/class-wp-mcp-ai-model-selector.php)
+- [Cloudflare Workers AI Models](https://developers.cloudflare.com/workers-ai/models/)
+- [NV oOS Model Service](../../../includes/services/class-wp-mcp-ai-model-service.php)
 - [Provider Configuration](../../../includes/admin/sections/class-wp-mcp-ai-section-providers.php)
-- [Video Tools](../../../includes/tools/class-wp-mcp-ai-tool-analyze-video.php)

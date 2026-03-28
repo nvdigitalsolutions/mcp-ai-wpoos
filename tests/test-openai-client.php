@@ -2315,7 +2315,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, $response['image'] );
 		$this->assertSame( 'png', $response['format'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
-		$this->assertSame( 'gpt-image-1', $response['model'] );
+		$this->assertSame( 'gpt-image-1.5', $response['model'] );
 		$this->assertSame( 'Binary payload', $response['prompt'] );
 		$this->assertSame( 0, $response['created'] );
 		$this->assertSame( '', $response['revised_prompt'] );
