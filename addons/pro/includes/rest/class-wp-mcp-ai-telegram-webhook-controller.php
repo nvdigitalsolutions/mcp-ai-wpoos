@@ -511,7 +511,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			foreach ( $takeover_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
 					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id, $connection_id );
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
 						}
@@ -534,7 +534,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			foreach ( $resume_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
 					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id, $connection_id );
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
 						}
@@ -1493,45 +1493,27 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * in the WP_MCP_AI_Channel_Contacts_CCT table (mirrors the identical helper
 	 * in the WhatsApp webhook controller).
 	 *
-	 * When a connection_id is supplied, the lookup is scoped to that specific
-	 * connection so that contacts from different bot connections are not confused.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $channel            Platform slug ('telegram').
 	 * @param string $channel_contact_id Platform-level contact identifier (Telegram user ID).
-	 * @param string $connection_id      Optional connection ID to scope the lookup.
 	 * @return int|null Contact record ID or null if not found.
 	 */
-	protected function get_channel_contact_id( $channel, $channel_contact_id, $connection_id = '' ) {
+	protected function get_channel_contact_id( $channel, $channel_contact_id ) {
 		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
 			return null;
 		}
 
 		global $wpdb;
 		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-
-		if ( '' !== $connection_id ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$id = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					sanitize_key( $channel ),
-					sanitize_text_field( $channel_contact_id ),
-					sanitize_text_field( $connection_id )
-				)
-			);
-		} else {
-			// Backward-compatible lookup without connection_id.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$id = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					sanitize_key( $channel ),
-					sanitize_text_field( $channel_contact_id )
-				)
-			);
-		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+				sanitize_key( $channel ),
+				sanitize_text_field( $channel_contact_id )
+			)
+		);
 
 		return $id ? (int) $id : null;
 	}
