@@ -223,6 +223,8 @@ class WP_MCP_AI_Chat_Channels_Menu {
 					'i18n'          => array(
 						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 						'noConversations' => __( 'No conversations found.', 'mcp-ai-wpoos-pro' ),
+						'noMessages'      => __( 'No messages yet.', 'mcp-ai-wpoos-pro' ),
+						'errorLoading'    => __( 'Error loading data. Please try again.', 'mcp-ai-wpoos-pro' ),
 						'sendReply'       => __( 'Send Reply', 'mcp-ai-wpoos-pro' ),
 						'humanTakeover'   => __( 'Human Takeover', 'mcp-ai-wpoos-pro' ),
 						'resumeAI'        => __( 'Resume AI', 'mcp-ai-wpoos-pro' ),
@@ -440,6 +442,8 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						<div class="cc-thread-header" id="cc-thread-header"></div>
 						<!-- Messages -->
 						<div class="cc-messages" id="cc-messages"></div>
+						<!-- Message pagination -->
+						<div class="cc-msg-pagination" id="cc-msg-pagination"></div>
 						<!-- Reply box – hidden when human takeover is off for this contact -->
 						<div class="cc-reply-box" id="cc-reply-box">
 							<textarea id="cc-reply-text" class="cc-reply-textarea" rows="3" placeholder="<?php esc_attr_e( 'Type a reply…', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
