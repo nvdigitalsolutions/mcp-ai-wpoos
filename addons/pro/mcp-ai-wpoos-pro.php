@@ -182,6 +182,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $schedule_manager_file;
 		}
 
+		// Load Schedule and Workflow Presets (Phase 2.1.0 — pre-built preset libraries).
+		$schedule_presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-presets.php';
+		if ( file_exists( $schedule_presets_file ) ) {
+			require_once $schedule_presets_file;
+		}
+		$workflow_presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( file_exists( $workflow_presets_file ) ) {
+			require_once $workflow_presets_file;
+		}
+
 		// In the base + pro separate-plugin scenario the base plugin's
 		// settings-dashboard-init.php already called
 		// $container->get( 'section.schedule_manager' ) before the Pro class
