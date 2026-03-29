@@ -447,7 +447,7 @@ class WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images implements WP_MCP_AI_Too
 
 		switch ( $media_type ) {
 			case 'IMAGE':
-				if ( in_array( $media_type_filter, array( 'all', 'image', 'carousel_album', 'video' ), true ) ) {
+				if ( in_array( $media_type_filter, array( 'all', 'image' ), true ) ) {
 					$media_url = isset( $media['media_url'] ) ? esc_url_raw( $media['media_url'] ) : '';
 
 					if ( '' !== $media_url ) {

@@ -293,7 +293,7 @@ class WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images implements WP_MCP_AI_Tool_I
 			);
 		}
 
-		// 6 & 7. Process output based on mode.
+		// 6. Process output based on mode.
 		$attachments = array();
 		$zip_url     = '';
 		$zip_path    = '';

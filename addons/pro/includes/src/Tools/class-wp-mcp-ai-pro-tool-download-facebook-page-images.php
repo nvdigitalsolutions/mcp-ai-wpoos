@@ -338,7 +338,6 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 		$photos    = array();
 		$after     = '';
 		$per_page  = min( $max_images, 25 );
-		$type_param = ( 'all' === $album ) ? 'uploaded' : $album;
 
 		do {
 			$url = sprintf(
@@ -349,11 +348,15 @@ class WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images implements WP_MCP_AI_Tool
 			);
 
 			$query_args = array(
-				'type'         => $type_param,
 				'fields'       => 'images,name,created_time',
 				'limit'        => $per_page,
 				'access_token' => $access_token,
 			);
+
+			// Add type filter unless 'all' is requested (omitting type returns all photos).
+			if ( 'all' !== $album ) {
+				$query_args['type'] = $album;
+			}
 
 			if ( '' !== $after ) {
 				$query_args['after'] = $after;
