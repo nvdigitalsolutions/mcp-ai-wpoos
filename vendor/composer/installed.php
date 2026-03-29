@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-        'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-        'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-64c96c8a-8a25-4171-8e9c-3c286145011b',
+        'version' => 'dev-copilot/rebuild-all-zips-with-script-64c96c8a-8a25-4171-8e9c-3c286145011b',
+        'reference' => 'ac27993c3bb1d06fe48140c4dbcade3ef574b355',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-            'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-            'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-64c96c8a-8a25-4171-8e9c-3c286145011b',
+            'version' => 'dev-copilot/rebuild-all-zips-with-script-64c96c8a-8a25-4171-8e9c-3c286145011b',
+            'reference' => 'ac27993c3bb1d06fe48140c4dbcade3ef574b355',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
