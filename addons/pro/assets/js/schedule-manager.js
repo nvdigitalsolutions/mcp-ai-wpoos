@@ -1193,7 +1193,11 @@
 
 			$grid.html( '<p>' + this.esc( wpMcpAiScheduleManager.strings.loading || 'Loading…' ) + '</p>' );
 
-			this.ajax( 'wp_mcp_ai_sm_get_presets', {}, function ( data ) {
+			this.ajax( 'wp_mcp_ai_sm_get_presets', {}, function ( err, data ) {
+				if ( err ) {
+					$grid.html( '<p class="wp-mcp-ai-sm-presets-empty">' + self.esc( err ) + '</p>' );
+					return;
+				}
 				self.presets = data.presets || [];
 				self.presetsLoaded = true;
 				self.populateToolkitFilter();
@@ -1314,7 +1318,13 @@
 
 			$btn.prop( 'disabled', true ).text( str.presetInstalling || 'Installing…' );
 
-			this.ajax( 'wp_mcp_ai_sm_install_preset', { preset_id: presetId }, function () {
+			this.ajax( 'wp_mcp_ai_sm_install_preset', { preset_id: presetId }, function ( err ) {
+				if ( err ) {
+					// eslint-disable-next-line no-alert
+					alert( err );
+					$btn.prop( 'disabled', false ).text( str.presetInstall || 'Install' );
+					return;
+				}
 				$btn.text( '✓ ' + ( str.presetInstalled || 'Installed' ) );
 				self.loadSchedules();
 
