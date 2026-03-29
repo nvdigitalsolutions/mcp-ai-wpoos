@@ -217,9 +217,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 				'wp-mcp-ai-chat-channels',
 				'wpMcpAiChatChannels',
 				array(
-					'restUrl'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'currentPage'   => $this->current_page_slug( $hook ),
+					'restUrl'         => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
+					'nonce'           => wp_create_nonce( 'wp_rest' ),
+					'currentPage'     => $this->current_page_slug( $hook ),
+					'refreshInterval' => (int) apply_filters( 'wp_mcp_ai_chat_channels_refresh_interval', 30 ),
 					'i18n'          => array(
 						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 						'noConversations' => __( 'No conversations found.', 'mcp-ai-wpoos-pro' ),

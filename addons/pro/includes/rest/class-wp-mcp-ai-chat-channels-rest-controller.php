@@ -578,7 +578,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$args = array(
 			'post_type'      => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => 200, // Reasonable upper bound for merging.
+			'posts_per_page' => 200, // phpcs:ignore -- Reasonable upper bound for merging. If more exist, they appear only in the CCT store going forward.
 			'orderby'        => 'meta_value_num',
 			'meta_key'       => '_last_message_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 			'order'          => 'DESC',
@@ -872,7 +872,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$args = array(
 			'post_type'      => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
 			'post_status'    => 'publish',
-			'posts_per_page' => 500, // Upper bound for merging.
+			'posts_per_page' => 500, // phpcs:ignore -- Upper bound for merging across stores. The CCT query has no hard limit; this cap prevents runaway WP_Query on large CPT datasets.
 			'orderby'        => 'meta_value_num',
 			'meta_key'       => '_message_timestamp', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 			'order'          => 'ASC',

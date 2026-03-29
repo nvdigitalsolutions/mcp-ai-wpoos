@@ -279,10 +279,10 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$row = array(
-			'_ID'               => 55,
-			'channel'           => 'telegram',
+			'_ID'                => 55,
+			'channel'            => 'telegram',
 			'channel_contact_id' => '123',
-			'raw_payload'       => wp_json_encode(
+			'raw_payload'        => wp_json_encode(
 				array(
 					'agentic_tool_messages' => array(
 						array(
@@ -1639,10 +1639,30 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$messages = array(
-			array( 'message_id' => 'msg_1', 'content' => 'CPT version', '_store' => 'cpt', 'timestamp' => 100 ),
-			array( 'message_id' => 'msg_1', 'content' => 'CCT version', '_store' => 'cct', 'timestamp' => 100 ),
-			array( 'message_id' => 'msg_2', 'content' => 'Unique CPT', '_store' => 'cpt', 'timestamp' => 200 ),
-			array( 'message_id' => 'msg_3', 'content' => 'Unique CCT', '_store' => 'cct', 'timestamp' => 300 ),
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CPT version',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CCT version',
+				'_store'     => 'cct',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_2',
+				'content'    => 'Unique CPT',
+				'_store'     => 'cpt',
+				'timestamp'  => 200,
+			),
+			array(
+				'message_id' => 'msg_3',
+				'content'    => 'Unique CCT',
+				'_store'     => 'cct',
+				'timestamp'  => 300,
+			),
 		);
 
 		$result = $method->invoke( $controller, $messages );
@@ -1666,8 +1686,18 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$messages = array(
-			array( 'message_id' => '', 'content' => 'No ID one', '_store' => 'cpt', 'timestamp' => 100 ),
-			array( 'message_id' => '', 'content' => 'No ID two', '_store' => 'cct', 'timestamp' => 200 ),
+			array(
+				'message_id' => '',
+				'content'    => 'No ID one',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => '',
+				'content'    => 'No ID two',
+				'_store'     => 'cct',
+				'timestamp'  => 200,
+			),
 		);
 
 		$result = $method->invoke( $controller, $messages );
@@ -1676,9 +1706,9 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Format_message includes the _store key when passed through.
+	 * Format_message correctly maps the message_timestamp field to timestamp.
 	 */
-	public function test_format_message_preserves_store_key() {
+	public function test_format_message_maps_timestamp_field() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
 
 		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();

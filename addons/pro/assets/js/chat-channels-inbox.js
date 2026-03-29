@@ -89,9 +89,9 @@
 			msgTotal        : 0,
 		};
 
-		// Auto-refresh interval (30 seconds).
+		// Auto-refresh interval (configurable via localized settings, default 30s).
 		let refreshInterval = null;
-		const REFRESH_MS    = 30000;
+		const REFRESH_MS    = ( cfg.refreshInterval && cfg.refreshInterval > 0 ) ? cfg.refreshInterval * 1000 : 30000;
 
 		// Load initial conversations and start auto-refresh.
 		loadConversations();
