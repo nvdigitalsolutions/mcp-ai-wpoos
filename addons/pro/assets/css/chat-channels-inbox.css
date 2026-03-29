@@ -371,10 +371,54 @@
 }
 
 .cc-message-time {
-	display: block;
+	display: inline;
 	font-size: .6875rem;
-	margin-top: 4px;
 	opacity: .65;
+}
+
+.cc-message-footer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.cc-message-status {
+	font-size: .625rem;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+	opacity: .7;
+}
+
+.cc-message-status--sent     { color: inherit; }
+.cc-message-status--delivered { color: #10b981; }
+.cc-message-status--read     { color: #3b82f6; }
+.cc-message-status--failed   { color: #ef4444; }
+
+.cc-message--outbound .cc-message-status--sent     { color: rgba(255,255,255,.7); }
+.cc-message--outbound .cc-message-status--delivered { color: #a7f3d0; }
+.cc-message--outbound .cc-message-status--read      { color: #93c5fd; }
+.cc-message--outbound .cc-message-status--failed    { color: #fca5a5; }
+
+/* Message pagination */
+.cc-msg-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 6px 16px;
+	border-top: 1px solid #e2e8f0;
+	background: #fafafa;
+	font-size: .75rem;
+}
+
+.cc-msg-pagination:empty {
+	display: none;
+}
+
+/* Error state for placeholders */
+.cc-placeholder--error {
+	color: #dc2626;
 }
 
 /* Reply box */

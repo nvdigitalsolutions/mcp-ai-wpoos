@@ -279,10 +279,10 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$row = array(
-			'_ID'               => 55,
-			'channel'           => 'telegram',
+			'_ID'                => 55,
+			'channel'            => 'telegram',
 			'channel_contact_id' => '123',
-			'raw_payload'       => wp_json_encode(
+			'raw_payload'        => wp_json_encode(
 				array(
 					'agentic_tool_messages' => array(
 						array(
@@ -1620,5 +1620,113 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 
 		wp_delete_user( $admin_id );
+	}
+
+	// =========================================================================
+	// Message deduplication
+	// =========================================================================
+
+	/**
+	 * Deduplicate_messages() must remove duplicates based on message_id,
+	 * preferring CCT entries over CPT entries.
+	 */
+	public function test_deduplicate_messages_prefers_cct() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'deduplicate_messages' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CPT version',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CCT version',
+				'_store'     => 'cct',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_2',
+				'content'    => 'Unique CPT',
+				'_store'     => 'cpt',
+				'timestamp'  => 200,
+			),
+			array(
+				'message_id' => 'msg_3',
+				'content'    => 'Unique CCT',
+				'_store'     => 'cct',
+				'timestamp'  => 300,
+			),
+		);
+
+		$result = $method->invoke( $controller, $messages );
+
+		$this->assertCount( 3, $result, 'Duplicate msg_1 should be reduced to one entry' );
+		// CCT version should win.
+		$this->assertSame( 'CCT version', $result[0]['content'] );
+		$this->assertSame( 'Unique CPT', $result[1]['content'] );
+		$this->assertSame( 'Unique CCT', $result[2]['content'] );
+	}
+
+	/**
+	 * Deduplicate_messages() keeps messages without a message_id.
+	 */
+	public function test_deduplicate_messages_keeps_empty_ids() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'deduplicate_messages' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'message_id' => '',
+				'content'    => 'No ID one',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => '',
+				'content'    => 'No ID two',
+				'_store'     => 'cct',
+				'timestamp'  => 200,
+			),
+		);
+
+		$result = $method->invoke( $controller, $messages );
+
+		$this->assertCount( 2, $result, 'Messages without IDs should both be kept' );
+	}
+
+	/**
+	 * Format_message correctly maps the message_timestamp field to timestamp.
+	 */
+	public function test_format_message_maps_timestamp_field() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_message' );
+		$method->setAccessible( true );
+
+		$row = array(
+			'_ID'                => 10,
+			'channel'            => 'telegram',
+			'channel_contact_id' => '999',
+			'message_timestamp'  => 1700000000,
+		);
+
+		$formatted = $method->invoke( $controller, $row, false );
+
+		// The format_message method itself does not add _store; it is added by the caller.
+		$this->assertArrayHasKey( 'timestamp', $formatted );
+		$this->assertSame( 1700000000, $formatted['timestamp'] );
 	}
 }

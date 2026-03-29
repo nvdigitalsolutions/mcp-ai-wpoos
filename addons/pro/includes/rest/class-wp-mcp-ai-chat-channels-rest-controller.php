@@ -292,13 +292,22 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$search            = $request->get_param( 'search' );
 		$conversation_type = $request->get_param( 'conversation_type' );
 
-		// CCT path (preferred when JetEngine table exists).
-		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+		$cct_available = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists();
+		$cpt_available = class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' );
+
+		// When both stores exist, merge contacts so that legacy CPT contacts
+		// (created before CCT was enabled) are not lost.
+		if ( $cct_available && $cpt_available ) {
+			return $this->get_conversations_merged( $page, $per_page, $channel, $crm_status, $search, $conversation_type );
+		}
+
+		// CCT-only path.
+		if ( $cct_available ) {
 			return $this->get_conversations_from_cct( $page, $per_page, $channel, $crm_status, $search, $conversation_type );
 		}
 
-		// CPT fallback path.
-		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+		// CPT-only path.
+		if ( $cpt_available ) {
 			return $this->get_conversations_from_cpt( $page, $per_page, $channel, $crm_status, $search );
 		}
 
@@ -428,6 +437,175 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Merge conversations from both CCT and CPT stores.
+	 *
+	 * Contacts that exist in both stores (matched by channel + channel_contact_id
+	 * + connection_id) are represented by the CCT record. CPT-only contacts
+	 * are appended so they remain visible in the inbox during the transition
+	 * from CPT to CCT storage.
+	 *
+	 * @param int    $page              Page number.
+	 * @param int    $per_page          Items per page.
+	 * @param string $channel           Optional channel filter.
+	 * @param string $crm_status        Optional CRM status filter.
+	 * @param string $search            Optional search term.
+	 * @param string $conversation_type Optional conversation type filter.
+	 * @return WP_REST_Response
+	 */
+	protected function get_conversations_merged( $page, $per_page, $channel, $crm_status, $search, $conversation_type = '' ) {
+		// Fetch all matching contacts from CCT (unpaginated so we can merge).
+		$cct_items = $this->get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type );
+
+		// Build a lookup set of channel+contact_id+connection keys already in CCT.
+		$cct_keys = array();
+		foreach ( $cct_items as $item ) {
+			$key = $item['channel'] . '|' . $item['channel_contact_id'] . '|' . $item['connection_id'];
+			$cct_keys[ $key ] = true;
+		}
+
+		// Fetch CPT contacts and append any that are not already in CCT.
+		$cpt_items = $this->get_conversations_items_from_cpt( $channel, $crm_status, $search );
+		foreach ( $cpt_items as $item ) {
+			$key = $item['channel'] . '|' . $item['channel_contact_id'] . '|' . $item['connection_id'];
+			if ( ! isset( $cct_keys[ $key ] ) ) {
+				// Mark the item source so the messages endpoint knows which store to query.
+				$item['_source'] = 'cpt';
+				$cct_items[]     = $item;
+			}
+		}
+
+		// Sort merged list by last_message_at descending.
+		usort(
+			$cct_items,
+			function ( $a, $b ) {
+				return $b['last_message_at'] - $a['last_message_at'];
+			}
+		);
+
+		$total = count( $cct_items );
+		$offset = ( $page - 1 ) * $per_page;
+		$paged  = array_slice( $cct_items, $offset, $per_page );
+
+		return rest_ensure_response(
+			array(
+				'items'    => $paged,
+				'total'    => $total,
+				'page'     => $page,
+				'per_page' => $per_page,
+			)
+		);
+	}
+
+	/**
+	 * Retrieve all matching conversation items from CCT (no pagination).
+	 *
+	 * @param string $channel           Optional channel filter.
+	 * @param string $crm_status        Optional CRM status filter.
+	 * @param string $search            Optional search term.
+	 * @param string $conversation_type Optional conversation type filter.
+	 * @return array[] Formatted contact items.
+	 */
+	protected function get_conversations_items_from_cct( $channel, $crm_status, $search, $conversation_type = '' ) {
+		global $wpdb;
+		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+
+		$where  = array( 'cct_status = %s' );
+		$values = array( 'publish' );
+
+		if ( ! empty( $channel ) ) {
+			$where[]  = 'channel = %s';
+			$values[] = $channel;
+		}
+
+		if ( ! empty( $crm_status ) ) {
+			$where[]  = 'crm_status = %s';
+			$values[] = $crm_status;
+		}
+
+		if ( ! empty( $conversation_type ) ) {
+			$where[]  = 'conversation_type = %s';
+			$values[] = $conversation_type;
+		}
+
+		if ( ! empty( $search ) ) {
+			$where[]  = '(display_name LIKE %s OR channel_contact_id LIKE %s OR phone_number LIKE %s)';
+			$like     = '%' . $wpdb->esc_like( $search ) . '%';
+			$values[] = $like;
+			$values[] = $like;
+			$values[] = $like;
+		}
+
+		$where_sql = implode( ' AND ', $where );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY last_message_at DESC", $values ), ARRAY_A );
+
+		$items = array();
+		foreach ( (array) $rows as $row ) {
+			$items[] = $this->format_contact( $row );
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Retrieve all matching conversation items from CPT (no pagination).
+	 *
+	 * @param string $channel    Optional channel filter.
+	 * @param string $crm_status Optional CRM status filter.
+	 * @param string $search     Optional search term.
+	 * @return array[] Formatted contact items.
+	 */
+	protected function get_conversations_items_from_cpt( $channel, $crm_status, $search ) {
+		$meta_query = array( 'relation' => 'AND' );
+
+		if ( ! empty( $channel ) ) {
+			$meta_query[] = array(
+				'key'     => '_channel',
+				'value'   => $channel,
+				'compare' => '=',
+			);
+		}
+
+		if ( ! empty( $crm_status ) ) {
+			$meta_query[] = array(
+				'key'     => '_crm_status',
+				'value'   => $crm_status,
+				'compare' => '=',
+			);
+		}
+
+		$args = array(
+			'post_type'      => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 200, // phpcs:ignore -- Reasonable upper bound for merging. If more exist, they appear only in the CCT store going forward.
+			'orderby'        => 'meta_value_num',
+			'meta_key'       => '_last_message_at', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'order'          => 'DESC',
+			'no_found_rows'  => true,
+		);
+
+		if ( count( $meta_query ) > 1 ) {
+			$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		}
+
+		if ( ! empty( $search ) ) {
+			$args['s'] = $search;
+		}
+
+		$query = new WP_Query( $args );
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$items[] = $this->format_contact( WP_MCP_AI_Channel_Contacts_CPT::post_to_row( $post ) );
+		}
+
+		wp_reset_postdata();
+
+		return $items;
+	}
+
+	/**
 	 * Get messages for a single conversation (identified by contact_id).
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -439,20 +617,75 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$per_page         = min( 200, max( 1, (int) $request->get_param( 'per_page' ) ) );
 		$include_metadata = rest_sanitize_boolean( $request->get_param( 'include_metadata' ) );
 
-		// CCT path (preferred when JetEngine tables exist).
 		$cct_contacts_ok = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists();
 		$cct_messages_ok = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) && WP_MCP_AI_Channel_Messages_CCT::table_exists();
+		$cpt_contacts_ok = class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' );
+		$cpt_messages_ok = class_exists( 'WP_MCP_AI_Channel_Messages_CPT' );
 
-		if ( $cct_contacts_ok && $cct_messages_ok ) {
-			return $this->get_conversation_messages_from_cct( $contact_id, $page, $per_page, $include_metadata );
+		// Resolve the contact from whichever store has it (try CCT first).
+		$channel            = '';
+		$channel_contact_id = '';
+
+		if ( $cct_contacts_ok ) {
+			global $wpdb;
+			$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id, connection_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+			if ( ! empty( $contact ) ) {
+				$channel            = $contact['channel'];
+				$channel_contact_id = $contact['channel_contact_id'];
+			}
 		}
 
-		// CPT fallback path.
-		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) && class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
-			return $this->get_conversation_messages_from_cpt( $contact_id, $page, $per_page, $include_metadata );
+		// If not found in CCT, try CPT.
+		if ( '' === $channel && $cpt_contacts_ok ) {
+			$contact_post = get_post( $contact_id );
+			if ( $contact_post && WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE === $contact_post->post_type ) {
+				$channel            = (string) get_post_meta( $contact_id, '_channel', true );
+				$channel_contact_id = (string) get_post_meta( $contact_id, '_channel_contact_id', true );
+			}
 		}
 
-		return rest_ensure_response( array( 'items' => array(), 'total' => 0 ) );
+		if ( '' === $channel || '' === $channel_contact_id ) {
+			return new WP_Error( 'rest_not_found', __( 'Contact not found.', 'mcp-ai-wpoos-pro' ), array( 'status' => 404 ) );
+		}
+
+		// Collect messages from all available stores and merge them.
+		$all_messages = array();
+
+		// CCT messages.
+		if ( $cct_messages_ok ) {
+			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata ) );
+		}
+
+		// CPT messages.
+		if ( $cpt_messages_ok ) {
+			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata ) );
+		}
+
+		// Deduplicate by message_id (platform message ID) when non-empty, otherwise by store-scoped composite key.
+		$all_messages = $this->deduplicate_messages( $all_messages );
+
+		// Sort chronologically (oldest first).
+		usort(
+			$all_messages,
+			function ( $a, $b ) {
+				return $a['timestamp'] - $b['timestamp'];
+			}
+		);
+
+		$total  = count( $all_messages );
+		$offset = ( $page - 1 ) * $per_page;
+		$paged  = array_slice( $all_messages, $offset, $per_page );
+
+		return rest_ensure_response(
+			array(
+				'items'    => $paged,
+				'total'    => $total,
+				'page'     => $page,
+				'per_page' => $per_page,
+			)
+		);
 	}
 
 	/**
@@ -579,6 +812,121 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		wp_reset_postdata();
 
 		return rest_ensure_response( array( 'items' => $items, 'total' => $total, 'page' => $page, 'per_page' => $per_page ) );
+	}
+
+	/**
+	 * Fetch all messages from the CCT table for a given channel + contact.
+	 *
+	 * @param string $channel            Platform slug.
+	 * @param string $channel_contact_id Platform contact identifier.
+	 * @param bool   $include_metadata   Whether to include raw payload.
+	 * @return array[] Formatted message items.
+	 */
+	protected function fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata = false ) {
+		global $wpdb;
+		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$channel,
+				$channel_contact_id
+			),
+			ARRAY_A
+		);
+
+		$items = array();
+		foreach ( (array) $rows as $row ) {
+			$item           = $this->format_message( $row, $include_metadata );
+			$item['_store'] = 'cct';
+			$items[]        = $item;
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Fetch all messages from the CPT store for a given channel + contact.
+	 *
+	 * @param string $channel            Platform slug.
+	 * @param string $channel_contact_id Platform contact identifier.
+	 * @param bool   $include_metadata   Whether to include raw payload.
+	 * @return array[] Formatted message items.
+	 */
+	protected function fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata = false ) {
+		$meta_query = array(
+			'relation' => 'AND',
+			array(
+				'key'     => '_channel',
+				'value'   => $channel,
+				'compare' => '=',
+			),
+			array(
+				'key'     => '_channel_contact_id',
+				'value'   => $channel_contact_id,
+				'compare' => '=',
+			),
+		);
+
+		$args = array(
+			'post_type'      => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+			'post_status'    => 'publish',
+			'posts_per_page' => 500, // phpcs:ignore -- Upper bound for merging across stores. The CCT query has no hard limit; this cap prevents runaway WP_Query on large CPT datasets.
+			'orderby'        => 'meta_value_num',
+			'meta_key'       => '_message_timestamp', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'order'          => 'ASC',
+			'meta_query'     => $meta_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'no_found_rows'  => true,
+		);
+
+		$query = new WP_Query( $args );
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$row            = WP_MCP_AI_Channel_Messages_CPT::post_to_row( $post, $include_metadata );
+			$item           = $this->format_message( $row, $include_metadata );
+			$item['_store'] = 'cpt';
+			$items[]        = $item;
+		}
+
+		wp_reset_postdata();
+
+		return $items;
+	}
+
+	/**
+	 * Remove duplicate messages that appear in both CCT and CPT stores.
+	 *
+	 * Deduplication uses the platform message_id when available. Messages
+	 * without a message_id are kept as-is since they cannot be reliably
+	 * matched across stores.
+	 *
+	 * @param array[] $messages Formatted message items.
+	 * @return array[] Deduplicated messages (CCT wins over CPT).
+	 */
+	protected function deduplicate_messages( array $messages ) {
+		$seen = array();
+		$out  = array();
+
+		foreach ( $messages as $msg ) {
+			$mid = isset( $msg['message_id'] ) ? $msg['message_id'] : '';
+
+			if ( '' !== $mid ) {
+				if ( isset( $seen[ $mid ] ) ) {
+					// Prefer the CCT version when duplicated.
+					if ( 'cct' === ( $msg['_store'] ?? '' ) && 'cpt' === ( $out[ $seen[ $mid ] ]['_store'] ?? '' ) ) {
+						$out[ $seen[ $mid ] ] = $msg;
+					}
+					continue;
+				}
+				$seen[ $mid ] = count( $out );
+			}
+
+			$out[] = $msg;
+		}
+
+		return array_values( $out );
 	}
 
 	// =========================================================================
