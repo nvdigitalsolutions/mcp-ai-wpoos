@@ -702,6 +702,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.
 			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
+			// Listing image download tools (Google Maps, Facebook, Instagram).
+			'WP_MCP_AI_Pro_Tool_Download_Google_Maps_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-google-maps-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Facebook_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-facebook-page-images.php',
+			'WP_MCP_AI_Pro_Tool_Download_Instagram_Page_Images' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-download-instagram-page-images.php',
 			// Social media publishing tools.
 			'WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-facebook-instagram.php',
 			'WP_MCP_AI_Pro_Tool_Post_Tiktok_Video'        => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-post-tiktok-video.php',
@@ -1511,6 +1515,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'product_actualization'           => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
 			'lookup_product_price'            => 'external-tools',
+			// Listing image download tools - Require external API credentials.
+			'download_google_maps_images'     => 'external-tools',
+			'download_facebook_page_images'   => 'external-tools',
+			'download_instagram_page_images'  => 'external-tools',
 			// WooCommerce tools - Require WooCommerce plugin.
 			'woo_products'                    => 'wordpress-plugins',
 			'woo_orders'                      => 'wordpress-plugins',
@@ -1826,6 +1834,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 		if ( isset( $categories['high_resource'] ) ) {
 			$categories['high_resource']['tools'][] = 'product_actualization';
 			$categories['high_resource']['tools'][] = 'lookup_product_price';
+		}
+
+		// Listing image download tools - medium resource (external API + file downloads).
+		if ( isset( $categories['medium_resource'] ) ) {
+			$categories['medium_resource']['tools'][] = 'download_google_maps_images';
+			$categories['medium_resource']['tools'][] = 'download_facebook_page_images';
+			$categories['medium_resource']['tools'][] = 'download_instagram_page_images';
 		}
 
 		/**
