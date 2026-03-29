@@ -75,7 +75,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 		 */
 		public static function get_preset( $preset_id ) {
 			$preset_id = sanitize_key( $preset_id );
-			$presets   = self::get_presets();
+
+			if ( '' === $preset_id ) {
+				return null;
+			}
+
+			$presets = self::get_presets();
 
 			return isset( $presets[ $preset_id ] ) ? $presets[ $preset_id ] : null;
 		}
@@ -544,8 +549,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Format Email', 'mcp-ai-wpoos-pro' ),
-								'toolSlug'    => 'generate_mermaid',
-								'arguments'   => array( 'template' => 'email_layout' ),
+								'toolSlug'    => 'client_summarize_text',
+								'arguments'   => array( 'format' => 'email_html' ),
 								'description' => __( 'Format the digest into an email-friendly layout.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -836,7 +841,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 450 ),
 							'data'     => array(
 								'label'       => __( 'Prioritise Keywords', 'mcp-ai-wpoos-pro' ),
-								'toolSlug'    => 'client_analyze_sentiment',
+								'toolSlug'    => 'content_recommendation_engine',
 								'arguments'   => array( 'mode' => 'ranking_potential' ),
 								'description' => __( 'Rank keywords by opportunity score.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -1387,7 +1392,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 150 ),
 							'data'     => array(
 								'label'       => __( 'Analyse ROI', 'mcp-ai-wpoos-pro' ),
-								'toolSlug'    => 'client_analyze_sentiment',
+								'toolSlug'    => 'visualize_workflow_metrics',
 								'arguments'   => array( 'mode' => 'roi_analysis' ),
 								'description' => __( 'Calculate return on investment for each campaign.', 'mcp-ai-wpoos-pro' ),
 							),
@@ -1719,7 +1724,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 150 ),
 							'data'     => array(
 								'label'       => __( 'Calculate Trends', 'mcp-ai-wpoos-pro' ),
-								'toolSlug'    => 'client_analyze_sentiment',
+								'toolSlug'    => 'openai_usage_analytics',
 								'arguments'   => array( 'mode' => 'trend_analysis' ),
 								'description' => __( 'Identify trends and patterns in the data.', 'mcp-ai-wpoos-pro' ),
 							),
