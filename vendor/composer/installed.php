@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
         'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-        'reference' => '6b6d1f9dbe771dcb9e452bdaa3dbe69928e22020',
+        'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
             'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-            'reference' => '6b6d1f9dbe771dcb9e452bdaa3dbe69928e22020',
+            'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

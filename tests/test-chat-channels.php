@@ -294,7 +294,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_contact_from_cpt populates channel and channel_contact_id from CPT meta.
+	 * Resolve_contact_from_cpt populates channel and channel_contact_id from CPT meta.
 	 */
 	public function test_resolve_contact_from_cpt_finds_cpt_contact() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -303,11 +303,13 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		// Register the CPT so that get_post() works.
 		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
-			'post_title'  => 'Test Contact',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Test Contact',
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $post_id, '_channel', 'whatsapp' );
 		update_post_meta( $post_id, '_channel_contact_id', '12345' );
 
@@ -327,18 +329,20 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_contact_from_cpt does not populate when post type mismatches.
+	 * Resolve_contact_from_cpt does not populate when post type mismatches.
 	 */
 	public function test_resolve_contact_from_cpt_ignores_wrong_post_type() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
 		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
 
 		// Create a regular post (not a contact CPT).
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'post',
-			'post_title'  => 'Regular Post',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'post',
+				'post_title'  => 'Regular Post',
+				'post_status' => 'publish',
+			)
+		);
 
 		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
 		$reflection = new ReflectionClass( $controller );
@@ -356,7 +360,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_contact_from_cpt does not populate when channel meta is empty.
+	 * Resolve_contact_from_cpt does not populate when channel meta is empty.
 	 */
 	public function test_resolve_contact_from_cpt_rejects_empty_channel() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -364,11 +368,13 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
-			'post_title'  => 'Incomplete Contact',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Incomplete Contact',
+				'post_status' => 'publish',
+			)
+		);
 		// channel is empty, channel_contact_id is set.
 		update_post_meta( $post_id, '_channel', '' );
 		update_post_meta( $post_id, '_channel_contact_id', '12345' );
@@ -1053,7 +1059,8 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 	}
 
-	// Apple Messages for Business Tools
+	// =========================================================================
+	// Apple Messages for Business Tools.
 	// =========================================================================
 
 	/**
@@ -1586,7 +1593,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	// iCloud Drive Tools
 	// =========================================================================
 
-	/** iCloud list-files tool must be loadable. */
+	/** ICloud list-files tool must be loadable. */
 	public function test_chat_channels_tool_list_icloud_drive_files_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1594,7 +1601,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud list-files slug must equal 'list_icloud_drive_files'. */
+	/** ICloud list-files slug must equal 'list_icloud_drive_files'. */
 	public function test_list_icloud_drive_files_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1605,7 +1612,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'list_icloud_drive_files', $tool->get_slug() );
 	}
 
-	/** iCloud list-files returns WP_Error for missing gateway URL. */
+	/** ICloud list-files returns WP_Error for missing gateway URL. */
 	public function test_list_icloud_drive_files_tool_returns_error_without_gateway_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1628,7 +1635,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_delete_user( $admin_id );
 	}
 
-	/** iCloud list-files rejects non-HTTPS gateway URL. */
+	/** ICloud list-files rejects non-HTTPS gateway URL. */
 	public function test_list_icloud_drive_files_tool_rejects_http_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1652,7 +1659,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_delete_user( $admin_id );
 	}
 
-	/** iCloud get-file tool must be loadable. */
+	/** ICloud get-file tool must be loadable. */
 	public function test_chat_channels_tool_get_icloud_drive_file_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1660,7 +1667,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud get-file slug must equal 'get_icloud_drive_file'. */
+	/** ICloud get-file slug must equal 'get_icloud_drive_file'. */
 	public function test_get_icloud_drive_file_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1671,7 +1678,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'get_icloud_drive_file', $tool->get_slug() );
 	}
 
-	/** iCloud get-file capability flags include 'read-only'. */
+	/** ICloud get-file capability flags include 'read-only'. */
 	public function test_get_icloud_drive_file_tool_capability_flags_include_read_only() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1685,7 +1692,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertContains( 'pro', $flags );
 	}
 
-	/** iCloud upload-file tool must be loadable. */
+	/** ICloud upload-file tool must be loadable. */
 	public function test_chat_channels_tool_upload_icloud_drive_file_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1693,7 +1700,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud upload-file slug must equal 'upload_icloud_drive_file'. */
+	/** ICloud upload-file slug must equal 'upload_icloud_drive_file'. */
 	public function test_upload_icloud_drive_file_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1704,7 +1711,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'upload_icloud_drive_file', $tool->get_slug() );
 	}
 
-	/** iCloud upload-file capability flags include 'write'. */
+	/** ICloud upload-file capability flags include 'write'. */
 	public function test_upload_icloud_drive_file_tool_capability_flags() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1718,7 +1725,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertContains( 'pro', $flags );
 	}
 
-	/** iCloud upload-file returns WP_Error for missing gateway URL. */
+	/** ICloud upload-file returns WP_Error for missing gateway URL. */
 	public function test_upload_icloud_drive_file_tool_returns_error_without_gateway_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
