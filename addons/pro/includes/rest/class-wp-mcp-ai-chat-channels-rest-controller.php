@@ -635,22 +635,21 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// coincidental CCT _ID match doesn't shadow the real contact.
 		$channel            = '';
 		$channel_contact_id = '';
-		$connection_id      = '';
 
 		$try_cct_first = 'cpt' !== $source;
 
 		if ( $try_cct_first && $cct_contacts_ok ) {
-			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id, $connection_id );
+			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id );
 		}
 
 		// Fall back to CPT when CCT did not yield a usable contact.
 		if ( ( '' === $channel || '' === $channel_contact_id ) && $cpt_contacts_ok ) {
-			$this->resolve_contact_from_cpt( $contact_id, $channel, $channel_contact_id, $connection_id );
+			$this->resolve_contact_from_cpt( $contact_id, $channel, $channel_contact_id );
 		}
 
 		// If source=cpt was requested but CPT didn't resolve, still try CCT.
 		if ( ( '' === $channel || '' === $channel_contact_id ) && ! $try_cct_first && $cct_contacts_ok ) {
-			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id, $connection_id );
+			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id );
 		}
 
 		if ( '' === $channel || '' === $channel_contact_id ) {
@@ -662,12 +661,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		// CCT messages.
 		if ( $cct_messages_ok ) {
-			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata, $connection_id ) );
+			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata ) );
 		}
 
 		// CPT messages.
 		if ( $cpt_messages_ok ) {
-			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata, $connection_id ) );
+			$all_messages = array_merge( $all_messages, $this->fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata ) );
 		}
 
 		// Deduplicate by message_id (platform message ID) when non-empty, otherwise by store-scoped composite key.
@@ -696,34 +695,31 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Resolve contact channel, channel_contact_id, and connection_id from the CCT store.
+	 * Resolve contact channel and channel_contact_id from the CCT store.
 	 *
 	 * @param int    $contact_id          CCT row _ID.
 	 * @param string $channel             Reference to channel (populated on success).
 	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
-	 * @param string $connection_id       Reference to connection_id (populated on success).
 	 */
-	protected function resolve_contact_from_cct( $contact_id, &$channel, &$channel_contact_id, &$connection_id = '' ) {
+	protected function resolve_contact_from_cct( $contact_id, &$channel, &$channel_contact_id ) {
 		global $wpdb;
 		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id, connection_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
 		if ( ! empty( $contact ) && '' !== (string) $contact['channel'] && '' !== (string) $contact['channel_contact_id'] ) {
 			$channel            = (string) $contact['channel'];
 			$channel_contact_id = (string) $contact['channel_contact_id'];
-			$connection_id      = isset( $contact['connection_id'] ) ? (string) $contact['connection_id'] : '';
 		}
 	}
 
 	/**
-	 * Resolve contact channel, channel_contact_id, and connection_id from the CPT store.
+	 * Resolve contact channel and channel_contact_id from the CPT store.
 	 *
 	 * @param int    $contact_id          WordPress post ID.
 	 * @param string $channel             Reference to channel (populated on success).
 	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
-	 * @param string $connection_id       Reference to connection_id (populated on success).
 	 */
-	protected function resolve_contact_from_cpt( $contact_id, &$channel, &$channel_contact_id, &$connection_id = '' ) {
+	protected function resolve_contact_from_cpt( $contact_id, &$channel, &$channel_contact_id ) {
 		$contact_post = get_post( $contact_id );
 		if ( $contact_post && WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE === $contact_post->post_type ) {
 			$ch  = (string) get_post_meta( $contact_id, '_channel', true );
@@ -731,7 +727,6 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			if ( '' !== $ch && '' !== $cid ) {
 				$channel            = $ch;
 				$channel_contact_id = $cid;
-				$connection_id      = (string) get_post_meta( $contact_id, '_connection_id', true );
 			}
 		}
 	}
@@ -759,60 +754,33 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		}
 
 		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
-		$connection_id  = isset( $contact['connection_id'] ) ? (string) $contact['connection_id'] : '';
 
-		// When a connection_id is available, scope the query to that specific
-		// connection so that conversations from different bot connections (e.g.
-		// multiple Telegram bots) stay separated in the inbox. Fall back to a
-		// channel + channel_contact_id only query for legacy contacts that have
-		// no connection_id stored.
-		if ( '' !== $connection_id ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total = (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$connection_id
-				)
-			);
+		// Query all messages for this channel + contact regardless of which
+		// connection_id they were stored under. The contact is already uniquely
+		// identified by its CCT _ID; filtering further by connection_id would
+		// exclude messages stored under a legacy or different connection identifier
+		// (e.g. after a connection key rename), resulting in the inbox showing
+		// fewer messages than the CCT actually contains.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+				$contact['channel'],
+				$contact['channel_contact_id']
+			)
+		);
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$connection_id,
-					$per_page,
-					$offset
-				),
-				ARRAY_A
-			);
-		} else {
-			// Backward-compatible: no connection_id on the contact, return all
-			// messages for this channel + channel_contact_id.
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total = (int) $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					$contact['channel'],
-					$contact['channel_contact_id']
-				)
-			);
-
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
-					$contact['channel'],
-					$contact['channel_contact_id'],
-					$per_page,
-					$offset
-				),
-				ARRAY_A
-			);
-		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
+				$contact['channel'],
+				$contact['channel_contact_id'],
+				$per_page,
+				$offset
+			),
+			ARRAY_A
+		);
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
@@ -892,43 +860,24 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Fetch all messages from the CCT table for a given channel + contact.
 	 *
-	 * When a non-empty connection_id is provided the query is scoped to that
-	 * specific connection so that conversations from different bot connections
-	 * (e.g. multiple Telegram bots) are kept separate in the inbox.
-	 *
 	 * @param string $channel            Platform slug.
 	 * @param string $channel_contact_id Platform contact identifier.
 	 * @param bool   $include_metadata   Whether to include raw payload.
-	 * @param string $connection_id      Optional connection ID to scope messages.
 	 * @return array[] Formatted message items.
 	 */
-	protected function fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata = false, $connection_id = '' ) {
+	protected function fetch_messages_from_cct( $channel, $channel_contact_id, $include_metadata = false ) {
 		global $wpdb;
 		$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
 
-		if ( '' !== $connection_id ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$channel,
-					$channel_contact_id,
-					$connection_id
-				),
-				ARRAY_A
-			);
-		} else {
-			// Backward-compatible: no connection_id, return all messages for this contact.
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$rows = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$channel,
-					$channel_contact_id
-				),
-				ARRAY_A
-			);
-		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s ORDER BY message_timestamp ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$channel,
+				$channel_contact_id
+			),
+			ARRAY_A
+		);
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
@@ -943,17 +892,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Fetch all messages from the CPT store for a given channel + contact.
 	 *
-	 * When a non-empty connection_id is provided the query is scoped to that
-	 * specific connection so that conversations from different bot connections
-	 * are kept separate in the inbox.
-	 *
 	 * @param string $channel            Platform slug.
 	 * @param string $channel_contact_id Platform contact identifier.
 	 * @param bool   $include_metadata   Whether to include raw payload.
-	 * @param string $connection_id      Optional connection ID to scope messages.
 	 * @return array[] Formatted message items.
 	 */
-	protected function fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata = false, $connection_id = '' ) {
+	protected function fetch_messages_from_cpt( $channel, $channel_contact_id, $include_metadata = false ) {
 		$meta_query = array(
 			'relation' => 'AND',
 			array(
@@ -967,14 +911,6 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 				'compare' => '=',
 			),
 		);
-
-		if ( '' !== $connection_id ) {
-			$meta_query[] = array(
-				'key'     => '_connection_id',
-				'value'   => $connection_id,
-				'compare' => '=',
-			);
-		}
 
 		$args = array(
 			'post_type'      => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
