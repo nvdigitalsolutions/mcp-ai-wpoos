@@ -255,6 +255,10 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_chat_channels_rest_controller_registers_routes() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
 
+		// Expect the incorrect usage notice since we call register_routes()
+		// directly outside of the rest_api_init action.
+		$this->setExpectedIncorrectUsage( 'register_rest_route' );
+
 		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
 		// Manually call register_routes so we can inspect the server.
 		$controller->register_routes();
@@ -265,6 +269,123 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/conversations', $routes, 'Conversations route must be registered' );
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/reply', $routes, 'Reply route must be registered' );
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/contacts', $routes, 'Contacts route must be registered' );
+		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/conversations/(?P<contact_id>[0-9]+)/messages', $routes, 'Conversation messages route must be registered' );
+	}
+
+	/**
+	 * The messages route must accept the optional source parameter.
+	 */
+	public function test_messages_route_has_source_arg() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$this->setExpectedIncorrectUsage( 'register_rest_route' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$controller->register_routes();
+
+		$server = rest_get_server();
+		$routes = $server->get_routes();
+		$key    = '/mcp-ai-pro/v1/chat-channels/conversations/(?P<contact_id>[0-9]+)/messages';
+
+		$this->assertArrayHasKey( $key, $routes, 'Messages route must be registered' );
+
+		$endpoint = $routes[ $key ][0];
+		$this->assertArrayHasKey( 'source', $endpoint['args'], 'Messages endpoint must accept "source" parameter' );
+	}
+
+	/**
+	 * resolve_contact_from_cpt populates channel and channel_contact_id from CPT meta.
+	 */
+	public function test_resolve_contact_from_cpt_finds_cpt_contact() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		// Register the CPT so that get_post() works.
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+			'post_title'  => 'Test Contact',
+			'post_status' => 'publish',
+		) );
+		update_post_meta( $post_id, '_channel', 'whatsapp' );
+		update_post_meta( $post_id, '_channel_contact_id', '12345' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( 'whatsapp', $channel );
+		$this->assertSame( '12345', $channel_contact_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * resolve_contact_from_cpt does not populate when post type mismatches.
+	 */
+	public function test_resolve_contact_from_cpt_ignores_wrong_post_type() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		// Create a regular post (not a contact CPT).
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'post',
+			'post_title'  => 'Regular Post',
+			'post_status' => 'publish',
+		) );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( '', $channel, 'Channel should remain empty for wrong post type' );
+		$this->assertSame( '', $channel_contact_id, 'Channel contact ID should remain empty for wrong post type' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * resolve_contact_from_cpt does not populate when channel meta is empty.
+	 */
+	public function test_resolve_contact_from_cpt_rejects_empty_channel() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+			'post_title'  => 'Incomplete Contact',
+			'post_status' => 'publish',
+		) );
+		// channel is empty, channel_contact_id is set.
+		update_post_meta( $post_id, '_channel', '' );
+		update_post_meta( $post_id, '_channel_contact_id', '12345' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( '', $channel, 'Channel should remain empty when meta is blank' );
+		$this->assertSame( '', $channel_contact_id, 'Channel contact ID should remain empty when channel is blank' );
+
+		wp_delete_post( $post_id, true );
 	}
 
 	/**

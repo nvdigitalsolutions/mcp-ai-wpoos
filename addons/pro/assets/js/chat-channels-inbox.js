@@ -33,7 +33,17 @@
 			},
 		};
 		if ( body ) { opts.body = JSON.stringify( body ); }
-		return fetch( REST + path, opts ).then( function( r ) { return r.json(); } );
+		return fetch( REST + path, opts ).then( function( r ) {
+			if ( ! r.ok ) {
+				return r.json().catch( function() { return {}; } ).then( function( err ) {
+					var e = new Error( ( err && err.message ) || r.statusText );
+					e.status = r.status;
+					e.data   = err;
+					throw e;
+				} );
+			}
+			return r.json();
+		} );
 	}
 
 	// Format Unix timestamp as a short locale string.
@@ -250,7 +260,12 @@
 				$msgs.html( '<div class="cc-placeholder">' + escHtml( I18N.loading || 'Loading…' ) + '</div>' );
 			}
 
-			apiFetch( '/conversations/' + state.activeContactId + '/messages?page=' + state.msgPage + '&per_page=' + state.msgPerPage )
+			let qs = 'page=' + state.msgPage + '&per_page=' + state.msgPerPage;
+			if ( state.activeContact && state.activeContact._source ) {
+				qs += '&source=' + encodeURIComponent( state.activeContact._source );
+			}
+
+			apiFetch( '/conversations/' + state.activeContactId + '/messages?' + qs )
 				.then( function( data ) {
 					if ( ! data || ! data.items || ! data.items.length ) {
 						$msgs.html( '<div class="cc-placeholder">' + escHtml( I18N.noMessages || 'No messages yet.' ) + '</div>' );
