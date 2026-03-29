@@ -177,17 +177,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				</p>
 			</div>
 			<script>
+			/* Minimal inline dismiss handler — runs outside the wizard page. */
 			(function(){
-				var notice = document.querySelector('.wp-mcp-ai-welcome-notice');
-				if (!notice) return;
-				notice.addEventListener('click', function(e){
+				var n = document.querySelector('.wp-mcp-ai-welcome-notice');
+				if (!n) return;
+				n.addEventListener('click', function(e){
 					if (e.target.classList.contains('notice-dismiss')) {
-						fetch(ajaxurl, {
-							method: 'POST',
-							credentials: 'same-origin',
-							headers: {'Content-Type':'application/x-www-form-urlencoded'},
-							body: 'action=wp_mcp_ai_dismiss_welcome_notice&nonce=' + notice.dataset.nonce
-						});
+						var fd = new FormData();
+						fd.append('action', 'wp_mcp_ai_dismiss_welcome_notice');
+						fd.append('nonce', n.dataset.nonce);
+						fetch(ajaxurl, {method:'POST', credentials:'same-origin', body:fd});
 					}
 				});
 			})();
@@ -200,7 +199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		// -------------------------------------------------------------------------
 
 		/**
-		 * Enqueue wizard-specific CSS on the wizard admin page.
+		 * Enqueue wizard-specific CSS and JavaScript on the wizard admin page.
 		 *
 		 * @param string $hook_suffix The current admin page hook suffix.
 		 */
@@ -218,8 +217,45 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			wp_enqueue_style( 'wp-mcp-ai-wizard' );
 			wp_add_inline_style( 'wp-mcp-ai-wizard', $css );
 
-			// Enqueue wp.ajax dependency for AJAX calls inside the wizard.
-			wp_enqueue_script( 'jquery' );
+			// Enqueue the wizard JavaScript with jQuery dependency.
+			wp_enqueue_script(
+				'wp-mcp-ai-wizard',
+				WP_MCP_AI_URL . 'assets/js/onboarding-wizard.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Step is display-only for localization.
+			$current_step = isset( $_GET['step'] ) ? absint( $_GET['step'] ) : 1;
+			$next_step    = min( $current_step + 1, self::TOTAL_STEPS );
+
+			wp_localize_script(
+				'wp-mcp-ai-wizard',
+				'wpMcpAiWizard',
+				array(
+					'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+					'completeNonce' => wp_create_nonce( 'wp_mcp_ai_wizard_complete' ),
+					'nextStepUrl'   => esc_url( $this->wizard_url( $next_step ) ),
+					'i18n'          => array(
+						'show'             => __( 'Show', 'mcp-ai-wpoos' ),
+						'hide'             => __( 'Hide', 'mcp-ai-wpoos' ),
+						'showKey'          => __( 'Show API key', 'mcp-ai-wpoos' ),
+						'hideKey'          => __( 'Hide API key', 'mcp-ai-wpoos' ),
+						'testing'          => __( 'Testing…', 'mcp-ai-wpoos' ),
+						'connected'        => __( 'Connected!', 'mcp-ai-wpoos' ),
+						'connectionFailed' => __( 'Connection failed. Check your key and try again.', 'mcp-ai-wpoos' ),
+						'requestFailed'    => __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ),
+						'saving'           => __( 'Saving…', 'mcp-ai-wpoos' ),
+						'saveFailed'       => __( 'Could not save. Please try again.', 'mcp-ai-wpoos' ),
+						'saveAndContinue'  => __( 'Save Selection & Continue →', 'mcp-ai-wpoos' ),
+						'completed'        => __( 'Setup Complete ✓', 'mcp-ai-wpoos' ),
+						'setupComplete'    => __( 'Setup marked complete!', 'mcp-ai-wpoos' ),
+						'copied'           => __( 'Copied!', 'mcp-ai-wpoos' ),
+						'copyFailed'       => __( 'Copy failed — please select and copy manually.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
 		}
 
 		// -------------------------------------------------------------------------
@@ -288,27 +324,44 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			);
 			?>
 			<div class="wp-mcp-ai-wizard-header">
-				<div class="wp-mcp-ai-wizard-logo">
-					<span class="dashicons dashicons-format-chat"></span>
-					<span class="wp-mcp-ai-wizard-brand">NV oOS</span>
+				<div class="wp-mcp-ai-wizard-logo" aria-label="<?php esc_attr_e( 'NV oOS — Open Operator System', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-format-chat" aria-hidden="true"></span>
+					<span class="wp-mcp-ai-wizard-brand" aria-hidden="true">NV oOS</span>
 				</div>
 
-				<nav class="wp-mcp-ai-wizard-steps" aria-label="<?php esc_attr_e( 'Setup steps', 'mcp-ai-wpoos' ); ?>">
-					<?php foreach ( $steps as $num => $label ) : ?>
-						<div class="wp-mcp-ai-wizard-step <?php echo $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ); ?>">
-							<span class="wp-mcp-ai-wizard-step-indicator">
-								<?php if ( $num < $current_step ) : ?>
-									<span class="dashicons dashicons-yes"></span>
-								<?php else : ?>
-									<?php echo esc_html( $num ); ?>
-								<?php endif; ?>
-							</span>
-							<span class="wp-mcp-ai-wizard-step-label"><?php echo esc_html( $label ); ?></span>
-						</div>
-						<?php if ( $num < self::TOTAL_STEPS ) : ?>
-							<div class="wp-mcp-ai-wizard-step-connector <?php echo $num < $current_step ? 'is-complete' : ''; ?>"></div>
-						<?php endif; ?>
-					<?php endforeach; ?>
+				<nav class="wp-mcp-ai-wizard-steps" aria-label="<?php esc_attr_e( 'Setup progress', 'mcp-ai-wpoos' ); ?>">
+					<ol class="wp-mcp-ai-wizard-steps-list">
+						<?php foreach ( $steps as $num => $label ) : ?>
+							<li class="wp-mcp-ai-wizard-step <?php echo $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ); ?>"
+								<?php echo $num === $current_step ? 'aria-current="step"' : ''; ?>>
+								<span class="wp-mcp-ai-wizard-step-indicator" aria-hidden="true">
+									<?php if ( $num < $current_step ) : ?>
+										<span class="dashicons dashicons-yes"></span>
+									<?php else : ?>
+										<?php echo esc_html( $num ); ?>
+									<?php endif; ?>
+								</span>
+								<span class="wp-mcp-ai-wizard-step-label">
+									<?php
+									printf(
+										/* translators: 1: step number, 2: total steps, 3: step label */
+										'<span class="screen-reader-text">%s</span>%s',
+										sprintf(
+											/* translators: 1: step number, 2: total steps */
+											esc_html__( 'Step %1$d of %2$d: ', 'mcp-ai-wpoos' ),
+											intval( $num ),
+											intval( self::TOTAL_STEPS )
+										),
+										esc_html( $label )
+									);
+									?>
+								</span>
+							</li>
+							<?php if ( $num < self::TOTAL_STEPS ) : ?>
+								<li class="wp-mcp-ai-wizard-step-connector <?php echo $num < $current_step ? 'is-complete' : ''; ?>" aria-hidden="true"></li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					</ol>
 				</nav>
 
 				<a href="<?php echo $skip_url; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- already escaped. ?>"
@@ -408,17 +461,51 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 * Step 2: AI Provider connection.
 		 */
 		private function render_step_provider() {
-			$settings            = get_option( 'wp_mcp_ai_settings', array() );
-			$openai_key          = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
-			$anthropic_key       = ! empty( $settings['anthropic_api_key'] ) ? '••••••••••••••••' : '';
-			$gemini_key          = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
-			$huggingface_key     = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
-			$ollama_url          = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
-			$lm_studio_url       = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
-			$cloudflare_token    = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
-			$cloudflare_acct_id  = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
-			$test_nonce          = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
-			$nonce               = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+			$settings           = get_option( 'wp_mcp_ai_settings', array() );
+			$openai_key         = ! empty( $settings['openai_api_key'] ) ? '••••••••••••••••' : '';
+			$anthropic_key      = ! empty( $settings['anthropic_api_key'] ) ? '••••••••••••••••' : '';
+			$gemini_key         = ! empty( $settings['gemini_api_key'] ) ? '••••••••••••••••' : '';
+			$huggingface_key    = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
+			$ollama_url         = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
+			$lm_studio_url      = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
+			$cloudflare_token   = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
+			$cloudflare_acct_id = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
+			$test_nonce         = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
+			$nonce              = wp_create_nonce( 'wp_mcp_ai_wizard_save_step' );
+
+			// Providers definition for the tab loop.
+			$providers     = array(
+				'openai'      => array(
+					'label'    => 'OpenAI',
+					'icon_img' => WP_MCP_AI_URL . 'assets/images/openai-logo.svg',
+				),
+				'anthropic'   => array(
+					'label'    => '🤖 Anthropic',
+					'icon_img' => '',
+				),
+				'gemini'      => array(
+					'label'    => 'Google Gemini',
+					'icon_img' => WP_MCP_AI_URL . 'assets/images/gemini-logo.svg',
+				),
+				'huggingface' => array(
+					'label'    => '🤗 Hugging Face',
+					'icon_img' => '',
+				),
+				'ollama'      => array(
+					'label'    => '🦙 Ollama (Local)',
+					'icon_img' => '',
+				),
+				'lm_studio'   => array(
+					'label'    => '🖥️ LM Studio',
+					'icon_img' => '',
+				),
+				'cloudflare'  => array(
+					'label'    => '☁️ Cloudflare',
+					'icon_img' => '',
+				),
+			);
+			$provider_keys = array_keys( $providers );
+			$first_key     = reset( $provider_keys );
 			?>
 			<div class="wp-mcp-ai-wizard-step-content">
 				<h2><?php esc_html_e( 'Connect Your AI Provider', 'mcp-ai-wpoos' ); ?></h2>
@@ -426,38 +513,32 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<?php esc_html_e( 'NV oOS works with several AI providers. Enter your API key below and click "Test Connection" to confirm it works. You can always change this later in Settings → Providers.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
-				<div class="wp-mcp-ai-wizard-provider-tabs">
-					<button type="button" class="wp-mcp-ai-provider-tab is-active" data-provider="openai">
-						<img src="<?php echo esc_url( WP_MCP_AI_URL . 'assets/images/openai-logo.svg' ); ?>"
-							onerror="this.style.display='none'"
-							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
-						OpenAI
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="anthropic">
-						🤖 Anthropic
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="gemini">
-						<img src="<?php echo esc_url( WP_MCP_AI_URL . 'assets/images/gemini-logo.svg' ); ?>"
-							onerror="this.style.display='none'"
-							alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
-						Google Gemini
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="huggingface">
-						🤗 Hugging Face
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="ollama">
-						🦙 Ollama (Local)
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="lm_studio">
-						🖥️ LM Studio
-					</button>
-					<button type="button" class="wp-mcp-ai-provider-tab" data-provider="cloudflare">
-						☁️ Cloudflare
-					</button>
+				<div class="wp-mcp-ai-wizard-provider-tabs" role="tablist" aria-label="<?php esc_attr_e( 'AI Provider selection', 'mcp-ai-wpoos' ); ?>">
+					<?php foreach ( $providers as $key => $provider ) : ?>
+						<button type="button"
+								role="tab"
+								id="wp-mcp-ai-tab-<?php echo esc_attr( $key ); ?>"
+								class="wp-mcp-ai-provider-tab <?php echo $key === $first_key ? 'is-active' : ''; ?>"
+								aria-selected="<?php echo $key === $first_key ? 'true' : 'false'; ?>"
+								aria-controls="wp-mcp-ai-panel-<?php echo esc_attr( $key ); ?>"
+								tabindex="<?php echo $key === $first_key ? '0' : '-1'; ?>"
+								data-provider="<?php echo esc_attr( $key ); ?>">
+							<?php if ( ! empty( $provider['icon_img'] ) ) : ?>
+								<img src="<?php echo esc_url( $provider['icon_img'] ); ?>"
+									onerror="this.style.display='none'"
+									alt="" width="20" height="20" style="vertical-align:middle;margin-right:6px;">
+							<?php endif; ?>
+							<?php echo esc_html( $provider['label'] ); ?>
+						</button>
+					<?php endforeach; ?>
 				</div>
 
 				<!-- OpenAI panel -->
-				<div class="wp-mcp-ai-provider-panel is-active" data-panel="openai">
+				<div class="wp-mcp-ai-provider-panel is-active"
+					id="wp-mcp-ai-panel-openai"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-openai"
+					data-panel="openai">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -496,11 +577,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="openai"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="openai"></span>
 				</div>
 
 				<!-- Anthropic panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="anthropic">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-anthropic"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-anthropic"
+					hidden
+					data-panel="anthropic">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -539,11 +625,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="anthropic"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="anthropic"></span>
 				</div>
 
 				<!-- Gemini panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="gemini">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-gemini"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-gemini"
+					hidden
+					data-panel="gemini">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -582,11 +673,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="gemini"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="gemini"></span>
 				</div>
 
 				<!-- Hugging Face panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="huggingface">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-huggingface"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-huggingface"
+					hidden
+					data-panel="huggingface">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -625,11 +721,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="huggingface"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="huggingface"></span>
 				</div>
 
 				<!-- Ollama panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="ollama">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-ollama"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-ollama"
+					hidden
+					data-panel="ollama">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -655,11 +756,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="ollama"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="ollama"></span>
 				</div>
 
 				<!-- LM Studio panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="lm_studio">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-lm_studio"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-lm_studio"
+					hidden
+					data-panel="lm_studio">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -685,11 +791,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="lm_studio"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="lm_studio"></span>
 				</div>
 
 				<!-- Cloudflare panel -->
-				<div class="wp-mcp-ai-provider-panel" data-panel="cloudflare">
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-cloudflare"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-cloudflare"
+					hidden
+					data-panel="cloudflare">
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row">
@@ -747,7 +858,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
-					<span class="wp-mcp-ai-test-result" data-for="cloudflare"></span>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="cloudflare"></span>
 				</div>
 
 				<input type="hidden" id="wp_mcp_ai_wizard_nonce" value="<?php echo esc_attr( $nonce ); ?>">
@@ -758,90 +869,6 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					</a>
 				</p>
 			</div>
-
-			<script>
-			(function($){
-				// Provider tabs.
-				$('.wp-mcp-ai-provider-tab').on('click', function(){
-					var provider = $(this).data('provider');
-					$('.wp-mcp-ai-provider-tab').removeClass('is-active');
-					$('.wp-mcp-ai-provider-panel').removeClass('is-active');
-					$(this).addClass('is-active');
-					$('[data-panel="' + provider + '"]').addClass('is-active');
-				});
-
-				// Show/hide key toggle.
-				$('.wp-mcp-ai-show-key').on('click', function(){
-					var targetId = $(this).data('target');
-					var input = $('#' + targetId);
-					if ('password' === input.attr('type')) {
-						input.attr('type', 'text');
-						$(this).text('<?php echo esc_js( __( 'Hide', 'mcp-ai-wpoos' ) ); ?>');
-					} else {
-						input.attr('type', 'password');
-						$(this).text('<?php echo esc_js( __( 'Show', 'mcp-ai-wpoos' ) ); ?>');
-					}
-				});
-
-				// Save API key + Test connection.
-				$('.wp-mcp-ai-wizard-test-btn').on('click', function(){
-					var provider = $(this).data('provider');
-					var $result  = $('[data-for="' + provider + '"]');
-					var $btn     = $(this);
-
-					var apiKey    = '';
-					var extraData = {};
-
-					if ('openai' === provider) {
-						apiKey = $('#wp_mcp_ai_openai_key').val();
-					} else if ('anthropic' === provider) {
-						apiKey = $('#wp_mcp_ai_anthropic_key').val();
-					} else if ('gemini' === provider) {
-						apiKey = $('#wp_mcp_ai_gemini_key').val();
-					} else if ('huggingface' === provider) {
-						apiKey = $('#wp_mcp_ai_huggingface_key').val();
-					} else if ('ollama' === provider) {
-						extraData.ollama_url = $('#wp_mcp_ai_ollama_url').val();
-					} else if ('lm_studio' === provider) {
-						extraData.lm_studio_url = $('#wp_mcp_ai_lm_studio_url').val();
-					} else if ('cloudflare' === provider) {
-						apiKey = $('#wp_mcp_ai_cloudflare_token').val();
-						extraData.cloudflare_account_id = $('#wp_mcp_ai_cloudflare_account_id').val();
-					}
-
-					$result.html('<span style="color:#888"><?php echo esc_js( __( 'Testing…', 'mcp-ai-wpoos' ) ); ?></span>');
-					$btn.prop('disabled', true);
-
-					// First save the key via our wizard AJAX handler.
-					$.post(ajaxurl, {
-						action:   'wp_mcp_ai_wizard_save_step',
-						step:     2,
-						provider: provider,
-						api_key:  apiKey,
-						nonce:    $('#wp_mcp_ai_wizard_nonce').val(),
-						extra:    extraData
-					}).always(function(){
-						// Then test the connection using the provider diagnostics AJAX action.
-						$.post(ajaxurl, {
-							action:   'wp_mcp_ai_test_provider',
-							provider: provider,
-							nonce:    $btn.data('nonce')
-						}).done(function(resp){
-							if (resp && resp.success) {
-								$result.html('<span style="color:#46b450">✓ <?php echo esc_js( __( 'Connected!', 'mcp-ai-wpoos' ) ); ?></span>');
-							} else {
-								var msg = (resp && resp.data && resp.data.message) ? resp.data.message : '<?php echo esc_js( __( 'Connection failed. Check your key and try again.', 'mcp-ai-wpoos' ) ); ?>';
-								$result.html('<span style="color:#dc3232">✗ ' + msg + '</span>');
-							}
-						}).fail(function(){
-							$result.html('<span style="color:#dc3232">✗ <?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) ); ?></span>');
-						}).always(function(){
-							$btn.prop('disabled', false);
-						});
-					});
-				});
-			})(jQuery);
-			</script>
 			<?php
 		}
 
@@ -864,7 +891,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 				<div class="wp-mcp-ai-wizard-presets" id="wp-mcp-ai-presets">
 					<?php foreach ( $presets as $key => $preset ) : ?>
-						<label class="wp-mcp-ai-preset-card <?php echo in_array( $key, $saved_selection, true ) ? 'is-selected' : ''; ?>">
+						<label class="wp-mcp-ai-preset-card <?php echo in_array( $key, $saved_selection, true ) ? 'is-selected' : ''; ?>"
+							aria-checked="<?php echo in_array( $key, $saved_selection, true ) ? 'true' : 'false'; ?>">
 							<input type="checkbox"
 									name="wp_mcp_ai_presets[]"
 									value="<?php echo esc_attr( $key ); ?>"
@@ -873,7 +901,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 							<span class="wp-mcp-ai-preset-icon"><?php echo esc_html( $preset['icon'] ); ?></span>
 							<span class="wp-mcp-ai-preset-title"><?php echo esc_html( $preset['label'] ); ?></span>
 							<span class="wp-mcp-ai-preset-desc"><?php echo esc_html( $preset['description'] ); ?></span>
-							<span class="wp-mcp-ai-preset-check dashicons dashicons-yes-alt"></span>
+							<span class="wp-mcp-ai-preset-tools-count">
+								<?php
+								printf(
+									/* translators: %d: number of tools */
+									esc_html__( '%d tools included', 'mcp-ai-wpoos' ),
+									count( $preset['tools'] )
+								);
+								?>
+							</span>
+							<span class="wp-mcp-ai-preset-check dashicons dashicons-yes-alt" aria-hidden="true"></span>
 						</label>
 					<?php endforeach; ?>
 				</div>
@@ -889,64 +926,20 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						<?php esc_html_e( 'Skip — I\'ll set up manually', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</div>
-				<span id="wp-mcp-ai-preset-save-result"></span>
+				<span id="wp-mcp-ai-preset-save-result" aria-live="polite"></span>
 			</div>
-
-			<script>
-			(function($){
-				// Toggle card selected state on checkbox change.
-				$('.wp-mcp-ai-preset-card').on('click', function(){
-					var $card = $(this);
-					// Let the browser toggle the checkbox first.
-					setTimeout(function(){
-						if ($card.find('input').is(':checked')) {
-							$card.addClass('is-selected');
-						} else {
-							$card.removeClass('is-selected');
-						}
-					}, 0);
-				});
-
-				// Save presets and redirect to next step.
-				$('#wp-mcp-ai-apply-presets').on('click', function(){
-					var selected = [];
-					$('.wp-mcp-ai-preset-checkbox:checked').each(function(){
-						selected.push($(this).val());
-					});
-
-					var $btn    = $(this);
-					var $result = $('#wp-mcp-ai-preset-save-result');
-					$btn.prop('disabled', true).text('<?php echo esc_js( __( 'Saving…', 'mcp-ai-wpoos' ) ); ?>');
-
-					$.post(ajaxurl, {
-						action:   'wp_mcp_ai_wizard_save_step',
-						step:     3,
-						presets:  selected,
-						nonce:    $btn.data('nonce')
-					}).done(function(resp){
-						if (resp && resp.success) {
-							window.location.href = '<?php echo esc_js( $this->wizard_url( 4 ) ); ?>';
-						} else {
-							$result.html('<span style="color:#dc3232"><?php echo esc_js( __( 'Could not save. Please try again.', 'mcp-ai-wpoos' ) ); ?></span>');
-							$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Save Selection & Continue →', 'mcp-ai-wpoos' ) ); ?>');
-						}
-					}).fail(function(){
-						$result.html('<span style="color:#dc3232"><?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) ); ?></span>');
-						$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Save Selection & Continue →', 'mcp-ai-wpoos' ) ); ?>');
-					});
-				});
-			})(jQuery);
-			</script>
 			<?php
 		}
 
 		/**
 		 * Step 4: Finish / summary screen.
+		 *
+		 * Note: the wizard is NOT marked complete automatically on render.
+		 * Completion is triggered by an explicit "Mark Setup Complete" button
+		 * via the wp_mcp_ai_wizard_complete AJAX handler, so that navigating
+		 * back from this step does not prematurely seal the wizard.
 		 */
 		private function render_step_finish() {
-			// Mark the wizard as complete.
-			$this->mark_complete();
-
 			$presets          = $this->get_presets();
 			$selected_presets = get_option( 'wp_mcp_ai_onboarding_presets', array() );
 			if ( ! is_array( $selected_presets ) ) {
@@ -1033,11 +1026,39 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<div class="wp-mcp-ai-shortcode-info">
 					<h4><?php esc_html_e( '💡 Embed the AI Chat on Any Page', 'mcp-ai-wpoos' ); ?></h4>
 					<p><?php esc_html_e( 'Use the following shortcode to add an AI chat widget to any page or post:', 'mcp-ai-wpoos' ); ?></p>
-					<code class="wp-mcp-ai-shortcode">[mcp_ai_chat]</code>
+					<div class="wp-mcp-ai-shortcode-row">
+						<code class="wp-mcp-ai-shortcode">[mcp_ai_chat]</code>
+						<button type="button"
+								class="button button-small wp-mcp-ai-copy-shortcode"
+								data-shortcode="[mcp_ai_chat]"
+								aria-label="<?php esc_attr_e( 'Copy shortcode to clipboard', 'mcp-ai-wpoos' ); ?>">
+							<span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
+							<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-copy-feedback" aria-live="polite"></span>
+						</button>
+					</div>
 					<p class="description">
 						<?php esc_html_e( 'Or use the NV oOS Elementor widget for drag-and-drop placement.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
+
+				<?php if ( ! $this->is_complete() ) : ?>
+					<div class="wp-mcp-ai-wizard-complete-section">
+						<button type="button"
+								id="wp-mcp-ai-complete-wizard"
+								class="button button-primary button-hero">
+							<?php esc_html_e( 'Mark Setup Complete ✓', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class="wp-mcp-ai-wizard-completion-status" aria-live="polite"></span>
+						<p class="description">
+							<?php esc_html_e( 'This hides the setup notice and wizard star from the menu.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				<?php else : ?>
+					<div class="wp-mcp-ai-wizard-complete-section">
+						<span class="wp-mcp-ai-test-success">✓ <?php esc_html_e( 'Setup already complete!', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				<?php endif; ?>
 			</div>
 			<?php
 		}
@@ -1150,7 +1171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		}
 
 		/**
-		 * Save the preset selection from step 3.
+		 * Save the preset selection from step 3 and seed assistants.
 		 */
 		private function handle_save_presets_step() {
 			// Unslash the raw POST data first, then validate the structure, then sanitize each key.
@@ -1168,7 +1189,16 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			);
 
 			update_option( 'wp_mcp_ai_onboarding_presets', array_values( $presets ) );
-			wp_send_json_success( array( 'message' => __( 'Presets saved.', 'mcp-ai-wpoos' ) ) );
+
+			// Seed assistants for each selected preset.
+			$created = $this->seed_preset_assistants( array_values( $presets ) );
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Presets saved.', 'mcp-ai-wpoos' ),
+					'created' => $created,
+				)
+			);
 		}
 
 		/**
@@ -1238,51 +1268,185 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		/**
 		 * Return the filterable array of onboarding presets.
 		 *
+		 * Each preset defines a complete assistant configuration including tools,
+		 * a system prompt, temperature, and description. When the user selects
+		 * presets in Step 3, the plugin creates a fully-functional assistant CPT
+		 * post for each one so the site is working out of the box.
+		 *
 		 * @return array Preset definitions keyed by preset slug.
 		 */
 		public function get_presets() {
 			$defaults = array(
 				'content_creator'  => array(
-					'label'       => __( 'Content Creator / Blogger', 'mcp-ai-wpoos' ),
-					'icon'        => '✍️',
-					'description' => __( 'Write blog posts, social media content, and email campaigns.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'create_post', 'rewrite_content', 'summarize_content' ),
-					'assistant'   => __( 'Blog Writing Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'Content Creator / Blogger', 'mcp-ai-wpoos' ),
+					'icon'          => '✍️',
+					'description'   => __( 'Write, edit, and publish blog posts with AI-powered SEO, image generation, and internal linking.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'create_post',
+						'save_post',
+						'generate_post_excerpt',
+						'search_content',
+						'auto_categorize_content',
+						'suggest_internal_links',
+						'generate_openai_image',
+						'seo_meta_optimizer',
+						'content_freshness_checker',
+						'web_search',
+						'deep_research',
+						'client_summarize_text',
+					),
+					'system_prompt' => "You are a professional content writer and blogging expert for a WordPress site.\n\nYour capabilities:\n- Research topics in depth using web search before writing\n- Create well-structured, engaging blog posts with proper headings\n- Generate relevant featured images for every post\n- Optimize content for SEO with meta descriptions and keywords\n- Suggest internal links to existing content\n- Auto-categorize posts into the right categories\n- Write compelling excerpts and summaries\n\nWhen creating content:\n1. Research the topic first using web_search or deep_research\n2. Outline the structure before writing\n3. Write in a clear, engaging, conversational tone\n4. Include a generated featured image\n5. Add SEO meta data\n6. Suggest internal links to related content\n\nAlways prioritize accuracy, originality, and reader engagement.",
+					'temperature'   => 0.7,
+					'assistant'     => __( 'Content Writer', 'mcp-ai-wpoos' ),
 				),
 				'customer_support' => array(
-					'label'       => __( 'Customer Support Bot', 'mcp-ai-wpoos' ),
-					'icon'        => '🎧',
-					'description' => __( 'Answer FAQs, handle support requests, and greet visitors.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'search_posts', 'get_post', 'send_email' ),
-					'assistant'   => __( 'Support Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'Customer Support Bot', 'mcp-ai-wpoos' ),
+					'icon'          => '🎧',
+					'description'   => __( 'Answer FAQs, search your knowledge base, send emails, and assist visitors with a friendly support persona.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'search_content',
+						'semantic_content_search',
+						'get_recent_posts',
+						'send_group_email',
+						'moderate_content',
+						'client_summarize_text',
+						'get_site_summary',
+						'web_search',
+					),
+					'system_prompt' => "You are a friendly, professional customer support assistant for this WordPress site.\n\nYour responsibilities:\n- Answer user questions by searching the site's existing content and knowledge base\n- Provide accurate, helpful responses based on published pages and posts\n- Summarize long articles into concise answers\n- Escalate complex issues by sending an email to the site administrator\n- Moderate user-submitted content for appropriateness\n- Stay on-topic and never fabricate information not found in the knowledge base\n\nCommunication style:\n- Warm, patient, and professional\n- Use short paragraphs and bullet points for clarity\n- Always offer to help further at the end of your response\n- If you cannot find an answer, honestly say so and suggest contacting a human",
+					'temperature'   => 0.3,
+					'assistant'     => __( 'Support Assistant', 'mcp-ai-wpoos' ),
 				),
 				'ecommerce'        => array(
-					'label'       => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
-					'icon'        => '🛒',
-					'description' => __( 'Write product descriptions and assist shoppers.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'create_post', 'get_post' ),
-					'assistant'   => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
+					'icon'          => '🛒',
+					'description'   => __( 'Write product descriptions, manage WooCommerce products, analyze competitors, and assist shoppers.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'create_post',
+						'save_post',
+						'get_woo_products',
+						'get_woo_recent_orders',
+						'create_woo_product',
+						'scrape_product',
+						'generate_openai_image',
+						'search_content',
+						'web_search',
+						'seo_meta_optimizer',
+						'client_summarize_text',
+					),
+					'system_prompt' => "You are an e-commerce specialist assistant for a WordPress/WooCommerce store.\n\nYour capabilities:\n- Create compelling, SEO-optimized product descriptions\n- Manage WooCommerce product listings (create, update, review)\n- Check order status and recent order activity\n- Research competitor products and pricing via web search\n- Generate product images when needed\n- Optimize product pages for search engines\n- Assist shoppers with product recommendations\n\nWhen writing product descriptions:\n1. Highlight key features and benefits\n2. Use persuasive, conversion-focused language\n3. Include relevant keywords for SEO\n4. Add structured information (specs, materials, dimensions)\n5. Write in a tone that matches the brand voice\n\nAlways be accurate about product information and pricing.",
+					'temperature'   => 0.5,
+					'assistant'     => __( 'E-commerce Assistant', 'mcp-ai-wpoos' ),
 				),
 				'seo_research'     => array(
-					'label'       => __( 'SEO & Research', 'mcp-ai-wpoos' ),
-					'icon'        => '🔍',
-					'description' => __( 'Research topics, analyze keywords, and optimize content.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'brave_search', 'summarize_content' ),
-					'assistant'   => __( 'Research Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'SEO & Research', 'mcp-ai-wpoos' ),
+					'icon'          => '🔍',
+					'description'   => __( 'Deep research, SEO audits, content optimization, keyword analysis, and competitive intelligence.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'web_search',
+						'deep_research',
+						'search_content',
+						'semantic_content_search',
+						'get_rankmath_seo',
+						'seo_meta_optimizer',
+						'suggest_internal_links',
+						'content_freshness_checker',
+						'auto_categorize_content',
+						'client_summarize_text',
+						'client_extract_entities',
+						'create_chart',
+					),
+					'system_prompt' => "You are an SEO analyst and research specialist for a WordPress site.\n\nYour expertise:\n- Keyword research and competitive analysis via web search\n- On-page SEO audits using Rank Math integration\n- Content gap analysis and optimization recommendations\n- Internal linking strategy to boost site authority\n- Content freshness checks to identify outdated material\n- Data visualization with charts for reporting\n\nWhen conducting SEO analysis:\n1. Audit existing content for SEO issues\n2. Research competitors and identify keyword opportunities\n3. Recommend specific optimizations for each page\n4. Suggest internal links between related content\n5. Identify stale content that needs refreshing\n6. Create visual reports with charts when presenting data\n\nBase all recommendations on current SEO best practices. Provide actionable, specific suggestions rather than vague advice.",
+					'temperature'   => 0.3,
+					'assistant'     => __( 'SEO & Research Analyst', 'mcp-ai-wpoos' ),
 				),
 				'developer'        => array(
-					'label'       => __( 'Developer Copilot', 'mcp-ai-wpoos' ),
-					'icon'        => '💻',
-					'description' => __( 'Code review, WP-CLI commands, and developer tools.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'run_wp_cli', 'create_snippet' ),
-					'assistant'   => __( 'Developer Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'Developer Copilot', 'mcp-ai-wpoos' ),
+					'icon'          => '💻',
+					'description'   => __( 'Site health monitoring, security checks, cron management, system logs, and environment diagnostics.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'get_site_summary',
+						'get_site_health',
+						'get_environment_status',
+						'get_system_logs',
+						'get_update_status',
+						'check_site_security',
+						'create_cron_job',
+						'list_cron_jobs',
+						'check_workflow_health',
+						'purge_cache',
+						'login_security_monitor',
+						'user_activity_auditor',
+					),
+					'system_prompt' => "You are a WordPress developer and system administrator assistant.\n\nYour capabilities:\n- Monitor site health, performance, and environment status\n- Review system and error logs for issues\n- Check for pending updates and security vulnerabilities\n- Manage cron jobs (create, list, monitor scheduled tasks)\n- Audit user activity and login security\n- Purge caches when needed\n- Validate workflow configurations\n\nWhen troubleshooting:\n1. Start by checking site health and environment status\n2. Review recent system logs for errors\n3. Verify security status and pending updates\n4. Provide specific, actionable fix recommendations\n5. Explain technical concepts in clear language\n\nAlways prioritize security and stability. Warn about risky operations before executing them.",
+					'temperature'   => 0.2,
+					'assistant'     => __( 'Developer Copilot', 'mcp-ai-wpoos' ),
+				),
+				'media_creative'   => array(
+					'label'         => __( 'Media & Creative Studio', 'mcp-ai-wpoos' ),
+					'icon'          => '🎨',
+					'description'   => __( 'Generate images, analyze visuals, create charts, produce audio/speech, and manage your media library.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'generate_openai_image',
+						'generate_gemini_image',
+						'analyze_image',
+						'extract_image_text',
+						'resize_image',
+						'generate_image_alt_text',
+						'search_attachments',
+						'generate_openai_speech',
+						'create_chart',
+						'generate_mermaid',
+						'media_library_optimizer',
+					),
+					'system_prompt' => "You are a creative media specialist and visual content producer.\n\nYour capabilities:\n- Generate images using AI (OpenAI DALL-E and Google Gemini)\n- Analyze and describe existing images\n- Extract text from images (OCR)\n- Generate accessible alt text for images\n- Resize and optimize media files\n- Create data visualizations (charts and diagrams)\n- Generate speech audio from text\n- Search and manage the media library\n\nWhen creating visual content:\n1. Ask about the desired style, mood, and dimensions\n2. Generate high-quality images with detailed prompts\n3. Always add descriptive alt text for accessibility\n4. Optimize file sizes for web performance\n5. Suggest complementary visuals for articles\n\nPrioritize quality, accessibility, and brand consistency in all creative work.",
+					'temperature'   => 0.8,
+					'assistant'     => __( 'Creative Studio', 'mcp-ai-wpoos' ),
+				),
+				'site_admin'       => array(
+					'label'         => __( 'Site Administrator', 'mcp-ai-wpoos' ),
+					'icon'          => '🛡️',
+					'description'   => __( 'Full site management: security monitoring, email, caching, user audits, and scheduled task automation.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'get_site_summary',
+						'get_site_health',
+						'get_environment_status',
+						'check_site_security',
+						'get_update_status',
+						'get_system_logs',
+						'purge_cache',
+						'create_cron_job',
+						'list_cron_jobs',
+						'send_group_email',
+						'login_security_monitor',
+						'user_activity_auditor',
+						'get_user_info',
+					),
+					'system_prompt' => "You are a WordPress site administrator assistant with full operational access.\n\nYour responsibilities:\n- Monitor site health, security, and performance\n- Review and act on system logs and error reports\n- Manage scheduled tasks and cron jobs\n- Send administrative emails and notifications\n- Audit user activity and login attempts\n- Clear caches and optimize site performance\n- Track pending updates and security patches\n- Provide user account information when needed\n\nOperating principles:\n1. Prioritize site security and stability above all else\n2. Always explain what an action will do before executing it\n3. Recommend preventive measures, not just reactive fixes\n4. Keep the site owner informed with clear status summaries\n5. Flag urgent security issues immediately\n\nYou handle day-to-day site operations so the owner can focus on their business.",
+					'temperature'   => 0.2,
+					'assistant'     => __( 'Site Administrator', 'mcp-ai-wpoos' ),
 				),
 				'general'          => array(
-					'label'       => __( 'General Purpose', 'mcp-ai-wpoos' ),
-					'icon'        => '🤖',
-					'description' => __( 'A balanced assistant for everyday AI tasks.', 'mcp-ai-wpoos' ),
-					'tools'       => array( 'create_post', 'search_posts', 'summarize_content' ),
-					'assistant'   => __( 'General Assistant', 'mcp-ai-wpoos' ),
+					'label'         => __( 'General Purpose', 'mcp-ai-wpoos' ),
+					'icon'          => '🤖',
+					'description'   => __( 'A well-rounded assistant with content, research, media, and site management tools for everyday tasks.', 'mcp-ai-wpoos' ),
+					'tools'         => array(
+						'create_post',
+						'save_post',
+						'search_content',
+						'web_search',
+						'generate_openai_image',
+						'generate_post_excerpt',
+						'suggest_internal_links',
+						'client_summarize_text',
+						'get_site_summary',
+						'moderate_content',
+						'auto_categorize_content',
+						'send_group_email',
+					),
+					'system_prompt' => "You are a versatile AI assistant for a WordPress site, capable of handling a wide range of tasks.\n\nYour capabilities include:\n- Creating and editing blog posts and pages\n- Researching topics via web search\n- Generating images for content\n- Summarizing long documents\n- Searching existing site content\n- Providing a site overview and status\n- Sending emails on behalf of the administrator\n- Moderating content for quality\n\nAdapt your communication style to each task:\n- For writing: be creative, engaging, and SEO-aware\n- For research: be thorough, factual, and well-sourced\n- For administration: be concise, clear, and action-oriented\n\nAlways ask for clarification if a request is ambiguous. Prioritize helpful, accurate, and safe responses.",
+					'temperature'   => 0.5,
+					'assistant'     => __( 'General Assistant', 'mcp-ai-wpoos' ),
 				),
 			);
 
@@ -1295,6 +1459,119 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			 * @param array $defaults Default preset definitions keyed by preset slug.
 			 */
 			return apply_filters( 'wp_mcp_ai_onboarding_presets', $defaults );
+		}
+
+		// -------------------------------------------------------------------------
+		// Preset assistant seeding
+		// -------------------------------------------------------------------------
+
+		/**
+		 * Create a fully configured assistant CPT post for each selected preset.
+		 *
+		 * Assistants are only created if they do not already exist (checked by
+		 * post slug). This makes the method safe to call multiple times.
+		 *
+		 * @param array $preset_keys Array of preset slugs to seed.
+		 * @return array Associative array of preset_key => assistant post ID (or WP_Error message).
+		 */
+		private function seed_preset_assistants( $preset_keys ) {
+			$presets = $this->get_presets();
+			$created = array();
+
+			// Determine the provider and model from saved settings.
+			$settings         = get_option( 'wp_mcp_ai_settings', array() );
+			$default_provider = ! empty( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
+			$default_model    = $this->resolve_default_model( $settings, $default_provider );
+
+			foreach ( $preset_keys as $key ) {
+				if ( ! isset( $presets[ $key ] ) ) {
+					continue;
+				}
+
+				$preset = $presets[ $key ];
+				$slug   = 'onboarding-' . sanitize_title( $key );
+
+				// Skip if an assistant with this slug already exists.
+				$existing = get_page_by_path( $slug, OBJECT, 'mcp_ai_assistant' );
+				if ( $existing ) {
+					$created[ $key ] = $existing->ID;
+					continue;
+				}
+
+				$post_id = wp_insert_post(
+					array(
+						'post_type'    => 'mcp_ai_assistant',
+						'post_title'   => $preset['assistant'],
+						'post_content' => $preset['description'],
+						'post_name'    => $slug,
+						'post_status'  => 'publish',
+						'post_author'  => get_current_user_id(),
+					),
+					true
+				);
+
+				if ( is_wp_error( $post_id ) ) {
+					$created[ $key ] = $post_id->get_error_message();
+					continue;
+				}
+
+				// Core configuration.
+				update_post_meta( $post_id, '_wp_mcp_ai_provider', $default_provider );
+				update_post_meta( $post_id, '_wp_mcp_ai_model', $default_model );
+				update_post_meta( $post_id, '_wp_mcp_ai_temperature', isset( $preset['temperature'] ) ? floatval( $preset['temperature'] ) : 0.7 );
+				update_post_meta( $post_id, '_wp_mcp_ai_system_prompt', $preset['system_prompt'] );
+				update_post_meta( $post_id, '_wp_mcp_ai_tools', $preset['tools'] );
+				update_post_meta( $post_id, 'mcp_ai_required_capability', 'edit_posts' );
+
+				// If this is the first assistant created and no default is set, make it the default.
+				$current_default = ! empty( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+				if ( 0 === $current_default ) {
+					$settings['default_assistant'] = $post_id;
+					update_option( 'wp_mcp_ai_settings', $settings );
+				}
+
+				$created[ $key ] = $post_id;
+			}
+
+			/**
+			 * Fires after onboarding presets have been seeded as assistants.
+			 *
+			 * @since 1.1.5
+			 * @param array $created    Associative array of preset_key => post_id or error.
+			 * @param array $preset_keys The preset slugs that were selected.
+			 */
+			do_action( 'wp_mcp_ai_onboarding_presets_seeded', $created, $preset_keys );
+
+			return $created;
+		}
+
+		/**
+		 * Determine the default model for a given provider from saved settings.
+		 *
+		 * Falls back to sensible defaults for each provider.
+		 *
+		 * @param array  $settings        Saved plugin settings.
+		 * @param string $default_provider The provider slug.
+		 * @return string The model identifier.
+		 */
+		private function resolve_default_model( $settings, $default_provider ) {
+			// Check if a specific model is configured.
+			if ( ! empty( $settings['default_model'] ) ) {
+				return $settings['default_model'];
+			}
+
+			// Provider-specific fallbacks.
+			$fallbacks = array(
+				'openai'      => 'gpt-4.1',
+				'anthropic'   => 'claude-sonnet-4-6',
+				'gemini'      => 'gemini-2.5-flash',
+				'ollama'      => 'llama3',
+				'lm_studio'   => 'local',
+				'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'huggingface' => 'meta-llama/Llama-3-8B-Instruct',
+			);
+
+			return isset( $fallbacks[ $default_provider ] ) ? $fallbacks[ $default_provider ] : 'gpt-4.1';
 		}
 
 		// -------------------------------------------------------------------------
@@ -1547,13 +1824,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				margin-left: 10px;
 			}
 
-			/* Preset cards (step 3) */
-			.wp-mcp-ai-wizard-presets {
-				display: grid;
-				grid-template-columns: repeat(3, 1fr);
-				gap: 16px;
-				margin-bottom: 24px;
-			}
+			/* Preset cards (step 3) — grid defined at bottom of stylesheet */
 			.wp-mcp-ai-preset-card {
 				position: relative;
 				border: 2px solid #e0e0e0;
@@ -1684,8 +1955,111 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				font-size: 1em;
 				letter-spacing: 0.02em;
 			}
+			.wp-mcp-ai-shortcode-row {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin: 8px 0;
+			}
+
+			/* Copy button */
+			.wp-mcp-ai-copy-shortcode {
+				display: inline-flex;
+				align-items: center;
+				gap: 4px;
+				position: relative;
+			}
+			.wp-mcp-ai-copy-shortcode .dashicons {
+				font-size: 16px;
+				width: 16px;
+				height: 16px;
+			}
+			.wp-mcp-ai-copy-feedback {
+				position: absolute;
+				top: -24px;
+				left: 50%;
+				transform: translateX(-50%);
+				background: #46b450;
+				color: #fff;
+				font-size: 0.75em;
+				padding: 2px 8px;
+				border-radius: 3px;
+				white-space: nowrap;
+				opacity: 0;
+				transition: opacity 0.2s;
+				pointer-events: none;
+			}
+			.wp-mcp-ai-copy-feedback.is-visible {
+				opacity: 1;
+			}
+			.wp-mcp-ai-copy-feedback.is-error {
+				background: #dc3232;
+			}
+
+			/* Completion section (step 4) */
+			.wp-mcp-ai-wizard-complete-section {
+				margin-top: 28px;
+				padding-top: 20px;
+				border-top: 1px solid #e0e0e0;
+				text-align: center;
+			}
+			.wp-mcp-ai-wizard-complete-section .description {
+				margin-top: 8px;
+			}
+			.wp-mcp-ai-wizard-completion-status {
+				display: block;
+				margin-top: 8px;
+			}
+
+			/* Test result colours */
+			.wp-mcp-ai-test-success { color: #46b450; }
+			.wp-mcp-ai-test-error { color: #dc3232; }
+			.wp-mcp-ai-testing { color: #888; }
+
+			/* Preset tool count badge */
+			.wp-mcp-ai-preset-tools-count {
+				font-size: 0.72em;
+				color: #2271b1;
+				background: #e8f0fe;
+				border-radius: 3px;
+				padding: 2px 6px;
+				margin-top: 4px;
+				display: inline-block;
+			}
+
+			/* Focus styles for accessibility */
+			.wp-mcp-ai-provider-tab:focus-visible,
+			.wp-mcp-ai-preset-card:focus-within,
+			.wp-mcp-ai-wizard-path-card:focus-visible,
+			.wp-mcp-ai-next-step-card:focus-visible {
+				outline: 2px solid #2271b1;
+				outline-offset: 2px;
+			}
+
+			/* Step indicators — semantic list */
+			.wp-mcp-ai-wizard-steps-list {
+				display: flex;
+				align-items: center;
+				gap: 0;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+
+			/* Presets grid — 4 columns for 8 presets */
+			.wp-mcp-ai-wizard-presets {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 16px;
+				margin-bottom: 24px;
+			}
 
 			/* Responsive */
+			@media (max-width: 900px) {
+				.wp-mcp-ai-wizard-presets {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
 			@media (max-width: 700px) {
 				.wp-mcp-ai-wizard-paths,
 				.wp-mcp-ai-wizard-presets,
