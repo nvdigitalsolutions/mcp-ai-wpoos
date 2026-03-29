@@ -29,6 +29,7 @@
 			this.populateIntervalSelect();
 			this.bindGlobalEvents();
 			this.loadSchedules();
+			this.initPresetBrowser();
 		},
 
 		/** Populate the "Interval" select with options from PHP */
@@ -133,6 +134,35 @@
 			$( document ).on( 'click', '#wp-mcp-ai-sm-export-ical', function ( e ) {
 				e.preventDefault();
 				self.exportIcal();
+			} );
+
+			// Toggle preset browser panel.
+			$( document ).on( 'click keypress', '.wp-mcp-ai-sm-presets-toggle', function ( e ) {
+				if ( 'click' === e.type || 13 === e.which ) {
+					const $panel = $( '#wp-mcp-ai-sm-presets-panel' );
+					const expanded = 'true' === $( this ).attr( 'aria-expanded' );
+					$panel.slideToggle( 200 );
+					$( this ).attr( 'aria-expanded', ! expanded );
+					if ( ! expanded && ! self.presetsLoaded ) {
+						self.loadPresets();
+					}
+				}
+			} );
+
+			// Preset filters.
+			$( document ).on( 'change', '#wp-mcp-ai-sm-preset-category, #wp-mcp-ai-sm-preset-toolkit', function () {
+				self.filterPresets();
+			} );
+
+			// Preset search.
+			$( document ).on( 'input', '#wp-mcp-ai-sm-preset-search', function () {
+				self.filterPresets();
+			} );
+
+			// Preset install (delegated).
+			$( document ).on( 'click', '[data-preset-install]', function ( e ) {
+				e.preventDefault();
+				self.installPreset( $( this ).data( 'preset-install' ), $( this ) );
 			} );
 		},
 
@@ -1136,6 +1166,163 @@
 
 			html += '</div>';
 			return html;
+		},
+
+		/** ------------------------------------------------------------------ *
+		 *  Schedule Preset Browser
+		 * ------------------------------------------------------------------ */
+
+		/** Cached presets data */
+		presets: [],
+
+		/** Whether presets have been loaded */
+		presetsLoaded: false,
+
+		/** Initialise the preset browser */
+		initPresetBrowser: function () {
+			// Populate toolkit filter from known presets if the panel exists.
+			if ( ! $( '#wp-mcp-ai-sm-presets-panel' ).length ) {
+				return;
+			}
+		},
+
+		/** Load presets via AJAX */
+		loadPresets: function () {
+			const self = this;
+			const $grid = $( '#wp-mcp-ai-sm-presets-grid' );
+
+			$grid.html( '<p>' + this.esc( wpMcpAiScheduleManager.strings.loading || 'Loading…' ) + '</p>' );
+
+			this.ajax( 'wp_mcp_ai_sm_get_presets', {}, function ( data ) {
+				self.presets = data.presets || [];
+				self.presetsLoaded = true;
+				self.populateToolkitFilter();
+				self.renderPresetGrid( self.presets );
+			} );
+		},
+
+		/** Populate the toolkit filter dropdown from loaded presets */
+		populateToolkitFilter: function () {
+			const $sel = $( '#wp-mcp-ai-sm-preset-toolkit' );
+			if ( ! $sel.length || ! this.presets.length ) {
+				return;
+			}
+
+			const toolkits = {};
+			$.each( this.presets, function ( _i, preset ) {
+				if ( preset.toolkit && ! toolkits[ preset.toolkit ] ) {
+					toolkits[ preset.toolkit ] = preset.toolkit.replace( /_/g, ' ' ).replace( /\b\w/g, function ( c ) {
+						return c.toUpperCase();
+					} );
+				}
+			} );
+
+			$sel.find( 'option:not(:first)' ).remove();
+			$.each( toolkits, function ( key, label ) {
+				$sel.append( $( '<option>' ).val( key ).text( label ) );
+			} );
+		},
+
+		/** Filter displayed presets based on category, toolkit, and search */
+		filterPresets: function () {
+			const category = $( '#wp-mcp-ai-sm-preset-category' ).val();
+			const toolkit  = $( '#wp-mcp-ai-sm-preset-toolkit' ).val();
+			const search   = ( $( '#wp-mcp-ai-sm-preset-search' ).val() || '' ).toLowerCase();
+
+			const filtered = $.grep( this.presets, function ( preset ) {
+				if ( category && preset.category !== category ) {
+					return false;
+				}
+				if ( toolkit && preset.toolkit !== toolkit ) {
+					return false;
+				}
+				if ( search ) {
+					const haystack = ( preset.name + ' ' + preset.description + ' ' + ( preset.tags || [] ).join( ' ' ) ).toLowerCase();
+					if ( haystack.indexOf( search ) === -1 ) {
+						return false;
+					}
+				}
+				return true;
+			} );
+
+			this.renderPresetGrid( filtered );
+		},
+
+		/** Render preset cards into the grid */
+		renderPresetGrid: function ( presets ) {
+			const self  = this;
+			const $grid = $( '#wp-mcp-ai-sm-presets-grid' );
+			const str   = wpMcpAiScheduleManager.strings;
+
+			if ( ! presets.length ) {
+				$grid.html( '<p class="wp-mcp-ai-sm-presets-empty">' + self.esc( str.presetNoResults || 'No presets match your filters.' ) + '</p>' );
+				return;
+			}
+
+			let html = '';
+			$.each( presets, function ( _i, preset ) {
+				const icon   = preset.icon || 'dashicons-clock';
+				const type   = self.typeLabel( preset.schedule_type || 'task' );
+				const tags   = ( preset.tags || [] ).map( function ( t ) {
+					return '<span class="wp-mcp-ai-sm-preset-tag">' + self.esc( t ) + '</span>';
+				} ).join( '' );
+
+				html += '<div class="wp-mcp-ai-sm-preset-card" data-category="' + self.esc( preset.category || '' ) + '" data-toolkit="' + self.esc( preset.toolkit || '' ) + '">';
+				html += '<div class="wp-mcp-ai-sm-preset-card-header">';
+				html += '<span class="dashicons ' + self.esc( icon ) + '"></span>';
+				html += '<strong>' + self.esc( preset.name ) + '</strong>';
+				html += '</div>';
+				html += '<p class="wp-mcp-ai-sm-preset-desc">' + self.esc( preset.description ) + '</p>';
+				html += '<div class="wp-mcp-ai-sm-preset-meta">';
+				html += '<span class="wp-mcp-ai-sm-preset-type">' + self.esc( type ) + '</span>';
+				html += '<span class="wp-mcp-ai-sm-preset-interval">' + self.esc( preset.schedule || 'daily' ) + '</span>';
+				html += '</div>';
+				if ( tags ) {
+					html += '<div class="wp-mcp-ai-sm-preset-tags">' + tags + '</div>';
+				}
+				html += '<button type="button" class="button button-primary button-small" data-preset-install="' + self.esc( preset.id ) + '">';
+				html += self.esc( str.presetInstall || 'Install' );
+				html += '</button>';
+				html += '</div>';
+			} );
+
+			$grid.html( html );
+		},
+
+		/** Human-readable type label */
+		typeLabel: function ( type ) {
+			const str = wpMcpAiScheduleManager.strings;
+			const map = {
+				task:              str.typeTask || 'Task',
+				workflow:          str.typeWorkflow || 'Workflow',
+				assistant_run:     str.typeAssistant || 'Assistant Run',
+				channel_broadcast: str.typeBroadcast || 'Channel Broadcast',
+				workflow_builder:  str.typeBuilder || 'Workflow Builder',
+			};
+			return map[ type ] || type;
+		},
+
+		/** Install a preset */
+		installPreset: function ( presetId, $btn ) {
+			const self = this;
+			const str  = wpMcpAiScheduleManager.strings;
+
+			// eslint-disable-next-line no-alert
+			if ( ! window.confirm( str.presetConfirmInstall || 'Install this schedule preset?' ) ) {
+				return;
+			}
+
+			$btn.prop( 'disabled', true ).text( str.presetInstalling || 'Installing…' );
+
+			this.ajax( 'wp_mcp_ai_sm_install_preset', { preset_id: presetId }, function () {
+				$btn.text( '✓ ' + ( str.presetInstalled || 'Installed' ) );
+				self.loadSchedules();
+
+				// Re-enable button after a short delay.
+				setTimeout( function () {
+					$btn.prop( 'disabled', false ).text( str.presetInstall || 'Install' );
+				}, 2000 );
+			} );
 		},
 
 		/** Safe HTML escape */

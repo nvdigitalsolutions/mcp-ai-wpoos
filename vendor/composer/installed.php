@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-        'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-        'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
+        'pretty_version' => 'dev-copilot/4491-research-plan-schedule-presets',
+        'version' => 'dev-copilot/4491-research-plan-schedule-presets',
+        'reference' => 'e8c3d112243d3ff9d659f8ca7d53d2c0303961a6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-            'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
-            'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
+            'pretty_version' => 'dev-copilot/4491-research-plan-schedule-presets',
+            'version' => 'dev-copilot/4491-research-plan-schedule-presets',
+            'reference' => 'e8c3d112243d3ff9d659f8ca7d53d2c0303961a6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
