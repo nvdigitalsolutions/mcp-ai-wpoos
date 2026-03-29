@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
-        'version' => 'dev-copilot/review-pro-plugin-compliance',
-        'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
+        'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
+        'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
+        'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
-            'version' => 'dev-copilot/review-pro-plugin-compliance',
-            'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
+            'pretty_version' => 'dev-copilot/fix-chat-channel-inbox-connection',
+            'version' => 'dev-copilot/fix-chat-channel-inbox-connection',
+            'reference' => '002a6f3e29f0a4269a2ad619990930b40d9154ae',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

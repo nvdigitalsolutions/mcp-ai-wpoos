@@ -116,6 +116,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 						'type'    => 'boolean',
 						'default' => false,
 					),
+					'source' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_key',
+						'description'       => __( 'Store hint: "cct" or "cpt". When provided, the endpoint queries the specified store first.', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			)
 		);
@@ -616,34 +622,34 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$page             = max( 1, (int) $request->get_param( 'page' ) );
 		$per_page         = min( 200, max( 1, (int) $request->get_param( 'per_page' ) ) );
 		$include_metadata = rest_sanitize_boolean( $request->get_param( 'include_metadata' ) );
+		$source           = sanitize_key( (string) $request->get_param( 'source' ) );
 
 		$cct_contacts_ok = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) && WP_MCP_AI_Channel_Contacts_CCT::table_exists();
 		$cct_messages_ok = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) && WP_MCP_AI_Channel_Messages_CCT::table_exists();
 		$cpt_contacts_ok = class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' );
 		$cpt_messages_ok = class_exists( 'WP_MCP_AI_Channel_Messages_CPT' );
 
-		// Resolve the contact from whichever store has it (try CCT first).
+		// Resolve the contact from whichever store has it.
+		// When the client passes source=cpt (set by the merged conversations
+		// endpoint for CPT-only contacts), try the CPT store first so that a
+		// coincidental CCT _ID match doesn't shadow the real contact.
 		$channel            = '';
 		$channel_contact_id = '';
 
-		if ( $cct_contacts_ok ) {
-			global $wpdb;
-			$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id, connection_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
-			if ( ! empty( $contact ) ) {
-				$channel            = $contact['channel'];
-				$channel_contact_id = $contact['channel_contact_id'];
-			}
+		$try_cct_first = 'cpt' !== $source;
+
+		if ( $try_cct_first && $cct_contacts_ok ) {
+			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id );
 		}
 
-		// If not found in CCT, try CPT.
-		if ( '' === $channel && $cpt_contacts_ok ) {
-			$contact_post = get_post( $contact_id );
-			if ( $contact_post && WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE === $contact_post->post_type ) {
-				$channel            = (string) get_post_meta( $contact_id, '_channel', true );
-				$channel_contact_id = (string) get_post_meta( $contact_id, '_channel_contact_id', true );
-			}
+		// Fall back to CPT when CCT did not yield a usable contact.
+		if ( ( '' === $channel || '' === $channel_contact_id ) && $cpt_contacts_ok ) {
+			$this->resolve_contact_from_cpt( $contact_id, $channel, $channel_contact_id );
+		}
+
+		// If source=cpt was requested but CPT didn't resolve, still try CCT.
+		if ( ( '' === $channel || '' === $channel_contact_id ) && ! $try_cct_first && $cct_contacts_ok ) {
+			$this->resolve_contact_from_cct( $contact_id, $channel, $channel_contact_id );
 		}
 
 		if ( '' === $channel || '' === $channel_contact_id ) {
@@ -686,6 +692,43 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 				'per_page' => $per_page,
 			)
 		);
+	}
+
+	/**
+	 * Resolve contact channel and channel_contact_id from the CCT store.
+	 *
+	 * @param int    $contact_id          CCT row _ID.
+	 * @param string $channel             Reference to channel (populated on success).
+	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
+	 */
+	protected function resolve_contact_from_cct( $contact_id, &$channel, &$channel_contact_id ) {
+		global $wpdb;
+		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$contact = $wpdb->get_row( $wpdb->prepare( "SELECT channel, channel_contact_id FROM {$contacts_table} WHERE _ID = %d LIMIT 1", $contact_id ), ARRAY_A );
+		if ( ! empty( $contact ) && '' !== (string) $contact['channel'] && '' !== (string) $contact['channel_contact_id'] ) {
+			$channel            = (string) $contact['channel'];
+			$channel_contact_id = (string) $contact['channel_contact_id'];
+		}
+	}
+
+	/**
+	 * Resolve contact channel and channel_contact_id from the CPT store.
+	 *
+	 * @param int    $contact_id          WordPress post ID.
+	 * @param string $channel             Reference to channel (populated on success).
+	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
+	 */
+	protected function resolve_contact_from_cpt( $contact_id, &$channel, &$channel_contact_id ) {
+		$contact_post = get_post( $contact_id );
+		if ( $contact_post && WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE === $contact_post->post_type ) {
+			$ch  = (string) get_post_meta( $contact_id, '_channel', true );
+			$cid = (string) get_post_meta( $contact_id, '_channel_contact_id', true );
+			if ( '' !== $ch && '' !== $cid ) {
+				$channel            = $ch;
+				$channel_contact_id = $cid;
+			}
+		}
 	}
 
 	/**
