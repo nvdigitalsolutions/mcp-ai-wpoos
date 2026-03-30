@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for WP_MCP_AI_HTTP_Helper network interface binding.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_HTTP_Helper_Network_Interface_Test extends WP_UnitTestCase {
 

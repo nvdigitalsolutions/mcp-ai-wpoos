@@ -19,7 +19,7 @@
  *
  * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Main plugin entry point; file is intentionally named after the plugin slug, not a class.
  *
- * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  */
 

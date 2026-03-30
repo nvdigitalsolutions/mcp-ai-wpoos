@@ -1,6 +1,10 @@
 <?php
 /**
  * Helper utilities for generating DOCX fixtures in tests.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 trait WP_MCP_AI_Docx_Test_Helper {
 	/**

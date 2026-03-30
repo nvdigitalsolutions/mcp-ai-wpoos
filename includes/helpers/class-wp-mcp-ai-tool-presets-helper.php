@@ -19,6 +19,9 @@
  *   search, sales pipeline tools, health metrics logging, vitals import, MOH sync, social listening,
  *   competitor analysis, workflow CRUD, vault tools, and more across all presets.
  * @updated 2026-03-30 - Added 8 missing tools: Brevo email/contacts/stats, Mailgun email,
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
  */
 

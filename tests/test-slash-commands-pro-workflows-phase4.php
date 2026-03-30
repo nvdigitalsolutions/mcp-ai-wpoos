@@ -4,6 +4,9 @@
  *
  * @package WP_MCP_AI
  * @subpackage Tests
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {

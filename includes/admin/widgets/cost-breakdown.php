@@ -4,6 +4,9 @@
  *
  * @package WP_MCP_AI
  * @var array $data Widget data containing cost information.
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for WP All Export and WP All Import tools.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_All_Import_Export_Tool_Availability_Test extends WP_UnitTestCase {
 	/**

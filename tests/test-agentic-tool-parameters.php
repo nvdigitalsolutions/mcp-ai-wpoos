@@ -4,6 +4,10 @@
  *
  * Ensures that tool arguments are properly validated and error handling
  * works correctly for invalid JSON and malformed parameters.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 

@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests to verify bearer token authentication doesn't inadvertently use session user privileges.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
 

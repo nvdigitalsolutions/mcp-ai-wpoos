@@ -7,6 +7,9 @@
  * @package MCP_AI_WP_OOS
  * @subpackage Pro/Vault
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 // If this file is called directly, abort.

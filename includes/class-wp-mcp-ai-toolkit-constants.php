@@ -9,6 +9,9 @@
  * @package WP_MCP_AI
  * @since   1.1.0
  * @deprecated 1.2.0 Use includes/domain/class-wp-mcp-ai-toolkit-constants.php
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

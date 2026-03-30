@@ -6,6 +6,10 @@
  * user capabilities before executing workflows.
  *
  * Usage: Run this from WP-CLI or include in a test environment.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Simulate the workflow class capability validation.

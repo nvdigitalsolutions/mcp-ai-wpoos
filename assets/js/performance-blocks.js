@@ -2,6 +2,10 @@
  * Gutenberg blocks for NV oOS Performance Monitoring.
  *
  * Registers performance monitoring blocks in the block editor.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 ( function( blocks, element, editor, components ) {

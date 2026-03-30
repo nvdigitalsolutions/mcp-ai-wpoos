@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Crawl4AI price lookup tool.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
 

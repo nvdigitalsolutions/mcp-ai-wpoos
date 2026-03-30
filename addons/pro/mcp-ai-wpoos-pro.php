@@ -16,7 +16,7 @@
  *
  * @package WP_MCP_AI_Pro
  *
- * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
  * All rights reserved. This is proprietary software.
  *
  * Patent Pending: This software is the subject of a pending patent application
