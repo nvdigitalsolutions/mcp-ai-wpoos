@@ -706,7 +706,8 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @param int    $contact_id          CCT row _ID.
 	 * @param string $channel             Reference to channel (populated on success).
 	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
-	 * @param string $connection_id       Reference to connection_id (populated on success).
+	 * @param string $connection_id       Optional. Reference to connection_id (populated on success).
+	 *                                    Callers must pass a variable by reference to receive the value.
 	 */
 	protected function resolve_contact_from_cct( $contact_id, &$channel, &$channel_contact_id, &$connection_id = '' ) {
 		global $wpdb;
@@ -730,7 +731,8 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * @param int    $contact_id          WordPress post ID.
 	 * @param string $channel             Reference to channel (populated on success).
 	 * @param string $channel_contact_id  Reference to channel_contact_id (populated on success).
-	 * @param string $connection_id       Reference to connection_id (populated on success).
+	 * @param string $connection_id       Optional. Reference to connection_id (populated on success).
+	 *                                    Callers must pass a variable by reference to receive the value.
 	 */
 	protected function resolve_contact_from_cpt( $contact_id, &$channel, &$channel_contact_id, &$connection_id = '' ) {
 		$contact_post = get_post( $contact_id );
