@@ -69,7 +69,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				self::get_chat_channels_presets(),
 				self::get_media_presets(),
 				self::get_calendar_booking_presets(),
-				self::get_health_wellness_presets()
+				self::get_health_wellness_presets(),
+				self::get_upwork_freelancer_presets()
 			);
 
 			return $presets;
@@ -1601,6 +1602,109 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'hook' => 'wp_mcp_ai_docgen_template_update_check',
 					),
 				),
+
+				// -- Document Management & Sharing (ISO 9001 / GDPR best-practice patterns).
+
+				'new_document_notification'  => array(
+					'name'          => __( 'New Document Notification', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monitors for newly created or uploaded documents and sends role-based notifications to relevant team members. Follows document control best practices for timely awareness and review.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'document_generation',
+					'category'      => 'communication',
+					'icon'          => 'dashicons-media-document',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'hourly',
+					'tags'          => array( 'documents', 'notifications', 'new', 'sharing' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'search_attachments',
+								'arguments' => array(
+									'date_query' => 'last_hour',
+									'orderby'    => 'date',
+									'order'      => 'DESC',
+								),
+								'label'     => __( 'Find documents added in the last hour', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'send_group_email',
+								'arguments' => array(
+									'subject' => 'New documents added — review required',
+								),
+								'label'     => __( 'Notify team of new documents', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'document_sharing_audit'     => array(
+					'name'          => __( 'Document Sharing Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Reviews document access and sharing activity to ensure compliance with data governance policies. Identifies documents shared externally or with unexpected recipients for security review.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'document_generation',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-lock',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'documents', 'sharing', 'audit', 'security' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Perform a weekly document sharing audit. List all documents shared or made public in the past 7 days. Identify any files shared with external users or outside approved distribution groups. Flag documents lacking proper access controls or missing classification metadata. Provide a summary with recommended corrective actions for each finding.',
+						),
+					),
+				),
+				'document_version_review'    => array(
+					'name'          => __( 'Document Version Review', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Checks for outdated document versions still in active use and identifies documents with pending draft revisions that have not been published. Supports version control best practices.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'document_generation',
+					'category'      => 'maintenance',
+					'icon'          => 'dashicons-backup',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'documents', 'versions', 'review', 'compliance' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'track_document_version',
+								'arguments' => array(
+									'action' => 'list_outdated',
+								),
+								'label'     => __( 'Find documents with outdated versions in use', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'validate_document_checklist',
+								'arguments' => array(),
+								'label'     => __( 'Validate document completeness checklist', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'document_approval_reminder' => array(
+					'name'          => __( 'Document Approval Reminder', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Sends daily reminders for documents awaiting approval or review. Prevents bottlenecks in document workflows by alerting approvers of pending items and upcoming deadlines.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'document_generation',
+					'category'      => 'communication',
+					'icon'          => 'dashicons-yes-alt',
+					'schedule_type' => 'channel_broadcast',
+					'schedule'      => 'daily',
+					'tags'          => array( 'documents', 'approval', 'reminders', 'workflow' ),
+					'schedule_data' => array(
+						'broadcast_config' => array(
+							'message'  => 'Document approval reminder: the following documents are awaiting review or approval. Please action pending items to avoid workflow delays.',
+							'channels' => array( 'slack' ),
+						),
+					),
+				),
+				'document_compliance_check'  => array(
+					'name'          => __( 'Document Compliance Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Validates documents against retention policies and regulatory requirements. Flags expired documents, missing mandatory metadata, and items approaching retention deadlines for proactive compliance management.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'document_generation',
+					'category'      => 'business',
+					'icon'          => 'dashicons-shield',
+					'schedule_type' => 'task',
+					'schedule'      => 'daily',
+					'tags'          => array( 'documents', 'compliance', 'retention', 'regulatory' ),
+					'schedule_data' => array(
+						'hook' => 'wp_mcp_ai_docgen_compliance_check',
+					),
+				),
 			);
 		}
 
@@ -1717,6 +1821,135 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 								),
 								'label'     => __( 'Archive stale contacts', 'mcp-ai-wpoos-pro' ),
 							),
+						),
+					),
+				),
+
+				// -- CRM Email Correspondence (industry-standard HubSpot / Salesforce patterns).
+
+				'email_correspondence_audit'  => array(
+					'name'          => __( 'Email Correspondence Audit', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Searches CRM contacts for customer emails that need follow-up, categorises correspondence by type (support, sales, escalated), and flags overdue responses following enterprise CRM standards.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-email-alt',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'email', 'correspondence', 'followup' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_correspondence',
+								'arguments' => array(
+									'action'              => 'search',
+									'correspondence_type' => 'needs_followup',
+									'category'            => 'all',
+									'days_since_contact'  => 3,
+								),
+								'label'     => __( 'Find contacts needing email follow-up', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'crm_email_search_correspondence',
+								'arguments' => array(
+									'action'              => 'search',
+									'correspondence_type' => 'overdue',
+									'category'            => 'all',
+								),
+								'label'     => __( 'Identify overdue correspondence', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'email_sla_breach_monitor'    => array(
+					'name'          => __( 'Email SLA Breach Monitor', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Monitors customer email response times and alerts when SLA thresholds are breached. Checks for escalated or support emails awaiting reply beyond the configured window.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-warning',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'hourly',
+					'tags'          => array( 'crm', 'email', 'sla', 'monitoring' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_correspondence',
+								'arguments' => array(
+									'action'          => 'search',
+									'sla_breach_only' => true,
+									'category'        => 'support',
+								),
+								'label'     => __( 'Check for SLA-breached support emails', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'crm_email_search_correspondence',
+								'arguments' => array(
+									'action'          => 'search',
+									'sla_breach_only' => true,
+									'category'        => 'escalated',
+								),
+								'label'     => __( 'Check for SLA-breached escalations', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'lead_nurture_email_digest'   => array(
+					'name'          => __( 'Lead Nurture Email Digest', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Generates a daily digest of new leads from email inquiries and scores them for sales readiness using industry-standard lead qualification criteria (demographic, firmographic, behavioural signals).', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-admin-users',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'email', 'leads', 'nurture', 'scoring' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Search for new email leads received in the last 24 hours using crm_email_search_leads with status "new_inquiry". Score each lead for sales readiness based on demographic, firmographic, and behavioural signals. Generate a prioritised digest showing lead name, email, score, recommended action, and suggested follow-up timeline.',
+						),
+					),
+				),
+				'customer_reengagement_check' => array(
+					'name'          => __( 'Customer Re-engagement Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Identifies inactive customers who have not engaged via email in 30+ days and triggers re-engagement outreach following multi-touch CRM best practices.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'marketing',
+					'icon'          => 'dashicons-megaphone',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'email', 'reengagement', 'marketing' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'crm_email_search_correspondence',
+								'arguments' => array(
+									'action'              => 'search',
+									'correspondence_type' => 'never_contacted',
+									'days_since_contact'  => 30,
+								),
+								'label'     => __( 'Find inactive customers (30+ days)', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'manage_crm_contact',
+								'arguments' => array(
+									'action' => 'list',
+									'tag'    => 'needs-reengagement',
+								),
+								'label'     => __( 'Tag contacts for re-engagement', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'email_deliverability_report' => array(
+					'name'          => __( 'Email Deliverability Report', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly analysis of email deliverability metrics including bounce rates, open rates, and spam complaints, with actionable recommendations to maintain sender reputation.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-area',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'email', 'deliverability', 'analytics' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly email deliverability report. Analyse bounce rates, open rates, click-through rates, spam complaints, and unsubscribe trends. Compare against industry benchmarks (20-25% open rate, <2% bounce rate, <0.1% spam complaint rate). Identify contacts with repeated bounces for list hygiene. Provide actionable recommendations to improve sender reputation and deliverability.',
 						),
 					),
 				),
@@ -2206,6 +2439,112 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 								'arguments' => array(),
 								'label'     => __( 'Send follow-up messages', 'mcp-ai-wpoos-pro' ),
 							),
+						),
+					),
+				),
+			);
+		}
+
+		// ------------------------------------------------------------------
+		// Upwork Freelancer presets
+		// ------------------------------------------------------------------
+
+		/**
+		 * Get Upwork Freelancer toolkit presets.
+		 *
+		 * Industry-standard freelancer workflow automation patterns for job
+		 * discovery, proposal management, and client communication following
+		 * best practices from leading freelance platforms and productivity
+		 * methodologies (GigRadar, Vollna, n8n automation patterns).
+		 *
+		 * @since  2.1.0
+		 * @return array<string, array> Preset definitions.
+		 */
+		private static function get_upwork_freelancer_presets() {
+			return array(
+				'upwork_job_discovery_scan'    => array(
+					'name'          => __( 'Upwork Job Discovery Scan', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Periodically searches the Upwork marketplace for new job postings matching configured skills, categories, and budget preferences. Surfaces high-potential opportunities before competitors apply.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'upwork_freelancer',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-search',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'wp_mcp_ai_every_30_minutes',
+					'tags'          => array( 'upwork', 'freelancer', 'jobs', 'discovery' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'search_upwork_jobs',
+								'arguments' => array(
+									'query'            => '',
+									'job_type'         => 'all',
+									'experience_level' => 'all',
+									'sort'             => 'recency',
+									'limit'            => 20,
+								),
+								'label'     => __( 'Search for new matching jobs', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'upwork_job_scoring'          => array(
+					'name'          => __( 'Upwork Job Fit Scoring', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scores recently discovered Upwork jobs against your freelancer profile, skills, and rate preferences. Ranks opportunities by fit to prioritise proposal effort on the highest-value postings.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'upwork_freelancer',
+					'category'      => 'business',
+					'icon'          => 'dashicons-star-half',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'upwork', 'freelancer', 'scoring', 'matching' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Search for Upwork jobs posted in the last 24 hours using search_upwork_jobs. For each job, use score_upwork_job to evaluate fit against my freelancer profile and skills. Generate a ranked report showing: job title, client budget, fit score, key matching skills, potential concerns (low client rating, unverified payment), and recommended bid strategy. Focus on jobs with a fit score above 70%.',
+						),
+					),
+				),
+				'upwork_proposal_pipeline'    => array(
+					'name'          => __( 'Upwork Proposal Pipeline Report', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Generates a daily overview of submitted proposals, pending invitations, and active contract statuses. Tracks proposal-to-interview conversion rate and highlights stalled applications needing attention.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'upwork_freelancer',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-clipboard',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'daily',
+					'tags'          => array( 'upwork', 'freelancer', 'proposals', 'pipeline', 'tracking' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a daily Upwork proposal pipeline report. Summarise: (1) proposals submitted in the last 7 days with their current status, (2) client response rate and average time to first response, (3) active interviews or pending invitations, (4) proposals with no response after 48 hours that may need follow-up, and (5) weekly win rate trend. Provide recommendations to improve proposal conversion.',
+						),
+					),
+				),
+				'upwork_client_followup'      => array(
+					'name'          => __( 'Upwork Client Follow-up Check', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Checks for unanswered client messages and interview invitations on Upwork. Sends reminders to ensure prompt responses, maintaining professional communication standards that boost freelancer ranking.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'upwork_freelancer',
+					'category'      => 'communication',
+					'icon'          => 'dashicons-format-chat',
+					'schedule_type' => 'channel_broadcast',
+					'schedule'      => 'wp_mcp_ai_every_4_hours',
+					'tags'          => array( 'upwork', 'freelancer', 'client', 'followup', 'messages' ),
+					'schedule_data' => array(
+						'broadcast_config' => array(
+							'message'  => 'Upwork client follow-up reminder: check for unanswered messages and interview invitations. Prompt response times improve your Job Success Score and client satisfaction rating.',
+							'channels' => array( 'slack' ),
+						),
+					),
+				),
+				'upwork_profile_performance'  => array(
+					'name'          => __( 'Upwork Profile Performance Review', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Weekly review of Upwork profile performance metrics including Job Success Score trends, earnings, proposal win rate, and profile visibility. Provides actionable recommendations to improve marketplace competitiveness.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'upwork_freelancer',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-line',
+					'schedule_type' => 'assistant_run',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'upwork', 'freelancer', 'profile', 'analytics', 'performance' ),
+					'schedule_data' => array(
+						'assistant_config' => array(
+							'message' => 'Generate a weekly Upwork profile performance review. Analyse: (1) Job Success Score trend over the past 4 weeks, (2) total earnings this week vs. previous weeks, (3) proposal submission count and win rate, (4) average project rating received, (5) profile views and search appearance trends. Compare against freelancer benchmarks for my category. Recommend specific actions to improve ranking, such as skill certifications, portfolio updates, or rate adjustments.',
 						),
 					),
 				),
