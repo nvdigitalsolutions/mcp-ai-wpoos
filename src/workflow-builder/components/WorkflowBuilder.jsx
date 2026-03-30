@@ -547,6 +547,8 @@ const WorkflowBuilderInner = () => {
 						config.arguments = JSON.stringify( d.arguments, null, 2 );
 					} else if ( typeof d.arguments === 'string' ) {
 						config.arguments = d.arguments;
+					} else {
+						config.arguments = '{}';
 					}
 				} else if ( mapped.type === 'condition' ) {
 					if ( d.expression ) {
