@@ -1,5 +1,9 @@
 /**
  * Auth0 1-Click Setup Wizard JS
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 (function($) {
 	'use strict';

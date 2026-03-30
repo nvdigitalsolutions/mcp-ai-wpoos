@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @subpackage Tests
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 	/**

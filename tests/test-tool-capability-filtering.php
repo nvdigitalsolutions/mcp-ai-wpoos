@@ -3,6 +3,9 @@
  * Test tool capability filtering in build_tools_payload.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 class Test_Tool_Capability_Filtering extends WP_UnitTestCase {

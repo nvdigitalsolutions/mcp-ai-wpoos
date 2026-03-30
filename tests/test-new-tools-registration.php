@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for new media and comments tools registration.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_New_Tools_Registration_Test extends WP_UnitTestCase {
 

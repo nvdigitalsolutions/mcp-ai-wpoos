@@ -12,7 +12,7 @@
  *
  * @package WP_MCP_AI
  *
- * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  */
 

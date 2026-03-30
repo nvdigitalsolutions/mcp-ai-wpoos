@@ -7,6 +7,9 @@
  * Pro plugin is loaded, rather than the deprecated WP_MCP_AI_BASE_VERSION constant.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**

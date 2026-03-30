@@ -5,6 +5,9 @@
  * This is a self-contained service that can be used independently.
  * 
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 (function(window) {

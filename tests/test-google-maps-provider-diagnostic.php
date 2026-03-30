@@ -6,6 +6,9 @@
  * and returns proper responses for testing Google Maps API connectivity.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 

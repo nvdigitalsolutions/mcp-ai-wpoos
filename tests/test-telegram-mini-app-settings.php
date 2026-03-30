@@ -3,6 +3,9 @@
  * Test Telegram Mini App Settings tab and group/channel webhook support.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**

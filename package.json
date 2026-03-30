@@ -123,6 +123,18 @@
 		"jetengine",
 		"mcp"
 	],
-	"author": "NV Digital Solutions",
+	"author": {
+		"name": "NV Digital Solutions",
+		"email": "developer@nvdigitalsolutions.com",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"homepage": "https://nvdigitalsolutions.com/wpoos",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git"
+	},
+	"bugs": {
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+	},
 	"license": "GPL-3.0-or-later"
 }

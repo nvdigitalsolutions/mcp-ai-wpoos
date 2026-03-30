@@ -10,6 +10,9 @@
  * WP_MCP_AI_Admin_AJAX_Handlers following the existing pattern in the codebase.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

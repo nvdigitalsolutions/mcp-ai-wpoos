@@ -5,6 +5,10 @@
  * Tests cover two filtering mechanisms:
  * 1. Toolkit-level filtering: Tools from disabled toolkits (Feature Manager)
  * 2. Individual tool filtering: Individually disabled tools (Tool Manager)
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Disabled_Tools_Metabox_Test extends WP_UnitTestCase {
 

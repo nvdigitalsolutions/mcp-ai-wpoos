@@ -3,6 +3,9 @@
  * Test that save endpoint returns proper error when JetEngine is not available.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
