@@ -269,6 +269,20 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (March 2026)
 
+### Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026) ⭐ **NEW**
+
+**8 use-case presets that seed fully-configured assistants, WCAG 2.1 accessible, external JS, explicit completion flow.**
+
+- ✅ **8 preset use cases**: Content Creator (✍️ 12 tools), Customer Support (🎧 8 tools), E-commerce (🛒 11 tools), SEO & Research (🔍 12 tools), Developer Copilot (💻 12 tools), Media & Creative Studio (🎨 11 tools), Site Administrator (🛡️ 13 tools), General Purpose (🤖 12 tools).
+- ✅ **Assistant seeding**: Selecting presets creates real `mcp_ai_assistant` CPT posts with tools, system prompt, provider, model, and temperature — working system out of the box.
+- ✅ **WCAG 2.1 accessibility**: WAI-ARIA tablist/tab/tabpanel for provider tabs, keyboard navigation (Arrow/Home/End), `aria-current="step"` progress, `aria-live="polite"` feedback regions, `focus-visible` outlines.
+- ✅ **External JavaScript**: Inline scripts extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n — CSP-compliant and cacheable.
+- ✅ **Explicit completion**: Step 4 no longer auto-completes; users click "Mark Setup Complete" to finalize.
+- ✅ **Copy shortcode**: One-click copy of `[mcp_ai_chat]` shortcode on the finish screen with clipboard fallback.
+- ✅ **Filterable presets**: `wp_mcp_ai_onboarding_presets` filter lets addons add custom presets.
+- ✅ **22 PHPUnit tests** for presets, seeding, model resolution, and accessibility.
+- [Getting Started Wizard →](#-installation)
+
 ### Pro Schedule Manager — Full Cron-Backed Scheduler with AI Tools & Admin UI (March 26, 2026) ⭐ **NEW**
 
 **Five schedule types, Symfony Cache/Validator, MJML email, ical + CSV export, chart.js sparkline** (PR branch `copilot/create-pro-schedule-manager`).
@@ -956,6 +970,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
 - 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
@@ -1326,6 +1341,9 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 > **ℹ️ Plugin Directory Status**  
 > This plugin is currently **pending approval** in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards throughout the review process. You can install the plugin manually from our [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos) or wait for the official WordPress Plugin Directory listing.
 
+> **🚀 Getting Started Wizard**  
+> After activating the plugin, you'll be redirected to a **4-step setup wizard** that walks you through connecting an AI provider, choosing a use case, and creating your first assistant — all in under 2 minutes. The wizard creates fully-configured assistants with tools, system prompts, and tuned temperatures so your site is working out of the box. You can access the wizard any time at **NV oOS → Getting Started** or directly at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`.
+
 ### Requirements
 
 **Minimum Requirements:**
@@ -1653,6 +1671,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - **[Docs Archive](docs/archive/)** - Consolidated implementation history and superseded documentation
 
 ### For New Users
+- **🚀 [Getting Started Wizard](#-installation)** ⭐ NEW — 4-step guided setup that connects your AI provider, selects a use case, and creates a ready-to-use assistant in under 2 minutes. 8 presets available: Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose.
 - **[Use Cases & Quickstart Guides](docs/getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering 7 major use cases with step-by-step quickstarts
 - [5-Minute Quick Start](docs/getting-started/QUICK_START_5_MINUTES.md) - Get started immediately: from zero to first chat
 - [Setup Checklist](docs/getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
@@ -3241,6 +3260,8 @@ Use the following hooks to extend the plugin:
 | `apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context )` | Filter | Inspect or transform tool output before it is returned. |
 | `do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result )` | Action | Runs after a tool completes execution. |
 | `apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $context )` | Filter | Intercept or redirect logging output. |
+| `apply_filters( 'wp_mcp_ai_onboarding_presets', $presets )` | Filter | Add, remove, or modify onboarding wizard use-case presets. Each preset defines tools, system prompt, temperature, and assistant name. |
+| `do_action( 'wp_mcp_ai_onboarding_presets_seeded', $created, $preset_keys )` | Action | Fires after the onboarding wizard creates assistant CPT posts from selected presets. `$created` maps preset keys to post IDs. |
 
 ---
 

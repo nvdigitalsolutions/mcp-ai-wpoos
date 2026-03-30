@@ -2,6 +2,10 @@
 /**
  * Tests for agentic tool execution loop ensuring assistant messages with tool_calls
  * are properly added to the conversation before tool response messages.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
 

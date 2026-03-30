@@ -8,6 +8,9 @@
  * @package WP_MCP_AI
  * @subpackage Admin
  * @since 2.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -65,6 +68,10 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_export_pro_workflow', array( $this, 'ajax_export_workflow' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_duplicate_pro_workflow', array( $this, 'ajax_duplicate_workflow' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_rename_pro_workflow', array( $this, 'ajax_rename_workflow' ) );
+
+		// Workflow presets AJAX handlers.
+		add_action( 'wp_ajax_wp_mcp_ai_get_workflow_presets', array( $this, 'ajax_get_workflow_presets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_install_workflow_preset', array( $this, 'ajax_install_workflow_preset' ) );
 	}
 
 	/**
@@ -167,12 +174,13 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			'mcp-ai-pro-workflow-builder',
 			'mcpAiWorkflowBuilder',
 			array(
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'mcp_ai_pro_workflow_builder' ),
-				'workflows'      => $this->get_all_workflows(),
-				'templates'      => $this->get_workflow_templates(),
-				'availableTools' => $this->get_available_tools(),
-				'assistants'     => $this->get_available_assistants(),
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'mcp_ai_pro_workflow_builder' ),
+				'workflows'       => $this->get_all_workflows(),
+				'templates'       => $this->get_workflow_templates(),
+				'workflowPresets' => $this->get_all_workflow_presets(),
+				'availableTools'  => $this->get_available_tools(),
+				'assistants'      => $this->get_available_assistants(),
 			)
 		);
 	}
@@ -208,6 +216,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>
 			<div id="mcp-ai-pro-workflow-builder-root"></div>
 
+			<?php $this->render_workflow_presets(); ?>
 			<?php $this->render_workflow_listing(); ?>
 		</div>
 		<?php
@@ -1341,6 +1350,292 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		wp_reset_postdata();
 
 		return $assistants;
+	}
+
+	// -------------------------------------------------------------------------
+	// Workflow Presets
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Retrieve all workflow presets.
+	 *
+	 * @since  2.1.0
+	 * @return array Presets array suitable for JS localization.
+	 */
+	protected function get_all_workflow_presets() {
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			return array();
+		}
+		require_once $presets_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
+			return array();
+		}
+
+		$raw    = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+		$output = array();
+
+		foreach ( $raw as $id => $preset ) {
+			$output[] = array(
+				'id'          => $id,
+				'name'        => isset( $preset['name'] ) ? $preset['name'] : '',
+				'description' => isset( $preset['description'] ) ? $preset['description'] : '',
+				'category'    => isset( $preset['category'] ) ? $preset['category'] : '',
+				'icon'        => isset( $preset['icon'] ) ? $preset['icon'] : 'dashicons-randomize',
+				'tags'        => isset( $preset['tags'] ) ? $preset['tags'] : array(),
+				'nodes'       => isset( $preset['nodes'] ) ? $preset['nodes'] : array(),
+				'edges'       => isset( $preset['edges'] ) ? $preset['edges'] : array(),
+			);
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Render the workflow presets browser below the builder canvas.
+	 *
+	 * @since 2.1.0
+	 */
+	protected function render_workflow_presets() {
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			return;
+		}
+		require_once $presets_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
+			return;
+		}
+
+		$categories = WP_MCP_AI_Pro_Workflow_Presets::get_categories();
+		$presets    = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+		?>
+		<div id="mcp-ai-pro-workflow-presets" class="mcp-ai-pro-workflow-presets" style="margin-top:24px;">
+			<div class="mcp-ai-pro-workflow-presets-header">
+				<h2>
+					<span class="dashicons dashicons-welcome-widgets-menus"></span>
+					<?php esc_html_e( 'Workflow Presets', 'mcp-ai-wpoos-pro' ); ?>
+					<span class="mcp-ai-pro-workflow-preset-count">(<?php echo count( $presets ); ?>)</span>
+				</h2>
+				<div class="mcp-ai-pro-workflow-presets-filters">
+					<select id="mcp-ai-wf-preset-category" class="mcp-ai-pro-wf-filter">
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $categories as $slug => $label ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<input type="search" id="mcp-ai-wf-preset-search" class="mcp-ai-pro-wf-filter" placeholder="<?php esc_attr_e( 'Search presets…', 'mcp-ai-wpoos-pro' ); ?>">
+				</div>
+			</div>
+
+			<div id="mcp-ai-wf-presets-grid" class="mcp-ai-pro-workflow-presets-grid">
+				<?php foreach ( $presets as $id => $preset ) : ?>
+					<div class="mcp-ai-pro-workflow-preset-card" data-category="<?php echo esc_attr( $preset['category'] ); ?>">
+						<div class="mcp-ai-pro-workflow-preset-card-header">
+							<span class="dashicons <?php echo esc_attr( $preset['icon'] ); ?>"></span>
+							<strong><?php echo esc_html( $preset['name'] ); ?></strong>
+						</div>
+						<p class="mcp-ai-pro-workflow-preset-desc"><?php echo esc_html( $preset['description'] ); ?></p>
+						<div class="mcp-ai-pro-workflow-preset-meta">
+							<span class="mcp-ai-pro-workflow-preset-category"><?php echo esc_html( $preset['category'] ); ?></span>
+							<span class="mcp-ai-pro-workflow-preset-nodes"><?php echo esc_html( count( $preset['nodes'] ) ); ?> <?php esc_html_e( 'nodes', 'mcp-ai-wpoos-pro' ); ?></span>
+						</div>
+						<?php if ( ! empty( $preset['tags'] ) ) : ?>
+							<div class="mcp-ai-pro-workflow-preset-tags">
+								<?php foreach ( $preset['tags'] as $tag ) : ?>
+									<span class="mcp-ai-pro-workflow-preset-tag"><?php echo esc_html( $tag ); ?></span>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+						<button type="button" class="button button-primary button-small" data-wf-preset-install="<?php echo esc_attr( $id ); ?>">
+							<?php esc_html_e( 'Load into Builder', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<style>
+			.mcp-ai-pro-workflow-presets-header {
+				display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;
+			}
+			.mcp-ai-pro-workflow-presets-header h2 {
+				display: flex; align-items: center; gap: 6px; margin: 0; font-size: 1.1em;
+			}
+			.mcp-ai-pro-workflow-presets-filters {
+				display: flex; gap: 8px; align-items: center; margin-left: auto;
+			}
+			.mcp-ai-pro-wf-filter { min-width: 150px; }
+			.mcp-ai-pro-workflow-presets-grid {
+				display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+			}
+			.mcp-ai-pro-workflow-preset-card {
+				background: #f9f9f9; border: 1px solid #dcdcde; border-radius: 6px;
+				padding: 16px; display: flex; flex-direction: column; gap: 8px;
+				transition: box-shadow 0.15s, border-color 0.15s;
+			}
+			.mcp-ai-pro-workflow-preset-card:hover {
+				border-color: #2271b1; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+			}
+			.mcp-ai-pro-workflow-preset-card-header {
+				display: flex; align-items: center; gap: 8px;
+			}
+			.mcp-ai-pro-workflow-preset-card-header .dashicons {
+				color: #2271b1; font-size: 20px; width: 20px; height: 20px;
+			}
+			.mcp-ai-pro-workflow-preset-desc {
+				color: #50575e; font-size: 0.85em; line-height: 1.5; margin: 0; flex: 1;
+			}
+			.mcp-ai-pro-workflow-preset-meta {
+				display: flex; gap: 8px; flex-wrap: wrap;
+			}
+			.mcp-ai-pro-workflow-preset-category,
+			.mcp-ai-pro-workflow-preset-nodes {
+				display: inline-block; padding: 2px 7px; border-radius: 3px;
+				font-size: 0.75em; font-weight: 600; white-space: nowrap;
+				background: #e0f0ff; color: #135e96;
+			}
+			.mcp-ai-pro-workflow-preset-nodes {
+				background: #f0f0f1; color: #50575e;
+			}
+			.mcp-ai-pro-workflow-preset-tags {
+				display: flex; gap: 4px; flex-wrap: wrap;
+			}
+			.mcp-ai-pro-workflow-preset-tag {
+				display: inline-block; padding: 1px 6px; border-radius: 2px;
+				font-size: 0.7em; background: #e8e8e8; color: #646970;
+			}
+			.mcp-ai-pro-workflow-preset-card .button { align-self: flex-start; margin-top: 4px; }
+			.mcp-ai-pro-workflow-preset-card[style*="display: none"] { display: none !important; }
+		</style>
+		<script>
+		( function( $ ) {
+			'use strict';
+
+			function filterWfPresets() {
+				var category = $( '#mcp-ai-wf-preset-category' ).val(),
+					search   = ( $( '#mcp-ai-wf-preset-search' ).val() || '' ).toLowerCase();
+
+				$( '#mcp-ai-wf-presets-grid .mcp-ai-pro-workflow-preset-card' ).each( function() {
+					var $card = $( this ),
+						cat   = $card.data( 'category' ) || '',
+						text  = $card.text().toLowerCase(),
+						show  = true;
+
+					if ( category && cat !== category ) {
+						show = false;
+					}
+					if ( search && text.indexOf( search ) === -1 ) {
+						show = false;
+					}
+					$card.toggle( show );
+				} );
+			}
+
+			$( document ).on( 'change', '#mcp-ai-wf-preset-category', filterWfPresets );
+			$( document ).on( 'input', '#mcp-ai-wf-preset-search', filterWfPresets );
+
+			$( document ).on( 'click', '[data-wf-preset-install]', function( e ) {
+				e.preventDefault();
+				var $btn     = $( this ),
+					presetId = $btn.data( 'wf-preset-install' ),
+					nonce    = window.mcpAiWorkflowBuilder ? mcpAiWorkflowBuilder.nonce : '',
+					ajaxUrl  = window.mcpAiWorkflowBuilder ? mcpAiWorkflowBuilder.ajaxUrl : '';
+
+				if ( ! ajaxUrl || ! nonce ) {
+					return;
+				}
+
+				// eslint-disable-next-line no-alert
+				if ( ! window.confirm( 'Load this workflow preset into the builder?' ) ) {
+					return;
+				}
+
+				$btn.prop( 'disabled', true ).text( 'Loading…' );
+
+				$.post( ajaxUrl, {
+					action:    'wp_mcp_ai_install_workflow_preset',
+					nonce:     nonce,
+					preset_id: presetId,
+				} ).done( function( resp ) {
+					if ( resp.success && resp.data && resp.data.workflow ) {
+						// Dispatch custom event that the React workflow builder can listen for.
+						var evt = new CustomEvent( 'mcpAiLoadWorkflowPreset', {
+							detail: resp.data.workflow,
+						} );
+						document.dispatchEvent( evt );
+						$btn.text( '✓ Loaded' );
+					} else {
+						$btn.text( 'Error' );
+					}
+				} ).fail( function() {
+					$btn.text( 'Error' );
+				} ).always( function() {
+					setTimeout( function() {
+						$btn.prop( 'disabled', false ).text( 'Load into Builder' );
+					}, 2000 );
+				} );
+			} );
+		} )( jQuery );
+		</script>
+		<?php
+	}
+
+	/**
+	 * AJAX: Return workflow presets.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_get_workflow_presets() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		wp_send_json_success( array( 'presets' => $this->get_all_workflow_presets() ) );
+	}
+
+	/**
+	 * AJAX: Install (load) a workflow preset.
+	 *
+	 * Returns the workflow data (nodes + edges) for the React builder to load.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_install_workflow_preset() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow presets not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+		require_once $presets_file;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
+
+		if ( '' === $preset_id ) {
+			wp_send_json_error( array( 'message' => __( 'No preset ID provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$workflow = WP_MCP_AI_Pro_Workflow_Presets::install_preset( $preset_id );
+
+		if ( null === $workflow || is_wp_error( $workflow ) ) {
+			$msg = is_wp_error( $workflow ) ? esc_html( $workflow->get_error_message() ) : __( 'Workflow preset not found.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'workflow' => $workflow,
+				'message'  => __( 'Workflow preset loaded.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 }
 

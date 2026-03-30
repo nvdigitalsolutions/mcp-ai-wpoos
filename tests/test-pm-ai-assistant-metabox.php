@@ -6,6 +6,9 @@
  * and only appears for project management CPTs.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {

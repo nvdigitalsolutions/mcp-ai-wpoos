@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI
  * @version 1.0.1
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 (function ($) {

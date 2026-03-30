@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,6 +45,10 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		add_action( 'wp_ajax_wp_mcp_ai_sm_clear_history',      array( $this, 'ajax_clear_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_export_history_csv', array( $this, 'ajax_export_history_csv' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_sm_export_ical',        array( $this, 'ajax_export_ical' ) );
+
+		// Schedule presets AJAX handlers.
+		add_action( 'wp_ajax_wp_mcp_ai_sm_get_presets',         array( $this, 'ajax_get_presets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_sm_install_preset',      array( $this, 'ajax_install_preset' ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -235,6 +242,12 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'chartFailure'    => __( 'Failure', 'mcp-ai-wpoos-pro' ),
 					'viewLog'         => __( 'View Log', 'mcp-ai-wpoos-pro' ),
 					'hideLog'         => __( 'Hide Log', 'mcp-ai-wpoos-pro' ),
+					// Preset browser strings.
+					'presetInstall'        => __( 'Install', 'mcp-ai-wpoos-pro' ),
+					'presetInstalling'     => __( 'Installing…', 'mcp-ai-wpoos-pro' ),
+					'presetInstalled'      => __( 'Preset installed successfully.', 'mcp-ai-wpoos-pro' ),
+					'presetNoResults'      => __( 'No presets match your filters.', 'mcp-ai-wpoos-pro' ),
+					'presetConfirmInstall' => __( 'Install this schedule preset?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -258,6 +271,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		<div class="wp-mcp-ai-schedule-manager" id="wp-mcp-ai-schedule-manager">
 
 			<?php $this->render_schedule_list(); ?>
+			<?php $this->render_preset_browser(); ?>
 			<?php $this->render_create_form(); ?>
 
 		</div><!-- .wp-mcp-ai-schedule-manager -->
@@ -1224,5 +1238,141 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	// -------------------------------------------------------------------------
+	// Schedule Preset Browser
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Render the preset browser UI.
+	 *
+	 * Displays a collapsible panel with category and toolkit filters, a
+	 * searchable grid of preset cards, and a one-click install button.
+	 */
+	protected function render_preset_browser() {
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			return;
+		}
+		require_once $presets_file;
+
+		$categories = WP_MCP_AI_Pro_Schedule_Presets::get_categories();
+		?>
+		<div class="wp-mcp-ai-sm-presets-section">
+			<h3 class="wp-mcp-ai-sm-presets-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="wp-mcp-ai-sm-presets-panel">
+				<span class="dashicons dashicons-welcome-widgets-menus"></span>
+				<?php esc_html_e( 'Schedule Presets', 'mcp-ai-wpoos-pro' ); ?>
+			</h3>
+
+			<div id="wp-mcp-ai-sm-presets-panel" class="wp-mcp-ai-sm-presets-panel" style="display:none;">
+				<p class="description">
+					<?php esc_html_e( 'Browse pre-configured schedule presets organised by toolkit and category. Click Install to create a ready-made schedule.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-sm-presets-filters">
+					<select id="wp-mcp-ai-sm-preset-category" class="wp-mcp-ai-sm-filter">
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $categories as $slug => $label ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<select id="wp-mcp-ai-sm-preset-toolkit" class="wp-mcp-ai-sm-filter">
+						<option value=""><?php esc_html_e( 'All Toolkits', 'mcp-ai-wpoos-pro' ); ?></option>
+					</select>
+					<input type="search" id="wp-mcp-ai-sm-preset-search" class="wp-mcp-ai-sm-filter" placeholder="<?php esc_attr_e( 'Search presets…', 'mcp-ai-wpoos-pro' ); ?>">
+				</div>
+
+				<div id="wp-mcp-ai-sm-presets-grid" class="wp-mcp-ai-sm-presets-grid">
+					<!-- Populated via JavaScript -->
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * AJAX: Return schedule presets (optionally filtered by category or toolkit).
+	 */
+	public function ajax_get_presets() {
+		if ( ! $this->verify_request() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-presets.php';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().
+		$category = isset( $_POST['category'] ) ? sanitize_key( $_POST['category'] ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$toolkit = isset( $_POST['toolkit'] ) ? sanitize_key( $_POST['toolkit'] ) : '';
+
+		if ( '' !== $category ) {
+			$presets = WP_MCP_AI_Pro_Schedule_Presets::get_presets_by_category( $category );
+		} elseif ( '' !== $toolkit ) {
+			$presets = WP_MCP_AI_Pro_Schedule_Presets::get_presets_by_toolkit( $toolkit );
+		} else {
+			$presets = WP_MCP_AI_Pro_Schedule_Presets::get_presets();
+		}
+
+		$output = array();
+		foreach ( $presets as $id => $preset ) {
+			$output[] = array(
+				'id'            => $id,
+				'name'          => $preset['name'],
+				'description'   => $preset['description'],
+				'toolkit'       => isset( $preset['toolkit'] ) ? $preset['toolkit'] : '',
+				'category'      => isset( $preset['category'] ) ? $preset['category'] : '',
+				'icon'          => isset( $preset['icon'] ) ? $preset['icon'] : 'dashicons-clock',
+				'schedule_type' => isset( $preset['schedule_type'] ) ? $preset['schedule_type'] : 'task',
+				'schedule'      => isset( $preset['schedule'] ) ? $preset['schedule'] : 'daily',
+				'tags'          => isset( $preset['tags'] ) ? $preset['tags'] : array(),
+			);
+		}
+
+		$categories = WP_MCP_AI_Pro_Schedule_Presets::get_categories();
+
+		wp_send_json_success(
+			array(
+				'presets'    => $output,
+				'categories' => $categories,
+			)
+		);
+	}
+
+	/**
+	 * AJAX: Install a schedule preset.
+	 */
+	public function ajax_install_preset() {
+		if ( ! $this->verify_request() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ), 403 );
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-presets.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-schedule-manager.php';
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().
+		$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
+
+		if ( '' === $preset_id ) {
+			wp_send_json_error( array( 'message' => __( 'No preset ID provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, get_current_user_id() );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $result );
+		$next_run = WP_MCP_AI_Pro_Schedule_Manager::get_next_run_time( $result );
+
+		wp_send_json_success(
+			array(
+				'schedule_id' => $result,
+				'name'        => $schedule['name'],
+				'next_run'    => $next_run ? wp_date( 'Y-m-d H:i:s', $next_run ) : null,
+				'message'     => __( 'Preset installed successfully.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 }

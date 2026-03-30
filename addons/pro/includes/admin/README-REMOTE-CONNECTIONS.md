@@ -121,6 +121,18 @@ The following tables list the meta keys stored per connection type. All sensitiv
 | `refresh_token` | string (encrypted) | Stored automatically after OAuth2 flow |
 | `url` | string | Auto-set to `https://appcenter.intuit.com/connect/oauth2` |
 
+### `quickbooks_desktop`
+
+| Meta Key | Type | Notes |
+|----------|------|-------|
+| `url` | string | QODBC relay API endpoint URL (e.g. `https://relay.example.com/qodbc-relay.php`) |
+| `api_key` | string (encrypted) | Bearer token / shared secret for the relay API (optional) |
+| `dsn_name` | string | ODBC Data Source Name on the relay server (e.g. `QuickBooks Data` or `QuickBooks Data QRemote`) |
+
+Architecture: **QuickBooks Desktop → QODBC Driver → PHP Relay API → This Connection**.
+The relay is a lightweight PHP script on the Windows machine where QuickBooks Desktop and QODBC are installed.
+For remote access, use QRemote to tunnel ODBC calls from the relay to QuickBooks Desktop.
+
 ### `ezuite_erp`
 
 | Meta Key | Type | Notes |
@@ -384,6 +396,7 @@ Each webhook controller:
 | `isams` | `class-wp-mcp-ai-tool-isams-query.php`, `class-wp-mcp-ai-tool-sync-ecas-from-isams.php` |
 | `flowhub` | `class-wp-mcp-ai-tool-flowhub-get-inventory.php` |
 | `quickbooks` | `class-wp-mcp-ai-pro-tool-get-quickbooks-report.php` |
+| `quickbooks_desktop` | `class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php` |
 | `ezuite_erp` | `class-wp-mcp-ai-tool-ezuite-erp.php` |
 | `gmail` | `class-wp-mcp-ai-pro-tool-search-gmail.php` |
 | `google_drive` | `class-wp-mcp-ai-pro-tool-search-drive.php` |

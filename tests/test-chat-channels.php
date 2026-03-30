@@ -7,6 +7,9 @@
  * the WhatsApp webhook's human-takeover keyword logic.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -255,6 +258,10 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	public function test_chat_channels_rest_controller_registers_routes() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
 
+		// Expect the incorrect usage notice since we call register_routes()
+		// directly outside of the rest_api_init action.
+		$this->setExpectedIncorrectUsage( 'register_rest_route' );
+
 		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
 		// Manually call register_routes so we can inspect the server.
 		$controller->register_routes();
@@ -265,6 +272,129 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/conversations', $routes, 'Conversations route must be registered' );
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/reply', $routes, 'Reply route must be registered' );
 		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/contacts', $routes, 'Contacts route must be registered' );
+		$this->assertArrayHasKey( '/mcp-ai-pro/v1/chat-channels/conversations/(?P<contact_id>[0-9]+)/messages', $routes, 'Conversation messages route must be registered' );
+	}
+
+	/**
+	 * The messages route must accept the optional source parameter.
+	 */
+	public function test_messages_route_has_source_arg() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$this->setExpectedIncorrectUsage( 'register_rest_route' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$controller->register_routes();
+
+		$server = rest_get_server();
+		$routes = $server->get_routes();
+		$key    = '/mcp-ai-pro/v1/chat-channels/conversations/(?P<contact_id>[0-9]+)/messages';
+
+		$this->assertArrayHasKey( $key, $routes, 'Messages route must be registered' );
+
+		$endpoint = $routes[ $key ][0];
+		$this->assertArrayHasKey( 'source', $endpoint['args'], 'Messages endpoint must accept "source" parameter' );
+	}
+
+	/**
+	 * Resolve_contact_from_cpt populates channel and channel_contact_id from CPT meta.
+	 */
+	public function test_resolve_contact_from_cpt_finds_cpt_contact() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		// Register the CPT so that get_post() works.
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Test Contact',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $post_id, '_channel', 'whatsapp' );
+		update_post_meta( $post_id, '_channel_contact_id', '12345' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( 'whatsapp', $channel );
+		$this->assertSame( '12345', $channel_contact_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Resolve_contact_from_cpt does not populate when post type mismatches.
+	 */
+	public function test_resolve_contact_from_cpt_ignores_wrong_post_type() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		// Create a regular post (not a contact CPT).
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'post',
+				'post_title'  => 'Regular Post',
+				'post_status' => 'publish',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( '', $channel, 'Channel should remain empty for wrong post type' );
+		$this->assertSame( '', $channel_contact_id, 'Channel contact ID should remain empty for wrong post type' );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Resolve_contact_from_cpt does not populate when channel meta is empty.
+	 */
+	public function test_resolve_contact_from_cpt_rejects_empty_channel() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Incomplete Contact',
+				'post_status' => 'publish',
+			)
+		);
+		// channel is empty, channel_contact_id is set.
+		update_post_meta( $post_id, '_channel', '' );
+		update_post_meta( $post_id, '_channel_contact_id', '12345' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( '', $channel, 'Channel should remain empty when meta is blank' );
+		$this->assertSame( '', $channel_contact_id, 'Channel contact ID should remain empty when channel is blank' );
+
+		wp_delete_post( $post_id, true );
 	}
 
 	/**
@@ -279,10 +409,10 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$row = array(
-			'_ID'               => 55,
-			'channel'           => 'telegram',
+			'_ID'                => 55,
+			'channel'            => 'telegram',
 			'channel_contact_id' => '123',
-			'raw_payload'       => wp_json_encode(
+			'raw_payload'        => wp_json_encode(
 				array(
 					'agentic_tool_messages' => array(
 						array(
@@ -932,7 +1062,8 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_set_current_user( 0 );
 	}
 
-	// Apple Messages for Business Tools
+	// =========================================================================
+	// Apple Messages for Business Tools.
 	// =========================================================================
 
 	/**
@@ -1465,7 +1596,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	// iCloud Drive Tools
 	// =========================================================================
 
-	/** iCloud list-files tool must be loadable. */
+	/** ICloud list-files tool must be loadable. */
 	public function test_chat_channels_tool_list_icloud_drive_files_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1473,7 +1604,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud list-files slug must equal 'list_icloud_drive_files'. */
+	/** ICloud list-files slug must equal 'list_icloud_drive_files'. */
 	public function test_list_icloud_drive_files_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1484,7 +1615,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'list_icloud_drive_files', $tool->get_slug() );
 	}
 
-	/** iCloud list-files returns WP_Error for missing gateway URL. */
+	/** ICloud list-files returns WP_Error for missing gateway URL. */
 	public function test_list_icloud_drive_files_tool_returns_error_without_gateway_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1507,7 +1638,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_delete_user( $admin_id );
 	}
 
-	/** iCloud list-files rejects non-HTTPS gateway URL. */
+	/** ICloud list-files rejects non-HTTPS gateway URL. */
 	public function test_list_icloud_drive_files_tool_rejects_http_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
@@ -1531,7 +1662,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_delete_user( $admin_id );
 	}
 
-	/** iCloud get-file tool must be loadable. */
+	/** ICloud get-file tool must be loadable. */
 	public function test_chat_channels_tool_get_icloud_drive_file_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1539,7 +1670,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud get-file slug must equal 'get_icloud_drive_file'. */
+	/** ICloud get-file slug must equal 'get_icloud_drive_file'. */
 	public function test_get_icloud_drive_file_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1550,7 +1681,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'get_icloud_drive_file', $tool->get_slug() );
 	}
 
-	/** iCloud get-file capability flags include 'read-only'. */
+	/** ICloud get-file capability flags include 'read-only'. */
 	public function test_get_icloud_drive_file_tool_capability_flags_include_read_only() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
@@ -1564,7 +1695,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertContains( 'pro', $flags );
 	}
 
-	/** iCloud upload-file tool must be loadable. */
+	/** ICloud upload-file tool must be loadable. */
 	public function test_chat_channels_tool_upload_icloud_drive_file_loadable() {
 		$this->assert_chat_channels_tool_loadable(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1572,7 +1703,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
-	/** iCloud upload-file slug must equal 'upload_icloud_drive_file'. */
+	/** ICloud upload-file slug must equal 'upload_icloud_drive_file'. */
 	public function test_upload_icloud_drive_file_tool_get_slug() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1583,7 +1714,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'upload_icloud_drive_file', $tool->get_slug() );
 	}
 
-	/** iCloud upload-file capability flags include 'write'. */
+	/** ICloud upload-file capability flags include 'write'. */
 	public function test_upload_icloud_drive_file_tool_capability_flags() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1597,7 +1728,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertContains( 'pro', $flags );
 	}
 
-	/** iCloud upload-file returns WP_Error for missing gateway URL. */
+	/** ICloud upload-file returns WP_Error for missing gateway URL. */
 	public function test_upload_icloud_drive_file_tool_returns_error_without_gateway_url() {
 		$this->load_channel_tool(
 			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
@@ -1620,5 +1751,383 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 
 		wp_delete_user( $admin_id );
+	}
+
+	// =========================================================================
+	// Message deduplication
+	// =========================================================================
+
+	/**
+	 * Deduplicate_messages() must remove duplicates based on message_id,
+	 * preferring CCT entries over CPT entries.
+	 */
+	public function test_deduplicate_messages_prefers_cct() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'deduplicate_messages' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CPT version',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_1',
+				'content'    => 'CCT version',
+				'_store'     => 'cct',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => 'msg_2',
+				'content'    => 'Unique CPT',
+				'_store'     => 'cpt',
+				'timestamp'  => 200,
+			),
+			array(
+				'message_id' => 'msg_3',
+				'content'    => 'Unique CCT',
+				'_store'     => 'cct',
+				'timestamp'  => 300,
+			),
+		);
+
+		$result = $method->invoke( $controller, $messages );
+
+		$this->assertCount( 3, $result, 'Duplicate msg_1 should be reduced to one entry' );
+		// CCT version should win.
+		$this->assertSame( 'CCT version', $result[0]['content'] );
+		$this->assertSame( 'Unique CPT', $result[1]['content'] );
+		$this->assertSame( 'Unique CCT', $result[2]['content'] );
+	}
+
+	/**
+	 * Deduplicate_messages() keeps messages without a message_id.
+	 */
+	public function test_deduplicate_messages_keeps_empty_ids() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'deduplicate_messages' );
+		$method->setAccessible( true );
+
+		$messages = array(
+			array(
+				'message_id' => '',
+				'content'    => 'No ID one',
+				'_store'     => 'cpt',
+				'timestamp'  => 100,
+			),
+			array(
+				'message_id' => '',
+				'content'    => 'No ID two',
+				'_store'     => 'cct',
+				'timestamp'  => 200,
+			),
+		);
+
+		$result = $method->invoke( $controller, $messages );
+
+		$this->assertCount( 2, $result, 'Messages without IDs should both be kept' );
+	}
+
+	/**
+	 * Format_message correctly maps the message_timestamp field to timestamp.
+	 */
+	public function test_format_message_maps_timestamp_field() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_message' );
+		$method->setAccessible( true );
+
+		$row = array(
+			'_ID'                => 10,
+			'channel'            => 'telegram',
+			'channel_contact_id' => '999',
+			'message_timestamp'  => 1700000000,
+		);
+
+		$formatted = $method->invoke( $controller, $row, false );
+
+		// The format_message method itself does not add _store; it is added by the caller.
+		$this->assertArrayHasKey( 'timestamp', $formatted );
+		$this->assertSame( 1700000000, $formatted['timestamp'] );
+	}
+
+	// =========================================================================
+	// Resolve contact helpers – connection_id support
+	// =========================================================================
+
+	/**
+	 * resolve_contact_from_cpt populates connection_id when available.
+	 */
+	public function test_resolve_contact_from_cpt_returns_connection_id() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Telegram Contact',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $post_id, '_channel', 'telegram' );
+		update_post_meta( $post_id, '_channel_contact_id', '12345' );
+		update_post_meta( $post_id, '_connection_id', 'tg_bot_abc' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$connection_id      = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id, &$connection_id ) );
+
+		$this->assertSame( 'telegram', $channel );
+		$this->assertSame( '12345', $channel_contact_id );
+		$this->assertSame( 'tg_bot_abc', $connection_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * resolve_contact_from_cpt returns empty connection_id when meta is absent.
+	 */
+	public function test_resolve_contact_from_cpt_returns_empty_connection_id_when_absent() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Legacy Contact',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $post_id, '_channel', 'whatsapp' );
+		update_post_meta( $post_id, '_channel_contact_id', '5551234567' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		$connection_id      = '';
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id, &$connection_id ) );
+
+		$this->assertSame( 'whatsapp', $channel );
+		$this->assertSame( '5551234567', $channel_contact_id );
+		$this->assertSame( '', $connection_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * resolve_contact_from_cpt works without the optional connection_id argument (backward compat).
+	 */
+	public function test_resolve_contact_from_cpt_backward_compat_without_connection_id_arg() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CPT', 'includes/class-wp-mcp-ai-channel-contacts-cpt.php' );
+
+		WP_MCP_AI_Channel_Contacts_CPT::register_post_type();
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Contacts_CPT::POST_TYPE,
+				'post_title'  => 'Compat Contact',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $post_id, '_channel', 'whatsapp' );
+		update_post_meta( $post_id, '_channel_contact_id', '99999' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_contact_from_cpt' );
+		$method->setAccessible( true );
+
+		$channel            = '';
+		$channel_contact_id = '';
+		// Call without the 4th connection_id argument.
+		$method->invokeArgs( $controller, array( $post_id, &$channel, &$channel_contact_id ) );
+
+		$this->assertSame( 'whatsapp', $channel );
+		$this->assertSame( '99999', $channel_contact_id );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	// =========================================================================
+	// CPT message scoping – Telegram vs non-Telegram
+	// =========================================================================
+
+	/**
+	 * fetch_messages_from_cpt for Telegram with connection_id uses inclusive filter.
+	 *
+	 * Messages matching the connection_id OR with empty/missing connection_id
+	 * should all be returned.
+	 */
+	public function test_fetch_messages_from_cpt_telegram_inclusive_connection_id() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CPT', 'includes/class-wp-mcp-ai-channel-messages-cpt.php' );
+
+		WP_MCP_AI_Channel_Messages_CPT::register_post_type();
+
+		$ts = time();
+
+		// Message with matching connection_id.
+		$p1 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p1, '_channel', 'telegram' );
+		update_post_meta( $p1, '_channel_contact_id', '100' );
+		update_post_meta( $p1, '_connection_id', 'bot_a' );
+		update_post_meta( $p1, '_direction', 'inbound' );
+		update_post_meta( $p1, '_message_timestamp', $ts );
+		update_post_meta( $p1, '_message_id', 'tg_1' );
+
+		// Message with empty connection_id (legacy).
+		$p2 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p2, '_channel', 'telegram' );
+		update_post_meta( $p2, '_channel_contact_id', '100' );
+		update_post_meta( $p2, '_connection_id', '' );
+		update_post_meta( $p2, '_direction', 'outbound' );
+		update_post_meta( $p2, '_message_timestamp', $ts + 1 );
+		update_post_meta( $p2, '_message_id', 'tg_2' );
+
+		// Message with no connection_id meta at all (legacy).
+		$p3 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p3, '_channel', 'telegram' );
+		update_post_meta( $p3, '_channel_contact_id', '100' );
+		// No _connection_id meta set.
+		update_post_meta( $p3, '_direction', 'inbound' );
+		update_post_meta( $p3, '_message_timestamp', $ts + 2 );
+		update_post_meta( $p3, '_message_id', 'tg_3' );
+
+		// Message with a DIFFERENT connection_id (should be excluded).
+		$p4 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p4, '_channel', 'telegram' );
+		update_post_meta( $p4, '_channel_contact_id', '100' );
+		update_post_meta( $p4, '_connection_id', 'bot_b' );
+		update_post_meta( $p4, '_direction', 'inbound' );
+		update_post_meta( $p4, '_message_timestamp', $ts + 3 );
+		update_post_meta( $p4, '_message_id', 'tg_4' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'fetch_messages_from_cpt' );
+		$method->setAccessible( true );
+
+		$items = $method->invoke( $controller, 'telegram', '100', false, 'bot_a' );
+
+		$message_ids = array_map(
+			function ( $i ) {
+				return $i['message_id'];
+			},
+			$items
+		);
+
+		$this->assertContains( 'tg_1', $message_ids, 'Message with matching connection_id should be included' );
+		$this->assertContains( 'tg_2', $message_ids, 'Legacy message with empty connection_id should be included' );
+		$this->assertContains( 'tg_3', $message_ids, 'Legacy message with no connection_id meta should be included' );
+		$this->assertNotContains( 'tg_4', $message_ids, 'Message from a different bot should be excluded' );
+
+		wp_delete_post( $p1, true );
+		wp_delete_post( $p2, true );
+		wp_delete_post( $p3, true );
+		wp_delete_post( $p4, true );
+	}
+
+	/**
+	 * fetch_messages_from_cpt for non-Telegram returns all messages regardless of connection_id.
+	 */
+	public function test_fetch_messages_from_cpt_whatsapp_no_connection_id_scoping() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CPT', 'includes/class-wp-mcp-ai-channel-messages-cpt.php' );
+
+		WP_MCP_AI_Channel_Messages_CPT::register_post_type();
+
+		$ts = time();
+
+		// Message with connection_id on WhatsApp.
+		$p1 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p1, '_channel', 'whatsapp' );
+		update_post_meta( $p1, '_channel_contact_id', '5551234567' );
+		update_post_meta( $p1, '_connection_id', 'wa_conn_1' );
+		update_post_meta( $p1, '_direction', 'inbound' );
+		update_post_meta( $p1, '_message_timestamp', $ts );
+		update_post_meta( $p1, '_message_id', 'wa_1' );
+
+		// Message with different connection_id on WhatsApp.
+		$p2 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		update_post_meta( $p2, '_channel', 'whatsapp' );
+		update_post_meta( $p2, '_channel_contact_id', '5551234567' );
+		update_post_meta( $p2, '_connection_id', 'wa_conn_2' );
+		update_post_meta( $p2, '_direction', 'outbound' );
+		update_post_meta( $p2, '_message_timestamp', $ts + 1 );
+		update_post_meta( $p2, '_message_id', 'wa_2' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'fetch_messages_from_cpt' );
+		$method->setAccessible( true );
+
+		// Empty connection_id = no scoping (the caller doesn't pass it for non-telegram).
+		$items = $method->invoke( $controller, 'whatsapp', '5551234567', false, '' );
+
+		$message_ids = array_map(
+			function ( $i ) {
+				return $i['message_id'];
+			},
+			$items
+		);
+
+		$this->assertContains( 'wa_1', $message_ids, 'All WhatsApp messages should be returned' );
+		$this->assertContains( 'wa_2', $message_ids, 'All WhatsApp messages should be returned regardless of connection_id' );
+
+		wp_delete_post( $p1, true );
+		wp_delete_post( $p2, true );
+	}
+
+	// =========================================================================
+	// CCT migration – connection_id column
+	// =========================================================================
+
+	/**
+	 * The contacts CCT migration method exists and is callable.
+	 */
+	public function test_channel_contacts_cct_has_connection_id_migration() {
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Contacts_CCT', 'includes/class-wp-mcp-ai-channel-contacts-cct.php' );
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_Channel_Contacts_CCT', 'maybe_migrate_connection_id' ),
+			'Contacts CCT must have maybe_migrate_connection_id method'
+		);
+	}
+
+	/**
+	 * The messages CCT migration method exists and is callable.
+	 */
+	public function test_channel_messages_cct_has_connection_id_migration() {
+		$this->load_pro_class( 'WP_MCP_AI_Channel_Messages_CCT', 'includes/class-wp-mcp-ai-channel-messages-cct.php' );
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_Channel_Messages_CCT', 'maybe_migrate_connection_id' ),
+			'Messages CCT must have maybe_migrate_connection_id method'
+		);
 	}
 }

@@ -11,6 +11,9 @@
  *
  * @see https://developer.wordpress.org/themes/global-settings-and-styles/
  * @see https://developer.wordpress.org/themes/core-concepts/global-settings-and-styles/
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

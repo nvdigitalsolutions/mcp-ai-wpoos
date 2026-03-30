@@ -3,6 +3,10 @@
  * Manual test script for preset settings preview
  *
  * Run: php tests/manual-test-preset-preview.php
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Bootstrap WordPress.

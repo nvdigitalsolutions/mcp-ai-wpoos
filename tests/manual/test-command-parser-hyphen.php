@@ -6,6 +6,10 @@
  * Usage: php tests/manual/test-command-parser-hyphen.php
  *
  * This is a standalone script that doesn't require WordPress to be loaded.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Define minimal constants needed for the parser class.

@@ -3,6 +3,9 @@
  * Tests for Cloudflare XML and JSON tool call parsing
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 class Test_Cloudflare_Tool_Call_Parsing extends WP_UnitTestCase {

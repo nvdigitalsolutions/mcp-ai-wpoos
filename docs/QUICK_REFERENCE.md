@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.4  
-**Last Updated:** March 15, 2026
+**Version:** 1.1.5  
+**Last Updated:** March 28, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## 🆕 Recent Updates (March 2026)
 
+- **Getting Started Wizard** ⭐ NEW – 4-step onboarding wizard with 8 use-case presets (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose). Selecting a preset creates a fully-configured assistant with tools, system prompt, and tuned temperature — working out of the box. WCAG 2.1 accessible with keyboard navigation. Access via **NV oOS → Getting Started**.
 - **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
 - **Security Hardening** ⭐ NEW – AES-256-GCM encryption upgrade, finfo fail-closed MIME detection, Discord replay attack protection, HTTPS enforcement, ZIP bomb protection, OCR error info-disclosure fix.
 - **Chat Channels** – Fixed Slack @mentions, Google Chat OIDC/route issues, Teams multi-connection with OAuth one-click, Telegram typing indicator and slash-command integration.
@@ -55,9 +56,11 @@ This quick reference provides fast access to the most common tasks and commands 
 ```bash
 # 1. Upload plugin
 # 2. Activate from WordPress admin
-# 3. Go to Settings → NV oOS
-# 4. Add OpenAI API key
-# 5. Create your first assistant
+# 3. Complete the Getting Started wizard (auto-redirects on first activation)
+#    → Step 1: Welcome
+#    → Step 2: Connect your AI provider (OpenAI, Gemini, Ollama, etc.)
+#    → Step 3: Choose a use-case preset (creates a ready-to-use assistant)
+#    → Step 4: You're all set — copy the [mcp_ai_chat] shortcode
 ```
 
 ### Developer Installation (GitHub Clone)
@@ -634,6 +637,7 @@ Settings → NV oOS → Chat Theme
 ## 🆘 Getting Help
 
 ### Quick Start Resources
+- **Getting Started Wizard** ⭐ NEW — Activate and follow the 4-step setup at **NV oOS → Getting Started** to create your first assistant in under 2 minutes
 - **[Use Cases & Quickstart Guides](getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - 7 major use cases with step-by-step guides
 - **[5-Minute Quick Start](getting-started/QUICK_START_5_MINUTES.md)** - Get started immediately
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete documentation map

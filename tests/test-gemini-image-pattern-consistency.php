@@ -6,6 +6,9 @@
  * preventing accidental divergence in future modifications.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Gemini_Image_Pattern_Consistency extends WP_UnitTestCase {
 	/**

@@ -7,6 +7,9 @@
  * data is an object with message, details, cli_command, and setup_command.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**

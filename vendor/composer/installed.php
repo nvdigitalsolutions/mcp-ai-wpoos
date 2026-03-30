@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
-        'version' => 'dev-copilot/review-pro-plugin-compliance',
-        'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
+        'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
+        'version' => 'dev-copilot/enhance-remote-connections-toolkit',
+        'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-pro-plugin-compliance',
-            'version' => 'dev-copilot/review-pro-plugin-compliance',
-            'reference' => 'dd0ac13c5aea295a8174a3bae1b2c40c960e8eb2',
+            'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
+            'version' => 'dev-copilot/enhance-remote-connections-toolkit',
+            'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -3,6 +3,9 @@
  * Test that League OAuth2 Client doesn't send approval_prompt parameter.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**

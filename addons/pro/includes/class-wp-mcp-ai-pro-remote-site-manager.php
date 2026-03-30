@@ -7,6 +7,9 @@
  * a centralized interface for managing multiple remote site connections.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -2406,6 +2409,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_quickbooks_credentials',
 					__( 'Client ID and client secret are required for QuickBooks connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks_desktop' === $connection_type ) {
+			if ( empty( $connection['url'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_qbd_relay_url',
+					__( 'The QODBC relay API URL is required for QuickBooks Desktop connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

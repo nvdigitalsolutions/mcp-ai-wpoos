@@ -9,6 +9,10 @@
  * Note: This primarily tests the server-side API. The client-side fix is in
  * assets/js/chat.js where originalAssistantId is preserved and used for
  * transcript saves.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	/**

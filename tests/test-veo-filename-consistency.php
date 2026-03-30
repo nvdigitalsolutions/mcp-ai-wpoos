@@ -7,6 +7,9 @@
  * the actual file URL when the video is saved, preventing 404 errors.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Veo_Filename_Consistency extends WP_UnitTestCase {
 

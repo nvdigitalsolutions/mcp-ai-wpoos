@@ -8,6 +8,9 @@
  * @subpackage Calendar_Booking_Toolkit
  * @since 2.6.0
  * @phase Phase 2.6 - Calendar Booking Toolkit
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

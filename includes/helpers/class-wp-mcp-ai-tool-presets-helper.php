@@ -2,11 +2,12 @@
 /**
  * Tool Presets Helper - Updated 2026
  *
- * Comprehensive tool selection presets covering 760+ tools organized by
+ * Comprehensive tool selection presets covering 770+ tools organized by
  * use case and profession type. Includes DeepSeek V4 agent coordination tools,
  * quiz management, media templates, music production, fantasy sports, webchat,
  * health vitals management, Shopify, registration management, appointment
- * scheduling, cloud storage, cross-platform messaging, and more.
+ * scheduling, cloud storage, cross-platform messaging, Brevo email marketing,
+ * Mailgun transactional email, listing image downloads, and more.
  * Clear All/Select All functionality included.
  *
  * @package WP_MCP_AI
@@ -17,6 +18,11 @@
  *   PDF/Excel document tools, site builder section tools, regulatory/compliance tools, CRM email
  *   search, sales pipeline tools, health metrics logging, vitals import, MOH sync, social listening,
  *   competitor analysis, workflow CRUD, vault tools, and more across all presets.
+ * @updated 2026-03-30 - Added 8 missing tools: Brevo email/contacts/stats, Mailgun email,
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -216,6 +222,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'analyze_image',
 					'extract_image_text',
 					'generate_cloudflareai_image',
+					// Image downloading from external platforms (Pro).
+					'download_facebook_page_images',
+					'download_instagram_page_images',
+					'download_google_maps_images',
 				),
 			),
 
@@ -294,6 +304,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'shopify_orders',
 					'shopify_customers',
 					'shopify_inventory',
+					'shopify_catalog',
 					// Advanced product management (Pro).
 					'create_product_advanced',
 					'create_discount_campaign',
@@ -499,6 +510,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'sitekit_get_analytics',
 					'sitekit_get_pagespeed',
 					'sitekit_get_search_console',
+					// Social media image downloads (Pro).
+					'download_facebook_page_images',
+					'download_instagram_page_images',
 				),
 			),
 
@@ -850,6 +864,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'send_group_email',
 					'send_group_email_validated',
 					'send_mailjet_email',
+					'send_brevo_email',
+					'send_mailgun_email',
 					'send_outlook_mail',
 					'get_outlook_messages',
 					'search_gmail',
@@ -928,6 +944,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Mailjet contacts & stats (Pro).
 					'manage_mailjet_contacts',
 					'get_mailjet_statistics',
+					// Brevo contacts & stats (Pro).
+					'manage_brevo_contacts',
+					'get_brevo_statistics',
 				),
 			),
 
@@ -1319,6 +1338,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Social media.
 					'post_facebook_instagram',
 					'post_google_business_update',
+					// Listing images (Pro).
+					'download_google_maps_images',
 				),
 			),
 
@@ -1839,6 +1860,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Communication.
 					'send_group_email',
 					'send_mailjet_email',
+					'send_brevo_email',
+					'send_mailgun_email',
 					'search_gmail',
 					'send_whatsapp_message',
 					'send_telegram_message',
@@ -1896,6 +1919,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// SEO & Marketing.
 					'get_rankmath_seo',
 					'google_analytics_report',
+					// Brevo contacts (Pro).
+					'manage_brevo_contacts',
+					'get_brevo_statistics',
 				),
 			),
 
@@ -2930,6 +2956,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_open_meteo_forecast',
 					'get_gdacs_events',
 					'get_nhc_active_storms',
+					// Business listing images (Pro).
+					'download_google_maps_images',
 				),
 			),
 

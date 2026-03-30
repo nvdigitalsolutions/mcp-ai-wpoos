@@ -6,6 +6,10 @@
  * with different client configurations, including:
  * 1. Proper MCP configuration (base URL with SSE)
  * 2. Incorrect configuration (direct /chat URL)
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 

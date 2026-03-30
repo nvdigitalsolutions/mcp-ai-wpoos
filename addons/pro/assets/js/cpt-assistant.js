@@ -3,6 +3,10 @@
  *
  * Handles modal and chat interface interactions for the AI assistant metabox.
  * Uses modern WordPress data store subscription for block editor compatibility.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 (function ($) {

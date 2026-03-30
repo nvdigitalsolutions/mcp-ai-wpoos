@@ -1,6 +1,10 @@
 <?php
 /**
  * Helper client that forces the Chat Completions endpoint during detection.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
 

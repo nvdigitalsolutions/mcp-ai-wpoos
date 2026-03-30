@@ -1,12 +1,22 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 26, 2026  
+**Last Updated:** March 28, 2026  
 **Plugin Version:** 1.1.5  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
+> - **8 Use-Case Presets** – Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools)
+> - **Assistant Seeding** – Selecting a preset creates a fully-configured `mcp_ai_assistant` CPT post with tools, system prompt, provider, model, and temperature. First assistant auto-set as default.
+> - **WCAG 2.1 Accessibility** – WAI-ARIA tablist/tab/tabpanel for provider tabs, keyboard navigation, `aria-current="step"` progress, `aria-live="polite"` feedback, `focus-visible` outlines
+> - **External JavaScript** – Inline scripts extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n (CSP-compliant)
+> - **Explicit Completion** – Step 4 no longer auto-completes; uses "Mark Setup Complete" button via AJAX
+> - **New Hooks** – `wp_mcp_ai_onboarding_presets` filter, `wp_mcp_ai_onboarding_presets_seeded` action
+> - **22 PHPUnit Tests** – Preset validation, assistant seeding, duplicate prevention, model resolution
+> - **See**: [README.md Getting Started Wizard](../README.md#-installation), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 19, 2026 UPDATE:** 🏥 **HEALTHCARE DICOM IMAGING VIEWER — FULL MANAGER REBUILD**
 > - **Black Images Fixed** — `csDicomImageLoader.external.cornerstone` link now correctly wired; auto-VOI from pixel min/max for studies without `WindowCenter`/`WindowWidth` tags
@@ -892,10 +902,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
-2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
-4. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-5. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+2. **Getting Started Wizard** ⭐ — Activate the plugin and follow the 4-step wizard (`NV oOS → Getting Started`) to connect a provider and create your first assistant in under 2 minutes
+3. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
+4. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+5. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+6. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
@@ -981,6 +992,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
+| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 

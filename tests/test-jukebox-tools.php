@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for OpenAI Jukebox integration tools.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php';

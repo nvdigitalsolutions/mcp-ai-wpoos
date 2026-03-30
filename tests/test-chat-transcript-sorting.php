@@ -3,6 +3,9 @@
  * Tests for chat transcript sorting to ensure most recent conversations appear first.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 	/**
