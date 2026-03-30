@@ -528,6 +528,9 @@ const WorkflowBuilderInner = () => {
 		};
 
 		return rawNodes.map( ( node ) => {
+			if ( ! node.type || typeof node.type !== 'string' ) {
+				return node;
+			}
 			const mappedType = typeMap[ node.type ];
 			if ( mappedType ) {
 				return { ...node, type: mappedType };
@@ -555,7 +558,7 @@ const WorkflowBuilderInner = () => {
 	useEffect( () => {
 		const handlePresetEvent = ( event ) => {
 			const workflow = event.detail;
-			if ( ! workflow ) {
+			if ( ! workflow || ! Array.isArray( workflow.nodes ) ) {
 				return;
 			}
 			setWorkflowName( workflow.name || __( 'Untitled Workflow', 'mcp-ai-wpoos' ) );
