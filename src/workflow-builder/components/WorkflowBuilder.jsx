@@ -507,15 +507,75 @@ const WorkflowBuilderInner = () => {
 	}, [workflowName, workflowDescription, nodes, edges] );
 
 	/**
+	 * Map preset node types to registered custom node types.
+	 *
+	 * Presets may use ReactFlow built-in types like 'input' and 'output' which
+	 * are not in our custom nodeTypes registry. Map them to the closest custom
+	 * equivalents so they render with proper styling and handles.
+	 *
+	 * @param {Array} rawNodes Array of node objects.
+	 * @return {Array} Nodes with mapped types.
+	 */
+	const mapPresetNodeTypes = useCallback( ( rawNodes ) => {
+		if ( ! Array.isArray( rawNodes ) ) {
+			return [];
+		}
+
+		const typeMap = {
+			input: 'trigger',
+			output: 'action',
+			default: 'action',
+		};
+
+		return rawNodes.map( ( node ) => {
+			const mappedType = typeMap[ node.type ];
+			if ( mappedType ) {
+				return { ...node, type: mappedType };
+			}
+			return node;
+		} );
+	}, [] );
+
+	/**
 	 * Load workflow from template
 	 */
 	const loadTemplate = useCallback( ( template ) => {
 		setWorkflowName( template.name );
 		setWorkflowDescription( template.description );
-		setNodes( template.nodes || [] );
+		setNodes( mapPresetNodeTypes( template.nodes ) );
 		setEdges( template.edges || [] );
 		setValidationErrors( [] );
-	}, [setNodes, setEdges] );
+	}, [setNodes, setEdges, mapPresetNodeTypes] );
+
+	/**
+	 * Listen for the 'mcpAiLoadWorkflowPreset' custom event dispatched by the
+	 * PHP-rendered preset cards so that clicking "Load into Builder" actually
+	 * populates the React canvas.
+	 */
+	useEffect( () => {
+		const handlePresetEvent = ( event ) => {
+			const workflow = event.detail;
+			if ( ! workflow ) {
+				return;
+			}
+			setWorkflowName( workflow.name || __( 'Untitled Workflow', 'mcp-ai-wpoos' ) );
+			setWorkflowDescription( workflow.description || '' );
+			setNodes( mapPresetNodeTypes( workflow.nodes ) );
+			setEdges( workflow.edges || [] );
+			setValidationErrors( [] );
+
+			// Scroll the builder into view so the user sees the loaded workflow.
+			const root = document.getElementById( 'mcp-ai-pro-workflow-builder-root' );
+			if ( root ) {
+				root.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			}
+		};
+
+		document.addEventListener( 'mcpAiLoadWorkflowPreset', handlePresetEvent );
+		return () => {
+			document.removeEventListener( 'mcpAiLoadWorkflowPreset', handlePresetEvent );
+		};
+	}, [setNodes, setEdges, mapPresetNodeTypes] );
 
 	return (
 		<div className="workflow-builder-container">

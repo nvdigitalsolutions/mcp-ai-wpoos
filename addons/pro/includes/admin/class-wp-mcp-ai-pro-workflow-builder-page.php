@@ -1622,8 +1622,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 		$workflow = WP_MCP_AI_Pro_Workflow_Presets::install_preset( $preset_id );
 
-		if ( null === $workflow ) {
-			wp_send_json_error( array( 'message' => __( 'Workflow preset not found.', 'mcp-ai-wpoos-pro' ) ) );
+		if ( null === $workflow || is_wp_error( $workflow ) ) {
+			$msg = is_wp_error( $workflow ) ? $workflow->get_error_message() : __( 'Workflow preset not found.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $msg ) );
 		}
 
 		wp_send_json_success(
