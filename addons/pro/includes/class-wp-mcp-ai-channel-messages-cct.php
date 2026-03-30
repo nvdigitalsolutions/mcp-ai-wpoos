@@ -35,6 +35,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_connection_id' ), 102 );
 	}
 
 	/**
@@ -56,6 +57,31 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
 		}
 		update_option( 'wp_mcp_ai_channel_messages_migration_v1', true );
+	}
+
+	/**
+	 * Ensure the connection_id column exists in the messages CCT table.
+	 *
+	 * Older installations that created the CCT before this field was added to
+	 * the schema will not have the column, causing queries that reference it
+	 * to fail silently and break the inbox.
+	 */
+	public static function maybe_migrate_connection_id() {
+		if ( get_option( 'wp_mcp_ai_channel_messages_migration_v2' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'connection_id', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `connection_id` VARCHAR(100) NOT NULL DEFAULT ''" );
+		}
+		update_option( 'wp_mcp_ai_channel_messages_migration_v2', true );
 	}
 
 	/**
