@@ -79,6 +79,7 @@ class WP_MCP_AI_TransformersTasksClient {
 					this.log( 'WebGPU available — using GPU acceleration' );
 					return this.device;
 				}
+				this.log( 'WebGPU API available but no adapter found — falling back to WASM' );
 			}
 		} catch ( e ) {
 			this.log( 'WebGPU detection failed, using WASM fallback' );

@@ -146,7 +146,7 @@
 		'Qwen3-8B-q4f16_1-MLC': {
 			name: 'Qwen3 8B',
 			size: '~5GB',
-			description: 'Latest Qwen3 with hybrid reasoning, 119 language support, and function calling',
+			description: 'Latest Qwen3 with hybrid reasoning (think/non-think modes), 119 language support, and function calling',
 			contextWindow: 32768,
 			recommended: false,
 			functionCalling: true
