@@ -199,11 +199,30 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// --- Layer 2: Secret-token header verification ------------------------------
 		$connection_id = $request->get_param( 'connection_id' );
+
+		// Verify the requested connection exists before checking the secret.
+		// When a per-connection URL is used but the connection cannot be found,
+		// log a specific error so the admin can diagnose the mismatch.
+		if ( $connection_id ) {
+			$connection = $this->get_active_telegram_connection( $connection_id );
+			if ( ! $connection ) {
+				WP_MCP_AI_Logger::log_error(
+					'Telegram webhook rejected: the per-connection URL references a connection that does not exist or is disabled. Verify the connection ID in the webhook URL matches a saved, enabled Telegram connection.',
+					array( 'connection_id' => $connection_id )
+				);
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'Telegram webhook rejected: connection not found or disabled.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 		$stored_secret = $this->get_secret_token( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
 			WP_MCP_AI_Logger::log_error(
-				'Telegram webhook rejected: secret token is not configured. Configure a secret_token in the connection settings to enable this webhook.',
+				'Telegram webhook rejected: secret token is not configured. Configure a secret_token in the connection settings and click "Set Webhook" to re-register it with Telegram.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return new WP_Error(
@@ -217,7 +236,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		if ( empty( $provided_token ) ) {
 			WP_MCP_AI_Logger::log_error(
-				'Telegram webhook rejected: missing secret token header.',
+				'Telegram webhook rejected: missing X-Telegram-Bot-Api-Secret-Token header. This usually means the webhook was registered without a secret_token. Click "Set Webhook" in the connection settings to re-register with the correct secret.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return false;
@@ -225,7 +244,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		if ( ! hash_equals( $stored_secret, $provided_token ) ) {
 			WP_MCP_AI_Logger::log_error(
-				'Telegram webhook rejected: invalid secret token. Ensure the secret_token configured in your Telegram connection settings matches the token set in BotFather (setWebhook secret_token parameter).',
+				'Telegram webhook rejected: invalid secret token. Ensure the secret_token configured in your Telegram connection settings matches the token set in BotFather (setWebhook secret_token parameter). Click "Set Webhook" to re-sync.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return false;
@@ -1457,6 +1476,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// When a specific connection is requested, look it up directly.
+		// Return null (NOT the first connection) when the requested ID cannot be
+		// resolved – falling through to the first-active-connection fallback
+		// caused the wrong bot's secret token to be used for validation,
+		// resulting in 403 Forbidden errors on the second Telegram connection.
 		if ( $target_id ) {
 			foreach ( $connections as $connection ) {
 				if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
@@ -1471,6 +1494,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					return $connection;
 				}
 			}
+
+			// Specific connection requested but not found — do not fall back to
+			// a different connection; return null so the caller can surface a
+			// descriptive error instead of silently using wrong credentials.
+			return null;
 		}
 
 		// Fallback: return the first active Telegram connection (single-bot / legacy behaviour).

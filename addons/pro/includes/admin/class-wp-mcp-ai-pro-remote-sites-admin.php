@@ -12359,15 +12359,22 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$secret_token  = trim( (string) $secret_token );
 		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 
-		// Fall back to stored credentials.
-		if ( empty( $bot_token ) ) {
-			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
-			if ( ! empty( $stored_connection['api_key'] ) ) {
-				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
-			}
-			if ( empty( $secret_token ) && ! empty( $stored_connection['secret_token'] ) ) {
-				$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['secret_token'] );
-			}
+		// Fall back to stored credentials for both bot_token and secret_token
+		// independently. The secret_token must be resolved even when the user
+		// provides a bot_token in the form, otherwise the setWebhook call
+		// omits the secret and Telegram stops sending the verification header,
+		// resulting in 403 Forbidden on subsequent webhook deliveries.
+		$stored_connection = null;
+		if ( ! empty( $connection_id ) ) {
+			$stored_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		}
+
+		if ( empty( $bot_token ) && $stored_connection && ! empty( $stored_connection['api_key'] ) ) {
+			$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+		}
+
+		if ( empty( $secret_token ) && $stored_connection && ! empty( $stored_connection['secret_token'] ) ) {
+			$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['secret_token'] );
 		}
 
 		if ( empty( $bot_token ) ) {
@@ -12396,10 +12403,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		// Include all update types handled by the webhook controller so that
+		// Telegram delivers channel posts, membership changes, inline queries,
+		// pre-checkout queries and payment notifications alongside messages.
 		$body = array(
 			'url'             => $webhook_url,
 			'max_connections' => 40,
-			'allowed_updates' => array( 'message', 'edited_message', 'callback_query' ),
+			'allowed_updates' => array(
+				'message',
+				'edited_message',
+				'channel_post',
+				'edited_channel_post',
+				'callback_query',
+				'inline_query',
+				'my_chat_member',
+				'chat_member',
+				'pre_checkout_query',
+			),
 		);
 
 		if ( ! empty( $secret_token ) ) {

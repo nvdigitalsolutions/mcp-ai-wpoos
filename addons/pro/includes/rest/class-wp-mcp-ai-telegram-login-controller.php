@@ -139,14 +139,17 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		}
 		if ( ! empty( $missing_params ) ) {
 			WP_MCP_AI_Logger::log_warning(
-				'Telegram Web Login: missing auth parameters. This URL may have been accidentally set as the Mini App URL in BotFather instead of the Web Login callback URL.',
+				'Telegram Web Login failed due to missing auth parameters. This may indicate the wrong callback URL was set in BotFather (the fields ' . implode( ', ', $missing_params ) . ' were missing). '
+				. 'To fix this: (1) In BotFather, use /setdomain or /mybots to set the Telegram Login domain to your site. '
+				. '(2) Ensure the Telegram Login Widget on your site points to: ' . home_url( '/wp-json/mcp-ai/v1/telegram-login' ) . '. '
+				. '(3) Do NOT use this URL as the Mini App URL — the Mini App URL is shown separately in your connection settings.',
 				array( 'missing' => $missing_params )
 			);
 			return new WP_Error(
 				'wp_mcp_ai_telegram_login_missing_params',
 				sprintf(
 					/* translators: %s: comma-separated list of missing parameter names */
-					__( 'Missing required Telegram auth parameter(s): %s. This endpoint handles Telegram Login Widget callbacks. If you are configuring a Telegram Mini App, please use the Mini App URL shown in your plugin settings instead.', 'mcp-ai-wpoos-pro' ),
+					__( 'Missing required Telegram auth parameter(s): %s. This endpoint handles Telegram Login Widget callbacks — it must be invoked by the Telegram Login Widget, not opened directly. If you are configuring a Telegram Mini App, please use the Mini App URL shown in your plugin connection settings instead.', 'mcp-ai-wpoos-pro' ),
 					implode( ', ', $missing_params )
 				),
 				array( 'status' => 400 )
