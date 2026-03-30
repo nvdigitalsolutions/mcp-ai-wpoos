@@ -12248,12 +12248,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
-		$bot_token = trim( (string) $bot_token );
+		$bot_token     = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
+		$bot_token     = trim( (string) $bot_token );
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 
 		// Fall back to stored token when the field is blank.
 		if ( empty( $bot_token ) ) {
-			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
 			if ( ! empty( $stored_connection['api_key'] ) ) {
 				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
@@ -12319,7 +12319,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				if ( ! empty( $wh['last_error_message'] ) ) {
 					$result['webhook_last_error'] = $wh['last_error_message'];
 				}
-				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				$expected_url = ! empty( $connection_id )
+					? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+					: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
 				if ( empty( $result['webhook_url'] ) ) {
 					$result['warning'] = sprintf(
 						/* translators: %s: expected webhook URL */
@@ -12459,12 +12461,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$bot_token = trim( (string) $bot_token );
+		$bot_token     = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$bot_token     = trim( (string) $bot_token );
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 
 		// Fall back to stored token.
 		if ( empty( $bot_token ) ) {
-			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
 			if ( ! empty( $stored_connection['api_key'] ) ) {
 				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
@@ -12519,7 +12521,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'last_error_message'  => isset( $wh['last_error_message'] ) ? $wh['last_error_message'] : '',
 		);
 
-		$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+		$expected_url = ! empty( $connection_id )
+			? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+			: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
 		if ( empty( $result['webhook_url'] ) ) {
 			$result['warning'] = sprintf(
 				/* translators: %s: expected webhook URL */

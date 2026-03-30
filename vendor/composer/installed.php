@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
-        'version' => 'dev-copilot/enhance-remote-connections-toolkit',
-        'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
+        'pretty_version' => 'dev-copilot/fix-telegram-webhook-issue',
+        'version' => 'dev-copilot/fix-telegram-webhook-issue',
+        'reference' => '276c847cf6dd938be9429f4bfc68fad92fa7cfdb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
-            'version' => 'dev-copilot/enhance-remote-connections-toolkit',
-            'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
+            'pretty_version' => 'dev-copilot/fix-telegram-webhook-issue',
+            'version' => 'dev-copilot/fix-telegram-webhook-issue',
+            'reference' => '276c847cf6dd938be9429f4bfc68fad92fa7cfdb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

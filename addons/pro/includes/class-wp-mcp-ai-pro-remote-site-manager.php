@@ -1627,7 +1627,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				if ( ! empty( $wh['last_error_message'] ) ) {
 					$results['webhook_last_error'] = $wh['last_error_message'];
 				}
-				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+				$expected_url  = ! empty( $connection_id )
+					? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+					: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
 				if ( empty( $results['webhook_url'] ) ) {
 					$results['warning'] = sprintf(
 						/* translators: %s: expected webhook URL */
