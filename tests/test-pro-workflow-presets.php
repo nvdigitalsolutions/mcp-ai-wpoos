@@ -339,4 +339,84 @@ class Test_Pro_Workflow_Presets extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	// -------------------------------------------------------------------------
+	// Tool node completeness
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that every tool node has a non-empty toolSlug.
+	 */
+	public function test_tool_nodes_have_tool_slug() {
+		$presets = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+
+		foreach ( $presets as $id => $preset ) {
+			foreach ( $preset['nodes'] as $index => $node ) {
+				if ( 'tool' !== $node['type'] ) {
+					continue;
+				}
+
+				$this->assertNotEmpty(
+					$node['data']['toolSlug'],
+					"Preset '{$id}' tool node [{$index}] ('{$node['data']['label']}') is missing toolSlug."
+				);
+			}
+		}
+	}
+
+	/**
+	 * Test that every tool node has a non-empty arguments array.
+	 */
+	public function test_tool_nodes_have_arguments() {
+		$presets = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+
+		foreach ( $presets as $id => $preset ) {
+			foreach ( $preset['nodes'] as $index => $node ) {
+				if ( 'tool' !== $node['type'] ) {
+					continue;
+				}
+
+				$this->assertArrayHasKey(
+					'arguments',
+					$node['data'],
+					"Preset '{$id}' tool node [{$index}] ('{$node['data']['label']}') is missing arguments key."
+				);
+
+				$this->assertNotEmpty(
+					$node['data']['arguments'],
+					"Preset '{$id}' tool node [{$index}] ('{$node['data']['label']}') has empty arguments."
+				);
+			}
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Condition node completeness
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that every condition node has an expression field.
+	 */
+	public function test_condition_nodes_have_expression() {
+		$presets = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+
+		foreach ( $presets as $id => $preset ) {
+			foreach ( $preset['nodes'] as $index => $node ) {
+				if ( 'condition' !== $node['type'] ) {
+					continue;
+				}
+
+				$this->assertArrayHasKey(
+					'expression',
+					$node['data'],
+					"Preset '{$id}' condition node [{$index}] ('{$node['data']['label']}') is missing expression."
+				);
+
+				$this->assertNotEmpty(
+					$node['data']['expression'],
+					"Preset '{$id}' condition node [{$index}] ('{$node['data']['label']}') has empty expression."
+				);
+			}
+		}
+	}
 }

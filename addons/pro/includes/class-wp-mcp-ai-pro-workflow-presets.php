@@ -331,6 +331,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Needs Update?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.pageviews < 100',
 								'description' => __( 'Check if post performance is below threshold.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -729,6 +730,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 150 ),
 							'data'     => array(
 								'label'       => __( 'Broken Links Found?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_1.broken_count > 0',
 								'description' => __( 'Check if any broken links were detected.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -739,7 +741,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Suggest Replacements', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'suggest_internal_links',
-								'arguments'   => array(),
+								'arguments'   => array( 'post_id' => '{{node_1.post_id}}' ),
 								'description' => __( 'Find replacement URLs for broken links.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -750,7 +752,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Update Posts', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
-								'arguments'   => array(),
+								'arguments'   => array( 'post_id' => '{{node_3.post_id}}', 'content' => '{{node_3.updated_content}}' ),
 								'description' => __( 'Replace broken links with suggested alternatives.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1073,6 +1075,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Stock Issues?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.out_of_stock_count > 0',
 								'description' => __( 'Check if any ordered items are out of stock.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1178,7 +1181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Analyse Sentiment', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'client_analyze_sentiment',
-								'arguments'   => array(),
+								'arguments'   => array( 'text' => '{{node_1.reviews}}' ),
 								'description' => __( 'Determine the sentiment of each review.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1188,6 +1191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Negative Review?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.sentiment === "negative"',
 								'description' => __( 'Route based on review sentiment.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1490,7 +1494,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Compare Metrics', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_pagespeed',
-								'arguments'   => array(),
+								'arguments'   => array( 'url' => '{{input.urls}}', 'strategy' => 'both' ),
 								'description' => __( 'Compare performance metrics against competitors.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1609,6 +1613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Duplicates Found?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.duplicate_count > 0',
 								'description' => __( 'Check if duplicate records were detected.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1619,7 +1624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Merge Records', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'save_post',
-								'arguments'   => array(),
+								'arguments'   => array( 'post_id' => '{{node_2.canonical_id}}', 'merge_from' => '{{node_2.duplicate_ids}}' ),
 								'description' => __( 'Merge duplicate records into canonical entries.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1630,7 +1635,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Validate Data', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'validate_reasoning_chain',
-								'arguments'   => array(),
+								'arguments'   => array( 'data_set' => '{{node_4.result}}' ),
 								'description' => __( 'Run validation checks on the cleaned data set.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -1841,6 +1846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Urgent Tickets Found?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.urgency_level === "high"',
 								'description' => __( 'Check if any tickets require immediate attention.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -2018,7 +2024,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'data'     => array(
 								'label'       => __( 'Check Performance', 'mcp-ai-wpoos-pro' ),
 								'toolSlug'    => 'sitekit_get_pagespeed',
-								'arguments'   => array(),
+								'arguments'   => array( 'strategy' => 'both' ),
 								'description' => __( 'Run a PageSpeed performance check.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -2050,6 +2056,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 450 ),
 							'data'     => array(
 								'label'       => __( 'Issues Found?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_3.issues_count > 0',
 								'description' => __( 'Determine if any health issues need attention.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
@@ -2165,6 +2172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'position' => array( 'x' => 250, 'y' => 300 ),
 							'data'     => array(
 								'label'       => __( 'Backup Valid?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.is_valid === true',
 								'description' => __( 'Check if the backup passed integrity verification.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
