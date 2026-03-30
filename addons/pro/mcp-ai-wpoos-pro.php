@@ -761,6 +761,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-analytics-report.php',
 			// Business and accounting tools.
 			'WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php',
+			'WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-quickbooks-desktop-sync.php',
 			'WP_MCP_AI_Pro_Tool_Get_Import_Duty'          => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-get-import-duty.php',
 			// Code and development tools.
 			'WP_MCP_AI_Pro_Tool_Create_WPCode_Snippet'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-wpcode-snippet.php',
@@ -1585,6 +1586,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'google_analytics_report'         => 'external-tools',
 			// Business and accounting tools - Require external API credentials.
 			'quickbooks_report'               => 'external-tools',
+			'quickbooks_desktop_sync'         => 'external-tools',
 			// iSAMS School Management System - Requires external API credentials.
 			'isams_query'                     => 'external-tools',
 			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
@@ -1841,6 +1843,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 			$categories['medium_resource']['tools'][] = 'download_google_maps_images';
 			$categories['medium_resource']['tools'][] = 'download_facebook_page_images';
 			$categories['medium_resource']['tools'][] = 'download_instagram_page_images';
+		}
+
+		// QuickBooks Desktop sync - medium resource (external relay API).
+		if ( isset( $categories['medium_resource'] ) ) {
+			$categories['medium_resource']['tools'][] = 'quickbooks_desktop_sync';
 		}
 
 		/**
