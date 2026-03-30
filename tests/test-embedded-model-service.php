@@ -41,12 +41,16 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 		// Verify specific models exist.
 		$expected_models = array(
 			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			'Qwen3-8B-q4f16_1-MLC',
 			'Qwen2.5-7B-Instruct-q4f16_1-MLC',
+			'Qwen3-4B-q4f16_1-MLC',
 			'Phi-3.5-mini-instruct-q4f16_1-MLC',
-			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+			'Qwen3-1.5B-q4f16_1-MLC',
 			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
+			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
 			'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+			'Qwen3-0.6B-q4f16_1-MLC',
 		);
 
 		foreach ( $expected_models as $model_id ) {
@@ -75,8 +79,11 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 		// Models with function calling support (should have * suffix).
 		$function_calling_models = array(
 			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			'Qwen3-8B-q4f16_1-MLC',
 			'Qwen2.5-7B-Instruct-q4f16_1-MLC',
+			'Qwen3-4B-q4f16_1-MLC',
 			'Phi-3.5-mini-instruct-q4f16_1-MLC',
+			'Qwen3-1.5B-q4f16_1-MLC',
 			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
 		);
 
@@ -89,6 +96,7 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 		$non_function_calling_models = array(
 			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
 			'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+			'Qwen3-0.6B-q4f16_1-MLC',
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
 		);
 
