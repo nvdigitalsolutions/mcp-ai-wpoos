@@ -12364,17 +12364,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// provides a bot_token in the form, otherwise the setWebhook call
 		// omits the secret and Telegram stops sending the verification header,
 		// resulting in 403 Forbidden on subsequent webhook deliveries.
-		$stored_connection = null;
-		if ( ! empty( $connection_id ) ) {
+		// Only fetch the stored connection when at least one value is missing.
+		if ( ( empty( $bot_token ) || empty( $secret_token ) ) && ! empty( $connection_id ) ) {
 			$stored_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-		}
 
-		if ( empty( $bot_token ) && $stored_connection && ! empty( $stored_connection['api_key'] ) ) {
-			$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
-		}
+			if ( empty( $bot_token ) && $stored_connection && ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
 
-		if ( empty( $secret_token ) && $stored_connection && ! empty( $stored_connection['secret_token'] ) ) {
-			$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['secret_token'] );
+			if ( empty( $secret_token ) && $stored_connection && ! empty( $stored_connection['secret_token'] ) ) {
+				$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['secret_token'] );
+			}
 		}
 
 		if ( empty( $bot_token ) ) {
