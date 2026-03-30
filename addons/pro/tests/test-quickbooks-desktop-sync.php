@@ -158,14 +158,13 @@ class Test_QuickBooks_Desktop_Sync extends WP_UnitTestCase {
 	 * Test that execute fails without permission.
 	 */
 	public function test_execute_requires_manage_options() {
-		wp_set_current_user( $this->subscriber_user );
-
+		// Use user_id = 0 (no user) to reliably trigger the permission check.
 		$result = $this->tool->execute(
 			array(
 				'connection_id' => 'test_conn',
 				'action'        => 'list_tables',
 			),
-			array( 'user_id' => $this->subscriber_user )
+			array( 'user_id' => 0 )
 		);
 
 		$this->assertInstanceOf( 'WP_Error', $result );

@@ -10,11 +10,11 @@ if ( ! defined( 'DB_NAME' ) ) {
 }
 
 if ( ! defined( 'DB_USER' ) ) {
-	define( 'DB_USER', 'wordpress_test' );
+	define( 'DB_USER', 'wordpress' );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
-	define( 'DB_PASSWORD', 'wordpress_test' );
+	define( 'DB_PASSWORD', 'wordpress' );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
@@ -29,18 +29,18 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-// phpcs:ignore Squiz.PHP.CommentedOutCode.Found -- SQLite configuration for local development (optional).
-// if ( ! defined( 'DB_TYPE' ) ) {
-// define( 'DB_TYPE', 'sqlite' );
-// }.
-//
-// if ( ! defined( 'DB_DIR' ) ) {
-// define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
-// }.
-//
-// if ( ! defined( 'DB_FILE' ) ) {
-// define( 'DB_FILE', 'wptests.sqlite' );
-// }.
+// Use SQLite for testing
+if ( ! defined( 'DB_TYPE' ) ) {
+	define( 'DB_TYPE', 'sqlite' );
+}
+
+if ( ! defined( 'DB_DIR' ) ) {
+	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
+}
+
+if ( ! defined( 'DB_FILE' ) ) {
+	define( 'DB_FILE', 'wptests.sqlite' );
+}
 
 if ( ! isset( $table_prefix ) ) {
 	$table_prefix = 'wptests_'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required for WordPress test suite.

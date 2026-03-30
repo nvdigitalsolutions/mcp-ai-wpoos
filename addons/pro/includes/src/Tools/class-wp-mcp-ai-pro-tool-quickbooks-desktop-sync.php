@@ -405,7 +405,7 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 		}
 
 		$fields   = isset( $arguments['fields'] ) ? sanitize_text_field( $arguments['fields'] ) : '*';
-		$where    = isset( $arguments['where'] ) ? sanitize_text_field( $arguments['where'] ) : '';
+		$where    = isset( $arguments['where'] ) ? wp_strip_all_tags( $arguments['where'] ) : '';
 		$order_by = isset( $arguments['order_by'] ) ? sanitize_text_field( $arguments['order_by'] ) : '';
 		$limit    = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), self::MAX_ROWS ) : 50;
 
@@ -441,7 +441,7 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 		}
 
 		$fields   = isset( $arguments['fields'] ) ? sanitize_text_field( $arguments['fields'] ) : '*';
-		$where    = isset( $arguments['where'] ) ? sanitize_text_field( $arguments['where'] ) : '';
+		$where    = isset( $arguments['where'] ) ? wp_strip_all_tags( $arguments['where'] ) : '';
 		$order_by = isset( $arguments['order_by'] ) ? sanitize_text_field( $arguments['order_by'] ) : '';
 		$limit    = isset( $arguments['limit'] ) ? min( absint( $arguments['limit'] ), self::MAX_ROWS ) : 50;
 
@@ -740,7 +740,7 @@ class WP_MCP_AI_Pro_Tool_QuickBooks_Desktop_Sync implements WP_MCP_AI_Tool_Inter
 			}
 
 			if ( is_string( $value ) ) {
-				$sanitized[ $clean_key ] = sanitize_text_field( $value );
+				$sanitized[ $clean_key ] = sanitize_textarea_field( $value );
 			} elseif ( is_numeric( $value ) ) {
 				$sanitized[ $clean_key ] = $value;
 			} elseif ( is_bool( $value ) ) {
