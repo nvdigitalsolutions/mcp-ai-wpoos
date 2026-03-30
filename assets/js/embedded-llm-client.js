@@ -143,10 +143,26 @@
 			recommended: false,
 			functionCalling: false
 		},
+		'Qwen3-8B-q4f16_1-MLC': {
+			name: 'Qwen3 8B',
+			size: '~5GB',
+			description: 'Latest Qwen3 with hybrid reasoning (think/non-think modes), 119 language support, and function calling',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true
+		},
 		'Qwen2.5-7B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 7B Instruct',
 			size: '~4.5GB',
 			description: 'Advanced multilingual model with function calling',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true
+		},
+		'Qwen3-4B-q4f16_1-MLC': {
+			name: 'Qwen3 4B',
+			size: '~2.5GB',
+			description: 'Compact Qwen3 with hybrid reasoning and strong multilingual capabilities',
 			contextWindow: 32768,
 			recommended: false,
 			functionCalling: true
@@ -183,6 +199,14 @@
 			recommended: false,
 			functionCalling: false
 		},
+		'Qwen3-1.5B-q4f16_1-MLC': {
+			name: 'Qwen3 1.5B',
+			size: '~1GB',
+			description: 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true
+		},
 		'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 1.5B Instruct',
 			size: '~1GB',
@@ -196,6 +220,14 @@
 			size: '~800MB',
 			description: 'Fast, lightweight model for basic chat (does not support function calling)',
 			contextWindow: 131072,
+			recommended: false,
+			functionCalling: false
+		},
+		'Qwen3-0.6B-q4f16_1-MLC': {
+			name: 'Qwen3 0.6B',
+			size: '~400MB',
+			description: 'Smallest Qwen3 with hybrid reasoning capabilities',
+			contextWindow: 32768,
 			recommended: false,
 			functionCalling: false
 		},
