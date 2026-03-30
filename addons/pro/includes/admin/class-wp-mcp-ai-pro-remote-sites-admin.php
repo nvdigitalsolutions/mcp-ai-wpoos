@@ -274,6 +274,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$user_email     = '';
 			$app_id         = '';
 			$signing_secret = '';
+			$dsn_name       = '';
 			$gc_method      = 'service_account';
 
 			switch ( $connection_type ) {
@@ -297,6 +298,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'quickbooks':
 					$client_id     = isset( $_POST['quickbooks_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['quickbooks_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['quickbooks_client_secret'] ) ? wp_unslash( $_POST['quickbooks_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'quickbooks_desktop':
+					$api_key  = isset( $_POST['qbd_api_key'] ) ? wp_unslash( $_POST['qbd_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$dsn_name = isset( $_POST['qbd_dsn_name'] ) ? sanitize_text_field( wp_unslash( $_POST['qbd_dsn_name'] ) ) : '';
 					break;
 				case 'ezuite_erp':
 					$api_key    = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -691,6 +696,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
 					? $shopify_api_mode
 					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
+				// QuickBooks Desktop (QODBC) specific fields.
+				'dsn_name'            => $dsn_name,
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -936,6 +943,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'flowhub'            => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
 									'payhere'            => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
 									'quickbooks'         => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'quickbooks_desktop' => __( 'QB Desktop', 'mcp-ai-wpoos-pro' ),
 									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
 									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
@@ -963,6 +971,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'flowhub'            => '#00a32a',
 									'payhere'            => '#f0b849',
 									'quickbooks'         => '#2c9f47',
+									'quickbooks_desktop' => '#1a7a32',
 									'ezuite_erp'         => '#8c50a7',
 									'gmail'              => '#ea4335', // Google red color
 									'google_drive'       => '#4285f4', // Google blue color
@@ -1249,6 +1258,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="quickbooks" <?php selected( $connection_type, 'quickbooks' ); ?>>
 								<?php esc_html_e( 'QuickBooks (Accounting)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="quickbooks_desktop" <?php selected( $connection_type, 'quickbooks_desktop' ); ?>>
+								<?php esc_html_e( 'QuickBooks Desktop (QODBC)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
 								<?php esc_html_e( 'EZuite ERP (Inventory)', 'mcp-ai-wpoos-pro' ); ?>
@@ -1691,6 +1703,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="company_id" id="company_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['company_id'] ) ? esc_attr( $connection['company_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for QuickBooks Desktop (QODBC) -->
+				<tr class="quickbooks_desktop-only-field" style="display: none;">
+					<th scope="row">
+						<label for="qbd_api_key"><?php esc_html_e( 'Relay API Key', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="qbd_api_key" id="qbd_api_key" class="large-text" rows="2" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing key. Shared secret or Bearer token used to authenticate with the QODBC relay API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Shared secret or Bearer token used to authenticate with the QODBC relay API. Leave blank if the relay does not require authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="quickbooks_desktop-only-field" style="display: none;">
+					<th scope="row">
+						<label for="qbd_dsn_name"><?php esc_html_e( 'ODBC DSN Name', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="qbd_dsn_name" id="qbd_dsn_name" class="regular-text" value="<?php echo $is_edit && isset( $connection['dsn_name'] ) ? esc_attr( $connection['dsn_name'] ) : ''; ?>" autocomplete="off" placeholder="QuickBooks Data">
+						<p class="description"><?php esc_html_e( 'The ODBC Data Source Name configured on the relay server (e.g. "QuickBooks Data" or "QuickBooks Data QRemote"). Optional — the relay may have a default DSN.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -5268,6 +5305,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var flowhubFields = document.querySelectorAll('.flowhub-only-field');
 			var payhereFields = document.querySelectorAll('.payhere-only-field');
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
+			var quickbooksDesktopFields = document.querySelectorAll('.quickbooks_desktop-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
@@ -5309,6 +5347,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			quickbooksFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			quickbooksDesktopFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			ezuiteFields.forEach(function(field) {
@@ -5413,6 +5454,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				quickbooksFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+			} else if (connectionType === 'quickbooks_desktop') {
+				quickbooksDesktopFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// QuickBooks Desktop uses custom_header auth (Bearer token to relay).
+				authTypeSelect.value = 'custom_header';
 			} else if (connectionType === 'ezuite_erp') {
 				ezuiteFields.forEach(function(field) {
 					field.style.display = 'table-row';

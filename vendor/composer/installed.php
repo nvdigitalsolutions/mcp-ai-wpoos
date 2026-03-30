@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/4491-research-plan-schedule-presets',
-        'version' => 'dev-copilot/4491-research-plan-schedule-presets',
-        'reference' => 'e8c3d112243d3ff9d659f8ca7d53d2c0303961a6',
+        'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
+        'version' => 'dev-copilot/enhance-remote-connections-toolkit',
+        'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/4491-research-plan-schedule-presets',
-            'version' => 'dev-copilot/4491-research-plan-schedule-presets',
-            'reference' => 'e8c3d112243d3ff9d659f8ca7d53d2c0303961a6',
+            'pretty_version' => 'dev-copilot/enhance-remote-connections-toolkit',
+            'version' => 'dev-copilot/enhance-remote-connections-toolkit',
+            'reference' => '32d6e14d2df4857627168f005911fdd4d99bc42d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
