@@ -1015,7 +1015,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Add Shopify tools — always available when a Shopify connection is configured.
 		// The tools themselves validate the connection at execution time.
+		// Load the shared Shopify connection resolver trait.
+		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
+		}
 		$shopify_tools = array(
+			'WP_MCP_AI_Tool_Remote_Shopify_Connection'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-shopify-connection.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
@@ -1597,6 +1602,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// iSAMS School Management System - Requires external API credentials.
 			'isams_query'                     => 'external-tools',
 			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
+			'remote_shopify_connection'        => 'external-tools',
 			'shopify_products'                => 'external-tools',
 			'shopify_orders'                  => 'external-tools',
 			'shopify_customers'               => 'external-tools',

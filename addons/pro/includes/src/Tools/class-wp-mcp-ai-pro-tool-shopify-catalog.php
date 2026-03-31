@@ -39,6 +39,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Shopify_Connection_Resolver;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -69,7 +71,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			'properties' => array(
 				'connection_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites connection ID for a Shopify catalog_api mode connection (connection_type must be "shopify" and shopify_api_mode must be "catalog_api").', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites connection ID for a Shopify catalog_api mode connection. If omitted, automatically uses the catalog_api Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
 				'action'         => array(
 					'type'        => 'string',
@@ -125,7 +127,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 					'maxLength'   => 2,
 				),
 			),
-			'required'             => array( 'connection_id', 'action' ),
+			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -158,9 +160,11 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to use the Shopify Catalog tool.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
-		if ( empty( $connection_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_missing_connection', __( 'A Remote Sites connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+		// Resolve the Shopify connection — auto-resolves from assistant context when not provided.
+		// Catalog tool requires catalog_api mode.
+		$connection_id = $this->resolve_shopify_connection_id( $arguments, $context, 'catalog_api' );
+		if ( is_wp_error( $connection_id ) ) {
+			return $connection_id;
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -169,13 +173,25 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) );
+			$available   = $this->get_available_shopify_connections( $context, 'catalog_api' );
+			$conn_list   = $this->format_available_connections_message( $available );
+			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_wrong_type', __( 'The specified connection is not a Shopify connection.', 'mcp-ai-wpoos-pro' ) );
 		}
 		if ( empty( $connection['enabled'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_disabled', __( 'This Shopify connection is disabled.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! $this->is_shopify_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_not_enabled',
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Shopify connection "%s" is not enabled for this assistant. Enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
+			);
 		}
 
 		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
