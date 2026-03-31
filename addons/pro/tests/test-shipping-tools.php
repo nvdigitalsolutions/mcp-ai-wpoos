@@ -559,6 +559,7 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		$this->assertContains( 'network-dependent', $flags );
 		$this->assertContains( 'requires-credentials', $flags );
 		$this->assertContains( 'requires-plugin', $flags );
+		$this->assertNotContains( 'read-only', $flags );
 	}
 
 	// ----------------------------------------------------------------

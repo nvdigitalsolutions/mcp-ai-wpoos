@@ -279,7 +279,6 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	public function get_capability_flags() {
 		return array(
 			'pro',
-			'read-only',
 			'requires-plugin',
 			'external-api',
 			'network-dependent',
@@ -1130,6 +1129,9 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Fall back to WooCommerce store address.
+		$default_country = get_option( 'woocommerce_default_country', 'US:CA' );
+		$country_parts   = explode( ':', $default_country );
+
 		return array(
 			'name'                          => get_option( 'blogname', '' ),
 			'company_name'                  => '',
@@ -1137,9 +1139,9 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			'address_line1'                 => get_option( 'woocommerce_store_address', '' ),
 			'address_line2'                 => get_option( 'woocommerce_store_address_2', '' ),
 			'city_locality'                 => get_option( 'woocommerce_store_city', '' ),
-			'state_province'                => get_option( 'woocommerce_default_country', 'US:CA' ) ? explode( ':', get_option( 'woocommerce_default_country', 'US:CA' ) )[1] ?? '' : '',
+			'state_province'                => $country_parts[1] ?? '',
 			'postal_code'                   => get_option( 'woocommerce_store_postcode', '' ),
-			'country_code'                  => get_option( 'woocommerce_default_country', 'US:CA' ) ? explode( ':', get_option( 'woocommerce_default_country', 'US:CA' ) )[0] : 'US',
+			'country_code'                  => $country_parts[0] ?? 'US',
 			'address_residential_indicator' => 'no',
 		);
 	}
