@@ -126,6 +126,22 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_telegram_reply_job' ) );
 		add_action( self::MEDIA_REPLY_CRON_HOOK, array( $this, 'handle_telegram_media_job' ) );
+
+		// WordPress Application Passwords (WP 5.6+) and JWT auth plugins intercept
+		// unauthenticated REST requests and can set a WP_Error in
+		// rest_authentication_errors before our permission_callback runs, causing a
+		// 403 that Telegram immediately reports as "Wrong response from the webhook:
+		// 403 Forbidden". Clear that error for requests to our webhook endpoints so
+		// that our own validate_webhook_secret() callback handles authentication.
+		// Priority 99999 ensures we run after third-party JWT plugins (commonly
+		// 100–999) and WordPress Application Passwords (priority 100).
+		add_filter( 'rest_authentication_errors', array( $this, 'allow_telegram_webhook_auth' ), 99999 );
+
+		// Register an admin-ajax.php fallback endpoint for sites where Cloudflare
+		// WAF, Bot Fight Mode, or other proxies block POST requests to /wp-json/.
+		// Telegram can be configured with the admin-ajax URL instead.
+		add_action( 'wp_ajax_nopriv_wp_mcp_ai_telegram_webhook', array( $this, 'handle_ajax_webhook' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_telegram_webhook', array( $this, 'handle_ajax_webhook' ) );
 	}
 
 	/**
@@ -251,6 +267,119 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Allow Telegram webhook requests to reach our permission callback.
+	 *
+	 * WordPress Application Passwords (WP 5.6+) and third-party JWT auth plugins
+	 * listen on the `determine_current_user` filter and set a WP_Error in
+	 * `rest_authentication_errors` when they encounter an unauthenticated request.
+	 * Because WordPress evaluates that filter before calling our permission_callback,
+	 * any such error causes a 401/403 response that Telegram immediately surfaces
+	 * as "Wrong response from the webhook: 403 Forbidden" — our
+	 * validate_webhook_secret() never even runs.
+	 *
+	 * For requests targeting our webhook endpoints we clear the authentication error
+	 * (return null) so WordPress proceeds to call validate_webhook_secret(), which
+	 * is the correct authority on whether the secret token header is valid.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Error|null $error Existing authentication error or null.
+	 * @return WP_Error|null Null for our webhook routes; unchanged value for all others.
+	 */
+	public function allow_telegram_webhook_auth( $error ) {
+		// Only intervene when another plugin already set an error — if there is no
+		// error we have nothing to clear.
+		if ( ! is_wp_error( $error ) ) {
+			return $error;
+		}
+
+		// Check whether this request targets one of our webhook routes.
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		if ( false !== strpos( $request_uri, '/' . $this->rest_base ) ) {
+			// Clear the error so our permission_callback handles auth instead.
+			return null;
+		}
+
+		return $error;
+	}
+
+	/**
+	 * Handle a Telegram webhook event via the WordPress admin-ajax endpoint.
+	 *
+	 * Provides a Cloudflare-compatible alternative to the REST API webhook URL.
+	 * When Cloudflare WAF, Bot Fight Mode, or other proxies block POST requests
+	 * to /wp-json/ endpoints, configure Telegram's setWebhook to use the
+	 * admin-ajax URL instead.
+	 *
+	 * Security is identical to the REST endpoint: the X-Telegram-Bot-Api-Secret-Token
+	 * header and IP range validation are performed by validate_webhook_secret()
+	 * before any event processing occurs.
+	 *
+	 * AJAX URL format:
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_telegram_webhook
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_telegram_webhook&connection_id={id}
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_ajax_webhook() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- secret token header is the auth mechanism.
+		$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+		// Build a synthetic REST request so validate_webhook_secret() and
+		// handle_webhook() can be reused without duplicating logic.
+		$route        = '/mcp-ai/v1/' . $this->rest_base . ( '' !== $connection_id ? '/' . $connection_id : '' );
+		$rest_request = new WP_REST_Request( 'POST', $route );
+
+		// Forward the X-Telegram-Bot-Api-Secret-Token header.
+		$secret_header = '';
+		if ( ! empty( $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ) ) {
+			$secret_header = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ) );
+		}
+
+		if ( '' !== $secret_header ) {
+			$rest_request->set_header( 'x-telegram-bot-api-secret-token', $secret_header );
+		}
+
+		if ( '' !== $connection_id ) {
+			$rest_request->set_param( 'connection_id', $connection_id );
+		}
+
+		// Validate the secret token before processing any payload.
+		$auth_result = $this->validate_webhook_secret( $rest_request );
+		if ( true !== $auth_result ) {
+			$status = 403;
+			$data   = array(
+				'ok'    => false,
+				'error' => 'Forbidden',
+			);
+
+			if ( is_wp_error( $auth_result ) ) {
+				$error_data = $auth_result->get_error_data();
+				if ( is_array( $error_data ) && isset( $error_data['status'] ) ) {
+					$status = (int) $error_data['status'];
+				}
+				$data['error'] = $auth_result->get_error_message();
+			}
+
+			wp_send_json( $data, $status );
+			return;
+		}
+
+		// Read the raw JSON body sent by Telegram and pass it to the handler.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$raw_body = file_get_contents( 'php://input' );
+		$rest_request->set_header( 'Content-Type', 'application/json' );
+		$rest_request->set_body( is_string( $raw_body ) ? $raw_body : '{}' );
+
+		// Process the event via the existing REST handler.
+		$response = $this->handle_webhook( $rest_request );
+		$data     = $response instanceof WP_REST_Response ? $response->get_data() : array( 'ok' => true );
+		$status   = $response instanceof WP_REST_Response ? $response->get_status() : 200;
+
+		wp_send_json( $data, $status );
 	}
 
 	/**
