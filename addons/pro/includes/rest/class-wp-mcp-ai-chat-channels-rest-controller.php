@@ -681,17 +681,21 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// Deduplicate by message_id (platform message ID) when non-empty, otherwise by store-scoped composite key.
 		$all_messages = $this->deduplicate_messages( $all_messages );
 
-		// Sort chronologically (oldest first).
+		// Sort newest first so page 1 contains the most recent messages.
 		usort(
 			$all_messages,
 			function ( $a, $b ) {
-				return $a['timestamp'] - $b['timestamp'];
+				return $b['timestamp'] - $a['timestamp'];
 			}
 		);
 
 		$total  = count( $all_messages );
 		$offset = ( $page - 1 ) * $per_page;
 		$paged  = array_slice( $all_messages, $offset, $per_page );
+
+		// Reverse the page slice so messages display in chronological order
+		// (oldest at top, newest at bottom) within the visible page.
+		$paged = array_reverse( $paged );
 
 		return rest_ensure_response(
 			array(

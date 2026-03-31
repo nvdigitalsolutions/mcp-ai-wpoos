@@ -319,11 +319,11 @@
 				return;
 			}
 			const prev = state.msgPage > 1
-				? '<button class="cc-page-btn" id="cc-msg-prev">&#8249; Older</button>'
-				: '<button class="cc-page-btn" disabled>&#8249; Older</button>';
+				? '<button class="cc-page-btn" id="cc-msg-prev">&#8249; Newer</button>'
+				: '<button class="cc-page-btn" disabled>&#8249; Newer</button>';
 			const next = state.msgPage < totalPgs
-				? '<button class="cc-page-btn" id="cc-msg-next">Newer &#8250;</button>'
-				: '<button class="cc-page-btn" disabled>Newer &#8250;</button>';
+				? '<button class="cc-page-btn" id="cc-msg-next">Older &#8250;</button>'
+				: '<button class="cc-page-btn" disabled>Older &#8250;</button>';
 			const info = '<span class="cc-page-info">' + total + ' messages &middot; Page ' + state.msgPage + '/' + totalPgs + '</span>';
 			$pag.html( prev + info + next );
 
