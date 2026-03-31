@@ -1072,7 +1072,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 
 				foreach ( $meta_fields as $key => $meta_key ) {
 					if ( ! empty( $product_data[ $key ] ) ) {
-						update_post_meta( $post_id, $meta_key, sanitize_text_field( $product_data[ $key ] ) );
+						$sanitize = 'inci_ingredients' === $key ? 'sanitize_textarea_field' : 'sanitize_text_field';
+						update_post_meta( $post_id, $meta_key, $sanitize( $product_data[ $key ] ) );
 					}
 				}
 
@@ -1104,6 +1105,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	private static function parse_bulk_product_data( $text ) {
 		$products = array();
+		$text     = str_replace( array( "\r\n", "\r" ), "\n", $text );
 		$blocks   = preg_split( '/\n{2,}/', trim( $text ) );
 		$current  = array();
 
@@ -1379,7 +1381,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		<div class="product-records-section">
 			<h3>
 				<?php esc_html_e( 'Registrations', 'mcp-ai-wpoos-pro' ); ?>
-				<span class="count">(<?php echo count( $registrations ); ?>)</span>
+				<span class="count">(<?php echo absint( count( $registrations ) ); ?>)</span>
 			</h3>
 			<?php if ( ! empty( $registrations ) ) : ?>
 				<table class="widefat striped">
@@ -1416,7 +1418,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		<div class="product-records-section">
 			<h3>
 				<?php esc_html_e( 'Documents', 'mcp-ai-wpoos-pro' ); ?>
-				<span class="count">(<?php echo count( $documents ); ?>)</span>
+				<span class="count">(<?php echo absint( count( $documents ) ); ?>)</span>
 			</h3>
 			<?php if ( ! empty( $documents ) ) : ?>
 				<table class="widefat striped">
