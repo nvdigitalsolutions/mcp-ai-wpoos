@@ -1007,7 +1007,12 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * Get API credentials from arguments or plugin settings.
+	 * Get API credentials from arguments, remote connections, or plugin settings.
+	 *
+	 * Resolution priority:
+	 * 1. Tool arguments (api_credentials parameter)
+	 * 2. Pro remote connection (shipengine/shipstation connection type)
+	 * 3. nv-boxpacker plugin settings (fk_usps_optimizer_settings option)
 	 *
 	 * @param array  $arguments Tool arguments.
 	 * @param string $carrier   Active carrier.
@@ -1019,29 +1024,91 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		// Check tool arguments first.
 		$arg_creds = isset( $arguments['api_credentials'] ) ? $arguments['api_credentials'] : array();
 
-		// Load from nv-boxpacker plugin settings as fallback.
+		// Attempt to resolve from a pro remote connection.
+		$remote_creds = $this->resolve_remote_connection_credentials( $carrier );
+
+		// Load from nv-boxpacker plugin settings as final fallback.
 		$optimizer_settings = get_option( 'fk_usps_optimizer_settings', array() );
 
 		if ( 'shipengine' === $carrier ) {
 			$creds['shipengine_api_key']    = ! empty( $arg_creds['shipengine_api_key'] )
 				? sanitize_text_field( $arg_creds['shipengine_api_key'] )
-				: ( $optimizer_settings['shipengine_api_key'] ?? '' );
+				: ( ! empty( $remote_creds['api_key'] ) ? $remote_creds['api_key'] : ( $optimizer_settings['shipengine_api_key'] ?? '' ) );
 			$creds['shipengine_carrier_id'] = ! empty( $arg_creds['shipengine_carrier_id'] )
 				? sanitize_text_field( $arg_creds['shipengine_carrier_id'] )
-				: ( $optimizer_settings['shipengine_carrier_id'] ?? '' );
+				: ( ! empty( $remote_creds['carrier_id'] ) ? $remote_creds['carrier_id'] : ( $optimizer_settings['shipengine_carrier_id'] ?? '' ) );
 		} else {
 			$creds['shipstation_api_key']      = ! empty( $arg_creds['shipstation_api_key'] )
 				? sanitize_text_field( $arg_creds['shipstation_api_key'] )
-				: ( $optimizer_settings['shipstation_api_key'] ?? '' );
+				: ( ! empty( $remote_creds['api_key'] ) ? $remote_creds['api_key'] : ( $optimizer_settings['shipstation_api_key'] ?? '' ) );
 			$creds['shipstation_api_secret']   = ! empty( $arg_creds['shipstation_api_secret'] )
 				? sanitize_text_field( $arg_creds['shipstation_api_secret'] )
-				: ( $optimizer_settings['shipstation_api_secret'] ?? '' );
+				: ( ! empty( $remote_creds['api_secret'] ) ? $remote_creds['api_secret'] : ( $optimizer_settings['shipstation_api_secret'] ?? '' ) );
 			$creds['shipstation_carrier_code'] = ! empty( $arg_creds['shipstation_carrier_code'] )
 				? sanitize_text_field( $arg_creds['shipstation_carrier_code'] )
-				: ( $optimizer_settings['shipstation_carrier_code'] ?? 'stamps_com' );
+				: ( ! empty( $remote_creds['carrier_code'] ) ? $remote_creds['carrier_code'] : ( $optimizer_settings['shipstation_carrier_code'] ?? 'stamps_com' ) );
 		}
 
 		return $creds;
+	}
+
+	/**
+	 * Resolve credentials from a pro remote connection of the matching carrier type.
+	 *
+	 * Finds the first enabled connection of type 'shipengine' or 'shipstation'
+	 * and decrypts its stored credentials.
+	 *
+	 * @param string $carrier Carrier name ('shipengine' or 'shipstation').
+	 * @return array Resolved credentials with keys: api_key, api_secret, carrier_id, carrier_code.
+	 */
+	protected function resolve_remote_connection_credentials( string $carrier ) {
+		$result = array(
+			'api_key'      => '',
+			'api_secret'   => '',
+			'carrier_id'   => '',
+			'carrier_code' => '',
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return $result;
+		}
+
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		foreach ( $connections as $conn ) {
+			if ( ! isset( $conn['connection_type'] ) || $conn['connection_type'] !== $carrier ) {
+				continue;
+			}
+			if ( empty( $conn['enabled'] ) ) {
+				continue;
+			}
+
+			// Decrypt stored credentials.
+			if ( ! empty( $conn['api_key'] ) ) {
+				$decrypted = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $conn['api_key'] );
+				if ( false !== $decrypted ) {
+					$result['api_key'] = $decrypted;
+				}
+			}
+			if ( ! empty( $conn['api_secret'] ) ) {
+				$decrypted = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $conn['api_secret'] );
+				if ( false !== $decrypted ) {
+					$result['api_secret'] = $decrypted;
+				}
+			}
+
+			// Non-encrypted carrier fields.
+			if ( 'shipengine' === $carrier && ! empty( $conn['shipengine_carrier_id'] ) ) {
+				$result['carrier_id'] = $conn['shipengine_carrier_id'];
+			}
+			if ( 'shipstation' === $carrier && ! empty( $conn['shipstation_carrier_code'] ) ) {
+				$result['carrier_code'] = $conn['shipstation_carrier_code'];
+			}
+
+			break; // Use the first enabled connection of this type.
+		}
+
+		return $result;
 	}
 
 	/**

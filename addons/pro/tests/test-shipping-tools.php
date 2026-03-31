@@ -752,4 +752,67 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	// ----------------------------------------------------------------
+	// Rate Estimator — remote connection credential resolution.
+	// ----------------------------------------------------------------
+
+	/**
+	 * Test that credentials are resolved from a remote connection when tool args are empty.
+	 */
+	public function test_credentials_resolve_from_remote_connection() {
+		// Only run if remote site manager class exists.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Site_Manager not available.' );
+		}
+
+		// Create a ShipEngine remote connection.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                  => 'Test ShipEngine',
+				'url'                   => 'https://api.shipengine.com',
+				'connection_type'       => 'shipengine',
+				'auth_type'             => 'custom_header',
+				'api_key'               => 'test_se_api_key_12345',
+				'enabled'               => true,
+				'shipengine_carrier_id' => 'se-999999',
+			)
+		);
+
+		$this->assertIsString( $connection_id, 'save_connection should return a string ID' );
+
+		// Use reflection to test the credential resolution method.
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'resolve_remote_connection_credentials' );
+		$method->setAccessible( true );
+
+		$resolved = $method->invoke( $tool, 'shipengine' );
+
+		$this->assertIsArray( $resolved );
+		$this->assertNotEmpty( $resolved['api_key'], 'API key should be resolved from remote connection' );
+		$this->assertSame( 'se-999999', $resolved['carrier_id'], 'Carrier ID should be resolved from remote connection' );
+
+		// Clean up.
+		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+	}
+
+	/**
+	 * Test that credentials fallback to empty when no remote connection exists.
+	 */
+	public function test_credentials_empty_without_remote_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Site_Manager not available.' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'resolve_remote_connection_credentials' );
+		$method->setAccessible( true );
+
+		$resolved = $method->invoke( $tool, 'shipstation' );
+
+		$this->assertIsArray( $resolved );
+		$this->assertEmpty( $resolved['api_key'] );
+		$this->assertEmpty( $resolved['api_secret'] );
+		$this->assertEmpty( $resolved['carrier_code'] );
+	}
 }

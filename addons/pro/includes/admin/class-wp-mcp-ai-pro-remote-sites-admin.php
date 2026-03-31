@@ -395,6 +395,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						$api_secret = isset( $_POST['shopify_storefront_token'] ) ? wp_unslash( $_POST['shopify_storefront_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- storefront token must not be sanitized.
 					}
 					break;
+				case 'shipengine':
+					$api_key = isset( $_POST['shipengine_api_key'] ) ? wp_unslash( $_POST['shipengine_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					break;
+				case 'shipstation':
+					$api_key    = isset( $_POST['shipstation_api_key'] ) ? wp_unslash( $_POST['shipstation_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					$api_secret = isset( $_POST['shipstation_api_secret'] ) ? wp_unslash( $_POST['shipstation_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API secret must not be sanitized.
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -427,6 +434,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'upwork' === $connection_type ) {
 				$url       = 'https://api.upwork.com/graphql';
 				$auth_type = 'none'; // Upwork uses OAuth, not standard auth types.
+			}
+
+			// For ShipEngine connections, always use the ShipEngine API URL.
+			if ( 'shipengine' === $connection_type ) {
+				$url       = 'https://api.shipengine.com';
+				$auth_type = 'custom_header'; // ShipEngine uses API-Key header.
+			}
+
+			// For ShipStation connections, always use the ShipStation API URL.
+			if ( 'shipstation' === $connection_type ) {
+				$url       = 'https://ssapi.shipstation.com';
+				$auth_type = 'basic_auth'; // ShipStation uses Basic Auth with api_key:api_secret.
 			}
 
 			// For chat channel connections, set appropriate API URLs
@@ -699,6 +718,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
 					? $shopify_api_mode
 					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
+				// ShipEngine-specific fields.
+				'shipengine_carrier_id' => 'shipengine' === $connection_type && isset( $_POST['shipengine_carrier_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['shipengine_carrier_id'] ) )
+					: '',
+				// ShipStation-specific fields.
+				'shipstation_carrier_code' => 'shipstation' === $connection_type && isset( $_POST['shipstation_carrier_code'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['shipstation_carrier_code'] ) )
+					: ( 'shipstation' === $connection_type ? 'stamps_com' : '' ),
 				// QuickBooks Desktop (QODBC) specific fields.
 				'dsn_name'            => $dsn_name,
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
@@ -964,6 +991,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
 									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
 									'shopify'            => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
+									'shipengine'         => __( 'ShipEngine', 'mcp-ai-wpoos-pro' ),
+									'shipstation'        => __( 'ShipStation', 'mcp-ai-wpoos-pro' ),
 									);
 
 								$type_colors = array(
@@ -992,6 +1021,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => '#d83b01', // Microsoft Office orange
 									'icloud'             => '#3693f5', // iCloud blue
 									'shopify'            => '#96bf48', // Shopify green
+									'shipengine'         => '#0072ce', // ShipEngine blue
+									'shipstation'        => '#f26522', // ShipStation orange
 									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -1316,6 +1347,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="shopify" <?php selected( $connection_type, 'shopify' ); ?>>
 								<?php esc_html_e( 'Shopify (E-Commerce Platform)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
+							<option value="shipengine" <?php selected( $connection_type, 'shipengine' ); ?>>
+								<?php esc_html_e( 'ShipEngine (Shipping Carrier API)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="shipstation" <?php selected( $connection_type, 'shipstation' ); ?>>
+								<?php esc_html_e( 'ShipStation (Shipping Carrier API)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'mcp-ai-wpoos-pro' ); ?>
@@ -1552,6 +1589,108 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<li><?php esc_html_e( 'The Catalog API enables product search and lookup across the global Shopify catalog — no store domain is required.', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ol>
 							</div>
+						</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for ShipEngine -->
+				<tr class="shipengine-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shipengine_api_key"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="shipengine_api_key" id="shipengine_api_key" class="regular-text"
+							value="" autocomplete="off">
+						<?php if ( $is_edit && 'shipengine' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your ShipEngine API key from the ShipEngine dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr class="shipengine-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shipengine_carrier_id"><?php esc_html_e( 'Carrier ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="shipengine_carrier_id" id="shipengine_carrier_id" class="regular-text"
+							value="<?php
+							$is_shipengine_edit = $is_edit && 'shipengine' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+							echo $is_shipengine_edit && ! empty( $connection['shipengine_carrier_id'] ) ? esc_attr( $connection['shipengine_carrier_id'] ) : '';
+							?>"
+							autocomplete="off" placeholder="se-123456">
+						<p class="description"><?php esc_html_e( 'The ShipEngine carrier ID for USPS (e.g. "se-123456"). Find this under Carriers in your ShipEngine dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="shipengine-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'ShipEngine Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
+							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipEngine credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+								<li><?php esc_html_e( 'Sign up or log in at app.shipengine.com.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to Settings → API Keys and create a new Production API key.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to Carriers → Connect a carrier and connect your USPS account.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the carrier ID (e.g. "se-123456") from the Carriers page.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for ShipStation -->
+				<tr class="shipstation-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shipstation_api_key"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="shipstation_api_key" id="shipstation_api_key" class="regular-text"
+							value="" autocomplete="off">
+						<?php if ( $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your ShipStation API key from Settings → API Settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr class="shipstation-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shipstation_api_secret"><?php esc_html_e( 'API Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="shipstation_api_secret" id="shipstation_api_secret" class="regular-text"
+							value="" autocomplete="off">
+						<?php if ( $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your ShipStation API secret from Settings → API Settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr class="shipstation-only-field" style="display: none;">
+					<th scope="row">
+						<label for="shipstation_carrier_code"><?php esc_html_e( 'Carrier Code', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="shipstation_carrier_code" id="shipstation_carrier_code" class="regular-text"
+							value="<?php
+							$is_shipstation_edit = $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' );
+							echo $is_shipstation_edit && ! empty( $connection['shipstation_carrier_code'] ) ? esc_attr( $connection['shipstation_carrier_code'] ) : 'stamps_com';
+							?>"
+							autocomplete="off" placeholder="stamps_com">
+						<p class="description"><?php esc_html_e( 'Carrier code in ShipStation (default: "stamps_com" for USPS). Other options: "fedex", "ups", etc.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="shipstation-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'ShipStation Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
+							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipStation credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
+								<li><?php esc_html_e( 'Log in to your ShipStation account at ss.shipstation.com.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to Settings → Account → API Settings.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Generate API Keys" if you haven\'t already.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the API Key and API Secret and paste them above.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
 						</div>
 					</td>
 				</tr>
@@ -5326,6 +5465,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var office365Fields = document.querySelectorAll('.office365-only-field');
 			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var shopifyFields = document.querySelectorAll('.shopify-only-field');
+			var shipengineFields = document.querySelectorAll('.shipengine-only-field');
+			var shipstationFields = document.querySelectorAll('.shipstation-only-field');
 			var upworkFields = document.querySelectorAll('.upwork-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
@@ -5404,6 +5545,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			shopifyFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			shipengineFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			shipstationFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			upworkFields.forEach(function(field) {
@@ -5650,6 +5797,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				var shopifyModeSelect = document.getElementById('shopify_api_mode');
 				var currentMode = shopifyModeSelect ? shopifyModeSelect.value : 'admin_api';
 				toggleShopifyApiMode(currentMode);
+			} else if (connectionType === 'shipengine') {
+				shipengineFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				urlField.value = 'https://api.shipengine.com';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'custom_header';
+			} else if (connectionType === 'shipstation') {
+				shipstationFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				urlField.value = 'https://ssapi.shipstation.com';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'basic_auth';
 			}
 		}
 
