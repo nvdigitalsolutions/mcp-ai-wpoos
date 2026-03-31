@@ -1021,7 +1021,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			wp_send_json_error( array( 'message' => __( 'You do not have permission to import products.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$raw_text    = isset( $_POST['bulk_text'] ) ? sanitize_textarea_field( wp_unslash( $_POST['bulk_text'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via wp_kses_post to preserve line breaks needed for parsing.
+		$raw_text    = isset( $_POST['bulk_text'] ) ? wp_kses_post( wp_unslash( $_POST['bulk_text'] ) ) : '';
 		$auto_create = isset( $_POST['auto_create'] ) && 'true' === $_POST['auto_create'];
 
 		if ( empty( $raw_text ) ) {
@@ -1072,8 +1073,11 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 
 				foreach ( $meta_fields as $key => $meta_key ) {
 					if ( ! empty( $product_data[ $key ] ) ) {
-						$sanitize = 'inci_ingredients' === $key ? 'sanitize_textarea_field' : 'sanitize_text_field';
-						update_post_meta( $post_id, $meta_key, $sanitize( $product_data[ $key ] ) );
+						if ( 'inci_ingredients' === $key ) {
+							update_post_meta( $post_id, $meta_key, sanitize_textarea_field( $product_data[ $key ] ) );
+						} else {
+							update_post_meta( $post_id, $meta_key, sanitize_text_field( $product_data[ $key ] ) );
+						}
 					}
 				}
 

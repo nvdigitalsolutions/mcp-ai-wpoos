@@ -21,6 +21,13 @@
 		return d.innerHTML.replace( /"/g, '&quot;' );
 	}
 
+	// Convert snake_case to Title Case.
+	function toTitleCase( str ) {
+		return str.replace( /_/g, ' ' ).replace( /\b\w/g, function( l ) {
+			return l.toUpperCase();
+		} );
+	}
+
 	function initRegConsolidate() {
 		initProductSelection();
 		initBulkImport();
@@ -149,6 +156,9 @@
 		// Remove file from list.
 		fileItems.on( 'click', '.remove-file', function() {
 			var id = parseInt( $( this ).data( 'id' ), 10 );
+			if ( isNaN( id ) ) {
+				return;
+			}
 			uploadedAttachmentIds = uploadedAttachmentIds.filter( function( v ) {
 				return v !== id;
 			} );
@@ -245,11 +255,13 @@
 					break;
 			}
 
+			var typeName = toTitleCase( type );
+
 			container.html(
 				'<div class="guided-entry-redirect">' +
-				'<p>' + escapeHtml( 'Opening the ' + type.replace( /_/g, ' ' ) + ' editor...' ) + '</p>' +
+				'<p>Opening the ' + escapeHtml( typeName.toLowerCase() ) + ' editor...</p>' +
 				'<p><a href="' + url + '" class="button button-primary" target="_blank">' +
-				'Open ' + escapeHtml( type.replace( /_/g, ' ' ).replace( /\b\w/g, function( l ) { return l.toUpperCase(); } ) ) + ' Editor' +
+				'Open ' + escapeHtml( typeName ) + ' Editor' +
 				'</a></p>' +
 				'<p class="description">The AI assistant in the "AI Research" tab can also guide you through creating records step by step.</p>' +
 				'</div>'
