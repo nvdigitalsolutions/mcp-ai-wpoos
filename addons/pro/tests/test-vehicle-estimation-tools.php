@@ -1,6 +1,6 @@
 <?php
 /**
- * Tests for Vehicle Estimation Tools (VIN Decode + Vehicle Repair Estimate).
+ * Tests for Vehicle Estimation Tools (VIN Decode + Vehicle Repair Estimate + Vehicle Cleaning Estimate).
  *
  * @package WP_MCP_AI
  * @since   2.2.0
@@ -43,6 +43,13 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 		}
 		if ( file_exists( $estimate_path ) ) {
 			require_once $estimate_path;
+		}
+
+		$cleaning_path = defined( 'WP_MCP_AI_PRO_PATH' )
+			? WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php'
+			: dirname( __DIR__ ) . '/includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php';
+		if ( file_exists( $cleaning_path ) ) {
+			require_once $cleaning_path;
 		}
 	}
 
@@ -423,6 +430,7 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 		$tools = wp_mcp_ai_pro_get_tools();
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_VIN_Decode', $tools );
 		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Vehicle_Repair_Estimate', $tools );
+		$this->assertArrayHasKey( 'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate', $tools );
 	}
 
 	// ----------------------------------------------------------------
@@ -471,5 +479,495 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'damage_type', $thresholds );
 		$this->assertArrayHasKey( 'coverage', $thresholds );
 		$this->assertGreaterThan( 0, $thresholds['vehicle_id'] );
+	}
+
+	// ================================================================
+	// Vehicle Cleaning Estimate Tool tests.
+	// ================================================================
+
+	/**
+	 * Test cleaning estimate slug.
+	 */
+	public function test_cleaning_estimate_slug() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$this->assertSame( 'vehicle_cleaning_estimate', $tool->get_slug() );
+	}
+
+	/**
+	 * Test cleaning estimate name.
+	 */
+	public function test_cleaning_estimate_name() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$this->assertSame( 'Vehicle Cleaning Estimate', $tool->get_name() );
+	}
+
+	/**
+	 * Test cleaning estimate description.
+	 */
+	public function test_cleaning_estimate_description() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$this->assertStringContainsString( 'car-wash', $tool->get_description() );
+		$this->assertStringContainsString( 'No VIN required', $tool->get_description() );
+	}
+
+	/**
+	 * Test cleaning estimate schema has required parameters.
+	 */
+	public function test_cleaning_estimate_schema() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertSame( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'image_attachment_ids', $schema['properties'] );
+		$this->assertArrayHasKey( 'package', $schema['properties'] );
+		$this->assertArrayHasKey( 'add_ons', $schema['properties'] );
+		$this->assertArrayHasKey( 'size_override', $schema['properties'] );
+		$this->assertArrayHasKey( 'menu_config_id', $schema['properties'] );
+		$this->assertArrayHasKey( 'tax_rate', $schema['properties'] );
+		$this->assertArrayHasKey( 'currency', $schema['properties'] );
+
+		// Package is required.
+		$this->assertContains( 'package', $schema['required'] );
+
+		// Package enum matches PACKAGE_TIERS.
+		$this->assertSame(
+			WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate::PACKAGE_TIERS,
+			$schema['properties']['package']['enum']
+		);
+
+		// Size override enum matches SIZE_TIERS.
+		$this->assertSame(
+			WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate::SIZE_TIERS,
+			$schema['properties']['size_override']['enum']
+		);
+	}
+
+	/**
+	 * Test cleaning estimate capability flags include expected entries.
+	 */
+	public function test_cleaning_estimate_capability_flags() {
+		$tool  = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'pro', $flags );
+		$this->assertContains( 'requires-capability', $flags );
+		$this->assertContains( 'requires-vision-model', $flags );
+		$this->assertContains( 'read-only', $flags );
+		$this->assertContains( 'cacheable', $flags );
+	}
+
+	/**
+	 * Test cleaning estimate tool rules.
+	 */
+	public function test_cleaning_estimate_tool_rules() {
+		$tool  = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$rules = $tool->get_tool_rules();
+
+		$this->assertArrayHasKey( 'rate_limits', $rules );
+		$this->assertArrayHasKey( 'cache', $rules );
+		$this->assertSame( 15, $rules['rate_limits']['requests_per_minute'] );
+	}
+
+	/**
+	 * Test cleaning estimate definition metadata.
+	 */
+	public function test_cleaning_estimate_definition() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$def  = $tool->get_definition();
+
+		$this->assertSame( 'vehicle_estimation', $def['toolkit'] );
+		$this->assertSame( 'info', $def['risk_level'] );
+		$this->assertContains( 'car_wash_operator', $def['profession_tags'] );
+	}
+
+	/**
+	 * Test cleaning estimate is_available returns true.
+	 */
+	public function test_cleaning_estimate_is_available() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$this->assertTrue( $tool->is_available() );
+	}
+
+	/**
+	 * Test cleaning estimate requires base pro.
+	 */
+	public function test_cleaning_estimate_requires_base_pro() {
+		$tool = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$this->assertTrue( $tool->requires_base_pro() );
+	}
+
+	/**
+	 * Test cleaning estimate requires auth.
+	 */
+	public function test_cleaning_estimate_requires_auth() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array( 'package' => 'premium_exterior_express' ),
+			array( 'user_id' => 0 )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test cleaning estimate rejects invalid package.
+	 */
+	public function test_cleaning_estimate_rejects_invalid_package() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array( 'package' => 'super_deluxe_99' ),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_package', $result->get_error_code() );
+	}
+
+	/**
+	 * Test cleaning estimate rejects missing package.
+	 */
+	public function test_cleaning_estimate_rejects_missing_package() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_package', $result->get_error_code() );
+	}
+
+	/**
+	 * Test cleaning estimate produces correct output with size override and no images.
+	 */
+	public function test_cleaning_estimate_basic_output() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'estimate_id', $result );
+		$data = $result;
+
+		$this->assertNotEmpty( $data['estimate_id'] );
+		$this->assertSame( 'car', $data['vehicle_size']['tier'] );
+		$this->assertSame( 1.0, $data['vehicle_size']['confidence'] );
+		$this->assertSame( 'manual_override', $data['vehicle_size']['source'] );
+		$this->assertSame( 'premium_exterior_express', $data['package']['code'] );
+		$this->assertSame( 'Premium Exterior Express', $data['package']['name'] );
+
+		// Line items.
+		$this->assertCount( 1, $data['line_items'] );
+		$this->assertSame( 'package', $data['line_items'][0]['type'] );
+		$this->assertSame( 29.99, $data['line_items'][0]['unit_price'] );
+
+		// Totals.
+		$this->assertSame( 29.99, $data['totals']['subtotal'] );
+		$this->assertSame( 0.0, $data['totals']['tax'] );
+		$this->assertSame( 29.99, $data['totals']['total'] );
+		$this->assertSame( 'CAD', $data['totals']['currency'] );
+	}
+
+	/**
+	 * Test cleaning estimate with oversize truck pricing.
+	 */
+	public function test_cleaning_estimate_oversize_pricing() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'prestige_interior_express',
+				'size_override' => 'oversize_truck_suv',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		$this->assertSame( 'oversize_truck_suv', $data['vehicle_size']['tier'] );
+		$this->assertSame( 159.99, $data['line_items'][0]['unit_price'] );
+		$this->assertSame( 159.99, $data['totals']['subtotal'] );
+	}
+
+	/**
+	 * Test cleaning estimate with tax rate applied.
+	 */
+	public function test_cleaning_estimate_with_tax() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'practical_interior_express',
+				'size_override' => 'car',
+				'tax_rate'      => 0.13,
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		$this->assertSame( 59.99, $data['totals']['subtotal'] );
+		$this->assertSame( 0.13, $data['totals']['tax_rate'] );
+		$this->assertSame( round( 59.99 * 0.13, 2 ), $data['totals']['tax'] );
+		$this->assertSame( round( 59.99 + 59.99 * 0.13, 2 ), $data['totals']['total'] );
+	}
+
+	/**
+	 * Test cleaning estimate with severity-priced add-on.
+	 */
+	public function test_cleaning_estimate_severity_addon() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+				'add_ons'       => array(
+					array( 'code' => 'pet_hair_removal', 'severity' => 'moderate' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		// Package + 1 add-on.
+		$this->assertCount( 2, $data['line_items'] );
+
+		// Add-on line.
+		$addon = $data['line_items'][1];
+		$this->assertSame( 'pet_hair_removal', $addon['code'] );
+		$this->assertSame( 'moderate', $addon['severity'] );
+		$this->assertSame( 75.00, $addon['unit_price'] );
+
+		// Totals: 29.99 + 75.00.
+		$this->assertSame( round( 29.99 + 75.00, 2 ), $data['totals']['subtotal'] );
+	}
+
+	/**
+	 * Test cleaning estimate with size-based add-on.
+	 */
+	public function test_cleaning_estimate_size_based_addon() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'small_truck_suv',
+				'add_ons'       => array(
+					array( 'code' => 'premium_hand_wash_upgrade' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data  = $result;
+		$addon = $data['line_items'][1];
+		$this->assertSame( 'premium_hand_wash_upgrade', $addon['code'] );
+		$this->assertSame( 20.00, $addon['unit_price'] );
+
+		// Package $35.99 + upgrade $20.00.
+		$this->assertSame( round( 35.99 + 20.00, 2 ), $data['totals']['subtotal'] );
+	}
+
+	/**
+	 * Test cleaning estimate with flat-price add-on.
+	 */
+	public function test_cleaning_estimate_flat_addon() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'popular_interior_express',
+				'size_override' => 'car',
+				'add_ons'       => array(
+					array( 'code' => 'carpet_seat_deodorizer' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data  = $result;
+		$addon = $data['line_items'][1];
+		$this->assertSame( 30.00, $addon['unit_price'] );
+		$this->assertSame( round( 79.99 + 30.00, 2 ), $data['totals']['subtotal'] );
+	}
+
+	/**
+	 * Test cleaning estimate deduplicates add-ons.
+	 */
+	public function test_cleaning_estimate_deduplicate_addons() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+				'add_ons'       => array(
+					array( 'code' => 'rims_tire_dressing' ),
+					array( 'code' => 'rims_tire_dressing' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		// Package + 1 add-on (deduplicated).
+		$this->assertCount( 2, $data['line_items'] );
+	}
+
+	/**
+	 * Test cleaning estimate ignores unknown add-on codes.
+	 */
+	public function test_cleaning_estimate_ignores_unknown_addons() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+				'add_ons'       => array(
+					array( 'code' => 'nonexistent_addon' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		$this->assertCount( 1, $data['line_items'] );
+	}
+
+	/**
+	 * Test cleaning estimate defaults to car tier with warning when no images and no override.
+	 */
+	public function test_cleaning_estimate_defaults_to_car() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array( 'package' => 'premium_exterior_express' ),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		$this->assertSame( 'car', $data['vehicle_size']['tier'] );
+		$this->assertSame( 0.0, $data['vehicle_size']['confidence'] );
+		$this->assertSame( 'default', $data['vehicle_size']['source'] );
+		$this->assertNotEmpty( $data['warnings'] );
+	}
+
+	/**
+	 * Test SIZE_TIERS constant contains expected values.
+	 */
+	public function test_size_tiers_constant() {
+		$tiers = WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate::SIZE_TIERS;
+		$this->assertContains( 'car', $tiers );
+		$this->assertContains( 'small_truck_suv', $tiers );
+		$this->assertContains( 'oversize_truck_suv', $tiers );
+		$this->assertCount( 3, $tiers );
+	}
+
+	/**
+	 * Test PACKAGE_TIERS matches London Prestige Car Wash menu.
+	 */
+	public function test_package_tiers_constant() {
+		$tiers = WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate::PACKAGE_TIERS;
+		$this->assertContains( 'premium_exterior_express', $tiers );
+		$this->assertContains( 'practical_interior_express', $tiers );
+		$this->assertContains( 'popular_interior_express', $tiers );
+		$this->assertContains( 'prestige_interior_express', $tiers );
+		$this->assertCount( 4, $tiers );
+	}
+
+	/**
+	 * Test all four package prices for car tier match expected values.
+	 */
+	public function test_all_package_car_prices() {
+		$tool     = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$context  = array( 'user_id' => $this->admin_id );
+		$packages = array(
+			'premium_exterior_express'   => 29.99,
+			'practical_interior_express' => 59.99,
+			'popular_interior_express'   => 79.99,
+			'prestige_interior_express'  => 129.99,
+		);
+
+		foreach ( $packages as $pkg => $expected ) {
+			$result = $tool->execute(
+				array( 'package' => $pkg, 'size_override' => 'car' ),
+				$context
+			);
+			$this->assertSame(
+				$expected,
+				$result['totals']['subtotal'],
+				"Package $pkg car price mismatch"
+			);
+		}
+	}
+
+	/**
+	 * Test soil/mud/sap/oil add-on severe pricing.
+	 */
+	public function test_soil_addon_severe_pricing() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+				'add_ons'       => array(
+					array( 'code' => 'soil_mud_sap_oil', 'severity' => 'severe' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$addon = $result['line_items'][1];
+		$this->assertSame( 75.00, $addon['unit_price'] );
+	}
+
+	/**
+	 * Test cleaning estimate with multiple add-ons and tax.
+	 */
+	public function test_cleaning_estimate_full_quote() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'prestige_interior_express',
+				'size_override' => 'small_truck_suv',
+				'tax_rate'      => 0.13,
+				'currency'      => 'CAD',
+				'add_ons'       => array(
+					array( 'code' => 'pet_hair_removal', 'severity' => 'light' ),
+					array( 'code' => 'trunk_bed_shampoo' ),
+					array( 'code' => 'carpet_seat_deodorizer' ),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$data = $result;
+		$this->assertCount( 4, $data['line_items'] );
+
+		// Package: $139.99, pet hair light: $45, trunk: $15, deodorizer: $30.
+		$expected_subtotal = round( 139.99 + 45.00 + 15.00 + 30.00, 2 );
+		$this->assertSame( $expected_subtotal, $data['totals']['subtotal'] );
+
+		$expected_tax = round( $expected_subtotal * 0.13, 2 );
+		$this->assertSame( $expected_tax, $data['totals']['tax'] );
+		$this->assertSame( round( $expected_subtotal + $expected_tax, 2 ), $data['totals']['total'] );
+		$this->assertSame( 'CAD', $data['totals']['currency'] );
+	}
+
+	/**
+	 * Test cleaning estimate included_services are in package line item.
+	 */
+	public function test_cleaning_estimate_included_services() {
+		$tool   = new WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate();
+		$result = $tool->execute(
+			array(
+				'package'       => 'premium_exterior_express',
+				'size_override' => 'car',
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		$pkg_item = $result['line_items'][0];
+		$this->assertArrayHasKey( 'included_services', $pkg_item );
+		$this->assertContains( 'Cotton towel hand dry', $pkg_item['included_services'] );
+		$this->assertContains( 'Spray foam soap', $pkg_item['included_services'] );
 	}
 }
