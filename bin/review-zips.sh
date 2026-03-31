@@ -135,12 +135,6 @@ has_dirs() {
     find "$dir" -path "$pattern" -type d 2>/dev/null | head -1 | grep -q .
 }
 
-count_files() {
-    local dir="$1"
-    local pattern="${2:-*}"
-    find "$dir" -name "$pattern" -type f 2>/dev/null | wc -l
-}
-
 # ============================================================================
 # Review a single ZIP file
 # ============================================================================
@@ -700,7 +694,7 @@ check_vendor_autoloader() {
 
 check_text_domain_transform() {
     local DIR="$1"
-    local TYPE="$2"
+    # $2 (type) available for future use
 
     # Check that old text domains are gone from PHP/JS files
     local OLD_DOMAIN_COUNT
