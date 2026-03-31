@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
         'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-        'reference' => 'e5889b2d3e3360f5981a7785d9b6fa04b85a36ee',
+        'reference' => 'daa915275cad31b4aea7755a57400cbaa63f0d82',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
             'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-            'reference' => 'e5889b2d3e3360f5981a7785d9b6fa04b85a36ee',
+            'reference' => 'daa915275cad31b4aea7755a57400cbaa63f0d82',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
