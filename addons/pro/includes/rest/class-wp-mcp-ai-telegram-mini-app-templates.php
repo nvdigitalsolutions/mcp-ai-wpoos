@@ -2792,11 +2792,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'<div class="tma-section-title" style="padding:0 0 4px" id="mv-trends-title">' . esc_html__( '7-Day Trends', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div style="font-size:12px;color:var(--tma-hint)">' . esc_html__( 'Shaded bands show normal reference ranges.', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
-				'<div class="mv-range-bar">' .
-					'<button class="mv-range-btn active" onclick="mvSetTrendRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
-					'<button class="mv-range-btn" onclick="mvSetTrendRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
-					'<button class="mv-range-btn" onclick="mvSetTrendRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
-					'<button class="mv-range-btn" onclick="mvSetTrendRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'<div class="mv-range-bar" role="group" aria-label="' . esc_attr__( 'Trend date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetTrendRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
 				'</div>' .
 				'<div id="mv-trends-content" style="padding-bottom:12px"><div class="tma-empty">' . esc_html__( 'Loading charts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 			'</div>' .
@@ -3642,8 +3642,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'window.mvSetTrendRange=function(days,btn){' .
 			'mvTrendsDays=days;' .
-			'document.querySelectorAll(".mv-range-btn").forEach(function(b){b.classList.remove("active");});' .
-			'if(btn)btn.classList.add("active");' .
+			'document.querySelectorAll(".mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
 			'var tt=document.getElementById("mv-trends-title");' .
 			'if(tt)tt.textContent=days+"' . esc_js( __( '-Day Trends', 'mcp-ai-wpoos-pro' ) ) . '";' .
 			'tmaHaptic("light");' .
