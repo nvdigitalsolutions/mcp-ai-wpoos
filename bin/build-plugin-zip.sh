@@ -475,6 +475,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'test' \
             --exclude 'Test' \
             --exclude 'Tests' \
+            --exclude 'docs' \
             --exclude '*.zip' \
             --exclude 'assets/examples' \
             --exclude 'composer.lock' \
