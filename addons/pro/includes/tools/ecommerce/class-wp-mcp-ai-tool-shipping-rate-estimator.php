@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Estimate shipping rates by packing items into optimal boxes and rate-shopping across carriers via ShipEngine or ShipStation APIs. Supports USPS Priority Mail cubic and flat-rate pricing. Provide items with dimensions and a destination address to get per-package rate estimates with packing plans.', 'mcp-ai-wpoos-pro' );
+		return __( 'Estimate shipping rates by packing items into optimal boxes and rate-shopping across carriers via ShipStation API (formerly ShipEngine) or legacy ShipStation V1 API. Supports USPS Priority Mail cubic and flat-rate pricing. Provide items with dimensions and a destination address to get per-package rate estimates with packing plans. ShipStation API is the recommended default.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				),
 				'carrier'   => array(
 					'type'        => 'string',
-					'description' => __( 'Carrier API to use for rate-shopping. Default reads from plugin settings.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Carrier API to use for rate-shopping. Defaults to "shipengine" (ShipStation API). Use "shipstation" for legacy ShipStation V1 API.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'shipengine', 'shipstation' ),
 				),
 				'order_id'  => array(
@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				),
 				'api_credentials' => array(
 					'type'        => 'object',
-					'description' => __( 'API credentials override (optional, reads from plugin settings if not provided). For ShipEngine: api_key + carrier_id. For ShipStation: api_key + api_secret + carrier_code.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'API credentials override (optional, reads from remote connections or plugin settings if not provided). For ShipStation API (shipengine): api_key + carrier_id. For ShipStation V1 (shipstation): api_key + api_secret + carrier_code.', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'shipengine_api_key'       => array(
 							'type'        => 'string',
@@ -906,8 +906,11 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 
 		return array(
 			'success'        => true,
-			'message'        => __( 'ShipEngine connection successful!', 'mcp-ai-wpoos-pro' ),
+			'message'        => ! empty( $creds['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' )
+				? __( 'ShipEngine sandbox connection successful!', 'mcp-ai-wpoos-pro' )
+				: __( 'ShipEngine connection successful!', 'mcp-ai-wpoos-pro' ),
 			'carrier'        => 'shipengine',
+			'sandbox_mode'   => ! empty( $creds['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' ),
 			'carriers_found' => count( $carriers ),
 		);
 	}
@@ -1054,8 +1057,11 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				: ( ! empty( $remote_creds['carrier_code'] ) ? $remote_creds['carrier_code'] : ( $optimizer_settings['shipstation_carrier_code'] ?? 'stamps_com' ) );
 		}
 
-		// Propagate sandbox mode from the remote connection.
+		// Propagate sandbox mode from the remote connection or auto-detect from ShipEngine TEST_ key prefix.
 		$creds['sandbox_mode'] = ! empty( $remote_creds['sandbox_mode'] );
+		if ( 'shipengine' === $carrier && ! $creds['sandbox_mode'] && ! empty( $creds['shipengine_api_key'] ) ) {
+			$creds['sandbox_mode'] = 0 === strpos( $creds['shipengine_api_key'], 'TEST_' );
+		}
 
 		return $creds;
 	}
@@ -1067,7 +1073,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	 * and decrypts its stored credentials.
 	 *
 	 * @param string $carrier Carrier name ('shipengine' or 'shipstation').
-	 * @return array Resolved credentials with keys: api_key, api_secret, carrier_id, carrier_code.
+	 * @return array Resolved credentials with keys: api_key, api_secret, carrier_id, carrier_code, sandbox_mode.
 	 */
 	protected function resolve_remote_connection_credentials( string $carrier ) {
 		$result = array(

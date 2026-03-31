@@ -904,4 +904,47 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		// Clean up.
 		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 	}
+
+	/**
+	 * Test that ShipEngine sandbox mode is auto-detected from TEST_ key prefix.
+	 */
+	public function test_shipengine_sandbox_auto_detected_from_test_prefix() {
+		$tool         = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$creds_method = new ReflectionMethod( $tool, 'get_credentials' );
+		$creds_method->setAccessible( true );
+
+		// Pass a TEST_ prefixed API key via tool arguments.
+		$arguments = array(
+			'api_credentials' => array(
+				'shipengine_api_key'    => 'TEST_abc123sandbox',
+				'shipengine_carrier_id' => 'se-111111',
+			),
+		);
+
+		$creds = $creds_method->invoke( $tool, $arguments, 'shipengine' );
+
+		$this->assertTrue( $creds['sandbox_mode'], 'sandbox_mode should be auto-detected from TEST_ prefixed API key' );
+		$this->assertSame( 'TEST_abc123sandbox', $creds['shipengine_api_key'] );
+	}
+
+	/**
+	 * Test that ShipEngine sandbox mode is NOT auto-detected from production keys.
+	 */
+	public function test_shipengine_sandbox_not_detected_from_production_key() {
+		$tool         = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$creds_method = new ReflectionMethod( $tool, 'get_credentials' );
+		$creds_method->setAccessible( true );
+
+		// Pass a production API key (no TEST_ prefix).
+		$arguments = array(
+			'api_credentials' => array(
+				'shipengine_api_key'    => 'dx_prod_real_key_99',
+				'shipengine_carrier_id' => 'se-222222',
+			),
+		);
+
+		$creds = $creds_method->invoke( $tool, $arguments, 'shipengine' );
+
+		$this->assertFalse( $creds['sandbox_mode'], 'sandbox_mode should be false for non-TEST_ keys' );
+	}
 }

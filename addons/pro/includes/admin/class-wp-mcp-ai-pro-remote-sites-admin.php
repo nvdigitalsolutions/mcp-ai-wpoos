@@ -991,8 +991,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
 									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
 									'shopify'            => __( 'Shopify', 'mcp-ai-wpoos-pro' ),
-									'shipengine'         => __( 'ShipEngine', 'mcp-ai-wpoos-pro' ),
-									'shipstation'        => __( 'ShipStation', 'mcp-ai-wpoos-pro' ),
+									'shipengine'         => __( 'ShipStation API', 'mcp-ai-wpoos-pro' ),
+									'shipstation'        => __( 'ShipStation V1', 'mcp-ai-wpoos-pro' ),
 									);
 
 								$type_colors = array(
@@ -1021,8 +1021,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'office365'          => '#d83b01', // Microsoft Office orange
 									'icloud'             => '#3693f5', // iCloud blue
 									'shopify'            => '#96bf48', // Shopify green
-									'shipengine'         => '#0072ce', // ShipEngine blue
-									'shipstation'        => '#f26522', // ShipStation orange
+									'shipengine'         => '#0072ce', // ShipStation API blue
+									'shipstation'        => '#f26522', // ShipStation V1 orange
 									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -1348,10 +1348,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php esc_html_e( 'Shopify (E-Commerce Platform)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="shipengine" <?php selected( $connection_type, 'shipengine' ); ?>>
-								<?php esc_html_e( 'ShipEngine (Shipping Carrier API)', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( 'ShipStation API (Recommended)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="shipstation" <?php selected( $connection_type, 'shipstation' ); ?>>
-								<?php esc_html_e( 'ShipStation (Shipping Carrier API)', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( 'ShipStation V1 API (Legacy)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -1623,16 +1623,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 				<tr class="shipengine-only-field" style="display: none;">
-					<th scope="row"><?php esc_html_e( 'ShipEngine Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Sandbox Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && 'shipengine' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'Enable sandbox/test mode', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Use a ShipEngine sandbox API key (starts with TEST_) for testing. Sandbox data is isolated from production.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="shipengine-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'ShipStation API Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
-							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipEngine credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipStation API credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
 								<li><?php esc_html_e( 'Sign up or log in at app.shipengine.com.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Go to Settings → API Keys and create a new Production API key.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to Settings → API Keys and create a new API key.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'For sandbox testing, create a sandbox key (starts with TEST_) and enable "Sandbox Mode" above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Go to Carriers → Connect a carrier and connect your USPS account.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the carrier ID (e.g. "se-123456") from the Carriers page.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
+							<p style="margin: 8px 0 0;">
+								<strong><?php esc_html_e( 'API Reference:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<a href="https://shipengine.github.io/shipengine-openapi/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'ShipStation API (OpenAPI Documentation)', 'mcp-ai-wpoos-pro' ); ?></a>
+							</p>
+							<p style="margin: 4px 0 0; color: #646970; font-style: italic;">
+								<?php esc_html_e( 'ShipStation API (formerly ShipEngine) is the recommended default carrier integration.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 						</div>
 					</td>
 				</tr>
@@ -1691,10 +1709,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 				<tr class="shipstation-only-field" style="display: none;">
-					<th scope="row"><?php esc_html_e( 'ShipStation Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'ShipStation V1 Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
-							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipStation credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+							<p style="margin: 0 0 8px;"><strong><?php esc_html_e( 'How to get your ShipStation V1 API credentials:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 							<ol style="margin: 0; padding-left: 20px; line-height: 1.8;">
 								<li><?php esc_html_e( 'Log in to your ShipStation account at ss.shipstation.com.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Go to Settings → Account → API Settings.', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -1702,6 +1720,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Copy the API Key and API Secret and paste them above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'For sandbox testing, enable "Sandbox Mode" above and use your sandbox API credentials.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
+							<p style="margin: 4px 0 0; color: #646970; font-style: italic;">
+								<?php esc_html_e( 'Note: This is the legacy ShipStation V1 API. For new integrations, use "ShipStation API" (Recommended) instead.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 						</div>
 					</td>
 				</tr>
