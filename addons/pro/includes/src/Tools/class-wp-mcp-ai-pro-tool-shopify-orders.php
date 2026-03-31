@@ -22,6 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Shopify_Connection_Resolver;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -52,7 +54,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites connection ID for the Shopify store (connection_type must be "shopify").', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites connection ID for the Shopify store. If omitted, automatically uses the Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
 				'action'        => array(
 					'type'        => 'string',
@@ -80,7 +82,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Shopify order search/filter query. Supports Shopify filter syntax, e.g. "financial_status:paid fulfillment_status:unfulfilled created_at:>2024-01-01".', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'connection_id', 'action' ),
+			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -113,9 +115,10 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to access Shopify orders.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
-		if ( empty( $connection_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_missing_connection', __( 'A Remote Sites connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+		// Resolve the Shopify connection — auto-resolves from assistant context when not provided.
+		$connection_id = $this->resolve_shopify_connection_id( $arguments, $context );
+		if ( is_wp_error( $connection_id ) ) {
+			return $connection_id;
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -124,13 +127,25 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) );
+			$available   = $this->get_available_shopify_connections( $context );
+			$conn_list   = $this->format_available_connections_message( $available );
+			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_wrong_type', __( 'The specified connection is not a Shopify connection.', 'mcp-ai-wpoos-pro' ) );
 		}
 		if ( empty( $connection['enabled'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_disabled', __( 'This Shopify connection is disabled.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! $this->is_shopify_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_not_enabled',
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Shopify connection "%s" is not enabled for this assistant. Enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
+			);
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
