@@ -1,0 +1,1146 @@
+<?php
+/**
+ * Shipping Rate Estimator Tool
+ *
+ * Estimates shipping rates by packing items into optimal boxes and rate-shopping
+ * across carriers via ShipEngine or ShipStation APIs. Supports USPS Priority Mail
+ * cubic and flat-rate pricing, PirateShip CSV export format, and WooCommerce order
+ * shipping plan generation.
+ *
+ * Inspired by the nv-boxpacker plugin (ShipEngine/ShipStation services).
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Tool for estimating shipping rates with box-packing optimization.
+ *
+ * Supports:
+ * - ShipEngine and ShipStation API integration
+ * - USPS Priority Mail cubic and flat-rate pricing
+ * - Automatic box-packing with rate comparison
+ * - WooCommerce order rate estimation
+ * - PirateShip-compatible CSV export data
+ * - Ship-from/ship-to address configuration
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return bool True if WooCommerce is active and toolkit is enabled.
+	 */
+	public static function is_available() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return false;
+		}
+
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return false;
+		}
+
+		return function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && wp_mcp_ai_is_ecommerce_toolkit_enabled();
+	}
+
+	/**
+	 * Get the reason why this tool is unavailable.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return string Reason message.
+	 */
+	public static function get_unavailable_reason() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return __( 'Shipping rate estimator requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && ! wp_mcp_ai_is_ecommerce_toolkit_enabled() ) {
+			return __( 'E-commerce toolkit is not enabled. Please enable it in plugin settings.', 'mcp-ai-wpoos-pro' );
+		}
+
+		return __( 'Shipping rate estimator tool is not available.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string
+	 */
+	public function get_slug() {
+		return 'shipping_rate_estimator';
+	}
+
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'Shipping Rate Estimator', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Estimate shipping rates by packing items into optimal boxes and rate-shopping across carriers via ShipEngine or ShipStation APIs. Supports USPS Priority Mail cubic and flat-rate pricing. Provide items with dimensions and a destination address to get per-package rate estimates with packing plans.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'       => 'object',
+			'properties' => array(
+				'action'    => array(
+					'type'        => 'string',
+					'description' => __( 'Rate estimation action to perform.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'estimate_rates', 'estimate_order_rates', 'test_connection' ),
+					'default'     => 'estimate_rates',
+				),
+				'carrier'   => array(
+					'type'        => 'string',
+					'description' => __( 'Carrier API to use for rate-shopping. Default reads from plugin settings.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'shipengine', 'shipstation' ),
+				),
+				'order_id'  => array(
+					'type'        => 'integer',
+					'description' => __( 'WooCommerce order ID (required for estimate_order_rates action).', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'items'     => array(
+					'type'        => 'array',
+					'description' => __( 'Items to pack and rate (required for estimate_rates action).', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'name'      => array(
+								'type'        => 'string',
+								'description' => __( 'Item name.', 'mcp-ai-wpoos-pro' ),
+							),
+							'length'    => array(
+								'type'        => 'number',
+								'description' => __( 'Length in inches.', 'mcp-ai-wpoos-pro' ),
+								'minimum'     => 0.1,
+							),
+							'width'     => array(
+								'type'        => 'number',
+								'description' => __( 'Width in inches.', 'mcp-ai-wpoos-pro' ),
+								'minimum'     => 0.1,
+							),
+							'height'    => array(
+								'type'        => 'number',
+								'description' => __( 'Height in inches.', 'mcp-ai-wpoos-pro' ),
+								'minimum'     => 0.1,
+							),
+							'weight_oz' => array(
+								'type'        => 'number',
+								'description' => __( 'Weight in ounces.', 'mcp-ai-wpoos-pro' ),
+								'minimum'     => 0.1,
+							),
+							'quantity'  => array(
+								'type'        => 'integer',
+								'description' => __( 'Quantity (default: 1).', 'mcp-ai-wpoos-pro' ),
+								'minimum'     => 1,
+								'default'     => 1,
+							),
+						),
+						'required'   => array( 'name', 'length', 'width', 'height', 'weight_oz' ),
+					),
+				),
+				'ship_to'   => array(
+					'type'        => 'object',
+					'description' => __( 'Destination address for rate calculation.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'name'           => array(
+							'type'        => 'string',
+							'description' => __( 'Recipient name.', 'mcp-ai-wpoos-pro' ),
+						),
+						'company'        => array(
+							'type'        => 'string',
+							'description' => __( 'Company name (optional).', 'mcp-ai-wpoos-pro' ),
+						),
+						'address_line1'  => array(
+							'type'        => 'string',
+							'description' => __( 'Street address.', 'mcp-ai-wpoos-pro' ),
+						),
+						'address_line2'  => array(
+							'type'        => 'string',
+							'description' => __( 'Suite/unit (optional).', 'mcp-ai-wpoos-pro' ),
+						),
+						'city'           => array(
+							'type'        => 'string',
+							'description' => __( 'City.', 'mcp-ai-wpoos-pro' ),
+						),
+						'state'          => array(
+							'type'        => 'string',
+							'description' => __( 'State/province code (e.g. "CA").', 'mcp-ai-wpoos-pro' ),
+						),
+						'postal_code'    => array(
+							'type'        => 'string',
+							'description' => __( 'ZIP/postal code.', 'mcp-ai-wpoos-pro' ),
+						),
+						'country_code'   => array(
+							'type'        => 'string',
+							'description' => __( 'Two-letter country code (default: "US").', 'mcp-ai-wpoos-pro' ),
+							'default'     => 'US',
+						),
+					),
+					'required'    => array( 'postal_code' ),
+				),
+				'ship_from' => array(
+					'type'        => 'object',
+					'description' => __( 'Origin address override (optional, reads from plugin settings if not provided).', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'name'         => array(
+							'type'        => 'string',
+							'description' => __( 'Sender name.', 'mcp-ai-wpoos-pro' ),
+						),
+						'company'      => array(
+							'type'        => 'string',
+							'description' => __( 'Company name.', 'mcp-ai-wpoos-pro' ),
+						),
+						'address_line1' => array(
+							'type'        => 'string',
+							'description' => __( 'Street address.', 'mcp-ai-wpoos-pro' ),
+						),
+						'city'         => array(
+							'type'        => 'string',
+							'description' => __( 'City.', 'mcp-ai-wpoos-pro' ),
+						),
+						'state'        => array(
+							'type'        => 'string',
+							'description' => __( 'State/province code.', 'mcp-ai-wpoos-pro' ),
+						),
+						'postal_code'  => array(
+							'type'        => 'string',
+							'description' => __( 'ZIP/postal code.', 'mcp-ai-wpoos-pro' ),
+						),
+						'country_code' => array(
+							'type'        => 'string',
+							'description' => __( 'Country code (default: "US").', 'mcp-ai-wpoos-pro' ),
+							'default'     => 'US',
+						),
+					),
+				),
+				'api_credentials' => array(
+					'type'        => 'object',
+					'description' => __( 'API credentials override (optional, reads from plugin settings if not provided). For ShipEngine: api_key + carrier_id. For ShipStation: api_key + api_secret + carrier_code.', 'mcp-ai-wpoos-pro' ),
+					'properties'  => array(
+						'shipengine_api_key'       => array(
+							'type'        => 'string',
+							'description' => __( 'ShipEngine API key.', 'mcp-ai-wpoos-pro' ),
+						),
+						'shipengine_carrier_id'    => array(
+							'type'        => 'string',
+							'description' => __( 'ShipEngine carrier ID (e.g. "se-123456").', 'mcp-ai-wpoos-pro' ),
+						),
+						'shipstation_api_key'      => array(
+							'type'        => 'string',
+							'description' => __( 'ShipStation API key.', 'mcp-ai-wpoos-pro' ),
+						),
+						'shipstation_api_secret'   => array(
+							'type'        => 'string',
+							'description' => __( 'ShipStation API secret.', 'mcp-ai-wpoos-pro' ),
+						),
+						'shipstation_carrier_code' => array(
+							'type'        => 'string',
+							'description' => __( 'ShipStation carrier code (default: "stamps_com").', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
+			),
+			'required'   => array( 'action' ),
+		);
+	}
+
+	/**
+	 * Get capability flags.
+	 *
+	 * @return array<string>
+	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',
+			'read-only',
+			'requires-plugin',
+			'external-api',
+			'network-dependent',
+			'requires-credentials',
+			'rate-limited',
+		);
+	}
+
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'manage_woocommerce' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to use the shipping rate estimator.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$action = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'estimate_rates';
+
+		switch ( $action ) {
+			case 'estimate_rates':
+				return $this->handle_estimate_rates( $arguments );
+
+			case 'estimate_order_rates':
+				return $this->handle_estimate_order_rates( $arguments );
+
+			case 'test_connection':
+				return $this->handle_test_connection( $arguments );
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_invalid_action',
+					/* translators: %s: action name */
+					sprintf( __( 'Invalid action: %s. Use estimate_rates, estimate_order_rates, or test_connection.', 'mcp-ai-wpoos-pro' ), $action )
+				);
+		}
+	}
+
+	/**
+	 * Handle the estimate_rates action.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_estimate_rates( array $arguments ) {
+		if ( empty( $arguments['items'] ) || ! is_array( $arguments['items'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_items',
+				__( 'Items array is required for rate estimation.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['ship_to'] ) || ! is_array( $arguments['ship_to'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_destination',
+				__( 'ship_to address with at least postal_code is required for rate estimation.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Use the box packer tool to pack items first.
+		$packer   = new WP_MCP_AI_Tool_Shipping_Box_Packer();
+		$pack_result = $packer->execute(
+			array(
+				'action' => 'pack_items',
+				'items'  => $arguments['items'],
+				'boxes'  => isset( $arguments['boxes'] ) ? $arguments['boxes'] : array(),
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $pack_result ) ) {
+			return $pack_result;
+		}
+
+		if ( empty( $pack_result['packages'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_packing_failed',
+				__( 'Unable to pack items into any available boxes.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$carrier  = $this->get_carrier( $arguments );
+		$ship_to  = $this->build_ship_to_address( $arguments['ship_to'] );
+		$ship_from = $this->get_ship_from_address( $arguments );
+		$creds    = $this->get_credentials( $arguments, $carrier );
+
+		$result = array(
+			'success'             => true,
+			'carrier'             => $carrier,
+			'total_items'         => $pack_result['total_items'],
+			'total_packages'      => $pack_result['total_packages'],
+			'total_rate_amount'   => 0.0,
+			'currency'            => 'USD',
+			'packages'            => array(),
+			'pirateship_rows'     => array(),
+			'warnings'            => array(),
+		);
+
+		foreach ( $pack_result['packages'] as $package ) {
+			$rate_result = $this->get_rate_for_package( $package, $ship_to, $ship_from, $carrier, $creds );
+
+			if ( is_wp_error( $rate_result ) ) {
+				$result['warnings'][] = sprintf(
+					/* translators: 1: package number, 2: error message */
+					__( 'Package %1$d: %2$s', 'mcp-ai-wpoos-pro' ),
+					$package['package_number'],
+					$rate_result->get_error_message()
+				);
+				// Include packing data even without rate.
+				$result['packages'][] = array_merge(
+					$package,
+					array(
+						'rate_amount' => null,
+						'rate_error'  => $rate_result->get_error_message(),
+					)
+				);
+				continue;
+			}
+
+			$rated_package = array_merge( $package, $rate_result );
+			$result['packages'][] = $rated_package;
+			$result['total_rate_amount'] += (float) $rate_result['rate_amount'];
+			$result['currency'] = $rate_result['currency'];
+
+			// Build PirateShip-compatible row.
+			$result['pirateship_rows'][] = array(
+				'package_number' => $package['package_number'],
+				'carrier'        => 'USPS',
+				'service'        => 'Priority Mail',
+				'package_type'   => $package['package_code'],
+				'package_name'   => $package['package_name'],
+				'weight_oz'      => $package['weight_oz'],
+				'length'         => $package['dimensions']['length'],
+				'width'          => $package['dimensions']['width'],
+				'height'         => $package['dimensions']['height'],
+				'rate_amount'    => $rate_result['rate_amount'],
+				'packing_list'   => implode( '; ', $package['packing_list'] ),
+			);
+		}
+
+		$result['total_rate_amount'] = round( $result['total_rate_amount'], 2 );
+
+		$result['message'] = sprintf(
+			/* translators: 1: number of packages, 2: formatted rate amount, 3: carrier name */
+			__( 'Estimated %1$d package(s) at $%2$s total via %3$s.', 'mcp-ai-wpoos-pro' ),
+			count( $result['packages'] ),
+			number_format( $result['total_rate_amount'], 2 ),
+			ucfirst( $carrier )
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Handle the estimate_order_rates action.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_estimate_order_rates( array $arguments ) {
+		if ( empty( $arguments['order_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_order_id',
+				__( 'order_id is required for order rate estimation.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$order = wc_get_order( absint( $arguments['order_id'] ) );
+
+		if ( ! $order instanceof WC_Order ) {
+			return new WP_Error(
+				'wp_mcp_ai_order_not_found',
+				/* translators: %d: order ID */
+				sprintf( __( 'Order #%d not found.', 'mcp-ai-wpoos-pro' ), absint( $arguments['order_id'] ) )
+			);
+		}
+
+		// Use the box packer to pack order items.
+		$packer      = new WP_MCP_AI_Tool_Shipping_Box_Packer();
+		$pack_result = $packer->execute(
+			array(
+				'action'   => 'pack_order',
+				'order_id' => $order->get_id(),
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( is_wp_error( $pack_result ) ) {
+			return $pack_result;
+		}
+
+		if ( empty( $pack_result['packages'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_packing_failed',
+				__( 'Unable to pack order items.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$carrier   = $this->get_carrier( $arguments );
+		$ship_to   = $this->build_order_ship_to( $order );
+		$ship_from = $this->get_ship_from_address( $arguments );
+		$creds     = $this->get_credentials( $arguments, $carrier );
+
+		$result = array(
+			'success'             => true,
+			'carrier'             => $carrier,
+			'order_id'            => $order->get_id(),
+			'order_number'        => $order->get_order_number(),
+			'total_items'         => $pack_result['total_items'],
+			'total_packages'      => $pack_result['total_packages'],
+			'total_rate_amount'   => 0.0,
+			'currency'            => 'USD',
+			'packages'            => array(),
+			'pirateship_rows'     => array(),
+			'warnings'            => array(),
+		);
+
+		foreach ( $pack_result['packages'] as $package ) {
+			$rate_result = $this->get_rate_for_package( $package, $ship_to, $ship_from, $carrier, $creds );
+
+			if ( is_wp_error( $rate_result ) ) {
+				$result['warnings'][] = sprintf(
+					/* translators: 1: package number, 2: error message */
+					__( 'Package %1$d: %2$s', 'mcp-ai-wpoos-pro' ),
+					$package['package_number'],
+					$rate_result->get_error_message()
+				);
+				$result['packages'][] = array_merge(
+					$package,
+					array(
+						'rate_amount' => null,
+						'rate_error'  => $rate_result->get_error_message(),
+					)
+				);
+				continue;
+			}
+
+			$rated_package = array_merge( $package, $rate_result );
+			$result['packages'][] = $rated_package;
+			$result['total_rate_amount'] += (float) $rate_result['rate_amount'];
+			$result['currency'] = $rate_result['currency'];
+
+			$result['pirateship_rows'][] = array(
+				'order_number'   => $order->get_order_number(),
+				'package_number' => $package['package_number'],
+				'recipient_name' => trim( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ),
+				'carrier'        => 'USPS',
+				'service'        => 'Priority Mail',
+				'package_type'   => $package['package_code'],
+				'weight_oz'      => $package['weight_oz'],
+				'length'         => $package['dimensions']['length'],
+				'width'          => $package['dimensions']['width'],
+				'height'         => $package['dimensions']['height'],
+				'rate_amount'    => $rate_result['rate_amount'],
+				'packing_list'   => implode( '; ', $package['packing_list'] ),
+			);
+		}
+
+		$result['total_rate_amount'] = round( $result['total_rate_amount'], 2 );
+
+		$result['message'] = sprintf(
+			/* translators: 1: order number, 2: number of packages, 3: formatted rate amount */
+			__( 'Order #%1$s: %2$d package(s) estimated at $%3$s total.', 'mcp-ai-wpoos-pro' ),
+			$order->get_order_number(),
+			count( $result['packages'] ),
+			number_format( $result['total_rate_amount'], 2 )
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Handle the test_connection action.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_test_connection( array $arguments ) {
+		$carrier = $this->get_carrier( $arguments );
+		$creds   = $this->get_credentials( $arguments, $carrier );
+
+		if ( 'shipengine' === $carrier ) {
+			return $this->test_shipengine_connection( $creds );
+		}
+
+		return $this->test_shipstation_connection( $creds );
+	}
+
+	/**
+	 * Get a shipping rate for a packed package from the carrier API.
+	 *
+	 * @param array  $package   Packed package data from the box packer.
+	 * @param array  $ship_to   Formatted ship-to address.
+	 * @param array  $ship_from Formatted ship-from address.
+	 * @param string $carrier   Carrier identifier ('shipengine' or 'shipstation').
+	 * @param array  $creds     API credentials.
+	 * @return array|WP_Error Rate result or error.
+	 */
+	protected function get_rate_for_package( array $package, array $ship_to, array $ship_from, string $carrier, array $creds ) {
+		if ( 'shipengine' === $carrier ) {
+			return $this->get_shipengine_rate( $package, $ship_to, $ship_from, $creds );
+		}
+
+		return $this->get_shipstation_rate( $package, $ship_to, $ship_from, $creds );
+	}
+
+	/**
+	 * Get a rate from ShipEngine API.
+	 *
+	 * @param array $package   Packed package data.
+	 * @param array $ship_to   Ship-to address.
+	 * @param array $ship_from Ship-from address.
+	 * @param array $creds     API credentials.
+	 * @return array|WP_Error
+	 */
+	protected function get_shipengine_rate( array $package, array $ship_to, array $ship_from, array $creds ) {
+		$api_key    = $creds['shipengine_api_key'] ?? '';
+		$carrier_id = $creds['shipengine_carrier_id'] ?? '';
+
+		if ( '' === $api_key || '' === $carrier_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'ShipEngine API key and carrier ID are required. Configure them in WooCommerce > USPS Optimizer settings or pass via api_credentials parameter.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$payload = array(
+			'rate_options' => array(
+				'carrier_ids' => array( $carrier_id ),
+			),
+			'shipment'     => array(
+				'validate_address' => 'no_validation',
+				'ship_to'          => $ship_to,
+				'ship_from'        => $ship_from,
+				'packages'         => array(
+					array(
+						'package_code' => $package['package_code'],
+						'weight'       => array(
+							'value' => round( (float) $package['weight_oz'], 2 ),
+							'unit'  => 'ounce',
+						),
+						'dimensions'   => array(
+							'unit'   => 'inch',
+							'length' => $package['dimensions']['length'],
+							'width'  => $package['dimensions']['width'],
+							'height' => $package['dimensions']['height'],
+						),
+					),
+				),
+				'service_code'     => 'usps_priority_mail',
+			),
+		);
+
+		$response = wp_remote_post(
+			'https://api.shipengine.com/v1/rates',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'API-Key'      => $api_key,
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				/* translators: %s: error message */
+				sprintf( __( 'ShipEngine request failed: %s', 'mcp-ai-wpoos-pro' ), $response->get_error_message() )
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				/* translators: %d: HTTP status code */
+				sprintf( __( 'ShipEngine returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+			);
+		}
+
+		$rates = $body['rate_response']['rates'] ?? array();
+
+		if ( empty( $rates ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_rates',
+				__( 'ShipEngine returned no rates for this package configuration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Sort by price ascending and pick cheapest.
+		usort(
+			$rates,
+			static function ( array $a, array $b ) {
+				return (float) $a['shipping_amount']['amount'] <=> (float) $b['shipping_amount']['amount'];
+			}
+		);
+
+		$best = $rates[0];
+
+		return array(
+			'rate_amount'  => (float) $best['shipping_amount']['amount'],
+			'currency'     => (string) ( $best['shipping_amount']['currency'] ?? 'USD' ),
+			'service_code' => 'usps_priority_mail',
+			'carrier_id'   => $carrier_id,
+		);
+	}
+
+	/**
+	 * Get a rate from ShipStation API.
+	 *
+	 * @param array $package   Packed package data.
+	 * @param array $ship_to   Ship-to address.
+	 * @param array $ship_from Ship-from address.
+	 * @param array $creds     API credentials.
+	 * @return array|WP_Error
+	 */
+	protected function get_shipstation_rate( array $package, array $ship_to, array $ship_from, array $creds ) {
+		$api_key      = $creds['shipstation_api_key'] ?? '';
+		$api_secret   = $creds['shipstation_api_secret'] ?? '';
+		$carrier_code = $creds['shipstation_carrier_code'] ?? 'stamps_com';
+
+		if ( '' === $api_key || '' === $api_secret ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'ShipStation API key and secret are required. Configure them in WooCommerce > USPS Optimizer settings or pass via api_credentials parameter.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$payload = array(
+			'carrierCode'    => $carrier_code,
+			'serviceCode'    => null,
+			'packageCode'    => null,
+			'fromPostalCode' => $ship_from['postal_code'] ?? '',
+			'toState'        => $ship_to['state_province'] ?? '',
+			'toCountry'      => $ship_to['country_code'] ?? 'US',
+			'toPostalCode'   => $ship_to['postal_code'] ?? '',
+			'toCity'         => $ship_to['city_locality'] ?? '',
+			'weight'         => array(
+				'value' => round( (float) $package['weight_oz'], 2 ),
+				'units' => 'ounces',
+			),
+			'dimensions'     => array(
+				'units'  => 'inches',
+				'length' => $package['dimensions']['length'],
+				'width'  => $package['dimensions']['width'],
+				'height' => $package['dimensions']['height'],
+			),
+			'confirmation'   => 'none',
+			'residential'    => false,
+		);
+
+		$auth = base64_encode( $api_key . ':' . $api_secret ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard Basic-Auth encoding.
+
+		/**
+		 * Filter the ShipStation API base URL.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $url Default ShipStation API base URL.
+		 */
+		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
+		$endpoint = trailingslashit( $api_url ) . 'shipments/getrates';
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . $auth,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				/* translators: %s: error message */
+				sprintf( __( 'ShipStation request failed: %s', 'mcp-ai-wpoos-pro' ), $response->get_error_message() )
+			);
+		}
+
+		$code  = (int) wp_remote_retrieve_response_code( $response );
+		$body  = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$rates = is_array( $body ) ? $body : array();
+
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				/* translators: %d: HTTP status code */
+				sprintf( __( 'ShipStation returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+			);
+		}
+
+		if ( empty( $rates ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_rates',
+				__( 'ShipStation returned no rates for this package configuration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Pick cheapest rate.
+		usort(
+			$rates,
+			static function ( array $a, array $b ) {
+				$cost_a = (float) $a['shipmentCost'] + (float) ( $a['otherCost'] ?? 0 );
+				$cost_b = (float) $b['shipmentCost'] + (float) ( $b['otherCost'] ?? 0 );
+				return $cost_a <=> $cost_b;
+			}
+		);
+
+		$best = $rates[0];
+
+		return array(
+			'rate_amount'  => (float) $best['shipmentCost'],
+			'currency'     => 'USD',
+			'service_code' => (string) ( $best['serviceCode'] ?? 'usps_priority_mail' ),
+			'carrier_code' => $carrier_code,
+		);
+	}
+
+	/**
+	 * Test ShipEngine API connection.
+	 *
+	 * @param array $creds API credentials.
+	 * @return array
+	 */
+	protected function test_shipengine_connection( array $creds ) {
+		$api_key    = $creds['shipengine_api_key'] ?? '';
+		$carrier_id = $creds['shipengine_carrier_id'] ?? '';
+
+		if ( '' === $api_key ) {
+			return array(
+				'success' => false,
+				'message' => __( 'ShipEngine API key is not configured.', 'mcp-ai-wpoos-pro' ),
+				'carrier' => 'shipengine',
+			);
+		}
+
+		$response = wp_remote_get(
+			'https://api.shipengine.com/v1/carriers',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'API-Key'      => $api_key,
+					'Content-Type' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				'carrier' => 'shipengine',
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 401 === $code || 403 === $code ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid ShipEngine API key.', 'mcp-ai-wpoos-pro' ),
+				'carrier' => 'shipengine',
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'ShipEngine returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				),
+				'carrier' => 'shipengine',
+			);
+		}
+
+		$body     = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$carriers = $body['carriers'] ?? array();
+
+		// If carrier_id provided, verify it exists.
+		if ( '' !== $carrier_id ) {
+			$found = false;
+			foreach ( $carriers as $c ) {
+				if ( isset( $c['carrier_id'] ) && $c['carrier_id'] === $carrier_id ) {
+					$found = true;
+					break;
+				}
+			}
+
+			if ( ! $found ) {
+				return array(
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %s: carrier ID */
+						__( 'Carrier ID "%s" was not found in your ShipEngine account.', 'mcp-ai-wpoos-pro' ),
+						$carrier_id
+					),
+					'carrier' => 'shipengine',
+				);
+			}
+		}
+
+		return array(
+			'success'        => true,
+			'message'        => __( 'ShipEngine connection successful!', 'mcp-ai-wpoos-pro' ),
+			'carrier'        => 'shipengine',
+			'carriers_found' => count( $carriers ),
+		);
+	}
+
+	/**
+	 * Test ShipStation API connection.
+	 *
+	 * @param array $creds API credentials.
+	 * @return array
+	 */
+	protected function test_shipstation_connection( array $creds ) {
+		$api_key    = $creds['shipstation_api_key'] ?? '';
+		$api_secret = $creds['shipstation_api_secret'] ?? '';
+
+		if ( '' === $api_key || '' === $api_secret ) {
+			return array(
+				'success' => false,
+				'message' => __( 'ShipStation API key and secret are not configured.', 'mcp-ai-wpoos-pro' ),
+				'carrier' => 'shipstation',
+			);
+		}
+
+		$auth = base64_encode( $api_key . ':' . $api_secret ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard Basic-Auth encoding.
+
+		/** This filter is documented in this file. */
+		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
+		$endpoint = trailingslashit( $api_url ) . 'carriers';
+
+		$response = wp_remote_get(
+			$endpoint,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . $auth,
+					'Content-Type'  => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				),
+				'carrier' => 'shipstation',
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 401 === $code || 403 === $code ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid ShipStation credentials.', 'mcp-ai-wpoos-pro' ),
+				'carrier' => 'shipstation',
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'ShipStation returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				),
+				'carrier' => 'shipstation',
+			);
+		}
+
+		return array(
+			'success' => true,
+			'message' => __( 'ShipStation connection successful!', 'mcp-ai-wpoos-pro' ),
+			'carrier' => 'shipstation',
+		);
+	}
+
+	/**
+	 * Get the active carrier from arguments or plugin settings.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return string Carrier identifier.
+	 */
+	protected function get_carrier( array $arguments ) {
+		if ( ! empty( $arguments['carrier'] ) && in_array( $arguments['carrier'], array( 'shipengine', 'shipstation' ), true ) ) {
+			return $arguments['carrier'];
+		}
+
+		// Try to read from nv-boxpacker plugin settings.
+		$optimizer_settings = get_option( 'fk_usps_optimizer_settings', array() );
+		if ( ! empty( $optimizer_settings['carrier'] ) ) {
+			return $optimizer_settings['carrier'];
+		}
+
+		return 'shipengine';
+	}
+
+	/**
+	 * Get API credentials from arguments or plugin settings.
+	 *
+	 * @param array  $arguments Tool arguments.
+	 * @param string $carrier   Active carrier.
+	 * @return array Credentials.
+	 */
+	protected function get_credentials( array $arguments, string $carrier ) {
+		$creds = array();
+
+		// Check tool arguments first.
+		$arg_creds = isset( $arguments['api_credentials'] ) ? $arguments['api_credentials'] : array();
+
+		// Load from nv-boxpacker plugin settings as fallback.
+		$optimizer_settings = get_option( 'fk_usps_optimizer_settings', array() );
+
+		if ( 'shipengine' === $carrier ) {
+			$creds['shipengine_api_key']    = ! empty( $arg_creds['shipengine_api_key'] )
+				? sanitize_text_field( $arg_creds['shipengine_api_key'] )
+				: ( $optimizer_settings['shipengine_api_key'] ?? '' );
+			$creds['shipengine_carrier_id'] = ! empty( $arg_creds['shipengine_carrier_id'] )
+				? sanitize_text_field( $arg_creds['shipengine_carrier_id'] )
+				: ( $optimizer_settings['shipengine_carrier_id'] ?? '' );
+		} else {
+			$creds['shipstation_api_key']      = ! empty( $arg_creds['shipstation_api_key'] )
+				? sanitize_text_field( $arg_creds['shipstation_api_key'] )
+				: ( $optimizer_settings['shipstation_api_key'] ?? '' );
+			$creds['shipstation_api_secret']   = ! empty( $arg_creds['shipstation_api_secret'] )
+				? sanitize_text_field( $arg_creds['shipstation_api_secret'] )
+				: ( $optimizer_settings['shipstation_api_secret'] ?? '' );
+			$creds['shipstation_carrier_code'] = ! empty( $arg_creds['shipstation_carrier_code'] )
+				? sanitize_text_field( $arg_creds['shipstation_carrier_code'] )
+				: ( $optimizer_settings['shipstation_carrier_code'] ?? 'stamps_com' );
+		}
+
+		return $creds;
+	}
+
+	/**
+	 * Build a formatted ship-to address from tool arguments.
+	 *
+	 * @param array $address Raw address data.
+	 * @return array Formatted address suitable for carrier APIs.
+	 */
+	protected function build_ship_to_address( array $address ) {
+		return array(
+			'name'                          => isset( $address['name'] ) ? sanitize_text_field( $address['name'] ) : '',
+			'company_name'                  => isset( $address['company'] ) ? sanitize_text_field( $address['company'] ) : '',
+			'phone'                         => isset( $address['phone'] ) ? sanitize_text_field( $address['phone'] ) : '',
+			'address_line1'                 => isset( $address['address_line1'] ) ? sanitize_text_field( $address['address_line1'] ) : '',
+			'address_line2'                 => isset( $address['address_line2'] ) ? sanitize_text_field( $address['address_line2'] ) : '',
+			'city_locality'                 => isset( $address['city'] ) ? sanitize_text_field( $address['city'] ) : '',
+			'state_province'                => isset( $address['state'] ) ? sanitize_text_field( $address['state'] ) : '',
+			'postal_code'                   => isset( $address['postal_code'] ) ? sanitize_text_field( $address['postal_code'] ) : '',
+			'country_code'                  => isset( $address['country_code'] ) ? sanitize_text_field( $address['country_code'] ) : 'US',
+			'address_residential_indicator' => 'unknown',
+		);
+	}
+
+	/**
+	 * Build a ship-to address from a WooCommerce order.
+	 *
+	 * @param WC_Order $order The WooCommerce order.
+	 * @return array Formatted address.
+	 */
+	protected function build_order_ship_to( $order ) {
+		return array(
+			'name'                          => trim( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ),
+			'company_name'                  => $order->get_shipping_company(),
+			'phone'                         => $order->get_billing_phone(),
+			'address_line1'                 => $order->get_shipping_address_1(),
+			'address_line2'                 => $order->get_shipping_address_2(),
+			'city_locality'                 => $order->get_shipping_city(),
+			'state_province'                => $order->get_shipping_state(),
+			'postal_code'                   => $order->get_shipping_postcode(),
+			'country_code'                  => $order->get_shipping_country() ? $order->get_shipping_country() : 'US',
+			'address_residential_indicator' => 'unknown',
+		);
+	}
+
+	/**
+	 * Get the ship-from address from arguments or plugin settings.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array Formatted ship-from address.
+	 */
+	protected function get_ship_from_address( array $arguments ) {
+		// Check tool arguments first.
+		if ( ! empty( $arguments['ship_from'] ) && is_array( $arguments['ship_from'] ) ) {
+			$sf = $arguments['ship_from'];
+			return array(
+				'name'                          => isset( $sf['name'] ) ? sanitize_text_field( $sf['name'] ) : '',
+				'company_name'                  => isset( $sf['company'] ) ? sanitize_text_field( $sf['company'] ) : '',
+				'phone'                         => isset( $sf['phone'] ) ? sanitize_text_field( $sf['phone'] ) : '',
+				'address_line1'                 => isset( $sf['address_line1'] ) ? sanitize_text_field( $sf['address_line1'] ) : '',
+				'address_line2'                 => isset( $sf['address_line2'] ) ? sanitize_text_field( $sf['address_line2'] ) : '',
+				'city_locality'                 => isset( $sf['city'] ) ? sanitize_text_field( $sf['city'] ) : '',
+				'state_province'                => isset( $sf['state'] ) ? sanitize_text_field( $sf['state'] ) : '',
+				'postal_code'                   => isset( $sf['postal_code'] ) ? sanitize_text_field( $sf['postal_code'] ) : '',
+				'country_code'                  => isset( $sf['country_code'] ) ? sanitize_text_field( $sf['country_code'] ) : 'US',
+				'address_residential_indicator' => 'no',
+			);
+		}
+
+		// Fall back to nv-boxpacker plugin settings.
+		$optimizer_settings = get_option( 'fk_usps_optimizer_settings', array() );
+
+		if ( ! empty( $optimizer_settings['ship_from_address1'] ) ) {
+			return array(
+				'name'                          => $optimizer_settings['ship_from_name'] ?? '',
+				'company_name'                  => $optimizer_settings['ship_from_company'] ?? '',
+				'phone'                         => $optimizer_settings['ship_from_phone'] ?? '',
+				'address_line1'                 => $optimizer_settings['ship_from_address1'] ?? '',
+				'address_line2'                 => $optimizer_settings['ship_from_address2'] ?? '',
+				'city_locality'                 => $optimizer_settings['ship_from_city'] ?? '',
+				'state_province'                => $optimizer_settings['ship_from_state'] ?? '',
+				'postal_code'                   => $optimizer_settings['ship_from_postal_code'] ?? '',
+				'country_code'                  => $optimizer_settings['ship_from_country'] ?? 'US',
+				'address_residential_indicator' => 'no',
+			);
+		}
+
+		// Fall back to WooCommerce store address.
+		return array(
+			'name'                          => get_option( 'blogname', '' ),
+			'company_name'                  => '',
+			'phone'                         => '',
+			'address_line1'                 => get_option( 'woocommerce_store_address', '' ),
+			'address_line2'                 => get_option( 'woocommerce_store_address_2', '' ),
+			'city_locality'                 => get_option( 'woocommerce_store_city', '' ),
+			'state_province'                => get_option( 'woocommerce_default_country', 'US:CA' ) ? explode( ':', get_option( 'woocommerce_default_country', 'US:CA' ) )[1] ?? '' : '',
+			'postal_code'                   => get_option( 'woocommerce_store_postcode', '' ),
+			'country_code'                  => get_option( 'woocommerce_default_country', 'US:CA' ) ? explode( ':', get_option( 'woocommerce_default_country', 'US:CA' ) )[0] : 'US',
+			'address_residential_indicator' => 'no',
+		);
+	}
+}
