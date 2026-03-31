@@ -340,18 +340,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 				$status = 'warning';
 			}
 
+			// Check whether a secret_token is configured on this connection.
+			// When missing, the webhook controller rejects every delivery with
+			// 403 Forbidden because it cannot verify the header Telegram sends.
+			$has_secret_token = ! empty( $connection['secret_token'] );
+
 			return array(
-				'status'          => $status,
-				'webhook_url'     => $webhook_url,
-				'expected_url'    => $expected_url,
-				'url_matches'     => $url_matches,
-				'pending_updates' => $pending,
-				'last_error'      => $last_error,
-				'last_error_date' => $last_error_ts > 0 ? gmdate( 'Y-m-d H:i:s', $last_error_ts ) : '',
-				'max_connections' => $max_conn,
-				'allowed_updates' => $allowed_updates,
-				'bot_info'        => $bot_info,
-				'has_custom_cert' => ! empty( $wh['has_custom_certificate'] ),
+				'status'           => $status,
+				'webhook_url'      => $webhook_url,
+				'expected_url'     => $expected_url,
+				'url_matches'      => $url_matches,
+				'pending_updates'  => $pending,
+				'last_error'       => $last_error,
+				'last_error_date'  => $last_error_ts > 0 ? gmdate( 'Y-m-d H:i:s', $last_error_ts ) : '',
+				'max_connections'  => $max_conn,
+				'allowed_updates'  => $allowed_updates,
+				'bot_info'         => $bot_info,
+				'has_custom_cert'  => ! empty( $wh['has_custom_certificate'] ),
+				'has_secret_token' => $has_secret_token,
 			);
 		}
 
@@ -536,6 +542,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 			$secret_token = '';
 			if ( ! empty( $connection['secret_token'] ) ) {
 				$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['secret_token'] );
+			}
+
+			// Auto-generate a secret_token when none is configured so that the
+			// webhook controller can always verify the X-Telegram-Bot-Api-Secret-Token
+			// header. Without this, setWebhook omits the secret_token parameter,
+			// Telegram does not send the header on deliveries, and our
+			// validate_webhook_secret() rejects every update with 403 Forbidden.
+			if ( empty( $secret_token ) ) {
+				$secret_token = wp_generate_password( 64, false );
+
+				// Persist the generated token on the connection so that
+				// validate_webhook_secret() can retrieve it later.
+				$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+				if ( is_array( $all_connections ) && isset( $all_connections[ $connection_id ] ) ) {
+					$all_connections[ $connection_id ]['secret_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::encrypt_value( $secret_token );
+					update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections );
+				}
 			}
 
 			$webhook_url = self::get_expected_webhook_url( $connection_id, 'telegram' );
@@ -1089,6 +1112,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 						}
 						if (data.max_connections) {
 							html += '<div class="webhook-details">' + <?php echo wp_json_encode( __( 'Max Conn:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + data.max_connections + '</div>';
+						}
+						if (data.has_secret_token === false) {
+							html += '<div class="webhook-warning">⚠ ' + <?php echo wp_json_encode( __( 'No secret token — click Set Webhook to auto-generate one', 'mcp-ai-wpoos-pro' ) ); ?> + '</div>';
 						}
 						if (data.bot_info && data.bot_info.bot_username) {
 							html += '<div class="webhook-details">@' + data.bot_info.bot_username + '</div>';
