@@ -45,9 +45,9 @@ Page load → resolve SERVER_MEMBER_ID (PHP, server-side)
 
 | Tab | Contents |
 |-----|----------|
-| **Dashboard** | Vitals KPI grid (BP, HR, SpO₂, temp, glucose) + Kidney Health grid (eGFR/CKD stage, creatinine, BUN, K⁺, Na⁺, phosphorus, albumin) + sparkline chart |
+| **Dashboard** | Most Recent Reading summary card (relative timestamp + colour-coded vital values) + Vitals KPI grid (BP, HR, SpO₂, temp, glucose) + Kidney Health grid (eGFR/CKD stage, creatinine, BUN, K⁺, Na⁺, phosphorus, albumin) + 7-day BP sparkline chart |
 | **Log** | Full vitals + kidney lab value form; saves via `log_vital_signs` |
-| **Trends** | 7-day Chart.js line charts per metric with reference-range shading |
+| **Trends** | Selectable date-range (7 / 14 / 30 / 90 days) Chart.js line charts per metric with reference-range shading |
 | **Dosage** | Add/edit/delete medication cards; dose, frequency, and instructions stored in localStorage |
 | **Doctor** | AI assistant chat; pre-seeds current member vitals as context on first message |
 | **Settings** | Switch default member; unit preferences |
