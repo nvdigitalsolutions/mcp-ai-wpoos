@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-webhook-issue',
-        'version' => 'dev-copilot/fix-telegram-webhook-issue',
-        'reference' => '276c847cf6dd938be9429f4bfc68fad92fa7cfdb',
+        'pretty_version' => 'dev-copilot/fix-telegram-connection-issue',
+        'version' => 'dev-copilot/fix-telegram-connection-issue',
+        'reference' => '6073300c318e1cf0f764ec7f02b18666f31e2a72',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-webhook-issue',
-            'version' => 'dev-copilot/fix-telegram-webhook-issue',
-            'reference' => '276c847cf6dd938be9429f4bfc68fad92fa7cfdb',
+            'pretty_version' => 'dev-copilot/fix-telegram-connection-issue',
+            'version' => 'dev-copilot/fix-telegram-connection-issue',
+            'reference' => '6073300c318e1cf0f764ec7f02b18666f31e2a72',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
