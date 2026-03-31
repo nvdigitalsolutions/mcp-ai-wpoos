@@ -947,4 +947,77 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 
 		$this->assertFalse( $creds['sandbox_mode'], 'sandbox_mode should be false for non-TEST_ keys' );
 	}
+
+	/**
+	 * Test User-Agent header is generated with plugin version and WordPress version.
+	 */
+	public function test_user_agent_contains_plugin_and_wp_version() {
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'get_user_agent' );
+		$method->setAccessible( true );
+
+		$user_agent = $method->invoke( $tool );
+
+		$this->assertStringContainsString( 'NV-oOS/', $user_agent, 'User-Agent should start with NV-oOS/' );
+		$this->assertStringContainsString( 'WordPress/', $user_agent, 'User-Agent should contain WordPress version' );
+	}
+
+	/**
+	 * Test parse_api_error extracts ShipEngine structured errors.
+	 */
+	public function test_parse_api_error_shipengine_structured() {
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'parse_api_error' );
+		$method->setAccessible( true );
+
+		// ShipEngine structured error.
+		$body = array(
+			'errors' => array(
+				array( 'message' => 'Invalid carrier ID' ),
+				array( 'message' => 'Rate limit exceeded' ),
+			),
+		);
+
+		$result = $method->invoke( $tool, $body, 'shipengine', 400 );
+		$this->assertSame( 'Invalid carrier ID; Rate limit exceeded', $result );
+	}
+
+	/**
+	 * Test parse_api_error extracts ShipStation V1 error messages.
+	 */
+	public function test_parse_api_error_shipstation_message() {
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'parse_api_error' );
+		$method->setAccessible( true );
+
+		// ShipStation V1 error format.
+		$body = array( 'Message' => 'Unauthorized access' );
+
+		$result = $method->invoke( $tool, $body, 'shipstation', 401 );
+		$this->assertSame( 'Unauthorized access', $result );
+	}
+
+	/**
+	 * Test parse_api_error falls back to HTTP status code.
+	 */
+	public function test_parse_api_error_fallback() {
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'parse_api_error' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $tool, null, 'shipengine', 500 );
+		$this->assertStringContainsString( '500', $result );
+	}
+
+	/**
+	 * Test request_with_retry method exists and is callable.
+	 */
+	public function test_request_with_retry_is_callable() {
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'request_with_retry' );
+		$method->setAccessible( true );
+
+		$this->assertTrue( $method->isProtected(), 'request_with_retry should be a protected method' );
+		$this->assertSame( 3, $method->getNumberOfParameters(), 'request_with_retry should accept 3 parameters (url, args, retries)' );
+	}
 }

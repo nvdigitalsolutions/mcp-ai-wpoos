@@ -596,6 +596,110 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
+	 * Get User-Agent string for carrier API requests.
+	 *
+	 * Industry standard: identify the integration software by name and version
+	 * so carrier support can diagnose issues from specific integrations.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return string
+	 */
+	protected function get_user_agent() {
+		$version = defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.0.0';
+		return 'NV-oOS/' . $version . ' (WordPress/' . get_bloginfo( 'version' ) . '; +' . home_url() . ')';
+	}
+
+	/**
+	 * Make an HTTP request with automatic retry on 429 rate-limit responses.
+	 *
+	 * ShipEngine (ShipStation API) enforces rate limits (200 req/min production,
+	 * 20 req/min sandbox). This method honours the Retry-After header and retries
+	 * up to the configured maximum to avoid transient failures during peak usage.
+	 *
+	 * Note: sleep() is intentionally used for synchronous blocking within a single
+	 * AI tool execution context. Rate-limit retries are short-lived (≤10 s) and
+	 * bounded (≤2 retries), making background scheduling unnecessary.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $url     Request URL.
+	 * @param array  $args    wp_remote_request() arguments (must include 'method').
+	 * @param int    $retries Maximum number of retries (default 2).
+	 * @return array|WP_Error
+	 */
+	protected function request_with_retry( string $url, array $args, int $retries = 2 ) {
+		$response = wp_remote_request( $url, $args );
+
+		for ( $attempt = 0; $attempt < $retries; $attempt++ ) {
+			if ( is_wp_error( $response ) ) {
+				break;
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( 429 !== $code ) {
+				break;
+			}
+
+			// Honour the Retry-After header (seconds to wait) per industry standard.
+			$retry_after = (int) wp_remote_retrieve_header( $response, 'retry-after' );
+			$retry_after = max( $retry_after, 1 ); // Minimum 1 second.
+			$retry_after = min( $retry_after, 10 ); // Cap at 10 seconds.
+
+			sleep( $retry_after ); // Intentional blocking; see method docblock.
+
+			$response = wp_remote_request( $url, $args );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Parse a structured error message from a carrier API JSON response body.
+	 *
+	 * Both ShipEngine and ShipStation return error details in their response bodies.
+	 * This method extracts human-readable messages for better diagnostics.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array|null $body    Decoded JSON response body.
+	 * @param string     $carrier Carrier identifier.
+	 * @param int        $code    HTTP status code.
+	 * @return string Formatted error message.
+	 */
+	protected function parse_api_error( $body, string $carrier, int $code ) {
+		if ( is_array( $body ) ) {
+			// ShipEngine structured errors.
+			if ( ! empty( $body['errors'] ) && is_array( $body['errors'] ) ) {
+				$messages = array();
+				foreach ( $body['errors'] as $err ) {
+					if ( isset( $err['message'] ) ) {
+						$messages[] = $err['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					return implode( '; ', $messages );
+				}
+			}
+
+			// ShipStation V1 error message.
+			if ( ! empty( $body['Message'] ) ) {
+				return (string) $body['Message'];
+			}
+
+			// Generic message field.
+			if ( ! empty( $body['message'] ) ) {
+				return (string) $body['message'];
+			}
+		}
+
+		$label = 'shipengine' === $carrier ? 'ShipEngine' : 'ShipStation';
+		/* translators: 1: carrier name, 2: HTTP status code */
+		return sprintf( __( '%1$s returned HTTP %2$d.', 'mcp-ai-wpoos-pro' ), $label, $code );
+	}
+
+	/**
 	 * Get a rate from ShipEngine API.
 	 *
 	 * @param array $package   Packed package data.
@@ -642,13 +746,15 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			),
 		);
 
-		$response = wp_remote_post(
+		$response = $this->request_with_retry(
 			'https://api.shipengine.com/v1/rates',
 			array(
-				'timeout' => 15,
+				'method'  => 'POST',
+				'timeout' => 30,
 				'headers' => array(
 					'API-Key'      => $api_key,
 					'Content-Type' => 'application/json',
+					'User-Agent'   => $this->get_user_agent(),
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
@@ -668,8 +774,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		if ( $code < 200 || $code >= 300 ) {
 			return new WP_Error(
 				'wp_mcp_ai_api_error',
-				/* translators: %d: HTTP status code */
-				sprintf( __( 'ShipEngine returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				$this->parse_api_error( $body, 'shipengine', $code )
 			);
 		}
 
@@ -756,13 +861,15 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
 		$endpoint = trailingslashit( $api_url ) . 'shipments/getrates';
 
-		$response = wp_remote_post(
+		$response = $this->request_with_retry(
 			$endpoint,
 			array(
-				'timeout' => 15,
+				'method'  => 'POST',
+				'timeout' => 30,
 				'headers' => array(
 					'Authorization' => 'Basic ' . $auth,
 					'Content-Type'  => 'application/json',
+					'User-Agent'    => $this->get_user_agent(),
 				),
 				'body'    => wp_json_encode( $payload ),
 			)
@@ -783,8 +890,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		if ( $code < 200 || $code >= 300 ) {
 			return new WP_Error(
 				'wp_mcp_ai_api_error',
-				/* translators: %d: HTTP status code */
-				sprintf( __( 'ShipStation returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $code )
+				$this->parse_api_error( $body, 'shipstation', $code )
 			);
 		}
 
@@ -833,13 +939,15 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$response = wp_remote_get(
+		$response = $this->request_with_retry(
 			'https://api.shipengine.com/v1/carriers',
 			array(
+				'method'  => 'GET',
 				'timeout' => 15,
 				'headers' => array(
 					'API-Key'      => $api_key,
 					'Content-Type' => 'application/json',
+					'User-Agent'   => $this->get_user_agent(),
 				),
 			)
 		);
@@ -857,6 +965,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 
 		if ( 401 === $code || 403 === $code ) {
 			return array(
@@ -869,16 +978,11 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		if ( $code < 200 || $code >= 300 ) {
 			return array(
 				'success' => false,
-				'message' => sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'ShipEngine returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
-					$code
-				),
+				'message' => $this->parse_api_error( $body, 'shipengine', $code ),
 				'carrier' => 'shipengine',
 			);
 		}
 
-		$body     = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 		$carriers = $body['carriers'] ?? array();
 
 		// If carrier_id provided, verify it exists.
@@ -904,15 +1008,35 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			}
 		}
 
-		return array(
+		$is_sandbox = ! empty( $creds['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' );
+
+		// Extract rate-limit diagnostics from response headers (industry standard).
+		$rate_limit_info = array();
+		$rl_remaining    = wp_remote_retrieve_header( $response, 'x-ratelimit-remaining' );
+		$rl_limit        = wp_remote_retrieve_header( $response, 'x-ratelimit-limit' );
+		if ( '' !== $rl_remaining ) {
+			$rate_limit_info['requests_remaining'] = (int) $rl_remaining;
+		}
+		if ( '' !== $rl_limit ) {
+			$rate_limit_info['requests_limit'] = (int) $rl_limit;
+		}
+
+		$result = array(
 			'success'        => true,
-			'message'        => ! empty( $creds['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' )
-				? __( 'ShipEngine sandbox connection successful!', 'mcp-ai-wpoos-pro' )
-				: __( 'ShipEngine connection successful!', 'mcp-ai-wpoos-pro' ),
+			'message'        => $is_sandbox
+				? __( 'ShipStation API sandbox connection successful!', 'mcp-ai-wpoos-pro' )
+				: __( 'ShipStation API connection successful!', 'mcp-ai-wpoos-pro' ),
 			'carrier'        => 'shipengine',
-			'sandbox_mode'   => ! empty( $creds['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' ),
+			'sandbox_mode'   => $is_sandbox,
+			'environment'    => $is_sandbox ? 'sandbox' : 'production',
 			'carriers_found' => count( $carriers ),
 		);
+
+		if ( ! empty( $rate_limit_info ) ) {
+			$result['rate_limits'] = $rate_limit_info;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -939,13 +1063,15 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
 		$endpoint = trailingslashit( $api_url ) . 'carriers';
 
-		$response = wp_remote_get(
+		$response = $this->request_with_retry(
 			$endpoint,
 			array(
+				'method'  => 'GET',
 				'timeout' => 15,
 				'headers' => array(
 					'Authorization' => 'Basic ' . $auth,
 					'Content-Type'  => 'application/json',
+					'User-Agent'    => $this->get_user_agent(),
 				),
 			)
 		);
@@ -963,11 +1089,12 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 
 		if ( 401 === $code || 403 === $code ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid ShipStation credentials.', 'mcp-ai-wpoos-pro' ),
+				'message' => __( 'Invalid ShipStation V1 credentials.', 'mcp-ai-wpoos-pro' ),
 				'carrier' => 'shipstation',
 			);
 		}
@@ -975,23 +1102,39 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		if ( $code < 200 || $code >= 300 ) {
 			return array(
 				'success' => false,
-				'message' => sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'ShipStation returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
-					$code
-				),
+				'message' => $this->parse_api_error( $body, 'shipstation', $code ),
 				'carrier' => 'shipstation',
 			);
 		}
 
-		return array(
+		$is_sandbox = ! empty( $creds['sandbox_mode'] );
+
+		// Extract ShipStation V1 rate-limit headers.
+		$rate_limit_info = array();
+		$rl_remaining    = wp_remote_retrieve_header( $response, 'x-rate-limit-remaining' );
+		$rl_limit        = wp_remote_retrieve_header( $response, 'x-rate-limit-limit' );
+		if ( '' !== $rl_remaining ) {
+			$rate_limit_info['requests_remaining'] = (int) $rl_remaining;
+		}
+		if ( '' !== $rl_limit ) {
+			$rate_limit_info['requests_limit'] = (int) $rl_limit;
+		}
+
+		$result = array(
 			'success'      => true,
-			'message'      => ! empty( $creds['sandbox_mode'] )
-				? __( 'ShipStation sandbox connection successful!', 'mcp-ai-wpoos-pro' )
-				: __( 'ShipStation connection successful!', 'mcp-ai-wpoos-pro' ),
+			'message'      => $is_sandbox
+				? __( 'ShipStation V1 sandbox connection successful!', 'mcp-ai-wpoos-pro' )
+				: __( 'ShipStation V1 connection successful!', 'mcp-ai-wpoos-pro' ),
 			'carrier'      => 'shipstation',
-			'sandbox_mode' => ! empty( $creds['sandbox_mode'] ),
+			'sandbox_mode' => $is_sandbox,
+			'environment'  => $is_sandbox ? 'sandbox' : 'production',
 		);
+
+		if ( ! empty( $rate_limit_info ) ) {
+			$result['rate_limits'] = $rate_limit_info;
+		}
+
+		return $result;
 	}
 
 	/**
