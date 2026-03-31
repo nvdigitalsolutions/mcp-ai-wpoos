@@ -1109,6 +1109,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	private static function parse_bulk_product_data( $text ) {
 		$products = array();
+		// Normalise line endings first so the double-newline split below works across OS formats.
 		$text     = str_replace( array( "\r\n", "\r" ), "\n", $text );
 		$blocks   = preg_split( '/\n{2,}/', trim( $text ) );
 		$current  = array();
@@ -1125,7 +1126,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 
 				// Match key: value pattern.
 				if ( preg_match( '/^(product|brand|inci|manufacturer|origin|category|hs\s*code|reg\s*number|status|expiry|registration|country)\s*:\s*(.+)$/i', $line, $matches ) ) {
-					$key   = strtolower( trim( $matches[1] ) );
+					// Normalise the matched key by collapsing whitespace to underscore.
+					$key   = str_replace( ' ', '_', strtolower( trim( preg_replace( '/\s+/', ' ', $matches[1] ) ) ) );
 					$value = trim( $matches[2] );
 
 					switch ( $key ) {
@@ -1151,10 +1153,10 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 						case 'category':
 							$current['category'] = $value;
 							break;
-						case 'hs code':
+						case 'hs_code':
 							$current['hs_code'] = $value;
 							break;
-						case 'reg number':
+						case 'reg_number':
 							$current['reg_number'] = $value;
 							break;
 						case 'status':

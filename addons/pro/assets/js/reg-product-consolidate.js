@@ -248,10 +248,10 @@
 					url = cfg.addDocUrl;
 					break;
 				case 'country':
-					url = cfg.productsUrl + '&post_type=mcp_ai_reg_country';
+					url = cfg.productsUrl.replace( /post_type=[^&]+/, 'post_type=mcp_ai_reg_country' );
 					break;
 				case 'requirement':
-					url = cfg.productsUrl + '&post_type=mcp_ai_reg_requirement';
+					url = cfg.productsUrl.replace( /post_type=[^&]+/, 'post_type=mcp_ai_reg_requirement' );
 					break;
 			}
 
