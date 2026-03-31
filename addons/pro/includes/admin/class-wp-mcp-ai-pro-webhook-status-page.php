@@ -219,10 +219,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Webhook_Status_Page' ) ) {
 		}
 
 		/**
-		 * Get the badge colour for a connection type.
+		 * Get the badge color for a connection type.
 		 *
 		 * @param string $type Connection type.
-		 * @return string Hex colour.
+		 * @return string Hex color.
 		 */
 		public static function get_type_color( $type ) {
 			$colors = array(
