@@ -541,6 +541,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Auto-populate the bot_username on the connection when it is missing.
+		// This ensures the inbox can display the @bot_username badge without
+		// requiring the admin to manually test or save the connection.
+		$connection = $this->maybe_populate_bot_username( $connection );
+
 		// ── Group / supergroup gate ──
 		// When in a group context, respect the connection's enable_groups setting.
 		$is_group     = in_array( $chat_type, array( 'group', 'supergroup' ), true );
@@ -1650,6 +1655,74 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Populate the bot_username on a Telegram connection when it is missing.
+	 *
+	 * Calls the Telegram getMe API once per connection (result cached via a
+	 * transient for 24 hours) and persists the username on the connection so
+	 * the inbox can display the @bot_username badge without requiring the
+	 * admin to manually test or save the connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data array.
+	 * @return array Connection data with bot_username populated (when possible).
+	 */
+	protected function maybe_populate_bot_username( array $connection ) {
+		if ( ! empty( $connection['bot_username'] ) ) {
+			return $connection;
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+		if ( '' === $connection_id ) {
+			return $connection;
+		}
+
+		// Avoid repeated API calls: one attempt per connection per 24h.
+		$transient_key = 'wp_mcp_ai_tg_botname_' . $connection_id;
+		if ( false !== get_transient( $transient_key ) ) {
+			return $connection;
+		}
+
+		$bot_token = isset( $connection['api_key'] )
+			? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] )
+			: '';
+
+		if ( '' === $bot_token ) {
+			set_transient( $transient_key, 'none', DAY_IN_SECONDS );
+			return $connection;
+		}
+
+		$api_base    = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+		$get_me_resp = wp_remote_get( $api_base . '/getMe', array( 'timeout' => 10 ) );
+
+		if ( is_wp_error( $get_me_resp ) ) {
+			set_transient( $transient_key, 'error', DAY_IN_SECONDS );
+			return $connection;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $get_me_resp ), true );
+
+		if ( empty( $body['ok'] ) || empty( $body['result']['username'] ) ) {
+			set_transient( $transient_key, 'empty', DAY_IN_SECONDS );
+			return $connection;
+		}
+
+		$bot_username = sanitize_text_field( $body['result']['username'] );
+
+		// Persist the username on the connection.
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+				array_merge( $connection, array( 'bot_username' => $bot_username ) )
+			);
+		}
+
+		set_transient( $transient_key, $bot_username, DAY_IN_SECONDS );
+
+		$connection['bot_username'] = $bot_username;
+		return $connection;
 	}
 
 	/**
@@ -3247,6 +3320,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( ! $connection ) {
 			return;
 		}
+
+		// Auto-populate the bot_username on the connection when it is missing.
+		$connection = $this->maybe_populate_bot_username( $connection );
 
 		// Only process channel posts when channel support is enabled.
 		if ( empty( $connection['enable_channels'] ) ) {

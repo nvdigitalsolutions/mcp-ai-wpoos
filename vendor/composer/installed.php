@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-and-commit',
-        'version' => 'dev-copilot/rebuild-all-zips-and-commit',
-        'reference' => '1a9eba0068afe01c2608de3b44a5a5db01073c89',
+        'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
+        'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
+        'reference' => '089ba372708f046325041c09708de5a38fefbf89',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-and-commit',
-            'version' => 'dev-copilot/rebuild-all-zips-and-commit',
-            'reference' => '1a9eba0068afe01c2608de3b44a5a5db01073c89',
+            'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
+            'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
+            'reference' => '089ba372708f046325041c09708de5a38fefbf89',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -1663,6 +1663,15 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		$bot_username = '';
 
+		// Ensure the Remote Site Manager class is loaded (mirrors the pattern
+		// used in the Telegram webhook controller).
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$rsm_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			if ( file_exists( $rsm_path ) ) {
+				require_once $rsm_path;
+			}
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 			if ( $connection && ! empty( $connection['bot_username'] ) ) {

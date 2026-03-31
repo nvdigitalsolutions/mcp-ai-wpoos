@@ -172,6 +172,38 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 						$connection_id
 					)
 				);
+
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
+
+				// Adopt an older record that has no connection_id yet so the
+				// contact is not duplicated and gains the connection_id needed
+				// for bot_username resolution in the inbox.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$legacy_id = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
+						$channel,
+						$channel_contact_id
+					)
+				);
+
+				if ( $legacy_id ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->update(
+						$table,
+						array(
+							'connection_id'    => $connection_id,
+							'conversation_type' => $conversation_type,
+						),
+						array( '_ID' => (int) $legacy_id ),
+						array( '%s', '%s' ),
+						array( '%d' )
+					);
+					return (int) $legacy_id;
+				}
 			} else {
 				// Backward-compatible lookup for callers that do not supply connection_id.
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -183,10 +215,10 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 						$channel_contact_id
 					)
 				);
-			}
 
-			if ( $existing_id ) {
-				return (int) $existing_id;
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
 			}
 		}
 
