@@ -195,15 +195,30 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test VIN Decode requires edit_posts capability.
+	 * Test VIN Decode verifies user capability via user_can().
+	 *
+	 * Uses the map_meta_cap filter to strip edit_posts from a
+	 * specific user, ensuring the tool's capability gate works.
 	 */
 	public function test_vin_decode_requires_capability() {
-		$no_role_id = self::factory()->user->create( array( 'role' => '' ) );
-		$tool       = new WP_MCP_AI_Tool_VIN_Decode();
-		$result     = $tool->execute(
+		$test_user_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+
+		// Temporarily deny edit_posts for this specific user.
+		$deny_filter = function ( $caps, $cap, $uid ) use ( $test_user_id ) {
+			if ( 'edit_posts' === $cap && $uid === $test_user_id ) {
+				return array( 'do_not_allow' );
+			}
+			return $caps;
+		};
+		add_filter( 'map_meta_cap', $deny_filter, 10, 3 );
+
+		$tool   = new WP_MCP_AI_Tool_VIN_Decode();
+		$result = $tool->execute(
 			array( 'vin' => '1HGBH41JXMN109186' ),
-			array( 'user_id' => $no_role_id )
+			array( 'user_id' => $test_user_id )
 		);
+
+		remove_filter( 'map_meta_cap', $deny_filter, 10 );
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
