@@ -12387,6 +12387,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		// Auto-generate a secret_token when none is configured so that the
+		// webhook controller can always verify the X-Telegram-Bot-Api-Secret-Token
+		// header. Without this, setWebhook omits the secret_token parameter,
+		// Telegram does not send the header on deliveries, and our
+		// validate_webhook_secret() rejects every update with 403 Forbidden.
+		if ( empty( $secret_token ) && ! empty( $connection_id ) ) {
+			$secret_token = wp_generate_password( 64, false );
+
+			// Persist the generated token on the connection so that
+			// validate_webhook_secret() can retrieve it later.
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+			if ( is_array( $all_connections ) && isset( $all_connections[ $connection_id ] ) ) {
+				$all_connections[ $connection_id ]['secret_token'] = WP_MCP_AI_Pro_Remote_Site_Manager::encrypt_value( $secret_token );
+				update_option( 'wp_mcp_ai_pro_remote_sites', $all_connections );
+			}
+		}
+
 		// Validate secret token characters (A–Z, a–z, 0–9, _ and – only; 1–256 chars).
 		if ( ! empty( $secret_token ) && ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( $secret_token ) ) {
 			wp_send_json_error( __( 'Webhook Secret Token may only contain A–Z, a–z, 0–9, underscores and hyphens (1–256 characters).', 'mcp-ai-wpoos-pro' ) );

@@ -1581,9 +1581,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * Find the active (enabled) Telegram connection.
 	 *
 	 * When a connection_id is provided (either via param or the instance
-	 * property set at the top of handle_webhook()), the method resolves that
-	 * specific connection. Falls back to the first active Telegram connection
-	 * for backward compatibility with single-bot setups.
+	 * property set at the top of handle_webhook()), the method uses the
+	 * Remote Site Manager's direct array-key lookup to resolve that specific
+	 * connection. Falls back to the first active Telegram connection for
+	 * backward compatibility with single-bot setups.
 	 *
 	 * Unlike the previous implementation, this no longer requires
 	 * assigned_assistant_ids to be set on the connection so that the global
@@ -1605,35 +1606,33 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// Resolve target connection ID: explicit param > instance property.
 		$target_id = $connection_id ?? $this->current_connection_id;
 
-		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-
-		if ( ! is_array( $connections ) ) {
-			return null;
-		}
-
-		// When a specific connection is requested, look it up directly.
-		// Return null (NOT the first connection) when the requested ID cannot be
-		// resolved – falling through to the first-active-connection fallback
-		// caused the wrong bot's secret token to be used for validation,
-		// resulting in 403 Forbidden errors on the second Telegram connection.
+		// When a specific connection is requested, use the Remote Site Manager's
+		// direct array-key lookup.  This is reliable regardless of whether the
+		// connection data includes a redundant 'id' field – unlike the previous
+		// foreach-based approach which compared $connection['id'] and silently
+		// failed when that field was absent, producing 403 Forbidden errors on
+		// multi-bot setups.  Mirrors the pattern used by the Twitter controller.
 		if ( $target_id ) {
-			foreach ( $connections as $connection ) {
-				if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
-					continue;
-				}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $target_id );
 
-				if ( empty( $connection['enabled'] ) ) {
-					continue;
-				}
-
-				if ( isset( $connection['id'] ) && $connection['id'] === $target_id ) {
-					return $connection;
-				}
+			if (
+				$connection
+				&& isset( $connection['connection_type'] )
+				&& 'telegram' === $connection['connection_type']
+				&& ! empty( $connection['enabled'] )
+			) {
+				return $connection;
 			}
 
 			// Specific connection requested but not found — do not fall back to
 			// a different connection; return null so the caller can surface a
 			// descriptive error instead of silently using wrong credentials.
+			return null;
+		}
+
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		if ( ! is_array( $connections ) ) {
 			return null;
 		}
 
