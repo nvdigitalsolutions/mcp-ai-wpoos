@@ -532,6 +532,49 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertIsArray( $cct_history, 'get_recent_messages() must return array even when table is absent' );
 	}
 
+	/**
+	 * maybe_populate_bot_username() returns the connection unchanged when
+	 * bot_username is already set.
+	 */
+	public function test_telegram_maybe_populate_bot_username_skips_when_set() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_populate_bot_username' );
+		$method->setAccessible( true );
+
+		$connection = array(
+			'id'           => 'conn_tg1',
+			'bot_username' => 'my_existing_bot',
+		);
+
+		$result = $method->invoke( $controller, $connection );
+
+		$this->assertSame( 'my_existing_bot', $result['bot_username'], 'Existing bot_username must not be overwritten' );
+	}
+
+	/**
+	 * maybe_populate_bot_username() returns the connection unchanged when
+	 * the connection has no id field.
+	 */
+	public function test_telegram_maybe_populate_bot_username_skips_without_id() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_populate_bot_username' );
+		$method->setAccessible( true );
+
+		$connection = array(
+			'bot_username' => '',
+		);
+
+		$result = $method->invoke( $controller, $connection );
+
+		$this->assertSame( '', $result['bot_username'], 'bot_username must stay empty when connection has no id' );
+	}
+
 	// =========================================================================
 	// Slack Event Controller
 	// =========================================================================

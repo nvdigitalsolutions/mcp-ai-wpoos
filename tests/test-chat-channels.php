@@ -551,6 +551,28 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
+	 * resolve_bot_username() method must exist and be callable via reflection.
+	 */
+	public function test_chat_channels_resolve_bot_username_method_exists() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$this->assertTrue(
+			$reflection->hasMethod( 'resolve_bot_username' ),
+			'resolve_bot_username method must exist on the REST controller'
+		);
+
+		$method = $reflection->getMethod( 'resolve_bot_username' );
+		$method->setAccessible( true );
+
+		// With a non-existent connection_id, should return empty string.
+		$result = $method->invoke( $controller, 'conn_nonexistent_12345' );
+		$this->assertSame( '', $result, 'resolve_bot_username must return empty for unknown connection' );
+	}
+
+	/**
 	 * The admin_permissions_check must reject unauthenticated requests.
 	 */
 	public function test_chat_channels_rest_controller_permissions_unauthenticated() {

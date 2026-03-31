@@ -134,8 +134,45 @@ class WP_MCP_AI_Channel_Contacts_CPT {
 			return (int) $existing[0];
 		}
 
-		// When no connection_id was given and the lookup above failed, skip
-		// an additional unscoped lookup because get_posts already did it.
+		// Adopt an older record whose connection_id is empty so the contact is
+		// not duplicated and gains the connection_id needed for bot_username
+		// resolution in the inbox.
+		if ( '' !== $connection_id ) {
+			$legacy_query = array(
+				'relation' => 'AND',
+				array(
+					'key'     => '_channel',
+					'value'   => $channel,
+					'compare' => '=',
+				),
+				array(
+					'key'     => '_channel_contact_id',
+					'value'   => $channel_contact_id,
+					'compare' => '=',
+				),
+				array(
+					'key'     => '_connection_id',
+					'value'   => '',
+					'compare' => '=',
+				),
+			);
+
+			$legacy = get_posts(
+				array(
+					'post_type'      => self::POST_TYPE,
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'meta_query'     => $legacy_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+				)
+			);
+
+			if ( ! empty( $legacy ) ) {
+				update_post_meta( (int) $legacy[0], '_connection_id', $connection_id );
+				return (int) $legacy[0];
+			}
+		}
 
 		// Create a new contact post.
 		$display_name = isset( $extra['display_name'] ) && '' !== $extra['display_name']
