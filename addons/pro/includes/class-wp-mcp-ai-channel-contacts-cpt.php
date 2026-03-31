@@ -169,8 +169,13 @@ class WP_MCP_AI_Channel_Contacts_CPT {
 			);
 
 			if ( ! empty( $legacy ) ) {
-				update_post_meta( (int) $legacy[0], '_connection_id', $connection_id );
-				return (int) $legacy[0];
+				$legacy_post_id = (int) $legacy[0];
+				update_post_meta( $legacy_post_id, '_connection_id', $connection_id );
+				$conversation_type = isset( $extra['conversation_type'] ) ? sanitize_key( $extra['conversation_type'] ) : '';
+				if ( '' !== $conversation_type ) {
+					update_post_meta( $legacy_post_id, '_conversation_type', $conversation_type );
+				}
+				return $legacy_post_id;
 			}
 		}
 
