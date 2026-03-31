@@ -4687,9 +4687,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for our webhook route (generic).
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram';
 
 		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
 
 		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for generic webhook route' );
 	}
@@ -4707,9 +4715,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for a per-connection webhook route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram/conn_sdfqpauwohng';
 
 		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
 
 		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for per-connection webhook route' );
 	}
@@ -4726,9 +4742,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
 
 		// Simulate the REQUEST_URI for an unrelated route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
 		$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
 
 		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
 
 		$this->assertInstanceOf( 'WP_Error', $result, 'allow_telegram_webhook_auth must preserve WP_Error for unrelated routes' );
 	}

@@ -297,8 +297,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Check whether this request targets one of our webhook routes.
+		// Use wp_parse_url() to extract only the path component so query strings
+		// and fragments cannot interfere with the route match.
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		if ( false !== strpos( $request_uri, '/' . $this->rest_base ) ) {
+		$path        = (string) wp_parse_url( $request_uri, PHP_URL_PATH );
+
+		// Match the REST namespace + our rest_base to avoid clearing errors for
+		// unrelated routes that happen to contain "webhooks/telegram" elsewhere.
+		if ( false !== strpos( $path, '/mcp-ai/v1/' . $this->rest_base ) ) {
 			// Clear the error so our permission_callback handles auth instead.
 			return null;
 		}
