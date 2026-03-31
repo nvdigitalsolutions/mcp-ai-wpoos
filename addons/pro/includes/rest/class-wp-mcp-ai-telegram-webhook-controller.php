@@ -403,7 +403,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	public function handle_webhook( $request ) {
 		// Resolve the per-connection ID from the URL so all helper methods in
 		// this request lifecycle can target the correct Telegram bot.
-		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+		$connection_id_param         = $request->get_param( 'connection_id' );
+		$this->current_connection_id = ! empty( $connection_id_param ) ? $connection_id_param : null;
 
 		$payload = $request->get_json_params();
 
