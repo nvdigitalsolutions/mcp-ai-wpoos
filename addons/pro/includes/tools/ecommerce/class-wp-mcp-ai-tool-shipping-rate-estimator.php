@@ -380,6 +380,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			'total_packages'      => $pack_result['total_packages'],
 			'total_rate_amount'   => 0.0,
 			'currency'            => 'USD',
+			'sandbox_mode'        => ! empty( $creds['sandbox_mode'] ),
 			'packages'            => array(),
 			'pirateship_rows'     => array(),
 			'warnings'            => array(),
@@ -499,6 +500,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			'total_packages'      => $pack_result['total_packages'],
 			'total_rate_amount'   => 0.0,
 			'currency'            => 'USD',
+			'sandbox_mode'        => ! empty( $creds['sandbox_mode'] ),
 			'packages'            => array(),
 			'pirateship_rows'     => array(),
 			'warnings'            => array(),
@@ -980,9 +982,12 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'ShipStation connection successful!', 'mcp-ai-wpoos-pro' ),
-			'carrier' => 'shipstation',
+			'success'      => true,
+			'message'      => ! empty( $creds['sandbox_mode'] )
+				? __( 'ShipStation sandbox connection successful!', 'mcp-ai-wpoos-pro' )
+				: __( 'ShipStation connection successful!', 'mcp-ai-wpoos-pro' ),
+			'carrier'      => 'shipstation',
+			'sandbox_mode' => ! empty( $creds['sandbox_mode'] ),
 		);
 	}
 
@@ -1049,6 +1054,9 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 				: ( ! empty( $remote_creds['carrier_code'] ) ? $remote_creds['carrier_code'] : ( $optimizer_settings['shipstation_carrier_code'] ?? 'stamps_com' ) );
 		}
 
+		// Propagate sandbox mode from the remote connection.
+		$creds['sandbox_mode'] = ! empty( $remote_creds['sandbox_mode'] );
+
 		return $creds;
 	}
 
@@ -1067,6 +1075,7 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			'api_secret'   => '',
 			'carrier_id'   => '',
 			'carrier_code' => '',
+			'sandbox_mode' => false,
 		);
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -1104,6 +1113,9 @@ class WP_MCP_AI_Tool_Shipping_Rate_Estimator implements WP_MCP_AI_Tool_Interface
 			if ( 'shipstation' === $carrier && ! empty( $conn['shipstation_carrier_code'] ) ) {
 				$result['carrier_code'] = $conn['shipstation_carrier_code'];
 			}
+
+			// Sandbox mode flag.
+			$result['sandbox_mode'] = ! empty( $conn['sandbox_mode'] );
 
 			break; // Use the first enabled connection of this type.
 		}

@@ -815,4 +815,93 @@ class Test_Shipping_Tools extends WP_UnitTestCase {
 		$this->assertEmpty( $resolved['api_secret'] );
 		$this->assertEmpty( $resolved['carrier_code'] );
 	}
+
+	/**
+	 * Test that sandbox_mode is propagated from remote connection to credentials.
+	 */
+	public function test_sandbox_mode_propagated_from_remote_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Site_Manager not available.' );
+		}
+
+		// Create a ShipStation connection with sandbox_mode enabled.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                    => 'Test ShipStation Sandbox',
+				'url'                     => 'https://ssapi.shipstation.com',
+				'connection_type'         => 'shipstation',
+				'auth_type'               => 'basic_auth',
+				'username'                => 'sandbox_test_key',
+				'password'                => 'sandbox_test_secret',
+				'api_key'                 => 'sandbox_test_key',
+				'api_secret'              => 'sandbox_test_secret',
+				'enabled'                 => true,
+				'sandbox_mode'            => true,
+				'shipstation_carrier_code' => 'stamps_com',
+			)
+		);
+
+		$this->assertIsString( $connection_id, 'save_connection should return a string ID' );
+
+		// Verify sandbox_mode is resolved via credential resolution.
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'resolve_remote_connection_credentials' );
+		$method->setAccessible( true );
+
+		$resolved = $method->invoke( $tool, 'shipstation' );
+
+		$this->assertIsArray( $resolved );
+		$this->assertTrue( $resolved['sandbox_mode'], 'sandbox_mode should be true when connection has it enabled' );
+		$this->assertNotEmpty( $resolved['api_key'], 'API key should be resolved' );
+		$this->assertNotEmpty( $resolved['api_secret'], 'API secret should be resolved' );
+		$this->assertSame( 'stamps_com', $resolved['carrier_code'], 'Carrier code should be resolved' );
+
+		// Also verify it propagates through get_credentials.
+		$creds_method = new ReflectionMethod( $tool, 'get_credentials' );
+		$creds_method->setAccessible( true );
+
+		$creds = $creds_method->invoke( $tool, array(), 'shipstation' );
+
+		$this->assertTrue( $creds['sandbox_mode'], 'sandbox_mode should propagate to get_credentials result' );
+
+		// Clean up.
+		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+	}
+
+	/**
+	 * Test that sandbox_mode defaults to false when not set on connection.
+	 */
+	public function test_sandbox_mode_defaults_to_false() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Remote_Site_Manager not available.' );
+		}
+
+		// Create a ShipStation connection without sandbox_mode.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Test ShipStation Production',
+				'url'             => 'https://ssapi.shipstation.com',
+				'connection_type' => 'shipstation',
+				'auth_type'       => 'basic_auth',
+				'username'        => 'prod_test_key',
+				'password'        => 'prod_test_secret',
+				'api_key'         => 'prod_test_key',
+				'api_secret'      => 'prod_test_secret',
+				'enabled'         => true,
+			)
+		);
+
+		$this->assertIsString( $connection_id );
+
+		$tool   = new WP_MCP_AI_Tool_Shipping_Rate_Estimator();
+		$method = new ReflectionMethod( $tool, 'resolve_remote_connection_credentials' );
+		$method->setAccessible( true );
+
+		$resolved = $method->invoke( $tool, 'shipstation' );
+
+		$this->assertFalse( $resolved['sandbox_mode'], 'sandbox_mode should default to false' );
+
+		// Clean up.
+		WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+	}
 }

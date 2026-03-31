@@ -1681,6 +1681,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 				<tr class="shipstation-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox Mode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && 'shipstation' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'Enable sandbox/test mode', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Use ShipStation sandbox API credentials for testing. Generate sandbox keys from your ShipStation test environment.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr class="shipstation-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'ShipStation Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<div style="background: #f6f7f7; border: 1px solid #dcdcde; padding: 12px 16px; border-radius: 4px;">
@@ -1690,6 +1700,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Go to Settings → Account → API Settings.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click "Generate API Keys" if you haven\'t already.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the API Key and API Secret and paste them above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'For sandbox testing, enable "Sandbox Mode" above and use your sandbox API credentials.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 						</div>
 					</td>
