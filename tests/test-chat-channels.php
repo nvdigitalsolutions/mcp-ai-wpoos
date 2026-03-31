@@ -551,7 +551,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_bot_username() method must exist and be callable via reflection.
+	 * Resolve_bot_username() method must exist and be callable via reflection.
 	 */
 	public function test_chat_channels_resolve_bot_username_method_exists() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -1947,7 +1947,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * resolve_contact_from_cpt populates connection_id when available.
+	 * Resolve_contact_from_cpt populates connection_id when available.
 	 */
 	public function test_resolve_contact_from_cpt_returns_connection_id() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -1984,7 +1984,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_contact_from_cpt returns empty connection_id when meta is absent.
+	 * Resolve_contact_from_cpt returns empty connection_id when meta is absent.
 	 */
 	public function test_resolve_contact_from_cpt_returns_empty_connection_id_when_absent() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -2020,7 +2020,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * resolve_contact_from_cpt works without the optional connection_id argument (backward compat).
+	 * Resolve_contact_from_cpt works without the optional connection_id argument (backward compat).
 	 */
 	public function test_resolve_contact_from_cpt_backward_compat_without_connection_id_arg() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -2059,7 +2059,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * fetch_messages_from_cpt for Telegram with connection_id uses inclusive filter.
+	 * Fetch_messages_from_cpt for Telegram with connection_id uses inclusive filter.
 	 *
 	 * Messages matching the connection_id OR with empty/missing connection_id
 	 * should all be returned.
@@ -2073,7 +2073,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$ts = time();
 
 		// Message with matching connection_id.
-		$p1 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p1 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p1, '_channel', 'telegram' );
 		update_post_meta( $p1, '_channel_contact_id', '100' );
 		update_post_meta( $p1, '_connection_id', 'bot_a' );
@@ -2082,7 +2087,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		update_post_meta( $p1, '_message_id', 'tg_1' );
 
 		// Message with empty connection_id (legacy).
-		$p2 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p2 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p2, '_channel', 'telegram' );
 		update_post_meta( $p2, '_channel_contact_id', '100' );
 		update_post_meta( $p2, '_connection_id', '' );
@@ -2091,7 +2101,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		update_post_meta( $p2, '_message_id', 'tg_2' );
 
 		// Message with no connection_id meta at all (legacy).
-		$p3 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p3 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p3, '_channel', 'telegram' );
 		update_post_meta( $p3, '_channel_contact_id', '100' );
 		// No _connection_id meta set.
@@ -2100,7 +2115,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		update_post_meta( $p3, '_message_id', 'tg_3' );
 
 		// Message with a DIFFERENT connection_id (should be excluded).
-		$p4 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p4 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p4, '_channel', 'telegram' );
 		update_post_meta( $p4, '_channel_contact_id', '100' );
 		update_post_meta( $p4, '_connection_id', 'bot_b' );
@@ -2134,7 +2154,7 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
-	 * fetch_messages_from_cpt for non-Telegram returns all messages regardless of connection_id.
+	 * Fetch_messages_from_cpt for non-Telegram returns all messages regardless of connection_id.
 	 */
 	public function test_fetch_messages_from_cpt_whatsapp_no_connection_id_scoping() {
 		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
@@ -2145,7 +2165,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$ts = time();
 
 		// Message with connection_id on WhatsApp.
-		$p1 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p1 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p1, '_channel', 'whatsapp' );
 		update_post_meta( $p1, '_channel_contact_id', '5551234567' );
 		update_post_meta( $p1, '_connection_id', 'wa_conn_1' );
@@ -2154,7 +2179,12 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		update_post_meta( $p1, '_message_id', 'wa_1' );
 
 		// Message with different connection_id on WhatsApp.
-		$p2 = wp_insert_post( array( 'post_type' => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE, 'post_status' => 'publish' ) );
+		$p2 = wp_insert_post(
+			array(
+				'post_type'   => WP_MCP_AI_Channel_Messages_CPT::POST_TYPE,
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $p2, '_channel', 'whatsapp' );
 		update_post_meta( $p2, '_channel_contact_id', '5551234567' );
 		update_post_meta( $p2, '_connection_id', 'wa_conn_2' );
