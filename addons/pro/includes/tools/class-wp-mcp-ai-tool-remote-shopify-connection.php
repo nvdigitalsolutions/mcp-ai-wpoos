@@ -200,13 +200,15 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
+		// Determine API mode before creating the client.
+		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+
 		// Attempt to load the Shopify client and run a basic shop info query.
 		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
 		}
 
-		$client    = new WP_MCP_AI_Shopify_Client( $connection_id );
-		$api_mode  = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
 
 		if ( 'admin_api' === $api_mode ) {
 			// Test Admin GraphQL API via a simple shop query.

@@ -169,7 +169,7 @@ trait WP_MCP_AI_Shopify_Connection_Resolver {
 
 		$formatted = array();
 		foreach ( $connections as $conn ) {
-			$label = sprintf( '%s (%s)', $conn['id'], $conn['name'] );
+			$label = sprintf( '%s (%s)', $conn['name'], $conn['id'] );
 			if ( ! empty( $conn['url'] ) ) {
 				$label .= sprintf( ' — %s', $conn['url'] );
 			}
