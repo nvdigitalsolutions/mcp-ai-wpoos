@@ -194,6 +194,7 @@
 			let html = '';
 			items.forEach( function( c ) {
 				const takenOver = c.human_takeover ? '<span class="cc-takeover-indicator">👤 Human</span>' : '';
+				const botLabel  = c.bot_username ? '<span class="cc-bot-label">@' + escHtml( c.bot_username ) + '</span>' : '';
 				html += '<div class="cc-conversation-item' + ( state.activeContactId === c.id ? ' cc-conversation-item--active' : '' ) + '"'
 					+ ' data-id="' + c.id + '" data-contact=\'' + JSON.stringify( c ).replace( /'/g, '&#39;' ) + '\'>'
 					+ '<div class="cc-conv-header">'
@@ -202,6 +203,7 @@
 					+ '</div>'
 					+ '<div class="cc-conv-meta">'
 					+ channelBadge( c.channel )
+					+ botLabel
 					+ convTypeBadge( c.conversation_type || 'dm' )
 					+ statusDot( c.crm_status )
 					+ takenOver
@@ -236,10 +238,12 @@
 		function renderThreadHeader( contact ) {
 			const takenOverClass = contact.human_takeover ? 'button-primary' : '';
 			const takenOverText  = contact.human_takeover ? ( I18N.resumeAI || 'Resume AI' ) : ( I18N.humanTakeover || 'Human Takeover' );
+			const botLabel       = contact.bot_username ? '<span class="cc-bot-label">@' + escHtml( contact.bot_username ) + '</span>' : '';
 
 			$( '#cc-thread-header' ).html(
 				'<span class="cc-thread-contact-name">' + escHtml( contact.display_name || contact.channel_contact_id ) + '</span>'
 				+ channelBadge( contact.channel )
+				+ botLabel
 				+ statusDot( contact.crm_status )
 				+ '<div class="cc-thread-actions">'
 				+ '<button id="cc-human-takeover-btn" class="button ' + takenOverClass + '">' + escHtml( takenOverText ) + '</button>'
@@ -471,9 +475,11 @@
 					return '<option value="' + s + '"' + ( c.crm_status === s ? ' selected' : '' ) + '>' + s + '</option>';
 				} ).join( '' );
 
+				const botLabel = c.bot_username ? ' <span class="cc-bot-label">@' + escHtml( c.bot_username ) + '</span>' : '';
+
 				html += '<tr>'
 					+ '<td>' + escHtml( c.display_name || c.channel_contact_id ) + '</td>'
-					+ '<td>' + channelBadge( c.channel ) + '</td>'
+					+ '<td>' + channelBadge( c.channel ) + botLabel + '</td>'
 					+ '<td><code>' + escHtml( c.channel_contact_id ) + '</code></td>'
 					+ '<td>' + ( tags || '<em>—</em>' ) + '</td>'
 					+ '<td><select class="cc-status-select" data-id="' + c.id + '">' + statusOptions + '</select></td>'

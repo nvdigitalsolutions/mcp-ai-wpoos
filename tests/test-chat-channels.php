@@ -492,6 +492,65 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Format_contact() includes a bot_username key that defaults to empty for non-Telegram contacts.
+	 */
+	public function test_chat_channels_format_contact_includes_bot_username() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_contact' );
+		$method->setAccessible( true );
+
+		// Non-Telegram channel: bot_username should always be empty.
+		$row = array(
+			'_ID'                => 5,
+			'channel'            => 'slack',
+			'channel_contact_id' => 'U12345678',
+			'connection_id'      => 'conn_workspace_a',
+			'display_name'       => 'Slack User',
+			'tags'               => '[]',
+			'crm_status'         => 'new',
+			'human_takeover'     => 0,
+			'last_message_at'    => 1700000000,
+		);
+
+		$formatted = $method->invoke( $controller, $row );
+
+		$this->assertArrayHasKey( 'bot_username', $formatted, 'bot_username key must always be present' );
+		$this->assertSame( '', $formatted['bot_username'], 'bot_username must be empty for non-Telegram contacts' );
+	}
+
+	/**
+	 * Format_contact() returns empty bot_username for Telegram contact without connection_id.
+	 */
+	public function test_chat_channels_format_contact_telegram_no_connection_id() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_contact' );
+		$method->setAccessible( true );
+
+		// Telegram contact with no connection_id: bot_username should be empty.
+		$row = array(
+			'_ID'                => 6,
+			'channel'            => 'telegram',
+			'channel_contact_id' => '9988776655',
+			'display_name'       => 'Test User',
+			'tags'               => '[]',
+			'crm_status'         => 'new',
+			'human_takeover'     => 0,
+			'last_message_at'    => 1700000000,
+		);
+
+		$formatted = $method->invoke( $controller, $row );
+
+		$this->assertArrayHasKey( 'bot_username', $formatted, 'bot_username key must always be present' );
+		$this->assertSame( '', $formatted['bot_username'], 'bot_username must be empty when no connection_id' );
+	}
+
+	/**
 	 * The admin_permissions_check must reject unauthenticated requests.
 	 */
 	public function test_chat_channels_rest_controller_permissions_unauthenticated() {

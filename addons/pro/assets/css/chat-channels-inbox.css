@@ -284,6 +284,17 @@
 	padding: 0 5px;
 }
 
+/* Bot username label */
+.cc-bot-label {
+	display: inline-block;
+	font-size: .6875rem;
+	font-weight: 500;
+	color: #0284c7;
+	background: #e0f2fe;
+	border-radius: 4px;
+	padding: 0 5px;
+}
+
 /* Right: thread */
 .cc-thread-panel {
 	flex: 1;
