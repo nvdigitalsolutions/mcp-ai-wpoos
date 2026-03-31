@@ -528,6 +528,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/psalm.xml*' \
             --exclude 'vendor/*/.php-cs-fixer*' \
             --exclude 'vendor/*/*/phpunit.xml*' \
+            --exclude 'vendor/*/*/*/phpunit.xml*' \
             --exclude 'vendor/*/*/phpstan.neon*' \
             --exclude 'vendor/*/*/psalm.xml*' \
             --exclude 'vendor/*/*/.php-cs-fixer*' \

@@ -585,7 +585,8 @@ review_wporg_base() {
     elif [ -f "$DIR/languages/mcp-ai-wpoos-base.pot" ] || [ -f "$DIR/languages/mcp-ai-wpoos.pot" ]; then
         fail "Translation file NOT renamed (still uses old text domain)"
     else
-        warn "No .pot translation file found"
+        # No .pot file at all — acceptable when pot generation has not been run
+        pass "No .pot translation file (not yet generated)"
     fi
 }
 
@@ -718,14 +719,14 @@ check_text_domain_transform() {
         fi
     fi
 
-    # Check that new text domains are present
+    # Check that new text domains are present (in quotes or plugin header)
     local NEW_DOMAIN_COUNT
-    NEW_DOMAIN_COUNT=$(grep -rlE "('nvdigital-open-operator-system-oos'|\"nvdigital-open-operator-system-oos\")" "$DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
+    NEW_DOMAIN_COUNT=$(grep -rlE "('nvdigital-open-operator-system-oos|\"nvdigital-open-operator-system-oos|Text Domain: nvdigital-open-operator-system-oos)" "$DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
 
     if [ "$NEW_DOMAIN_COUNT" -gt 0 ]; then
         pass "New text domain found in $NEW_DOMAIN_COUNT files"
     else
-        warn "New text domain (nvdigital-open-operator-system-oos) not found in any files"
+        fail "New text domain (nvdigital-open-operator-system-oos) not found in any files"
     fi
 }
 
