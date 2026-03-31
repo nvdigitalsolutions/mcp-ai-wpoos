@@ -216,6 +216,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $schedule_manager_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
+		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
+		if ( file_exists( $webhook_status_page ) ) {
+			require_once $webhook_status_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
