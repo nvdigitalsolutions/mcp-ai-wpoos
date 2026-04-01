@@ -14,7 +14,7 @@
 class Test_Embedded_Model_Service extends WP_UnitTestCase {
 
 	/**
-	 * Test that all 7 embedded models are returned when provider is enabled.
+	 * Test that all 16 embedded models are returned when provider is enabled.
 	 */
 	public function test_all_embedded_models_returned_when_enabled() {
 		// Set up embedded settings.
@@ -35,22 +35,27 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 		$this->assertNotEmpty( $models, 'Embedded models should be returned when provider is enabled' );
 		$this->assertIsArray( $models, 'Models should be an array' );
 
-		// Verify we have exactly 7 models (all available embedded models).
-		$this->assertEquals( 7, count( $models ), 'Should have exactly 7 embedded models' );
+		// Verify we have exactly 16 models (all available embedded models).
+		$this->assertEquals( 16, count( $models ), 'Should have exactly 16 embedded models' );
 
 		// Verify specific models exist.
 		$expected_models = array(
 			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			'Hermes-3-Llama-3.1-8B-q4f16_1-MLC',
+			'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC',
+			'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC',
 			'Qwen3-8B-q4f16_1-MLC',
 			'Qwen2.5-7B-Instruct-q4f16_1-MLC',
 			'Qwen3-4B-q4f16_1-MLC',
 			'Phi-3.5-mini-instruct-q4f16_1-MLC',
+			'gemma-2-2b-it-q4f16_1-MLC',
+			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+			'SmolLM2-1.7B-Instruct-q4f16_1-MLC',
 			'Qwen3-1.5B-q4f16_1-MLC',
 			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
-			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
 			'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
 			'Qwen3-0.6B-q4f16_1-MLC',
+			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
 		);
 
 		foreach ( $expected_models as $model_id ) {
@@ -79,6 +84,7 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 		// Models with function calling support (should have * suffix).
 		$function_calling_models = array(
 			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			'Hermes-3-Llama-3.1-8B-q4f16_1-MLC',
 			'Qwen3-8B-q4f16_1-MLC',
 			'Qwen2.5-7B-Instruct-q4f16_1-MLC',
 			'Qwen3-4B-q4f16_1-MLC',
@@ -94,7 +100,11 @@ class Test_Embedded_Model_Service extends WP_UnitTestCase {
 
 		// Models without function calling support (should NOT have * suffix).
 		$non_function_calling_models = array(
+			'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC',
+			'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC',
+			'gemma-2-2b-it-q4f16_1-MLC',
 			'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+			'SmolLM2-1.7B-Instruct-q4f16_1-MLC',
 			'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			'Qwen3-0.6B-q4f16_1-MLC',
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
