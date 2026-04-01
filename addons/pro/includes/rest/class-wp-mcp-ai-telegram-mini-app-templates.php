@@ -2562,10 +2562,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-recent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
 		'.mv-recent-title{font-size:11px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px}' .
 		'.mv-recent-ago{font-size:11px;color:var(--tma-hint)}' .
-		'.mv-recent-strip{display:flex;gap:10px;flex-wrap:wrap}' .
-		'.mv-recent-item{font-size:12px;color:var(--tma-text);display:flex;align-items:center;gap:3px}' .
-		'.mv-recent-val{font-weight:700}' .
-		'.mv-recent-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}' .
+		'.mv-recent-strip{display:flex;flex-direction:column;gap:8px}' .
+		'.mv-recent-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tma-text)}' .
+		'.mv-recent-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}' .
+		'.mv-recent-label{flex:1;font-weight:500}' .
+		'.mv-recent-val{font-weight:700;white-space:nowrap}' .
+		'.mv-recent-unit{font-weight:400;color:var(--tma-hint);margin-left:2px}' .
 
 		/* Settings tab */
 		'.mv-settings-wrap{padding:12px}' .
@@ -3415,31 +3417,44 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var lt=document.getElementById("mv-last-time");' .
 			'if(lt){if(latest&&latest.ts){var d=new Date(latest.ts);lt.textContent="' . esc_js( __( 'Last reading: ', 'mcp-ai-wpoos-pro' ) ) . '"+d.toLocaleString();}else{lt.textContent="' . esc_js( __( 'No readings yet', 'mcp-ai-wpoos-pro' ) ) . '";}}' .
 
-			/* Most Recent Reading summary card */
+			/* Most Recent Reading summary card – always show all 5 vitals with
+			 * "--" placeholder when no value, matching the admin dashboard layout.
+			 * No age restriction: card is always visible when a reading exists. */
 			'var rc=document.getElementById("mv-recent-card");' .
 			'var rs=document.getElementById("mv-recent-strip");' .
 			'var ra=document.getElementById("mv-recent-ago");' .
 			'if(rc&&rs&&ra){' .
-				'if(latest&&latest.ts){' .
+				'if(latest){' .
 					'rc.style.display="block";' .
-					/* Relative time ago */
-					'var now=Date.now();var ts=new Date(latest.ts).getTime();var diff=Math.max(0,Math.floor((now-ts)/1000));' .
-					'var ago;' .
-					'if(diff<60){ago=diff+"s ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-					'else if(diff<3600){ago=Math.floor(diff/60)+"m ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-					'else if(diff<86400){ago=Math.floor(diff/3600)+"h ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-					'else{ago=Math.floor(diff/86400)+"d ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-					'ra.textContent=ago;' .
-					/* Build quick-status strip */
-					'function dotColor(st){return st==="alert"?"#c62828":st==="warning"?"#e65100":"#2e7d32";}' .
-					'var items=[];' .
-					'if(latest.bp_sys&&latest.bp_dia){items.push({icon:"&#129728;",lbl:"BP",val:latest.bp_sys+"/"+latest.bp_dia,st:mvBpStatus(latest.bp_sys,latest.bp_dia)});}' .
-					'if(latest.hr){items.push({icon:"&#10084;",lbl:"HR",val:latest.hr,st:mvHrStatus(latest.hr)});}' .
-					'if(latest.spo2){items.push({icon:"&#128164;",lbl:"SpO\u2082",val:latest.spo2+"%",st:mvSpo2Status(latest.spo2)});}' .
-					'if(latest.temp){items.push({icon:"&#127777;",lbl:"Temp",val:latest.temp+"\u00b0",st:mvTempStatus(latest.temp)});}' .
-					'if(latest.glucose){items.push({icon:"&#128137;",lbl:"Glu",val:latest.glucose,st:mvGlucoseStatus(latest.glucose)});}' .
+					/* Relative time ago – no age restriction */
+					'if(latest.ts){' .
+						'var now=Date.now();var ts=new Date(latest.ts).getTime();var diff=Math.max(0,Math.floor((now-ts)/1000));' .
+						'var ago;' .
+						'if(diff<60){ago=diff+"s ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+						'else if(diff<3600){ago=Math.floor(diff/60)+"m ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+						'else if(diff<86400){ago=Math.floor(diff/3600)+"h ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+						'else{ago=Math.floor(diff/86400)+"d ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+						'ra.textContent=ago;' .
+					'}else{ra.textContent="";}' .
+					/* Build vitals strip – always show all 5 vitals */
+					'var bpVal=(latest.bp_sys&&latest.bp_dia)?latest.bp_sys+"/"+latest.bp_dia:"--";' .
+					'var hrVal=latest.hr||"--";' .
+					'var spo2Val=latest.spo2||"--";' .
+					'var tempVal=latest.temp||"--";' .
+					'var gluVal=latest.glucose||"--";' .
+					'var items=[' .
+						'{icon:"\uD83E\uDEC0",lbl:"' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . '",val:bpVal,unit:"mmHg"},' .
+						'{icon:"\u2764",lbl:"' . esc_js( __( 'Heart Rate', 'mcp-ai-wpoos-pro' ) ) . '",val:hrVal,unit:"bpm"},' .
+						'{icon:"\uD83D\uDCA4",lbl:"SpO\u2082",val:spo2Val,unit:"%"},' .
+						'{icon:"\uD83C\uDF21",lbl:"' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",val:tempVal,unit:"\u00b0F"},' .
+						'{icon:"\uD83D\uDC89",lbl:"' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",val:gluVal,unit:"mg/dL"}' .
+					'];' .
 					'rs.innerHTML=items.map(function(it){' .
-						'return \'<div class="mv-recent-item"><span class="mv-recent-dot" style="background:\'+dotColor(it.st)+\'"></span><span class="mv-recent-val">\'+it.val+\'</span> \'+escH(it.lbl)+\'</div>\';' .
+						'return \'<div class="mv-recent-item">\'+' .
+							'\'<span class="mv-recent-icon">\'+it.icon+\'</span>\'+' .
+							'\'<span class="mv-recent-label">\'+escH(it.lbl)+\'</span>\'+' .
+							'\'<span class="mv-recent-val">\'+escH(String(it.val))+\'<span class="mv-recent-unit"> \'+escH(it.unit)+\'</span></span>\'+' .
+						'\'</div>\';' .
 					'}).join("");' .
 				'}else{rc.style.display="none";}' .
 			'}' .
