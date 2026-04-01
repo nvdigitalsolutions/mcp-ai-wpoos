@@ -2681,6 +2681,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<div class="mv-kpi-grid" id="mv-kidney-kpi-grid" style="padding-top:6px">' .
 					'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_html__( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
+				'<div class="mv-range-bar" id="mv-dash-range-bar" role="group" aria-label="' . esc_attr__( 'Chart date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetDashChartRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
 				'<div id="mv-dash-chart" style="padding-bottom:12px"></div>' .
 			'</div>' .
 		'</div>' .
@@ -3509,8 +3515,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvLoadDashChart();' .
 		'};' .
 
-		/* Dash chart – 7-day systolic BP sparkline */
+		/* Dash chart – systolic BP sparkline */
 		'var dashChartInst=null;' .
+		'var mvDashChartDays=7;' .
 		'function mvLoadDashChart(){' .
 			'if(window.Chart){mvRenderDashChart();return;}' .
 			'if(!CHART_JS_URL)return;' .
@@ -3520,11 +3527,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvRenderDashChart(){' .
 			'var cw=document.getElementById("mv-dash-chart");if(!cw)return;' .
-			'var hist=mvLoadHistory();' .
+			'var hist=mvLoadHistory(mvDashChartDays);' .
 			'var labels=hist.map(function(h){return h.date?h.date.slice(5):"";});' .
 			'var sysData=hist.map(function(h){return h.bp_sys||null;});' .
 			'var diaData=hist.map(function(h){return h.bp_dia||null;});' .
-			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure — 7 Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
+			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . ' \u2014 \'+mvDashChartDays+\' ' . esc_js( __( 'Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
 			'if(!window.Chart)return;' .
 			'var c=document.getElementById("mv-dash-bp-canvas");if(!c)return;' .
 			'if(dashChartInst)dashChartInst.destroy();' .
@@ -3535,6 +3542,15 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'scales:{x:{ticks:{font:{size:10},color:"#999"}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,suggestedMin:60,suggestedMax:180,grid:{color:"rgba(0,0,0,.06)"}}}' .
 			'}});' .
 		'}' .
+
+		/* Dashboard chart range selector */
+		'window.mvSetDashChartRange=function(days,btn){' .
+			'mvDashChartDays=days;' .
+			'document.querySelectorAll("#mv-dash-range-bar .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
+			'tmaHaptic("light");' .
+			'mvRenderDashChart();' .
+		'};' .
 
 		/* ── Log tab ── */
 		'window.mvSaveReading=function(){' .
@@ -3642,7 +3658,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'window.mvSetTrendRange=function(days,btn){' .
 			'mvTrendsDays=days;' .
-			'document.querySelectorAll(".mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'document.querySelectorAll("#mv-tab-trends .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
 			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
 			'var tt=document.getElementById("mv-trends-title");' .
 			'if(tt)tt.textContent=days+"' . esc_js( __( '-Day Trends', 'mcp-ai-wpoos-pro' ) ) . '";' .
