@@ -3608,8 +3608,33 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'};' .
 
 		/* ── Pull server history into localStorage on first load ── */
+		/* Normalise a server row to the local schema.
+		 * Handles both flat CCT format (measurement_date, bp_systolic …)
+		 * and nested options format (date, measurements.blood_pressure.systolic …). */
+		'function mvNormaliseRow(row){' .
+			'function pf(v){var n=parseFloat(v);return isNaN(n)?0:n;}' .
+			'var m=row.measurements||{};var bp=m.blood_pressure||{};' .
+			'return{ts:(row.measurement_date||row.date||"")+"T"+String(row.measurement_time||row.time||"00:00").slice(0,5)+":00.000Z",' .
+				'bp_sys:pf(row.bp_systolic)||pf(bp.systolic),' .
+				'bp_dia:pf(row.bp_diastolic)||pf(bp.diastolic),' .
+				'hr:pf(row.heart_rate)||pf(m.heart_rate&&m.heart_rate.value),' .
+				'spo2:pf(row.oxygen_saturation)||pf(m.oxygen_saturation&&m.oxygen_saturation.value),' .
+				'temp:pf(row.temperature)||pf(m.temperature&&m.temperature.value),' .
+				'glucose:pf(row.blood_glucose)||pf(m.blood_glucose&&m.blood_glucose.value),' .
+				'egfr:pf(row.egfr)||pf(m.egfr&&m.egfr.value),' .
+				'creatinine:pf(row.creatinine)||pf(m.creatinine&&m.creatinine.value),' .
+				'bun:pf(row.bun)||pf(m.bun&&m.bun.value),' .
+				'potassium:pf(row.potassium)||pf(m.potassium&&m.potassium.value),' .
+				'sodium:pf(row.sodium)||pf(m.sodium&&m.sodium.value),' .
+				'phosphorus:pf(row.phosphorus)||pf(m.phosphorus&&m.phosphorus.value),' .
+				'albumin:pf(row.albumin)||pf(m.albumin&&m.albumin.value),' .
+				'hemoglobin:pf(row.hemoglobin)||pf(m.hemoglobin&&m.hemoglobin.value),' .
+				'notes:row.notes||""};' .
+		'}' .
+
 		'function mvSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
+			/* Fetch 90-day history for trends/charts */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
@@ -3617,29 +3642,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
-				'var serverRows=d.result.history.map(function(row){' .
-					/* Normalise measurement_time to HH:MM — the CCT column may
-					 * store HH:MM:SS when data was logged via the AI tool or
-					 * imported, which would produce the invalid ISO string
-					 * "2024-01-15T14:30:00:00.000Z".  Slicing to 5 chars
-					 * ensures the result is always a valid ISO 8601 timestamp. */
-					'return{ts:(row.measurement_date||"")+"T"+String(row.measurement_time||"00:00").slice(0,5)+":00.000Z",' .
-						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
-						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
-						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
-						'spo2:row.oxygen_saturation?parseFloat(row.oxygen_saturation):0,' .
-						'temp:row.temperature?parseFloat(row.temperature):0,' .
-						'glucose:row.blood_glucose?parseFloat(row.blood_glucose):0,' .
-						'egfr:row.egfr?parseFloat(row.egfr):0,' .
-						'creatinine:row.creatinine?parseFloat(row.creatinine):0,' .
-						'bun:row.bun?parseFloat(row.bun):0,' .
-						'potassium:row.potassium?parseFloat(row.potassium):0,' .
-						'sodium:row.sodium?parseFloat(row.sodium):0,' .
-						'phosphorus:row.phosphorus?parseFloat(row.phosphorus):0,' .
-						'albumin:row.albumin?parseFloat(row.albumin):0,' .
-						'hemoglobin:row.hemoglobin?parseFloat(row.hemoglobin):0,' .
-						'notes:row.notes||""};' .
-				'});' .
+				'var serverRows=d.result.history.map(mvNormaliseRow);' .
 				/* Merge: server rows keyed by day, local-only days preserved */
 				'var local=mvLoadReadings();' .
 				'var byDay={};' .
@@ -3648,6 +3651,30 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'var merged=Object.keys(byDay).sort().reverse().map(function(k){return byDay[k];});' .
 				'mvStoreReadings(merged);' .
 				'mvRefresh();' .
+			'})' .
+			'.catch(function(){});' .
+			/* Fetch the single most-recent reading with NO time restriction
+			 * so the dashboard always shows the last record even if it is
+			 * older than 90 days. */
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_latest",member_id:MEMBER_ID}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.latest)return;' .
+				'var entry=mvNormaliseRow(d.result.latest);' .
+				'var k=entry.ts?entry.ts.slice(0,10):"";' .
+				'if(!k)return;' .
+				/* Merge into localStorage only if that day is not already present */
+				'var local=mvLoadReadings();' .
+				'var exists=local.some(function(r){return r.ts&&r.ts.slice(0,10)===k;});' .
+				'if(!exists){' .
+					'local.push(entry);' .
+					'local.sort(function(a,b){return(b.ts||"").localeCompare(a.ts||"");});' .
+					'mvStoreReadings(local);' .
+					'mvRefresh();' .
+				'}' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
