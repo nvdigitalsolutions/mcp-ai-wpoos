@@ -317,7 +317,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 	 *
 	 * Regression test for the Qwen3 model update (PR #4531) which triggered
 	 * this bug: the enable_embedded checkbox has 'disabled' => true so it is
-	 * never submitted by the browser.  The sanitise handler previously treated
+	 * never submitted by the browser.  The sanitize handler previously treated
 	 * the missing value as "unchecked" (false), overriding the auto-enable
 	 * default and hiding the Embedded LLM provider from every dropdown.
 	 */
