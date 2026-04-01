@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
         'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-        'reference' => '58a0d12d983f0d5a10088ce3b11062bd2ba573f2',
+        'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
             'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-            'reference' => '58a0d12d983f0d5a10088ce3b11062bd2ba573f2',
+            'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
