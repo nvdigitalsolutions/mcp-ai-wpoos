@@ -73,7 +73,9 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
 * **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
 * **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
-* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
+* **E-commerce** - WooCommerce integration, Shopify (auto-resolved connections), QuickBooks Desktop sync, product management, order processing (25+ Pro tools)
+* **Vehicle Estimation** - VIN decode, repair estimate pipeline, car wash package pricing (3 Pro tools, NEW March 2026)
+* **Listing Image Downloads** - Google Maps, Facebook, Instagram business listing images (3 Pro tools, NEW March 2026)
 * **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
 
 **Chat Interface**
@@ -269,6 +271,65 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= Unreleased =
+
+**New: Vehicle Estimation Tools (Pro)**
+
+* New tool `vin_decode` — ISO 3779 VIN validation with NHTSA vPIC API decode and 24h transient cache
+* New tool `vehicle_repair_estimate` — 5-step image-to-estimate pipeline with VIN identification, damage analysis, and price-sheet mapping
+* New tool `vehicle_cleaning_estimate` — Car wash package and add-on pricing engine with LLM vision vehicle size classification
+* Gated behind `enable_vehicle_estimation` setting; 60 PHPUnit tests
+
+**New: Shopify Connection Auto-Resolve**
+
+* All 5 Shopify tools auto-resolve `connection_id` from assistant context — no more manual IDs
+* New `remote_shopify_connection` tool for listing and testing Shopify connections
+* New `WP_MCP_AI_Shopify_Connection_Resolver` reusable trait
+
+**New: Webhook Status Admin Page (Pro)**
+
+* Centralized webhook monitoring for 9 connection types (Telegram, WhatsApp, Slack, Discord, etc.)
+* Live Telegram checks via `getMe` + `getWebhookInfo` APIs
+* Set/Remove Webhook actions, summary cards, connections table
+
+**New: QuickBooks Desktop Sync (Pro)**
+
+* New `quickbooks_desktop_sync` tool via QODBC relay API on Windows
+* New `quickbooks_desktop` remote connection type with relay URL, API key, and DSN fields
+
+**New: Listing Image Download Tools (Pro)**
+
+* New tool `download_google_maps_images` — Google Places API image download
+* New tool `download_facebook_page_images` — Facebook Graph API album images
+* New tool `download_instagram_page_images` — Instagram Graph API media download
+* All support media library import and/or ZIP export
+
+**New: Transformers.js v3.8.1 + Qwen3 Models**
+
+* CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`
+* WebGPU auto-detection for up to 4x faster embeddings, WASM fallback
+* 4 Qwen3 embedded models added (8B, 4B, 1.5B, 0.6B)
+
+**New: Schedule Presets**
+
+* 15 new presets: CRM Email Correspondence (5), Document Management (5), Upwork Freelancer (5)
+* Total schedule presets: 100 → 115
+
+**Bug Fixes**
+
+* Fixed Telegram webhook 403 errors on multi-bot setups (PRs #4512, #4513, #4516, #4518)
+* Fixed chat channels inbox bot name display — @bot_username now shown as primary (PRs #4522, #4524)
+* Fixed chat channels inbox message pagination — newest messages first (PR #4525)
+* Fixed chat channels inbox connection_id scoping for Telegram multi-bot isolation (PRs #4500, #4506)
+* Fixed chat channels inbox 404 on messages endpoint (PR #4489)
+* Fixed workflow preset data mapping in Pro Workflow Builder (PRs #4504, #4508)
+* Fixed preset browser AJAX callback signatures (PR #4501)
+
+**Security**
+
+* Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750)
+* Fixed serialize-javascript CPU exhaustion (CVE-2026-34043)
 
 = 1.1.5 - March 2026 =
 

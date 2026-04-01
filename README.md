@@ -13,7 +13,7 @@
 
 **Version:** 1.1.5  
 **Release Date:** 2026-03-24 (March 2026 — WordPress.org compliance pass 17, embedded LLM moved to Pro, new email integrations, canvas addon)  
-**Latest Updates:** March 2026 - NV oOS Canvas Addon (platform ZIPs for Tesseract PDF OCR), embedded LLM server-side client moved to Pro addon, Gemma 2B Instruct GGUF model, Mailgun + Brevo email integrations, 5 new WP-CLI command groups, SSE streaming fixes, WordPress.org compliance confirmed  
+**Latest Updates:** March–April 2026 - Vehicle estimation tools (VIN decode, repair & cleaning estimates), Shopify connection auto-resolve, QuickBooks Desktop sync via QODBC, listing image download tools (Google Maps/Facebook/Instagram), Webhook Status admin page, Transformers.js v3.8.1 with WebGPU & Qwen3 models, 15 new schedule presets, Medical Vitals dashboard enhancements, registration product research page rebuild, copyright/license attribution across all source files, Telegram webhook 403 fixes, chat channels inbox reliability improvements, security vulnerability patches  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -106,9 +106,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
-The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
+The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **368 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **533 built-in tools**.
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 519 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, and more.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 533 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -267,7 +267,115 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (March 2026)
+## 🆕 Latest Updates (March–April 2026)
+
+### Vehicle Estimation Tools — VIN Decode, Repair & Cleaning Estimates (March 31, 2026) ⭐ **NEW**
+
+**3 new Pro tools for automotive estimation, gated behind `enable_vehicle_estimation` setting** (PR #4526).
+
+- ✅ **`vin_decode`** — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, returns 28-field vehicle descriptor (year/make/model/trim/body/engine/ADAS features).
+- ✅ **`vehicle_repair_estimate`** — 5-step pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. 4-path vehicle ID (direct VIN, VIN image OCR, manual overrides, LLM visual recognition). Heuristic fallback costs for 20+ common parts; ADAS calibration auto-added for 2018+ windshield replacements.
+- ✅ **`vehicle_cleaning_estimate`** — Car wash package & add-on pricing engine. Probabilistic LLM vision vehicle size classification into 3 tiers. 4 packages with size-tiered pricing, 7 specialty add-ons with severity/size/flat pricing modes. Custom menu support via JSON attachment and `wp_mcp_ai_vehicle_cleaning_menu` filter.
+- ✅ **60 PHPUnit tests** covering all three tools, input validation, permission checks, domain constants, pricing scenarios.
+
+### Shopify Connection Auto-Resolve + `remote_shopify_connection` Tool (March 31, 2026) ⭐ **NEW**
+
+**Shopify tools no longer require manual `connection_id` — auto-resolved from assistant context** (PR #4521).
+
+- ✅ **`WP_MCP_AI_Shopify_Connection_Resolver` trait** — reusable connection resolution logic (mirrors `remote_wp_connection` patterns): queries assistant's `_wp_mcp_ai_pro_remote_connections` meta, auto-selects if exactly one Shopify connection matches, returns helpful error with available connections if multiple.
+- ✅ **All 5 Shopify tools updated** (`shopify_products`, `shopify_orders`, `shopify_customers`, `shopify_inventory`, `shopify_catalog`) — `connection_id` now optional, auto-resolved from assistant context.
+- ✅ **New `remote_shopify_connection` tool** — list available Shopify connections and test connectivity via Admin GraphQL `{ shop { name } }` query.
+- ✅ **14 PHPUnit tests** covering auto-resolution, explicit `connection_id`, assistant filtering, disabled/unauthorized connections.
+
+### Webhook Status Admin Page (March 31, 2026) ⭐ **NEW**
+
+**Centralized webhook monitoring for multi-bot Telegram setups and all 9 webhook-capable connection types** (PR #4517).
+
+- ✅ **New admin page**: `Webhook Status` submenu under NV oOS Pro (`nvoos-pro-webhook-status`). Covers Telegram, WhatsApp, Slack, Discord, MS Teams, Messenger, Google Chat, Twitter/X, Apple Messages.
+- ✅ **Summary cards** — total endpoints, active, inactive, Telegram bot count.
+- ✅ **Connections table** — type badge, enabled state, health indicator, expected vs actual URL, error details, action buttons.
+- ✅ **Telegram live checks** — calls `getMe` + `getWebhookInfo` APIs per-connection; reports URL match/mismatch, pending updates, last error with timestamp.
+- ✅ **Actions** — Check single, Check All, Set Webhook (Telegram), Remove Webhook (Telegram), link to Edit Connection.
+- ✅ **30 PHPUnit tests** covering helpers, URL generation, status checks, menu/AJAX registration, rendering.
+
+### Transformers.js Upgrade — v3.8.1, WebGPU Acceleration & Qwen3 Models (March 30, 2026) ⭐ **NEW**
+
+**CDN upgraded from deprecated `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`; 4 new Qwen3 embedded models** (PR #4514).
+
+- ✅ **WebGPU auto-detect**: `navigator.gpu.requestAdapter()` for up to 4× faster embeddings, WASM fallback.
+- ✅ **Quantization API**: `quantized: true` (v2) → `dtype: 'q8'` (v3).
+- ✅ **4 Qwen3 models** added to JS `AVAILABLE_MODELS` and PHP `get_embedded_models()`: Qwen3-8B (5 GB, function calling ✅), Qwen3-4B (2.5 GB ✅), Qwen3-1.5B (1 GB ✅), Qwen3-0.6B (400 MB, no function calling).
+
+### QuickBooks Desktop Sync Tool via QODBC (March 30, 2026) ⭐ **NEW**
+
+**New Pro tool for syncing QuickBooks Desktop data through a QODBC relay API** (PR #4507).
+
+- ✅ **`quickbooks_desktop_sync`** — relay-based tool connecting to QuickBooks Desktop via QODBC DSN on a Windows relay server.
+- ✅ **New `quickbooks_desktop` remote connection type** with relay URL, API key, and DSN name fields.
+- ✅ **14 PHPUnit tests** covering tool contract, sanitization, and auth enforcement.
+
+### Listing Image Download Tools (March 29, 2026) ⭐ **NEW**
+
+**3 new always-on Pro tools for bulk-downloading business listing images into the Media Library or ZIP** (PR #4503).
+
+- ✅ **`download_google_maps_images`** — Places API (New), resolves `place_id` via text search, stores author attribution as post meta, max 10 images.
+- ✅ **`download_facebook_page_images`** — Graph API v21.0, cursor-based pagination across 5 album types, auto-selects highest resolution.
+- ✅ **`download_instagram_page_images`** — Graph API v21.0, filters by media type (image/carousel/video), expands `CAROUSEL_ALBUM` children, handles ephemeral URLs.
+- ✅ Shared patterns: `media_handle_sideload()` import, optional `ZipArchive` export, `output_mode` param (`media_library`/`zip`/`both`).
+- ✅ **39 PHPUnit tests** covering slug/schema/flags/rules, auth enforcement, required param validation.
+
+### Medical Vitals Dashboard — Recent Reading Card & Multi-Range Trends (March 31, 2026) ⭐ **NEW**
+
+**At-a-glance recency info and configurable date ranges for the Medical Vitals Telegram Mini App** (PR #4523).
+
+- ✅ **"Most Recent Reading" card** — relative timestamp (`5m ago`, `2h ago`) and colour-coded status dots (green/orange/red) per vital. Auto-hidden when no readings exist.
+- ✅ **Configurable trend range** — segmented control bar: **7D · 14D · 30D · 90D** with dynamic title, ARIA `aria-pressed` state, auto-scaling chart density.
+
+### Registration Product Research Page — Consolidation & Bulk Import (March 31, 2026) ⭐ **NEW**
+
+**Feature-parity rebuild of the registration product research page** (PR #4519).
+
+- ✅ **2 new workflow tabs**: Quick Import (file upload + text paste with structured parsing) and Guided Entry (record type selector with 5 types).
+- ✅ **13 document processing tools** added to AI chat: `extract_pdf_text`, `pro_pdf_document`, `merge_pdfs`, `add_watermark_to_pdf`, `excel_data_import`, etc.
+- ✅ **Sidebar additions**: Product selector dropdown with brand taxonomy labels, Document Tools Info panel.
+- ✅ **3 new AJAX handlers**: `handle_bulk_import()`, `handle_document_upload()`, `handle_get_product_preview()` — all with `check_ajax_referer()`, `current_user_can()`, and proper sanitization/escaping.
+
+### 15 New Schedule Presets — CRM Email, Document Management, Upwork Freelancer (March 30, 2026) ⭐ **NEW**
+
+**Total schedule presets: 100 → 115** (PR #4509).
+
+- ✅ **CRM Email Correspondence** (5 presets): email correspondence audit, SLA breach monitor, lead nurture digest, customer re-engagement check, deliverability report.
+- ✅ **Document Management & Sharing** (5 presets): new document notification, sharing audit, version review, approval reminder, compliance check.
+- ✅ **Upwork Freelancer** (5 presets, new `upwork_freelancer` toolkit): job discovery scan, job fit scoring, proposal pipeline report, client follow-up check, profile performance review.
+
+### Author/Copyright/License Attribution (March 30, 2026) ⭐ **NEW**
+
+**Consistent IP attribution across the entire codebase** (PR #4510).
+
+- ✅ **2,535 PHP files**, **101 JS files**, **58 CSS files** — `@author`, `@copyright`, `@license` tags added to first docblock.
+- ✅ Base plugin files: GPL-3.0-or-later; Pro addon files: Proprietary.
+- ✅ Copyright year updated from `2025` → `2025-2026` in all 5 entry-point files.
+- ✅ `composer.json` and `package.json` updated with structured author/homepage/support/repository fields.
+
+### dvdoug/boxpacker Pre-Packaged in Pro Addon (March 31, 2026) 🔧 **UPDATED**
+
+**Production autoload strategy aligned to `composer install` not `dump-autoload`** (PR #4527).
+
+- ✅ `dvdoug/boxpacker` (`^3.12 || ^4.0`) now pre-packaged in `addons/pro/vendor/` — v3.12.1 + psr/log 3.0.2.
+- ✅ All documentation updated: `dump-autoload` → `composer install --no-dev --classmap-authoritative --no-interaction`.
+
+### Bug Fixes & Reliability Improvements (March 29–31, 2026) 🔧
+
+- ✅ **Telegram webhook 403 on multi-bot setups** (PRs #4512, #4513, #4516, #4518): Fixed webhook URL to include `connection_id` in test/status endpoints; added REST auth bypass and admin-ajax fallback; direct array-key lookup for connection resolution.
+- ✅ **Chat channels inbox — bot name display** (PRs #4522, #4524): Telegram bot `@bot_username` now shown as primary display in conversations list, thread header, and contacts table.
+- ✅ **Chat channels inbox — message pagination** (PR #4525): Newest messages now appear on page 1 (was oldest-first).
+- ✅ **Chat channels inbox — connection_id scoping** (PRs #4500, #4506): Message queries scoped by `connection_id` for Telegram to isolate multi-bot conversations; column migration and `SELECT *` fallback for backward compatibility.
+- ✅ **Chat channels inbox — 404 on messages endpoint** (PR #4489): Fixed CCT and CPT store merge for conversations and messages.
+- ✅ **Chat channels inbox — CCT/CPT store merge** (PR #4488): Merged CCT and CPT stores so conversations and messages from both backends display correctly.
+- ✅ **Workflow preset data mapping** (PRs #4504, #4508): Fixed preset data so tools, arguments, and conditions populate correctly in the Pro Workflow Builder canvas.
+- ✅ **Preset browser AJAX callbacks** (PR #4501): Fixed wrong callback signatures in schedule manager preset browser.
+- ✅ **Quick Tool Selection Presets** (PR #4505): Added 8 missing tools to preset coverage.
+- ✅ **Security — brace-expansion & serialize-javascript** (PR #4487): Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750) and serialize-javascript CPU exhaustion (CVE-2026-34043); `npm audit` clean.
 
 ### Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026) ⭐ **NEW**
 
@@ -998,6 +1106,10 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Commerce & finance workflows
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- 🖥️ **Pro:** QuickBooks Desktop sync via QODBC relay API — connect to QuickBooks Desktop through a Windows relay server for data synchronization
+- 🛒 **Pro:** Shopify integration with auto-resolved connections — `connection_id` auto-resolved from assistant context, covering products, orders, customers, inventory, and catalog tools
+- 🚗 **Pro:** Vehicle estimation tools — VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine (gated behind `enable_vehicle_estimation`)
+- 📸 **Pro:** Listing image download tools — bulk-download Google Maps, Facebook, and Instagram business listing images into the Media Library or ZIP
 
 ### Slash Commands & Workflow Automation ⭐ **NEW**
 - ⚡ **8 Core Commands**: `/help`, `/next-task`, `/ship`, `/clean-content`, `/optimize-perf`, `/sync-docs`, `/workflow` - Command-line style interface for content management
