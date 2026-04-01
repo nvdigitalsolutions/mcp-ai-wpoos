@@ -9,7 +9,7 @@ This document provides a comprehensive index of all documentation available for 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
 
 > **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
-> - **Vehicle Estimation Tools** – 3 new Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`) gated behind `enable_vehicle_estimation`. VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
+> - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
 > - **Shopify Connection Auto-Resolve** – All 5 Shopify tools auto-resolve `connection_id` from assistant context. New `remote_shopify_connection` tool. `WP_MCP_AI_Shopify_Connection_Resolver` trait.
 > - **Webhook Status Admin Page** – Centralized webhook monitoring for 9 connection types under NV oOS Pro Dashboard. Live Telegram checks, set/remove webhook actions.
 > - **QuickBooks Desktop Sync** – New `quickbooks_desktop_sync` Pro tool via QODBC relay API. New `quickbooks_desktop` remote connection type.
