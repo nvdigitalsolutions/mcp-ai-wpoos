@@ -273,7 +273,7 @@ trait WP_MCP_AI_Tool_Product_Card {
 		}
 
 		// Append quantity if available.
-		if ( isset( $product['stock_quantity'] ) && null !== $product['stock_quantity'] ) {
+		if ( isset( $product['stock_quantity'] ) ) {
 			$qty    = floatval( $product['stock_quantity'] );
 			$badge .= sprintf(
 				' (%s)',
@@ -675,7 +675,7 @@ trait WP_MCP_AI_Tool_Product_Card {
 
 		$price = '';
 		foreach ( array( 'price', 'unitPrice', 'unit_price', 'retailPrice', 'retail_price' ) as $key ) {
-			if ( isset( $product[ $key ] ) && '' !== $product[ $key ] ) {
+			if ( isset( $product[ $key ] ) && '' !== $product[ $key ] && null !== $product[ $key ] ) {
 				$price = $product[ $key ];
 				break;
 			}
@@ -683,7 +683,7 @@ trait WP_MCP_AI_Tool_Product_Card {
 
 		$stock_qty = null;
 		foreach ( array( 'quantity', 'quantityOnHand', 'quantity_on_hand', 'stock', 'inventory' ) as $key ) {
-			if ( isset( $product[ $key ] ) && null !== $product[ $key ] ) {
+			if ( isset( $product[ $key ] ) && '' !== $product[ $key ] && null !== $product[ $key ] ) {
 				$stock_qty = $product[ $key ];
 				break;
 			}
