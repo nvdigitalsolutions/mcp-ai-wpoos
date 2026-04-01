@@ -590,7 +590,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 519 tools detailed (165 base + 348 pro + 6 core/memory)
+- [Tool Reference](reference/tools/tool-reference.md) - All 533 tools detailed (165 base + 368 pro)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
