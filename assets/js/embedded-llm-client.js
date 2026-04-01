@@ -39,7 +39,7 @@
 	 */
 	function stripThinkTags(text) {
 		if (!text || typeof text !== 'string') {
-			return text || '';
+			return '';
 		}
 		// Remove complete <think>...</think> blocks (greedy, handles newlines)
 		let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
