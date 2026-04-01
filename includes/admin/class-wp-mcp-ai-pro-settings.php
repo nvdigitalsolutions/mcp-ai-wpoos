@@ -457,6 +457,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_imaging_studies tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'vehicle_estimation'              => array(
+					'name'          => __( 'Vehicle Estimation', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Automotive estimation tools: VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine. Always available with Pro.', 'mcp-ai-wpoos' ),
+					'enabled'       => true,
+					'category'      => 'specialized',
+					'php_functions' => array(),
+					'npm_packages'  => array(),
+					'tools_count'   => 3,
+					'tools'         => array(
+						__( 'vin_decode tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_repair_estimate tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_cleaning_estimate tool', 'mcp-ai-wpoos' ),
+					),
+				),
 				'quiz_system'                     => array(
 					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
@@ -3234,9 +3248,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<strong><?php esc_html_e( 'Quiz System', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Interactive quizzes, assessments, learning management', 'mcp-ai-wpoos' ); ?></small>
 				</li>
-				<li style="padding: 8px 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
 					<strong><?php esc_html_e( 'AI Tool Builder', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Create custom AI tools and integrations', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Vehicle Estimation', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'VIN decode, repair estimates, car wash pricing', 'mcp-ai-wpoos' ); ?></small>
 				</li>
 			</ul>
 		</div>
