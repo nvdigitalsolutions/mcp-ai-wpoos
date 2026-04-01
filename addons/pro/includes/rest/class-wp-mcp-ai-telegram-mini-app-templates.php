@@ -2562,10 +2562,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-recent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
 		'.mv-recent-title{font-size:11px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px}' .
 		'.mv-recent-ago{font-size:11px;color:var(--tma-hint)}' .
-		'.mv-recent-strip{display:flex;gap:10px;flex-wrap:wrap}' .
-		'.mv-recent-item{font-size:12px;color:var(--tma-text);display:flex;align-items:center;gap:3px}' .
-		'.mv-recent-val{font-weight:700}' .
-		'.mv-recent-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}' .
+		'.mv-recent-strip{display:flex;flex-direction:column;gap:8px}' .
+		'.mv-recent-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tma-text)}' .
+		'.mv-recent-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}' .
+		'.mv-recent-label{flex:1;font-weight:500}' .
+		'.mv-recent-val{font-weight:700;white-space:nowrap}' .
+		'.mv-recent-unit{font-weight:400;color:var(--tma-hint);margin-left:2px}' .
 
 		/* Settings tab */
 		'.mv-settings-wrap{padding:12px}' .
