@@ -4,7 +4,7 @@
 ## [Unreleased]
 
 ### Added
-- **Vehicle Estimation Tools (March 31, 2026)** (PR #4526): Three new Pro tools for automotive estimation, gated behind `enable_vehicle_estimation` setting.
+- **Vehicle Estimation Tools (March 31, 2026)** (PR #4526): Three always-available Pro tools for automotive estimation.
   - `vin_decode` — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, 28-field vehicle descriptor.
   - `vehicle_repair_estimate` — 5-step image-to-estimate pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. Heuristic fallback costs for 20+ parts; ADAS calibration for 2018+ windshield replacements.
   - `vehicle_cleaning_estimate` — Car wash package & add-on pricing engine with LLM vision vehicle size classification, 4 packages, 7 add-ons, and `wp_mcp_ai_vehicle_cleaning_menu` filter.

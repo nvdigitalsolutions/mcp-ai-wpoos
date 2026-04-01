@@ -271,7 +271,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### Vehicle Estimation Tools — VIN Decode, Repair & Cleaning Estimates (March 31, 2026) ⭐ **NEW**
 
-**3 new Pro tools for automotive estimation, gated behind `enable_vehicle_estimation` setting** (PR #4526).
+**3 always-available Pro tools for automotive estimation** (PR #4526).
 
 - ✅ **`vin_decode`** — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, returns 28-field vehicle descriptor (year/make/model/trim/body/engine/ADAS features).
 - ✅ **`vehicle_repair_estimate`** — 5-step pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. 4-path vehicle ID (direct VIN, VIN image OCR, manual overrides, LLM visual recognition). Heuristic fallback costs for 20+ common parts; ADAS calibration auto-added for 2018+ windshield replacements.
@@ -1108,7 +1108,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - 🖥️ **Pro:** QuickBooks Desktop sync via QODBC relay API — connect to QuickBooks Desktop through a Windows relay server for data synchronization
 - 🛒 **Pro:** Shopify integration with auto-resolved connections — `connection_id` auto-resolved from assistant context, covering products, orders, customers, inventory, and catalog tools
-- 🚗 **Pro:** Vehicle estimation tools — VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine (gated behind `enable_vehicle_estimation`)
+- 🚗 **Pro:** Vehicle estimation tools — VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine (always available)
 - 📸 **Pro:** Listing image download tools — bulk-download Google Maps, Facebook, and Instagram business listing images into the Media Library or ZIP
 
 ### Slash Commands & Workflow Automation ⭐ **NEW**
