@@ -181,8 +181,8 @@ composer update
 If you modify class files or add new classes:
 
 ```bash
-# Regenerate optimized autoloader
-composer dump-autoload --classmap-authoritative
+# Regenerate optimized autoloader (re-maps classes without dump-autoload)
+composer install --no-dev --classmap-authoritative --no-interaction
 ```
 
 ## Compatibility
@@ -211,8 +211,8 @@ composer dump-autoload --classmap-authoritative
 ### Issue: Classes Not Found
 
 ```bash
-# Regenerate autoloader
-composer dump-autoload --classmap-authoritative
+# Regenerate autoloader (re-maps classes without dump-autoload)
+composer install --no-dev --classmap-authoritative --no-interaction
 ```
 
 ### Issue: Dev Dependencies Installed

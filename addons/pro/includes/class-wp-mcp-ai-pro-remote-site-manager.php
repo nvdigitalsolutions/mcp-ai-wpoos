@@ -543,6 +543,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
+			// ShipEngine-specific fields.
+			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
+				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )
+				: '',
+			// ShipStation-specific fields.
+			'shipstation_carrier_code' => isset( $connection_data['shipstation_carrier_code'] )
+				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
+				: 'stamps_com',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -2403,6 +2411,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_payhere_credentials',
 					__( 'App ID and app secret are required for PayHere connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shipengine' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipengine_credentials',
+					__( 'API key is required for ShipEngine connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shipstation' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipstation_credentials',
+					__( 'API key and API secret are required for ShipStation connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

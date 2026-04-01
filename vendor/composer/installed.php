@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-        'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-        'reference' => '089ba372708f046325041c09708de5a38fefbf89',
+        'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
+        'version' => 'dev-copilot/integrate-nv-boxpacker-service',
+        'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-            'version' => 'dev-copilot/fix-telegram-bot-inbox-issue',
-            'reference' => '089ba372708f046325041c09708de5a38fefbf89',
+            'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
+            'version' => 'dev-copilot/integrate-nv-boxpacker-service',
+            'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

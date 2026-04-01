@@ -522,12 +522,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				),
 				'ecommerce_toolkit'               => array(
 					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, customer management, and shipping optimization with box-packing and carrier rate-shopping.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
 					'category'      => 'specialized',
 					'php_functions' => array(),
 					'npm_packages'  => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
-					'tools_count'   => 8,
+					'tools_count'   => 10,
 					'tools'         => array(
 						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
 						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
@@ -537,6 +537,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_customers tool', 'mcp-ai-wpoos' ),
 						__( 'track_shipments tool', 'mcp-ai-wpoos' ),
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_box_packer tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_rate_estimator tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'social_media_toolkit'            => array(
