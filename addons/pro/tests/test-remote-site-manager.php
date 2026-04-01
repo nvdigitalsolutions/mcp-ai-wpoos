@@ -692,4 +692,149 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertNotEmpty( $updated_connection['refresh_token'] );
 		$this->assertNotEquals( 'original_refresh_token', $updated_connection['refresh_token'] );
 	}
+
+	/**
+	 * Test that ShipEngine connection type is routed to test_shipengine_connection.
+	 *
+	 * Verifies that test_connection does NOT fall through to the default WordPress
+	 * REST API test (which would send requests to api.shipengine.com/wp-json/wp/v2/types
+	 * and return a 404 error).
+	 */
+	public function test_shipengine_connection_type_routing() {
+		$connection_data = array(
+			'name'            => 'Test ShipEngine Connection',
+			'url'             => 'https://api.shipengine.com',
+			'connection_type' => 'shipengine',
+			'auth_type'       => 'custom_header',
+			'api_key'         => 'TEST_fake_key_for_routing_test',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'shipengine', $connection['connection_type'] );
+
+		// Call test_connection. We expect it to fail with a ShipEngine-specific error
+		// (since the API key is fake), NOT a generic 404 from the WordPress REST test.
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+		// The result should be a WP_Error from the ShipEngine handler.
+		$this->assertWPError( $result );
+		$this->assertNotEquals( 'wp_mcp_ai_pro_invalid_connection', $result->get_error_code() );
+
+		// The error should be one of the ShipEngine-specific error codes.
+		$valid_error_codes = array(
+			'wp_mcp_ai_pro_shipengine_connection_failed',
+			'wp_mcp_ai_pro_shipengine_auth_failed',
+			'wp_mcp_ai_pro_shipengine_api_error',
+			'wp_mcp_ai_pro_shipengine_carrier_not_found',
+			'wp_mcp_ai_pro_missing_shipengine_key',
+		);
+
+		$this->assertContains(
+			$result->get_error_code(),
+			$valid_error_codes,
+			'Expected a ShipEngine-specific error code, got: ' . $result->get_error_code()
+		);
+	}
+
+	/**
+	 * Test that ShipStation V1 connection type is routed to test_shipstation_connection.
+	 *
+	 * Verifies that test_connection does NOT fall through to the default WordPress
+	 * REST API test (which would send requests to ssapi.shipstation.com/wp-json/wp/v2/types
+	 * and return a 404 error).
+	 */
+	public function test_shipstation_connection_type_routing() {
+		$connection_data = array(
+			'name'            => 'Test ShipStation V1 Connection',
+			'url'             => 'https://ssapi.shipstation.com',
+			'connection_type' => 'shipstation',
+			'auth_type'       => 'basic_auth',
+			'username'        => 'fake_user',
+			'password'        => 'fake_pass',
+			'api_key'         => 'fake_api_key',
+			'api_secret'      => 'fake_api_secret',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'shipstation', $connection['connection_type'] );
+
+		// Call test_connection. We expect it to fail with a ShipStation-specific error
+		// (since credentials are fake), NOT a generic 404 from the WordPress REST test.
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+		// The result should be a WP_Error from the ShipStation handler.
+		$this->assertWPError( $result );
+		$this->assertNotEquals( 'wp_mcp_ai_pro_invalid_connection', $result->get_error_code() );
+
+		// The error should be one of the ShipStation-specific error codes.
+		$valid_error_codes = array(
+			'wp_mcp_ai_pro_shipstation_connection_failed',
+			'wp_mcp_ai_pro_shipstation_auth_failed',
+			'wp_mcp_ai_pro_shipstation_api_error',
+			'wp_mcp_ai_pro_missing_shipstation_credentials',
+		);
+
+		$this->assertContains(
+			$result->get_error_code(),
+			$valid_error_codes,
+			'Expected a ShipStation-specific error code, got: ' . $result->get_error_code()
+		);
+	}
+
+	/**
+	 * Test that ShipEngine sandbox mode is properly saved and preserved.
+	 */
+	public function test_shipengine_sandbox_mode_saved() {
+		$connection_data = array(
+			'name'            => 'ShipEngine Sandbox Test',
+			'url'             => 'https://api.shipengine.com',
+			'connection_type' => 'shipengine',
+			'auth_type'       => 'custom_header',
+			'api_key'         => 'TEST_sandbox_key_123',
+			'sandbox_mode'    => true,
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertIsArray( $saved );
+		$this->assertTrue( $saved['sandbox_mode'] );
+	}
+
+	/**
+	 * Test that ShipStation sandbox mode is properly saved and preserved.
+	 */
+	public function test_shipstation_sandbox_mode_saved() {
+		$connection_data = array(
+			'name'            => 'ShipStation Sandbox Test',
+			'url'             => 'https://ssapi.shipstation.com',
+			'connection_type' => 'shipstation',
+			'auth_type'       => 'basic_auth',
+			'username'        => 'test_user',
+			'password'        => 'test_pass',
+			'api_key'         => 'test_key',
+			'api_secret'      => 'test_secret',
+			'sandbox_mode'    => true,
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertIsArray( $saved );
+		$this->assertTrue( $saved['sandbox_mode'] );
+	}
 }
