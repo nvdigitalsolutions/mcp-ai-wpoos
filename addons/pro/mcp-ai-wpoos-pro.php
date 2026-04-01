@@ -1002,15 +1002,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $imaging_tools );
 		}
 
-		// Vehicle Estimation tools — VIN decode + image-to-repair-estimate pipeline + cleaning estimate.
-		if ( ! empty( $settings['enable_vehicle_estimation'] ) ) {
-			$vehicle_tools = array(
-				'WP_MCP_AI_Tool_VIN_Decode'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php',
-				'WP_MCP_AI_Tool_Vehicle_Repair_Estimate'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php',
-				'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php',
-			);
-			$pro_tools = array_merge( $pro_tools, $vehicle_tools );
-		}
+		// Vehicle Estimation tools — always available Pro tools.
+		$vehicle_tools = array(
+			'WP_MCP_AI_Tool_VIN_Decode'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php',
+			'WP_MCP_AI_Tool_Vehicle_Repair_Estimate'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php',
+			'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php',
+		);
+		$pro_tools = array_merge( $pro_tools, $vehicle_tools );
 
 		// Add WooCommerce tools if enabled.
 		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {			$woo_tools = array(
@@ -1779,12 +1777,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['interpret_imaging_study']  = 'wordpress-core';
 		}
 
-		// Add Vehicle Estimation tool mappings if enabled.
-		if ( ! empty( $settings['enable_vehicle_estimation'] ) ) {
-			$pro_tools['vin_decode']                 = 'external-tools';
-			$pro_tools['vehicle_repair_estimate']    = 'external-tools';
-			$pro_tools['vehicle_cleaning_estimate']  = 'external-tools';
-		}
+		// Vehicle Estimation tool mappings — always available.
+		$pro_tools['vin_decode']                 = 'external-tools';
+		$pro_tools['vehicle_repair_estimate']    = 'external-tools';
+		$pro_tools['vehicle_cleaning_estimate']  = 'external-tools';
 
 		// Add Document Generation Toolkit tool mappings if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {			$pro_tools['pro_pdf_document']   = 'external-tools';

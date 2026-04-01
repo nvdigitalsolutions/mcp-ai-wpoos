@@ -414,14 +414,9 @@ class Test_Vehicle_Estimation_Tools extends WP_UnitTestCase {
 	// ----------------------------------------------------------------
 
 	/**
-	 * Test that vehicle estimation tools are in the pro registration array when enabled.
+	 * Test that vehicle estimation tools are always in the pro registration array.
 	 */
-	public function test_vehicle_tools_registered_when_enabled() {
-		update_option(
-			'wp_mcp_ai_settings',
-			array( 'enable_vehicle_estimation' => true )
-		);
-
+	public function test_vehicle_tools_always_registered() {
 		// Check function exists (it's in the pro addon).
 		if ( ! function_exists( 'wp_mcp_ai_pro_get_tools' ) ) {
 			$this->markTestSkipped( 'Pro addon tool listing function not available.' );
