@@ -332,7 +332,7 @@ add_filter( 'wp_mcp_ai_quick_action_categories', function( $categories ) {
 ### Q: Can I use this widget without Elementor?
 A: Currently, the widget requires Elementor. We plan to add a shortcode version in a future update.
 
-### Q: Are all 519 tools available?
+### Q: Are all 533 tools available?
 A: Yes, if you have the Full Version enabled. Base Version includes 165 core tools.
 
 ### Q: Can I customize which tools appear?
@@ -399,7 +399,7 @@ A: Yes, add the widget to any Elementor page. Each instance can have different s
 ### Version 1.1.1
 - Initial release of AI Quick Actions Widget
 - 14 tool categories
-- Support for all 519 tools (base + pro)
+- Support for all 533 tools (base + pro)
 - File upload and media library integration
 - Result preview and regenerate functionality
 - Responsive design with dark mode support

@@ -270,6 +270,19 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= Unreleased =
+
+**New: Transformers.js v3.8.1 + Qwen3 Models**
+
+* CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`
+* WebGPU auto-detection for up to 4x faster embeddings, WASM fallback
+* 4 Qwen3 embedded models added (8B, 4B, 1.5B, 0.6B)
+
+**Security**
+
+* Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750)
+* Fixed serialize-javascript CPU exhaustion (CVE-2026-34043)
+
 = 1.1.5 - March 2026 =
 
 **New: NV oOS Canvas Addon**

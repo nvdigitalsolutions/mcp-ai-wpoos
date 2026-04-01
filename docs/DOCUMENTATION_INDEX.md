@@ -1,12 +1,28 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 28, 2026  
+**Last Updated:** April 1, 2026  
 **Plugin Version:** 1.1.5  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
+> - **Vehicle Estimation Tools** – 3 new Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`) gated behind `enable_vehicle_estimation`. VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
+> - **Shopify Connection Auto-Resolve** – All 5 Shopify tools auto-resolve `connection_id` from assistant context. New `remote_shopify_connection` tool. `WP_MCP_AI_Shopify_Connection_Resolver` trait.
+> - **Webhook Status Admin Page** – Centralized webhook monitoring for 9 connection types under NV oOS Pro Dashboard. Live Telegram checks, set/remove webhook actions.
+> - **QuickBooks Desktop Sync** – New `quickbooks_desktop_sync` Pro tool via QODBC relay API. New `quickbooks_desktop` remote connection type.
+> - **Listing Image Download Tools** – 3 new Pro tools: `download_google_maps_images`, `download_facebook_page_images`, `download_instagram_page_images`.
+> - **Transformers.js v3.8.1** – CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`. WebGPU acceleration, 4 Qwen3 models.
+> - **15 Schedule Presets** – CRM Email Correspondence (5), Document Management (5), Upwork Freelancer (5). Total: 100 → 115.
+> - **Medical Vitals Dashboard** – Recent reading card, configurable trend range (7D/14D/30D/90D).
+> - **Registration Product Research Page** – Quick Import, Guided Entry tabs, product selector sidebar, 3 AJAX handlers.
+> - **Copyright Attribution** – `@author`/`@copyright`/`@license` tags across 2,535 PHP + 159 JS/CSS files.
+> - **Bug Fixes** – Telegram webhook 403, chat inbox bot names, message pagination, connection_id scoping, workflow presets.
+> - **Security** – brace-expansion (CVE-2026-33750) and serialize-javascript (CVE-2026-34043) patched.
+> - **Tool Count** – 165 base + 368 pro = **533 total tools** (was 519).
+> - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
 > - **8 Use-Case Presets** – Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools)
@@ -67,7 +83,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
 
 > **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
-> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 519+ tools for multi-step orchestration
+> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 533+ tools for multi-step orchestration
 > - **Pattern: Web Search → Source Collection → AI Synthesis → Report Generation**
 > - **Key Findings:**
 >   - 14 tools already using pattern (research_product, research_post, etc.)
