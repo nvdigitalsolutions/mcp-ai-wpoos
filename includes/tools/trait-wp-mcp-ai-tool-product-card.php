@@ -81,8 +81,8 @@ trait WP_MCP_AI_Tool_Product_Card {
 			$source_label = $this->get_source_label( $source );
 		}
 
-		/* translators: 1: number of products, 2: source label */
 		$header = sprintf(
+			/* translators: 1: number of products, 2: source label */
 			__( '### 📦 %1$d Product(s) from %2$s', 'mcp-ai-wpoos' ),
 			$count,
 			$source_label
