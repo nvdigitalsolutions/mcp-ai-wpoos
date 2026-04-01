@@ -285,7 +285,7 @@ class WP_MCP_AI_Tool_Vehicle_Repair_Estimate implements WP_MCP_AI_Tool_Interface
 	 * @since 2.2.0
 	 * @return bool
 	 */
-	public function is_available() {
+	public static function is_available() {
 		return true;
 	}
 
