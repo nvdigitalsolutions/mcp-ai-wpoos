@@ -4646,4 +4646,149 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertIsString( $user_message['content'], 'Plain text messages must use a string content (not a multipart array)' );
 		$this->assertEquals( 'Hello, what is 2+2?', $user_message['content'] );
 	}
+
+	// =========================================================================
+	// REST authentication bypass & admin-ajax fallback.
+	// =========================================================================
+
+	/**
+	 * Test allow_telegram_webhook_auth is registered at priority 99999.
+	 *
+	 * Third-party JWT auth plugins commonly hook rest_authentication_errors at
+	 * priority 100–999. Our filter must run after them so it can clear any
+	 * WP_Error they set before WordPress rejects the request with 403.
+	 */
+	public function test_telegram_auth_filter_registered_at_99999() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$priority = has_filter( 'rest_authentication_errors', array( $controller, 'allow_telegram_webhook_auth' ) );
+
+		$this->assertSame(
+			99999,
+			$priority,
+			'allow_telegram_webhook_auth must be registered at priority 99999 so it runs after JWT plugins at 100–999'
+		);
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth clears a WP_Error set by a JWT plugin
+	 * when the request targets our webhook route.
+	 */
+	public function test_telegram_auth_filter_clears_error_for_webhook_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Simulate a JWT auth plugin that sets a WP_Error.
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for our webhook route (generic).
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for generic webhook route' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth clears a WP_Error set by a JWT plugin
+	 * when the request targets a per-connection webhook route.
+	 */
+	public function test_telegram_auth_filter_clears_error_for_per_connection_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for a per-connection webhook route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram/conn_sdfqpauwohng';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for per-connection webhook route' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth does NOT clear errors for unrelated routes.
+	 */
+	public function test_telegram_auth_filter_preserves_error_for_unrelated_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for an unrelated route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'allow_telegram_webhook_auth must preserve WP_Error for unrelated routes' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth passes through null when no error is set.
+	 */
+	public function test_telegram_auth_filter_passes_through_null() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$result = $controller->allow_telegram_webhook_auth( null );
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must pass through null when no error is set' );
+	}
+
+	/**
+	 * Test that the admin-ajax webhook actions are registered on both privileged
+	 * and unprivileged wp_ajax_* hooks so Telegram requests arrive without a
+	 * WordPress user session.
+	 */
+	public function test_telegram_ajax_webhook_actions_registered() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertTrue(
+			has_action( 'wp_ajax_nopriv_wp_mcp_ai_telegram_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_nopriv_wp_mcp_ai_telegram_webhook action must be registered'
+		);
+		$this->assertTrue(
+			has_action( 'wp_ajax_wp_mcp_ai_telegram_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_wp_mcp_ai_telegram_webhook action must be registered'
+		);
+	}
 }

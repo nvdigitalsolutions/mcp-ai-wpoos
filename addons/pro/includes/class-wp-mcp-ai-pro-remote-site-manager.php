@@ -543,6 +543,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
+			// ShipEngine-specific fields.
+			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
+				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )
+				: '',
+			// ShipStation-specific fields.
+			'shipstation_carrier_code' => isset( $connection_data['shipstation_carrier_code'] )
+				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
+				: 'stamps_com',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -943,6 +951,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Handle ShipEngine (ShipStation API) connections separately.
+		if ( 'shipengine' === $connection_type ) {
+			return self::test_shipengine_connection( $connection );
+		}
+
+		// Handle ShipStation V1 (Legacy) connections separately.
+		if ( 'shipstation' === $connection_type ) {
+			return self::test_shipstation_connection( $connection );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
@@ -1143,6 +1161,242 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Test ShipEngine (ShipStation API) connection.
+	 *
+	 * Verifies the API key by calling GET /v1/carriers on the ShipEngine API.
+	 * ShipEngine uses the same base URL for both production and sandbox;
+	 * the environment is determined by the API key prefix (TEST_ = sandbox).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipengine_connection( $connection ) {
+		$api_key = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipengine_key',
+				__( 'ShipEngine API key is not configured.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = self::make_request_with_retry(
+			'https://api.shipengine.com/v1/carriers',
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'API-Key'      => $api_key,
+					'Content-Type' => 'application/json',
+					'User-Agent'   => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipEngine connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_auth_failed',
+				__( 'Invalid ShipEngine API key. Please check your credentials.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = __( 'ShipEngine API error.', 'mcp-ai-wpoos-pro' );
+			if ( is_array( $body ) && ! empty( $body['errors'] ) && is_array( $body['errors'] ) ) {
+				$messages = array();
+				foreach ( $body['errors'] as $err ) {
+					if ( isset( $err['message'] ) ) {
+						$messages[] = $err['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					$error_message = implode( '; ', $messages );
+				}
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipEngine returned HTTP %1$d: %2$s', 'mcp-ai-wpoos-pro' ),
+					$code,
+					$error_message
+				)
+			);
+		}
+
+		$carriers   = isset( $body['carriers'] ) ? $body['carriers'] : array();
+		$is_sandbox = ! empty( $connection['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' );
+
+		// Verify carrier_id if provided.
+		$carrier_id = isset( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
+		$carrier_info = '';
+		if ( '' !== $carrier_id ) {
+			$found = false;
+			foreach ( $carriers as $c ) {
+				if ( isset( $c['carrier_id'] ) && $c['carrier_id'] === $carrier_id ) {
+					$found        = true;
+					$carrier_info = isset( $c['friendly_name'] ) ? $c['friendly_name'] : '';
+					break;
+				}
+			}
+
+			if ( ! $found ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_shipengine_carrier_not_found',
+					sprintf(
+						/* translators: %s: carrier ID */
+						__( 'Carrier ID "%s" was not found in your ShipEngine account. Please verify the carrier ID.', 'mcp-ai-wpoos-pro' ),
+						$carrier_id
+					)
+				);
+			}
+		}
+
+		$message = $is_sandbox
+			? __( 'ShipStation API (sandbox) connection successful!', 'mcp-ai-wpoos-pro' )
+			: __( 'ShipStation API connection successful!', 'mcp-ai-wpoos-pro' );
+
+		if ( ! empty( $carrier_info ) ) {
+			/* translators: 1: status message, 2: carrier name */
+			$message = sprintf( __( '%1$s Carrier: %2$s.', 'mcp-ai-wpoos-pro' ), $message, $carrier_info );
+		}
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'mcp-ai-wpoos-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipengine'    => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
+		);
+	}
+
+	/**
+	 * Test ShipStation V1 (Legacy) API connection.
+	 *
+	 * Verifies the API key and secret by calling GET /carriers on the
+	 * ShipStation V1 API using Basic Authentication.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipstation_connection( $connection ) {
+		$api_key    = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$api_secret = isset( $connection['api_secret'] ) ? self::decrypt_value( $connection['api_secret'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key || empty( $api_secret ) || false === $api_secret ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipstation_credentials',
+				__( 'ShipStation API key and secret are required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$auth = base64_encode( $api_key . ':' . $api_secret ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard Basic-Auth encoding.
+
+		/**
+		 * Filter the ShipStation API base URL.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $url Default ShipStation API base URL.
+		 */
+		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
+		$endpoint = trailingslashit( $api_url ) . 'carriers';
+
+		$response = self::make_request_with_retry(
+			$endpoint,
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . $auth,
+					'Content-Type'  => 'application/json',
+					'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipStation V1 connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_auth_failed',
+				__( 'Invalid ShipStation V1 credentials. Please check your API key and secret.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = '';
+			if ( is_array( $body ) && ! empty( $body['Message'] ) ) {
+				$error_message = (string) $body['Message'];
+			} elseif ( is_array( $body ) && ! empty( $body['message'] ) ) {
+				$error_message = (string) $body['message'];
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipStation V1 returned HTTP %1$d%2$s', 'mcp-ai-wpoos-pro' ),
+					$code,
+					'' !== $error_message ? ': ' . $error_message : '.'
+				)
+			);
+		}
+
+		$is_sandbox = ! empty( $connection['sandbox_mode'] );
+		$carriers   = is_array( $body ) ? $body : array();
+
+		$message = $is_sandbox
+			? __( 'ShipStation V1 (sandbox) connection successful!', 'mcp-ai-wpoos-pro' )
+			: __( 'ShipStation V1 connection successful!', 'mcp-ai-wpoos-pro' );
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'mcp-ai-wpoos-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipstation'   => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
+		);
 	}
 
 	/**
@@ -1627,7 +1881,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				if ( ! empty( $wh['last_error_message'] ) ) {
 					$results['webhook_last_error'] = $wh['last_error_message'];
 				}
-				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+				$expected_url  = ! empty( $connection_id )
+					? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+					: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
 				if ( empty( $results['webhook_url'] ) ) {
 					$results['warning'] = sprintf(
 						/* translators: %s: expected webhook URL */
@@ -2400,6 +2657,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_payhere_credentials',
 					__( 'App ID and app secret are required for PayHere connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shipengine' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipengine_credentials',
+					__( 'API key is required for ShipEngine connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shipstation' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipstation_credentials',
+					__( 'API key and API secret are required for ShipStation connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

@@ -1,6 +1,6 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.5  
+**Version:** 1.1.6  
 **Last Updated:** March 28, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
@@ -58,7 +58,7 @@ This quick reference provides fast access to the most common tasks and commands 
 # 2. Activate from WordPress admin
 # 3. Complete the Getting Started wizard (auto-redirects on first activation)
 #    → Step 1: Welcome
-#    → Step 2: Connect your AI provider (OpenAI, Gemini, Ollama, etc.)
+#    → Step 2: Connect your AI provider (OpenAI, Gemini, NVIDIA NIM, Ollama, etc.)
 #    → Step 3: Choose a use-case preset (creates a ready-to-use assistant)
 #    → Step 4: You're all set — copy the [mcp_ai_chat] shortcode
 ```
@@ -120,6 +120,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ### Optional Integration Keys
 - **Gemini API Key** - For Gemini provider support
+- **NVIDIA API Key** - For NVIDIA NIM provider support (get from [build.nvidia.com](https://build.nvidia.com/))
 - **Crawl4AI URL** - For web crawling capabilities
 - **Mailjet API** - For email automation
 - **QuickBooks API** - For financial reporting
@@ -590,7 +591,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 519 tools detailed (165 base + 348 pro + 6 core/memory)
+- [Tool Reference](reference/tools/tool-reference.md) - All 533 tools detailed (165 base + 368 pro)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

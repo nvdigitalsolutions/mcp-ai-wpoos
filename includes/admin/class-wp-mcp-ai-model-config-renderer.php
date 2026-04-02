@@ -175,6 +175,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 				.wp-mcp-ai-model-provider-badge.webllm {
 					background-color: #9b59b6;
 				}
+				.wp-mcp-ai-model-provider-badge.nvidia {
+					background-color: #76b900;
+				}
 				.wp-mcp-ai-model-provider-badge.google {
 					background-color: #4285f4;
 				}

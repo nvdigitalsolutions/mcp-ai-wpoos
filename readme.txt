@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
 
 == Description ==
 
@@ -31,6 +31,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
+* [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
 * Ollama (self-hosted, no external data transmission)
 * LM Studio (self-hosted, no external data transmission)
 
@@ -41,7 +42,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 * **Comprehensive Tool Library** - Content management, media generation, research, site operations
 * **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed
-* **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
+* **Multi-Provider Support** - OpenAI, Google Gemini, NVIDIA NIM, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
 * **Zero Lock-in** - Works with vanilla WordPress; optional integrations enhance functionality
@@ -61,6 +62,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
+* **NVIDIA NIM** - Llama, Mistral, Nemotron via NVIDIA cloud inference ([Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/))
 * **Ollama** - Privacy-focused local AI (self-hosted, no external data)
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * Automatic provider fallback for maximum uptime
@@ -71,10 +73,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
-* **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
-* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
 
 **Chat Interface**
 * Modern, responsive chat UI
@@ -219,7 +218,7 @@ See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-
 = Is this plugin GDPR compliant? =
 
 NV oOS includes features to help with GDPR compliance:
-* Activation tracking is opt-out and collects no PII (see External Services section)
+* Activation tracking is opt-in and collects no PII (see External Services section)
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -269,6 +268,28 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.6 - April 2026 =
+
+**WordPress.org Compliance — Final Pass Before Resubmission**
+
+* Optional component downloads now require explicit opt-in consent (admin notice with Download button)
+* All "Powered by" / credit attribution gated behind explicit administrator opt-in setting
+* Fixed 3 invalid URLs in External Services section (ReliefWeb, NV Digital Services)
+* Updated Symfony packages to 6.4.36 (cache, validator, http-client)
+* Added ITA Tariff Rates API to External Services documentation
+* CLI export command restricted to WordPress uploads directory (security hardening)
+* Field-specific sanitization for `register_setting()` — API keys/secrets preserved correctly
+* REST API `/no-sse` endpoint uses correct `permissions_check_assistant_list` callback
+* JSON input from `$_POST` now sanitized with `wp_mcp_ai_sanitize_recursive()` after decode
+* Cookie names and values sanitized before forwarding in JetEngine tool handlers
+* Full 13-guideline compliance audit completed and verified
+* NVIDIA NIM added as 8th AI provider in Getting Started wizard
+
+**Security**
+
+* Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750)
+* Fixed serialize-javascript CPU exhaustion (CVE-2026-34043)
 
 = 1.1.5 - March 2026 =
 
@@ -507,7 +528,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 **Initial Release**
 
 * 74+ built-in tools for content, media, research, and site operations
-* Multi-provider support: OpenAI, Gemini, Ollama, LM Studio
+* Multi-provider support: OpenAI, Gemini, NVIDIA NIM, Ollama, LM Studio
 * Full MCP (Model Context Protocol) server implementation
 * Modern chat interface with streaming responses
 * 182 profession templates across 12 industry categories
@@ -576,15 +597,17 @@ Initial release. Welcome to Open Operator System!
 * **Purpose:** Privacy-focused local AI processing
 * **Data Sent:** None (runs entirely on your server)
 * **When:** When configured as AI provider
-* **Service URL:** Your local server only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local server only (default: http://localhost:11434)
+* **Terms of Service:** https://github.com/ollama/ollama/blob/main/LICENSE (MIT License)
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your server
 
 **5. LM Studio (Self-Hosted)**
 * **Purpose:** Local AI with function calling support
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
-* **Service URL:** Your local computer only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local computer only (default: http://localhost:1234)
+* **Terms of Service:** https://lmstudio.ai/terms
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your computer
 
 **6. Cloudflare Workers AI**
 * **Purpose:** AI image generation and inference
@@ -593,6 +616,14 @@ Initial release. Welcome to Open Operator System!
 * **Service URL:** https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}
 * **Terms of Service:** https://www.cloudflare.com/terms/
 * **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
+
+**6a. NVIDIA NIM API**
+* **Purpose:** Cloud AI inference via NVIDIA's optimized model platform (Llama, Mistral, Nemotron, and more)
+* **Data Sent:** Chat messages, system prompts, tool results
+* **When:** Every time an AI assistant is used with NVIDIA NIM as the provider
+* **Service URL:** https://integrate.api.nvidia.com/v1 (default cloud endpoint; supports custom/self-hosted NIM endpoints)
+* **Terms of Service:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
+* **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
 
 = Optional Third-Party Service Integrations =
 
@@ -628,7 +659,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When ReliefWeb tools are used
 * **Service URL:** https://api.reliefweb.int/v1/reports
 * **Terms of Service:** https://reliefweb.int/terms-conditions
-* **Privacy Policy:** https://reliefweb.int/terms
+* **Privacy Policy:** https://reliefweb.int/terms-conditions
 
 **11. WordPress.org API**
 * **Purpose:** PHP version compatibility check for site health
@@ -714,7 +745,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Enterprise authentication and user management via Auth0
 * **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
+* **Service URL:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
@@ -733,6 +764,14 @@ These services are only contacted when specific tools/features are used:
 * **Service URL:** https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP
 * **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
 * **Privacy Policy:** https://www.gdacs.org/About/overview.aspx
+
+**23a. ITA Tariff Rates API (Trade.gov)**
+* **Purpose:** Automated tariff rate lookups for international trade compliance (Pro addon feature)
+* **Data Sent:** Country codes, product classification codes (HS codes), API key
+* **When:** When the import duty lookup tool is used (requires ITA API key configuration)
+* **Service URL:** https://api.trade.gov/v1/tariff_rates/search
+* **Terms of Service:** https://developer.trade.gov/
+* **Privacy Policy:** https://www.trade.gov/privacy
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -757,16 +796,16 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
 * **When:** Only when a site owner explicitly opts in via Settings → NV oOS → "Enable activation tracking". Tracking is **disabled by default** and requires explicit consent. Tracking is never sent from local/development environments.
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
-* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3)
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-In:** Enable via Settings → NV oOS → "Enable activation tracking" or return `true` from the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is OFF by default.
 
 **27. NV Digital Solutions License Server & Optional Component Downloads**
-* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
+* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size — downloads only occur after explicit administrator consent via an admin notice
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
-* **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
-* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
-* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **When:** (a) Only when a user manually enters and activates a license key; (b) Only when the site administrator explicitly clicks "Download Optional Components" in the admin notice (opt-in required, never automatic)
+* **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
@@ -912,7 +951,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * File uploads (AI providers only)
 * Search queries (when using search/weather tools)
 * OAuth credentials (when using optional integrations)
-* Anonymous activation data (opt-out available; see service #26 above)
+* Anonymous activation data (opt-in only; see service #26 above)
 
 **What is NOT sent:**
 * WordPress admin credentials
@@ -923,7 +962,7 @@ The following libraries are loaded as external CDN connections directly in the v
 **When data is sent:**
 * Only when you or your users actively use AI features
 * Only to services you have explicitly configured
-* Anonymous activation/deactivation tracking on plugin lifecycle events (opt-out available)
+* Anonymous activation tracking only when explicitly opted in (see service #26 above)
 
 **Your control:**
 * You choose which AI provider to use
@@ -953,12 +992,12 @@ The following libraries are loaded as external CDN connections directly in the v
 * Optional: Chat transcripts (if JetEngine integration is enabled)
 * Optional: Usage logs (disabled by default, controlled in settings)
 
-**Activation Tracking (Opt-Out Available):**
-* On plugin activation and deactivation, anonymous usage data is sent to NV Digital Solutions
+**Activation Tracking (Opt-In Only):**
+* Anonymous usage data is sent to NV Digital Solutions only when explicitly enabled by the site administrator
 * Data collected: hashed site URL (SHA-256 HMAC, non-reversible), plugin version, WordPress version, PHP version, locale, multisite status
 * No personally identifiable information (PII) is collected or stored
 * No tracking scripts, cookies, or beacons are used
-* Opt-out: Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
+* Tracking is **OFF by default** — enable via Settings → NV oOS → "Enable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
 * Tracking is automatically skipped in local/development environments (localhost, .local, .test, .dev)
 
 = What Data is Sent to AI Providers? =
@@ -1131,3 +1170,24 @@ Review your chosen provider's privacy policy before use.
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
 Special thanks to the open source community and all contributors.
+
+== Licensing ==
+
+= Base Plugin =
+
+This plugin is licensed under the [GNU General Public License v3 or later](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE). All source code in the base plugin is open source. You have full freedom to use, study, modify, and redistribute the base plugin under the terms of the GPLv3.
+
+= Pro Addon =
+
+The Pro addon (`addons/pro/`) is a completely separate, optional plugin distributed under a **proprietary license**. It is copyrighted by NV Digital Solutions and all rights are reserved. The Pro addon is not included in the WordPress.org distribution — it is installed separately and is not required for the base plugin to function.
+
+= How They Differ =
+
+* **Base plugin (this plugin):** GPLv3 — open source, freely redistributable, modifiable
+* **Pro addon (separate plugin):** Proprietary — requires a license from NV Digital Solutions, not redistributable
+
+The base plugin and the Pro addon are independent codebases. The base plugin does not contain any Pro addon code, and no base plugin features are gated behind the Pro addon's license. The Pro addon adds entirely new tools and capabilities built on PHP 8.1+ features.
+
+= Patent Notice =
+
+NV oOS is the subject of a pending patent application (Application #19/410,504). The patent does not restrict your GPL rights to the base plugin. See the "Is this plugin patented?" FAQ entry above for details.

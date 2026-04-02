@@ -24,6 +24,8 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  */
 class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Product_Card;
+
 	/**
 	 * Essential WooCommerce product fields to retrieve.
 	 *
@@ -862,6 +864,17 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Generate rich product cards for chat display.
+		$source_label = ! empty( $connection['name'] ) ? $connection['name'] : 'WooCommerce';
+		$cards_message = $this->format_product_cards(
+			$all_products,
+			'woocommerce',
+			array( 'source_label' => $source_label )
+		);
+		if ( ! empty( $cards_message ) ) {
+			$summary .= "\n\n" . $cards_message;
+		}
+
 		return array(
 			'summary'         => $summary,
 			'products'        => $all_products,
@@ -920,8 +933,15 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$product       = $product_array[0];
 		}
 
+		// Generate rich product card for chat display.
+		$card_message = $this->format_single_product_card( $product, 'woocommerce', array( 'max_description' => 200 ) );
+		$summary      = __( 'Product retrieved successfully', 'mcp-ai-wpoos-pro' );
+		if ( ! empty( $card_message ) ) {
+			$summary .= "\n\n" . $card_message;
+		}
+
 		return array(
-			'summary' => __( 'Product retrieved successfully', 'mcp-ai-wpoos-pro' ),
+			'summary' => $summary,
 			'product' => $product,
 		);
 	}

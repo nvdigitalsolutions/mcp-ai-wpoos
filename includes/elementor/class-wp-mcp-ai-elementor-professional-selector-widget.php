@@ -323,7 +323,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	protected function get_provider_options() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
 		);
 
 		$labels = array(
@@ -331,6 +331,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 			'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 			'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 			'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),

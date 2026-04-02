@@ -415,7 +415,31 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		if ( $file ) {
 			$file = wp_normalize_path( $file );
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to user-specified path.
+
+			// WordPress.org compliance: restrict file writes to the uploads directory.
+			$upload_dir      = wp_upload_dir();
+			$uploads_basedir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) );
+
+			// Ensure the parent directory exists within uploads (create if needed).
+			$parent_dir = dirname( $file );
+			if ( ! is_dir( $parent_dir ) ) {
+				// Only create the directory if it's inside uploads.
+				$normalized_parent = wp_normalize_path( $parent_dir ) . '/';
+				if ( 0 !== strpos( $normalized_parent, $uploads_basedir ) ) {
+					/* translators: %s: uploads directory path */
+					WP_CLI::error( sprintf( __( 'For security, export files must be saved inside the uploads directory (%s).', 'mcp-ai-wpoos' ), $uploads_basedir ) );
+				}
+				wp_mkdir_p( $parent_dir );
+			}
+
+			// Resolve the real path now that the directory exists and verify it's within uploads.
+			$real_parent = realpath( $parent_dir );
+			if ( false === $real_parent || 0 !== strpos( wp_normalize_path( $real_parent ) . '/', $uploads_basedir ) ) {
+				/* translators: %s: uploads directory path */
+				WP_CLI::error( sprintf( __( 'For security, export files must be saved inside the uploads directory (%s).', 'mcp-ai-wpoos' ), $uploads_basedir ) );
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to restricted uploads path.
 			if ( false === file_put_contents( $file, $json ) ) {
 				/* translators: %s: file path */
 				WP_CLI::error( sprintf( __( 'Could not write to file: %s', 'mcp-ai-wpoos' ), $file ) );

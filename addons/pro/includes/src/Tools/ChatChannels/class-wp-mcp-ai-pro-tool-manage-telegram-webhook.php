@@ -191,8 +191,11 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 				'edited_message',
 				'channel_post',
 				'edited_channel_post',
+				'callback_query',
+				'inline_query',
 				'my_chat_member',
 				'chat_member',
+				'pre_checkout_query',
 			),
 		);
 

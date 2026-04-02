@@ -194,12 +194,19 @@
 			let html = '';
 			items.forEach( function( c ) {
 				const takenOver = c.human_takeover ? '<span class="cc-takeover-indicator">👤 Human</span>' : '';
+				// For Telegram contacts with a known bot, show the bot name as the
+				// primary conversation name and the contact name as a subtitle so
+				// admins can immediately identify which bot owns each thread.
+				const hasBotName  = c.channel === 'telegram' && c.bot_username;
+				const primaryName = hasBotName ? '@' + c.bot_username : ( c.display_name || c.channel_contact_id );
+				const subtitle    = hasBotName ? '<div class="cc-conv-subtitle">' + escHtml( c.display_name || c.channel_contact_id ) + '</div>' : '';
 				html += '<div class="cc-conversation-item' + ( state.activeContactId === c.id ? ' cc-conversation-item--active' : '' ) + '"'
 					+ ' data-id="' + c.id + '" data-contact=\'' + JSON.stringify( c ).replace( /'/g, '&#39;' ) + '\'>'
 					+ '<div class="cc-conv-header">'
-					+ '<span class="cc-conv-name">' + escHtml( c.display_name || c.channel_contact_id ) + '</span>'
+					+ '<span class="cc-conv-name">' + escHtml( primaryName ) + '</span>'
 					+ '<span class="cc-conv-time">' + fmtTime( c.last_message_at ) + '</span>'
 					+ '</div>'
+					+ subtitle
 					+ '<div class="cc-conv-meta">'
 					+ channelBadge( c.channel )
 					+ convTypeBadge( c.conversation_type || 'dm' )
@@ -236,9 +243,14 @@
 		function renderThreadHeader( contact ) {
 			const takenOverClass = contact.human_takeover ? 'button-primary' : '';
 			const takenOverText  = contact.human_takeover ? ( I18N.resumeAI || 'Resume AI' ) : ( I18N.humanTakeover || 'Human Takeover' );
+			// Show the bot name as primary title for Telegram threads.
+			const hasBotName     = contact.channel === 'telegram' && contact.bot_username;
+			const headerName     = hasBotName
+				? '@' + contact.bot_username + ' — ' + ( contact.display_name || contact.channel_contact_id )
+				: ( contact.display_name || contact.channel_contact_id );
 
 			$( '#cc-thread-header' ).html(
-				'<span class="cc-thread-contact-name">' + escHtml( contact.display_name || contact.channel_contact_id ) + '</span>'
+				'<span class="cc-thread-contact-name">' + escHtml( headerName ) + '</span>'
 				+ channelBadge( contact.channel )
 				+ statusDot( contact.crm_status )
 				+ '<div class="cc-thread-actions">'
@@ -315,11 +327,11 @@
 				return;
 			}
 			const prev = state.msgPage > 1
-				? '<button class="cc-page-btn" id="cc-msg-prev">&#8249; Older</button>'
-				: '<button class="cc-page-btn" disabled>&#8249; Older</button>';
+				? '<button class="cc-page-btn" id="cc-msg-prev">&#8249; Newer</button>'
+				: '<button class="cc-page-btn" disabled>&#8249; Newer</button>';
 			const next = state.msgPage < totalPgs
-				? '<button class="cc-page-btn" id="cc-msg-next">Newer &#8250;</button>'
-				: '<button class="cc-page-btn" disabled>Newer &#8250;</button>';
+				? '<button class="cc-page-btn" id="cc-msg-next">Older &#8250;</button>'
+				: '<button class="cc-page-btn" disabled>Older &#8250;</button>';
 			const info = '<span class="cc-page-info">' + total + ' messages &middot; Page ' + state.msgPage + '/' + totalPgs + '</span>';
 			$pag.html( prev + info + next );
 
@@ -471,8 +483,14 @@
 					return '<option value="' + s + '"' + ( c.crm_status === s ? ' selected' : '' ) + '>' + s + '</option>';
 				} ).join( '' );
 
+				const botLabel = c.bot_username ? ' <span class="cc-bot-label">@' + escHtml( c.bot_username ) + '</span>' : '';
+				// Show the bot name as primary when available for Telegram.
+				const contactName = ( c.channel === 'telegram' && c.bot_username )
+					? '@' + escHtml( c.bot_username ) + ' <span class="cc-contact-sub">' + escHtml( c.display_name || c.channel_contact_id ) + '</span>'
+					: escHtml( c.display_name || c.channel_contact_id );
+
 				html += '<tr>'
-					+ '<td>' + escHtml( c.display_name || c.channel_contact_id ) + '</td>'
+					+ '<td>' + contactName + '</td>'
 					+ '<td>' + channelBadge( c.channel ) + '</td>'
 					+ '<td><code>' + escHtml( c.channel_contact_id ) + '</code></td>'
 					+ '<td>' + ( tags || '<em>—</em>' ) + '</td>'

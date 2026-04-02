@@ -681,17 +681,21 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		// Deduplicate by message_id (platform message ID) when non-empty, otherwise by store-scoped composite key.
 		$all_messages = $this->deduplicate_messages( $all_messages );
 
-		// Sort chronologically (oldest first).
+		// Sort newest first so page 1 contains the most recent messages.
 		usort(
 			$all_messages,
 			function ( $a, $b ) {
-				return $a['timestamp'] - $b['timestamp'];
+				return $b['timestamp'] - $a['timestamp'];
 			}
 		);
 
 		$total  = count( $all_messages );
 		$offset = ( $page - 1 ) * $per_page;
 		$paged  = array_slice( $all_messages, $offset, $per_page );
+
+		// Reverse the page slice so messages display in chronological order
+		// (oldest at top, newest at bottom) within the visible page.
+		$paged = array_reverse( $paged );
 
 		return rest_ensure_response(
 			array(
@@ -1615,13 +1619,21 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			$tags    = is_array( $decoded ) ? $decoded : array();
 		}
 
+		// Resolve bot_username from the connection when available.
+		$bot_username  = '';
+		$connection_id = isset( $row['connection_id'] ) ? $row['connection_id'] : '';
+		if ( '' !== $connection_id && 'telegram' === ( isset( $row['channel'] ) ? $row['channel'] : '' ) ) {
+			$bot_username = $this->resolve_bot_username( $connection_id );
+		}
+
 		return array(
 			'id'                 => isset( $row['_ID'] ) ? (int) $row['_ID'] : 0,
 			'channel'            => isset( $row['channel'] ) ? $row['channel'] : '',
 			'channel_contact_id' => isset( $row['channel_contact_id'] ) ? $row['channel_contact_id'] : '',
-			'connection_id'      => isset( $row['connection_id'] ) ? $row['connection_id'] : '',
+			'connection_id'      => $connection_id,
 			'conversation_type'  => isset( $row['conversation_type'] ) ? $row['conversation_type'] : 'dm',
 			'display_name'       => isset( $row['display_name'] ) ? $row['display_name'] : '',
+			'bot_username'       => $bot_username,
 			'phone_number'       => isset( $row['phone_number'] ) ? $row['phone_number'] : '',
 			'email'              => isset( $row['email'] ) ? $row['email'] : '',
 			'tags'               => $tags,
@@ -1631,6 +1643,45 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'human_takeover'     => ! empty( $row['human_takeover'] ),
 			'last_message_at'    => isset( $row['last_message_at'] ) ? (int) $row['last_message_at'] : 0,
 		);
+	}
+
+	/**
+	 * Resolve the bot_username for a Telegram connection.
+	 *
+	 * Uses a static cache so that the same connection is only looked up once
+	 * per request even when formatting many contacts.
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return string Bot username (without leading @) or empty string.
+	 */
+	protected function resolve_bot_username( $connection_id ) {
+		static $cache = array();
+
+		if ( isset( $cache[ $connection_id ] ) ) {
+			return $cache[ $connection_id ];
+		}
+
+		$bot_username = '';
+
+		// Ensure the Remote Site Manager class is loaded (mirrors the pattern
+		// used in the Telegram webhook controller).
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$rsm_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			if ( file_exists( $rsm_path ) ) {
+				require_once $rsm_path;
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $connection && ! empty( $connection['bot_username'] ) ) {
+				$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
+			}
+		}
+
+		$cache[ $connection_id ] = $bot_username;
+
+		return $bot_username;
 	}
 
 	/**

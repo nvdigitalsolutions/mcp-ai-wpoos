@@ -457,6 +457,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_imaging_studies tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'vehicle_estimation'              => array(
+					'name'          => __( 'Vehicle Estimation', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Automotive estimation tools: VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine. Always available with Pro.', 'mcp-ai-wpoos' ),
+					'enabled'       => true,
+					'category'      => 'specialized',
+					'php_functions' => array(),
+					'npm_packages'  => array(),
+					'tools_count'   => 3,
+					'tools'         => array(
+						__( 'vin_decode tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_repair_estimate tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_cleaning_estimate tool', 'mcp-ai-wpoos' ),
+					),
+				),
 				'quiz_system'                     => array(
 					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
@@ -522,12 +536,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				),
 				'ecommerce_toolkit'               => array(
 					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, customer management, and shipping optimization with box-packing and carrier rate-shopping.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
 					'category'      => 'specialized',
 					'php_functions' => array(),
 					'npm_packages'  => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
-					'tools_count'   => 8,
+					'tools_count'   => 10,
 					'tools'         => array(
 						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
 						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
@@ -537,6 +551,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_customers tool', 'mcp-ai-wpoos' ),
 						__( 'track_shipments tool', 'mcp-ai-wpoos' ),
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_box_packer tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_rate_estimator tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'social_media_toolkit'            => array(
@@ -2348,10 +2364,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Apache 2.0',
 					'recommended' => true,
 				),
+				'Qwen3-8B-q4f16_1-MLC'                => array(
+					'name'        => 'Qwen3 8B',
+					'size'        => '~5GB',
+					'description' => 'Latest Qwen3 with hybrid reasoning (think/non-think modes), 119 language support, and function calling',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
 				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => array(
 					'name'        => 'Qwen2.5 7B Instruct',
 					'size'        => '~4.5GB',
 					'description' => 'Advanced multilingual model with function calling',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Qwen3-4B-q4f16_1-MLC'                => array(
+					'name'        => 'Qwen3 4B',
+					'size'        => '~2.5GB',
+					'description' => 'Compact Qwen3 with hybrid reasoning and strong multilingual capabilities',
 					'context'     => '32K tokens',
 					'license'     => 'Apache 2.0',
 					'recommended' => false,
@@ -2372,6 +2404,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Llama 3.2 Community License',
 					'recommended' => false,
 				),
+				'Qwen3-1.7B-q4f16_1-MLC'              => array(
+					'name'        => 'Qwen3 1.7B',
+					'size'        => '~1.1GB',
+					'description' => 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
 				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => array(
 					'name'        => 'Qwen2.5 1.5B Instruct',
 					'size'        => '~1GB',
@@ -2386,6 +2426,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'description' => 'Fast, lightweight model for basic chat (does not support function calling)',
 					'context'     => '128K tokens',
 					'license'     => 'Llama 3.2 Community License',
+					'recommended' => false,
+				),
+				'Qwen3-0.6B-q4f16_1-MLC'              => array(
+					'name'        => 'Qwen3 0.6B',
+					'size'        => '~400MB',
+					'description' => 'Smallest Qwen3 with hybrid reasoning capabilities',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
 					'recommended' => false,
 				),
 				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => array(
@@ -3200,9 +3248,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<strong><?php esc_html_e( 'Quiz System', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Interactive quizzes, assessments, learning management', 'mcp-ai-wpoos' ); ?></small>
 				</li>
-				<li style="padding: 8px 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
 					<strong><?php esc_html_e( 'AI Tool Builder', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Create custom AI tools and integrations', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Vehicle Estimation', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'VIN decode, repair estimates, car wash pricing', 'mcp-ai-wpoos' ); ?></small>
 				</li>
 			</ul>
 		</div>

@@ -2,7 +2,7 @@
 
 **Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T14 24Mar26/3.9A7 (P0TDX269399HGN)  
 **Document version:** 1.0 — 2026-03-24  
-**Plugin version:** 1.1.5+
+**Plugin version:** 1.1.6
 
 This document records every issue raised by the WordPress.org plugin directory review and
 the exact code change made to resolve it.

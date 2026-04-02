@@ -39,6 +39,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Shopify_Connection_Resolver;
+	use WP_MCP_AI_Shopify_Smart_Search;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -69,7 +72,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			'properties' => array(
 				'connection_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites connection ID for a Shopify catalog_api mode connection (connection_type must be "shopify" and shopify_api_mode must be "catalog_api").', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites connection ID for a Shopify catalog_api mode connection. If omitted, automatically uses the catalog_api Shopify connection configured for this assistant.', 'mcp-ai-wpoos-pro' ),
 				),
 				'action'         => array(
 					'type'        => 'string',
@@ -124,8 +127,13 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 					'minLength'   => 2,
 					'maxLength'   => 2,
 				),
+				'smart_search'   => array(
+					'type'        => 'boolean',
+					'description' => __( 'Enable smart search (default: true). When the full query returns zero results, automatically decomposes it into smaller keyword groups and merges results. Set to false to disable progressive relaxation.', 'mcp-ai-wpoos-pro' ),
+					'default'     => true,
+				),
 			),
-			'required'             => array( 'connection_id', 'action' ),
+			'required'             => array( 'action' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -158,9 +166,11 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to use the Shopify Catalog tool.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
-		if ( empty( $connection_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_missing_connection', __( 'A Remote Sites connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+		// Resolve the Shopify connection — auto-resolves from assistant context when not provided.
+		// Catalog tool requires catalog_api mode.
+		$connection_id = $this->resolve_shopify_connection_id( $arguments, $context, 'catalog_api' );
+		if ( is_wp_error( $connection_id ) ) {
+			return $connection_id;
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -169,13 +179,25 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		if ( ! $connection ) {
-			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) );
+			$available   = $this->get_available_shopify_connections( $context, 'catalog_api' );
+			$conn_list   = $this->format_available_connections_message( $available );
+			return new WP_Error( 'wp_mcp_ai_shopify_connection_not_found', __( 'The specified connection was not found.', 'mcp-ai-wpoos-pro' ) . $conn_list );
 		}
 		if ( empty( $connection['connection_type'] ) || 'shopify' !== $connection['connection_type'] ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_wrong_type', __( 'The specified connection is not a Shopify connection.', 'mcp-ai-wpoos-pro' ) );
 		}
 		if ( empty( $connection['enabled'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_disabled', __( 'This Shopify connection is disabled.', 'mcp-ai-wpoos-pro' ) );
+		}
+		if ( ! $this->is_shopify_connection_enabled_for_assistant( $connection_id, $context ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_not_enabled',
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Shopify connection "%s" is not enabled for this assistant. Enable it in the assistant editor under Remote Site Connections.', 'mcp-ai-wpoos-pro' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
+			);
 		}
 
 		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
@@ -212,6 +234,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 	 * Handle the search action.
 	 *
 	 * Calls GET /global/v2/search with the provided query and optional filters.
+	 * When the initial query returns zero results and the query has enough tokens,
+	 * automatically decomposes the query into smaller keyword groups and merges
+	 * the results (progressive query relaxation).
 	 *
 	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client instance.
 	 * @param array                    $arguments Tool arguments.
@@ -225,7 +250,97 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 
 		$limit = isset( $arguments['limit'] ) ? max( 1, min( 100, absint( $arguments['limit'] ) ) ) : 20;
 
+		$filters = $this->build_catalog_filters( $arguments );
+		if ( is_wp_error( $filters ) ) {
+			return $filters;
+		}
+
+		// --- Primary search: try the full original query first. ---
+		$response = $client->catalog_search( $query, $limit, $filters );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$products = isset( $response['products'] ) ? $response['products'] : array();
+
+		// --- Progressive relaxation: decompose when no results. ---
+		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
+		$decomposed   = false;
+
+		if ( empty( $products ) && $smart_search && $this->should_decompose_query( $query ) ) {
+			$tokens      = $this->extract_search_tokens( $query );
+			$sub_queries = $this->generate_sub_queries( $tokens, $query );
+
+			if ( ! empty( $sub_queries ) ) {
+				$result_sets = array();
+
+				foreach ( $sub_queries as $sub_query ) {
+					$sub_response = $client->catalog_search( $sub_query, $limit, $filters );
+
+					if ( is_wp_error( $sub_response ) ) {
+						continue; // Skip failed sub-queries but keep trying.
+					}
+
+					$sub_products = isset( $sub_response['products'] ) ? $sub_response['products'] : array();
+					if ( ! empty( $sub_products ) ) {
+						$result_sets[] = $sub_products;
+					}
+				}
+
+				if ( ! empty( $result_sets ) ) {
+					$products   = $this->merge_and_rank_products(
+						$result_sets,
+						function ( $product ) {
+							// Catalog API products use 'upid' as the unique identifier.
+							if ( isset( $product['upid'] ) ) {
+								return $product['upid'];
+							}
+							if ( isset( $product['id'] ) ) {
+								return $product['id'];
+							}
+							return isset( $product['title'] ) ? $product['title'] : '';
+						},
+						$limit
+					);
+					$decomposed = true;
+				}
+			}
+		}
+
+		$count = count( $products );
+
+		$result = array(
+			'success'  => true,
+			'action'   => 'search',
+			'query'    => $query,
+			'count'    => $count,
+			'products' => $products,
+			'raw'      => $response,
+		);
+
+		if ( $decomposed ) {
+			$result['smart_search'] = true;
+			$result['note']         = sprintf(
+				/* translators: %1$d: number of results, %2$s: original query */
+				__( 'The original query "%2$s" returned 0 results. Smart search decomposed the query into smaller keywords and found %1$d product(s).', 'mcp-ai-wpoos-pro' ),
+				$count,
+				$query
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build catalog search filters from tool arguments.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error Filters array or error on validation failure.
+	 */
+	protected function build_catalog_filters( array $arguments ) {
 		$filters = array();
+
 		if ( isset( $arguments['min_price'] ) && is_numeric( $arguments['min_price'] ) ) {
 			$filters['min_price'] = (float) $arguments['min_price'];
 		}
@@ -253,23 +368,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			$filters['ships_from'] = $ships_from;
 		}
 
-		$response = $client->catalog_search( $query, $limit, $filters );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$products = isset( $response['products'] ) ? $response['products'] : array();
-		$count    = count( $products );
-
-		return array(
-			'success'  => true,
-			'action'   => 'search',
-			'query'    => $query,
-			'count'    => $count,
-			'products' => $products,
-			'raw'      => $response,
-		);
+		return $filters;
 	}
 
 	/**

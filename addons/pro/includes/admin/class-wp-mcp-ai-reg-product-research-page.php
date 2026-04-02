@@ -43,6 +43,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_create_reg_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_reg_product', array( __CLASS__, 'ajax_handle_import' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_preview_excel', array( __CLASS__, 'ajax_preview_excel' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_bulk_import_reg_products', array( __CLASS__, 'handle_bulk_import' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_upload_reg_document', array( __CLASS__, 'handle_document_upload' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_product_records_preview', array( __CLASS__, 'handle_get_product_preview' ) );
 	}
 
 	/**
@@ -105,6 +108,45 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 				'entityType' => 'reg_product',
 			)
 		);
+
+		// Enqueue registration consolidation styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-reg-product-consolidate',
+			WP_MCP_AI_PRO_URL . 'assets/css/reg-product-consolidate.css',
+			array( 'wp-mcp-ai-enhanced-research-page' ),
+			WP_MCP_AI_PRO_VERSION
+		);
+
+		// Enqueue registration consolidation script.
+		wp_enqueue_script(
+			'wp-mcp-ai-reg-product-consolidate',
+			WP_MCP_AI_PRO_URL . 'assets/js/reg-product-consolidate.js',
+			array( 'jquery', 'wp-mcp-ai-enhanced-research-page' ),
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		// Localize registration consolidation script.
+		wp_localize_script(
+			'wp-mcp-ai-reg-product-consolidate',
+			'wpMcpAiRegConsolidate',
+			array(
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_reg_consolidate' ),
+				'productsUrl'   => admin_url( 'edit.php?post_type=mcp_ai_reg_product' ),
+				'addProductUrl' => admin_url( 'post-new.php?post_type=mcp_ai_reg_product' ),
+				'addRegUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_registration' ),
+				'addDocUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_reg_document' ),
+				'strings'       => array(
+					'loading'          => __( 'Loading product data...', 'mcp-ai-wpoos-pro' ),
+					'error'            => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'selectProduct'    => __( 'Select a product to view its registration records.', 'mcp-ai-wpoos-pro' ),
+					'analyzing'        => __( 'Analyzing and importing data...', 'mcp-ai-wpoos-pro' ),
+					'enterProductInfo' => __( 'Please enter product information to import.', 'mcp-ai-wpoos-pro' ),
+					'importComplete'   => __( 'Import complete!', 'mcp-ai-wpoos-pro' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -130,6 +172,17 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
 		}
 
+		// Get all products for the dropdown.
+		$products = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_reg_product',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
@@ -138,7 +191,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_chat_interface( $assistant_id ); ?>
+			<?php self::render_chat_interface( $assistant_id, $products ); ?>
 		</div>
 		<?php
 	}
@@ -146,12 +199,52 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	/**
 	 * Render the chat interface.
 	 *
-	 * @param int $assistant_id Assistant ID.
+	 * @param int   $assistant_id Assistant ID.
+	 * @param array $products     Array of product post objects.
 	 */
-	protected static function render_chat_interface( $assistant_id ) {
+	protected static function render_chat_interface( $assistant_id, $products = array() ) {
 		?>
 			<div class="wp-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
+					<div class="wp-mcp-ai-product-selector">
+						<h3><?php esc_html_e( 'Select Product', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<?php if ( ! empty( $products ) ) : ?>
+							<select id="wp-mcp-ai-product-select" class="widefat">
+								<option value=""><?php esc_html_e( '-- Select a Product --', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $products as $product ) : ?>
+									<?php
+									$brands = wp_get_object_terms( $product->ID, 'mcp_ai_reg_brand', array( 'fields' => 'names' ) );
+									$brand  = ! empty( $brands ) && ! is_wp_error( $brands ) ? $brands[0] : '';
+									?>
+									<option value="<?php echo esc_attr( $product->ID ); ?>">
+										<?php
+										echo esc_html( $product->post_title );
+										if ( $brand ) {
+											echo ' (' . esc_html( $brand ) . ')';
+										}
+										?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p>
+								<button type="button" id="wp-mcp-ai-load-product-btn" class="button button-primary">
+									<?php esc_html_e( 'Load Product Records', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</p>
+						<?php else : ?>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: URL to create a product */
+										__( 'No products found. <a href="%s">Create a product</a> first.', 'mcp-ai-wpoos-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_reg_product' )
+									)
+								);
+								?>
+							</p>
+						<?php endif; ?>
+					</div>
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
@@ -185,6 +278,22 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 								<?php esc_html_e( '"Research compliance requirements for haircare..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-document-tools-info">
+						<h3><?php esc_html_e( '📄 Document Processing Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p><strong><?php esc_html_e( 'The AI assistant has access to document tools:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+						<ul>
+							<li><?php esc_html_e( 'Extract text from PDFs (certificates, dossiers)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate regulatory reports (PDF, Word, Excel)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Import/export product data from spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Merge multiple regulatory documents', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Add watermarks to compliance certificates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate submission packages', 'mcp-ai-wpoos-pro' ); ?></li>
+						</ul>
+						<p>
+							<em><?php esc_html_e( 'Try: "Extract text from this certificate PDF" or "Generate a compliance report for this product"', 'mcp-ai-wpoos-pro' ); ?></em>
+						</p>
 					</div>
 
 					<div class="wp-mcp-ai-research-preview" id="wp-mcp-ai-product-preview" style="display: none;">
@@ -263,10 +372,20 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<p><?php esc_html_e( 'Research and create products with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
+							<button type="button" class="workflow-option" data-workflow="quick-import">
+								<span class="dashicons dashicons-database-import"></span>
+								<strong><?php esc_html_e( 'Quick Import', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Paste or upload product data for AI parsing', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
 							<button type="button" class="workflow-option" data-workflow="import">
 								<span class="dashicons dashicons-upload"></span>
 								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<p><?php esc_html_e( 'Bulk import product data', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="guided">
+								<span class="dashicons dashicons-welcome-learn-more"></span>
+								<strong><?php esc_html_e( 'Guided Entry', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Step-by-step record creation', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
 							<button type="button" class="workflow-option" data-workflow="review">
 								<span class="dashicons dashicons-analytics"></span>
@@ -356,6 +475,20 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 								'web_search',
 								'search_content',
 								'semantic_content_search',
+								// Document processing tools.
+								'extract_pdf_text',
+								'pro_pdf_document',
+								'pro_word_document',
+								'pro_excel_document',
+								'generate_pdf',
+								'generate_word',
+								'generate_excel',
+								'html_to_pdf',
+								'merge_pdfs',
+								'add_watermark_to_pdf',
+								'excel_data_import',
+								'excel_data_export',
+								'generate_invoice_pdf',
 							);
 							echo do_shortcode(
 								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_tools ) ) . '"]'
@@ -380,14 +513,140 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					<?php endif; ?>
 					</div>
 
+					<!-- Quick Import Workflow -->
+					<div id="workflow-quick-import" class="workflow-content">
+						<div class="wp-mcp-ai-bulk-import-section">
+							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'mcp-ai-wpoos-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'Paste or type all your product registration information below, or upload documents (PDFs, certificates, spreadsheets). The AI will automatically parse, categorize, and organize it into structured products and registrations.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+
+							<div class="bulk-import-tips">
+								<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos-pro' ); ?></h4>
+								<ul>
+									<li><?php esc_html_e( '✓ Include product names and brands', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Add INCI ingredient lists where available', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Include registration numbers and countries', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Mention expiry dates and status', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Upload original certificates - they will be kept as attachments', 'mcp-ai-wpoos-pro' ); ?></li>
+								</ul>
+							</div>
+
+							<div class="bulk-import-form">
+								<!-- File Upload Section -->
+								<div class="bulk-import-file-section">
+									<h3><?php esc_html_e( 'Upload Documents (Optional)', 'mcp-ai-wpoos-pro' ); ?></h3>
+									<p class="description">
+										<?php esc_html_e( 'Upload registration certificates, compliance documents, product specifications, or spreadsheets. Original files are preserved in your media library.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+									<div class="file-upload-area">
+										<input type="file" id="wp-mcp-ai-reg-file-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt,.csv,.xlsx,.xls" style="display: none;">
+										<button type="button" id="wp-mcp-ai-reg-file-upload-btn" class="button">
+											<span class="dashicons dashicons-upload"></span>
+											<?php esc_html_e( 'Choose Files to Upload', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<span class="file-upload-note"><?php esc_html_e( 'Accepted: PDF, JPG, PNG, DOC, DOCX, TXT, CSV, XLSX', 'mcp-ai-wpoos-pro' ); ?></span>
+									</div>
+									<div id="wp-mcp-ai-reg-file-list" class="file-upload-list" style="display: none;">
+										<h4><?php esc_html_e( 'Files to Upload:', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<ul id="wp-mcp-ai-reg-file-items"></ul>
+									</div>
+								</div>
+
+								<hr class="form-section-divider">
+
+								<!-- Text Import Section -->
+								<h3><?php esc_html_e( 'Or Paste/Type Product Information', 'mcp-ai-wpoos-pro' ); ?></h3>
+								<textarea
+									id="wp-mcp-ai-reg-bulk-import-text"
+									class="widefat"
+									rows="12"
+									placeholder="<?php esc_attr_e( "Example:\nProduct: Hydrating Face Cream\nBrand: BeautySkin\nINCI: Aqua, Glycerin, Cetyl Alcohol, Stearyl Alcohol\nManufacturer: ABC Cosmetics Ltd\nOrigin: France\n\nRegistration: UAE MOHAP\nReg Number: MOHAP-2024-12345\nStatus: Approved\nExpiry: 2026-12-31\n\nProduct: Anti-Aging Serum\nBrand: DermaPro\nCategory: Skincare\nHS Code: 3304.99", 'mcp-ai-wpoos-pro' ); ?>"
+								></textarea>
+
+								<div class="bulk-import-options">
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-reg-bulk-auto-create" checked>
+										<?php esc_html_e( 'Automatically create products and registrations (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<label>
+										<input type="checkbox" id="wp-mcp-ai-reg-bulk-require-confirmation">
+										<?php esc_html_e( 'Review before creating (for meticulous users)', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+								</div>
+
+								<p>
+									<button type="button" id="wp-mcp-ai-reg-bulk-import-btn" class="button button-primary button-large">
+										<span class="dashicons dashicons-update"></span>
+										<?php esc_html_e( 'Import & Organize with AI', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-reg-bulk-clear-btn" class="button button-secondary">
+										<?php esc_html_e( 'Clear', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</p>
+								<div id="wp-mcp-ai-reg-bulk-import-result" class="bulk-import-result" style="display: none;"></div>
+							</div>
+						</div>
+					</div>
+
 					<!-- Import Data Workflow -->
 					<div id="workflow-import" class="workflow-content">
 						<?php self::render_import_workflow(); ?>
 					</div>
 
+					<!-- Guided Entry Workflow -->
+					<div id="workflow-guided" class="workflow-content">
+						<div class="wp-mcp-ai-guided-section">
+							<h2><?php esc_html_e( 'Guided Record Entry', 'mcp-ai-wpoos-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'Follow the step-by-step process to add regulatory records. The AI will guide you through each field and ensure all necessary information is captured.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+
+							<div class="guided-steps">
+								<div class="step-selector">
+									<h3><?php esc_html_e( 'What would you like to add?', 'mcp-ai-wpoos-pro' ); ?></h3>
+									<div class="record-type-buttons">
+										<button type="button" class="record-type-btn" data-type="reg_product">
+											<span class="dashicons dashicons-archive"></span>
+											<?php esc_html_e( 'Product', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="registration">
+											<span class="dashicons dashicons-clipboard"></span>
+											<?php esc_html_e( 'Registration', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="reg_document">
+											<span class="dashicons dashicons-media-document"></span>
+											<?php esc_html_e( 'Document', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="country">
+											<span class="dashicons dashicons-admin-site-alt3"></span>
+											<?php esc_html_e( 'Country/Authority', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<button type="button" class="record-type-btn" data-type="requirement">
+											<span class="dashicons dashicons-shield"></span>
+											<?php esc_html_e( 'Requirement', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+									</div>
+								</div>
+
+								<div id="reg-guided-form-container" class="guided-form-container" style="display: none;">
+									<!-- Dynamic form will be loaded here -->
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<!-- Review & Quality Workflow -->
 					<div id="workflow-review" class="workflow-content">
-						<?php self::render_review_workflow(); ?>
+						<div id="wp-mcp-ai-product-records-preview" class="wp-mcp-ai-records-preview" style="display: none;">
+							<!-- Product records preview will be loaded here via AJAX -->
+						</div>
+
+						<div id="wp-mcp-ai-no-product-selection" class="notice notice-info inline">
+							<p><?php esc_html_e( 'Select a product from the sidebar to view its registration records, or view the overall quality dashboard below.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+
+						<?php self::render_consolidation_dashboard(); ?>
 					</div>
 				</div>
 			</div>
@@ -750,6 +1009,454 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Handle AJAX bulk import of reg products.
+	 */
+	public static function handle_bulk_import() {
+		check_ajax_referer( 'wp_mcp_ai_reg_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import products.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via wp_kses_post to preserve line breaks needed for parsing.
+		$raw_text    = isset( $_POST['bulk_text'] ) ? wp_kses_post( wp_unslash( $_POST['bulk_text'] ) ) : '';
+		$auto_create = isset( $_POST['auto_create'] ) && 'true' === $_POST['auto_create'];
+
+		if ( empty( $raw_text ) ) {
+			wp_send_json_error( array( 'message' => __( 'No product data provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$parsed = self::parse_bulk_product_data( $raw_text );
+
+		if ( empty( $parsed ) ) {
+			wp_send_json_error( array( 'message' => __( 'Could not parse any product data from the input.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$created  = array();
+		$errors   = array();
+
+		if ( $auto_create ) {
+			foreach ( $parsed as $product_data ) {
+				$post_data = array(
+					'post_title'  => sanitize_text_field( $product_data['name'] ),
+					'post_type'   => 'mcp_ai_reg_product',
+					'post_status' => 'draft',
+				);
+
+				$post_id = wp_insert_post( $post_data, true );
+
+				if ( is_wp_error( $post_id ) ) {
+					$errors[] = $product_data['name'] . ': ' . $post_id->get_error_message();
+					continue;
+				}
+
+				// Set brand taxonomy if available.
+				if ( ! empty( $product_data['brand'] ) ) {
+					wp_set_object_terms( $post_id, sanitize_text_field( $product_data['brand'] ), 'mcp_ai_reg_brand' );
+				}
+
+				// Set category taxonomy if available.
+				if ( ! empty( $product_data['category'] ) ) {
+					wp_set_object_terms( $post_id, sanitize_text_field( $product_data['category'] ), 'mcp_ai_reg_category' );
+				}
+
+				// Save meta fields.
+				$meta_fields = array(
+					'manufacturer'     => '_mcp_ai_manufacturer',
+					'inci_ingredients' => '_mcp_ai_inci_ingredients',
+					'origin_country'   => '_mcp_ai_origin_country',
+					'hs_code'          => '_mcp_ai_hs_code',
+				);
+
+				foreach ( $meta_fields as $key => $meta_key ) {
+					if ( ! empty( $product_data[ $key ] ) ) {
+						if ( 'inci_ingredients' === $key ) {
+							update_post_meta( $post_id, $meta_key, sanitize_textarea_field( $product_data[ $key ] ) );
+						} else {
+							update_post_meta( $post_id, $meta_key, sanitize_text_field( $product_data[ $key ] ) );
+						}
+					}
+				}
+
+				$created[] = array(
+					'id'    => $post_id,
+					'title' => $product_data['name'],
+					'url'   => get_edit_post_link( $post_id, 'raw' ),
+				);
+			}
+		}
+
+		$summary = self::render_bulk_import_summary( $parsed, $created, $errors, $auto_create );
+
+		wp_send_json_success(
+			array(
+				'parsed'  => $parsed,
+				'created' => $created,
+				'errors'  => $errors,
+				'summary' => $summary,
+			)
+		);
+	}
+
+	/**
+	 * Parse bulk product data from raw text input.
+	 *
+	 * @param string $text Raw text input.
+	 * @return array Parsed product data.
+	 */
+	private static function parse_bulk_product_data( $text ) {
+		$products = array();
+		// Normalise line endings first so the double-newline split below works across OS formats.
+		$text     = str_replace( array( "\r\n", "\r" ), "\n", $text );
+		$blocks   = preg_split( '/\n{2,}/', trim( $text ) );
+		$current  = array();
+
+		foreach ( $blocks as $block ) {
+			$lines = explode( "\n", trim( $block ) );
+
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+
+				if ( empty( $line ) ) {
+					continue;
+				}
+
+				// Match key: value pattern.
+				if ( preg_match( '/^(product|brand|inci|manufacturer|origin|category|hs\s*code|reg\s*number|status|expiry|registration|country)\s*:\s*(.+)$/i', $line, $matches ) ) {
+					// Normalise the matched key by collapsing whitespace to underscore.
+					$key   = str_replace( ' ', '_', strtolower( trim( preg_replace( '/\s+/', ' ', $matches[1] ) ) ) );
+					$value = trim( $matches[2] );
+
+					switch ( $key ) {
+						case 'product':
+							if ( ! empty( $current['name'] ) ) {
+								$products[] = $current;
+							}
+							$current         = array();
+							$current['name'] = $value;
+							break;
+						case 'brand':
+							$current['brand'] = $value;
+							break;
+						case 'inci':
+							$current['inci_ingredients'] = $value;
+							break;
+						case 'manufacturer':
+							$current['manufacturer'] = $value;
+							break;
+						case 'origin':
+							$current['origin_country'] = $value;
+							break;
+						case 'category':
+							$current['category'] = $value;
+							break;
+						case 'hs_code':
+							$current['hs_code'] = $value;
+							break;
+						case 'reg_number':
+							$current['reg_number'] = $value;
+							break;
+						case 'status':
+							$current['status'] = $value;
+							break;
+						case 'expiry':
+							$current['expiry'] = $value;
+							break;
+						case 'registration':
+						case 'country':
+							$current['reg_country'] = $value;
+							break;
+					}
+				}
+			}
+		}
+
+		// Add last product.
+		if ( ! empty( $current['name'] ) ) {
+			$products[] = $current;
+		}
+
+		return $products;
+	}
+
+	/**
+	 * Render summary HTML for bulk import results.
+	 *
+	 * @param array $parsed      Parsed products.
+	 * @param array $created     Created products.
+	 * @param array $errors      Errors encountered.
+	 * @param bool  $auto_create Whether auto-create was used.
+	 * @return string HTML summary.
+	 */
+	private static function render_bulk_import_summary( $parsed, $created, $errors, $auto_create ) {
+		ob_start();
+		?>
+		<div class="bulk-import-summary">
+			<h3><?php esc_html_e( 'Import Results', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p>
+				<?php
+				printf(
+					/* translators: %d: number of products parsed */
+					esc_html__( 'Parsed %d product(s) from input.', 'mcp-ai-wpoos-pro' ),
+					count( $parsed )
+				);
+				?>
+			</p>
+
+			<?php if ( $auto_create && ! empty( $created ) ) : ?>
+				<h4><?php esc_html_e( 'Created Products:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<?php foreach ( $created as $item ) : ?>
+						<li>
+							<a href="<?php echo esc_url( $item['url'] ); ?>" target="_blank">
+								<?php echo esc_html( $item['title'] ); ?>
+							</a>
+							<span class="status-badge draft"><?php esc_html_e( 'Draft', 'mcp-ai-wpoos-pro' ); ?></span>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $errors ) ) : ?>
+				<div class="notice notice-warning inline">
+					<h4><?php esc_html_e( 'Errors:', 'mcp-ai-wpoos-pro' ); ?></h4>
+					<ul>
+						<?php foreach ( $errors as $error ) : ?>
+							<li><?php echo esc_html( $error ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( ! $auto_create ) : ?>
+				<h4><?php esc_html_e( 'Parsed Data (Review Mode):', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Product Name', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Brand', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Fields Found', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $parsed as $item ) : ?>
+							<tr>
+								<td><?php echo esc_html( $item['name'] ?? '—' ); ?></td>
+								<td><?php echo esc_html( $item['brand'] ?? '—' ); ?></td>
+								<td><?php echo esc_html( $item['category'] ?? '—' ); ?></td>
+								<td><?php echo esc_html( count( $item ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Handle AJAX document upload for registration products.
+	 */
+	public static function handle_document_upload() {
+		check_ajax_referer( 'wp_mcp_ai_reg_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to upload files.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( empty( $_FILES['file'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No file provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+
+		$attachment_id = media_handle_upload( 'file', 0 );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
+		}
+
+		$file_url  = wp_get_attachment_url( $attachment_id );
+		$file_type = get_post_mime_type( $attachment_id );
+		$file_name = get_the_title( $attachment_id );
+
+		wp_send_json_success(
+			array(
+				'attachment_id' => $attachment_id,
+				'url'           => $file_url,
+				'type'          => $file_type,
+				'name'          => $file_name,
+				'message'       => sprintf(
+					/* translators: %s: file name */
+					__( 'File "%s" uploaded successfully.', 'mcp-ai-wpoos-pro' ),
+					$file_name
+				),
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX request to get product records preview.
+	 */
+	public static function handle_get_product_preview() {
+		check_ajax_referer( 'wp_mcp_ai_reg_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to view product records.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$product_id = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+
+		if ( ! $product_id ) {
+			wp_send_json_error( array( 'message' => __( 'No product ID provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$product = get_post( $product_id );
+
+		if ( ! $product || 'mcp_ai_reg_product' !== $product->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid product.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$html = self::render_product_records_preview( $product );
+
+		wp_send_json_success( array( 'html' => $html ) );
+	}
+
+	/**
+	 * Render product records preview HTML.
+	 *
+	 * @param WP_Post $product Product post object.
+	 * @return string HTML content.
+	 */
+	private static function render_product_records_preview( $product ) {
+		// Get registrations for this product.
+		$registrations = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_registration',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'   => '_mcp_ai_product_id',
+						'value' => $product->ID,
+					),
+				),
+			)
+		);
+
+		// Get documents for this product.
+		$documents = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_reg_document',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'   => '_mcp_ai_product_id',
+						'value' => $product->ID,
+					),
+				),
+			)
+		);
+
+		$brands = wp_get_object_terms( $product->ID, 'mcp_ai_reg_brand', array( 'fields' => 'names' ) );
+		$brand  = ! empty( $brands ) && ! is_wp_error( $brands ) ? $brands[0] : '—';
+
+		ob_start();
+		?>
+		<div class="product-records-header">
+			<h2><?php echo esc_html( $product->post_title ); ?></h2>
+			<p class="product-meta">
+				<span class="product-brand"><?php echo esc_html( $brand ); ?></span>
+				<span class="product-status"><?php echo esc_html( get_post_status_object( $product->post_status )->label ); ?></span>
+			</p>
+			<p>
+				<a href="<?php echo esc_url( get_edit_post_link( $product->ID ) ); ?>" class="button button-small" target="_blank">
+					<?php esc_html_e( 'Edit Product', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+			</p>
+		</div>
+
+		<div class="product-records-section">
+			<h3>
+				<?php esc_html_e( 'Registrations', 'mcp-ai-wpoos-pro' ); ?>
+				<span class="count">(<?php echo absint( count( $registrations ) ); ?>)</span>
+			</h3>
+			<?php if ( ! empty( $registrations ) ) : ?>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Country/Authority', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Reg Number', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Expiry', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $registrations as $reg ) : ?>
+							<tr>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_country', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_number', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_reg_status', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $reg->ID, '_mcp_ai_expiry_date', true ) ?: '—' ); ?></td>
+								<td>
+									<a href="<?php echo esc_url( get_edit_post_link( $reg->ID ) ); ?>" target="_blank">
+										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									</a>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p class="description"><?php esc_html_e( 'No registrations found for this product.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php endif; ?>
+		</div>
+
+		<div class="product-records-section">
+			<h3>
+				<?php esc_html_e( 'Documents', 'mcp-ai-wpoos-pro' ); ?>
+				<span class="count">(<?php echo absint( count( $documents ) ); ?>)</span>
+			</h3>
+			<?php if ( ! empty( $documents ) ) : ?>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Document', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $documents as $doc ) : ?>
+							<tr>
+								<td><?php echo esc_html( $doc->post_title ); ?></td>
+								<td><?php echo esc_html( get_post_meta( $doc->ID, '_mcp_ai_doc_type', true ) ?: '—' ); ?></td>
+								<td><?php echo esc_html( $doc->post_status ); ?></td>
+								<td>
+									<a href="<?php echo esc_url( get_edit_post_link( $doc->ID ) ); ?>" target="_blank">
+										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									</a>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php else : ?>
+				<p class="description"><?php esc_html_e( 'No documents found for this product.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+		return ob_get_clean();
 	}
 }
 

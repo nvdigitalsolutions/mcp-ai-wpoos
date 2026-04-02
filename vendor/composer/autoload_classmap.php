@@ -311,6 +311,7 @@ return array(
     'Symfony\\Component\\Cache\\Traits\\Relay\\Relay121Trait' => $vendorDir . '/symfony/cache/Traits/Relay/Relay121Trait.php',
     'Symfony\\Component\\Cache\\Traits\\Relay\\Relay12Trait' => $vendorDir . '/symfony/cache/Traits/Relay/Relay12Trait.php',
     'Symfony\\Component\\Cache\\Traits\\Relay\\Relay20Trait' => $vendorDir . '/symfony/cache/Traits/Relay/Relay20Trait.php',
+    'Symfony\\Component\\Cache\\Traits\\Relay\\Relay21Trait' => $vendorDir . '/symfony/cache/Traits/Relay/Relay21Trait.php',
     'Symfony\\Component\\Cache\\Traits\\Relay\\SwapdbTrait' => $vendorDir . '/symfony/cache/Traits/Relay/SwapdbTrait.php',
     'Symfony\\Component\\Filesystem\\Exception\\ExceptionInterface' => $vendorDir . '/symfony/filesystem/Exception/ExceptionInterface.php',
     'Symfony\\Component\\Filesystem\\Exception\\FileNotFoundException' => $vendorDir . '/symfony/filesystem/Exception/FileNotFoundException.php',

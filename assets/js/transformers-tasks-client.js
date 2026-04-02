@@ -12,6 +12,12 @@
  * - Question Answering (extract answers from context)
  * - Semantic Search (vector embeddings for search)
  *
+ * Updated to @huggingface/transformers v3.8.1 (stable) from deprecated @xenova/transformers v2.
+ * - WebGPU hardware acceleration with automatic WASM fallback
+ * - Modern dtype-based quantization control
+ * - Improved performance (up to 4x faster embeddings with WebGPU)
+ * - Full offline support after initial model download
+ *
  * @package WP_MCP_AI
  * @since 1.2.0
  * @author    NV Digital Solutions
@@ -38,6 +44,9 @@ class WP_MCP_AI_TransformersTasksClient {
 		this.isInitialized = false;
 		this.transformersModule = null;
 		
+		// Device for inference ('webgpu' or 'wasm'), auto-detected on first use
+		this.device = null;
+		
 		// Model configurations
 		this.models = {
 			summarization: 'Xenova/distilbart-cnn-6-6',
@@ -49,6 +58,36 @@ class WP_MCP_AI_TransformersTasksClient {
 		};
 		
 		this.log( 'TransformersTasksClient initialized' );
+	}
+
+	/**
+	 * Detect the best available device for inference.
+	 * Prefers WebGPU for hardware acceleration, falls back to WASM.
+	 *
+	 * @return {Promise<string>} 'webgpu' or 'wasm'
+	 */
+	async detectDevice() {
+		if ( this.device ) {
+			return this.device;
+		}
+
+		try {
+			if ( typeof navigator !== 'undefined' && navigator.gpu ) {
+				const adapter = await navigator.gpu.requestAdapter();
+				if ( adapter ) {
+					this.device = 'webgpu';
+					this.log( 'WebGPU available — using GPU acceleration' );
+					return this.device;
+				}
+				this.log( 'WebGPU API available but no adapter found — falling back to WASM' );
+			}
+		} catch ( e ) {
+			this.log( 'WebGPU detection failed, using WASM fallback' );
+		}
+
+		this.device = 'wasm';
+		this.log( 'Using WASM backend' );
+		return this.device;
 	}
 
 	/**
@@ -77,10 +116,11 @@ class WP_MCP_AI_TransformersTasksClient {
 		this.log( 'Loading Transformers.js from CDN...' );
 
 		try {
-			// Load from esm.run CDN
-			const module = await import( 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2' );
+			// Load from jsdelivr CDN — @huggingface/transformers v3.8.1 (stable)
+			// Upgraded from deprecated @xenova/transformers v2.17.2
+			const module = await import( 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1' );
 			this.transformersModule = module;
-			this.log( 'Transformers.js loaded successfully' );
+			this.log( 'Transformers.js v3 loaded successfully' );
 			return module;
 		} catch ( error ) {
 			this.error( 'Failed to load Transformers.js', error );
@@ -111,6 +151,9 @@ class WP_MCP_AI_TransformersTasksClient {
 
 		// Load Transformers.js if not loaded
 		const transformers = await this.loadTransformers();
+		
+		// Detect the best available device
+		const device = await this.detectDevice();
 
 		// Create loading promise
 		const loadingPromise = ( async () => {
@@ -118,8 +161,11 @@ class WP_MCP_AI_TransformersTasksClient {
 				this.log( `Loading pipeline: ${ task } with model: ${ model }` );
 				
 				const pipeline = await transformers.pipeline( task, model, {
-					// Use quantized models for faster loading
-					quantized: true,
+					// Use the auto-detected device (webgpu or wasm)
+					device: device,
+					// Use quantized dtype for smaller downloads and faster inference
+					// 'q8' is the recommended default for WASM; WebGPU can use 'fp32' or 'q8'
+					dtype: 'q8',
 					// Progress callback for loading feedback
 					progress_callback: ( progress ) => {
 						if ( progress.status === 'downloading' ) {

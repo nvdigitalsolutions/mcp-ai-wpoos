@@ -216,6 +216,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $schedule_manager_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
+		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
+		if ( file_exists( $webhook_status_page ) ) {
+			require_once $webhook_status_page;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
@@ -995,6 +1002,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $imaging_tools );
 		}
 
+		// Vehicle Estimation tools — always available Pro tools.
+		$vehicle_tools = array(
+			'WP_MCP_AI_Tool_VIN_Decode'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php',
+			'WP_MCP_AI_Tool_Vehicle_Repair_Estimate'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-repair-estimate.php',
+			'WP_MCP_AI_Tool_Vehicle_Cleaning_Estimate'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vehicle-cleaning-estimate.php',
+		);
+		$pro_tools = array_merge( $pro_tools, $vehicle_tools );
+
 		// Add WooCommerce tools if enabled.
 		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
@@ -1008,7 +1023,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Add Shopify tools — always available when a Shopify connection is configured.
 		// The tools themselves validate the connection at execution time.
+		// Load the shared Shopify connection resolver trait.
+		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
+		}
+		// Load the smart search trait for progressive query relaxation.
+		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Smart_Search' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-smart-search.php';
+		}
 		$shopify_tools = array(
+			'WP_MCP_AI_Tool_Remote_Shopify_Connection'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-shopify-connection.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-orders.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-customers.php',
@@ -1076,6 +1100,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Abandoned_Cart_Recovery'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-abandoned-cart-recovery.php',
 				'WP_MCP_AI_Tool_Upsell_Recommendations'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-upsell-recommendations.php',
 				'WP_MCP_AI_Tool_Sales_Performance_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sales-performance-dashboard.php',
+				// Shipping & Fulfillment tools.
+				'WP_MCP_AI_Tool_Shipping_Box_Packer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-box-packer.php',
+				'WP_MCP_AI_Tool_Shipping_Rate_Estimator' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-shipping-rate-estimator.php',
 			);
 			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
@@ -1590,6 +1617,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// iSAMS School Management System - Requires external API credentials.
 			'isams_query'                     => 'external-tools',
 			// Shopify e-commerce tools - Require a configured Shopify Remote Sites connection.
+			'remote_shopify_connection'        => 'external-tools',
 			'shopify_products'                => 'external-tools',
 			'shopify_orders'                  => 'external-tools',
 			'shopify_customers'               => 'external-tools',
@@ -1752,6 +1780,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['manage_imaging_studies']   = 'wordpress-core';
 			$pro_tools['interpret_imaging_study']  = 'wordpress-core';
 		}
+
+		// Vehicle Estimation tool mappings — always available.
+		$pro_tools['vin_decode']                 = 'external-tools';
+		$pro_tools['vehicle_repair_estimate']    = 'external-tools';
+		$pro_tools['vehicle_cleaning_estimate']  = 'external-tools';
 
 		// Add Document Generation Toolkit tool mappings if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {			$pro_tools['pro_pdf_document']   = 'external-tools';

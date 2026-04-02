@@ -2550,6 +2550,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
 		'.mv-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
 
+		/* Date range segmented control (trends tab) */
+		'.mv-range-bar{display:flex;gap:0;border:1px solid var(--tma-border);border-radius:20px;overflow:hidden;margin:10px 12px 6px}' .
+		'.mv-range-btn{flex:1;padding:6px 0;border:none;background:transparent;color:var(--tma-hint);' .
+			'font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.mv-range-btn.active{background:var(--tma-btn);color:#fff}' .
+
 		/* Settings tab */
 		'.mv-settings-wrap{padding:12px}' .
 		'.mv-settings-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
@@ -2656,6 +2662,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<div class="mv-kidney-section-title">&#129506; ' . esc_html__( 'Kidney Health', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'<div class="mv-kpi-grid" id="mv-kidney-kpi-grid" style="padding-top:6px">' .
 					'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_html__( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
+				'<div class="mv-range-bar" id="mv-dash-range-bar" role="group" aria-label="' . esc_attr__( 'Chart date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetDashChartRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
 				'</div>' .
 				'<div id="mv-dash-chart" style="padding-bottom:12px"></div>' .
 			'</div>' .
@@ -2765,8 +2777,14 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-trends">' .
 			'<div class="mv-scroll" id="mv-trends-scroll">' .
 				'<div style="padding:10px 12px 0">' .
-					'<div class="tma-section-title" style="padding:0 0 4px">' . esc_html__( '7-Day Trends', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-section-title" style="padding:0 0 4px" id="mv-trends-title">' . esc_html__( '7-Day Trends', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div style="font-size:12px;color:var(--tma-hint)">' . esc_html__( 'Shaded bands show normal reference ranges.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
+				'<div class="mv-range-bar" role="group" aria-label="' . esc_attr__( 'Trend date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetTrendRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
 				'</div>' .
 				'<div id="mv-trends-content" style="padding-bottom:12px"><div class="tma-empty">' . esc_html__( 'Loading charts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 			'</div>' .
@@ -2989,13 +3007,14 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'try{localStorage.setItem(SK_READINGS,JSON.stringify(arr));}catch(e){}' .
 		'}' .
 
-		/* Load last 7 days of readings (one per day, last reading of that day) */
-		'function mvLoadHistory(){' .
+		/* Load last N days of readings (one per day, last reading of that day) */
+		'function mvLoadHistory(days){' .
+			'if(!days)days=7;' .
 			'var all=mvLoadReadings();' .
 			'var byDay={};' .
 			'all.forEach(function(r){var d=r.ts?r.ts.slice(0,10):mvTodayKey();byDay[d]=r;});' .
 			'var hist=[];var base=new Date();' .
-			'for(var i=6;i>=0;i--){' .
+			'for(var i=days-1;i>=0;i--){' .
 				'var dd=new Date(base);dd.setDate(dd.getDate()-i);' .
 				'var dk=dd.toISOString().slice(0,10);' .
 				'hist.push(byDay[dk]||{date:dk});' .
@@ -3377,11 +3396,25 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Update last-read time */
 			'var lt=document.getElementById("mv-last-time");' .
 			'if(lt){if(latest&&latest.ts){var d=new Date(latest.ts);lt.textContent="' . esc_js( __( 'Last reading: ', 'mcp-ai-wpoos-pro' ) ) . '"+d.toLocaleString();}else{lt.textContent="' . esc_js( __( 'No readings yet', 'mcp-ai-wpoos-pro' ) ) . '";}}' .
+
+			/* Scan all readings to find the most recent non-zero value for each
+			 * metric.  Records are often stored as separate rows per measurement
+			 * type (e.g. one row for BP/HR/SpO2 and another for renal labs), so
+			 * the chronologically last entry cannot reliably represent all KPIs
+			 * on its own — matching the admin dashboard latestFor() pattern. */
+			'function mvLatestFor(field){' .
+				'for(var i=0;i<readings.length;i++){' .
+					'var v=parseFloat(readings[i][field]);' .
+					'if(v>0)return v;' .
+				'}' .
+				'return 0;' .
+			'}' .
+
 			/* KPI cards */
 			'var g=document.getElementById("mv-kpi-grid");if(!g)return;' .
-			'if(!latest){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-			'var bpSys=latest.bp_sys||0;var bpDia=latest.bp_dia||0;' .
-			'var hr=latest.hr||0;var spo2=latest.spo2||0;var temp=latest.temp||0;var glucose=latest.glucose||0;' .
+			'if(!readings.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'var bpSys=mvLatestFor("bp_sys");var bpDia=mvLatestFor("bp_dia");' .
+			'var hr=mvLatestFor("hr");var spo2=mvLatestFor("spo2");var temp=mvLatestFor("temp");var glucose=mvLatestFor("glucose");' .
 			'var bpSt=mvBpStatus(bpSys,bpDia);' .
 			'var hrSt=mvHrStatus(hr);' .
 			'var spo2St=mvSpo2Status(spo2);' .
@@ -3413,9 +3446,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Kidney KPI section */
 			'var kg=document.getElementById("mv-kidney-kpi-grid");' .
 			'if(kg){' .
-				'var egfr=latest.egfr||0;var creat=latest.creatinine||0;var bun=latest.bun||0;' .
-				'var kpot=latest.potassium||0;var kna=latest.sodium||0;var phos=latest.phosphorus||0;var alb=latest.albumin||0;' .
-				'var hgb=latest.hemoglobin||0;' .
+				'var egfr=mvLatestFor("egfr");var creat=mvLatestFor("creatinine");var bun=mvLatestFor("bun");' .
+				'var kpot=mvLatestFor("potassium");var kna=mvLatestFor("sodium");var phos=mvLatestFor("phosphorus");var alb=mvLatestFor("albumin");' .
+				'var hgb=mvLatestFor("hemoglobin");' .
 				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb||hgb;' .
 				'if(!hasKidney){' .
 					'kg.innerHTML=\'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_js( __( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
@@ -3448,8 +3481,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvLoadDashChart();' .
 		'};' .
 
-		/* Dash chart – 7-day systolic BP sparkline */
+		/* Dash chart – systolic BP sparkline */
 		'var dashChartInst=null;' .
+		'var mvDashChartDays=7;' .
 		'function mvLoadDashChart(){' .
 			'if(window.Chart){mvRenderDashChart();return;}' .
 			'if(!CHART_JS_URL)return;' .
@@ -3459,11 +3493,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvRenderDashChart(){' .
 			'var cw=document.getElementById("mv-dash-chart");if(!cw)return;' .
-			'var hist=mvLoadHistory();' .
+			'var hist=mvLoadHistory(mvDashChartDays);' .
 			'var labels=hist.map(function(h){return h.date?h.date.slice(5):"";});' .
 			'var sysData=hist.map(function(h){return h.bp_sys||null;});' .
 			'var diaData=hist.map(function(h){return h.bp_dia||null;});' .
-			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure — 7 Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
+			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . ' \u2014 \'+mvDashChartDays+\' ' . esc_js( __( 'Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
 			'if(!window.Chart)return;' .
 			'var c=document.getElementById("mv-dash-bp-canvas");if(!c)return;' .
 			'if(dashChartInst)dashChartInst.destroy();' .
@@ -3474,6 +3508,15 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'scales:{x:{ticks:{font:{size:10},color:"#999"}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,suggestedMin:60,suggestedMax:180,grid:{color:"rgba(0,0,0,.06)"}}}' .
 			'}});' .
 		'}' .
+
+		/* Dashboard chart range selector */
+		'window.mvSetDashChartRange=function(days,btn){' .
+			'mvDashChartDays=days;' .
+			'document.querySelectorAll("#mv-dash-range-bar .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
+			'tmaHaptic("light");' .
+			'mvRenderDashChart();' .
+		'};' .
 
 		/* ── Log tab ── */
 		'window.mvSaveReading=function(){' .
@@ -3531,8 +3574,33 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'};' .
 
 		/* ── Pull server history into localStorage on first load ── */
+		/* Normalise a server row to the local schema.
+		 * Handles both flat CCT format (measurement_date, bp_systolic …)
+		 * and nested options format (date, measurements.blood_pressure.systolic …). */
+		'function mvNormaliseRow(row){' .
+			'function pf(v){var n=parseFloat(v);return isNaN(n)?0:n;}' .
+			'var m=row.measurements||{};var bp=m.blood_pressure||{};' .
+			'return{ts:(row.measurement_date||row.date||"")+"T"+String(row.measurement_time||row.time||"00:00").slice(0,5)+":00.000Z",' .
+				'bp_sys:pf(row.bp_systolic)||pf(bp.systolic),' .
+				'bp_dia:pf(row.bp_diastolic)||pf(bp.diastolic),' .
+				'hr:pf(row.heart_rate)||pf(m.heart_rate&&m.heart_rate.value),' .
+				'spo2:pf(row.oxygen_saturation)||pf(m.oxygen_saturation&&m.oxygen_saturation.value),' .
+				'temp:pf(row.temperature)||pf(m.temperature&&m.temperature.value),' .
+				'glucose:pf(row.blood_glucose)||pf(m.blood_glucose&&m.blood_glucose.value),' .
+				'egfr:pf(row.egfr)||pf(m.egfr&&m.egfr.value),' .
+				'creatinine:pf(row.creatinine)||pf(m.creatinine&&m.creatinine.value),' .
+				'bun:pf(row.bun)||pf(m.bun&&m.bun.value),' .
+				'potassium:pf(row.potassium)||pf(m.potassium&&m.potassium.value),' .
+				'sodium:pf(row.sodium)||pf(m.sodium&&m.sodium.value),' .
+				'phosphorus:pf(row.phosphorus)||pf(m.phosphorus&&m.phosphorus.value),' .
+				'albumin:pf(row.albumin)||pf(m.albumin&&m.albumin.value),' .
+				'hemoglobin:pf(row.hemoglobin)||pf(m.hemoglobin&&m.hemoglobin.value),' .
+				'notes:row.notes||""};' .
+		'}' .
+
 		'function mvSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
+			/* Fetch 90-day history for trends/charts */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
@@ -3540,29 +3608,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
-				'var serverRows=d.result.history.map(function(row){' .
-					/* Normalise measurement_time to HH:MM — the CCT column may
-					 * store HH:MM:SS when data was logged via the AI tool or
-					 * imported, which would produce the invalid ISO string
-					 * "2024-01-15T14:30:00:00.000Z".  Slicing to 5 chars
-					 * ensures the result is always a valid ISO 8601 timestamp. */
-					'return{ts:(row.measurement_date||"")+"T"+String(row.measurement_time||"00:00").slice(0,5)+":00.000Z",' .
-						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
-						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
-						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
-						'spo2:row.oxygen_saturation?parseFloat(row.oxygen_saturation):0,' .
-						'temp:row.temperature?parseFloat(row.temperature):0,' .
-						'glucose:row.blood_glucose?parseFloat(row.blood_glucose):0,' .
-						'egfr:row.egfr?parseFloat(row.egfr):0,' .
-						'creatinine:row.creatinine?parseFloat(row.creatinine):0,' .
-						'bun:row.bun?parseFloat(row.bun):0,' .
-						'potassium:row.potassium?parseFloat(row.potassium):0,' .
-						'sodium:row.sodium?parseFloat(row.sodium):0,' .
-						'phosphorus:row.phosphorus?parseFloat(row.phosphorus):0,' .
-						'albumin:row.albumin?parseFloat(row.albumin):0,' .
-						'hemoglobin:row.hemoglobin?parseFloat(row.hemoglobin):0,' .
-						'notes:row.notes||""};' .
-				'});' .
+				'var serverRows=d.result.history.map(mvNormaliseRow);' .
 				/* Merge: server rows keyed by day, local-only days preserved */
 				'var local=mvLoadReadings();' .
 				'var byDay={};' .
@@ -3573,10 +3619,46 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'mvRefresh();' .
 			'})' .
 			'.catch(function(){});' .
+			/* Fetch the single most-recent reading with NO time restriction
+			 * so the dashboard always shows the last record even if it is
+			 * older than 90 days. */
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_latest",member_id:MEMBER_ID}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.latest)return;' .
+				'var entry=mvNormaliseRow(d.result.latest);' .
+				'var k=entry.ts?entry.ts.slice(0,10):"";' .
+				'if(!k)return;' .
+				/* Merge into localStorage only if that day is not already present */
+				'var local=mvLoadReadings();' .
+				'var exists=local.some(function(r){return r.ts&&r.ts.slice(0,10)===k;});' .
+				'if(!exists){' .
+					'local.push(entry);' .
+					'local.sort(function(a,b){return(b.ts||"").localeCompare(a.ts||"");});' .
+					'mvStoreReadings(local);' .
+					'mvRefresh();' .
+				'}' .
+			'})' .
+			'.catch(function(){});' .
 		'}' .
 
 		/* ── Trends tab ── */
 		'var trendsChartInsts=[];' .
+		'var mvTrendsDays=7;' .
+
+		'window.mvSetTrendRange=function(days,btn){' .
+			'mvTrendsDays=days;' .
+			'document.querySelectorAll("#mv-tab-trends .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
+			'var tt=document.getElementById("mv-trends-title");' .
+			'if(tt)tt.textContent=days+"' . esc_js( __( '-Day Trends', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'tmaHaptic("light");' .
+			'mvRenderTrends();' .
+		'};' .
+
 		'function mvRenderTrends(){' .
 			'if(window.Chart){mvBuildTrendCharts();return;}' .
 			'if(!CHART_JS_URL){mvBuildTrendCharts();return;}' .
@@ -3586,7 +3668,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvBuildTrendCharts(){' .
 			'trendsChartInsts.forEach(function(c){if(c)c.destroy();});trendsChartInsts=[];' .
-			'var hist=mvLoadHistory();' .
+			'var hist=mvLoadHistory(mvTrendsDays);' .
 			'var labels=hist.map(function(h){return h.date?h.date.slice(5):"";});' .
 			'var cw=document.getElementById("mv-trends-content");if(!cw)return;' .
 
@@ -3630,13 +3712,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 			'if(!window.Chart)return;' .
 
+			'var pRadius=mvTrendsDays>30?1:mvTrendsDays>14?2:3;' .
+			'var maxTicks=mvTrendsDays>30?10:mvTrendsDays>14?14:undefined;' .
+
 			'charts.forEach(function(ch){' .
 				'var el=document.getElementById(ch.id);if(!el)return;' .
 				'var inst=new Chart(el,{type:"line",data:{labels:labels,datasets:ch.datasets.map(function(ds){' .
-					'return{label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+"22",tension:.4,fill:false,pointRadius:3,spanGaps:true};' .
+					'return{label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+"22",tension:.4,fill:false,pointRadius:pRadius,spanGaps:true};' .
 				'})},options:{responsive:true,' .
 					'plugins:{legend:{display:ch.datasets.length>1,labels:{font:{size:10},boxWidth:8}}},' .
-					'scales:{x:{ticks:{font:{size:10},color:"#999"}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,grid:{color:"rgba(0,0,0,.06)"}}}' .
+					'scales:{x:{ticks:{font:{size:10},color:"#999",maxTicksLimit:maxTicks,maxRotation:45}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,grid:{color:"rgba(0,0,0,.06)"}}}' .
 				'}});' .
 				'trendsChartInsts.push(inst);' .
 			'});' .

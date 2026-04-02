@@ -4,9 +4,31 @@
 
 Phase 2 of the WebLLM Enhancement roadmap adds **Transformers.js** integration, enabling instant browser-native AI tasks without server round-trips. This implementation provides 6 specialized AI capabilities that run entirely in the user's browser using HuggingFace models.
 
-**Status:** ✅ Implemented (January 2026)  
+**Status:** ✅ Implemented (January 2026, updated March 2026)  
 **Version:** 1.2.0+  
+**Library:** `@huggingface/transformers` v3.8.1 (stable)  
 **Bundle Impact:** +4.7KB minified JavaScript (+1.2MB models from CDN, lazy-loaded)
+
+---
+
+## Features
+
+### Browser-Native AI Tasks
+
+All tasks execute instantly in the browser without:
+- ❌ Server processing overhead
+- ❌ API key requirements
+- ❌ Network latency
+- ❌ Token costs
+- ❌ Privacy concerns (data never leaves browser)
+
+### WebGPU Hardware Acceleration
+
+Transformers.js v3 adds **automatic WebGPU detection** for hardware-accelerated inference:
+- ⚡ Up to 4x faster embeddings with WebGPU
+- 🔄 Automatic fallback to WASM on unsupported browsers
+- 🖥️ Works across Chrome, Edge, Firefox, and Safari
+- 📱 Full offline support after initial model download
 
 ---
 
@@ -317,6 +339,7 @@ $result = WP_MCP_AI_Tool_Registry::get_instance()
 
 - Model load: < 1 second (cached in browser)
 - Task execution: < 1-5 seconds depending on input length
+- **With WebGPU:** Up to 4x faster for embedding and inference tasks
 - No network required (fully offline)
 
 ### Browser Cache
@@ -430,6 +453,9 @@ connect-src 'self' https://cdn.jsdelivr.net https://huggingface.co;
 worker-src 'self' blob:;
 ```
 
+> **Note:** The library is loaded from `https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1`.
+> Previous versions used the deprecated `@xenova/transformers` package.
+
 ### Model Integrity
 
 - Models loaded from trusted HuggingFace CDN
@@ -498,15 +524,16 @@ Heavy processing happens in background threads, keeping UI responsive.
 
 ## Comparison with Server-Side
 
-| Aspect | Transformers.js | Server-Side |
-|--------|----------------|-------------|
+| Aspect | Transformers.js (v3) | Server-Side |
+|--------|---------------------|-------------|
 | **Latency** | < 1s (after cache) | 500ms - 5s |
 | **Cost** | Free | API charges |
 | **Privacy** | 100% local | Data sent to API |
 | **Offline** | Yes (after cache) | No |
-| **Scalability** | Unlimited (client CPU) | Server capacity |
+| **Scalability** | Unlimited (client CPU/GPU) | Server capacity |
 | **Accuracy** | Good (smaller models) | Excellent (large models) |
 | **First Use** | 10-60s (download) | Instant |
+| **GPU Accel** | WebGPU (up to 4x faster) | Server GPU |
 
 **Recommendation:** Use Transformers.js for:
 - Privacy-sensitive data
@@ -538,6 +565,6 @@ Use server-side for:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** January 26, 2026  
+**Document Version:** 1.1  
+**Last Updated:** March 30, 2026  
 **Status:** ✅ Implemented and Production-Ready
