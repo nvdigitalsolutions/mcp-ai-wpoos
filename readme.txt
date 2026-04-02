@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -272,13 +272,22 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= Unreleased =
+= 1.1.6 - April 2026 =
 
-**New: Transformers.js v3.8.1 + Qwen3 Models**
+**WordPress.org Compliance — Final Pass Before Resubmission**
 
-* CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`
-* WebGPU auto-detection for up to 4x faster embeddings, WASM fallback
-* 4 Qwen3 embedded models added (8B, 4B, 1.5B, 0.6B)
+* Optional component downloads now require explicit opt-in consent (admin notice with Download button)
+* All "Powered by" / credit attribution gated behind explicit administrator opt-in setting
+* Fixed 3 invalid URLs in External Services section (ReliefWeb, NV Digital Services)
+* Updated Symfony packages to 6.4.36 (cache, validator, http-client)
+* Added ITA Tariff Rates API to External Services documentation
+* CLI export command restricted to WordPress uploads directory (security hardening)
+* Field-specific sanitization for `register_setting()` — API keys/secrets preserved correctly
+* REST API `/no-sse` endpoint uses correct `permissions_check_assistant_list` callback
+* JSON input from `$_POST` now sanitized with `wp_mcp_ai_sanitize_recursive()` after decode
+* Cookie names and values sanitized before forwarding in JetEngine tool handlers
+* Full 13-guideline compliance audit completed and verified
+* NVIDIA NIM added as 8th AI provider in Getting Started wizard
 
 **Security**
 
