@@ -617,7 +617,7 @@ class WP_MCP_AI_Model_Service {
 	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
 	 * @return array Array of model_id => model_name pairs.
 	 */
-	protected function get_nvidia_models( $settings, $requires_vision, $requires_multimodal ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameters reserved for capability filtering.
+	protected function get_nvidia_models( $settings, $requires_vision, $requires_multimodal ) {
 		if ( empty( $settings['nvidia_api_key'] ) ) {
 			return array();
 		}
