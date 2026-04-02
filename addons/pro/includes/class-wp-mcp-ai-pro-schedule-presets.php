@@ -2467,7 +2467,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 			return array(
 				'upwork_job_discovery_scan'    => array(
 					'name'          => __( 'Upwork Job Discovery Scan', 'mcp-ai-wpoos-pro' ),
-					'description'   => __( 'Periodically searches the Upwork marketplace for new job postings matching configured skills, categories, and budget preferences. Surfaces high-potential opportunities before competitors apply.', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Periodically searches the Upwork marketplace for new job postings matching configured skills, categories, and budget preferences. Surfaces high-potential opportunities before competitors apply. Works in fallback mode via web search when no Upwork connection is configured.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
 					'category'      => 'monitoring',
 					'icon'          => 'dashicons-search',
@@ -2492,7 +2492,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				),
 				'upwork_job_scoring'          => array(
 					'name'          => __( 'Upwork Job Fit Scoring', 'mcp-ai-wpoos-pro' ),
-					'description'   => __( 'Scores recently discovered Upwork jobs against your freelancer profile, skills, and rate preferences. Ranks opportunities by fit to prioritise proposal effort on the highest-value postings.', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Scores recently discovered Upwork jobs against your freelancer profile, skills, and rate preferences. Ranks opportunities by fit to prioritise proposal effort on the highest-value postings. Supports text-based fallback scoring when no Upwork connection is configured.', 'mcp-ai-wpoos-pro' ),
 					'toolkit'       => 'upwork_freelancer',
 					'category'      => 'business',
 					'icon'          => 'dashicons-star-half',
