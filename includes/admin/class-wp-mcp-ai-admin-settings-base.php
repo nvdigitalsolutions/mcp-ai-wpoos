@@ -281,6 +281,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			return array(
 				'openai_api_key'                       => '',
+				'openai_api_key_type'                  => 'standard',
+				'openai_project_id'                    => '',
+				'openai_base_url'                      => '',
 				'gemini_api_key'                       => '',
 				'ollama_endpoint_url'                  => '',
 				'ollama_model'                         => '',

@@ -182,12 +182,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, OpenAI will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'openai_api_key_type'                => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your OpenAI subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for pay-as-you-go API keys. Business/Team and Enterprise keys may have different rate limits and project scoping.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (Pay-as-you-go)', 'mcp-ai-wpoos' ),
+						'business'   => __( 'ChatGPT Business / Team', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'ChatGPT Enterprise', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'openai_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'OpenAI API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: OpenAI API keys URL */
-						__( 'Your OpenAI API key. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your OpenAI API key. Supports standard, project-scoped, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'mcp-ai-wpoos' ),
 						'https://platform.openai.com/api-keys'
 					),
 					'placeholder'  => 'sk-...',
@@ -214,9 +225,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_organization_id'             => array(
 					'type'         => 'text',
 					'label'        => __( 'OpenAI Organization ID (Optional)', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. Sent as the OpenAI-Organization header with every request. Find it in your OpenAI account settings.', 'mcp-ai-wpoos' ),
 					'placeholder'  => 'org-...',
 					'autocomplete' => 'off',
+				),
+				'openai_project_id'                  => array(
+					'type'         => 'text',
+					'label'        => __( 'OpenAI Project ID (Optional)', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your OpenAI project ID for project-scoped API access. Sent as the OpenAI-Project header to scope usage, billing, and access. Recommended for Business and Enterprise accounts. Find it in your OpenAI project settings.', 'mcp-ai-wpoos' ),
+					'placeholder'  => 'proj_...',
+					'autocomplete' => 'off',
+				),
+				'openai_base_url'                    => array(
+					'type'        => 'url',
+					'label'       => __( 'OpenAI API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for OpenAI API requests. Leave empty to use the default (https://api.openai.com/v1). Useful for enterprise proxy endpoints, Azure OpenAI, or OpenAI-compatible services. Must include the version path (e.g. /v1).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.openai.com/v1',
 				),
 				'openai_image_model'                 => array(
 					'type'        => 'select',
@@ -1017,7 +1041,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
+					'fields' => array( 'enable_openai', 'openai_api_key_type', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_project_id', 'openai_base_url', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
