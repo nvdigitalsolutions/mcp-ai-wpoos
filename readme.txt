@@ -1190,4 +1190,4 @@ The base plugin and the Pro addon are independent codebases. The base plugin doe
 
 = Patent Notice =
 
-NV oOS is the subject of a pending patent application (Application #19/410,504). The patent does not restrict your GPL rights to the base plugin. See the [Patent Notice FAQ](#is-this-plugin-patented) for details.
+NV oOS is the subject of a pending patent application (Application #19/410,504). The patent does not restrict your GPL rights to the base plugin. See the "Is this plugin patented?" FAQ entry above for details.
