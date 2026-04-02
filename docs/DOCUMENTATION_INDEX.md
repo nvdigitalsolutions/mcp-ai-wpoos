@@ -815,6 +815,24 @@ Complete integration of Hugging Face Inference API as a provider for open-source
 - Privacy-friendly (can self-host)
 - Integrated with provider priority and fallback system
 
+### NVIDIA NIM Integration (April 2026)
+Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
+
+- **[NVIDIA_NIM_SETUP.md](features/ai-providers/nvidia/NVIDIA_NIM_SETUP.md)** ⭐ **NEW**
+  - Step-by-step setup guide for NVIDIA NIM provider
+  - API key generation via build.nvidia.com
+  - Getting Started wizard and Settings page configuration
+  - Self-hosted NIM container support
+  - Available models catalog (Llama, Mistral, Nemotron, Gemma, Qwen, DeepSeek)
+  - Troubleshooting common issues
+
+**Key Features:**
+- OpenAI-compatible API interface
+- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma, Qwen, DeepSeek R1)
+- Cloud inference via `integrate.api.nvidia.com` or self-hosted NIM containers
+- Integrated with provider priority and fallback system
+- Getting Started wizard support for first-time setup
+
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 

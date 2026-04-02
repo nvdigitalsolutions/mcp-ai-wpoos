@@ -120,6 +120,8 @@
 			apiKey = $( '#wp_mcp_ai_gemini_key' ).val();
 		} else if ( 'huggingface' === provider ) {
 			apiKey = $( '#wp_mcp_ai_huggingface_key' ).val();
+		} else if ( 'nvidia' === provider ) {
+			apiKey = $( '#wp_mcp_ai_nvidia_key' ).val();
 		} else if ( 'ollama' === provider ) {
 			extraData.ollama_url = $( '#wp_mcp_ai_ollama_url' ).val();
 		} else if ( 'lm_studio' === provider ) {
