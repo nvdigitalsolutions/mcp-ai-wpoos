@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-model-not-found-error',
-        'version' => 'dev-copilot/fix-model-not-found-error',
-        'reference' => 'e0bec19d703d23587ff91c44c4b708bf0f655c8c',
+        'pretty_version' => 'dev-copilot/extend-model-config-nvidia-llm',
+        'version' => 'dev-copilot/extend-model-config-nvidia-llm',
+        'reference' => '1d3a04eb76476e3c9da60abda28968cf8e45f0f5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-model-not-found-error',
-            'version' => 'dev-copilot/fix-model-not-found-error',
-            'reference' => 'e0bec19d703d23587ff91c44c4b708bf0f655c8c',
+            'pretty_version' => 'dev-copilot/extend-model-config-nvidia-llm',
+            'version' => 'dev-copilot/extend-model-config-nvidia-llm',
+            'reference' => '1d3a04eb76476e3c9da60abda28968cf8e45f0f5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -1642,15 +1642,17 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					return;
 				}
 
-				$model_count = isset( $result['model_count'] ) ? $result['model_count'] : 0;
+				$model_count      = isset( $result['model_count'] ) ? $result['model_count'] : 0;
+				$configured_count = isset( $result['configured_count'] ) ? $result['configured_count'] : 0;
 
 				wp_send_json_success(
 					array(
 						'message' => __( 'NVIDIA NIM connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Endpoint', 'mcp-ai-wpoos' )        => isset( $settings['nvidia_endpoint_url'] ) ? $settings['nvidia_endpoint_url'] : 'https://integrate.api.nvidia.com/v1',
-							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
-							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+							__( 'Endpoint', 'mcp-ai-wpoos' )          => isset( $settings['nvidia_endpoint_url'] ) ? $settings['nvidia_endpoint_url'] : 'https://integrate.api.nvidia.com/v1',
+							__( 'API Models Available', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Configured Models', 'mcp-ai-wpoos' ) => $configured_count,
+							__( 'Selected Model', 'mcp-ai-wpoos' )    => isset( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
