@@ -69,7 +69,7 @@ fi
 echo ""
 
 # Build all versions using the build-plugin-zip.sh script
-# Use --all flag for base, pro, combined, and also add --core-only
+# Use --all flag for base, pro, combined, toolkits, and also add --core-only
 # Always pass --skip-npm-build since we already ran the full build above
 "$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG --skip-npm-build
 
@@ -91,6 +91,13 @@ echo ""
 echo "📦 Build output in build/:"
 ls -lh "$ROOT_DIR/build/"*.zip | awk '{print "   " $9 " (" $5 ")"}'
 echo ""
+if [ -d "$ROOT_DIR/build/toolkit-addons" ]; then
+    echo "📦 Toolkit add-ons in build/toolkit-addons/:"
+    ls -lh "$ROOT_DIR/build/toolkit-addons/"*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
+    TOOLKIT_COUNT=$(ls -1 "$ROOT_DIR/build/toolkit-addons/"*.zip 2>/dev/null | wc -l)
+    echo "   (${TOOLKIT_COUNT} individual toolkit add-on ZIPs)"
+    echo ""
+fi
 echo "📄 WordPress.org submission package:"
 WPORG_ZIP_NAME="nvdigital-open-operator-system-oos-${VERSION}.zip"
 WPORG_SIZE=$(du -h "$ROOT_DIR/build/$WPORG_ZIP_NAME" | cut -f1)
