@@ -83,13 +83,6 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Fetches an Upwork job posting and uses AI to draft a personalised proposal tailored to the job requirements and your freelancer profile. Proposals must be submitted manually on Upwork.', 'mcp-ai-wpoos-pro' );
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_description() {
 		return __( 'Fetches an Upwork job posting and uses AI to draft a personalised proposal tailored to the job requirements and your freelancer profile. Proposals must be submitted manually on Upwork. When no Upwork connection is configured, accepts job_title and job_description text directly.', 'mcp-ai-wpoos-pro' );
 	}
 
