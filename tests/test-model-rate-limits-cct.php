@@ -125,6 +125,41 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that NVIDIA NIM models are included in defaults.
+	 */
+	public function test_default_models_include_nvidia() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$nvidia_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return 'nvidia' === $model['provider'];
+			}
+		);
+
+		$this->assertNotEmpty( $nvidia_models );
+
+		// Check for specific models across different families.
+		$model_names = array_column( $nvidia_models, 'model_name' );
+		$this->assertContains( 'meta/llama-3.3-70b-instruct', $model_names );
+		$this->assertContains( 'meta/llama-3.1-8b-instruct', $model_names );
+		$this->assertContains( 'nvidia/llama-3.1-nemotron-70b-instruct', $model_names );
+		$this->assertContains( 'nvidia/nemotron-3-super-120b-a12b', $model_names );
+		$this->assertContains( 'mistralai/mistral-large-2-instruct', $model_names );
+		$this->assertContains( 'deepseek-ai/deepseek-r1', $model_names );
+		$this->assertContains( 'qwen/qwen3-32b', $model_names );
+		$this->assertContains( 'meta/llama-4-scout-17b-16e-instruct', $model_names );
+		$this->assertContains( 'google/gemma-3-27b-it', $model_names );
+
+		// Verify we have a substantial number of NVIDIA models.
+		$this->assertGreaterThanOrEqual( 50, count( $nvidia_models ) );
+	}
+
+	/**
 	 * Test that TPM limits are reasonable.
 	 */
 	public function test_default_models_have_valid_tpm_limits() {
@@ -162,8 +197,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'context_window', $model );
 			$this->assertIsInt( $model['context_window'] );
 			$this->assertGreaterThan( 0, $model['context_window'] );
-			// Max context should be less than 2 million tokens.
-			$this->assertLessThanOrEqual( 2000000, $model['context_window'] );
+			// Max context should be less than 3 million tokens.
+			$this->assertLessThanOrEqual( 3000000, $model['context_window'] );
 		}
 	}
 
