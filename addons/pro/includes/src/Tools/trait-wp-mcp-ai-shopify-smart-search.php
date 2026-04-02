@@ -61,16 +61,16 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 	/**
 	 * Extract meaningful search tokens from a query string.
 	 *
-	 * Removes stop words and normalises case. Preserves numeric values since
+	 * Removes stop words and normalizes case. Preserves numeric values since
 	 * they may represent product attributes (e.g. "2 carat", "14k").
 	 *
 	 * @param string $query The original search query.
 	 * @return array Array of meaningful lowercase tokens.
 	 */
 	protected function extract_search_tokens( $query ) {
-		// Normalise to lowercase and split on whitespace / common separators.
-		$normalised = strtolower( trim( $query ) );
-		$raw_tokens = preg_split( '/[\s,;|\/\-]+/', $normalised, -1, PREG_SPLIT_NO_EMPTY );
+		// Normalize to lowercase and split on whitespace / common separators.
+		$normalized = strtolower( trim( $query ) );
+		$raw_tokens = preg_split( '/[\s,;|\/\-]+/', $normalized, -1, PREG_SPLIT_NO_EMPTY );
 
 		$tokens = array();
 		foreach ( $raw_tokens as $token ) {
@@ -113,8 +113,8 @@ trait WP_MCP_AI_Shopify_Smart_Search {
 		// 1. Full token string (stop-words removed). Only include if it differs
 		//    meaningfully from the original query.
 		$full_cleaned = implode( ' ', $tokens );
-		$original_normalised = strtolower( trim( $original_query ) );
-		if ( $full_cleaned !== $original_normalised && '' !== $full_cleaned ) {
+		$original_normalized = strtolower( trim( $original_query ) );
+		if ( $full_cleaned !== $original_normalized && '' !== $full_cleaned ) {
 			$sub_queries[] = $full_cleaned;
 		}
 
