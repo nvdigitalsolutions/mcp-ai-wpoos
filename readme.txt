@@ -651,7 +651,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When ReliefWeb tools are used
 * **Service URL:** https://api.reliefweb.int/v1/reports
 * **Terms of Service:** https://reliefweb.int/terms-conditions
-* **Privacy Policy:** https://reliefweb.int/terms
+* **Privacy Policy:** https://reliefweb.int/terms-conditions
 
 **11. WordPress.org API**
 * **Purpose:** PHP version compatibility check for site health
@@ -757,6 +757,14 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
 * **Privacy Policy:** https://www.gdacs.org/About/overview.aspx
 
+**23a. ITA Tariff Rates API (Trade.gov)**
+* **Purpose:** Automated tariff rate lookups for international trade compliance (Pro addon feature)
+* **Data Sent:** Country codes, product classification codes (HS codes), API key
+* **When:** When the import duty lookup tool is used (requires ITA API key configuration)
+* **Service URL:** https://api.trade.gov/v1/tariff_rates/search
+* **Terms of Service:** https://developer.trade.gov/
+* **Privacy Policy:** https://www.trade.gov/privacy
+
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
 * **Data Sent:** Location queries, coordinates, place IDs, API key
@@ -780,16 +788,16 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
 * **When:** Only when a site owner explicitly opts in via Settings → NV oOS → "Enable activation tracking". Tracking is **disabled by default** and requires explicit consent. Tracking is never sent from local/development environments.
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
-* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE
+* **Terms of Service:** https://www.gnu.org/licenses/gpl-3.0.html
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-In:** Enable via Settings → NV oOS → "Enable activation tracking" or return `true` from the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is OFF by default.
 
 **27. NV Digital Solutions License Server & Optional Component Downloads**
-* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
+* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size — downloads only occur after explicit administrator consent via an admin notice
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
-* **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
-* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
-* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **When:** (a) Only when a user manually enters and activates a license key; (b) Only when the site administrator explicitly clicks "Download Optional Components" in the admin notice (opt-in required, never automatic)
+* **Service URLs:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://www.gnu.org/licenses/gpl-3.0.html (GPLv3 license); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
@@ -935,7 +943,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * File uploads (AI providers only)
 * Search queries (when using search/weather tools)
 * OAuth credentials (when using optional integrations)
-* Anonymous activation data (opt-out available; see service #26 above)
+* Anonymous activation data (opt-in only; see service #26 above)
 
 **What is NOT sent:**
 * WordPress admin credentials
@@ -946,7 +954,7 @@ The following libraries are loaded as external CDN connections directly in the v
 **When data is sent:**
 * Only when you or your users actively use AI features
 * Only to services you have explicitly configured
-* Anonymous activation/deactivation tracking on plugin lifecycle events (opt-out available)
+* Anonymous activation tracking only when explicitly opted in (see service #26 above)
 
 **Your control:**
 * You choose which AI provider to use
@@ -976,12 +984,12 @@ The following libraries are loaded as external CDN connections directly in the v
 * Optional: Chat transcripts (if JetEngine integration is enabled)
 * Optional: Usage logs (disabled by default, controlled in settings)
 
-**Activation Tracking (Opt-Out Available):**
-* On plugin activation and deactivation, anonymous usage data is sent to NV Digital Solutions
+**Activation Tracking (Opt-In Only):**
+* Anonymous usage data is sent to NV Digital Solutions only when explicitly enabled by the site administrator
 * Data collected: hashed site URL (SHA-256 HMAC, non-reversible), plugin version, WordPress version, PHP version, locale, multisite status
 * No personally identifiable information (PII) is collected or stored
 * No tracking scripts, cookies, or beacons are used
-* Opt-out: Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
+* Tracking is **OFF by default** — enable via Settings → NV oOS → "Enable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
 * Tracking is automatically skipped in local/development environments (localhost, .local, .test, .dev)
 
 = What Data is Sent to AI Providers? =

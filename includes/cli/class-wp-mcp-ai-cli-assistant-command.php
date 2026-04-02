@@ -415,7 +415,16 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		if ( $file ) {
 			$file = wp_normalize_path( $file );
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to user-specified path.
+
+			// WordPress.org compliance: restrict file writes to the uploads directory.
+			$upload_dir      = wp_upload_dir();
+			$uploads_basedir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) );
+			if ( 0 !== strpos( realpath( dirname( $file ) ) ? wp_normalize_path( realpath( dirname( $file ) ) ) . '/' : $file, $uploads_basedir ) ) {
+				/* translators: %s: uploads directory path */
+				WP_CLI::error( sprintf( __( 'For security, export files must be saved inside the uploads directory (%s).', 'mcp-ai-wpoos' ), $uploads_basedir ) );
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to restricted uploads path.
 			if ( false === file_put_contents( $file, $json ) ) {
 				/* translators: %s: file path */
 				WP_CLI::error( sprintf( __( 'Could not write to file: %s', 'mcp-ai-wpoos' ), $file ) );

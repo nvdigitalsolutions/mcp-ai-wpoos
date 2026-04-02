@@ -524,8 +524,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 				$args['cookies'][] = new WP_Http_Cookie(
 					array(
-						'name'  => $cookie_name,
-						'value' => $cookie_value,
+						'name'  => sanitize_text_field( $cookie_name ),
+						'value' => sanitize_text_field( $cookie_value ),
 					)
 				);
 			}

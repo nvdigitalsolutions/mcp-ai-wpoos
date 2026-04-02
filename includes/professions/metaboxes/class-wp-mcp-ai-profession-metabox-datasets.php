@@ -320,7 +320,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 		// Get selected datasets from form.
 		$selected_datasets = array();
 		if ( isset( $_POST['profession_preferred_datasets'] ) && is_array( $_POST['profession_preferred_datasets'] ) ) {
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below via json_decode.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Raw JSON array; each element is decoded and individual fields are sanitized with sanitize_text_field() below.
 			$raw_datasets = wp_unslash( $_POST['profession_preferred_datasets'] );
 
 			foreach ( $raw_datasets as $dataset_json ) {

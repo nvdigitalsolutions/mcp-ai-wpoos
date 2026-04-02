@@ -265,6 +265,42 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		}
 
 		/**
+		 * Keys that hold API keys, passwords, or secrets.
+		 *
+		 * These fields are validated for type safety (must be strings) and trimmed,
+		 * but are NOT passed through sanitize_textarea_field() because that function
+		 * strips octets and certain characters that may be valid in credentials.
+		 *
+		 * @var array<string>
+		 */
+		private static $secret_field_patterns = array(
+			'_api_key',
+			'_secret',
+			'_password',
+			'_token',
+			'_key',
+			'client_id',
+			'client_secret',
+			'access_token',
+			'refresh_token',
+		);
+
+		/**
+		 * Check if a settings key represents a secret/credential field.
+		 *
+		 * @param string $key The settings key to check.
+		 * @return bool True if the key is a secret field.
+		 */
+		private function is_secret_field( $key ) {
+			foreach ( self::$secret_field_patterns as $pattern ) {
+				if ( false !== strpos( (string) $key, $pattern ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
 		 * Recursively sanitize a settings array.
 		 *
 		 * Applies type-appropriate sanitization to each value:
@@ -272,6 +308,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * - Integers are cast to int.
 		 * - Floats are cast to float.
 		 * - Strings that look like URLs are passed through esc_url_raw().
+		 * - Secret/credential fields (API keys, passwords, tokens) are trimmed but
+		 *   NOT passed through sanitize_textarea_field() to avoid altering valid
+		 *   credential characters.
 		 * - All other strings use sanitize_textarea_field(), which strips HTML/PHP
 		 *   tags but PRESERVES newlines — critical for multiline settings such as
 		 *   ip_whitelist (newline-separated IPs) and textarea prompts.
@@ -302,6 +341,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// Use esc_url_raw for values that look like URLs.
 					if ( preg_match( '/^https?:\/\//i', $value ) ) {
 						$sanitized[ $key ] = esc_url_raw( $value );
+					} elseif ( $this->is_secret_field( $key ) ) {
+						// Secret fields: trim whitespace only; do not strip
+						// octets or HTML entities that may be valid in credentials.
+						$sanitized[ $key ] = trim( $value );
 					} else {
 						// sanitize_textarea_field strips HTML tags while preserving
 						// newlines — safe for all string types in this option.
