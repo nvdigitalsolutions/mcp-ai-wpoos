@@ -471,6 +471,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			$huggingface_key    = ! empty( $settings['huggingface_api_key'] ) ? '••••••••••••••••' : '';
 			$ollama_url         = ! empty( $settings['ollama_endpoint_url'] ) ? esc_url( $settings['ollama_endpoint_url'] ) : 'http://localhost:11434';
 			$lm_studio_url      = ! empty( $settings['lm_studio_endpoint_url'] ) ? esc_url( $settings['lm_studio_endpoint_url'] ) : 'http://localhost:1234';
+			$nvidia_key         = ! empty( $settings['nvidia_api_key'] ) ? '••••••••••••••••' : '';
 			$cloudflare_token   = ! empty( $settings['cloudflare_api_token'] ) ? '••••••••••••••••' : '';
 			$cloudflare_acct_id = ! empty( $settings['cloudflare_account_id'] ) ? esc_attr( $settings['cloudflare_account_id'] ) : '';
 			$test_nonce         = wp_create_nonce( 'wp-mcp-ai-provider-diagnostic' );
@@ -492,6 +493,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				),
 				'huggingface' => array(
 					'label'    => '🤗 Hugging Face',
+					'icon_img' => '',
+				),
+				'nvidia'      => array(
+					'label'    => '🟢 NVIDIA NIM',
 					'icon_img' => '',
 				),
 				'ollama'      => array(
@@ -725,6 +730,54 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="huggingface"></span>
+				</div>
+
+				<!-- NVIDIA NIM panel -->
+				<div class="wp-mcp-ai-provider-panel"
+					id="wp-mcp-ai-panel-nvidia"
+					role="tabpanel"
+					aria-labelledby="wp-mcp-ai-tab-nvidia"
+					hidden
+					data-panel="nvidia">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row">
+								<label for="wp_mcp_ai_nvidia_key">
+									<?php esc_html_e( 'NVIDIA API Key', 'mcp-ai-wpoos' ); ?>
+								</label>
+							</th>
+							<td>
+								<div style="display:flex;gap:8px;align-items:center;">
+									<input type="password"
+											id="wp_mcp_ai_nvidia_key"
+											name="wp_mcp_ai_nvidia_key"
+											class="regular-text"
+											value="<?php echo esc_attr( $nvidia_key ); ?>"
+											placeholder="nvapi-…"
+											autocomplete="new-password">
+									<button type="button" class="button wp-mcp-ai-show-key" data-target="wp_mcp_ai_nvidia_key">
+										<?php esc_html_e( 'Show', 'mcp-ai-wpoos' ); ?>
+									</button>
+								</div>
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: URL to NVIDIA Build Portal */
+										esc_html__( 'Get your API key from %s', 'mcp-ai-wpoos' ),
+										'<a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer">build.nvidia.com</a>'
+									);
+									?>
+								</p>
+							</td>
+						</tr>
+					</table>
+					<button type="button"
+							class="button button-secondary wp-mcp-ai-wizard-test-btn"
+							data-provider="nvidia"
+							data-nonce="<?php echo esc_attr( $test_nonce ); ?>">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<span class="wp-mcp-ai-test-result" aria-live="polite" data-for="nvidia"></span>
 				</div>
 
 				<!-- Ollama panel -->
@@ -1115,7 +1168,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare' );
 			if ( ! in_array( $provider, $valid_providers, true ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid provider.', 'mcp-ai-wpoos' ) ) );
 			}
@@ -1144,6 +1197,12 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					$settings['huggingface_api_key'] = $api_key;
 					// Enable Hugging Face (disabled by default) when a key is provided.
 					$settings['enable_huggingface'] = true;
+				}
+			} elseif ( 'nvidia' === $provider ) {
+				if ( ! $this->is_masked_key( $api_key ) ) {
+					$settings['nvidia_api_key'] = $api_key;
+					// Enable NVIDIA NIM (disabled by default) when a key is provided.
+					$settings['enable_nvidia'] = true;
 				}
 			} elseif ( 'ollama' === $provider ) {
 				// For Ollama, save the endpoint URL from the extra data.
