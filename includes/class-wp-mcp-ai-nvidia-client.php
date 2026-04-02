@@ -62,6 +62,53 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 		}
 
 		/**
+		 * Extract a human-readable error message from an NVIDIA NIM error response.
+		 *
+		 * NVIDIA NIM may return errors in multiple formats:
+		 * - OpenAI-compatible: {"error": {"message": "...", "type": "...", "code": "..."}}
+		 * - NVIDIA native:     {"status": 404, "title": "Not Found", "detail": "..."}
+		 * - String error:      {"error": "some error string"}
+		 *
+		 * @param array  $decoded  Decoded JSON response body.
+		 * @param string $fallback Fallback message when no message can be extracted.
+		 * @return string
+		 */
+		protected function extract_error_message( array $decoded, $fallback = '' ) {
+			// OpenAI-compatible format with nested error.message field.
+			if ( isset( $decoded['error']['message'] ) && '' !== $decoded['error']['message'] ) {
+				return (string) $decoded['error']['message'];
+			}
+
+			// NVIDIA native format with a detail field.
+			if ( isset( $decoded['detail'] ) && '' !== $decoded['detail'] ) {
+				$detail = (string) $decoded['detail'];
+
+				// Prepend the title if available for additional context.
+				if ( isset( $decoded['title'] ) && '' !== $decoded['title'] ) {
+					$detail = (string) $decoded['title'] . ': ' . $detail;
+				}
+
+				return $detail;
+			}
+
+			// Flat error string (error key is a plain string).
+			if ( isset( $decoded['error'] ) && is_string( $decoded['error'] ) && '' !== $decoded['error'] ) {
+				return $decoded['error'];
+			}
+
+			// NVIDIA native format with only title.
+			if ( isset( $decoded['title'] ) && '' !== $decoded['title'] ) {
+				return (string) $decoded['title'];
+			}
+
+			if ( '' !== $fallback ) {
+				return $fallback;
+			}
+
+			return __( 'Unexpected response from NVIDIA NIM.', 'mcp-ai-wpoos' );
+		}
+
+		/**
 		 * Test the connection to the NVIDIA NIM API.
 		 *
 		 * @return array|WP_Error
@@ -117,14 +164,26 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$code = wp_remote_retrieve_response_code( $response );
 
 			if ( $code < 200 || $code >= 300 ) {
+				$body    = wp_remote_retrieve_body( $response );
+				$decoded = json_decode( $body, true );
+
+				$error_detail = is_array( $decoded )
+					? $this->extract_error_message( $decoded )
+					: trim( $body );
+
 				WP_MCP_AI_Logger::log_error(
 					'NVIDIA NIM returned an error response.',
-					array( 'code' => $code )
+					array(
+						'code' => $code,
+						'url'  => $url,
+						'body' => is_array( $decoded ) ? $decoded : $body,
+					)
 				);
 
 				return new WP_Error(
 					'wp_mcp_ai_nvidia_api_error',
-					__( 'NVIDIA NIM returned an unexpected response.', 'mcp-ai-wpoos' ),
+					/* translators: %1$d: HTTP status code, %2$s: error detail. */
+					sprintf( __( 'NVIDIA NIM returned HTTP %1$d: %2$s', 'mcp-ai-wpoos' ), $code, $error_detail ),
 					array( 'status' => $code )
 				);
 			}
@@ -214,18 +273,39 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode NVIDIA NIM response.', array( 'body' => $body ) );
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode NVIDIA NIM response.',
+					array(
+						'url'  => $url,
+						'code' => $code,
+						'body' => $body,
+					)
+				);
+
+				// Non-JSON responses (e.g. "404 page not found") indicate the endpoint URL is likely incorrect.
+				if ( $code >= 400 ) {
+					return new WP_Error(
+						'wp_mcp_ai_nvidia_invalid_response',
+						/* translators: %1$d: HTTP status code, %2$s: endpoint URL. */
+						sprintf( __( 'NVIDIA NIM endpoint returned HTTP %1$d with a non-JSON response. Verify the endpoint URL is correct: %2$s', 'mcp-ai-wpoos' ), $code, $url ),
+						array(
+							'status' => $code,
+							'body'   => $body,
+						)
+					);
+				}
 
 				return new WP_Error( 'wp_mcp_ai_nvidia_invalid_response', __( 'The NVIDIA NIM API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'Unexpected response from NVIDIA NIM.', 'mcp-ai-wpoos' );
+				$error_message = $this->extract_error_message( $decoded );
 
 				WP_MCP_AI_Logger::log_error(
 					'NVIDIA NIM returned an error response.',
 					array(
 						'code' => $code,
+						'url'  => $url,
 						'body' => $decoded,
 					)
 				);
@@ -317,12 +397,26 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				'timeout' => max( 60, $this->resolve_timeout( $options ) ),
 			);
 
-			WP_MCP_AI_Logger::log_event( 'nvidia_request', 'Sending request to NVIDIA NIM.', array( 'model' => $model ) );
+			WP_MCP_AI_Logger::log_event(
+				'nvidia_request',
+				'Sending request to NVIDIA NIM.',
+				array(
+					'url'   => $url,
+					'model' => $model,
+				)
+			);
 
 			$response = wp_remote_post( $url, $request_args );
 
 			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'NVIDIA NIM request failed.', array( 'error' => $response->get_error_message() ) );
+				WP_MCP_AI_Logger::log_error(
+					'NVIDIA NIM request failed.',
+					array(
+						'url'   => $url,
+						'model' => $model,
+						'error' => $response->get_error_message(),
+					)
+				);
 
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
@@ -339,19 +433,42 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode NVIDIA NIM response.', array( 'body' => $body ) );
+				WP_MCP_AI_Logger::log_error(
+					'Failed to decode NVIDIA NIM response.',
+					array(
+						'url'   => $url,
+						'model' => $model,
+						'code'  => $code,
+						'body'  => $body,
+					)
+				);
+
+				// Non-JSON responses (e.g. "404 page not found") indicate the endpoint URL is likely incorrect.
+				if ( $code >= 400 ) {
+					return new WP_Error(
+						'wp_mcp_ai_nvidia_invalid_response',
+						/* translators: %1$d: HTTP status code, %2$s: model identifier. */
+						sprintf( __( 'NVIDIA NIM returned HTTP %1$d with a non-JSON response for model "%2$s". The endpoint URL or model may be incorrect.', 'mcp-ai-wpoos' ), $code, $model ),
+						array(
+							'status' => $code,
+							'body'   => $body,
+						)
+					);
+				}
 
 				return new WP_Error( 'wp_mcp_ai_nvidia_invalid_response', __( 'The NVIDIA NIM API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from NVIDIA NIM.', 'mcp-ai-wpoos' );
+				$error_message = $this->extract_error_message( $decoded );
 
 				WP_MCP_AI_Logger::log_error(
 					'NVIDIA NIM returned an error response.',
 					array(
-						'code' => $code,
-						'body' => $decoded,
+						'code'  => $code,
+						'url'   => $url,
+						'model' => $model,
+						'body'  => $decoded,
 					)
 				);
 
