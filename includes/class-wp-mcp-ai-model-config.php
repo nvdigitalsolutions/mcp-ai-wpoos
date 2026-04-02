@@ -301,17 +301,18 @@ class WP_MCP_AI_Model_Config {
 
 			// Convert CCT model data to config format.
 			$configs[ $model_id ] = array(
-				'name'                  => $name,
-				'provider'              => isset( $model_data['provider'] ) ? $model_data['provider'] : '',
-				'tpm'                   => isset( $model_data['tpm_limit'] ) ? absint( $model_data['tpm_limit'] ) : 0,
-				'rpm'                   => isset( $model_data['rpm_limit'] ) ? absint( $model_data['rpm_limit'] ) : 0,
-				'tpd'                   => 0, // Not in CCT, calculate from TPM if needed.
-				'rpd'                   => 0, // Not in CCT, calculate from RPM if needed.
-				'context_window'        => isset( $model_data['context_window'] ) ? absint( $model_data['context_window'] ) : 0,
-				'max_completion_tokens' => isset( $model_data['max_output_tokens'] ) ? absint( $model_data['max_output_tokens'] ) : 0,
-				'fallback_model'        => isset( $model_data['fallback_model'] ) ? sanitize_text_field( $model_data['fallback_model'] ) : '',
-				'cost_per_1k'           => isset( $model_data['cost_per_1k_input_tokens'] ) ? floatval( $model_data['cost_per_1k_input_tokens'] ) : 0.0,
-				'status'                => 'active',
+				'name'                      => $name,
+				'provider'                  => isset( $model_data['provider'] ) ? $model_data['provider'] : '',
+				'tpm'                       => isset( $model_data['tpm_limit'] ) ? absint( $model_data['tpm_limit'] ) : 0,
+				'rpm'                       => isset( $model_data['rpm_limit'] ) ? absint( $model_data['rpm_limit'] ) : 0,
+				'tpd'                       => 0, // Not in CCT, calculate from TPM if needed.
+				'rpd'                       => 0, // Not in CCT, calculate from RPM if needed.
+				'context_window'            => isset( $model_data['context_window'] ) ? absint( $model_data['context_window'] ) : 0,
+				'max_completion_tokens'     => isset( $model_data['max_output_tokens'] ) ? absint( $model_data['max_output_tokens'] ) : 0,
+				'supports_function_calling' => isset( $model_data['supports_function_calling'] ) ? (bool) $model_data['supports_function_calling'] : true,
+				'fallback_model'            => isset( $model_data['fallback_model'] ) ? sanitize_text_field( $model_data['fallback_model'] ) : '',
+				'cost_per_1k'               => isset( $model_data['cost_per_1k_input_tokens'] ) ? floatval( $model_data['cost_per_1k_input_tokens'] ) : 0.0,
+				'status'                    => 'active',
 			);
 
 			// Calculate TPD and RPD from TPM and RPM (rough estimate: 24 hours * 60 minutes).
@@ -3115,16 +3116,18 @@ class WP_MCP_AI_Model_Config {
 	 */
 	protected static function convert_cct_to_config( $cct_data ) {
 		return array(
-			'name'           => isset( $cct_data['model_name'] ) ? $cct_data['model_name'] : '',
-			'provider'       => isset( $cct_data['provider'] ) ? $cct_data['provider'] : '',
-			'tpm'            => isset( $cct_data['tpm'] ) ? absint( $cct_data['tpm'] ) : 0,
-			'rpm'            => isset( $cct_data['rpm'] ) ? absint( $cct_data['rpm'] ) : 0,
-			'tpd'            => isset( $cct_data['tpd'] ) ? absint( $cct_data['tpd'] ) : 0,
-			'rpd'            => isset( $cct_data['rpd'] ) ? absint( $cct_data['rpd'] ) : 0,
-			'context_window' => isset( $cct_data['context_window'] ) ? absint( $cct_data['context_window'] ) : 0,
-			'fallback_model' => isset( $cct_data['fallback_model'] ) ? sanitize_text_field( $cct_data['fallback_model'] ) : null,
-			'cost_per_1k'    => isset( $cct_data['input_cost_per_1k'] ) ? floatval( $cct_data['input_cost_per_1k'] ) : 0.0,
-			'status'         => 'active',
+			'name'                      => isset( $cct_data['model_name'] ) ? $cct_data['model_name'] : '',
+			'provider'                  => isset( $cct_data['provider'] ) ? $cct_data['provider'] : '',
+			'tpm'                       => isset( $cct_data['tpm'] ) ? absint( $cct_data['tpm'] ) : 0,
+			'rpm'                       => isset( $cct_data['rpm'] ) ? absint( $cct_data['rpm'] ) : 0,
+			'tpd'                       => isset( $cct_data['tpd'] ) ? absint( $cct_data['tpd'] ) : 0,
+			'rpd'                       => isset( $cct_data['rpd'] ) ? absint( $cct_data['rpd'] ) : 0,
+			'context_window'            => isset( $cct_data['context_window'] ) ? absint( $cct_data['context_window'] ) : 0,
+			'max_completion_tokens'     => isset( $cct_data['max_output_tokens'] ) ? absint( $cct_data['max_output_tokens'] ) : 0,
+			'supports_function_calling' => isset( $cct_data['supports_function_calling'] ) ? (bool) $cct_data['supports_function_calling'] : true,
+			'fallback_model'            => isset( $cct_data['fallback_model'] ) ? sanitize_text_field( $cct_data['fallback_model'] ) : null,
+			'cost_per_1k'               => isset( $cct_data['input_cost_per_1k'] ) ? floatval( $cct_data['input_cost_per_1k'] ) : 0.0,
+			'status'                    => 'active',
 		);
 	}
 
