@@ -129,11 +129,36 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				);
 			}
 
-			WP_MCP_AI_Logger::log_event( 'nvidia_test_connection', 'NVIDIA NIM connection successful.' );
+			// Parse the response body to extract the model count.
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			$api_model_count = 0;
+			if ( is_array( $decoded ) && isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
+				$api_model_count = count( $decoded['data'] );
+			}
+
+			// Also count configured models from the model config registry.
+			$configured_count = 0;
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$nvidia_models    = WP_MCP_AI_Model_Config::get_models_by_provider( 'nvidia' );
+				$configured_count = count( $nvidia_models );
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'nvidia_test_connection',
+				'NVIDIA NIM connection successful.',
+				array(
+					'api_models'        => $api_model_count,
+					'configured_models' => $configured_count,
+				)
+			);
 
 			return array(
-				'success' => true,
-				'message' => __( 'Successfully connected to NVIDIA NIM API.', 'mcp-ai-wpoos' ),
+				'success'          => true,
+				'message'          => __( 'Successfully connected to NVIDIA NIM API.', 'mcp-ai-wpoos' ),
+				'model_count'      => $api_model_count,
+				'configured_count' => $configured_count,
 			);
 		}
 
