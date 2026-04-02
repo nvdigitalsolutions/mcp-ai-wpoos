@@ -400,7 +400,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$gpt5_models = array_filter(
 			$default_models,
 			function ( $model ) {
-				return in_array( $model['model_name'], array( 'gpt-5', 'gpt-5-mini' ) );
+				return in_array( $model['model_name'], array( 'gpt-5', 'gpt-5-mini' ), true );
 			}
 		);
 
