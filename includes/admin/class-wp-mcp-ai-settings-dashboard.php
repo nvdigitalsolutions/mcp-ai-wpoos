@@ -271,14 +271,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * but are NOT passed through sanitize_textarea_field() because that function
 		 * strips octets and certain characters that may be valid in credentials.
 		 *
+		 * Patterns use suffix matching to avoid false positives (e.g., a field named
+		 * 'notification_token_count' would NOT match because '_count' is the suffix).
+		 *
 		 * @var array<string>
 		 */
-		private static $secret_field_patterns = array(
+		private static $secret_field_suffixes = array(
 			'_api_key',
 			'_secret',
 			'_password',
 			'_token',
-			'_key',
+			'api_key',
 			'client_id',
 			'client_secret',
 			'access_token',
@@ -288,12 +291,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Check if a settings key represents a secret/credential field.
 		 *
+		 * Uses suffix matching to avoid false positives with unrelated fields
+		 * (e.g., 'notification_token_count' would not match '_token' because
+		 * the key does not end with that suffix).
+		 *
 		 * @param string $key The settings key to check.
 		 * @return bool True if the key is a secret field.
 		 */
 		private function is_secret_field( $key ) {
-			foreach ( self::$secret_field_patterns as $pattern ) {
-				if ( false !== strpos( (string) $key, $pattern ) ) {
+			$key = (string) $key;
+			foreach ( self::$secret_field_suffixes as $suffix ) {
+				$suffix_len = strlen( $suffix );
+				if ( strlen( $key ) >= $suffix_len && substr( $key, -$suffix_len ) === $suffix ) {
 					return true;
 				}
 			}

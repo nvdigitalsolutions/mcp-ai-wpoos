@@ -358,10 +358,28 @@ class WP_MCP_AI_Optional_Components {
 						data.append('action', 'wp_mcp_ai_download_all_components');
 						data.append('nonce', downloadBtn.getAttribute('data-nonce'));
 						fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
-							.then(function() {
+							.then(function(response) {
+								if (!response.ok) { throw new Error('HTTP ' + response.status); }
 								downloadBtn.textContent = '<?php echo esc_js( __( 'Download started!', 'mcp-ai-wpoos' ) ); ?>';
 								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
-								if (notice) { notice.querySelector('p:last-child').innerHTML = '<em><?php echo esc_js( __( 'Components are downloading in the background. Please refresh in a few minutes.', 'mcp-ai-wpoos' ) ); ?></em>'; }
+								if (notice) {
+									var statusP = notice.querySelector('p:last-child');
+									statusP.textContent = '';
+									var em = document.createElement('em');
+									em.textContent = '<?php echo esc_js( __( 'Components are downloading in the background. Please refresh in a few minutes.', 'mcp-ai-wpoos' ) ); ?>';
+									statusP.appendChild(em);
+								}
+							})
+							.catch(function() {
+								downloadBtn.disabled = false;
+								downloadBtn.textContent = '<?php echo esc_js( __( 'Download Optional Components', 'mcp-ai-wpoos' ) ); ?>';
+								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+								if (notice) {
+									var errorP = document.createElement('p');
+									errorP.style.color = '#d63638';
+									errorP.textContent = '<?php echo esc_js( __( 'Download failed. Please try again or download manually from the Components page.', 'mcp-ai-wpoos' ) ); ?>';
+									notice.appendChild(errorP);
+								}
 							});
 					});
 				}
