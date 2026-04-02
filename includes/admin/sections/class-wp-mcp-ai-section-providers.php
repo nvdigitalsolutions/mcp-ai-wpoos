@@ -141,8 +141,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get NVIDIA NIM models from Model Config.
+			$nvidia_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$nvidia_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'nvidia' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $nvidia_models ) ) {
+				$nvidia_models = array(
+					'meta/llama-3.1-8b-instruct'   => 'Llama 3.1 8B Instruct (Fast)',
+					'meta/llama-3.3-70b-instruct'  => 'Llama 3.3 70B Instruct',
+					'meta/llama-3.1-405b-instruct' => 'Llama 3.1 405B Instruct',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -936,6 +951,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '@cf/openai/whisper',
 				),
 
+				// NVIDIA NIM Provider Settings.
+				'enable_nvidia'                      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable NVIDIA NIM Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable NVIDIA NIM as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, NVIDIA NIM will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'nvidia_api_key'                     => array(
+					'type'         => 'password',
+					'label'        => __( 'NVIDIA API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: NVIDIA Build Portal URL */
+						__( 'Your NVIDIA NIM API key. Get one from <a href="%s" target="_blank">NVIDIA Build Portal</a>. Sign up for an NVIDIA account and generate an API key for NIM access.', 'mcp-ai-wpoos' ),
+						'https://build.nvidia.com/'
+					),
+					'placeholder'  => 'nvapi-...',
+					'autocomplete' => 'new-password',
+				),
+				'nvidia_endpoint_url'                => array(
+					'type'        => 'text',
+					'label'       => __( 'NVIDIA NIM Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'The base URL for the NVIDIA NIM API. Use the default cloud endpoint or point to a self-hosted NIM container (e.g., http://localhost:8000/v1).', 'mcp-ai-wpoos' ),
+					'default'     => 'https://integrate.api.nvidia.com/v1',
+					'placeholder' => 'https://integrate.api.nvidia.com/v1',
+				),
+				'nvidia_model'                       => array(
+					'type'        => 'select',
+					'label'       => __( 'Default NVIDIA Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for NVIDIA NIM requests. Llama 3.1 8B is fast and cost-effective. Llama 3.3 70B offers better quality. Browse all models at build.nvidia.com.', 'mcp-ai-wpoos' ),
+					'options'     => $nvidia_models,
+					'default'     => 'meta/llama-3.1-8b-instruct',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -1011,6 +1060,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'enable_cloudflare_api_caching', 'cloudflare_model_list_cache_ttl', 'cloudflare_audio_model' ),
+				),
+				'nvidia'               => array(
+					'id'     => 'nvidia',
+					'label'  => __( 'NVIDIA', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-superhero',
+					'fields' => array( 'enable_nvidia', 'nvidia_api_key', 'nvidia_endpoint_url', 'nvidia_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1223,6 +1278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1350,7 +1406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

@@ -474,6 +474,80 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- NVIDIA NIM -->
+				<div class="card">
+					<h2><?php esc_html_e( '8. NVIDIA NIM', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_nvidia'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['nvidia_api_key'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['nvidia_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Endpoint URL', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['nvidia_endpoint_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['nvidia_endpoint_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">⚠ <?php esc_html_e( 'Using Default', 'mcp-ai-wpoos' ); ?></span>
+										<code>https://integrate.api.nvidia.com/v1</code>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['nvidia_model'] ) ) : ?>
+										<code><?php echo esc_html( $settings['nvidia_model'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Not Selected', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="nvidia-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="nvidia"
+						<?php echo esc_attr( empty( $settings['enable_nvidia'] ) || empty( $settings['nvidia_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test NVIDIA Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_nvidia'] ) || empty( $settings['nvidia_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your NVIDIA NIM settings in the Providers tab. You need to enable the provider and set your API key.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'NVIDIA NIM provides access to optimized AI models via NVIDIA\'s cloud inference platform, including Llama, Mistral, Gemma, and more.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
@@ -735,6 +809,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
 						$configured[] = 'Cloudflare Workers AI';
+					}
+					if ( ! empty( $settings['enable_nvidia'] ) && ! empty( $settings['nvidia_api_key'] ) ) {
+						$configured[] = 'NVIDIA NIM';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -1006,6 +1083,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'cloudflare':
 					self::test_cloudflare( $settings );
+					break;
+
+				case 'nvidia':
+					self::test_nvidia( $settings );
 					break;
 
 				case 'embedded':
@@ -1504,6 +1585,72 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'Account ID', 'mcp-ai-wpoos' )      => $account_id,
 							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
 							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test NVIDIA NIM connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_nvidia( $settings ) {
+			if ( empty( $settings['enable_nvidia'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'NVIDIA NIM provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['nvidia_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'NVIDIA API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'NVIDIA client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Nvidia_Client();
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					$error_data = $result->get_error_data();
+					$error_msg  = $result->get_error_message();
+
+					if ( is_array( $error_data ) && isset( $error_data['status'] ) ) {
+						$error_msg .= ' ' . sprintf(
+							/* translators: %d: HTTP status code */
+							__( '(HTTP Status: %d)', 'mcp-ai-wpoos' ),
+							absint( $error_data['status'] )
+						);
+					}
+
+					wp_send_json_error( array( 'message' => $error_msg ) );
+					return;
+				}
+
+				$model_count = isset( $result['model_count'] ) ? $result['model_count'] : 0;
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'NVIDIA NIM connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Endpoint', 'mcp-ai-wpoos' )        => isset( $settings['nvidia_endpoint_url'] ) ? $settings['nvidia_endpoint_url'] : 'https://integrate.api.nvidia.com/v1',
+							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['nvidia_model'] ) ? $settings['nvidia_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
