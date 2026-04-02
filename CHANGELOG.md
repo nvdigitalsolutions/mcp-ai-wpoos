@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- **NVIDIA NIM Provider in Getting Started Wizard (April 2, 2026)**: Added NVIDIA NIM as the 8th AI provider in the onboarding wizard (Step 2). Users can now enter their NVIDIA API key and test the connection during initial setup. Saving the key automatically enables the provider. 40+ NVIDIA models available including Llama, Mistral, Nemotron, Gemma, and Qwen families via `integrate.api.nvidia.com` or self-hosted NIM containers.
 - **Vehicle Estimation Tools (March 31, 2026)** (PR #4526): Three always-available Pro tools for automotive estimation.
   - `vin_decode` — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, 28-field vehicle descriptor.
   - `vehicle_repair_estimate` — 5-step image-to-estimate pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. Heuristic fallback costs for 20+ parts; ADAS calibration for 2018+ windshield replacements.
