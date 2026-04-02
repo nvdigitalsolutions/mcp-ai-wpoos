@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'List of providers to check. If empty, checks all configured providers.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
-						'enum' => array( 'openai', 'anthropic', 'gemini', 'huggingface' ),
+						'enum' => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia' ),
 					),
 					'default'     => array(),
 				),
