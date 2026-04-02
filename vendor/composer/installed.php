@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
-        'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-        'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
+        'pretty_version' => 'dev-copilot/enhance-product-response-tools',
+        'version' => 'dev-copilot/enhance-product-response-tools',
+        'reference' => 'f02f8849569672b4a69e5a0f98c4c09c84bdbef5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
-            'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-            'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
+            'pretty_version' => 'dev-copilot/enhance-product-response-tools',
+            'version' => 'dev-copilot/enhance-product-response-tools',
+            'reference' => 'f02f8849569672b4a69e5a0f98c4c09c84bdbef5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

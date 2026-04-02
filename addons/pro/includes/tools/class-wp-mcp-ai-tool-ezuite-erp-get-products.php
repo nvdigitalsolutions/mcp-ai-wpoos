@@ -26,6 +26,8 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  */
 class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Product_Card;
+
 	/**
 	 * Default limit for number of products to retrieve.
 	 *
@@ -243,13 +245,24 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		// Parse and format the response.
 		$products = $this->format_products( $result, $limit );
 
+		// Generate rich product cards for chat display.
+		$summary = sprintf(
+			/* translators: 1: number of products returned, 2: connection name */
+			__( 'Retrieved %1$d product(s) from %2$s', 'mcp-ai-wpoos-pro' ),
+			count( $products ),
+			$connection['name']
+		);
+		$cards_message = $this->format_product_cards(
+			$products,
+			'ezuite',
+			array( 'source_label' => $connection['name'] )
+		);
+		if ( ! empty( $cards_message ) ) {
+			$summary .= "\n\n" . $cards_message;
+		}
+
 		return array(
-			'summary'         => sprintf(
-				/* translators: 1: number of products returned, 2: connection name */
-				__( 'Retrieved %1$d product(s) from %2$s', 'mcp-ai-wpoos-pro' ),
-				count( $products ),
-				$connection['name']
-			),
+			'summary'         => $summary,
 			'products'        => $products,
 			'count'           => count( $products ),
 			'connection_name' => $connection['name'],

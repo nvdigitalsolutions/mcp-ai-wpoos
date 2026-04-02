@@ -23,6 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
+	use WP_MCP_AI_Tool_Product_Card;
 
 	/**
 	 * {@inheritdoc}
@@ -243,8 +244,16 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			$products[] = $this->normalize_product( $node );
 		}
 
+		// Generate rich product cards for chat display.
+		$cards_message = $this->format_product_cards( $products, 'shopify' );
+
 		return array(
 			'success'   => true,
+			'message'   => ! empty( $cards_message ) ? $cards_message : sprintf(
+				/* translators: %d: number of products */
+				__( 'Retrieved %d product(s) from Shopify', 'mcp-ai-wpoos-pro' ),
+				count( $products )
+			),
 			'products'  => $products,
 			'count'     => count( $products ),
 			'page_info' => isset( $response['data']['products']['pageInfo'] ) ? $response['data']['products']['pageInfo'] : array(),
@@ -284,9 +293,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'wp_mcp_ai_shopify_not_found', __( 'Product not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Generate rich product card for chat display.
+		$normalized = $this->normalize_product( $node );
+		$card_message = $this->format_single_product_card( $normalized, 'shopify', array( 'max_description' => 200 ) );
+
 		return array(
 			'success' => true,
-			'product' => $this->normalize_product( $node ),
+			'message' => ! empty( $card_message ) ? $card_message : __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' ),
+			'product' => $normalized,
 		);
 	}
 
