@@ -1128,6 +1128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
@@ -2458,10 +2459,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
@@ -2587,6 +2588,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['cloudflare_zone_id'] ) ) {
 				$clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
+			}
+
+			// NVIDIA NIM settings.
+			$clean['enable_nvidia'] = ! empty( $settings['enable_nvidia'] );
+
+			if ( isset( $settings['nvidia_api_key'] ) ) {
+				$clean['nvidia_api_key'] = trim( sanitize_text_field( $settings['nvidia_api_key'] ) );
+			}
+
+			if ( isset( $settings['nvidia_endpoint_url'] ) ) {
+				$clean['nvidia_endpoint_url'] = esc_url_raw( trim( $settings['nvidia_endpoint_url'] ) );
+			}
+
+			if ( isset( $settings['nvidia_model'] ) ) {
+				$clean['nvidia_model'] = sanitize_text_field( $settings['nvidia_model'] );
 			}
 
 			$clean['enable_varnish_purge'] = ! empty( $settings['enable_varnish_purge'] );
@@ -4738,7 +4754,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$saved_list   = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
 				: array();
-			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
@@ -4756,6 +4772,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 			);
