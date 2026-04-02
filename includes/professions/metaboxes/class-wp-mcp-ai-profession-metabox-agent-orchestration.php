@@ -360,11 +360,15 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 
 		foreach ( $json_fields as $field_name => $meta_key ) {
 			if ( isset( $_POST[ $field_name ] ) ) {
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON re-encoding below serves as sanitization.
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Raw JSON string must be decoded first; all nested values are sanitized recursively via wp_mcp_ai_sanitize_recursive() below.
 				$raw_value     = wp_unslash( $_POST[ $field_name ] );
 				$decoded_value = json_decode( $raw_value, true );
-				// json_decode( $raw, true ) converts JSON objects and arrays to PHP arrays; primitives and invalid JSON yield non-array results.
-				$value = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_value ) ) ? wp_json_encode( $decoded_value ) : '{}';
+				if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_value ) ) {
+					$decoded_value = wp_mcp_ai_sanitize_recursive( $decoded_value );
+					$value         = wp_json_encode( $decoded_value );
+				} else {
+					$value = '{}';
+				}
 				update_post_meta( $post_id, $meta_key, $value );
 			}
 		}
