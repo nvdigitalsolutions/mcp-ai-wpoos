@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
 
 == Description ==
 
@@ -73,10 +73,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
-* **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
-* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
 
 **Chat Interface**
 * Modern, responsive chat UI
@@ -221,7 +218,7 @@ See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-
 = Is this plugin GDPR compliant? =
 
 NV oOS includes features to help with GDPR compliance:
-* Activation tracking is opt-out and collects no PII (see External Services section)
+* Activation tracking is opt-in and collects no PII (see External Services section)
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -272,13 +269,22 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= Unreleased =
+= 1.1.6 - April 2026 =
 
-**New: Transformers.js v3.8.1 + Qwen3 Models**
+**WordPress.org Compliance — Final Pass Before Resubmission**
 
-* CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`
-* WebGPU auto-detection for up to 4x faster embeddings, WASM fallback
-* 4 Qwen3 embedded models added (8B, 4B, 1.5B, 0.6B)
+* Optional component downloads now require explicit opt-in consent (admin notice with Download button)
+* All "Powered by" / credit attribution gated behind explicit administrator opt-in setting
+* Fixed 3 invalid URLs in External Services section (ReliefWeb, NV Digital Services)
+* Updated Symfony packages to 6.4.36 (cache, validator, http-client)
+* Added ITA Tariff Rates API to External Services documentation
+* CLI export command restricted to WordPress uploads directory (security hardening)
+* Field-specific sanitization for `register_setting()` — API keys/secrets preserved correctly
+* REST API `/no-sse` endpoint uses correct `permissions_check_assistant_list` callback
+* JSON input from `$_POST` now sanitized with `wp_mcp_ai_sanitize_recursive()` after decode
+* Cookie names and values sanitized before forwarding in JetEngine tool handlers
+* Full 13-guideline compliance audit completed and verified
+* NVIDIA NIM added as 8th AI provider in Getting Started wizard
 
 **Security**
 
@@ -591,15 +597,17 @@ Initial release. Welcome to Open Operator System!
 * **Purpose:** Privacy-focused local AI processing
 * **Data Sent:** None (runs entirely on your server)
 * **When:** When configured as AI provider
-* **Service URL:** Your local server only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local server only (default: http://localhost:11434)
+* **Terms of Service:** https://github.com/ollama/ollama/blob/main/LICENSE (MIT License)
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your server
 
 **5. LM Studio (Self-Hosted)**
 * **Purpose:** Local AI with function calling support
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
-* **Service URL:** Your local computer only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local computer only (default: http://localhost:1234)
+* **Terms of Service:** https://lmstudio.ai/terms
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your computer
 
 **6. Cloudflare Workers AI**
 * **Purpose:** AI image generation and inference
@@ -737,7 +745,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Enterprise authentication and user management via Auth0
 * **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
+* **Service URL:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
@@ -788,7 +796,7 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
 * **When:** Only when a site owner explicitly opts in via Settings → NV oOS → "Enable activation tracking". Tracking is **disabled by default** and requires explicit consent. Tracking is never sent from local/development environments.
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
-* **Terms of Service:** https://www.gnu.org/licenses/gpl-3.0.html
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3)
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-In:** Enable via Settings → NV oOS → "Enable activation tracking" or return `true` from the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is OFF by default.
 
@@ -796,8 +804,8 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size — downloads only occur after explicit administrator consent via an admin notice
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
 * **When:** (a) Only when a user manually enters and activates a license key; (b) Only when the site administrator explicitly clicks "Download Optional Components" in the admin notice (opt-in required, never automatic)
-* **Service URLs:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
-* **Terms of Service:** https://www.gnu.org/licenses/gpl-3.0.html (GPLv3 license); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
@@ -1162,3 +1170,24 @@ Review your chosen provider's privacy policy before use.
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
 Special thanks to the open source community and all contributors.
+
+== Licensing ==
+
+= Base Plugin =
+
+This plugin is licensed under the [GNU General Public License v3 or later](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE). All source code in the base plugin is open source. You have full freedom to use, study, modify, and redistribute the base plugin under the terms of the GPLv3.
+
+= Pro Addon =
+
+The Pro addon (`addons/pro/`) is a completely separate, optional plugin distributed under a **proprietary license**. It is copyrighted by NV Digital Solutions and all rights are reserved. The Pro addon is not included in the WordPress.org distribution — it is installed separately and is not required for the base plugin to function.
+
+= How They Differ =
+
+* **Base plugin (this plugin):** GPLv3 — open source, freely redistributable, modifiable
+* **Pro addon (separate plugin):** Proprietary — requires a license from NV Digital Solutions, not redistributable
+
+The base plugin and the Pro addon are independent codebases. The base plugin does not contain any Pro addon code, and no base plugin features are gated behind the Pro addon's license. The Pro addon adds entirely new tools and capabilities built on PHP 8.1+ features.
+
+= Patent Notice =
+
+NV oOS is the subject of a pending patent application (Application #19/410,504). The patent does not restrict your GPL rights to the base plugin. See the "Is this plugin patented?" FAQ entry above for details.
