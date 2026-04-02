@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-product-search-function',
+        'version' => 'dev-copilot/enhance-product-search-function',
+        'reference' => '5f2f92085183869bc287272755697cdd2ea655da',
         'pretty_version' => 'dev-copilot/update-nvidia-models-in-dropdown',
         'version' => 'dev-copilot/update-nvidia-models-in-dropdown',
         'reference' => '8e084df84d5cf6d9b8561810e7e9a8b44daa70bb',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-product-search-function',
+            'version' => 'dev-copilot/enhance-product-search-function',
+            'reference' => '5f2f92085183869bc287272755697cdd2ea655da',
             'pretty_version' => 'dev-copilot/update-nvidia-models-in-dropdown',
             'version' => 'dev-copilot/update-nvidia-models-in-dropdown',
             'reference' => '8e084df84d5cf6d9b8561810e7e9a8b44daa70bb',

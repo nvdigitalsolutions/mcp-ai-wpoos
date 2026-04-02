@@ -24,6 +24,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 
 	use WP_MCP_AI_Shopify_Connection_Resolver;
 	use WP_MCP_AI_Tool_Product_Card;
+	use WP_MCP_AI_Shopify_Smart_Search;
 
 	/**
 	 * {@inheritdoc}
@@ -121,6 +122,11 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'string',
 					'description' => __( 'SEO meta description for create/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
+				'smart_search'    => array(
+					'type'        => 'boolean',
+					'description' => __( 'Enable smart search for list/search actions (default: true). When the full query returns zero results, automatically decomposes it into smaller keyword groups and merges results. Set to false to disable.', 'mcp-ai-wpoos-pro' ),
+					'default'     => true,
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
@@ -217,6 +223,10 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Handle list/search action.
 	 *
+	 * When the initial query returns zero results and the query has enough
+	 * tokens, automatically decomposes the query into smaller keyword groups
+	 * and merges the results (progressive query relaxation).
+	 *
 	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
 	 * @param array                    $arguments Tool arguments.
 	 * @return array|WP_Error
@@ -226,6 +236,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		$after = isset( $arguments['after'] ) ? sanitize_text_field( $arguments['after'] ) : '';
 		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
 
+		// --- Primary search: try the full original query first. ---
 		$response = $client->get_products( $first, $after, $query );
 
 		if ( is_wp_error( $response ) ) {
@@ -244,10 +255,55 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			$products[] = $this->normalize_product( $node );
 		}
 
+		// --- Progressive relaxation: decompose when no results and query is present. ---
+		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
+		$decomposed   = false;
+
+		if ( empty( $products ) && ! empty( $query ) && $smart_search && $this->should_decompose_query( $query ) ) {
+			$tokens      = $this->extract_search_tokens( $query );
+			$sub_queries = $this->generate_sub_queries( $tokens, $query );
+
+			if ( ! empty( $sub_queries ) ) {
+				$result_sets = array();
+
+				foreach ( $sub_queries as $sub_query ) {
+					$sub_response = $client->get_products( $first, '', $sub_query );
+
+					if ( is_wp_error( $sub_response ) ) {
+						continue;
+					}
+					if ( isset( $sub_response['errors'] ) && ! empty( $sub_response['errors'] ) ) {
+						continue;
+					}
+
+					$sub_edges = isset( $sub_response['data']['products']['edges'] ) ? $sub_response['data']['products']['edges'] : array();
+					$sub_products = array();
+					foreach ( $sub_edges as $edge ) {
+						$node           = isset( $edge['node'] ) ? $edge['node'] : array();
+						$sub_products[] = $this->normalize_product( $node );
+					}
+					if ( ! empty( $sub_products ) ) {
+						$result_sets[] = $sub_products;
+					}
+				}
+
+				if ( ! empty( $result_sets ) ) {
+					$products   = $this->merge_and_rank_products(
+						$result_sets,
+						function ( $product ) {
+							return isset( $product['id'] ) ? $product['id'] : '';
+						},
+						$first
+					);
+					$decomposed = true;
+				}
+			}
+		}
+
 		// Generate rich product cards for chat display.
 		$cards_message = $this->format_product_cards( $products, 'shopify' );
 
-		return array(
+		$result = array(
 			'success'   => true,
 			'message'   => ! empty( $cards_message ) ? $cards_message : sprintf(
 				/* translators: %d: number of products */
@@ -258,6 +314,18 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			'count'     => count( $products ),
 			'page_info' => isset( $response['data']['products']['pageInfo'] ) ? $response['data']['products']['pageInfo'] : array(),
 		);
+
+		if ( $decomposed ) {
+			$result['smart_search'] = true;
+			$result['note']         = sprintf(
+				/* translators: %1$d: number of results, %2$s: original query */
+				__( 'The original query "%2$s" returned 0 results. Smart search decomposed the query into smaller keywords and found %1$d product(s).', 'mcp-ai-wpoos-pro' ),
+				count( $products ),
+				$query
+			);
+		}
+
+		return $result;
 	}
 
 	/**
