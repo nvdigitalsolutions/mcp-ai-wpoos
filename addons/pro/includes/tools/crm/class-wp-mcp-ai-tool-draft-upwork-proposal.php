@@ -89,17 +89,41 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_description() {
+		return __( 'Fetches an Upwork job posting and uses AI to draft a personalised proposal tailored to the job requirements and your freelancer profile. Proposals must be submitted manually on Upwork. When no Upwork connection is configured, accepts job_title and job_description text directly.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
 				'connection_id'        => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites Upwork connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites Upwork connection ID. Optional — when omitted, provide job_title and job_description for fallback mode.', 'mcp-ai-wpoos-pro' ),
 				),
 				'job_id'               => array(
 					'type'        => 'string',
-					'description' => __( 'Upwork job posting ID to write a proposal for.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Upwork job posting ID to write a proposal for (required when using the API).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_title'            => array(
+					'type'        => 'string',
+					'description' => __( 'Job title text (used for fallback proposal generation when no connection is configured).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_description'      => array(
+					'type'        => 'string',
+					'description' => __( 'Full job description text (used for fallback proposal generation when no connection is configured).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_skills_list'      => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Skills required by the job (used for fallback proposal generation).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_category'         => array(
+					'type'        => 'string',
+					'description' => __( 'Job category name (used for fallback proposal generation).', 'mcp-ai-wpoos-pro' ),
 				),
 				'freelancer_profile'   => array(
 					'type'        => 'string',
@@ -135,7 +159,7 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 					'default'     => 500,
 				),
 			),
-			'required'             => array( 'connection_id', 'job_id', 'freelancer_profile' ),
+			'required'             => array( 'freelancer_profile' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -182,33 +206,25 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		if ( empty( $arguments['connection_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_connection_id', __( 'connection_id is required.', 'mcp-ai-wpoos-pro' ) );
-		}
-		if ( empty( $arguments['job_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_job_id', __( 'job_id is required.', 'mcp-ai-wpoos-pro' ) );
-		}
 		if ( empty( $arguments['freelancer_profile'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_missing_profile', __( 'freelancer_profile is required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Determine whether the Upwork API is available.
+		$use_api = $this->has_valid_connection( $arguments );
+
+		// Fall back to text-based proposal generation when no connection is configured.
+		if ( ! $use_api ) {
+			return $this->execute_fallback( $arguments );
+		}
+
+		if ( empty( $arguments['job_id'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_job_id', __( 'job_id is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$connection_id      = sanitize_text_field( $arguments['connection_id'] );
 		$job_id             = sanitize_text_field( $arguments['job_id'] );
 		$freelancer_profile = sanitize_textarea_field( $arguments['freelancer_profile'] );
-
-		// Validate connection.
-		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			if ( ! $connection ) {
-				return new WP_Error( 'wp_mcp_ai_connection_not_found', __( 'Upwork connection not found.', 'mcp-ai-wpoos-pro' ) );
-			}
-			if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_connection_type', __( 'The specified connection is not an Upwork connection.', 'mcp-ai-wpoos-pro' ) );
-			}
-			if ( empty( $connection['enabled'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_connection_disabled', __( 'The Upwork connection is disabled.', 'mcp-ai-wpoos-pro' ) );
-			}
-		}
 
 		// Fetch job details from Upwork.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-upwork-client.php';
@@ -260,6 +276,7 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 
 		return array(
 			'success'       => true,
+			'mode'          => 'api',
 			'job_id'        => $job_id,
 			'job_title'     => isset( $job['title'] ) ? $job['title'] : '',
 			'proposal_text' => $ai_result,
@@ -267,6 +284,98 @@ class WP_MCP_AI_Tool_Draft_Upwork_Proposal implements WP_MCP_AI_Tool_Interface, 
 			'bid_amount'    => $bid_amount,
 			'bid_type'      => $bid_type,
 			'notes'         => __( 'IMPORTANT: This proposal draft must be submitted manually on Upwork. Copy the proposal text above and paste it into the Upwork job application form. The Upwork API does not support automated proposal submission.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Check whether the arguments include a valid, enabled Upwork connection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True when the Upwork API can be used.
+	 */
+	private function has_valid_connection( array $arguments ) {
+		if ( empty( $arguments['connection_id'] ) ) {
+			return false;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return false;
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return false;
+		}
+		if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return false;
+		}
+		if ( empty( $connection['enabled'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Generate a proposal from text-based job data when Upwork API is unavailable.
+	 *
+	 * Accepts job_title, job_description, job_skills_list, and job_category
+	 * parameters directly, skipping the API fetch step while still using the
+	 * same AI-powered proposal generation pipeline.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error Proposal results or error.
+	 */
+	private function execute_fallback( array $arguments ) {
+		if ( empty( $arguments['job_description'] ) && empty( $arguments['job_title'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fallback_missing_data',
+				__( 'No Upwork connection configured. For fallback proposal generation, provide at least job_title or job_description. Alternatively, configure an Upwork connection in Remote Sites and supply connection_id + job_id.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Build a synthetic job array from the provided text parameters.
+		$job = array(
+			'title'       => isset( $arguments['job_title'] ) ? sanitize_text_field( $arguments['job_title'] ) : __( 'Untitled Job', 'mcp-ai-wpoos-pro' ),
+			'description' => isset( $arguments['job_description'] ) ? sanitize_textarea_field( $arguments['job_description'] ) : '',
+			'jobType'     => isset( $arguments['bid_type'] ) ? strtoupper( sanitize_text_field( $arguments['bid_type'] ) ) : '',
+			'skills'      => array(),
+			'category'    => array( 'name' => isset( $arguments['job_category'] ) ? sanitize_text_field( $arguments['job_category'] ) : '' ),
+		);
+
+		// Convert skills list into the same structure used by the API.
+		if ( ! empty( $arguments['job_skills_list'] ) && is_array( $arguments['job_skills_list'] ) ) {
+			foreach ( $arguments['job_skills_list'] as $skill ) {
+				$job['skills'][] = array( 'prettyName' => sanitize_text_field( $skill ) );
+			}
+		}
+
+		// Build AI prompt using the existing method.
+		$prompt = $this->build_proposal_prompt( $job, $arguments );
+
+		// Generate proposal via AI.
+		$ai_result = $this->generate_proposal( $prompt );
+
+		if ( is_wp_error( $ai_result ) ) {
+			return $ai_result;
+		}
+
+		$bid_amount = isset( $arguments['bid_amount'] ) ? (float) $arguments['bid_amount'] : null;
+		$bid_type   = isset( $arguments['bid_type'] ) ? sanitize_text_field( $arguments['bid_type'] ) : '';
+
+		return array(
+			'success'       => true,
+			'mode'          => 'fallback',
+			'job_id'        => isset( $arguments['job_id'] ) ? sanitize_text_field( $arguments['job_id'] ) : '',
+			'job_title'     => $job['title'],
+			'proposal_text' => $ai_result,
+			'cover_letter'  => $ai_result,
+			'bid_amount'    => $bid_amount,
+			'bid_type'      => $bid_type,
+			'notes'         => __( 'IMPORTANT: This proposal draft must be submitted manually on Upwork. Copy the proposal text above and paste it into the Upwork job application form.', 'mcp-ai-wpoos-pro' ),
+			'notice'        => __( 'Proposal generated in fallback mode from provided text. Configure an Upwork connection in Remote Sites for automatic job data retrieval.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

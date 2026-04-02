@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Algorithmically scores an Upwork job posting (0-100) based on budget fit, skill match, client quality, and competition level. Returns a score breakdown and an apply/skip/maybe recommendation.', 'mcp-ai-wpoos-pro' );
+		return __( 'Algorithmically scores an Upwork job posting (0-100) based on budget fit, skill match, client quality, and competition level. Returns a score breakdown and an apply/skip/maybe recommendation. When no Upwork connection is configured, accepts a job description and title as text for offline scoring.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -98,11 +98,28 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'connection_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites Upwork connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites Upwork connection ID. Optional — when omitted, falls back to text-based scoring.', 'mcp-ai-wpoos-pro' ),
 				),
 				'job_id'              => array(
 					'type'        => 'string',
-					'description' => __( 'Upwork job posting ID to score.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Upwork job posting ID to score (required when using the API).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_title'           => array(
+					'type'        => 'string',
+					'description' => __( 'Job title text (used for fallback scoring when no connection is configured).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_description'     => array(
+					'type'        => 'string',
+					'description' => __( 'Full job description text (used for fallback scoring when no connection is configured).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_skills_list'     => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Skills required by the job (used for fallback scoring).', 'mcp-ai-wpoos-pro' ),
+				),
+				'job_budget_amount'   => array(
+					'type'        => 'number',
+					'description' => __( 'Job budget or hourly rate amount (used for fallback scoring).', 'mcp-ai-wpoos-pro' ),
 				),
 				'freelancer_skills'   => array(
 					'type'        => 'array',
@@ -133,7 +150,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 				),
 			),
-			'required'             => array( 'connection_id', 'job_id' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -181,29 +198,20 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		if ( empty( $arguments['connection_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_connection_id', __( 'connection_id is required.', 'mcp-ai-wpoos-pro' ) );
+		// Determine whether the Upwork API is available.
+		$use_api = $this->has_valid_connection( $arguments );
+
+		// Fall back to text-based scoring when the Upwork connection is not configured.
+		if ( ! $use_api ) {
+			return $this->execute_fallback( $arguments );
 		}
+
 		if ( empty( $arguments['job_id'] ) ) {
 			return new WP_Error( 'wp_mcp_ai_missing_job_id', __( 'job_id is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$connection_id = sanitize_text_field( $arguments['connection_id'] );
 		$job_id        = sanitize_text_field( $arguments['job_id'] );
-
-		// Validate connection.
-		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			if ( ! $connection ) {
-				return new WP_Error( 'wp_mcp_ai_connection_not_found', __( 'Upwork connection not found.', 'mcp-ai-wpoos-pro' ) );
-			}
-			if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_connection_type', __( 'The specified connection is not an Upwork connection.', 'mcp-ai-wpoos-pro' ) );
-			}
-			if ( empty( $connection['enabled'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_connection_disabled', __( 'The Upwork connection is disabled.', 'mcp-ai-wpoos-pro' ) );
-			}
-		}
 
 		// Fetch job details.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-upwork-client.php';
@@ -457,6 +465,7 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		return array(
 			'success'        => true,
+			'mode'           => 'api',
 			'job_id'         => $job_id,
 			'job_title'      => isset( $job['title'] ) ? $job['title'] : '',
 			'overall_score'  => $overall_score,
@@ -469,6 +478,184 @@ class WP_MCP_AI_Tool_Score_Upwork_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 			'reasoning'      => implode( ' ', $reasons ),
 			'job_skills'     => $job_skills,
+		);
+	}
+
+	/**
+	 * Check whether the arguments include a valid, enabled Upwork connection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True when the Upwork API can be used.
+	 */
+	private function has_valid_connection( array $arguments ) {
+		if ( empty( $arguments['connection_id'] ) ) {
+			return false;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return false;
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return false;
+		}
+		if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return false;
+		}
+		if ( empty( $connection['enabled'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Execute text-based fallback scoring when no Upwork connection is available.
+	 *
+	 * Uses job_title, job_description, job_skills_list, and job_budget_amount
+	 * parameters instead of fetching data from the Upwork API.  Client quality
+	 * and competition dimensions receive neutral default scores.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return array|WP_Error Scoring results.
+	 */
+	private function execute_fallback( array $arguments ) {
+		// Require at least a job description or title for fallback scoring.
+		if ( empty( $arguments['job_description'] ) && empty( $arguments['job_title'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_fallback_missing_data',
+				__( 'No Upwork connection configured. For fallback scoring, provide at least job_title or job_description. Alternatively, configure an Upwork connection in Remote Sites and supply connection_id + job_id.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$job_title = isset( $arguments['job_title'] ) ? sanitize_text_field( $arguments['job_title'] ) : '';
+
+		// Extract scoring inputs.
+		$freelancer_skills = isset( $arguments['freelancer_skills'] ) && is_array( $arguments['freelancer_skills'] )
+			? array_map( 'strtolower', array_map( 'sanitize_text_field', $arguments['freelancer_skills'] ) )
+			: array();
+		$min_budget        = isset( $arguments['min_budget'] ) ? (float) $arguments['min_budget'] : 0;
+
+		$criteria = isset( $arguments['scoring_criteria'] ) && is_array( $arguments['scoring_criteria'] )
+			? $arguments['scoring_criteria']
+			: array();
+
+		$w_budget      = isset( $criteria['budget_weight'] )         ? max( 0.0, min( 1.0, (float) $criteria['budget_weight'] ) )         : 0.3;
+		$w_skill       = isset( $criteria['skill_match_weight'] )    ? max( 0.0, min( 1.0, (float) $criteria['skill_match_weight'] ) )    : 0.3;
+		$w_client      = isset( $criteria['client_quality_weight'] ) ? max( 0.0, min( 1.0, (float) $criteria['client_quality_weight'] ) ) : 0.2;
+		$w_competition = isset( $criteria['competition_weight'] )    ? max( 0.0, min( 1.0, (float) $criteria['competition_weight'] ) )    : 0.2;
+
+		// ---------- Budget score (from provided amount) ----------
+		$budget_score  = 0;
+		$budget_detail = __( 'Budget not specified', 'mcp-ai-wpoos-pro' );
+		$job_budget    = isset( $arguments['job_budget_amount'] ) ? (float) $arguments['job_budget_amount'] : 0;
+
+		if ( $job_budget > 0 ) {
+			$budget_detail = sprintf(
+				/* translators: %s: budget amount */
+				__( 'Provided budget: $%s', 'mcp-ai-wpoos-pro' ),
+				number_format( $job_budget, 2 )
+			);
+		}
+
+		if ( $job_budget > 0 && $min_budget > 0 ) {
+			if ( $job_budget >= $min_budget * 2 ) {
+				$budget_score = 100;
+			} elseif ( $job_budget >= $min_budget ) {
+				$budget_score = (int) round( ( ( $job_budget - $min_budget ) / $min_budget ) * 100 );
+				$budget_score = min( 100, max( 0, $budget_score ) );
+			} else {
+				$budget_score = 0;
+			}
+		} elseif ( $job_budget > 0 ) {
+			$budget_score = 70;
+		}
+
+		// ---------- Skill match score ----------
+		$skill_score  = 0;
+		$skill_detail = __( 'No skills data available for matching', 'mcp-ai-wpoos-pro' );
+		$job_skills   = array();
+
+		if ( ! empty( $arguments['job_skills_list'] ) && is_array( $arguments['job_skills_list'] ) ) {
+			$job_skills = array_map( 'strtolower', array_map( 'sanitize_text_field', $arguments['job_skills_list'] ) );
+		}
+
+		if ( ! empty( $job_skills ) && ! empty( $freelancer_skills ) ) {
+			$matched   = array_intersect( $freelancer_skills, $job_skills );
+			$match_pct = count( $matched ) / count( $job_skills );
+			$skill_score  = (int) round( min( 1.0, $match_pct * 1.5 ) * 100 );
+			$skill_detail = sprintf(
+				/* translators: 1: matched count, 2: total required */
+				__( 'Matched %1$d of %2$d required skills', 'mcp-ai-wpoos-pro' ),
+				count( $matched ),
+				count( $job_skills )
+			);
+		} elseif ( empty( $job_skills ) ) {
+			$skill_score  = 60;
+			$skill_detail = __( 'No specific skills required', 'mcp-ai-wpoos-pro' );
+		} elseif ( empty( $freelancer_skills ) ) {
+			$skill_score  = 50;
+			$skill_detail = __( 'No freelancer skills provided for comparison', 'mcp-ai-wpoos-pro' );
+		}
+
+		// ---------- Client quality (neutral — not available in fallback) ----------
+		$client_score  = 50;
+		$client_detail = __( 'Client quality data unavailable in fallback mode — neutral score applied', 'mcp-ai-wpoos-pro' );
+
+		// ---------- Competition (neutral — not available in fallback) ----------
+		$competition_score  = 50;
+		$competition_detail = __( 'Competition data unavailable in fallback mode — neutral score applied', 'mcp-ai-wpoos-pro' );
+
+		// ---------- Weighted overall score ----------
+		$total_weight = $w_budget + $w_skill + $w_client + $w_competition;
+		if ( $total_weight <= 0 ) {
+			$total_weight = 1.0;
+		}
+
+		$overall_score = (int) round(
+			(
+				( $budget_score * $w_budget ) +
+				( $skill_score * $w_skill ) +
+				( $client_score * $w_client ) +
+				( $competition_score * $w_competition )
+			) / $total_weight
+		);
+
+		// ---------- Recommendation ----------
+		$recommendation = 'maybe';
+		if ( $overall_score >= 70 ) {
+			$recommendation = 'apply';
+		} elseif ( $overall_score < 40 ) {
+			$recommendation = 'skip';
+		}
+
+		$reasons = array();
+		if ( $budget_score < 30 && $min_budget > 0 ) {
+			$reasons[] = __( 'Budget is below your minimum rate.', 'mcp-ai-wpoos-pro' );
+		}
+		if ( $skill_score < 40 && ! empty( $freelancer_skills ) && ! empty( $job_skills ) ) {
+			$reasons[] = __( 'Low skill match — consider expanding your skill set or skipping.', 'mcp-ai-wpoos-pro' );
+		}
+
+		return array(
+			'success'        => true,
+			'mode'           => 'fallback',
+			'job_id'         => isset( $arguments['job_id'] ) ? sanitize_text_field( $arguments['job_id'] ) : '',
+			'job_title'      => $job_title,
+			'overall_score'  => $overall_score,
+			'recommendation' => $recommendation,
+			'breakdown'      => array(
+				'budget'      => array( 'score' => $budget_score,      'weight' => $w_budget,      'detail' => $budget_detail ),
+				'skill_match' => array( 'score' => $skill_score,       'weight' => $w_skill,       'detail' => $skill_detail ),
+				'client'      => array( 'score' => $client_score,      'weight' => $w_client,      'detail' => $client_detail ),
+				'competition' => array( 'score' => $competition_score, 'weight' => $w_competition, 'detail' => $competition_detail ),
+			),
+			'reasoning'      => implode( ' ', $reasons ),
+			'job_skills'     => $job_skills,
+			'notice'         => __( 'Scored in fallback mode without Upwork API data. Client quality and competition dimensions use neutral defaults. Configure an Upwork connection in Remote Sites for full scoring accuracy.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }
