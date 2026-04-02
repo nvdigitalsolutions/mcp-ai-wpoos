@@ -580,6 +580,21 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				}
 			}
 
+			// Check if the model supports function calling before including tools.
+			// Many NVIDIA NIM models (Gemma, Phi-3, Granite, etc.) reject the tools parameter.
+			$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+			if ( ! empty( $options['tools'] ) && $model_config && isset( $model_config['supports_function_calling'] ) && false === $model_config['supports_function_calling'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'nvidia_tools_stripped',
+					'Tools removed from payload because model does not support function calling.',
+					array(
+						'model'      => $model,
+						'tool_count' => is_countable( $options['tools'] ) ? count( $options['tools'] ) : 0,
+					)
+				);
+				unset( $options['tools'], $options['tool_choice'] );
+			}
+
 			// NVIDIA NIM uses OpenAI format, so we can pass messages mostly as-is.
 			$has_tools          = ! empty( $options['tools'] );
 			$formatted_messages = array();
@@ -746,6 +761,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 
 			// Apply resource-aware max_tokens if not explicitly set.
 			// NVIDIA NIM uses the standard max_tokens parameter.
+			// Reuse $model_config fetched earlier for tool support check.
+			if ( ! $model_config ) {
+				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+			}
+
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
@@ -759,7 +779,6 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				$max_tokens = apply_filters( 'wp_mcp_ai_nvidia_max_tokens', $max_tokens, $options );
 
 				// Get model-specific limit from model config.
-				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
 				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
 					$model_limit = absint( $model_config['max_completion_tokens'] );
 					// Respect model limit.
@@ -773,7 +792,6 @@ if ( ! class_exists( 'WP_MCP_AI_Nvidia_Client' ) ) {
 				$max_tokens = absint( $options['max_tokens'] );
 
 				// Get model-specific limit from model config.
-				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
 				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
 					$model_limit = absint( $model_config['max_completion_tokens'] );
 					// Respect model limit.
