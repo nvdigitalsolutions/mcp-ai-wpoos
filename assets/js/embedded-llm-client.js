@@ -250,9 +250,9 @@
 			functionCalling: false,
 			isThinkingModel: false
 		},
-		'Qwen3-1.5B-q4f16_1-MLC': {
-			name: 'Qwen3 1.5B',
-			size: '~1GB',
+		'Qwen3-1.7B-q4f16_1-MLC': {
+			name: 'Qwen3 1.7B',
+			size: '~1.1GB',
 			description: 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
 			contextWindow: 32768,
 			recommended: false,

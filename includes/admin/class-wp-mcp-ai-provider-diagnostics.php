@@ -1557,7 +1557,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					'gemma-2-2b-it-q4f16_1-MLC'                => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
 					'Llama-3.2-3B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
 					'SmolLM2-1.7B-Instruct-q4f16_1-MLC'        => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
-					'Qwen3-1.5B-q4f16_1-MLC'                   => __( 'Qwen3 1.5B (~1GB)*', 'mcp-ai-wpoos' ),
+					'Qwen3-1.7B-q4f16_1-MLC'                   => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
 					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
 					'Llama-3.2-1B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
 					'Qwen3-0.6B-q4f16_1-MLC'                   => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),

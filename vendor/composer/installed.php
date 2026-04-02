@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-01673e81-6ec6-47c5-b5f9-829f1b71d661',
-        'version' => 'dev-copilot/rebuild-all-zips-01673e81-6ec6-47c5-b5f9-829f1b71d661',
-        'reference' => '8b16d86e39017d8ab2bb3c5b92eb90002ec75e0c',
+        'pretty_version' => 'dev-copilot/fix-model-not-found-error',
+        'version' => 'dev-copilot/fix-model-not-found-error',
+        'reference' => 'e0bec19d703d23587ff91c44c4b708bf0f655c8c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-01673e81-6ec6-47c5-b5f9-829f1b71d661',
-            'version' => 'dev-copilot/rebuild-all-zips-01673e81-6ec6-47c5-b5f9-829f1b71d661',
-            'reference' => '8b16d86e39017d8ab2bb3c5b92eb90002ec75e0c',
+            'pretty_version' => 'dev-copilot/fix-model-not-found-error',
+            'version' => 'dev-copilot/fix-model-not-found-error',
+            'reference' => 'e0bec19d703d23587ff91c44c4b708bf0f655c8c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

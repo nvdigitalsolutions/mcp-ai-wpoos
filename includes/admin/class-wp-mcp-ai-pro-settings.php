@@ -2404,9 +2404,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Llama 3.2 Community License',
 					'recommended' => false,
 				),
-				'Qwen3-1.5B-q4f16_1-MLC'              => array(
-					'name'        => 'Qwen3 1.5B',
-					'size'        => '~1GB',
+				'Qwen3-1.7B-q4f16_1-MLC'              => array(
+					'name'        => 'Qwen3 1.7B',
+					'size'        => '~1.1GB',
 					'description' => 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
 					'context'     => '32K tokens',
 					'license'     => 'Apache 2.0',

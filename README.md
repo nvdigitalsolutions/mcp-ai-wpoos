@@ -304,7 +304,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 - ✅ **WebGPU auto-detect**: `navigator.gpu.requestAdapter()` for up to 4× faster embeddings, WASM fallback.
 - ✅ **Quantization API**: `quantized: true` (v2) → `dtype: 'q8'` (v3).
-- ✅ **4 Qwen3 models** added to JS `AVAILABLE_MODELS` and PHP `get_embedded_models()`: Qwen3-8B (5 GB, function calling ✅), Qwen3-4B (2.5 GB ✅), Qwen3-1.5B (1 GB ✅), Qwen3-0.6B (400 MB, no function calling).
+- ✅ **4 Qwen3 models** added to JS `AVAILABLE_MODELS` and PHP `get_embedded_models()`: Qwen3-8B (5 GB, function calling ✅), Qwen3-4B (2.5 GB ✅), Qwen3-1.7B (1.1 GB ✅), Qwen3-0.6B (400 MB, no function calling).
 
 ### QuickBooks Desktop Sync Tool via QODBC (March 30, 2026) ⭐ **NEW**
 
