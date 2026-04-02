@@ -9,7 +9,7 @@ Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
 
 == Description ==
 
@@ -73,10 +73,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
-* **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
-* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
 
 **Chat Interface**
 * Modern, responsive chat UI
@@ -600,15 +597,17 @@ Initial release. Welcome to Open Operator System!
 * **Purpose:** Privacy-focused local AI processing
 * **Data Sent:** None (runs entirely on your server)
 * **When:** When configured as AI provider
-* **Service URL:** Your local server only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local server only (default: http://localhost:11434)
+* **Terms of Service:** https://github.com/ollama/ollama/blob/main/LICENSE (MIT License)
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your server
 
 **5. LM Studio (Self-Hosted)**
 * **Purpose:** Local AI with function calling support
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
-* **Service URL:** Your local computer only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local computer only (default: http://localhost:1234)
+* **Terms of Service:** https://lmstudio.ai/terms
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your computer
 
 **6. Cloudflare Workers AI**
 * **Purpose:** AI image generation and inference
@@ -746,7 +745,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Enterprise authentication and user management via Auth0
 * **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
+* **Service URL:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
@@ -805,7 +804,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size — downloads only occur after explicit administrator consent via an admin notice
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
 * **When:** (a) Only when a user manually enters and activates a license key; (b) Only when the site administrator explicitly clicks "Download Optional Components" in the admin notice (opt-in required, never automatic)
-* **Service URLs:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
 * **Terms of Service:** https://www.gnu.org/licenses/gpl-3.0.html (GPLv3 license); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
