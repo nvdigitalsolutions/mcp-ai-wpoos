@@ -55,7 +55,7 @@ This document tracks the remediation of all issues identified by the WordPress.o
 **Finding:** Three URLs return HTTP 404:
 1. `https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE` (Terms of Service for services #26 and #27)
 2. `https://reliefweb.int/terms` (Privacy Policy for ReliefWeb, service #10)
-3. `https://nvdigitalsolutions.com/api/licenses` (Service URL for service #27)
+3. `https://nvdigitalsolutions.com/api-licenses` (Service URL for service #27)
 
 **Fix Applied:**
 
