@@ -162,8 +162,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'context_window', $model );
 			$this->assertIsInt( $model['context_window'] );
 			$this->assertGreaterThan( 0, $model['context_window'] );
-			// Max context should be less than 3 million tokens.
-			$this->assertLessThanOrEqual( 3000000, $model['context_window'] );
+			// Max context should be less than 2 million tokens.
+			$this->assertLessThanOrEqual( 2000000, $model['context_window'] );
 		}
 	}
 
