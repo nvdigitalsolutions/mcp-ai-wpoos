@@ -2556,19 +2556,6 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}' .
 		'.mv-range-btn.active{background:var(--tma-btn);color:#fff}' .
 
-		/* Recent reading summary card (dashboard) */
-		'.mv-recent-card{margin:8px 12px 0;background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
-			'border-radius:var(--tma-radius);padding:10px 14px}' .
-		'.mv-recent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
-		'.mv-recent-title{font-size:11px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px}' .
-		'.mv-recent-ago{font-size:11px;color:var(--tma-hint)}' .
-		'.mv-recent-strip{display:flex;flex-direction:column;gap:8px}' .
-		'.mv-recent-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tma-text)}' .
-		'.mv-recent-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}' .
-		'.mv-recent-label{flex:1;font-weight:500}' .
-		'.mv-recent-val{font-weight:700;white-space:nowrap}' .
-		'.mv-recent-unit{font-weight:400;color:var(--tma-hint);margin-left:2px}' .
-
 		/* Settings tab */
 		'.mv-settings-wrap{padding:12px}' .
 		'.mv-settings-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
@@ -2667,13 +2654,6 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'<div class="mv-banner-sub" id="mv-last-time">' . esc_html__( 'No readings yet', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'</div>' .
 					'<div class="mv-banner-icon">❤️</div>' .
-				'</div>' .
-				'<div class="mv-recent-card" id="mv-recent-card" style="display:none">' .
-					'<div class="mv-recent-header">' .
-						'<div class="mv-recent-title">' . esc_html__( 'Most Recent Reading', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<div class="mv-recent-ago" id="mv-recent-ago"></div>' .
-					'</div>' .
-					'<div class="mv-recent-strip" id="mv-recent-strip"></div>' .
 				'</div>' .
 				'<div class="mv-kpi-grid" id="mv-kpi-grid">' .
 					'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -3417,53 +3397,24 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var lt=document.getElementById("mv-last-time");' .
 			'if(lt){if(latest&&latest.ts){var d=new Date(latest.ts);lt.textContent="' . esc_js( __( 'Last reading: ', 'mcp-ai-wpoos-pro' ) ) . '"+d.toLocaleString();}else{lt.textContent="' . esc_js( __( 'No readings yet', 'mcp-ai-wpoos-pro' ) ) . '";}}' .
 
-			/* Most Recent Reading summary card – always show all 5 vitals with
-			 * "--" placeholder when no value, matching the admin dashboard layout.
-			 * No age restriction: card is always visible when a reading exists. */
-			'var rc=document.getElementById("mv-recent-card");' .
-			'var rs=document.getElementById("mv-recent-strip");' .
-			'var ra=document.getElementById("mv-recent-ago");' .
-			'if(rc&&rs&&ra){' .
-				'if(latest){' .
-					'rc.style.display="block";' .
-					/* Relative time ago – no age restriction */
-					'if(latest.ts){' .
-						'var now=Date.now();var ts=new Date(latest.ts).getTime();var diff=Math.max(0,Math.floor((now-ts)/1000));' .
-						'var ago;' .
-						'if(diff<60){ago=diff+"s ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-						'else if(diff<3600){ago=Math.floor(diff/60)+"m ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-						'else if(diff<86400){ago=Math.floor(diff/3600)+"h ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-						'else{ago=Math.floor(diff/86400)+"d ' . esc_js( __( 'ago', 'mcp-ai-wpoos-pro' ) ) . '";}' .
-						'ra.textContent=ago;' .
-					'}else{ra.textContent="";}' .
-					/* Build vitals strip – always show all 5 vitals */
-					'var bpVal=(latest.bp_sys&&latest.bp_dia)?latest.bp_sys+"/"+latest.bp_dia:"--";' .
-					'var hrVal=latest.hr||"--";' .
-					'var spo2Val=latest.spo2||"--";' .
-					'var tempVal=latest.temp||"--";' .
-					'var gluVal=latest.glucose||"--";' .
-					'var items=[' .
-						'{icon:"\uD83E\uDEC0",lbl:"' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . '",val:bpVal,unit:"mmHg"},' .
-						'{icon:"\u2764",lbl:"' . esc_js( __( 'Heart Rate', 'mcp-ai-wpoos-pro' ) ) . '",val:hrVal,unit:"bpm"},' .
-						'{icon:"\uD83D\uDCA4",lbl:"SpO\u2082",val:spo2Val,unit:"%"},' .
-						'{icon:"\uD83C\uDF21",lbl:"' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",val:tempVal,unit:"\u00b0F"},' .
-						'{icon:"\uD83D\uDC89",lbl:"' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",val:gluVal,unit:"mg/dL"}' .
-					'];' .
-					'rs.innerHTML=items.map(function(it){' .
-						'return \'<div class="mv-recent-item">\'+' .
-							'\'<span class="mv-recent-icon">\'+it.icon+\'</span>\'+' .
-							'\'<span class="mv-recent-label">\'+escH(it.lbl)+\'</span>\'+' .
-							'\'<span class="mv-recent-val">\'+escH(String(it.val))+\'<span class="mv-recent-unit"> \'+escH(it.unit)+\'</span></span>\'+' .
-						'\'</div>\';' .
-					'}).join("");' .
-				'}else{rc.style.display="none";}' .
+			/* Scan all readings to find the most recent non-zero value for each
+			 * metric.  Records are often stored as separate rows per measurement
+			 * type (e.g. one row for BP/HR/SpO2 and another for renal labs), so
+			 * the chronologically last entry cannot reliably represent all KPIs
+			 * on its own — matching the admin dashboard latestFor() pattern. */
+			'function mvLatestFor(field){' .
+				'for(var i=0;i<readings.length;i++){' .
+					'var v=parseFloat(readings[i][field]);' .
+					'if(v>0)return v;' .
+				'}' .
+				'return 0;' .
 			'}' .
 
 			/* KPI cards */
 			'var g=document.getElementById("mv-kpi-grid");if(!g)return;' .
-			'if(!latest){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-			'var bpSys=latest.bp_sys||0;var bpDia=latest.bp_dia||0;' .
-			'var hr=latest.hr||0;var spo2=latest.spo2||0;var temp=latest.temp||0;var glucose=latest.glucose||0;' .
+			'if(!readings.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'var bpSys=mvLatestFor("bp_sys");var bpDia=mvLatestFor("bp_dia");' .
+			'var hr=mvLatestFor("hr");var spo2=mvLatestFor("spo2");var temp=mvLatestFor("temp");var glucose=mvLatestFor("glucose");' .
 			'var bpSt=mvBpStatus(bpSys,bpDia);' .
 			'var hrSt=mvHrStatus(hr);' .
 			'var spo2St=mvSpo2Status(spo2);' .
@@ -3495,9 +3446,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Kidney KPI section */
 			'var kg=document.getElementById("mv-kidney-kpi-grid");' .
 			'if(kg){' .
-				'var egfr=latest.egfr||0;var creat=latest.creatinine||0;var bun=latest.bun||0;' .
-				'var kpot=latest.potassium||0;var kna=latest.sodium||0;var phos=latest.phosphorus||0;var alb=latest.albumin||0;' .
-				'var hgb=latest.hemoglobin||0;' .
+				'var egfr=mvLatestFor("egfr");var creat=mvLatestFor("creatinine");var bun=mvLatestFor("bun");' .
+				'var kpot=mvLatestFor("potassium");var kna=mvLatestFor("sodium");var phos=mvLatestFor("phosphorus");var alb=mvLatestFor("albumin");' .
+				'var hgb=mvLatestFor("hemoglobin");' .
 				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb||hgb;' .
 				'if(!hasKidney){' .
 					'kg.innerHTML=\'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_js( __( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
