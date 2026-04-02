@@ -9,7 +9,7 @@ Stable tag: 1.1.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ tools; Pro addon (PHP 8.1+) adds new tools on top.
 
 == Description ==
 
@@ -31,6 +31,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
+* [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
 * Ollama (self-hosted, no external data transmission)
 * LM Studio (self-hosted, no external data transmission)
 
@@ -41,7 +42,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 * **Comprehensive Tool Library** - Content management, media generation, research, site operations
 * **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed
-* **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
+* **Multi-Provider Support** - OpenAI, Google Gemini, NVIDIA NIM, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
 * **Zero Lock-in** - Works with vanilla WordPress; optional integrations enhance functionality
@@ -61,6 +62,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
+* **NVIDIA NIM** - Llama, Mistral, Nemotron via NVIDIA cloud inference ([Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/))
 * **Ollama** - Privacy-focused local AI (self-hosted, no external data)
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * Automatic provider fallback for maximum uptime
@@ -520,7 +522,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 **Initial Release**
 
 * 74+ built-in tools for content, media, research, and site operations
-* Multi-provider support: OpenAI, Gemini, Ollama, LM Studio
+* Multi-provider support: OpenAI, Gemini, NVIDIA NIM, Ollama, LM Studio
 * Full MCP (Model Context Protocol) server implementation
 * Modern chat interface with streaming responses
 * 182 profession templates across 12 industry categories
@@ -606,6 +608,14 @@ Initial release. Welcome to Open Operator System!
 * **Service URL:** https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}
 * **Terms of Service:** https://www.cloudflare.com/terms/
 * **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
+
+**6a. NVIDIA NIM API**
+* **Purpose:** Cloud AI inference via NVIDIA's optimized model platform (Llama, Mistral, Nemotron, and more)
+* **Data Sent:** Chat messages, system prompts, tool results
+* **When:** Every time an AI assistant is used with NVIDIA NIM as the provider
+* **Service URL:** https://integrate.api.nvidia.com/v1 (default cloud endpoint; supports custom/self-hosted NIM endpoints)
+* **Terms of Service:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
+* **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
 
 = Optional Third-Party Service Integrations =
 

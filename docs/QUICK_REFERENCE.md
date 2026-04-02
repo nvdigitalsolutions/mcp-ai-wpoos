@@ -58,7 +58,7 @@ This quick reference provides fast access to the most common tasks and commands 
 # 2. Activate from WordPress admin
 # 3. Complete the Getting Started wizard (auto-redirects on first activation)
 #    → Step 1: Welcome
-#    → Step 2: Connect your AI provider (OpenAI, Gemini, Ollama, etc.)
+#    → Step 2: Connect your AI provider (OpenAI, Gemini, NVIDIA NIM, Ollama, etc.)
 #    → Step 3: Choose a use-case preset (creates a ready-to-use assistant)
 #    → Step 4: You're all set — copy the [mcp_ai_chat] shortcode
 ```
@@ -120,6 +120,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ### Optional Integration Keys
 - **Gemini API Key** - For Gemini provider support
+- **NVIDIA API Key** - For NVIDIA NIM provider support (get from [build.nvidia.com](https://build.nvidia.com/))
 - **Crawl4AI URL** - For web crawling capabilities
 - **Mailjet API** - For email automation
 - **QuickBooks API** - For financial reporting

@@ -1027,6 +1027,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Connection_Resolver' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-connection-resolver.php';
 		}
+		// Load the smart search trait for progressive query relaxation.
+		if ( ! trait_exists( 'WP_MCP_AI_Shopify_Smart_Search' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/trait-wp-mcp-ai-shopify-smart-search.php';
+		}
 		$shopify_tools = array(
 			'WP_MCP_AI_Tool_Remote_Shopify_Connection'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-shopify-connection.php',
 			'WP_MCP_AI_Pro_Tool_Shopify_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-shopify-products.php',
