@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/revert-default-provider-setting',
-        'version' => 'dev-copilot/revert-default-provider-setting',
-        'reference' => 'ce498a36543c021bf055b20983a431f55bc72c9f',
+        'pretty_version' => 'dev-copilot/fix-nvidia-provider-error',
+        'version' => 'dev-copilot/fix-nvidia-provider-error',
+        'reference' => '8788797178f47ba88ba15e99d9f786ff626cd94a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/revert-default-provider-setting',
-            'version' => 'dev-copilot/revert-default-provider-setting',
-            'reference' => 'ce498a36543c021bf055b20983a431f55bc72c9f',
+            'pretty_version' => 'dev-copilot/fix-nvidia-provider-error',
+            'version' => 'dev-copilot/fix-nvidia-provider-error',
+            'reference' => '8788797178f47ba88ba15e99d9f786ff626cd94a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
