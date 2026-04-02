@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/extend-model-config-nvidia-llm',
-        'version' => 'dev-copilot/extend-model-config-nvidia-llm',
-        'reference' => '1d3a04eb76476e3c9da60abda28968cf8e45f0f5',
+        'pretty_version' => 'dev-copilot/update-build-script-pro-toolkits',
+        'version' => 'dev-copilot/update-build-script-pro-toolkits',
+        'reference' => '42d08034b857e27600ac41d6c331cbc6d1f72c8b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/extend-model-config-nvidia-llm',
-            'version' => 'dev-copilot/extend-model-config-nvidia-llm',
-            'reference' => '1d3a04eb76476e3c9da60abda28968cf8e45f0f5',
+            'pretty_version' => 'dev-copilot/update-build-script-pro-toolkits',
+            'version' => 'dev-copilot/update-build-script-pro-toolkits',
+            'reference' => '42d08034b857e27600ac41d6c331cbc6d1f72c8b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

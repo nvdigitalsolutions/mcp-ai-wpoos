@@ -44,6 +44,8 @@ composer.phar
 # Ignore ZIP files everywhere except the final build output in build/
 *.zip
 !/build/*.zip
+!/build/toolkit-addons/
+!/build/toolkit-addons/*.zip
 
 # Ignore all vendor by default
 /vendor/*
