@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-nvidia-provider-error',
-        'version' => 'dev-copilot/fix-nvidia-provider-error',
-        'reference' => '8788797178f47ba88ba15e99d9f786ff626cd94a',
+        'pretty_version' => 'dev-copilot/fix-nvidia-chat-client-error',
+        'version' => 'dev-copilot/fix-nvidia-chat-client-error',
+        'reference' => '7496945ff506cfec36ff61d663f237ed8efdaa23',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-nvidia-provider-error',
-            'version' => 'dev-copilot/fix-nvidia-provider-error',
-            'reference' => '8788797178f47ba88ba15e99d9f786ff626cd94a',
+            'pretty_version' => 'dev-copilot/fix-nvidia-chat-client-error',
+            'version' => 'dev-copilot/fix-nvidia-chat-client-error',
+            'reference' => '7496945ff506cfec36ff61d663f237ed8efdaa23',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
