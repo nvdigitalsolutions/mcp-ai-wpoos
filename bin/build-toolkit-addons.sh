@@ -89,31 +89,62 @@ fi
 # Toolkit Definitions
 # ============================================================================
 # Each toolkit is defined as:
-#   TOOLKIT_ID|Display Name|setting_key|tools_dir|init_file|description|extra_dirs
+#   TOOLKIT_ID|Display Name|setting_key|tools_dir|init_file|description|extra_dirs|vendor_packages
 #
 # extra_dirs: comma-separated list of additional directories/files to include
 #   relative to addons/pro/ (e.g., includes/admin/class-wp-mcp-ai-crm-*.php)
+#
+# vendor_packages: comma-separated list of Composer vendor package names to include.
+#   Each package and its transitive dependencies will be copied from addons/pro/vendor/.
+#   A vendor/autoload.php will be generated and the bootstrapper will load it.
+#   Leave empty if no vendor packages are needed.
 
 declare -a TOOLKITS=(
-    "ecommerce|E-commerce Toolkit|enable_ecommerce_toolkit|ecommerce|ecommerce-toolkit-init.php|Advanced WooCommerce integration with product management, order processing, inventory tracking, shipping optimization, and customer management.|includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php,includes/admin/class-wp-mcp-ai-product-research-page.php,includes/admin/class-wp-mcp-ai-product-consolidate-page.php,includes/admin/class-wp-mcp-ai-product-settings-page.php"
-    "social-media|Social Media Management Toolkit|enable_social_media_toolkit|social-media|social-media-toolkit-init.php|Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.|"
-    "analytics|Advanced Analytics Toolkit|enable_advanced_analytics_toolkit|analytics|analytics-toolkit-init.php|Business intelligence, predictive analytics, data visualization, statistical analysis, and regression modeling.|"
-    "multilingual|Multilingual Content Toolkit|enable_multilingual_toolkit|multilingual|multilingual-toolkit-init.php|Multi-language content management with automatic language detection, translation, and localization.|"
-    "video-production|Video Production Toolkit|enable_video_production_toolkit|video-production|video-production-toolkit-init.php|Professional video creation, editing, and processing with FFmpeg, subtitle generation, and GIF creation.|"
-    "financial-planner|Financial Planner Toolkit|enable_financial_planner_toolkit|financial-planning|financial-planner-toolkit-init.php|Retirement planning, budgeting, investment tracking, debt management, and financial goal planning.|"
-    "dj-management|DJ Management Toolkit|enable_dj_management_toolkit|dj-management|dj-management-toolkit-init.php|Equipment tracking, playlist management, event scheduling, client management, and music library organization.|"
-    "image-production|Image Production Toolkit|enable_image_production_toolkit|image-production|image-production-toolkit-init.php|AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.|"
-    "ai-tool-builder|AI Tool Builder Toolkit|enable_ai_tool_builder_toolkit|ai-tool-builder|ai-tool-builder-toolkit-init.php|Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation.|"
-    "architect-agent|Architect Agent Toolkit|enable_architect_agent_toolkit|architect-agent|architect-agent-toolkit-init.php|Self-editing capabilities for AI agents with file operations, shell commands, git integration, and code search.|"
-    "architectural-design|Architectural Design Toolkit|enable_architectural_design_toolkit|architectural-design|architectural-design-toolkit-init.php|AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance, and cost estimation.|"
-    "calendar-booking|Calendar Booking Toolkit|enable_calendar_booking_toolkit|calendar-booking|calendar-booking-toolkit-init.php|Appointment scheduling, availability management, calendar synchronization, and booking management.|includes/calendar-booking"
-    "crm|CRM & Email Marketing Toolkit|enable_crm_toolkit|crm|crm-toolkit-init.php|Contact management, email campaigns, lead tracking, CSV import/export, and customer relationship management.|includes/class-wp-mcp-ai-company-cpt.php,includes/admin/class-wp-mcp-ai-crm-settings-page.php,includes/admin/class-wp-mcp-ai-company-research-page.php,includes/research-add/class-wp-mcp-ai-crm-research-add.php"
-    "document-generation|Document Generation Toolkit|enable_document_generation_toolkit|document-generation|document-generation-toolkit-init.php|Advanced PDF, Word, and Excel document generation, OCR, merging, and watermarking.|"
-    "regulatory-registration|Regulatory Registration Toolkit|enable_regulatory_registration_toolkit|regulatory-registration|regulatory-registration-toolkit-init.php|Regulatory product registration and compliance management for multi-country submissions.|"
-    "site-creator|Site Creator Toolkit|enable_site_creator_toolkit|site-creator-toolkit|site-creator-toolkit-init.php|Advanced site creation with page builders, section builders, and widget builders.|"
-    "healthcare-imaging|Healthcare Imaging Toolkit|enable_healthcare_imaging|_none_|healthcare-imaging-toolkit-init.php|DICOM medical imaging viewer with Cornerstone3D for PET/CT/MR studies.|"
-    "fantasy-football|Fantasy Football Toolkit|enable_fantasy_football|_none_|fantasy-football-toolkit-init.php|Yahoo Fantasy Sports integration with team management, player research, and trade analysis.|includes/fantasy-football"
-    "media|Media Toolkit|enable_media_toolkit|_none_|media-toolkit-init.php|Image optimization, video processing, SVG vectorization, and math equation rendering.|"
+    "ecommerce|E-commerce Toolkit|enable_ecommerce_toolkit|ecommerce|ecommerce-toolkit-init.php|Advanced WooCommerce integration with product management, order processing, inventory tracking, shipping optimization, and customer management.|includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php,includes/admin/class-wp-mcp-ai-product-research-page.php,includes/admin/class-wp-mcp-ai-product-consolidate-page.php,includes/admin/class-wp-mcp-ai-product-settings-page.php|dvdoug/boxpacker"
+    "social-media|Social Media Management Toolkit|enable_social_media_toolkit|social-media|social-media-toolkit-init.php|Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.||"
+    "analytics|Advanced Analytics Toolkit|enable_advanced_analytics_toolkit|analytics|analytics-toolkit-init.php|Business intelligence, predictive analytics, data visualization, statistical analysis, and regression modeling.||"
+    "multilingual|Multilingual Content Toolkit|enable_multilingual_toolkit|multilingual|multilingual-toolkit-init.php|Multi-language content management with automatic language detection, translation, and localization.||"
+    "video-production|Video Production Toolkit|enable_video_production_toolkit|video-production|video-production-toolkit-init.php|Professional video creation, editing, and processing with FFmpeg, subtitle generation, and GIF creation.||"
+    "financial-planner|Financial Planner Toolkit|enable_financial_planner_toolkit|financial-planning|financial-planner-toolkit-init.php|Retirement planning, budgeting, investment tracking, debt management, and financial goal planning.||phpoffice/phpspreadsheet"
+    "dj-management|DJ Management Toolkit|enable_dj_management_toolkit|dj-management|dj-management-toolkit-init.php|Equipment tracking, playlist management, event scheduling, client management, and music library organization.||phpoffice/phpspreadsheet"
+    "image-production|Image Production Toolkit|enable_image_production_toolkit|image-production|image-production-toolkit-init.php|AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.||"
+    "ai-tool-builder|AI Tool Builder Toolkit|enable_ai_tool_builder_toolkit|ai-tool-builder|ai-tool-builder-toolkit-init.php|Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation.||"
+    "architect-agent|Architect Agent Toolkit|enable_architect_agent_toolkit|architect-agent|architect-agent-toolkit-init.php|Self-editing capabilities for AI agents with file operations, shell commands, git integration, and code search.||"
+    "architectural-design|Architectural Design Toolkit|enable_architectural_design_toolkit|architectural-design|architectural-design-toolkit-init.php|AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance, and cost estimation.||"
+    "calendar-booking|Calendar Booking Toolkit|enable_calendar_booking_toolkit|calendar-booking|calendar-booking-toolkit-init.php|Appointment scheduling, availability management, calendar synchronization, and booking management.|includes/calendar-booking|"
+    "crm|CRM & Email Marketing Toolkit|enable_crm_toolkit|crm|crm-toolkit-init.php|Contact management, email campaigns, lead tracking, CSV import/export, and customer relationship management.|includes/class-wp-mcp-ai-company-cpt.php,includes/admin/class-wp-mcp-ai-crm-settings-page.php,includes/admin/class-wp-mcp-ai-company-research-page.php,includes/research-add/class-wp-mcp-ai-crm-research-add.php|"
+    "document-generation|Document Generation Toolkit|enable_document_generation_toolkit|document-generation|document-generation-toolkit-init.php|Advanced PDF, Word, and Excel document generation, OCR, merging, and watermarking.||dompdf/dompdf,tecnickcom/tcpdf,phpoffice/phpspreadsheet,phpoffice/phpword,smalot/pdfparser,thiagoalessio/tesseract_ocr"
+    "regulatory-registration|Regulatory Registration Toolkit|enable_regulatory_registration_toolkit|regulatory-registration|regulatory-registration-toolkit-init.php|Regulatory product registration and compliance management for multi-country submissions.||phpoffice/phpspreadsheet"
+    "site-creator|Site Creator Toolkit|enable_site_creator_toolkit|site-creator-toolkit|site-creator-toolkit-init.php|Advanced site creation with page builders, section builders, and widget builders.||"
+    "healthcare-imaging|Healthcare Imaging Toolkit|enable_healthcare_imaging|_none_|healthcare-imaging-toolkit-init.php|DICOM medical imaging viewer with Cornerstone3D for PET/CT/MR studies.||"
+    "fantasy-football|Fantasy Football Toolkit|enable_fantasy_football|_none_|fantasy-football-toolkit-init.php|Yahoo Fantasy Sports integration with team management, player research, and trade analysis.|includes/fantasy-football|"
+    "media|Media Toolkit|enable_media_toolkit|_none_|media-toolkit-init.php|Image optimization, video processing, SVG vectorization, and math equation rendering.||"
+)
+
+# ============================================================================
+# Vendor Package → Directory Mapping
+# ============================================================================
+# Maps Composer package names to their vendor directory names and transitive
+# dependencies. This avoids needing to parse composer.lock at build time.
+#
+# Format: VENDOR_PACKAGE_MAP[package/name]="dir1 dir2 dir3"
+# where each dir is a path under vendor/ to copy.
+
+declare -A VENDOR_PACKAGE_MAP=(
+    # dvdoug/boxpacker → dvdoug/ + psr/log
+    ["dvdoug/boxpacker"]="dvdoug psr/log"
+    # phpoffice/phpspreadsheet → phpoffice/phpspreadsheet + transitive deps
+    ["phpoffice/phpspreadsheet"]="phpoffice/phpspreadsheet composer/pcre maennchen markbaker psr/simple-cache"
+    # phpoffice/phpword → phpoffice/phpword + phpoffice/math
+    ["phpoffice/phpword"]="phpoffice/phpword phpoffice/math"
+    # dompdf/dompdf → dompdf/ + masterminds + sabberworm + thecodingmachine
+    ["dompdf/dompdf"]="dompdf masterminds sabberworm thecodingmachine"
+    # tecnickcom/tcpdf (no transitive deps)
+    ["tecnickcom/tcpdf"]="tecnickcom"
+    # smalot/pdfparser → smalot/ + symfony/polyfill-mbstring
+    ["smalot/pdfparser"]="smalot symfony/polyfill-mbstring"
+    # thiagoalessio/tesseract_ocr (no transitive deps)
+    ["thiagoalessio/tesseract_ocr"]="thiagoalessio"
 )
 
 # ============================================================================
@@ -124,8 +155,12 @@ if [ "$LIST_ONLY" = true ]; then
     echo "========================="
     echo ""
     for toolkit_def in "${TOOLKITS[@]}"; do
-        IFS='|' read -r tk_id tk_name tk_setting tk_tools_dir tk_init tk_desc tk_extra <<< "$toolkit_def"
-        printf "  %-25s %s\n" "$tk_id" "$tk_name"
+        IFS='|' read -r tk_id tk_name tk_setting tk_tools_dir tk_init tk_desc tk_extra tk_vendor <<< "$toolkit_def"
+        local_deps=""
+        if [ -n "$tk_vendor" ]; then
+            local_deps=" [vendor: ${tk_vendor}]"
+        fi
+        printf "  %-25s %s%s\n" "$tk_id" "$tk_name" "$local_deps"
     done
     echo ""
     echo "Use --toolkit NAME to build a specific toolkit."
@@ -153,49 +188,109 @@ OUTPUT_DIR="build/toolkit-addons"
 mkdir -p "$OUTPUT_DIR"
 
 # ============================================================================
-# Common vendor exclusion patterns (reused for each toolkit)
+# Function: Copy vendor packages for a toolkit add-on
 # ============================================================================
-VENDOR_EXCLUDES=(
-    --exclude 'vendor/*/tests'
-    --exclude 'vendor/*/test'
-    --exclude 'vendor/*/Test'
-    --exclude 'vendor/*/Tests'
-    --exclude 'vendor/*/*/tests'
-    --exclude 'vendor/*/*/test'
-    --exclude 'vendor/*/*/Test'
-    --exclude 'vendor/*/*/Tests'
-    --exclude 'vendor/*/docs'
-    --exclude 'vendor/*/doc'
-    --exclude 'vendor/*/Docs'
-    --exclude 'vendor/*/examples'
-    --exclude 'vendor/*/example'
-    --exclude 'vendor/*/*/docs'
-    --exclude 'vendor/*/*/doc'
-    --exclude 'vendor/*/*/examples'
-    --exclude 'vendor/*/*/example'
-    --exclude 'vendor/*/README*'
-    --exclude 'vendor/*/CHANGELOG*'
-    --exclude 'vendor/*/CONTRIBUTING*'
-    --exclude 'vendor/*/LICENSE*'
-    --exclude 'vendor/*/*/README*'
-    --exclude 'vendor/*/*/CHANGELOG*'
-    --exclude 'vendor/*/.travis.yml'
-    --exclude 'vendor/*/.circleci'
-    --exclude 'vendor/*/.github'
-    --exclude 'vendor/*/*/.travis.yml'
-    --exclude 'vendor/*/*/.circleci'
-    --exclude 'vendor/*/*/.github'
-    --exclude 'vendor/*/phpunit.xml*'
-    --exclude 'vendor/*/phpstan.neon*'
-    --exclude 'vendor/*/psalm.xml*'
-    --exclude 'vendor/*/.php-cs-fixer*'
-    --exclude 'vendor/*/*/phpunit.xml*'
-    --exclude 'vendor/*/*/phpstan.neon*'
-    --exclude 'vendor/*/*/psalm.xml*'
-    --exclude 'vendor/*/*/.php-cs-fixer*'
-    --exclude 'vendor/*/Makefile'
-    --exclude 'vendor/*/*/Makefile'
-)
+# Copies the required vendor packages (and their transitive dependencies)
+# from addons/pro/vendor/ to the toolkit's build directory, then copies
+# the Composer autoloader files and regenerates the autoload classmap.
+#
+# Arguments:
+#   $1 - build_dir: path to the toolkit build directory
+#   $2 - vendor_packages: comma-separated list of package names
+#
+# Returns 0 if vendor packages were copied, 1 if none were needed.
+copy_vendor_packages() {
+    local build_dir="$1"
+    local vendor_packages="$2"
+    
+    if [ -z "$vendor_packages" ]; then
+        return 1
+    fi
+    
+    local vendor_src="${PRO_DIR}/vendor"
+    local vendor_dest="${build_dir}/vendor"
+    
+    # Collect all unique vendor directories to copy
+    declare -A dirs_to_copy
+    
+    IFS=',' read -ra PACKAGES <<< "$vendor_packages"
+    for package in "${PACKAGES[@]}"; do
+        package=$(echo "$package" | xargs)  # trim whitespace
+        
+        # Look up the package's directory mapping
+        local dirs="${VENDOR_PACKAGE_MAP[$package]}"
+        if [ -z "$dirs" ]; then
+            echo "    ⚠️  No vendor mapping for: ${package} (skipping)"
+            continue
+        fi
+        
+        # Add each directory to the set
+        for dir in $dirs; do
+            dirs_to_copy["$dir"]=1
+        done
+    done
+    
+    if [ ${#dirs_to_copy[@]} -eq 0 ]; then
+        return 1
+    fi
+    
+    # Create vendor directory
+    mkdir -p "$vendor_dest"
+    
+    # Copy each required vendor directory
+    local copied_count=0
+    for dir in "${!dirs_to_copy[@]}"; do
+        local src_path="${vendor_src}/${dir}"
+        if [ -d "$src_path" ]; then
+            local dest_path="${vendor_dest}/${dir}"
+            mkdir -p "$(dirname "$dest_path")"
+            rsync -a --quiet "$src_path/" "$dest_path/" \
+                --exclude 'tests' \
+                --exclude 'test' \
+                --exclude 'Test' \
+                --exclude 'Tests' \
+                --exclude 'docs' \
+                --exclude 'doc' \
+                --exclude 'Docs' \
+                --exclude 'examples' \
+                --exclude 'example' \
+                --exclude 'README*' \
+                --exclude 'CHANGELOG*' \
+                --exclude 'CONTRIBUTING*' \
+                --exclude '.travis.yml' \
+                --exclude '.circleci' \
+                --exclude '.github' \
+                --exclude 'phpunit.xml*' \
+                --exclude 'phpstan.neon*' \
+                --exclude 'psalm.xml*' \
+                --exclude '.php-cs-fixer*' \
+                --exclude 'Makefile' \
+                --exclude '.gitignore' \
+                --exclude '.gitattributes' \
+                --exclude '.editorconfig'
+            copied_count=$((copied_count + 1))
+        else
+            echo "    ⚠️  Vendor directory not found: vendor/${dir}"
+        fi
+    done
+    
+    # Copy the Composer autoloader infrastructure
+    if [ $copied_count -gt 0 ] && [ -d "${vendor_src}/composer" ]; then
+        mkdir -p "${vendor_dest}/composer"
+        # Copy the Composer autoloader files
+        for f in autoload_classmap.php autoload_namespaces.php autoload_psr4.php \
+                 autoload_real.php autoload_static.php ClassLoader.php \
+                 installed.json installed.php LICENSE platform_check.php InstalledVersions.php; do
+            [ -f "${vendor_src}/composer/${f}" ] && cp "${vendor_src}/composer/${f}" "${vendor_dest}/composer/"
+        done
+        # Copy the root autoload.php
+        [ -f "${vendor_src}/autoload.php" ] && cp "${vendor_src}/autoload.php" "${vendor_dest}/"
+        
+        echo "    ✓ Copied ${copied_count} vendor package(s) with Composer autoloader"
+    fi
+    
+    return 0
+}
 
 # ============================================================================
 # Function: Generate the bootstrapper PHP file for a toolkit add-on
@@ -208,6 +303,7 @@ generate_bootstrapper() {
     local tk_init="$5"
     local tk_desc="$6"
     local output_file="$7"
+    local has_vendor="$8"
     
     # Convert toolkit ID to slug (e.g., "ecommerce" -> "oos-toolkit-ecommerce")
     local plugin_slug="oos-toolkit-${tk_id}"
@@ -330,6 +426,28 @@ function wp_mcp_ai_toolkit_${tk_id//-/_}_init() {
 		define( 'WP_MCP_AI_PRO_VERSION', WP_MCP_AI_TOOLKIT_${constant_prefix}_VERSION );
 	}
 
+PHPEOF
+
+    # Conditionally add vendor autoloader loading if this toolkit has vendor packages
+    if [ "$has_vendor" = "true" ]; then
+        cat >> "$output_file" << 'VENDORPHPEOF'
+	// Load Composer vendor autoloader for toolkit dependencies.
+	// These packages require PHP 8.1+; tools gracefully degrade on older PHP.
+	if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
+VENDORPHPEOF
+        cat >> "$output_file" << VENDORPHPEOF2
+		\$vendor_autoload = WP_MCP_AI_TOOLKIT_${constant_prefix}_PATH . 'vendor/autoload.php';
+VENDORPHPEOF2
+        cat >> "$output_file" << 'VENDORPHPEOF3'
+		if ( file_exists( $vendor_autoload ) ) {
+			require_once $vendor_autoload;
+		}
+	}
+
+VENDORPHPEOF3
+    fi
+    
+    cat >> "$output_file" << PHPEOF
 	// Load the toolkit init file.
 	\$init_file = WP_MCP_AI_TOOLKIT_${constant_prefix}_PATH . 'includes/${tk_init}';
 	if ( file_exists( \$init_file ) ) {
@@ -428,10 +546,11 @@ PHPEOF
 build_toolkit() {
     local toolkit_def="$1"
     
-    IFS='|' read -r tk_id tk_name tk_setting tk_tools_dir tk_init tk_desc tk_extra <<< "$toolkit_def"
+    IFS='|' read -r tk_id tk_name tk_setting tk_tools_dir tk_init tk_desc tk_extra tk_vendor <<< "$toolkit_def"
     
     local plugin_slug="oos-toolkit-${tk_id}"
     local build_dir="build/toolkit-addons/${plugin_slug}"
+    local has_vendor="false"
     
     echo "  Building: ${tk_name} (${plugin_slug})..."
     
@@ -439,17 +558,24 @@ build_toolkit() {
     rm -rf "$build_dir"
     mkdir -p "$build_dir/includes"
     
-    # 1. Generate the bootstrapper plugin file
-    generate_bootstrapper "$tk_id" "$tk_name" "$tk_setting" "$tk_tools_dir" "$tk_init" "$tk_desc" "${build_dir}/${plugin_slug}.php"
+    # 1. Copy vendor packages if needed (before generating bootstrapper)
+    if [ -n "$tk_vendor" ]; then
+        if copy_vendor_packages "$build_dir" "$tk_vendor"; then
+            has_vendor="true"
+        fi
+    fi
     
-    # 2. Copy the toolkit init file
+    # 2. Generate the bootstrapper plugin file
+    generate_bootstrapper "$tk_id" "$tk_name" "$tk_setting" "$tk_tools_dir" "$tk_init" "$tk_desc" "${build_dir}/${plugin_slug}.php" "$has_vendor"
+    
+    # 3. Copy the toolkit init file
     if [ -f "${PRO_DIR}/includes/${tk_init}" ]; then
         cp "${PRO_DIR}/includes/${tk_init}" "${build_dir}/includes/"
     else
         echo "    ⚠️  Init file not found: includes/${tk_init}"
     fi
     
-    # 3. Copy the tools directory (if it exists and is not _none_)
+    # 4. Copy the tools directory (if it exists and is not _none_)
     if [ "$tk_tools_dir" != "_none_" ] && [ -d "${PRO_DIR}/includes/tools/${tk_tools_dir}" ]; then
         mkdir -p "${build_dir}/includes/tools/${tk_tools_dir}"
         rsync -a --quiet "${PRO_DIR}/includes/tools/${tk_tools_dir}/" "${build_dir}/includes/tools/${tk_tools_dir}/"
@@ -458,7 +584,7 @@ build_toolkit() {
         echo "    ✓ Copied ${tools_count} tool files from tools/${tk_tools_dir}/"
     fi
     
-    # 4. Copy any root-level tool files that belong to this toolkit
+    # 5. Copy any root-level tool files that belong to this toolkit
     # (Some toolkits like media/healthcare have tools in includes/tools/ root)
     case "$tk_id" in
         media)
@@ -482,7 +608,7 @@ build_toolkit() {
             ;;
     esac
     
-    # 5. Copy extra directories/files specified in the toolkit definition
+    # 6. Copy extra directories/files specified in the toolkit definition
     if [ -n "$tk_extra" ]; then
         IFS=',' read -ra EXTRA_ITEMS <<< "$tk_extra"
         for item in "${EXTRA_ITEMS[@]}"; do
@@ -518,7 +644,7 @@ build_toolkit() {
         done
     fi
     
-    # 6. Copy relevant CSS assets if they exist
+    # 7. Copy relevant CSS assets if they exist
     mkdir -p "${build_dir}/assets/css"
     local css_slug="${tk_id}"
     for css_file in "${PRO_DIR}/assets/css/admin-${css_slug}-toolkit"*.css \
@@ -530,7 +656,7 @@ build_toolkit() {
     rmdir "${build_dir}/assets/css" 2>/dev/null || true
     rmdir "${build_dir}/assets" 2>/dev/null || true
     
-    # 7. Copy relevant Gutenberg blocks if they exist
+    # 8. Copy relevant Gutenberg blocks if they exist
     local block_dir="${PRO_DIR}/includes/blocks/${tk_id}-block"
     if [ -d "$block_dir" ]; then
         mkdir -p "${build_dir}/includes/blocks/${tk_id}-block"
@@ -540,7 +666,7 @@ build_toolkit() {
         echo "    ✓ Copied Gutenberg block: ${tk_id}-block/"
     fi
     
-    # 8. Create the ZIP
+    # 9. Create the ZIP
     cd "build/toolkit-addons"
     zip -r -q "${plugin_slug}-${VERSION}.zip" "${plugin_slug}/" -x "*.DS_Store" -x "*__MACOSX*"
     cd "$ROOT_DIR"
@@ -564,7 +690,7 @@ if [ -n "$BUILD_SINGLE" ]; then
     # Build a specific toolkit
     FOUND=false
     for toolkit_def in "${TOOLKITS[@]}"; do
-        IFS='|' read -r tk_id _ _ _ _ _ _ <<< "$toolkit_def"
+        IFS='|' read -r tk_id _ _ _ _ _ _ _ <<< "$toolkit_def"
         if [ "$tk_id" = "$BUILD_SINGLE" ]; then
             build_toolkit "$toolkit_def"
             BUILT_COUNT=$((BUILT_COUNT + 1))
@@ -578,7 +704,7 @@ if [ -n "$BUILD_SINGLE" ]; then
         echo ""
         echo "Available toolkits:"
         for toolkit_def in "${TOOLKITS[@]}"; do
-            IFS='|' read -r tk_id tk_name _ _ _ _ _ <<< "$toolkit_def"
+            IFS='|' read -r tk_id tk_name _ _ _ _ _ _ <<< "$toolkit_def"
             printf "  %-25s %s\n" "$tk_id" "$tk_name"
         done
         exit 1
@@ -607,6 +733,7 @@ echo "  • Requires the base oOS plugin to be installed"
 echo "  • Auto-enables its toolkit setting on activation"
 echo "  • Won't conflict with the full Pro add-on (auto-deactivates if Pro detected)"
 echo "  • Contains only toolkit-specific files for minimal footprint"
+echo "  • Includes required Composer vendor packages (if needed) with PHP 8.1+ autoloader"
 echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
