@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-assets-and-create-zips-again',
-        'version' => 'dev-copilot/rebuild-assets-and-create-zips-again',
-        'reference' => '81aefaf190aa93d76fcbf62e660549414834799c',
+        'pretty_version' => 'dev-copilot/update-ai-model-pricing',
+        'version' => 'dev-copilot/update-ai-model-pricing',
+        'reference' => '0ec5c43a7c05416da04fb44a3ca71352318d4f45',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-assets-and-create-zips-again',
-            'version' => 'dev-copilot/rebuild-assets-and-create-zips-again',
-            'reference' => '81aefaf190aa93d76fcbf62e660549414834799c',
+            'pretty_version' => 'dev-copilot/update-ai-model-pricing',
+            'version' => 'dev-copilot/update-ai-model-pricing',
+            'reference' => '0ec5c43a7c05416da04fb44a3ca71352318d4f45',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
