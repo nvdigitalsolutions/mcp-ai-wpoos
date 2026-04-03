@@ -68,6 +68,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 		// Register blocks with block.json if they exist.
 		$block_types = array(
 			'chat',
+			'chat-bubble',
 			'professional-selector',
 			'assistant-selector',
 			'tools-grid',
@@ -169,6 +170,15 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			array(),
 			WP_MCP_AI_VERSION
 		);
+
+		// Register chat bubble block editor script.
+		wp_enqueue_script(
+			'wp-mcp-ai-chat-bubble-block',
+			WP_MCP_AI_URL . 'assets/js/blocks/chat-bubble-block.js',
+			array( 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n', 'wp-block-editor' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -180,7 +190,8 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			! has_block( 'mcp-ai-wpoos/knowledge-base' ) &&
 			! has_block( 'mcp-ai-wpoos/tools-grid' ) &&
 			! has_block( 'mcp-ai-wpoos/assistant-selector' ) &&
-			! has_block( 'mcp-ai-wpoos/chat' ) ) {
+			! has_block( 'mcp-ai-wpoos/chat' ) &&
+			! has_block( 'mcp-ai-wpoos/chat-bubble' ) ) {
 			return;
 		}
 

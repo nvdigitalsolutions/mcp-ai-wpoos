@@ -198,6 +198,29 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
+		// Register chat bubble assets (floating chat widget).
+		$bubble_script_relative = 'assets/js/chat-bubble.js';
+		$bubble_style_relative  = 'assets/css/chat-bubble.css';
+
+		if ( ! wp_script_is( 'wp-mcp-ai-chat-bubble', 'registered' ) ) {
+			wp_register_script(
+				'wp-mcp-ai-chat-bubble',
+				WP_MCP_AI_URL . $bubble_script_relative,
+				array( self::SCRIPT_HANDLE ),
+				$this->get_asset_version( $bubble_script_relative ),
+				true
+			);
+		}
+
+		if ( ! wp_style_is( 'wp-mcp-ai-chat-bubble-style', 'registered' ) ) {
+			wp_register_style(
+				'wp-mcp-ai-chat-bubble-style',
+				WP_MCP_AI_URL . $bubble_style_relative,
+				array( self::STYLE_HANDLE ),
+				$this->get_asset_version( $bubble_style_relative )
+			);
+		}
+
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.
