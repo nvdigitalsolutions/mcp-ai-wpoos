@@ -2578,6 +2578,71 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-settings-member-row.selected .tma-member-card-icon{background:#1565c0}' .
 		'.mv-settings-member-check{margin-left:auto;font-size:16px;color:var(--tma-btn);opacity:0}' .
 		'.mv-settings-member-row.selected .mv-settings-member-check{opacity:1}' .
+
+		/* Prescription cards */
+		'.mv-rx-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:12px;margin-bottom:10px;position:relative;overflow:hidden}' .
+		'.mv-rx-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--mv-rx-color,#1565c0)}' .
+		'.mv-rx-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}' .
+		'.mv-rx-icon{font-size:20px;flex-shrink:0}' .
+		'.mv-rx-name{font-size:14px;font-weight:600;flex:1}' .
+		'.mv-rx-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid;display:inline-block;flex-shrink:0}' .
+		'.mv-rx-badge.active{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.mv-rx-badge.completed{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.mv-rx-badge.discontinued{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.mv-rx-badge.expired{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.mv-rx-detail{font-size:12px;color:var(--tma-hint);margin-bottom:2px}' .
+
+		/* History log cards */
+		'.mv-hist-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:12px;margin-bottom:8px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent}' .
+		'.mv-hist-card:active{background:var(--tma-secondary-bg)}' .
+		'.mv-hist-date{font-size:14px;font-weight:600;color:var(--tma-text);margin-bottom:4px;display:flex;align-items:center;gap:6px}' .
+		'.mv-hist-date-icon{font-size:16px}' .
+		'.mv-hist-chips{display:flex;flex-wrap:wrap;gap:4px}' .
+		'.mv-hist-chip{font-size:10px;padding:2px 6px;border-radius:10px;' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);border:1px solid var(--tma-border)}' .
+		'.mv-hist-detail{margin-top:8px;padding-top:8px;border-top:1px solid var(--tma-border);display:none}' .
+		'.mv-hist-detail.open{display:block}' .
+		'.mv-hist-detail-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}' .
+		'.mv-hist-detail-label{color:var(--tma-hint)}' .
+		'.mv-hist-detail-val{font-weight:600;color:var(--tma-text)}' .
+
+		/* Font size setting buttons */
+		'.mv-font-btn{min-width:36px;text-align:center;font-weight:600}' .
+		'.mv-font-btn.active{background:var(--tma-btn);color:#fff;border-color:var(--tma-btn)}' .
+
+		/* Toggle switch knob */
+		'input:checked+span{background:var(--tma-btn) !important}' .
+		'input:checked+span+.mv-toggle-knob{transform:translateX(18px)}' .
+
+		/* Font size CSS custom properties (medium is default) */
+		'.mv-font-small{--mv-base:12px;--mv-label:10px;--mv-kpi:17px;--mv-section:12px;--mv-hint:9px}' .
+		'.mv-font-large{--mv-base:16px;--mv-label:14px;--mv-kpi:24px;--mv-section:16px;--mv-hint:12px}' .
+		'.mv-font-small .mv-kpi-val{font-size:var(--mv-kpi)}' .
+		'.mv-font-small .mv-kpi-label,.mv-font-small .mv-log-label{font-size:var(--mv-label)}' .
+		'.mv-font-small .mv-kpi-unit,.mv-font-small .mv-kpi-time{font-size:var(--mv-hint)}' .
+		'.mv-font-small .mv-med-name,.mv-font-small .mv-rx-name,.mv-font-small .mv-hist-date{font-size:var(--mv-base)}' .
+		'.mv-font-small .tma-section-title{font-size:var(--mv-section)}' .
+		'.mv-font-large .mv-kpi-val{font-size:var(--mv-kpi)}' .
+		'.mv-font-large .mv-kpi-label,.mv-font-large .mv-log-label{font-size:var(--mv-label)}' .
+		'.mv-font-large .mv-kpi-unit,.mv-font-large .mv-kpi-time{font-size:var(--mv-hint)}' .
+		'.mv-font-large .mv-med-name,.mv-font-large .mv-rx-name,.mv-font-large .mv-hist-date{font-size:var(--mv-base)}' .
+		'.mv-font-large .tma-section-title{font-size:var(--mv-section)}' .
+		'.mv-font-large .mv-med-dose,.mv-font-large .mv-med-schedule,.mv-font-large .mv-rx-detail{font-size:14px}' .
+		'.mv-font-large .mv-settings-label,.mv-font-large .mv-settings-value{font-size:15px}' .
+		'.mv-font-large .tma-input{font-size:15px}' .
+		'.mv-font-small .mv-med-dose,.mv-font-small .mv-med-schedule,.mv-font-small .mv-rx-detail{font-size:10px}' .
+		'.mv-font-small .mv-settings-label,.mv-font-small .mv-settings-value{font-size:11px}' .
+		'.mv-font-small .tma-input{font-size:11px}' .
+
+		/* Compact mode */
+		'.mv-compact .mv-kpi{padding:8px}' .
+		'.mv-compact .mv-kpi-grid{gap:6px;padding:6px 8px}' .
+		'.mv-compact .mv-med-card,.mv-compact .mv-rx-card,.mv-compact .mv-hist-card{padding:8px;margin-bottom:6px}' .
+		'.mv-compact .mv-log-section{margin-bottom:8px}' .
+		'.mv-compact .mv-banner{padding:8px 10px;margin:6px 8px}' .
 		'</style>' .
 
 		/* ── Member picker overlay ─────────────────────────────────────────── */
@@ -2677,98 +2742,114 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-log">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-log-wrap">' .
-					'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Blood Pressure */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129728; ' . esc_html__( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<div class="mv-bp-row">' .
-							'<input type="number" id="mv-bp-sys" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Systolic', 'mcp-ai-wpoos-pro' ) . '" min="60" max="250" />' .
-							'<span class="mv-bp-sep">/</span>' .
-							'<input type="number" id="mv-bp-dia" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Diastolic', 'mcp-ai-wpoos-pro' ) . '" min="40" max="150" />' .
+					/* History list (default view) */
+					'<div id="mv-log-history-view">' .
+						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+							'<div class="tma-section-title" style="padding:0">&#128197; ' . esc_html__( 'Vitals History', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<button class="tma-btn tma-btn-primary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogForm()">+ ' . esc_html__( 'New Entry', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
+						'<div id="mv-log-history-list"><div class="mv-empty">' . esc_html__( 'No vitals recorded yet.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 					'</div>' .
 
-					/* Heart Rate */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#10084; ' . esc_html__( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-hr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="30" max="250" />' .
-					'</div>' .
-
-					/* SpO2 */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128164; ' . esc_html__( 'Blood Oxygen SpO₂ (%)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-spo2" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98', 'mcp-ai-wpoos-pro' ) . '" min="70" max="100" step="1" />' .
-					'</div>' .
-
-					/* Temperature */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#127777; ' . esc_html__( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-temp" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98.6', 'mcp-ai-wpoos-pro' ) . '" min="90" max="110" step="0.1" />' .
-					'</div>' .
-
-					/* Glucose */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
-					'</div>' .
-
-					/* ── Kidney Lab Values ── */
-					'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
-
-					/* eGFR */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
-						'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
-					'</div>' .
-
-					/* Creatinine */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
-					'</div>' .
-
-					/* BUN */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
-					'</div>' .
-
-					/* Two-column row: Potassium + Sodium */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<div style="display:flex;gap:8px">' .
-							'<div style="flex:1"><input type="number" id="mv-potassium" class="tma-input" placeholder="K\u207a ' . esc_attr__( 'Potassium', 'mcp-ai-wpoos-pro' ) . '" min="1" max="10" step="0.1" /></div>' .
-							'<div style="flex:1"><input type="number" id="mv-sodium" class="tma-input" placeholder="Na\u207a ' . esc_attr__( 'Sodium', 'mcp-ai-wpoos-pro' ) . '" min="100" max="180" step="1" /></div>' .
+					/* Record form (hidden by default) */
+					'<div id="mv-log-form-view" style="display:none">' .
+						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+							'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogHistory()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
-					'</div>' .
+						'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Phosphorus */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
-					'</div>' .
+						/* Blood Pressure */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129728; ' . esc_html__( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<div class="mv-bp-row">' .
+								'<input type="number" id="mv-bp-sys" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Systolic', 'mcp-ai-wpoos-pro' ) . '" min="60" max="250" />' .
+								'<span class="mv-bp-sep">/</span>' .
+								'<input type="number" id="mv-bp-dia" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Diastolic', 'mcp-ai-wpoos-pro' ) . '" min="40" max="150" />' .
+							'</div>' .
+						'</div>' .
 
-					/* Albumin */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
-					'</div>' .
+						/* Heart Rate */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#10084; ' . esc_html__( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-hr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="30" max="250" />' .
+						'</div>' .
 
-					/* Hemoglobin */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129978; ' . esc_html__( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-hemoglobin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 13.5', 'mcp-ai-wpoos-pro' ) . '" min="1" max="25" step="0.1" />' .
-					'</div>' .
+						/* SpO2 */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128164; ' . esc_html__( 'Blood Oxygen SpO₂ (%)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-spo2" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98', 'mcp-ai-wpoos-pro' ) . '" min="70" max="100" step="1" />' .
+						'</div>' .
 
-					/* Notes */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<textarea id="mv-notes" class="tma-input" rows="3" style="resize:none;width:100%" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
-					'</div>' .
+						/* Temperature */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#127777; ' . esc_html__( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-temp" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98.6', 'mcp-ai-wpoos-pro' ) . '" min="90" max="110" step="0.1" />' .
+						'</div>' .
 
-					'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="mvSaveReading()">' . esc_html__( 'Save Reading', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						/* Glucose */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
+						'</div>' .
+
+						/* ── Kidney Lab Values ── */
+						'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+						/* eGFR */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
+							'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
+						'</div>' .
+
+						/* Creatinine */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
+						'</div>' .
+
+						/* BUN */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
+						'</div>' .
+
+						/* Two-column row: Potassium + Sodium */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<div style="display:flex;gap:8px">' .
+								'<div style="flex:1"><input type="number" id="mv-potassium" class="tma-input" placeholder="K\u207a ' . esc_attr__( 'Potassium', 'mcp-ai-wpoos-pro' ) . '" min="1" max="10" step="0.1" /></div>' .
+								'<div style="flex:1"><input type="number" id="mv-sodium" class="tma-input" placeholder="Na\u207a ' . esc_attr__( 'Sodium', 'mcp-ai-wpoos-pro' ) . '" min="100" max="180" step="1" /></div>' .
+							'</div>' .
+						'</div>' .
+
+						/* Phosphorus */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
+						'</div>' .
+
+						/* Albumin */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
+						'</div>' .
+
+						/* Hemoglobin */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129978; ' . esc_html__( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-hemoglobin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 13.5', 'mcp-ai-wpoos-pro' ) . '" min="1" max="25" step="0.1" />' .
+						'</div>' .
+
+						/* Notes */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<textarea id="mv-notes" class="tma-input" rows="3" style="resize:none;width:100%" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
+						'</div>' .
+
+						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="mvSaveReading()">' . esc_html__( 'Save Reading', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
 				'</div>' .
 			'</div>' .
 		'</div>' .
@@ -2794,6 +2875,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-dosage">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-dosage-wrap">' .
+
+					/* Server prescriptions section */
+					'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+						'<div class="tma-section-title" style="padding:0">&#128203; ' . esc_html__( 'Prescriptions', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvFetchPrescriptions()">' . esc_html__( '↻ Refresh', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div id="mv-rx-list"><div class="mv-empty">' . esc_html__( 'Loading prescriptions…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+
+					'<div class="mv-lab-divider">&#128138; ' . esc_html__( 'Quick Medications', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
 					'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 						'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Medications & Dosage', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvToggleAddMed()">' . esc_html__( '+ Add', 'mcp-ai-wpoos-pro' ) . '</button>' .
@@ -2870,6 +2961,28 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'</div>' .
 					'</div>' .
 
+					/* Display / font size card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#127912; ' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Adjust the font size and styling of the app.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div id="mv-font-size-btns" style="display:flex;gap:4px">' .
+								'<button class="mv-settings-btn mv-font-btn" data-size="small" onclick="mvSetFontSize(\'small\',this)">A<span style="font-size:9px">&#8722;</span></button>' .
+								'<button class="mv-settings-btn mv-font-btn active" data-size="medium" onclick="mvSetFontSize(\'medium\',this)">A</button>' .
+								'<button class="mv-settings-btn mv-font-btn" data-size="large" onclick="mvSetFontSize(\'large\',this)">A<span style="font-size:9px">+</span></button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0">' .
+								'<input type="checkbox" id="mv-compact-toggle" onchange="mvToggleCompact(this.checked)" style="opacity:0;width:0;height:0">' .
+								'<span style="position:absolute;cursor:pointer;inset:0;background:var(--tma-border);border-radius:24px;transition:.2s"></span>' .
+								'<span class="mv-toggle-knob" style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s"></span>' .
+							'</label>' .
+						'</div>' .
+					'</div>' .
+
 					/* About card */
 					'<div class="mv-settings-card">' .
 						'<div class="mv-settings-card-title">&#8505; ' . esc_html__( 'About', 'mcp-ai-wpoos-pro' ) . '</div>' .
@@ -2896,7 +3009,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				esc_html__( 'Dashboard', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
 			'<button class="tma-nav-btn" id="mv-nav-log" onclick="mvTab(\'log\',this)">' .
-				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' .
+				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' .
 				esc_html__( 'Log', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
 			'<button class="tma-nav-btn" id="mv-nav-trends" onclick="mvTab(\'trends\',this)">' .
@@ -3111,7 +3224,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(lbl)lbl.textContent=name;' .
 			/* Clear cached readings and pull fresh data from server for this member */
 			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
-			'mvRefresh();mvRenderMeds();mvSyncFromServer();' .
+			'mvRefresh();mvRenderMeds();mvSyncFromServer();mvFetchPrescriptions();' .
 		'};' .
 
 		'window.mvSwitchMember=function(){' .
@@ -3307,8 +3420,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(btn)btn.classList.add("tma-active");' .
 			'tmaHaptic("light");' .
 			'if(tab==="dashboard")mvRefresh();' .
+			'if(tab==="log")mvRenderLogHistory();' .
 			'if(tab==="trends")mvRenderTrends();' .
-			'if(tab==="dosage")mvRenderMeds();' .
+			'if(tab==="dosage"){mvRenderMeds();mvFetchPrescriptions();}' .
 			'if(tab==="settings")mvRenderSettings();' .
 		'};' .
 
@@ -3319,6 +3433,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(readingCountEl)readingCountEl.textContent=mvLoadReadings().length;' .
 			'var medCountEl=document.getElementById("mv-settings-med-count");' .
 			'if(medCountEl)medCountEl.textContent=mvLoadMeds().length;' .
+			/* Restore display settings UI */
+			'mvRestoreDisplayUI();' .
 			/* Fetch members and render inline member selector */
 			'var list=document.getElementById("mv-settings-member-list");' .
 			'if(!list)return;' .
@@ -3366,6 +3482,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Re-render the settings list to show the new selection, then sync */
 			'mvRenderSettings();' .
 			'mvSyncFromServer();' .
+			'mvFetchPrescriptions();' .
 		'};' .
 
 		/* Open new-member form from the Settings tab */
@@ -3387,6 +3504,175 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'try{localStorage.removeItem(SK_READINGS);localStorage.removeItem(SK_MEDS);}catch(e){}' .
 			'tmaHaptic("medium");' .
 			'mvRenderSettings();' .
+		'};' .
+
+		/* ── Display / font size settings ── */
+		'function mvApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=localStorage.getItem("mv_font_size")||"medium";' .
+				'shell.classList.remove("mv-font-small","mv-font-large");' .
+				'if(size==="small")shell.classList.add("mv-font-small");' .
+				'else if(size==="large")shell.classList.add("mv-font-large");' .
+				'var compact=localStorage.getItem("mv_compact")==="true";' .
+				'if(compact)shell.classList.add("mv-compact");' .
+				'else shell.classList.remove("mv-compact");' .
+			'}catch(e){}' .
+		'}' .
+
+		'window.mvSetFontSize=function(size,btn){' .
+			'try{localStorage.setItem("mv_font_size",size);}catch(e){}' .
+			'document.querySelectorAll(".mv-font-btn").forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+			'mvApplyDisplaySettings();' .
+			'tmaHaptic("light");' .
+		'};' .
+
+		'window.mvToggleCompact=function(checked){' .
+			'try{localStorage.setItem("mv_compact",checked?"true":"false");}catch(e){}' .
+			'mvApplyDisplaySettings();' .
+			'tmaHaptic("light");' .
+		'};' .
+
+		/* Restore display settings on render */
+		'function mvRestoreDisplayUI(){' .
+			'try{' .
+				'var size=localStorage.getItem("mv_font_size")||"medium";' .
+				'document.querySelectorAll(".mv-font-btn").forEach(function(b){' .
+					'b.classList.toggle("active",b.getAttribute("data-size")===size);' .
+				'});' .
+				'var compact=localStorage.getItem("mv_compact")==="true";' .
+				'var toggle=document.getElementById("mv-compact-toggle");' .
+				'if(toggle)toggle.checked=compact;' .
+			'}catch(e){}' .
+		'}' .
+
+		/* ── Prescription fetching (Dosage tab) ── */
+		'window.mvFetchPrescriptions=function(){' .
+			'var list=document.getElementById("mv-rx-list");if(!list)return;' .
+			'if(!MEMBER_ID){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Select a member to view prescriptions.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Loading prescriptions…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_prescriptions",arguments:{member_id:MEMBER_ID,per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Unable to load prescriptions.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'var rxs=d.result.prescriptions||[];' .
+				'if(!rxs.length){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'No prescriptions found for this member.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'list.innerHTML=rxs.map(function(rx){' .
+					'var st=rx.status||"active";' .
+					'var stColor=st==="active"?"#2e7d32":st==="completed"?"#1565c0":st==="discontinued"?"#e65100":"#c62828";' .
+					'return \'<div class="mv-rx-card" style="--mv-rx-color:\'+stColor+\'">\'+' .
+						'\'<div class="mv-rx-header">\'+' .
+							'\'<div class="mv-rx-icon">&#128138;</div>\'+' .
+							'\'<div class="mv-rx-name">\'+escH(rx.medication_name||"")+\'</div>\'+' .
+							'\'<span class="mv-rx-badge \'+st+\'">\'+escH(st)+\'</span>\'+' .
+						'\'</div>\'+' .
+						'(rx.dosage?\'<div class="mv-rx-detail">&#128137; ' . esc_js( __( 'Dosage:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.dosage)+\'</div>\':"")+' .
+						'(rx.frequency?\'<div class="mv-rx-detail">&#128337; ' . esc_js( __( 'Frequency:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.frequency)+\'</div>\':"")+' .
+						'(rx.prescribing_doctor?\'<div class="mv-rx-detail">&#129658; ' . esc_js( __( 'Doctor:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.prescribing_doctor)+\'</div>\':"")+' .
+						'(rx.start_date?\'<div class="mv-rx-detail">&#128197; \'+escH(rx.start_date)+(rx.end_date?" \u2013 "+escH(rx.end_date):"")+\'</div>\':"")+' .
+						'(rx.refills_remaining?\'<div class="mv-rx-detail">&#128260; ' . esc_js( __( 'Refills:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.refills_remaining)+\'</div>\':"")+' .
+					'\'</div>\';' .
+				'}).join("");' .
+			'})' .
+			'.catch(function(){' .
+				'if(list)list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Could not load prescriptions. Check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'};' .
+
+		/* ── Log tab: history view ── */
+		'window.mvShowLogForm=function(){' .
+			'var hist=document.getElementById("mv-log-history-view");' .
+			'var form=document.getElementById("mv-log-form-view");' .
+			'if(hist)hist.style.display="none";' .
+			'if(form)form.style.display="block";' .
+		'};' .
+		'window.mvShowLogHistory=function(){' .
+			'var hist=document.getElementById("mv-log-history-view");' .
+			'var form=document.getElementById("mv-log-form-view");' .
+			'if(form)form.style.display="none";' .
+			'if(hist)hist.style.display="block";' .
+			'mvRenderLogHistory();' .
+		'};' .
+
+		'window.mvRenderLogHistory=function(){' .
+			'var list=document.getElementById("mv-log-history-list");if(!list)return;' .
+			'var readings=mvLoadReadings();' .
+			/* Group readings by date, only include dates that have real vital data */
+			'var byDay={};' .
+			'readings.forEach(function(r){' .
+				'var k=r.ts?r.ts.slice(0,10):"";if(!k)return;' .
+				/* Check if this reading has at least one non-zero vital value */
+				'var hasData=r.bp_sys||r.bp_dia||r.hr||r.spo2||r.temp||r.glucose||' .
+					'r.egfr||r.creatinine||r.bun||r.potassium||r.sodium||r.phosphorus||r.albumin||r.hemoglobin;' .
+				'if(!hasData)return;' .
+				'if(!byDay[k])byDay[k]=[];' .
+				'byDay[k].push(r);' .
+			'});' .
+			'var dates=Object.keys(byDay).sort().reverse();' .
+			'if(!dates.length){' .
+				'list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'No vitals recorded yet. Tap "+ New Entry" to log your first reading.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+				'return;' .
+			'}' .
+			'list.innerHTML=dates.map(function(dk){' .
+				'var entries=byDay[dk];' .
+				'var r=entries[0];' . /* Use first entry for summary chips */
+				/* Collect non-zero vital labels for chips */
+				'var chips=[];' .
+				'entries.forEach(function(e){' .
+					'if(e.bp_sys&&e.bp_dia)chips.push("BP "+e.bp_sys+"/"+e.bp_dia);' .
+					'if(e.hr)chips.push("HR "+e.hr);' .
+					'if(e.spo2)chips.push("SpO\u2082 "+e.spo2+"%");' .
+					'if(e.temp)chips.push(e.temp+"\u00b0F");' .
+					'if(e.glucose)chips.push("Gluc "+e.glucose);' .
+					'if(e.egfr)chips.push("eGFR "+e.egfr);' .
+					'if(e.creatinine)chips.push("Cr "+e.creatinine);' .
+					'if(e.hemoglobin)chips.push("Hgb "+e.hemoglobin);' .
+				'});' .
+				/* Deduplicate chips */
+				'var seen={};chips=chips.filter(function(c){if(seen[c])return false;seen[c]=true;return true;});' .
+				/* Format date for display */
+				'var dd=new Date(dk+"T12:00:00");' .
+				'var dayStr=dd.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});' .
+				/* Build detail section from all entries for that day */
+				'var detailRows=[];' .
+				'entries.forEach(function(e){' .
+					'if(e.bp_sys&&e.bp_dia)detailRows.push(["' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . '",e.bp_sys+"/"+e.bp_dia+" mmHg"]);' .
+					'if(e.hr)detailRows.push(["' . esc_js( __( 'Heart Rate', 'mcp-ai-wpoos-pro' ) ) . '",e.hr+" bpm"]);' .
+					'if(e.spo2)detailRows.push(["SpO\u2082",e.spo2+"%"]);' .
+					'if(e.temp)detailRows.push(["' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",e.temp+"\u00b0F"]);' .
+					'if(e.glucose)detailRows.push(["' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",e.glucose+" mg/dL"]);' .
+					'if(e.egfr)detailRows.push(["eGFR",e.egfr+" mL/min"]);' .
+					'if(e.creatinine)detailRows.push(["' . esc_js( __( 'Creatinine', 'mcp-ai-wpoos-pro' ) ) . '",e.creatinine+" mg/dL"]);' .
+					'if(e.bun)detailRows.push(["BUN",e.bun+" mg/dL"]);' .
+					'if(e.potassium)detailRows.push(["K\u207a",e.potassium+" mEq/L"]);' .
+					'if(e.sodium)detailRows.push(["Na\u207a",e.sodium+" mEq/L"]);' .
+					'if(e.phosphorus)detailRows.push(["' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",e.phosphorus+" mg/dL"]);' .
+					'if(e.albumin)detailRows.push(["' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",e.albumin+" g/dL"]);' .
+					'if(e.hemoglobin)detailRows.push(["' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",e.hemoglobin+" g/dL"]);' .
+					'if(e.notes)detailRows.push(["' . esc_js( __( 'Notes', 'mcp-ai-wpoos-pro' ) ) . '",e.notes]);' .
+				'});' .
+				/* Deduplicate detail rows */
+				'var dSeen={};detailRows=detailRows.filter(function(dr){var key=dr[0]+":"+dr[1];if(dSeen[key])return false;dSeen[key]=true;return true;});' .
+				'var detailHtml=detailRows.map(function(dr){' .
+					'return\'<div class="mv-hist-detail-row"><span class="mv-hist-detail-label">\'+escH(dr[0])+\'</span><span class="mv-hist-detail-val">\'+escH(dr[1])+\'</span></div>\';' .
+				'}).join("");' .
+				'var cardId="mv-hist-"+dk;' .
+				'return\'<div class="mv-hist-card" onclick="mvToggleHistDetail(\\\'\'+cardId+\'\\\')">\'+' .
+					'\'<div class="mv-hist-date"><span class="mv-hist-date-icon">&#128197;</span>\'+escH(dayStr)+\'</div>\'+' .
+					'\'<div class="mv-hist-chips">\'+chips.slice(0,5).map(function(c){return\'<span class="mv-hist-chip">\'+escH(c)+\'</span>\';}).join("")+\'</div>\'+' .
+					'\'<div class="mv-hist-detail" id="\'+cardId+\'">\'+detailHtml+\'</div>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'};' .
+
+		'window.mvToggleHistDetail=function(id){' .
+			'var el=document.getElementById(id);if(!el)return;' .
+			'el.classList.toggle("open");' .
+			'tmaHaptic("light");' .
 		'};' .
 
 		/* ── Dashboard ── */
@@ -3545,8 +3831,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvStoreReadings(arr);tmaHaptic("success");' .
 			/* Clear fields */
 			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-hemoglobin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
-			/* Show saved message */
-			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
+			/* Show saved message, then switch back to history view */
+			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";mvShowLogHistory();},2000);}' .
 			/* Server sync via log_vital_signs tool when a member is resolved */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'var sArgs={action:"log",member_id:MEMBER_ID,source:"tma",' .
@@ -3870,8 +4156,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'}else{' .
 			'mvShowMemberPicker();' .
 		'}' .
+		'mvApplyDisplaySettings();' .
 		'mvInitSession();mvRefresh();mvRenderMeds();' .
-		'if(MEMBER_ID)mvSyncFromServer();' .
+		'if(MEMBER_ID){mvSyncFromServer();mvFetchPrescriptions();}' .
 		'})();</script></body>';
 		// phpcs:enable
 	}
