@@ -3,12 +3,25 @@
     "description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "NV Digital Solutions",
+            "email": "developer@nvdigitalsolutions.com",
+            "homepage": "https://nvdigitalsolutions.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://nvdigitalsolutions.com/wpoos",
+    "support": {
+        "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
+        "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
+    },
     "require": {
         "rahul900day/tiktoken-php": "^1.0",
         "symfony/http-client": "^6.1|^7.0",
         "nyholm/psr7": "^1.8",
-        "symfony/validator": ">=6.4.35 <7.0|^7.0",
-        "symfony/cache": ">=6.4.35 <7.0|^7.0",
+        "symfony/validator": ">=6.4.36 <7.0|^7.0",
+        "symfony/cache": ">=6.4.36 <7.0|^7.0",
         "symfony/filesystem": "^6.4|^7.0",
         "symfony/process": "^6.4|^7.0",
         "league/oauth2-client": "^2.7"

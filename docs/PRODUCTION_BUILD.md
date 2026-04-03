@@ -293,9 +293,9 @@ If you encounter class not found errors:
    ls -la vendor/composer/autoload_classmap.php
    ```
 
-2. Regenerate the classmap:
+2. Regenerate the classmap (re-maps classes without dump-autoload):
    ```bash
-   composer dump-autoload --classmap-authoritative
+   composer install --no-dev --classmap-authoritative --no-interaction
    ```
 
 3. Verify the class exists in the classmap:

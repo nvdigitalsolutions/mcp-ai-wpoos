@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Model Rate Limits CCT.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
@@ -118,6 +122,41 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'claude-opus-4-6', $model_names );
 		$this->assertContains( 'claude-sonnet-4-6', $model_names );
 		$this->assertContains( 'claude-3-5-sonnet-20241022', $model_names );
+	}
+
+	/**
+	 * Test that NVIDIA NIM models are included in defaults.
+	 */
+	public function test_default_models_include_nvidia() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$nvidia_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return 'nvidia' === $model['provider'];
+			}
+		);
+
+		$this->assertNotEmpty( $nvidia_models );
+
+		// Check for specific models across different families.
+		$model_names = array_column( $nvidia_models, 'model_name' );
+		$this->assertContains( 'meta/llama-3.3-70b-instruct', $model_names );
+		$this->assertContains( 'meta/llama-3.1-8b-instruct', $model_names );
+		$this->assertContains( 'nvidia/llama-3.1-nemotron-70b-instruct', $model_names );
+		$this->assertContains( 'nvidia/nemotron-3-super-120b-a12b', $model_names );
+		$this->assertContains( 'mistralai/mistral-large-2-instruct', $model_names );
+		$this->assertContains( 'deepseek-ai/deepseek-r1', $model_names );
+		$this->assertContains( 'qwen/qwen3-32b', $model_names );
+		$this->assertContains( 'meta/llama-4-scout-17b-16e-instruct', $model_names );
+		$this->assertContains( 'google/gemma-3-27b-it', $model_names );
+
+		// Verify we have a substantial number of NVIDIA models.
+		$this->assertGreaterThanOrEqual( 50, count( $nvidia_models ) );
 	}
 
 	/**
@@ -361,7 +400,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$gpt5_models = array_filter(
 			$default_models,
 			function ( $model ) {
-				return in_array( $model['model_name'], array( 'gpt-5', 'gpt-5-mini' ) );
+				return in_array( $model['model_name'], array( 'gpt-5', 'gpt-5-mini' ), true );
 			}
 		);
 

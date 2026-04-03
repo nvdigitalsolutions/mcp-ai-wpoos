@@ -3,7 +3,7 @@
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 200+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -19,7 +19,7 @@
  *
  * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Main plugin entry point; file is intentionally named after the plugin slug, not a class.
  *
- * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  */
 

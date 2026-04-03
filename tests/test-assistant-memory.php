@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for assistant memory integration.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
 	use WP_MCP_AI_Docx_Test_Helper;

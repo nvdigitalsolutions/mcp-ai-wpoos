@@ -3,6 +3,9 @@
  * Test Cloudflare tool_calls response parsing and validation.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {

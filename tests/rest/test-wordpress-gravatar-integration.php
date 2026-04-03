@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the WordPress.com/Gravatar bridge integration.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 	/**

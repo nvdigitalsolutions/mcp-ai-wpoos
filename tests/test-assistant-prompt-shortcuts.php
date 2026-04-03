@@ -3,6 +3,9 @@
  * Tests for assistant prompt shortcut aggregation.
  *
  * @package WP_MCP_AI\Tests
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 	/**

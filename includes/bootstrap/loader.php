@@ -12,6 +12,9 @@
  *
  * @package WP_MCP_AI
  * @since   1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -154,6 +157,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 // WP_MCP_AI_Embedded_Client is a Pro-only feature loaded by the Pro addon.
 
@@ -163,6 +167,7 @@ require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-ollama-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-anthropic-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-cloudflare-provider-client.php';
+require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php';
 require_once WP_MCP_AI_PATH . 'includes/infrastructure/providers/class-wp-mcp-ai-lm-studio-provider-client.php';
 
 // ---------------------------------------------------------------------------

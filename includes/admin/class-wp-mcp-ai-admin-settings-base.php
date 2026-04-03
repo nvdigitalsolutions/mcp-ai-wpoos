@@ -5,6 +5,9 @@
  * Handles core settings registration and management.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -188,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get available providers dynamically from Model Config.
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -268,7 +271,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		public static function get_default_settings() {
 			// Get dynamic provider list from Model Config.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -335,6 +338,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'huggingface_datasets_api_token'       => '',
 				'huggingface_datasets_cache_ttl'       => 3600,
 				'huggingface_datasets_default_limit'   => 10,
+				// NVIDIA NIM Provider settings.
+				'enable_nvidia'                        => false,
+				'nvidia_api_key'                       => '',
+				'nvidia_endpoint_url'                  => 'https://integrate.api.nvidia.com/v1',
+				'nvidia_model'                         => 'meta/llama-3.1-8b-instruct',
 				// RabbitMQ settings (Cloudways integration).
 				'rabbitmq_enabled'                     => false,
 				'rabbitmq_host'                        => 'localhost',

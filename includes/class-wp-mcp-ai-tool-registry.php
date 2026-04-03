@@ -3,6 +3,9 @@
  * Tool registry singleton.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-product-card.php';
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 	/**

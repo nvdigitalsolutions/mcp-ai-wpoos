@@ -14,6 +14,9 @@
  *   _last_message_at, _metadata
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -131,8 +134,50 @@ class WP_MCP_AI_Channel_Contacts_CPT {
 			return (int) $existing[0];
 		}
 
-		// When no connection_id was given and the lookup above failed, skip
-		// an additional unscoped lookup because get_posts already did it.
+		// Adopt an older record whose connection_id is empty so the contact is
+		// not duplicated and gains the connection_id needed for bot_username
+		// resolution in the inbox.
+		if ( '' !== $connection_id ) {
+			$legacy_query = array(
+				'relation' => 'AND',
+				array(
+					'key'     => '_channel',
+					'value'   => $channel,
+					'compare' => '=',
+				),
+				array(
+					'key'     => '_channel_contact_id',
+					'value'   => $channel_contact_id,
+					'compare' => '=',
+				),
+				array(
+					'key'     => '_connection_id',
+					'value'   => '',
+					'compare' => '=',
+				),
+			);
+
+			$legacy = get_posts(
+				array(
+					'post_type'      => self::POST_TYPE,
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'meta_query'     => $legacy_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+				)
+			);
+
+			if ( ! empty( $legacy ) ) {
+				$legacy_post_id = (int) $legacy[0];
+				update_post_meta( $legacy_post_id, '_connection_id', $connection_id );
+				$conversation_type = isset( $extra['conversation_type'] ) ? sanitize_key( $extra['conversation_type'] ) : '';
+				if ( '' !== $conversation_type ) {
+					update_post_meta( $legacy_post_id, '_conversation_type', $conversation_type );
+				}
+				return $legacy_post_id;
+			}
+		}
 
 		// Create a new contact post.
 		$display_name = isset( $extra['display_name'] ) && '' !== $extra['display_name']

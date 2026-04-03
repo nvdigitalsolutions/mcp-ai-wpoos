@@ -8,6 +8,9 @@
  * 
  * @package WP_MCP_AI
  * @since 1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 (function() {
@@ -142,6 +145,7 @@
 			 */
 			async *processToolStream( stream, onChunk ) {
 				var contentBuffer = '';
+				var reasoningBuffer = '';
 				var toolCallsBuffer = [];
 				var chunkCount = 0;
 				
@@ -154,6 +158,16 @@
 							continue;
 						}
 						
+						// Handle reasoning/thinking content from models like Qwen3, DeepSeek R1
+						var reasoningDelta = delta.reasoning_content || delta.reasoning || '';
+						if ( reasoningDelta ) {
+							reasoningBuffer += reasoningDelta;
+							if ( onChunk ) {
+								onChunk( { type: 'reasoning', data: reasoningDelta } );
+							}
+							yield { type: 'reasoning', data: reasoningDelta };
+						}
+
 						// Handle content
 						if ( delta.content ) {
 							contentBuffer += delta.content;
@@ -176,6 +190,7 @@
 					console.log( '[NV oOS WebLLM] Stream completed:', {
 						chunks: chunkCount,
 						contentLength: contentBuffer.length,
+						reasoningLength: reasoningBuffer.length,
 						toolCalls: toolCallsBuffer.length
 					} );
 					
@@ -183,6 +198,7 @@
 					yield {
 						type: 'done',
 						content: contentBuffer,
+						reasoning_content: reasoningBuffer || undefined,
 						tool_calls: toolCallsBuffer.length > 0 ? toolCallsBuffer : undefined,
 						chunks: chunkCount
 					};

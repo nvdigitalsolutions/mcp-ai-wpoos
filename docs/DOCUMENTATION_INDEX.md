@@ -1,12 +1,38 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 26, 2026  
-**Plugin Version:** 1.1.5  
+**Last Updated:** April 1, 2026  
+**Plugin Version:** 1.1.6  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
+> - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
+> - **Shopify Connection Auto-Resolve** – All 5 Shopify tools auto-resolve `connection_id` from assistant context. New `remote_shopify_connection` tool. `WP_MCP_AI_Shopify_Connection_Resolver` trait.
+> - **Webhook Status Admin Page** – Centralized webhook monitoring for 9 connection types under NV oOS Pro Dashboard. Live Telegram checks, set/remove webhook actions.
+> - **QuickBooks Desktop Sync** – New `quickbooks_desktop_sync` Pro tool via QODBC relay API. New `quickbooks_desktop` remote connection type.
+> - **Listing Image Download Tools** – 3 new Pro tools: `download_google_maps_images`, `download_facebook_page_images`, `download_instagram_page_images`.
+> - **Transformers.js v3.8.1** – CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`. WebGPU acceleration, 4 Qwen3 models.
+> - **15 Schedule Presets** – CRM Email Correspondence (5), Document Management (5), Upwork Freelancer (5). Total: 100 → 115.
+> - **Medical Vitals Dashboard** – Recent reading card, configurable trend range (7D/14D/30D/90D).
+> - **Registration Product Research Page** – Quick Import, Guided Entry tabs, product selector sidebar, 3 AJAX handlers.
+> - **Copyright Attribution** – `@author`/`@copyright`/`@license` tags across 2,535 PHP + 159 JS/CSS files.
+> - **Bug Fixes** – Telegram webhook 403, chat inbox bot names, message pagination, connection_id scoping, workflow presets.
+> - **Security** – brace-expansion (CVE-2026-33750) and serialize-javascript (CVE-2026-34043) patched.
+> - **Tool Count** – 165 base + 368 pro = **533 total tools** (was 519).
+> - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
+
+> **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
+> - **8 Use-Case Presets** – Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools)
+> - **Assistant Seeding** – Selecting a preset creates a fully-configured `mcp_ai_assistant` CPT post with tools, system prompt, provider, model, and temperature. First assistant auto-set as default.
+> - **WCAG 2.1 Accessibility** – WAI-ARIA tablist/tab/tabpanel for provider tabs, keyboard navigation, `aria-current="step"` progress, `aria-live="polite"` feedback, `focus-visible` outlines
+> - **External JavaScript** – Inline scripts extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n (CSP-compliant)
+> - **Explicit Completion** – Step 4 no longer auto-completes; uses "Mark Setup Complete" button via AJAX
+> - **New Hooks** – `wp_mcp_ai_onboarding_presets` filter, `wp_mcp_ai_onboarding_presets_seeded` action
+> - **22 PHPUnit Tests** – Preset validation, assistant seeding, duplicate prevention, model resolution
+> - **See**: [README.md Getting Started Wizard](../README.md#-installation), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 19, 2026 UPDATE:** 🏥 **HEALTHCARE DICOM IMAGING VIEWER — FULL MANAGER REBUILD**
 > - **Black Images Fixed** — `csDicomImageLoader.external.cornerstone` link now correctly wired; auto-VOI from pixel min/max for studies without `WindowCenter`/`WindowWidth` tags
@@ -57,7 +83,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
 
 > **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
-> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 519+ tools for multi-step orchestration
+> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 533+ tools for multi-step orchestration
 > - **Pattern: Web Search → Source Collection → AI Synthesis → Report Generation**
 > - **Key Findings:**
 >   - 14 tools already using pattern (research_product, research_post, etc.)
@@ -789,6 +815,24 @@ Complete integration of Hugging Face Inference API as a provider for open-source
 - Privacy-friendly (can self-host)
 - Integrated with provider priority and fallback system
 
+### NVIDIA NIM Integration (April 2026)
+Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
+
+- **[NVIDIA_NIM_SETUP.md](features/ai-providers/nvidia/NVIDIA_NIM_SETUP.md)** ⭐ **NEW**
+  - Step-by-step setup guide for NVIDIA NIM provider
+  - API key generation via build.nvidia.com
+  - Getting Started wizard and Settings page configuration
+  - Self-hosted NIM container support
+  - Available models catalog (Llama, Mistral, Nemotron, Gemma, Qwen, DeepSeek)
+  - Troubleshooting common issues
+
+**Key Features:**
+- OpenAI-compatible API interface
+- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma, Qwen, DeepSeek R1)
+- Cloud inference via `integrate.api.nvidia.com` or self-hosted NIM containers
+- Integrated with provider priority and fallback system
+- Getting Started wizard support for first-time setup
+
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 
@@ -892,10 +936,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
-2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
-4. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-5. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+2. **Getting Started Wizard** ⭐ — Activate the plugin and follow the 4-step wizard (`NV oOS → Getting Started`) to connect a provider and create your first assistant in under 2 minutes
+3. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
+4. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+5. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+6. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
@@ -981,6 +1026,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
+| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 

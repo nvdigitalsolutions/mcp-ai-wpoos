@@ -31,6 +31,9 @@
 *
 * @package WP_MCP_AI_Pro
 * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -4589,7 +4592,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		 * post_types  – CPTs the toolkit registers (show_ui=true types only).
 		 * tool_slugs  – Tool slugs the toolkit adds to the registry.
 		 *
-		 * Only the Password Vault uses always=true (always loaded by the Pro plugin).
+		 * Only the Password Vault and Vehicle Estimation use always=true (always loaded by the Pro plugin).
 		 * All other toolkits are controlled via the wp_mcp_ai_settings option.
 		 */
 		$toolkit_registry = array(
@@ -4600,6 +4603,15 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 				'always'     => true,
 				'post_types' => array(),
 				'tool_slugs' => array( 'get_vault_entry', 'create_vault_entry', 'update_vault_entry', 'delete_vault_entry', 'list_vault_entries' ),
+			),
+
+			// ── Always-on (Vehicle Estimation is loaded unconditionally by Pro) ──
+			'_always_vehicle_estimation' => array(
+				'label'      => __( 'Vehicle Estimation', 'mcp-ai-wpoos-pro' ),
+				'setting'    => '',
+				'always'     => true,
+				'post_types' => array(),
+				'tool_slugs' => array( 'vin_decode', 'vehicle_repair_estimate', 'vehicle_cleaning_estimate' ),
 			),
 
 			// ── Media Toolkit (file always loaded, activated via setting) ──────

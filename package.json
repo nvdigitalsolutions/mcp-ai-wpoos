@@ -1,6 +1,6 @@
 {
 	"name": "mcp-ai-wpoos",
-	"version": "1.1.4",
+	"version": "1.1.6",
 	"description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows",
 	"private": true,
 	"scripts": {
@@ -102,13 +102,17 @@
 		"minimatch@^3": "3.1.5",
 		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
-		"serialize-javascript": ">=7.0.3",
+		"serialize-javascript": ">=7.0.5",
 		"undici": ">=7.24.0",
 		"flatted": ">=3.4.2",
 		"picomatch@^2": "2.3.2",
 		"picomatch@^4": "4.0.4",
 		"yaml@^1": "1.10.3",
-		"handlebars": ">=4.7.9"
+		"handlebars": ">=4.7.9",
+		"brace-expansion@^1": "1.1.13",
+		"brace-expansion@^2": "2.0.3",
+		"lodash": ">=4.18.1",
+		"lodash-es": ">=4.18.1"
 	},
 	"engines": {
 		"node": ">=18.17.0",
@@ -121,6 +125,18 @@
 		"jetengine",
 		"mcp"
 	],
-	"author": "NV Digital Solutions",
+	"author": {
+		"name": "NV Digital Solutions",
+		"email": "developer@nvdigitalsolutions.com",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"homepage": "https://nvdigitalsolutions.com/wpoos",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git"
+	},
+	"bugs": {
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+	},
 	"license": "GPL-3.0-or-later"
 }

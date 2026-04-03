@@ -11,6 +11,9 @@
  *   POST   /mcp-ai-pro/v1/skills/install-url  (tested without real HTTP)
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Skill_Manager_REST_Test extends WP_Test_REST_TestCase {
 

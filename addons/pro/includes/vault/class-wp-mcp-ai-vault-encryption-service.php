@@ -17,6 +17,9 @@
  * @since 1.3.0
  * @link https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
  * @link https://datatracker.ietf.org/doc/html/rfc6238
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

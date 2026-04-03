@@ -178,6 +178,29 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 ---
 
+### 6a. NVIDIA NIM API
+
+**Service URL:** `https://integrate.api.nvidia.com/v1` (default; supports custom/self-hosted NIM endpoints)  
+**Purpose:** Cloud AI inference via NVIDIA's optimized model platform (Llama, Mistral, Nemotron, Gemma, and 40+ models)  
+**Data Sent:**
+- Chat messages and system prompts
+- Tool execution results
+- Model inference parameters
+
+**When Used:** Every time an AI assistant is used with NVIDIA NIM as the provider
+
+**Legal & Privacy:**
+- **NVIDIA AI Enterprise EULA:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
+- **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
+- **NIM Documentation:** https://build.nvidia.com/
+- **Data Usage:** Review NVIDIA's privacy policy for data handling details; self-hosted NIM containers keep data on-premises
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-nvidia-client.php`
+- `includes/infrastructure/providers/class-wp-mcp-ai-nvidia-provider-client.php`
+
+---
+
 ## Research & Data Services
 
 These services provide real-world data for AI assistants (weather, news, search, etc.).
@@ -964,6 +987,7 @@ When adding a new external service integration:
 | Ollama | Active | 2026-02 | Self-hosted |
 | LM Studio | Active | 2026-02 | Self-hosted |
 | Cloudflare Workers AI | Active | 2026-02 | Image generation |
+| NVIDIA NIM | Active | 2026-04 | Cloud AI inference |
 | Brave Search | Active | 2026-02 | Requires API key |
 | Open-Meteo | Active | 2026-02 | Free tier available |
 | ReliefWeb | Active | 2026-02 | Public API |

@@ -9,6 +9,9 @@
  * - store_vitals_embedding() writes to the index option and evicts old entries.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**

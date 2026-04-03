@@ -1,9 +1,45 @@
 # oOS – Changelog
 
 
-## [Unreleased]
+## [1.1.6] - 2026-04-02
+
+### WordPress.org Compliance — Final Pass Before Resubmission
+
+This release addresses all issues identified by the WordPress.org automated review system
+on April 2, 2026, plus the compliance work from March 24, 2026.
+
+### Added
+- **NVIDIA NIM Provider in Getting Started Wizard (April 2, 2026)**: Added NVIDIA NIM as the 8th AI provider in the onboarding wizard (Step 2). Users can now enter their NVIDIA API key and test the connection during initial setup. Saving the key automatically enables the provider. 40+ NVIDIA models available including Llama, Mistral, Nemotron, Gemma, and Qwen families via `integrate.api.nvidia.com` or self-hosted NIM containers.
+- **Vehicle Estimation Tools (March 31, 2026)** (PR #4526): Three always-available Pro tools for automotive estimation.
+  - `vin_decode` — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, 28-field vehicle descriptor.
+  - `vehicle_repair_estimate` — 5-step image-to-estimate pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. Heuristic fallback costs for 20+ parts; ADAS calibration for 2018+ windshield replacements.
+  - `vehicle_cleaning_estimate` — Car wash package & add-on pricing engine with LLM vision vehicle size classification, 4 packages, 7 add-ons, and `wp_mcp_ai_vehicle_cleaning_menu` filter.
+  - 60 PHPUnit tests covering tool contracts, pricing scenarios, and permission checks.
+- **Shopify Connection Auto-Resolve + `remote_shopify_connection` Tool (March 31, 2026)** (PR #4521): New `WP_MCP_AI_Shopify_Connection_Resolver` trait auto-resolves `connection_id` from assistant context for all 5 Shopify tools. New `remote_shopify_connection` tool for listing and testing Shopify connections. 14 PHPUnit tests.
+- **Webhook Status Admin Page (March 31, 2026)** (PR #4517): New submenu under NV oOS Pro (`nvoos-pro-webhook-status`) for centralized webhook monitoring across all 9 webhook-capable connection types. Summary cards, live Telegram checks via `getMe` + `getWebhookInfo`, action buttons for set/remove webhook. 30 PHPUnit tests.
+- **QuickBooks Desktop Sync Tool (March 30, 2026)** (PR #4507): New `quickbooks_desktop_sync` Pro tool connecting to QuickBooks Desktop via QODBC relay API on Windows. New `quickbooks_desktop` remote connection type with relay URL, API key, and DSN fields. 14 PHPUnit tests.
+- **Listing Image Download Tools (March 29, 2026)** (PR #4503): Three new always-on Pro tools for bulk-downloading business listing images: `download_google_maps_images` (Places API), `download_facebook_page_images` (Graph API v21.0), `download_instagram_page_images` (Graph API v21.0). Shared `media_handle_sideload()` import, optional ZIP export. 39 PHPUnit tests.
+- **15 Schedule Presets (March 30, 2026)** (PR #4509): CRM Email Correspondence (5), Document Management & Sharing (5), and Upwork Freelancer (5, new `upwork_freelancer` toolkit). Total presets: 100 → 115.
+- **Registration Product Research Page Enhancement (March 31, 2026)** (PR #4519): Quick Import and Guided Entry tabs, 13 document processing tools added to AI chat, product selector sidebar, 3 new AJAX handlers for bulk import, document upload, and product preview.
+- **Author/Copyright/License Attribution (March 30, 2026)** (PR #4510): Consistent `@author`, `@copyright`, `@license` tags added across 2,535 PHP files, 101 JS files, 58 CSS files. Base: GPL-3.0-or-later; Pro: Proprietary. Copyright year updated to 2025-2026.
+- **dvdoug/boxpacker Pre-Packaged (March 31, 2026)** (PR #4527): `dvdoug/boxpacker` (`^3.12 || ^4.0`) v3.12.1 + psr/log 3.0.2 pre-packaged in `addons/pro/vendor/`. Production autoload docs aligned to `composer install --no-dev --classmap-authoritative`.
+- **Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026)**: Complete code review and enhancement of the Getting Started wizard (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`).
+  - **8 use-case presets** with comprehensive tool lists, system prompts, and temperatures: Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools).
+  - **Assistant seeding**: Selecting presets in Step 3 now creates fully-configured `mcp_ai_assistant` CPT posts with tools, system prompt, provider, model, and temperature — users get a working system out of the box.
+  - **First assistant auto-default**: The first seeded assistant is automatically set as the site's default assistant.
+  - **Copy-to-clipboard**: Shortcode display on Step 4 includes a copy button with accessible feedback.
+  - **Explicit wizard completion**: Step 4 no longer marks the wizard as complete on page render; users must click "Mark Setup Complete" to finalize.
+  - **External JavaScript**: All inline `<script>` blocks extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n strings, improving CSP compliance and cacheability.
+  - **WCAG 2.1 accessibility**: WAI-ARIA `tablist`/`tab`/`tabpanel` pattern for provider tabs with keyboard navigation (Arrow keys, Home, End), `aria-current="step"` progress indicators, `aria-live="polite"` regions for dynamic feedback, `focus-visible` outlines.
+  - **New filter**: `wp_mcp_ai_onboarding_presets` — third-party addons can add or modify onboarding presets.
+  - **New action**: `wp_mcp_ai_onboarding_presets_seeded` — fires after preset assistants are created.
+  - **22 PHPUnit tests** covering presets structure, assistant seeding, duplicate prevention, model resolution, and masked key detection.
 
 ### Changed
+- **Transformers.js Upgrade to v3.8.1 (March 30, 2026)** (PR #4514): CDN upgraded from deprecated `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`. WebGPU auto-detect with WASM fallback. Quantization API migrated: `quantized: true` → `dtype: 'q8'`. 4 Qwen3 models added to embedded LLM catalog.
+- **Medical Vitals Dashboard Enhancements (March 31, 2026)** (PR #4523): "Most Recent Reading" card with relative timestamps and colour-coded status dots. Configurable trend date range selector: 7D/14D/30D/90D.
+- **Shopify Tools — `connection_id` Auto-Resolve (March 31, 2026)** (PR #4521): All 5 Shopify tools (`shopify_products`, `shopify_orders`, `shopify_customers`, `shopify_inventory`, `shopify_catalog`) now auto-resolve `connection_id` from assistant context. Manual `connection_id` parameter is optional.
+- **Quick Tool Selection Presets — 8 Missing Tools Added (March 30, 2026)** (PR #4505): Added 8 missing tools to preset coverage.
 - **Quick Tool Selection Presets – Full 760-Tool Coverage (March 16, 2026)**: Expanded the Quick Tool Selection Presets on the assistant CPT edit page from ~527 covered tools to all 760 available tools, ensuring every registered tool can be applied via a preset without requiring manual search.
   - **New preset**: `📋 Registration & Compliance` (44 tools) — end-to-end regulated product/permit workflow: registration lifecycle (create/approve/renew/submit), document expiry tracking, regulatory submissions, compliance certificates, authority submission, NMRA/MOHAP sync, import duty/HS code
   - **🛒 E-commerce**: Added Shopify (products/orders/customers/inventory), regulated product lifecycle (create/validate/duplicate/import-export Excel), inventory forecast/tracking, bulk order management, abandoned cart recovery, customer lifetime value
@@ -30,6 +66,14 @@
   - **Result**: 61 presets covering all 760 tools (2,030 total tool references across presets) — up from 60 presets covering ~527 tools
 
 ### Fixed
+- **Telegram Webhook 403 on Multi-Bot Setups (March 30–31, 2026)** (PRs #4512, #4513, #4516, #4518): Fixed webhook URL to include `connection_id` in test/status endpoints; added REST auth bypass and admin-ajax fallback; direct array-key lookup for connection resolution.
+- **Chat Channels Inbox — Bot Name Display (March 31, 2026)** (PRs #4522, #4524): Telegram bot `@bot_username` now shown as primary display in conversations list, thread header, and contacts table.
+- **Chat Channels Inbox — Message Pagination (March 31, 2026)** (PR #4525): Newest messages now appear on page 1 (was oldest-first).
+- **Chat Channels Inbox — connection_id Scoping (March 29–30, 2026)** (PRs #4500, #4506): Message queries scoped by `connection_id` for Telegram to isolate multi-bot conversations; column migration and `SELECT *` fallback for backward compatibility.
+- **Chat Channels Inbox — 404 on Messages Endpoint (March 29, 2026)** (PR #4489): Fixed CCT and CPT store merge for conversations and messages.
+- **Chat Channels Inbox — CCT/CPT Store Merge (March 29, 2026)** (PR #4488): Merged CCT and CPT stores so conversations and messages from both backends display correctly.
+- **Workflow Preset Data Mapping (March 30, 2026)** (PRs #4504, #4508): Fixed preset data so tools, arguments, and conditions populate correctly in the Pro Workflow Builder canvas.
+- **Preset Browser AJAX Callbacks (March 29, 2026)** (PR #4501): Fixed wrong callback signatures in schedule manager preset browser.
 - **Telegram Mini App – Member Loading (March 2026)**: Health & Wellness and Medical Vitals mini app templates no longer get stuck on "Loading…" when a subscriber opens the app for the first time.
   - Server-side member pre-selection: the current WordPress user's linked `mcp_ai_member` post is resolved at page-render time and injected as `SERVER_MEMBER_ID`/`SERVER_MEMBER_NAME` JS variables; the member picker is skipped when a match is found.
   - Auto-select single member: `hwFetchMembers()` / `mvFetchMembers()` now auto-select and close the picker when only one member is returned, eliminating the manual-tap requirement after first member creation.
@@ -38,6 +82,9 @@
 ### Changed
 - **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
 - **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
+
+### Security
+- **brace-expansion & serialize-javascript Vulnerabilities (March 29, 2026)** (PR #4487): Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750) and serialize-javascript CPU exhaustion via crafted array-like objects (CVE-2026-34043). Upgraded brace-expansion v1.x to 1.1.13, v2.x to 2.0.3, serialize-javascript to 7.0.5.
 
 ### Added
 - **NPM Packages – Zero-Config Publish for All 9 Packages (March 2026)** (PR #4364): All nine standalone NPM packages extracted from the oOS chat UI are now automatically published to the NPM registry via GitHub Actions.

@@ -3,6 +3,9 @@
  * Abstract base class for settings sections.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 
@@ -374,6 +377,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 				// Special handling for checkboxes.
 				if ( 'checkbox' === $type ) {
+					// Skip disabled checkboxes entirely — they are never submitted by the
+					// browser, so treating a missing value as "unchecked" would incorrectly
+					// override the field's default.  Preserve existing/default value instead.
+					$is_disabled = ! empty( $field['disabled'] );
+					if ( $is_disabled ) {
+						continue;
+					}
+
 					// Only process checkboxes if this is actually the form being submitted.
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {

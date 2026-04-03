@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the explicit transcript save endpoint (POST /chat-transcripts).
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Chat_Transcript_Save_Endpoint_Test extends WP_UnitTestCase {
 	/**

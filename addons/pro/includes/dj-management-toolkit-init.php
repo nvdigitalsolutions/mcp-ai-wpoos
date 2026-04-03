@@ -8,6 +8,9 @@
  * Phase 2.7 - Planned Implementation
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

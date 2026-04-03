@@ -8,6 +8,9 @@
  * to the right people.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -43,6 +46,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_connection_id' ), 102 );
 	}
 
 	/**
@@ -64,6 +68,31 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
 		}
 		update_option( 'wp_mcp_ai_channel_contacts_migration_v1', true );
+	}
+
+	/**
+	 * Ensure the connection_id column exists in the contacts CCT table.
+	 *
+	 * Older installations that created the CCT before this field was added to
+	 * the schema will not have the column, causing queries that reference it
+	 * to fail silently and break the inbox.
+	 */
+	public static function maybe_migrate_connection_id() {
+		if ( get_option( 'wp_mcp_ai_channel_contacts_migration_v2' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'connection_id', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `connection_id` VARCHAR(100) NOT NULL DEFAULT ''" );
+		}
+		update_option( 'wp_mcp_ai_channel_contacts_migration_v2', true );
 	}
 
 	/**
@@ -143,6 +172,38 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 						$connection_id
 					)
 				);
+
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
+
+				// Adopt an older record that has no connection_id yet so the
+				// contact is not duplicated and gains the connection_id needed
+				// for bot_username resolution in the inbox.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$legacy_id = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
+						$channel,
+						$channel_contact_id
+					)
+				);
+
+				if ( $legacy_id ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->update(
+						$table,
+						array(
+							'connection_id'    => $connection_id,
+							'conversation_type' => $conversation_type,
+						),
+						array( '_ID' => (int) $legacy_id ),
+						array( '%s', '%s' ),
+						array( '%d' )
+					);
+					return (int) $legacy_id;
+				}
 			} else {
 				// Backward-compatible lookup for callers that do not supply connection_id.
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -154,10 +215,10 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 						$channel_contact_id
 					)
 				);
-			}
 
-			if ( $existing_id ) {
-				return (int) $existing_id;
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
 			}
 		}
 

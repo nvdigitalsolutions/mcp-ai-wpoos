@@ -6,6 +6,9 @@
  * and model before chatting with an AI assistant.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -408,7 +411,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
 		);
 
 		$labels = array(
@@ -416,6 +419,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 			'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 			'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),

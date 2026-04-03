@@ -8,6 +8,9 @@
  * 3. Conversations can be loaded back into chat with full context
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Chat_Conversation_Flow extends WP_UnitTestCase {
 

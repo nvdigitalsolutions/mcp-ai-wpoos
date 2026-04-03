@@ -1,3 +1,8 @@
+/**
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
 (function () {
     'use strict';
 
@@ -12628,6 +12633,19 @@
             const timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
             systemPromptContent += '\n\n---\n\n**Current Context Information:**\n- Current Date: ' + dateStr + '\n- Current Year: ' + now.getUTCFullYear() + '\n- Current Time: ' + timeStr;
 
+            // For Qwen3 thinking models with tools enabled, append /no_think directive.
+            // Qwen3's hybrid reasoning mode can interfere with function calling by wrapping
+            // tool call decisions in <think> tags, leading to malformed tool calls.
+            // The /no_think directive tells Qwen3 to skip the thinking phase for cleaner output.
+            if (state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0 &&
+                state.config.model && window.WP_MCP_AI_EmbeddedLLM && window.WP_MCP_AI_EmbeddedLLM.availableModels) {
+                const modelConfig = window.WP_MCP_AI_EmbeddedLLM.availableModels[state.config.model];
+                if (modelConfig && modelConfig.isThinkingModel) {
+                    systemPromptContent += '\n/no_think';
+                    console.log('[NV oOS] Added /no_think directive for thinking model with tools:', state.config.model);
+                }
+            }
+
             formattedMessages.unshift({
                 role: 'system',
                 content: systemPromptContent
@@ -12741,6 +12759,20 @@
             function(chunk) {
                 chunkCallbackCount++;
                 
+                // Handle reasoning/thinking content from thinking models (Qwen3, DeepSeek R1)
+                // When the model is reasoning, show progress in the status area while the
+                // main bubble remains empty until actual content arrives.
+                if (chunk.reasoning && !chunk.done) {
+                    // Update status to show thinking progress
+                    setStatus(state.container, {
+                        message: getString('embeddedThinking', 'Thinking...'),
+                        type: 'thinking',
+                        showTime: true
+                    });
+                    // Skip updating the message bubble with reasoning-only chunks
+                    return;
+                }
+
                 // Update message with each chunk
                 if (chunk.done) {
                     // Final chunk - update status and ensure bubble has final content

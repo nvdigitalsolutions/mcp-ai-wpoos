@@ -6,6 +6,10 @@
  * 1. Returns JSON discovery information by default (for LM Studio compatibility)
  * 2. Returns SSE stream when explicitly requested via ?stream=true
  * 3. Returns SSE stream when Accept: text/event-stream header is set
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 

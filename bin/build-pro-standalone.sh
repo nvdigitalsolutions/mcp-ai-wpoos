@@ -202,7 +202,7 @@ Tested up to: 6.7
 Requires PHP: 7.4
 Stable tag: VERSION_PLACEHOLDER
 License: Proprietary
-License URI: https://nvdigitalsolutions.com/wpoos-pro/license
+License URI: https://nvdigitalsolutions.com/api-license
 
 Professional add-on for NV Digital Open Operator System. Adds 70+ advanced tools.
 
@@ -380,7 +380,7 @@ After activation, verify Pro features are available:
 
 For technical support:
 - Email: support@nvdigitalsolutions.com
-- Documentation: https://nvdigitalsolutions.com/wpoos-pro/docs
+- Documentation: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs
 - Issue Tracker: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 
 ---

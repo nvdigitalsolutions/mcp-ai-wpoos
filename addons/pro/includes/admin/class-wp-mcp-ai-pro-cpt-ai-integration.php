@@ -5,6 +5,9 @@
  * Adds AI assistant metabox to WordPress CPT edit screens (posts, pages, products, terms).
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

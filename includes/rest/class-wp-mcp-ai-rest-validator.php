@@ -9,6 +9,9 @@
  * @package WP_MCP_AI
  * @subpackage REST
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Prevent direct file access.
@@ -588,9 +591,9 @@ class WP_MCP_AI_REST_Validator {
 			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 		}
 
-		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 		if ( ! is_array( $allowed_providers ) ) {
-			$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 		}
 
 		if ( ! in_array( $provider, $allowed_providers, true ) ) {

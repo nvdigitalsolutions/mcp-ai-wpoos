@@ -4,6 +4,10 @@
  * This simulates the normalise_aspect_ratio method behavior.
  *
  * Run with: php tests/manual-verify-auto-aspect-ratio.php
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 echo "Manual Verification of Auto Aspect Ratio Functionality\n";

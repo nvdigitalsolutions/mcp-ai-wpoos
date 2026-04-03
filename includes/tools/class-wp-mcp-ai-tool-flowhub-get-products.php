@@ -3,6 +3,9 @@
  * Tool that retrieves product data from Flowhub API.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,6 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  */
 class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Product_Card;
 
 	/**
 	 * {@inheritdoc}
@@ -173,6 +177,15 @@ class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, W
 				__( 'Retrieved %d products from Flowhub', 'mcp-ai-wpoos' ),
 				absint( $result['total'] )
 			);
+		}
+
+		// Generate rich product cards for chat display.
+		$products_data = isset( $result['products'] ) ? $result['products'] : ( isset( $result['data'] ) ? $result['data'] : array() );
+		if ( ! empty( $products_data ) && is_array( $products_data ) ) {
+			$cards_message = $this->format_product_cards( $products_data, 'flowhub' );
+			if ( ! empty( $cards_message ) ) {
+				$summary .= "\n\n" . $cards_message;
+			}
 		}
 
 		$result = array_merge(

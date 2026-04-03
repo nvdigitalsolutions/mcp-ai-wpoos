@@ -5,6 +5,9 @@
  * Handles all AJAX requests for the admin settings page.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -3731,7 +3734,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Validate provider.
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'nvidia', 'embedded' ) );
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
 				wp_send_json_error(
 					array(

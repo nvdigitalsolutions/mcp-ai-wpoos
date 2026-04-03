@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -149,7 +152,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_no_sse_request' ),
 					'args'                => array(
 						'assistant_id' => array(

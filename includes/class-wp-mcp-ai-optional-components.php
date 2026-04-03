@@ -9,6 +9,9 @@
  * Only the knowledge base (profession playbooks) remains as an optional download.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -45,14 +48,20 @@ class WP_MCP_AI_Optional_Components {
 	 * Initialize the optional components manager.
 	 */
 	public static function init() {
-		// Hook into plugin activation to download components.
+		// Hook into plugin activation to show opt-in notice for optional component downloads.
 		add_action( 'wp_mcp_ai_after_activation', array( __CLASS__, 'download_on_activation' ) );
 
-		// Add admin notice for download status.
+		// Add admin notice for download status and opt-in consent.
 		add_action( 'admin_notices', array( __CLASS__, 'show_download_notice' ) );
 
-		// AJAX handler for manual downloads.
+		// AJAX handler for individual manual downloads.
 		add_action( 'wp_ajax_wp_mcp_ai_download_component', array( __CLASS__, 'ajax_download_component' ) );
+
+		// AJAX handler for opt-in download of all components.
+		add_action( 'wp_ajax_wp_mcp_ai_download_all_components', array( __CLASS__, 'ajax_download_all_components' ) );
+
+		// AJAX handler for dismissing the opt-in notice.
+		add_action( 'wp_ajax_wp_mcp_ai_dismiss_optional_components', array( __CLASS__, 'ajax_dismiss_optional_components' ) );
 
 		// Background download via action scheduler or cron.
 		add_action( 'wp_mcp_ai_download_optional_components', array( __CLASS__, 'background_download' ) );
@@ -77,24 +86,22 @@ class WP_MCP_AI_Optional_Components {
 	}
 
 	/**
-	 * Download optional components on plugin activation.
+	 * Handle plugin activation — show opt-in notice instead of auto-downloading.
 	 *
-	 * Schedules a background task to download components without blocking activation.
+	 * Per WordPress.org Guidelines 7 & 9, plugins must not auto-download optional
+	 * components without explicit opt-in consent. This method flags that optional
+	 * components are available but does NOT schedule any background downloads.
 	 *
 	 * @return void
 	 */
 	public static function download_on_activation() {
 		$status = self::get_status();
 
-		// Only schedule if not already downloaded and not currently downloading.
+		// Flag that optional components are available for download (opt-in notice).
+		// Do NOT auto-schedule downloads — the admin must explicitly consent first
+		// via the admin notice or the AJAX manual download handler.
 		if ( empty( $status['vectorizer']['downloaded'] ) || empty( $status['knowledge_base']['downloaded'] ) ) {
-			if ( ! wp_next_scheduled( 'wp_mcp_ai_download_optional_components' ) ) {
-				// Schedule immediate download in background.
-				wp_schedule_single_event( time() + 10, 'wp_mcp_ai_download_optional_components' );
-			}
-
-			// Set flag that download is scheduled.
-			set_transient( self::DOWNLOAD_IN_PROGRESS, true, HOUR_IN_SECONDS );
+			update_option( 'wp_mcp_ai_optional_components_available', true );
 		}
 	}
 
@@ -317,6 +324,81 @@ class WP_MCP_AI_Optional_Components {
 			return;
 		}
 
+		// Show opt-in notice for optional component downloads (WordPress.org Guidelines 7 & 9).
+		$components_available = get_option( 'wp_mcp_ai_optional_components_available', false );
+		$needs_vectorizer     = ! $status['vectorizer']['downloaded'];
+		$needs_knowledge_base = ! $status['knowledge_base']['downloaded'];
+
+		if ( $components_available && ( $needs_vectorizer || $needs_knowledge_base ) ) {
+			$nonce = wp_create_nonce( 'wp_mcp_ai_download_component' );
+			?>
+			<div class="notice notice-info is-dismissible" id="wp-mcp-ai-optional-components-notice">
+				<p>
+					<strong><?php esc_html_e( 'Open Operator System:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php esc_html_e( 'Optional components are available for download to enhance your experience (vectorizer library and complete knowledge base with 218 profession playbooks). These are downloaded from the plugin\'s GitHub releases.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p>
+					<button type="button" class="button button-primary" id="wp-mcp-ai-download-components-btn" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+						<?php esc_html_e( 'Download Optional Components', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button type="button" class="button" id="wp-mcp-ai-dismiss-components-btn">
+						<?php esc_html_e( 'No Thanks', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</p>
+			</div>
+			<script>
+			(function() {
+				var downloadBtn = document.getElementById('wp-mcp-ai-download-components-btn');
+				var dismissBtn = document.getElementById('wp-mcp-ai-dismiss-components-btn');
+				if (downloadBtn) {
+					downloadBtn.addEventListener('click', function() {
+						downloadBtn.disabled = true;
+						downloadBtn.textContent = '<?php echo esc_js( __( 'Downloading...', 'mcp-ai-wpoos' ) ); ?>';
+						var data = new FormData();
+						data.append('action', 'wp_mcp_ai_download_all_components');
+						data.append('nonce', downloadBtn.getAttribute('data-nonce'));
+						fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
+							.then(function(response) {
+								if (!response.ok) { throw new Error('HTTP ' + response.status); }
+								downloadBtn.textContent = '<?php echo esc_js( __( 'Download started!', 'mcp-ai-wpoos' ) ); ?>';
+								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+								if (notice) {
+									var statusP = notice.querySelector('p:last-child');
+									statusP.textContent = '';
+									var em = document.createElement('em');
+									em.textContent = '<?php echo esc_js( __( 'Components are downloading in the background. Please refresh in a few minutes.', 'mcp-ai-wpoos' ) ); ?>';
+									statusP.appendChild(em);
+								}
+							})
+							.catch(function() {
+								downloadBtn.disabled = false;
+								downloadBtn.textContent = '<?php echo esc_js( __( 'Download Optional Components', 'mcp-ai-wpoos' ) ); ?>';
+								var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+								if (notice) {
+									var errorP = document.createElement('p');
+									errorP.style.color = '#d63638';
+									errorP.textContent = '<?php echo esc_js( __( 'Download failed. Please try again or download manually from the Components page.', 'mcp-ai-wpoos' ) ); ?>';
+									notice.appendChild(errorP);
+								}
+							});
+					});
+				}
+				if (dismissBtn) {
+					dismissBtn.addEventListener('click', function() {
+						var data = new FormData();
+						data.append('action', 'wp_mcp_ai_dismiss_optional_components');
+						data.append('_wpnonce', '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_components' ) ); ?>');
+						fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' });
+						var notice = document.getElementById('wp-mcp-ai-optional-components-notice');
+						if (notice) { notice.style.display = 'none'; }
+					});
+				}
+			})();
+			</script>
+			<?php
+			return;
+		}
+
 		// Show error notices if any.
 		$has_error = false;
 
@@ -407,6 +489,51 @@ class WP_MCP_AI_Optional_Components {
 		}
 
 		wp_send_json_success( array( 'message' => 'Component downloaded successfully' ) );
+	}
+
+	/**
+	 * AJAX handler for downloading all optional components after explicit consent.
+	 *
+	 * This is triggered when the admin clicks "Download Optional Components" in the
+	 * opt-in admin notice. Downloads are scheduled in the background so the admin
+	 * does not have to wait for completion.
+	 *
+	 * @return void
+	 */
+	public static function ajax_download_all_components() {
+		check_ajax_referer( 'wp_mcp_ai_download_component', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+
+		// Schedule background download now that admin has opted in.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_download_optional_components' ) ) {
+			wp_schedule_single_event( time() + 10, 'wp_mcp_ai_download_optional_components' );
+		}
+
+		set_transient( self::DOWNLOAD_IN_PROGRESS, true, HOUR_IN_SECONDS );
+
+		// Clear the available flag since admin has consented.
+		delete_option( 'wp_mcp_ai_optional_components_available' );
+
+		wp_send_json_success( array( 'message' => 'Download scheduled. Components will be ready in a few minutes.' ) );
+	}
+
+	/**
+	 * AJAX handler for dismissing the optional components notice.
+	 *
+	 * @return void
+	 */
+	public static function ajax_dismiss_optional_components() {
+		check_ajax_referer( 'wp_mcp_ai_dismiss_components' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+		}
+
+		delete_option( 'wp_mcp_ai_optional_components_available' );
+		wp_send_json_success();
 	}
 }
 

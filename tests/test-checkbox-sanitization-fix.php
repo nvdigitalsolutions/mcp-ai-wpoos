@@ -5,6 +5,9 @@
  * Unit tests to verify the checkbox sanitization fix handles string '0' correctly.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Minimal test - does not require WordPress test suite.

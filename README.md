@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.5  
-**Release Date:** 2026-03-24 (March 2026 — WordPress.org compliance pass 17, embedded LLM moved to Pro, new email integrations, canvas addon)  
-**Latest Updates:** March 2026 - NV oOS Canvas Addon (platform ZIPs for Tesseract PDF OCR), embedded LLM server-side client moved to Pro addon, Gemma 2B Instruct GGUF model, Mailgun + Brevo email integrations, 5 new WP-CLI command groups, SSE streaming fixes, WordPress.org compliance confirmed  
+**Version:** 1.1.6  
+**Release Date:** 2026-04-02 (April 2026 — WordPress.org compliance final pass, NVIDIA NIM onboarding wizard, vehicle estimation tools, Shopify auto-resolve, QuickBooks Desktop sync)  
+**Latest Updates:** March–April 2026 - Vehicle estimation tools (VIN decode, repair & cleaning estimates), Shopify connection auto-resolve, QuickBooks Desktop sync via QODBC, listing image download tools (Google Maps/Facebook/Instagram), Webhook Status admin page, Transformers.js v3.8.1 with WebGPU & Qwen3 models, 15 new schedule presets, Medical Vitals dashboard enhancements, registration product research page rebuild, copyright/license attribution across all source files, Telegram webhook 403 fixes, chat channels inbox reliability improvements, security vulnerability patches  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (March 2026)](#-latest-updates-march-2026)
+- [🆕 Latest Updates (March–April 2026)](#-latest-updates-marchapril-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -42,7 +42,7 @@
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama-lm-studio-hugging-face-cloudflare)
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-anthropic-nvidia-nim-ollama-lm-studio-hugging-face--cloudflare)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
@@ -106,9 +106,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
-The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
+The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **368 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **533 built-in tools**.
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 519 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, and more.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 533 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -267,7 +267,129 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (March 2026)
+## 🆕 Latest Updates (March–April 2026)
+
+### Vehicle Estimation Tools — VIN Decode, Repair & Cleaning Estimates (March 31, 2026) ⭐ **NEW**
+
+**3 always-available Pro tools for automotive estimation** (PR #4526).
+
+- ✅ **`vin_decode`** — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, returns 28-field vehicle descriptor (year/make/model/trim/body/engine/ADAS features).
+- ✅ **`vehicle_repair_estimate`** — 5-step pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. 4-path vehicle ID (direct VIN, VIN image OCR, manual overrides, LLM visual recognition). Heuristic fallback costs for 20+ common parts; ADAS calibration auto-added for 2018+ windshield replacements.
+- ✅ **`vehicle_cleaning_estimate`** — Car wash package & add-on pricing engine. Probabilistic LLM vision vehicle size classification into 3 tiers. 4 packages with size-tiered pricing, 7 specialty add-ons with severity/size/flat pricing modes. Custom menu support via JSON attachment and `wp_mcp_ai_vehicle_cleaning_menu` filter.
+- ✅ **60 PHPUnit tests** covering all three tools, input validation, permission checks, domain constants, pricing scenarios.
+
+### Shopify Connection Auto-Resolve + `remote_shopify_connection` Tool (March 31, 2026) ⭐ **NEW**
+
+**Shopify tools no longer require manual `connection_id` — auto-resolved from assistant context** (PR #4521).
+
+- ✅ **`WP_MCP_AI_Shopify_Connection_Resolver` trait** — reusable connection resolution logic (mirrors `remote_wp_connection` patterns): queries assistant's `_wp_mcp_ai_pro_remote_connections` meta, auto-selects if exactly one Shopify connection matches, returns helpful error with available connections if multiple.
+- ✅ **All 5 Shopify tools updated** (`shopify_products`, `shopify_orders`, `shopify_customers`, `shopify_inventory`, `shopify_catalog`) — `connection_id` now optional, auto-resolved from assistant context.
+- ✅ **New `remote_shopify_connection` tool** — list available Shopify connections and test connectivity via Admin GraphQL `{ shop { name } }` query.
+- ✅ **14 PHPUnit tests** covering auto-resolution, explicit `connection_id`, assistant filtering, disabled/unauthorized connections.
+
+### Webhook Status Admin Page (March 31, 2026) ⭐ **NEW**
+
+**Centralized webhook monitoring for multi-bot Telegram setups and all 9 webhook-capable connection types** (PR #4517).
+
+- ✅ **New admin page**: `Webhook Status` submenu under NV oOS Pro (`nvoos-pro-webhook-status`). Covers Telegram, WhatsApp, Slack, Discord, MS Teams, Messenger, Google Chat, Twitter/X, Apple Messages.
+- ✅ **Summary cards** — total endpoints, active, inactive, Telegram bot count.
+- ✅ **Connections table** — type badge, enabled state, health indicator, expected vs actual URL, error details, action buttons.
+- ✅ **Telegram live checks** — calls `getMe` + `getWebhookInfo` APIs per-connection; reports URL match/mismatch, pending updates, last error with timestamp.
+- ✅ **Actions** — Check single, Check All, Set Webhook (Telegram), Remove Webhook (Telegram), link to Edit Connection.
+- ✅ **30 PHPUnit tests** covering helpers, URL generation, status checks, menu/AJAX registration, rendering.
+
+### Transformers.js Upgrade — v3.8.1, WebGPU Acceleration & Qwen3 Models (March 30, 2026) ⭐ **NEW**
+
+**CDN upgraded from deprecated `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`; 4 new Qwen3 embedded models** (PR #4514).
+
+- ✅ **WebGPU auto-detect**: `navigator.gpu.requestAdapter()` for up to 4× faster embeddings, WASM fallback.
+- ✅ **Quantization API**: `quantized: true` (v2) → `dtype: 'q8'` (v3).
+- ✅ **4 Qwen3 models** added to JS `AVAILABLE_MODELS` and PHP `get_embedded_models()`: Qwen3-8B (5 GB, function calling ✅), Qwen3-4B (2.5 GB ✅), Qwen3-1.7B (1.1 GB ✅), Qwen3-0.6B (400 MB, no function calling).
+
+### QuickBooks Desktop Sync Tool via QODBC (March 30, 2026) ⭐ **NEW**
+
+**New Pro tool for syncing QuickBooks Desktop data through a QODBC relay API** (PR #4507).
+
+- ✅ **`quickbooks_desktop_sync`** — relay-based tool connecting to QuickBooks Desktop via QODBC DSN on a Windows relay server.
+- ✅ **New `quickbooks_desktop` remote connection type** with relay URL, API key, and DSN name fields.
+- ✅ **14 PHPUnit tests** covering tool contract, sanitization, and auth enforcement.
+
+### Listing Image Download Tools (March 29, 2026) ⭐ **NEW**
+
+**3 new always-on Pro tools for bulk-downloading business listing images into the Media Library or ZIP** (PR #4503).
+
+- ✅ **`download_google_maps_images`** — Places API (New), resolves `place_id` via text search, stores author attribution as post meta, max 10 images.
+- ✅ **`download_facebook_page_images`** — Graph API v21.0, cursor-based pagination across 5 album types, auto-selects highest resolution.
+- ✅ **`download_instagram_page_images`** — Graph API v21.0, filters by media type (image/carousel/video), expands `CAROUSEL_ALBUM` children, handles ephemeral URLs.
+- ✅ Shared patterns: `media_handle_sideload()` import, optional `ZipArchive` export, `output_mode` param (`media_library`/`zip`/`both`).
+- ✅ **39 PHPUnit tests** covering slug/schema/flags/rules, auth enforcement, required param validation.
+
+### Medical Vitals Dashboard — Recent Reading Card & Multi-Range Trends (March 31, 2026) ⭐ **NEW**
+
+**At-a-glance recency info and configurable date ranges for the Medical Vitals Telegram Mini App** (PR #4523).
+
+- ✅ **"Most Recent Reading" card** — relative timestamp (`5m ago`, `2h ago`) and colour-coded status dots (green/orange/red) per vital. Auto-hidden when no readings exist.
+- ✅ **Configurable trend range** — segmented control bar: **7D · 14D · 30D · 90D** with dynamic title, ARIA `aria-pressed` state, auto-scaling chart density.
+
+### Registration Product Research Page — Consolidation & Bulk Import (March 31, 2026) ⭐ **NEW**
+
+**Feature-parity rebuild of the registration product research page** (PR #4519).
+
+- ✅ **2 new workflow tabs**: Quick Import (file upload + text paste with structured parsing) and Guided Entry (record type selector with 5 types).
+- ✅ **13 document processing tools** added to AI chat: `extract_pdf_text`, `pro_pdf_document`, `merge_pdfs`, `add_watermark_to_pdf`, `excel_data_import`, etc.
+- ✅ **Sidebar additions**: Product selector dropdown with brand taxonomy labels, Document Tools Info panel.
+- ✅ **3 new AJAX handlers**: `handle_bulk_import()`, `handle_document_upload()`, `handle_get_product_preview()` — all with `check_ajax_referer()`, `current_user_can()`, and proper sanitization/escaping.
+
+### 15 New Schedule Presets — CRM Email, Document Management, Upwork Freelancer (March 30, 2026) ⭐ **NEW**
+
+**Total schedule presets: 100 → 115** (PR #4509).
+
+- ✅ **CRM Email Correspondence** (5 presets): email correspondence audit, SLA breach monitor, lead nurture digest, customer re-engagement check, deliverability report.
+- ✅ **Document Management & Sharing** (5 presets): new document notification, sharing audit, version review, approval reminder, compliance check.
+- ✅ **Upwork Freelancer** (5 presets, new `upwork_freelancer` toolkit): job discovery scan, job fit scoring, proposal pipeline report, client follow-up check, profile performance review.
+
+### Author/Copyright/License Attribution (March 30, 2026) ⭐ **NEW**
+
+**Consistent IP attribution across the entire codebase** (PR #4510).
+
+- ✅ **2,535 PHP files**, **101 JS files**, **58 CSS files** — `@author`, `@copyright`, `@license` tags added to first docblock.
+- ✅ Base plugin files: GPL-3.0-or-later; Pro addon files: Proprietary.
+- ✅ Copyright year updated from `2025` → `2025-2026` in all 5 entry-point files.
+- ✅ `composer.json` and `package.json` updated with structured author/homepage/support/repository fields.
+
+### dvdoug/boxpacker Pre-Packaged in Pro Addon (March 31, 2026) 🔧 **UPDATED**
+
+**Production autoload strategy aligned to `composer install` not `dump-autoload`** (PR #4527).
+
+- ✅ `dvdoug/boxpacker` (`^3.12 || ^4.0`) now pre-packaged in `addons/pro/vendor/` — v3.12.1 + psr/log 3.0.2.
+- ✅ All documentation updated: `dump-autoload` → `composer install --no-dev --classmap-authoritative --no-interaction`.
+
+### Bug Fixes & Reliability Improvements (March 29–31, 2026) 🔧
+
+- ✅ **Telegram webhook 403 on multi-bot setups** (PRs #4512, #4513, #4516, #4518): Fixed webhook URL to include `connection_id` in test/status endpoints; added REST auth bypass and admin-ajax fallback; direct array-key lookup for connection resolution.
+- ✅ **Chat channels inbox — bot name display** (PRs #4522, #4524): Telegram bot `@bot_username` now shown as primary display in conversations list, thread header, and contacts table.
+- ✅ **Chat channels inbox — message pagination** (PR #4525): Newest messages now appear on page 1 (was oldest-first).
+- ✅ **Chat channels inbox — connection_id scoping** (PRs #4500, #4506): Message queries scoped by `connection_id` for Telegram to isolate multi-bot conversations; column migration and `SELECT *` fallback for backward compatibility.
+- ✅ **Chat channels inbox — 404 on messages endpoint** (PR #4489): Fixed CCT and CPT store merge for conversations and messages.
+- ✅ **Chat channels inbox — CCT/CPT store merge** (PR #4488): Merged CCT and CPT stores so conversations and messages from both backends display correctly.
+- ✅ **Workflow preset data mapping** (PRs #4504, #4508): Fixed preset data so tools, arguments, and conditions populate correctly in the Pro Workflow Builder canvas.
+- ✅ **Preset browser AJAX callbacks** (PR #4501): Fixed wrong callback signatures in schedule manager preset browser.
+- ✅ **Quick Tool Selection Presets** (PR #4505): Added 8 missing tools to preset coverage.
+- ✅ **Security — brace-expansion & serialize-javascript** (PR #4487): Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750) and serialize-javascript CPU exhaustion (CVE-2026-34043); `npm audit` clean.
+
+### Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026) ⭐ **NEW**
+
+**8 use-case presets that seed fully-configured assistants, WCAG 2.1 accessible, external JS, explicit completion flow.**
+
+- ✅ **8 preset use cases**: Content Creator (✍️ 12 tools), Customer Support (🎧 8 tools), E-commerce (🛒 11 tools), SEO & Research (🔍 12 tools), Developer Copilot (💻 12 tools), Media & Creative Studio (🎨 11 tools), Site Administrator (🛡️ 13 tools), General Purpose (🤖 12 tools).
+- ✅ **Assistant seeding**: Selecting presets creates real `mcp_ai_assistant` CPT posts with tools, system prompt, provider, model, and temperature — working system out of the box.
+- ✅ **WCAG 2.1 accessibility**: WAI-ARIA tablist/tab/tabpanel for provider tabs, keyboard navigation (Arrow/Home/End), `aria-current="step"` progress, `aria-live="polite"` feedback regions, `focus-visible` outlines.
+- ✅ **External JavaScript**: Inline scripts extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n — CSP-compliant and cacheable.
+- ✅ **Explicit completion**: Step 4 no longer auto-completes; users click "Mark Setup Complete" to finalize.
+- ✅ **Copy shortcode**: One-click copy of `[mcp_ai_chat]` shortcode on the finish screen with clipboard fallback.
+- ✅ **Filterable presets**: `wp_mcp_ai_onboarding_presets` filter lets addons add custom presets.
+- ✅ **22 PHPUnit tests** for presets, seeding, model resolution, and accessibility.
+- [Getting Started Wizard →](#-installation)
 
 ### Pro Schedule Manager — Full Cron-Backed Scheduler with AI Tools & Admin UI (March 26, 2026) ⭐ **NEW**
 
@@ -956,6 +1078,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
 - 👔 **Professional & Team Templates** - Deploy assistants from 182 pre-built profession templates spanning 12 industry categories, or create entire teams of specialists with one click. Includes backend testing for professions, teams, and assistants before public deployment.
+- 🚀 **Getting Started Wizard** - Guided 4-step onboarding (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`) that walks new users through provider setup and use-case selection. Selecting a preset (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, or General Purpose) seeds a fully-configured assistant with tools, system prompt, and tuned temperature — ready to use immediately.【F:includes/admin/class-wp-mcp-ai-onboarding-wizard.php†L1-L53】【F:assets/js/onboarding-wizard.js†L1-L303】
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
@@ -983,6 +1106,10 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Commerce & finance workflows
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- 🖥️ **Pro:** QuickBooks Desktop sync via QODBC relay API — connect to QuickBooks Desktop through a Windows relay server for data synchronization
+- 🛒 **Pro:** Shopify integration with auto-resolved connections — `connection_id` auto-resolved from assistant context, covering products, orders, customers, inventory, and catalog tools
+- 🚗 **Pro:** Vehicle estimation tools — VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine (always available)
+- 📸 **Pro:** Listing image download tools — bulk-download Google Maps, Facebook, and Instagram business listing images into the Media Library or ZIP
 
 ### Slash Commands & Workflow Automation ⭐ **NEW**
 - ⚡ **8 Core Commands**: `/help`, `/next-task`, `/ship`, `/clean-content`, `/optimize-perf`, `/sync-docs`, `/workflow` - Command-line style interface for content management
@@ -1326,6 +1453,9 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 > **ℹ️ Plugin Directory Status**  
 > This plugin is currently **pending approval** in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards throughout the review process. You can install the plugin manually from our [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos) or wait for the official WordPress Plugin Directory listing.
 
+> **🚀 Getting Started Wizard**  
+> After activating the plugin, you'll be redirected to a **4-step setup wizard** that walks you through connecting an AI provider, choosing a use case, and creating your first assistant — all in under 2 minutes. The wizard creates fully-configured assistants with tools, system prompts, and tuned temperatures so your site is working out of the box. You can access the wizard any time at **NV oOS → Getting Started** or directly at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`.
+
 ### Requirements
 
 **Minimum Requirements:**
@@ -1408,11 +1538,11 @@ composer install --no-dev
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all 159 tools (95 base + 64 Pro)
+2. You now have the **complete version** with all 533 tools (165 base + 368 Pro)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
-- ✅ All 159 built-in tools ready to use
+- ✅ All 533 built-in tools ready to use
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1442,7 +1572,7 @@ composer install --no-dev
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ 95 base tools (more with optional third-party plugins)
+- ✅ 165 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
@@ -1474,7 +1604,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, 95 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, 165 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -1653,6 +1783,7 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - **[Docs Archive](docs/archive/)** - Consolidated implementation history and superseded documentation
 
 ### For New Users
+- **🚀 [Getting Started Wizard](#-installation)** ⭐ NEW — 4-step guided setup that connects your AI provider, selects a use case, and creates a ready-to-use assistant in under 2 minutes. 8 presets available: Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose.
 - **[Use Cases & Quickstart Guides](docs/getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering 7 major use cases with step-by-step quickstarts
 - [5-Minute Quick Start](docs/getting-started/QUICK_START_5_MINUTES.md) - Get started immediately: from zero to first chat
 - [Setup Checklist](docs/getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
@@ -1715,14 +1846,15 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
-## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face & Cloudflare)
+## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face & Cloudflare)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, NVIDIA NIM, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
 **Privacy & Terms:** All AI providers have specific terms and privacy policies:
 - **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
 - **Google Gemini**: [Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
 - **Anthropic**: [Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
+- **NVIDIA NIM**: [Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/)
 - **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama/LM Studio**: Self-hosted (no external data transmission)
@@ -1743,7 +1875,7 @@ The plugin includes an intelligent provider priority system that automatically t
 
 - **Drag and drop** providers to set your preferred order
 - **Automatic fallback** - if the first provider fails, the system tries the next one
-- **Visual management** - see all available providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
+- **Visual management** - see all available providers (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
 - **Flexible prioritization** - adjust based on cost, performance, or availability needs
 
 The first provider in the list serves as the default. If any provider returns an error, the router automatically attempts the next provider in the list until one succeeds. This ensures maximum uptime and resilience without manual intervention. All fallback attempts are logged for debugging and monitoring.
@@ -1937,7 +2069,7 @@ Administrators with `manage_options` capability can view comprehensive token usa
 - Reset personal usage data button
 
 **Detailed Breakdown:**
-- Usage by provider (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face, Cloudflare)
+- Usage by provider (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare)
 - Usage by specific model (e.g., `gpt-4.1-mini`, `gemini-2.0-flash`)
 - Request counts per provider/model combination
 - Last used timestamp for each model
@@ -2042,7 +2174,7 @@ NV oOS includes several performance optimizations to enhance the chat experience
 NV oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
 
 1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
-2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, Anthropic, Hugging Face, Cloudflare, and Ollama on one site
+2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, and Ollama on one site
 
 Both modes use the same AI-powered routing engine to optimize for cost, performance, and reliability.
 
@@ -3241,6 +3373,8 @@ Use the following hooks to extend the plugin:
 | `apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context )` | Filter | Inspect or transform tool output before it is returned. |
 | `do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result )` | Action | Runs after a tool completes execution. |
 | `apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $context )` | Filter | Intercept or redirect logging output. |
+| `apply_filters( 'wp_mcp_ai_onboarding_presets', $presets )` | Filter | Add, remove, or modify onboarding wizard use-case presets. Each preset defines tools, system prompt, temperature, and assistant name. |
+| `do_action( 'wp_mcp_ai_onboarding_presets_seeded', $created, $preset_keys )` | Action | Fires after the onboarding wizard creates assistant CPT posts from selected presets. `$created` maps preset keys to post IDs. |
 
 ---
 

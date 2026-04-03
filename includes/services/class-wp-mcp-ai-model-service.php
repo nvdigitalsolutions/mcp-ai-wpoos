@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -81,6 +84,10 @@ class WP_MCP_AI_Model_Service {
 
 			case 'cloudflare':
 				$models = $this->get_cloudflare_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'nvidia':
+				$models = $this->get_nvidia_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
 			case 'embedded':
@@ -601,6 +608,127 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get NVIDIA NIM models.
+	 *
+	 * Returns a static list of NVIDIA NIM models available via integrate.api.nvidia.com.
+	 *
+	 * @param array $settings             Plugin settings.
+	 * @param bool  $requires_vision      Whether vision capability is required.
+	 * @param bool  $requires_multimodal  Whether multimodal capability is required.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_nvidia_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['nvidia_api_key'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Meta Llama 4 Models (MoE, Multimodal).
+		$models['meta/llama-4-maverick-17b-128e-instruct'] = 'Llama 4 Maverick 17Bx128E (1M context, Vision)';
+		$models['meta/llama-4-scout-17b-16e-instruct']     = 'Llama 4 Scout 17Bx16E (1M context, Vision)';
+
+		// Meta Llama 3.x Family.
+		$models['meta/llama-3.3-70b-instruct']        = 'Llama 3.3 70B Instruct (Free)';
+		$models['meta/llama-3.1-405b-instruct']       = 'Llama 3.1 405B Instruct';
+		$models['meta/llama-3.1-70b-instruct']        = 'Llama 3.1 70B Instruct (Free)';
+		$models['meta/llama-3.1-8b-instruct']         = 'Llama 3.1 8B Instruct (Free)';
+		$models['meta/llama-3.2-3b-instruct']         = 'Llama 3.2 3B Instruct (Free)';
+		$models['meta/llama-3.2-1b-instruct']         = 'Llama 3.2 1B Instruct (Free)';
+		$models['meta/llama-3.2-90b-vision-instruct'] = 'Llama 3.2 90B Vision Instruct';
+		$models['meta/llama-3.2-11b-vision-instruct'] = 'Llama 3.2 11B Vision Instruct (Free)';
+
+		// NVIDIA Nemotron Models.
+		$models['nvidia/llama-3.1-nemotron-70b-instruct'] = 'Nemotron 70B Instruct (Free)';
+		$models['nvidia/nemotron-3-super-120b-a12b']      = 'Nemotron 3 Super 120B MoE (1M context)';
+		$models['nvidia/nemotron-3-nano-30b-a3b']         = 'Nemotron 3 Nano 30B MoE (Free, 1M context)';
+
+		// Mistral AI Models.
+		$models['mistralai/mistral-large-2-instruct']        = 'Mistral Large 2 Instruct (Free)';
+		$models['mistralai/mixtral-8x22b-instruct-v0.1']     = 'Mixtral 8x22B Instruct (Free)';
+		$models['mistralai/mixtral-8x7b-instruct-v0.1']      = 'Mixtral 8x7B Instruct (Free)';
+		$models['mistralai/mistral-7b-instruct-v0.3']        = 'Mistral 7B Instruct (Free)';
+		$models['mistralai/mistral-small-24b-instruct-2501'] = 'Mistral Small 24B Instruct (Free)';
+
+		// Microsoft Phi-3 Models.
+		$models['microsoft/phi-3-medium-128k-instruct'] = 'Phi-3 Medium 128K Instruct (Free)';
+		$models['microsoft/phi-3-medium-4k-instruct']   = 'Phi-3 Medium 4K Instruct (Free)';
+		$models['microsoft/phi-3-mini-128k-instruct']   = 'Phi-3 Mini 128K Instruct (Free)';
+		$models['microsoft/phi-3-mini-4k-instruct']     = 'Phi-3 Mini 4K Instruct (Free)';
+		$models['microsoft/phi-3-small-128k-instruct']  = 'Phi-3 Small 128K Instruct (Free)';
+		$models['microsoft/phi-3-small-8k-instruct']    = 'Phi-3 Small 8K Instruct (Free)';
+
+		// Google Gemma 2 Models.
+		$models['google/gemma-2-27b-it'] = 'Gemma 2 27B IT (Free)';
+		$models['google/gemma-2-9b-it']  = 'Gemma 2 9B IT (Free)';
+		$models['google/gemma-2-2b-it']  = 'Gemma 2 2B IT (Free)';
+		$models['google/codegemma-7b']   = 'CodeGemma 7B (Free)';
+
+		// Google Gemma 3 Models (Multimodal).
+		$models['google/gemma-3-27b-it']  = 'Gemma 3 27B IT (Free, Vision)';
+		$models['google/gemma-3-12b-it']  = 'Gemma 3 12B IT (Free, Vision)';
+		$models['google/gemma-3-4b-it']   = 'Gemma 3 4B IT (Free, Vision)';
+		$models['google/gemma-3-1b-it']   = 'Gemma 3 1B IT (Free)';
+		$models['google/gemma-3n-e4b-it'] = 'Gemma 3n E4B IT (Free)';
+
+		// Qwen 2.5 Models.
+		$models['qwen/qwen2.5-72b-instruct'] = 'Qwen 2.5 72B Instruct (Free)';
+		$models['qwen/qwen2.5-32b-instruct'] = 'Qwen 2.5 32B Instruct (Free)';
+		$models['qwen/qwen2.5-14b-instruct'] = 'Qwen 2.5 14B Instruct (Free)';
+		$models['qwen/qwen2.5-7b-instruct']  = 'Qwen 2.5 7B Instruct (Free)';
+
+		// Qwen 3 Models (Dense + MoE, Thinking).
+		$models['qwen/qwen3-235b-a22b'] = 'Qwen 3 235B A22B MoE (Thinking)';
+		$models['qwen/qwen3-32b']       = 'Qwen 3 32B (Free, Thinking)';
+		$models['qwen/qwen3-30b-a3b']   = 'Qwen 3 30B A3B MoE (Free, Thinking)';
+		$models['qwen/qwen3-14b']       = 'Qwen 3 14B (Free, Thinking)';
+		$models['qwen/qwen3-8b']        = 'Qwen 3 8B (Free, Thinking)';
+		$models['qwen/qwen3-4b']        = 'Qwen 3 4B (Free, Thinking)';
+
+		// Qwen 3.5 Models (Latest, Vision + MoE).
+		$models['qwen/qwen3.5-397b-a17b'] = 'Qwen 3.5 397B A17B (Vision, MoE)';
+		$models['qwen/qwen3.5-122b-a10b'] = 'Qwen 3.5 122B A10B MoE (Free)';
+
+		// Qwen 3 Specialized Models.
+		$models['qwen/qwen3-coder-480b-a35b-instruct'] = 'Qwen 3 Coder 480B A35B (Coding)';
+
+		// DeepSeek Models (Reasoning).
+		$models['deepseek-ai/deepseek-r1']                   = 'DeepSeek R1 (Reasoning)';
+		$models['deepseek-ai/deepseek-r1-distill-llama-70b'] = 'DeepSeek R1 Distill Llama 70B (Free)';
+		$models['deepseek-ai/deepseek-r1-distill-llama-8b']  = 'DeepSeek R1 Distill Llama 8B (Free)';
+		$models['deepseek-ai/deepseek-r1-distill-qwen-32b']  = 'DeepSeek R1 Distill Qwen 32B (Free)';
+		$models['deepseek-ai/deepseek-r1-distill-qwen-14b']  = 'DeepSeek R1 Distill Qwen 14B (Free)';
+		$models['deepseek-ai/deepseek-r1-distill-qwen-7b']   = 'DeepSeek R1 Distill Qwen 7B (Free)';
+
+		// IBM Granite Code Models.
+		$models['ibm/granite-34b-code-instruct'] = 'Granite 34B Code Instruct (Free)';
+		$models['ibm/granite-8b-code-instruct']  = 'Granite 8B Code Instruct (Free)';
+
+		// Databricks DBRX.
+		$models['databricks/dbrx-instruct'] = 'DBRX Instruct 132B MoE (Free)';
+
+		// MiniMax Models.
+		$models['minimax/minimax-m1-80k'] = 'MiniMax M1 80K (Free)';
+
+		// Filter by vision/multimodal requirements.
+		if ( $requires_vision || $requires_multimodal ) {
+			$vision_models = array(
+				'meta/llama-4-maverick-17b-128e-instruct',
+				'meta/llama-4-scout-17b-16e-instruct',
+				'meta/llama-3.2-90b-vision-instruct',
+				'meta/llama-3.2-11b-vision-instruct',
+				'google/gemma-3-27b-it',
+				'google/gemma-3-12b-it',
+				'google/gemma-3-4b-it',
+				'qwen/qwen3.5-397b-a17b',
+			);
+			$models        = array_intersect_key( $models, array_flip( $vision_models ) );
+		}
+
+		return $models;
+	}
+
+	/**
 	 * Get embedded models
 	 *
 	 * Returns client-side WebLLM models that run in the browser using WebGPU/WebAssembly.
@@ -631,13 +759,17 @@ class WP_MCP_AI_Model_Service {
 			'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'        => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
 			'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Llama 8B (~5GB)', 'mcp-ai-wpoos' ),
 			'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC'  => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
+			'Qwen3-8B-q4f16_1-MLC'                     => __( 'Qwen3 8B (~5GB)*', 'mcp-ai-wpoos' ),
 			'Qwen2.5-7B-Instruct-q4f16_1-MLC'          => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+			'Qwen3-4B-q4f16_1-MLC'                     => __( 'Qwen3 4B (~2.5GB)*', 'mcp-ai-wpoos' ),
 			'Phi-3.5-mini-instruct-q4f16_1-MLC'        => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
 			'gemma-2-2b-it-q4f16_1-MLC'                => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
 			'Llama-3.2-3B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
 			'SmolLM2-1.7B-Instruct-q4f16_1-MLC'        => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
+			'Qwen3-1.7B-q4f16_1-MLC'                   => __( 'Qwen3 1.7B (~1.1GB)*', 'mcp-ai-wpoos' ),
 			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
 			'Llama-3.2-1B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+			'Qwen3-0.6B-q4f16_1-MLC'                   => __( 'Qwen3 0.6B (~400MB)', 'mcp-ai-wpoos' ),
 			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 		);
 

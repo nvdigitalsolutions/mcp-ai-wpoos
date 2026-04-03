@@ -3,6 +3,9 @@
  * Tool that manages Telegram bot webhooks.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -188,8 +191,11 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 				'edited_message',
 				'channel_post',
 				'edited_channel_post',
+				'callback_query',
+				'inline_query',
 				'my_chat_member',
 				'chat_member',
+				'pre_checkout_query',
 			),
 		);
 

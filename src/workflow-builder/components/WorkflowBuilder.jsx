@@ -507,15 +507,150 @@ const WorkflowBuilderInner = () => {
 	}, [workflowName, workflowDescription, nodes, edges] );
 
 	/**
+	 * Map preset node types to registered custom node types.
+	 *
+	 * Presets may use ReactFlow built-in types like 'input' and 'output' which
+	 * are not in our custom nodeTypes registry. Map them to the closest custom
+	 * equivalents so they render with proper styling and handles.
+	 *
+	 * @param {Array} rawNodes Array of node objects.
+	 * @return {Array} Nodes with mapped types.
+	 */
+	const mapPresetNodeTypes = useCallback( ( rawNodes ) => {
+		if ( ! Array.isArray( rawNodes ) ) {
+			return [];
+		}
+
+		const typeMap = {
+			input: 'trigger',
+			output: 'action',
+			default: 'action',
+		};
+
+		return rawNodes.map( ( node ) => {
+			const mapped = { ...node };
+
+			// Map ReactFlow built-in types to custom node types.
+			if ( mapped.type && typeof mapped.type === 'string' && typeMap[ mapped.type ] ) {
+				mapped.type = typeMap[ mapped.type ];
+			}
+
+			// Build the `config` object expected by WorkflowPropertiesPanel
+			// from preset data fields (toolSlug, arguments, expression, etc.).
+			if ( mapped.data && ! mapped.data.config ) {
+				const config = {};
+				const d = mapped.data;
+
+				if ( mapped.type === 'tool' && d.toolSlug ) {
+					config.tool_name = d.toolSlug;
+					if ( d.arguments && typeof d.arguments === 'object' ) {
+						config.arguments = JSON.stringify( d.arguments, null, 2 );
+					} else if ( typeof d.arguments === 'string' ) {
+						config.arguments = d.arguments;
+					} else {
+						config.arguments = '{}';
+					}
+				} else if ( mapped.type === 'condition' ) {
+					if ( d.expression ) {
+						config.expression = d.expression;
+					}
+				} else if ( mapped.type === 'trigger' ) {
+					config.trigger_type = d.trigger_type || 'manual';
+					if ( d.schedule ) {
+						config.schedule = d.schedule;
+					}
+					if ( d.event ) {
+						config.event = d.event;
+					}
+				} else if ( mapped.type === 'agent' ) {
+					if ( d.agent_id ) {
+						config.agent_id = d.agent_id;
+					}
+					if ( d.prompt ) {
+						config.prompt = d.prompt;
+					}
+				} else if ( mapped.type === 'delay' ) {
+					if ( d.duration ) {
+						config.duration = d.duration;
+					}
+				} else if ( mapped.type === 'loop' ) {
+					if ( d.items ) {
+						config.items = d.items;
+					}
+					if ( d.max_iterations ) {
+						config.max_iterations = d.max_iterations;
+					}
+				} else if ( mapped.type === 'approval' ) {
+					if ( d.message ) {
+						config.message = d.message;
+					}
+					if ( d.timeout ) {
+						config.timeout = d.timeout;
+					}
+				} else if ( mapped.type === 'merge' ) {
+					if ( d.strategy ) {
+						config.strategy = d.strategy;
+					}
+				} else if ( mapped.type === 'action' ) {
+					if ( d.command ) {
+						config.command = d.command;
+					}
+					if ( d.params ) {
+						config.params = typeof d.params === 'object'
+							? JSON.stringify( d.params, null, 2 )
+							: d.params;
+					}
+				}
+
+				if ( Object.keys( config ).length > 0 ) {
+					mapped.data = { ...d, config };
+				}
+			}
+
+			return mapped;
+		} );
+	}, [] );
+
+	/**
 	 * Load workflow from template
 	 */
 	const loadTemplate = useCallback( ( template ) => {
 		setWorkflowName( template.name );
 		setWorkflowDescription( template.description );
-		setNodes( template.nodes || [] );
+		setNodes( mapPresetNodeTypes( template.nodes ) );
 		setEdges( template.edges || [] );
 		setValidationErrors( [] );
-	}, [setNodes, setEdges] );
+	}, [setNodes, setEdges, mapPresetNodeTypes] );
+
+	/**
+	 * Listen for the 'mcpAiLoadWorkflowPreset' custom event dispatched by the
+	 * PHP-rendered preset cards so that clicking "Load into Builder" actually
+	 * populates the React canvas.
+	 */
+	useEffect( () => {
+		const handlePresetEvent = ( event ) => {
+			const workflow = event.detail;
+			if ( ! workflow || ! Array.isArray( workflow.nodes ) ) {
+				return;
+			}
+			setWorkflowName( workflow.name || __( 'Untitled Workflow', 'mcp-ai-wpoos' ) );
+			setWorkflowDescription( workflow.description || '' );
+			setNodes( mapPresetNodeTypes( workflow.nodes ) );
+			setEdges( workflow.edges || [] );
+			setValidationErrors( [] );
+
+			// Scroll the builder into view so the user sees the loaded workflow.
+			const root = document.getElementById( 'mcp-ai-pro-workflow-builder-root' );
+			if ( root ) {
+				root.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			}
+		};
+
+		document.addEventListener( 'mcpAiLoadWorkflowPreset', handlePresetEvent );
+		return () => {
+			document.removeEventListener( 'mcpAiLoadWorkflowPreset', handlePresetEvent );
+		};
+	}, [setNodes, setEdges, mapPresetNodeTypes] );
 
 	return (
 		<div className="workflow-builder-container">

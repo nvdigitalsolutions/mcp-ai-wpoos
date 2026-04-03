@@ -6,6 +6,9 @@
  * signature helper constants, and conversation key generation for each controller.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -527,6 +530,49 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		$this->assertIsArray( $cct_history, 'get_recent_messages() must return array even when table is absent' );
+	}
+
+	/**
+	 * Maybe_populate_bot_username() returns the connection unchanged when
+	 * bot_username is already set.
+	 */
+	public function test_telegram_maybe_populate_bot_username_skips_when_set() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_populate_bot_username' );
+		$method->setAccessible( true );
+
+		$connection = array(
+			'id'           => 'conn_tg1',
+			'bot_username' => 'my_existing_bot',
+		);
+
+		$result = $method->invoke( $controller, $connection );
+
+		$this->assertSame( 'my_existing_bot', $result['bot_username'], 'Existing bot_username must not be overwritten' );
+	}
+
+	/**
+	 * Maybe_populate_bot_username() returns the connection unchanged when
+	 * the connection has no id field.
+	 */
+	public function test_telegram_maybe_populate_bot_username_skips_without_id() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_populate_bot_username' );
+		$method->setAccessible( true );
+
+		$connection = array(
+			'bot_username' => '',
+		);
+
+		$result = $method->invoke( $controller, $connection );
+
+		$this->assertSame( '', $result['bot_username'], 'bot_username must stay empty when connection has no id' );
 	}
 
 	// =========================================================================
@@ -1431,8 +1477,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$segments = array(
-			array( 'type' => 'text', 'text' => 'Hello ' ),
-			array( 'type' => 'text', 'text' => 'world' ),
+			array(
+				'type' => 'text',
+				'text' => 'Hello ',
+			),
+			array(
+				'type' => 'text',
+				'text' => 'world',
+			),
 		);
 
 		$result = $method->invoke( $controller, $segments );
@@ -1455,12 +1507,18 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'data' => array(
 				'choices'               => array(
 					array(
-						'message'       => array( 'content' => null, 'role' => 'assistant' ),
+						'message'       => array(
+							'content' => null,
+							'role'    => 'assistant',
+						),
 						'finish_reason' => 'tool_calls',
 					),
 				),
 				'agentic_tool_messages' => array(
-					array( 'role' => 'assistant', 'content' => 'Intermediate answer from tool' ),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Intermediate answer from tool',
+					),
 				),
 			),
 		);
@@ -1484,7 +1542,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'data' => array(
 				'choices' => array(
 					array(
-						'message'       => array( 'content' => 'Final answer', 'role' => 'assistant' ),
+						'message'       => array(
+							'content' => 'Final answer',
+							'role'    => 'assistant',
+						),
 						'finish_reason' => 'stop',
 					),
 				),
@@ -1820,10 +1881,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Explicit conversationType field.
-		$channel_payload = array(
+		$channel_payload   = array(
 			'conversation' => array( 'conversationType' => 'channel' ),
 		);
-		$personal_payload = array(
+		$personal_payload  = array(
 			'conversation' => array( 'conversationType' => 'personal' ),
 		);
 		$groupchat_payload = array(
@@ -1902,8 +1963,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_conversation_history_key' );
 		$method->setAccessible( true );
 
-		$no_thread   = $method->invoke( $controller, 'user1', 'chan1', 'conn1' );
-		$with_thread = $method->invoke( $controller, 'user1', 'chan1', 'conn1', 'thread_root_1' );
+		$no_thread    = $method->invoke( $controller, 'user1', 'chan1', 'conn1' );
+		$with_thread  = $method->invoke( $controller, 'user1', 'chan1', 'conn1', 'thread_root_1' );
 		$other_thread = $method->invoke( $controller, 'user1', 'chan1', 'conn1', 'thread_root_2' );
 
 		$this->assertNotSame( $no_thread, $with_thread, 'Thread-scoped key must differ from channel-level key' );
@@ -2034,13 +2095,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$group_chat = array( 'conversation' => array( 'conversationType' => 'groupChat' ) );
 		$channel    = array( 'conversation' => array( 'conversationType' => 'channel' ) );
 
-		$personal_type   = $method->invoke( $controller, $personal );
-		$groupchat_type  = $method->invoke( $controller, $group_chat );
-		$channel_type    = $method->invoke( $controller, $channel );
+		$personal_type  = $method->invoke( $controller, $personal );
+		$groupchat_type = $method->invoke( $controller, $group_chat );
+		$channel_type   = $method->invoke( $controller, $channel );
 
-		$is_dm_personal   = in_array( $personal_type, array( 'personal', 'groupChat' ), true );
-		$is_dm_groupchat  = in_array( $groupchat_type, array( 'personal', 'groupChat' ), true );
-		$is_dm_channel    = in_array( $channel_type, array( 'personal', 'groupChat' ), true );
+		$is_dm_personal  = in_array( $personal_type, array( 'personal', 'groupChat' ), true );
+		$is_dm_groupchat = in_array( $groupchat_type, array( 'personal', 'groupChat' ), true );
+		$is_dm_channel   = in_array( $channel_type, array( 'personal', 'groupChat' ), true );
 
 		$this->assertTrue( $is_dm_personal, 'personal conversation type must be treated as DM (bypass require_mention)' );
 		$this->assertTrue( $is_dm_groupchat, 'groupChat conversation type must be treated as DM (bypass require_mention)' );
@@ -2309,9 +2370,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					wp_json_encode(
 						array(
-						'iss' => 'accounts.google.com',
-						'aud' => $webhook_url,
-						'exp' => time() - 3600,
+							'iss' => 'accounts.google.com',
+							'aud' => $webhook_url,
+							'exp' => time() - 3600,
 						)
 					)
 				),
@@ -2380,9 +2441,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					wp_json_encode(
 						array(
-						'iss' => 'accounts.google.com',
-						'aud' => 'https://example.com/wrong-endpoint',
-						'exp' => time() + 3600,
+							'iss' => 'accounts.google.com',
+							'aud' => 'https://example.com/wrong-endpoint',
+							'exp' => time() + 3600,
 						)
 					)
 				),
@@ -3172,7 +3233,11 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$expected_signature = 'sha256=' . base64_encode( hash_hmac( 'sha256', $payload, $secret, true ) );
 
 		$controller = new class( $secret ) extends WP_MCP_AI_Twitter_Webhook_Controller {
-			/** @var string The consumer secret used in tests. */
+			/**
+			 * The consumer secret used in tests.
+			 *
+			 * @var string
+			 */
 			private $test_secret;
 			/**
 			 * Constructor.
@@ -6508,13 +6573,16 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_media_info returns null for a plain-text message.
+	 * Extract_media_info returns null for a plain-text message.
 	 */
 	public function test_extract_media_info_returns_null_for_text_message() {
 		$message = array(
 			'message_id' => 1,
 			'text'       => 'Hello',
-			'chat'       => array( 'id' => 111, 'type' => 'private' ),
+			'chat'       => array(
+				'id'   => 111,
+				'type' => 'private',
+			),
 			'from'       => array( 'id' => 222 ),
 		);
 
@@ -6523,17 +6591,38 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_media_info detects a photo and picks the last (highest-res) PhotoSize.
+	 * Extract_media_info detects a photo and picks the last (highest-res) PhotoSize.
 	 */
 	public function test_extract_media_info_detects_photo_highest_resolution() {
 		$message = array(
 			'message_id' => 2,
-			'chat'       => array( 'id' => 111, 'type' => 'private' ),
+			'chat'       => array(
+				'id'   => 111,
+				'type' => 'private',
+			),
 			'from'       => array( 'id' => 222 ),
 			'photo'      => array(
-				array( 'file_id' => 'small_id', 'file_unique_id' => 'u1', 'width' => 90, 'height' => 90, 'file_size' => 1000 ),
-				array( 'file_id' => 'medium_id', 'file_unique_id' => 'u2', 'width' => 320, 'height' => 320, 'file_size' => 5000 ),
-				array( 'file_id' => 'large_id', 'file_unique_id' => 'u3', 'width' => 1280, 'height' => 960, 'file_size' => 80000 ),
+				array(
+					'file_id'        => 'small_id',
+					'file_unique_id' => 'u1',
+					'width'          => 90,
+					'height'         => 90,
+					'file_size'      => 1000,
+				),
+				array(
+					'file_id'        => 'medium_id',
+					'file_unique_id' => 'u2',
+					'width'          => 320,
+					'height'         => 320,
+					'file_size'      => 5000,
+				),
+				array(
+					'file_id'        => 'large_id',
+					'file_unique_id' => 'u3',
+					'width'          => 1280,
+					'height'         => 960,
+					'file_size'      => 80000,
+				),
 			),
 			'caption'    => 'Look at this!',
 		);
@@ -6551,12 +6640,15 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_media_info detects a document with filename and MIME type.
+	 * Extract_media_info detects a document with filename and MIME type.
 	 */
 	public function test_extract_media_info_detects_document() {
 		$message = array(
 			'message_id' => 3,
-			'chat'       => array( 'id' => 111, 'type' => 'private' ),
+			'chat'       => array(
+				'id'   => 111,
+				'type' => 'private',
+			),
 			'from'       => array( 'id' => 222 ),
 			'document'   => array(
 				'file_id'        => 'doc_file_id',
@@ -6581,12 +6673,15 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_media_info detects a video with duration and dimensions.
+	 * Extract_media_info detects a video with duration and dimensions.
 	 */
 	public function test_extract_media_info_detects_video() {
 		$message = array(
 			'message_id' => 4,
-			'chat'       => array( 'id' => 111, 'type' => 'private' ),
+			'chat'       => array(
+				'id'   => 111,
+				'type' => 'private',
+			),
 			'from'       => array( 'id' => 222 ),
 			'video'      => array(
 				'file_id'        => 'vid_id',
@@ -6612,39 +6707,63 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * extract_media_info detects audio, voice, animation, and video_note.
+	 * Extract_media_info detects audio, voice, animation, and video_note.
 	 */
 	public function test_extract_media_info_detects_audio_voice_animation_videonote() {
 		// Audio.
 		$audio_msg = array(
-			'audio' => array( 'file_id' => 'aud_id', 'file_unique_id' => 'a1', 'duration' => 180, 'mime_type' => 'audio/mpeg', 'file_size' => 3072 ),
+			'audio' => array(
+				'file_id'        => 'aud_id',
+				'file_unique_id' => 'a1',
+				'duration'       => 180,
+				'mime_type'      => 'audio/mpeg',
+				'file_size'      => 3072,
+			),
 		);
-		$res = $this->invoke_telegram_method( 'extract_media_info', array( $audio_msg ) );
+		$res       = $this->invoke_telegram_method( 'extract_media_info', array( $audio_msg ) );
 		$this->assertSame( 'audio', $res['media_type'] );
 		$this->assertSame( 180, $res['duration'] );
 
 		// Voice.
 		$voice_msg = array(
-			'voice' => array( 'file_id' => 'voi_id', 'file_unique_id' => 'v1', 'duration' => 10, 'mime_type' => 'audio/ogg' ),
+			'voice' => array(
+				'file_id'        => 'voi_id',
+				'file_unique_id' => 'v1',
+				'duration'       => 10,
+				'mime_type'      => 'audio/ogg',
+			),
 		);
-		$res = $this->invoke_telegram_method( 'extract_media_info', array( $voice_msg ) );
+		$res       = $this->invoke_telegram_method( 'extract_media_info', array( $voice_msg ) );
 		$this->assertSame( 'voice', $res['media_type'] );
 		$this->assertSame( 'audio/ogg', $res['mime_type'] );
 		$this->assertSame( '', $res['caption'], 'Voice messages do not support captions' );
 
 		// Animation.
 		$anim_msg = array(
-			'animation' => array( 'file_id' => 'ani_id', 'file_unique_id' => 'an1', 'width' => 400, 'height' => 300, 'duration' => 3, 'mime_type' => 'video/mp4' ),
+			'animation' => array(
+				'file_id'        => 'ani_id',
+				'file_unique_id' => 'an1',
+				'width'          => 400,
+				'height'         => 300,
+				'duration'       => 3,
+				'mime_type'      => 'video/mp4',
+			),
 		);
-		$res = $this->invoke_telegram_method( 'extract_media_info', array( $anim_msg ) );
+		$res      = $this->invoke_telegram_method( 'extract_media_info', array( $anim_msg ) );
 		$this->assertSame( 'animation', $res['media_type'] );
 		$this->assertSame( 400, $res['width'] );
 
 		// Video note (circular video).
 		$vn_msg = array(
-			'video_note' => array( 'file_id' => 'vn_id', 'file_unique_id' => 'vn1', 'length' => 360, 'duration' => 15, 'file_size' => 2048 ),
+			'video_note' => array(
+				'file_id'        => 'vn_id',
+				'file_unique_id' => 'vn1',
+				'length'         => 360,
+				'duration'       => 15,
+				'file_size'      => 2048,
+			),
 		);
-		$res = $this->invoke_telegram_method( 'extract_media_info', array( $vn_msg ) );
+		$res    = $this->invoke_telegram_method( 'extract_media_info', array( $vn_msg ) );
 		$this->assertSame( 'video_note', $res['media_type'] );
 		// length is used for both width and height for circular videos.
 		$this->assertSame( 360, $res['width'] );
@@ -6652,7 +6771,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_cct_message_type_for_media maps correctly to CCT types.
+	 * Get_cct_message_type_for_media maps correctly to CCT types.
 	 */
 	public function test_get_cct_message_type_for_media_maps_correctly() {
 		$cases = array(
@@ -6677,22 +6796,22 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_media_metadata_reply_lines produces expected structured lines.
+	 * Build_media_metadata_reply_lines produces expected structured lines.
 	 */
 	public function test_build_media_metadata_reply_lines_contains_required_fields() {
 		$lines = $this->invoke_telegram_method(
 			'build_media_metadata_reply_lines',
 			array(
-				'🖼️ Image',          // type_label
-				42,                    // attachment_id
-				'https://example.com/photo.jpg', // attachment_url
-				'photo.jpg',           // original_filename
-				'image/jpeg',          // mime_type
-				1280,                  // width
-				960,                   // height
-				0,                     // duration
-				80000,                 // file_size
-				'Beautiful sunset',    // caption
+				'🖼️ Image',          // Type label.
+				42,                    // Attachment ID.
+				'https://example.com/photo.jpg', // Attachment URL.
+				'photo.jpg',           // Original filename.
+				'image/jpeg',          // MIME type.
+				1280,                  // Width.
+				960,                   // Height.
+				0,                     // Duration.
+				80000,                 // File size.
+				'Beautiful sunset',    // Caption.
 			)
 		);
 
@@ -6710,7 +6829,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_media_metadata_reply_lines omits optional fields when zero/empty.
+	 * Build_media_metadata_reply_lines omits optional fields when zero/empty.
 	 */
 	public function test_build_media_metadata_reply_lines_omits_empty_optional_fields() {
 		$lines = $this->invoke_telegram_method(
@@ -6719,13 +6838,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				'📄 Document',
 				10,
 				'https://example.com/file.pdf',
-				'',    // no filename
-				'',    // no mime type
-				0,     // no dimensions
+				'',    // No filename.
+				'',    // No mime type.
+				0,     // No dimensions.
 				0,
-				0,     // no duration
-				0,     // no file size
-				'',    // no caption
+				0,     // No duration.
+				0,     // No file size.
+				'',    // No caption.
 			)
 		);
 
@@ -6743,7 +6862,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_media_metadata_reply_lines includes duration for audio/video.
+	 * Build_media_metadata_reply_lines includes duration for audio/video.
 	 */
 	public function test_build_media_metadata_reply_lines_includes_duration() {
 		$lines = $this->invoke_telegram_method(
@@ -6756,7 +6875,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sideload_telegram_file returns WP_Error when file_size exceeds 20 MB.
+	 * Sideload_telegram_file returns WP_Error when file_size exceeds 20 MB.
 	 */
 	public function test_sideload_telegram_file_rejects_oversized_file() {
 		$result = $this->invoke_telegram_method(
@@ -6774,7 +6893,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sideload_telegram_file passes for file_size exactly at the 20 MB limit.
+	 * Sideload_telegram_file passes for file_size exactly at the 20 MB limit.
 	 */
 	public function test_sideload_telegram_file_allows_exactly_20mb() {
 		// We only test the size-gate logic (no network call); stub download_url
@@ -6804,7 +6923,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * wp_mcp_ai_telegram_media_metadata_reply_lines filter is applied.
+	 * Wp_mcp_ai_telegram_media_metadata_reply_lines filter is applied.
 	 */
 	public function test_build_media_metadata_reply_lines_filter_is_applied() {
 		$this->load_controller(
@@ -6834,5 +6953,4 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		remove_all_filters( 'wp_mcp_ai_telegram_media_metadata_reply_lines' );
 	}
-
 }

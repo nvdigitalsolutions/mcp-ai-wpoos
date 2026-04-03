@@ -3,6 +3,9 @@
  * Tests for embedded provider appearing in dropdown.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -306,5 +309,58 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 			$models,
 			'Embedded provider should include Hermes model when base+pro are active'
 		);
+	}
+
+	/**
+	 * Test that saving the embedded settings subtab does not disable the
+	 * embedded provider because the disabled checkbox is absent from POST.
+	 *
+	 * Regression test for the Qwen3 model update (PR #4531) which triggered
+	 * this bug: the enable_embedded checkbox has 'disabled' => true so it is
+	 * never submitted by the browser.  The sanitize handler previously treated
+	 * the missing value as "unchecked" (false), overriding the auto-enable
+	 * default and hiding the Embedded LLM provider from every dropdown.
+	 */
+	public function test_disabled_checkbox_not_overridden_on_save() {
+		// Skip if base version or Pro section class unavailable.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Embedded LLM is not available in base version.' );
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+			$this->markTestSkipped( 'Pro Providers section not available.' );
+		}
+
+		// Simulate a fresh Pro install (no settings saved yet).
+		delete_option( 'wp_mcp_ai_settings' );
+
+		// Embedded should auto-enable before any save.
+		$providers_before = WP_MCP_AI_Model_Config::get_available_providers();
+		$this->assertArrayHasKey( 'embedded', $providers_before, 'Embedded should auto-enable before save' );
+
+		// Build a Pro Providers section and call sanitize() with input that
+		// does NOT include enable_embedded (mimics disabled checkbox behaviour).
+		$section = new WP_MCP_AI_Section_Pro_Providers();
+		$input   = array(
+			'embedded_model' => 'Qwen3-8B-q4f16_1-MLC',
+			// enable_embedded is intentionally absent — disabled checkboxes
+			// are never submitted by the browser.
+		);
+
+		$sanitized = $section->sanitize( $input );
+
+		// enable_embedded must NOT have been set to false.
+		$this->assertArrayNotHasKey(
+			'enable_embedded',
+			$sanitized,
+			'Disabled checkbox should not be included in sanitized output'
+		);
+
+		// Save the sanitized values (merge, as WordPress does).
+		$existing = get_option( 'wp_mcp_ai_settings', array() );
+		update_option( 'wp_mcp_ai_settings', array_merge( $existing, $sanitized ) );
+
+		// Embedded provider should still appear after save.
+		$providers_after = WP_MCP_AI_Model_Config::get_available_providers();
+		$this->assertArrayHasKey( 'embedded', $providers_after, 'Embedded provider should still appear after saving embedded settings subtab' );
 	}
 }
