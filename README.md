@@ -11,8 +11,8 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.5  
-**Release Date:** 2026-03-24 (March 2026 — WordPress.org compliance pass 17, embedded LLM moved to Pro, new email integrations, canvas addon)  
+**Version:** 1.1.6  
+**Release Date:** 2026-04-02 (April 2026 — WordPress.org compliance final pass, NVIDIA NIM onboarding wizard, vehicle estimation tools, Shopify auto-resolve, QuickBooks Desktop sync)  
 **Latest Updates:** March–April 2026 - Vehicle estimation tools (VIN decode, repair & cleaning estimates), Shopify connection auto-resolve, QuickBooks Desktop sync via QODBC, listing image download tools (Google Maps/Facebook/Instagram), Webhook Status admin page, Transformers.js v3.8.1 with WebGPU & Qwen3 models, 15 new schedule presets, Medical Vitals dashboard enhancements, registration product research page rebuild, copyright/license attribution across all source files, Telegram webhook 403 fixes, chat channels inbox reliability improvements, security vulnerability patches  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  

@@ -1,6 +1,6 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.5  
+**Version:** 1.1.6  
 **Last Updated:** March 28, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.

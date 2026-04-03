@@ -1,7 +1,12 @@
 # oOS – Changelog
 
 
-## [Unreleased]
+## [1.1.6] - 2026-04-02
+
+### WordPress.org Compliance — Final Pass Before Resubmission
+
+This release addresses all issues identified by the WordPress.org automated review system
+on April 2, 2026, plus the compliance work from March 24, 2026.
 
 ### Added
 - **NVIDIA NIM Provider in Getting Started Wizard (April 2, 2026)**: Added NVIDIA NIM as the 8th AI provider in the onboarding wizard (Step 2). Users can now enter their NVIDIA API key and test the connection during initial setup. Saving the key automatically enables the provider. 40+ NVIDIA models available including Llama, Mistral, Nemotron, Gemma, and Qwen families via `integrate.api.nvidia.com` or self-hosted NIM containers.
