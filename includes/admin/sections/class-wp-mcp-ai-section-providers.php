@@ -445,12 +445,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, Anthropic will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'anthropic_api_key_type'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Anthropic API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your Anthropic subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for pay-as-you-go API keys. Team and Enterprise keys have workspace-level billing and access controls.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (Pay-as-you-go)', 'mcp-ai-wpoos' ),
+						'team'       => __( 'Claude Team', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'Claude Enterprise', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'anthropic_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Anthropic API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: Anthropic Console URL */
-						__( 'Your Anthropic API key. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your Anthropic API key. Supports standard, Team, and Enterprise workspace keys. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'mcp-ai-wpoos' ),
 						'https://console.anthropic.com/'
 					),
 					'placeholder'  => 'sk-ant-...',
@@ -495,6 +506,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'max'         => '86400',
 					'step'        => '300',
 				),
+				'anthropic_base_url'                 => array(
+					'type'        => 'url',
+					'label'       => __( 'Anthropic API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Anthropic API requests. Leave empty to use the default (https://api.anthropic.com/v1). Useful for enterprise proxy endpoints or Anthropic-compatible services. Must include the version path (e.g. /v1).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.anthropic.com/v1',
+				),
 
 				// Google Gemini Settings.
 				'enable_gemini'                      => array(
@@ -504,12 +521,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, Gemini will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'gemini_api_key_type'                => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your Google Gemini subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for AI Studio pay-as-you-go keys. Enterprise keys may use Vertex AI endpoints with higher limits and compliance features.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (AI Studio)', 'mcp-ai-wpoos' ),
+						'business'   => __( 'Gemini Business', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'Gemini Enterprise / Vertex AI', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'gemini_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'Gemini API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: Google AI Studio URL */
-						__( 'Your Google Gemini API key. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your Google Gemini API key. Supports AI Studio, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'mcp-ai-wpoos' ),
 						'https://aistudio.google.com/app/apikey'
 					),
 					'placeholder'  => 'AIza...',
@@ -670,6 +698,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'en-US-Neural2-J' => 'en-US-Neural2-J (Male)',
 					),
 					'default'     => 'en-US-Neural2-C',
+				),
+				'gemini_base_url'                    => array(
+					'type'        => 'url',
+					'label'       => __( 'Gemini API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Gemini API requests. Leave empty to use the default Google AI Studio endpoint. Useful for Vertex AI Enterprise deployments with custom regional endpoints or proxy services. Must include the version path (e.g. /v1beta).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://generativelanguage.googleapis.com/v1beta',
 				),
 
 				// Ollama Settings.
@@ -1047,13 +1081,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key_type', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl', 'anthropic_base_url' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
