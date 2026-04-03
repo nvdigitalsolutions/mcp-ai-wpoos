@@ -1157,7 +1157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					'wp_mcp_ai_unknown_file_reference',
 					sprintf(
 						/* translators: %s: OpenAI file identifier */
-						__( 'The OpenAI file "%s" could not be verified. It may not exist or may belong to a different organisation.', 'mcp-ai-wpoos' ),
+						__( 'The OpenAI file "%s" could not be verified. It may not exist or may belong to a different organization.', 'mcp-ai-wpoos' ),
 						$file_id
 					),
 					array( 'status' => 400 )
