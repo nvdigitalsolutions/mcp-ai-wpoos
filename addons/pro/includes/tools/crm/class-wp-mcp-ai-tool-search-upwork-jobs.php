@@ -85,7 +85,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search Upwork marketplace job postings with filters for keyword, category, skills, budget, job type, experience level, duration, and more. Returns a paginated list of matching jobs.', 'mcp-ai-wpoos-pro' );
+		return __( 'Search Upwork marketplace job postings with filters for keyword, category, skills, budget, job type, experience level, duration, and more. Returns a paginated list of matching jobs. When no Upwork connection is configured, automatically falls back to web search for job discovery.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'connection_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Remote Sites Upwork connection ID.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Remote Sites Upwork connection ID. Optional — when omitted or invalid, falls back to web search.', 'mcp-ai-wpoos-pro' ),
 				),
 				'query'               => array(
 					'type'        => 'string',
@@ -150,7 +150,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Pagination cursor from a previous search response.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'connection_id' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -198,37 +198,15 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		if ( empty( $arguments['connection_id'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_connection_id',
-				__( 'connection_id is required.', 'mcp-ai-wpoos-pro' )
-			);
+		// Determine whether the Upwork API is available.
+		$use_api = $this->has_valid_connection( $arguments );
+
+		// Fall back to web search when the Upwork connection is not configured.
+		if ( ! $use_api ) {
+			return $this->execute_fallback( $arguments, $context );
 		}
 
 		$connection_id = sanitize_text_field( $arguments['connection_id'] );
-
-		// Validate connection.
-		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			if ( ! $connection ) {
-				return new WP_Error(
-					'wp_mcp_ai_connection_not_found',
-					__( 'Upwork connection not found.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-			if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_wrong_connection_type',
-					__( 'The specified connection is not an Upwork connection.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-			if ( empty( $connection['enabled'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_connection_disabled',
-					__( 'The Upwork connection is disabled.', 'mcp-ai-wpoos-pro' )
-				);
-			}
-		}
 
 		// Build GraphQL variables.
 		$filter = array();
@@ -350,6 +328,7 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 
 		return array(
 			'success'       => true,
+			'mode'          => 'api',
 			'total_count'   => $total,
 			'count'         => count( $jobs ),
 			'jobs'          => $jobs,
@@ -357,5 +336,182 @@ class WP_MCP_AI_Tool_Search_Upwork_Jobs implements WP_MCP_AI_Tool_Interface, WP_
 			'has_next_page' => isset( $page_info['hasNextPage'] ) ? (bool) $page_info['hasNextPage'] : false,
 			'end_cursor'    => isset( $page_info['endCursor'] ) ? $page_info['endCursor'] : null,
 		);
+	}
+
+	/**
+	 * Check whether the arguments include a valid, enabled Upwork connection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return bool True when the Upwork API can be used.
+	 */
+	private function has_valid_connection( array $arguments ) {
+		if ( empty( $arguments['connection_id'] ) ) {
+			return false;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			return false;
+		}
+
+		$connection_id = sanitize_text_field( $arguments['connection_id'] );
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			return false;
+		}
+		if ( 'upwork' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+			return false;
+		}
+		if ( empty( $connection['enabled'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Execute a web-search-based fallback when the Upwork API is unavailable.
+	 *
+	 * Builds one or more targeted search queries from the provided filters,
+	 * runs them through the web_search tool, and returns the results in a
+	 * format consistent with the primary API response.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Fallback results or error.
+	 */
+	private function execute_fallback( array $arguments, array $context ) {
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			return new WP_Error(
+				'wp_mcp_ai_fallback_unavailable',
+				__( 'Upwork connection is not configured and the web search tool is not available. Please configure an Upwork connection in Remote Sites or enable the web_search tool.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Build a descriptive search query from the provided filters.
+		$search_query = $this->build_fallback_query( $arguments );
+
+		$limit          = isset( $arguments['limit'] ) ? min( 50, max( 1, absint( $arguments['limit'] ) ) ) : 10;
+		$max_results    = min( $limit, 10 ); // Web search typically caps at ~10 results.
+		$search_result  = $web_search_tool->execute(
+			array(
+				'query'       => $search_query,
+				'max_results' => $max_results,
+			),
+			$context
+		);
+
+		if ( is_wp_error( $search_result ) ) {
+			return $search_result;
+		}
+
+		// Normalise web search results into the standard job listing format.
+		$jobs    = array();
+		$results = isset( $search_result['results'] ) && is_array( $search_result['results'] )
+			? $search_result['results']
+			: array();
+
+		foreach ( $results as $idx => $result ) {
+			$title   = isset( $result['title'] ) ? $result['title'] : '';
+			$snippet = isset( $result['snippet'] ) ? $result['snippet'] : '';
+			$url     = isset( $result['url'] ) ? $result['url'] : '';
+
+			$jobs[] = array(
+				'id'            => 'web_' . ( $idx + 1 ),
+				'title'         => $title,
+				'description'   => $snippet,
+				'url'           => $url,
+				'created'       => '',
+				'published'     => '',
+				'job_type'      => '',
+				'engagement'    => '',
+				'duration'      => '',
+				'budget'        => null,
+				'hourly_budget' => null,
+				'skills'        => array(),
+				'category'      => '',
+				'subcategory'   => '',
+				'applicants'    => 0,
+				'tier'          => '',
+				'client'        => array(
+					'feedback'         => null,
+					'total_hires'      => null,
+					'jobs_posted'      => null,
+					'total_spent'      => null,
+					'payment_verified' => null,
+					'country'          => '',
+				),
+				'cursor'        => '',
+			);
+		}
+
+		return array(
+			'success'       => true,
+			'mode'          => 'fallback',
+			'source'        => 'web_search',
+			'total_count'   => count( $jobs ),
+			'count'         => count( $jobs ),
+			'jobs'          => $jobs,
+			'page_info'     => array(),
+			'has_next_page' => false,
+			'end_cursor'    => null,
+			'notice'        => __( 'Results obtained via web search because no Upwork connection is configured. Data is less structured than the Upwork API. Configure an Upwork connection in Remote Sites for full access to job details, client history, and pagination.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Build a natural-language search query from the tool arguments.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @return string Search query string.
+	 */
+	private function build_fallback_query( array $arguments ) {
+		$parts = array( 'site:upwork.com/freelance-jobs' );
+
+		if ( ! empty( $arguments['query'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['query'] );
+		}
+
+		if ( ! empty( $arguments['category2'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['category2'] );
+		}
+
+		if ( ! empty( $arguments['skills'] ) && is_array( $arguments['skills'] ) ) {
+			$parts[] = implode( ' ', array_map( 'sanitize_text_field', array_slice( $arguments['skills'], 0, 5 ) ) );
+		}
+
+		if ( ! empty( $arguments['job_type'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['job_type'] );
+		}
+
+		if ( ! empty( $arguments['experience_level'] ) ) {
+			$parts[] = sanitize_text_field( $arguments['experience_level'] ) . ' level';
+		}
+
+		if ( isset( $arguments['budget_min'] ) || isset( $arguments['budget_max'] ) ) {
+			$budget_str = '';
+			if ( isset( $arguments['budget_min'] ) ) {
+				$budget_str .= '$' . number_format( (float) $arguments['budget_min'], 0 );
+			}
+			if ( isset( $arguments['budget_min'] ) && isset( $arguments['budget_max'] ) ) {
+				$budget_str .= '-';
+			}
+			if ( isset( $arguments['budget_max'] ) ) {
+				$budget_str .= '$' . number_format( (float) $arguments['budget_max'], 0 );
+			}
+			if ( $budget_str ) {
+				$parts[] = $budget_str;
+			}
+		}
+
+		// If no meaningful filters were provided, add a sensible default.
+		if ( count( $parts ) <= 1 ) {
+			$parts[] = 'latest freelance jobs';
+		}
+
+		return implode( ' ', $parts );
 	}
 }

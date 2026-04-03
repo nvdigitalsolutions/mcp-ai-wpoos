@@ -1,7 +1,7 @@
 # NVIDIA NIM Provider Setup Guide
 
 **Last Updated:** April 2, 2026  
-**Plugin Version:** 1.1.5
+**Plugin Version:** 1.1.6
 
 ## Overview
 
