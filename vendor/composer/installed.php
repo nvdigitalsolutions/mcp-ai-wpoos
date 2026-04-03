@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/handle-openai-files-in-prompt',
+        'version' => 'dev-copilot/handle-openai-files-in-prompt',
+        'reference' => 'bb63a8658eb0dbc6deba15e9f873ad3ec0086166',
         'pretty_version' => 'dev-copilot/rebuild-toolkit-zips-config',
         'version' => 'dev-copilot/rebuild-toolkit-zips-config',
         'reference' => 'f7bf97dee7114103db99555b9a5ce11b61c697e9',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/handle-openai-files-in-prompt',
+            'version' => 'dev-copilot/handle-openai-files-in-prompt',
+            'reference' => 'bb63a8658eb0dbc6deba15e9f873ad3ec0086166',
             'pretty_version' => 'dev-copilot/rebuild-toolkit-zips-config',
             'version' => 'dev-copilot/rebuild-toolkit-zips-config',
             'reference' => 'f7bf97dee7114103db99555b9a5ce11b61c697e9',
