@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-eca-pro-toolkit',
-        'version' => 'dev-copilot/enhance-eca-pro-toolkit',
-        'reference' => '5bac7885accb81bbbe99ed2c7ff601f610a85444',
+        'pretty_version' => 'dev-copilot/handle-openai-files-in-prompt',
+        'version' => 'dev-copilot/handle-openai-files-in-prompt',
+        'reference' => 'bb63a8658eb0dbc6deba15e9f873ad3ec0086166',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-eca-pro-toolkit',
-            'version' => 'dev-copilot/enhance-eca-pro-toolkit',
-            'reference' => '5bac7885accb81bbbe99ed2c7ff601f610a85444',
+            'pretty_version' => 'dev-copilot/handle-openai-files-in-prompt',
+            'version' => 'dev-copilot/handle-openai-files-in-prompt',
+            'reference' => 'bb63a8658eb0dbc6deba15e9f873ad3ec0086166',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
