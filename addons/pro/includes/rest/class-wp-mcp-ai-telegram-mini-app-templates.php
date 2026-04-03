@@ -2747,7 +2747,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'<div id="mv-log-history-view">' .
 						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 							'<div class="tma-section-title" style="padding:0">&#128197; ' . esc_html__( 'Vitals History', 'mcp-ai-wpoos-pro' ) . '</div>' .
-							'<button class="tma-btn tma-btn-primary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogForm()">+ ' . esc_html__( 'New Entry', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="tma-btn tma-btn-primary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogForm()" aria-label="' . esc_attr__( 'Create new vitals entry', 'mcp-ai-wpoos-pro' ) . '">+ ' . esc_html__( 'New Entry', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
 						'<div id="mv-log-history-list"><div class="mv-empty">' . esc_html__( 'No vitals recorded yet.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 					'</div>' .
@@ -2756,7 +2756,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'<div id="mv-log-form-view" style="display:none">' .
 						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 							'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
-							'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogHistory()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogHistory()" aria-label="' . esc_attr__( 'Back to vitals history', 'mcp-ai-wpoos-pro' ) . '">&larr; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
 						'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
@@ -3832,7 +3832,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Clear fields */
 			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-hemoglobin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
 			/* Show saved message, then switch back to history view */
-			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";mvShowLogHistory();},2000);}' .
+			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";mvShowLogHistory();},3000);}' .
 			/* Server sync via log_vital_signs tool when a member is resolved */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'var sArgs={action:"log",member_id:MEMBER_ID,source:"tma",' .
