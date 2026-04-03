@@ -1,6 +1,12 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-build-script-pro-toolkits',
+        'version' => 'dev-copilot/update-build-script-pro-toolkits',
+        'reference' => '42d08034b857e27600ac41d6c331cbc6d1f72c8b',
+        'pretty_version' => 'dev-copilot/revert-default-provider-setting',
+        'version' => 'dev-copilot/revert-default-provider-setting',
+        'reference' => 'ce498a36543c021bf055b20983a431f55bc72c9f',
         'pretty_version' => 'dev-copilot/extend-openai-provider-chat-client',
         'version' => 'dev-copilot/extend-openai-provider-chat-client',
         'reference' => '7e8e49b4a86a959eff614373f3b53a6a7b0e9603',
@@ -53,6 +59,12 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-build-script-pro-toolkits',
+            'version' => 'dev-copilot/update-build-script-pro-toolkits',
+            'reference' => '42d08034b857e27600ac41d6c331cbc6d1f72c8b',
+            'pretty_version' => 'dev-copilot/revert-default-provider-setting',
+            'version' => 'dev-copilot/revert-default-provider-setting',
+            'reference' => 'ce498a36543c021bf055b20983a431f55bc72c9f',
             'pretty_version' => 'dev-copilot/extend-openai-provider-chat-client',
             'version' => 'dev-copilot/extend-openai-provider-chat-client',
             'reference' => '7e8e49b4a86a959eff614373f3b53a6a7b0e9603',
