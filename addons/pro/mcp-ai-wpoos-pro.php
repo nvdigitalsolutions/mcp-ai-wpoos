@@ -1738,6 +1738,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['enroll_student_eca']       = 'wordpress-core';
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
 			$pro_tools['sync_ecas_from_isams']     = 'wordpress-core';
+			$pro_tools['research_eca']             = 'wordpress-core';
 			// Attendance & participation tools.
 			$pro_tools['mark_eca_attendance']              = 'wordpress-core';
 			$pro_tools['get_eca_attendance_report']        = 'wordpress-core';
