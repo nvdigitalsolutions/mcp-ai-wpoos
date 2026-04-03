@@ -490,8 +490,13 @@ class WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS implements WP_MCP_AI_Tool_I
 			array(
 				'post_type'      => $post_type,
 				'post_status'    => 'any',
-				'meta_key'       => $meta_key,
-				'meta_value'     => $meta_value,
+				'meta_query'     => array(
+					array(
+						'key'     => $meta_key,
+						'value'   => $meta_value,
+						'compare' => '=',
+					),
+				),
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
 				'no_found_rows'  => true,

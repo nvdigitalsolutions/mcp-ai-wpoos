@@ -300,8 +300,12 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 				array(
 					'post_type'      => 'mcp_ai_eca',
 					'post_status'    => 'publish',
-					'meta_key'       => '_eca_isams_sync_id',
-					'meta_compare'   => 'EXISTS',
+					'meta_query'     => array(
+						array(
+							'key'     => '_eca_isams_sync_id',
+							'compare' => 'EXISTS',
+						),
+					),
 					'posts_per_page' => 200,
 					'fields'         => 'ids',
 					'no_found_rows'  => true,

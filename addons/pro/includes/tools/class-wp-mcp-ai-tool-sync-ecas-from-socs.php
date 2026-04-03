@@ -514,8 +514,13 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_eca',
 				'post_status'    => 'any',
-				'meta_key'       => '_eca_socs_id',
-				'meta_value'     => $socs_id,
+				'meta_query'     => array(
+					array(
+						'key'     => '_eca_socs_id',
+						'value'   => $socs_id,
+						'compare' => '=',
+					),
+				),
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
 				'no_found_rows'  => true,
@@ -536,8 +541,13 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 			array(
 				'post_type'      => 'mcp_ai_student',
 				'post_status'    => 'any',
-				'meta_key'       => '_student_socs_id',
-				'meta_value'     => $socs_student_id,
+				'meta_query'     => array(
+					array(
+						'key'     => '_student_socs_id',
+						'value'   => $socs_student_id,
+						'compare' => '=',
+					),
+				),
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
 				'no_found_rows'  => true,
