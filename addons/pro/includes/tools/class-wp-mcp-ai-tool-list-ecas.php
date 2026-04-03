@@ -36,7 +36,7 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists Extra-Curricular Activities with filtering options by type, day, year group, status, and availability. Returns ECA details including enrollment counts and capacity.', 'mcp-ai-wpoos-pro' );
+		return __( 'Lists Extra-Curricular Activities with comprehensive filtering by type, day, year group, teacher, venue, status, and availability. Supports sorting and returns enrollment counts with capacity utilization.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -60,6 +60,14 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'type'        => 'string',
 					'description' => __( 'Filter by year group eligibility', 'mcp-ai-wpoos-pro' ),
 				),
+				'teacher'          => array(
+					'type'        => 'string',
+					'description' => __( 'Filter by teacher name', 'mcp-ai-wpoos-pro' ),
+				),
+				'venue'            => array(
+					'type'        => 'string',
+					'description' => __( 'Filter by venue/location', 'mcp-ai-wpoos-pro' ),
+				),
 				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by ECA status', 'mcp-ai-wpoos-pro' ),
@@ -77,6 +85,18 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'type'        => 'string',
 					'description' => __( 'Search by ECA name or description', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
+				),
+				'sort_by'          => array(
+					'type'        => 'string',
+					'description' => __( 'Sort results by field', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'name', 'day', 'created_date', 'type' ),
+					'default'     => 'name',
+				),
+				'sort_order'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sort direction', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ASC', 'DESC' ),
+					'default'     => 'ASC',
 				),
 				'page'             => array(
 					'type'        => 'integer',
@@ -98,10 +118,6 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	}
 
 	/**
-	 * {@inheritdoc}
-	 */
-
-	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
 	 * @return array Tool definition with metadata.
@@ -118,6 +134,9 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'read-only' );
 	}
@@ -157,15 +176,35 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
 		$per_page = min( $per_page, 100 );
 
+		// Determine sort order.
+		$sort_by    = isset( $arguments['sort_by'] ) ? sanitize_key( $arguments['sort_by'] ) : 'name';
+		$sort_order = isset( $arguments['sort_order'] ) && 'DESC' === strtoupper( $arguments['sort_order'] ) ? 'DESC' : 'ASC';
+
+		$orderby = 'title';
+		if ( 'created_date' === $sort_by ) {
+			$orderby = 'date';
+		} elseif ( 'day' === $sort_by ) {
+			$orderby = 'meta_value';
+		} elseif ( 'type' === $sort_by ) {
+			$orderby = 'meta_value';
+		}
+
 		// Build query arguments.
 		$query_args = array(
 			'post_type'      => 'mcp_ai_eca',
 			'post_status'    => 'publish',
 			'posts_per_page' => $per_page,
 			'paged'          => $page,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'orderby'        => $orderby,
+			'order'          => $sort_order,
 		);
+
+		// Add meta key for meta-based sorting.
+		if ( 'day' === $sort_by ) {
+			$query_args['meta_key'] = '_eca_day'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		} elseif ( 'type' === $sort_by ) {
+			$query_args['meta_key'] = '_eca_type'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		}
 
 		// Add search if provided.
 		if ( isset( $arguments['search'] ) && '' !== $arguments['search'] ) {
@@ -191,6 +230,33 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
+		// Filter by year group via meta_query (LIKE for serialized array).
+		if ( isset( $arguments['year_group'] ) && '' !== $arguments['year_group'] ) {
+			$meta_query[] = array(
+				'key'     => '_eca_year_groups',
+				'value'   => sanitize_text_field( $arguments['year_group'] ),
+				'compare' => 'LIKE',
+			);
+		}
+
+		// Filter by teacher via meta_query (LIKE for serialized array).
+		if ( isset( $arguments['teacher'] ) && '' !== $arguments['teacher'] ) {
+			$meta_query[] = array(
+				'key'     => '_eca_teachers',
+				'value'   => sanitize_text_field( $arguments['teacher'] ),
+				'compare' => 'LIKE',
+			);
+		}
+
+		// Filter by venue.
+		if ( isset( $arguments['venue'] ) && '' !== $arguments['venue'] ) {
+			$meta_query[] = array(
+				'key'     => '_eca_venue',
+				'value'   => sanitize_text_field( $arguments['venue'] ),
+				'compare' => 'LIKE',
+			);
+		}
+
 		// Filter by status.
 		if ( isset( $arguments['status'] ) && '' !== $arguments['status'] ) {
 			$meta_query[] = array(
@@ -207,8 +273,17 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
+		// Filter by availability (not full).
+		if ( ! empty( $arguments['has_availability'] ) ) {
+			$meta_query[] = array(
+				'key'     => '_eca_status',
+				'value'   => 'full',
+				'compare' => '!=',
+			);
+		}
+
 		if ( count( $meta_query ) > 1 ) {
-			$query_args['meta_query'] = $meta_query;
+			$query_args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 		}
 
 		// Execute query.
@@ -216,24 +291,7 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 
 		$ecas = array();
 		foreach ( $query->posts as $post ) {
-			$eca_data = $this->get_eca_data( $post->ID );
-
-			// Filter by year group if specified.
-			if ( isset( $arguments['year_group'] ) && '' !== $arguments['year_group'] ) {
-				$year_groups = get_post_meta( $post->ID, '_eca_year_groups', true );
-				if ( ! is_array( $year_groups ) || ! in_array( $arguments['year_group'], $year_groups, true ) ) {
-					continue;
-				}
-			}
-
-			// Filter by availability if specified.
-			if ( isset( $arguments['has_availability'] ) && $arguments['has_availability'] ) {
-				if ( $eca_data['is_full'] ) {
-					continue;
-				}
-			}
-
-			$ecas[] = $eca_data;
+			$ecas[] = $this->get_eca_data( $post->ID );
 		}
 
 		return array(
@@ -260,33 +318,35 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$current_enrollment = absint( get_post_meta( $post_id, '_eca_current_enrollment', true ) );
 		$is_full            = $max_students > 0 && $current_enrollment >= $max_students;
 		$available_spots    = $max_students > 0 ? max( 0, $max_students - $current_enrollment ) : null;
+		$utilization        = $max_students > 0 ? round( ( $current_enrollment / $max_students ) * 100, 1 ) : null;
 
 		$is_paid = get_post_meta( $post_id, '_eca_is_paid', true ) === 'yes';
 		$cost    = $is_paid ? floatval( get_post_meta( $post_id, '_eca_cost', true ) ) : 0;
 
 		return array(
-			'eca_id'             => $post_id,
-			'name'               => $post->post_title,
-			'eca_code'           => get_post_meta( $post_id, '_eca_code', true ),
-			'description'        => $post->post_content,
-			'type'               => get_post_meta( $post_id, '_eca_type', true ),
-			'day'                => get_post_meta( $post_id, '_eca_day', true ),
-			'start_time'         => get_post_meta( $post_id, '_eca_start_time', true ),
-			'end_time'           => get_post_meta( $post_id, '_eca_end_time', true ),
-			'venue'              => get_post_meta( $post_id, '_eca_venue', true ),
-			'year_groups'        => get_post_meta( $post_id, '_eca_year_groups', true ),
-			'teachers'           => get_post_meta( $post_id, '_eca_teachers', true ),
-			'max_students'       => $max_students,
-			'current_enrollment' => $current_enrollment,
-			'available_spots'    => $available_spots,
-			'is_full'            => $is_full,
-			'is_paid'            => $is_paid,
-			'cost'               => $cost,
-			'cost_period'        => get_post_meta( $post_id, '_eca_cost_period', true ),
-			'requires_audition'  => get_post_meta( $post_id, '_eca_requires_audition', true ) === 'yes',
-			'booking_type'       => get_post_meta( $post_id, '_eca_booking_type', true ),
-			'status'             => get_post_meta( $post_id, '_eca_status', true ),
-			'url'                => get_permalink( $post_id ),
+			'eca_id'              => $post_id,
+			'name'                => $post->post_title,
+			'eca_code'            => get_post_meta( $post_id, '_eca_code', true ),
+			'description'         => $post->post_content,
+			'type'                => get_post_meta( $post_id, '_eca_type', true ),
+			'day'                 => get_post_meta( $post_id, '_eca_day', true ),
+			'start_time'          => get_post_meta( $post_id, '_eca_start_time', true ),
+			'end_time'            => get_post_meta( $post_id, '_eca_end_time', true ),
+			'venue'               => get_post_meta( $post_id, '_eca_venue', true ),
+			'year_groups'         => get_post_meta( $post_id, '_eca_year_groups', true ),
+			'teachers'            => get_post_meta( $post_id, '_eca_teachers', true ),
+			'max_students'        => $max_students,
+			'current_enrollment'  => $current_enrollment,
+			'available_spots'     => $available_spots,
+			'is_full'             => $is_full,
+			'capacity_utilization' => $utilization,
+			'is_paid'             => $is_paid,
+			'cost'                => $cost,
+			'cost_period'         => get_post_meta( $post_id, '_eca_cost_period', true ),
+			'requires_audition'   => get_post_meta( $post_id, '_eca_requires_audition', true ) === 'yes',
+			'booking_type'        => get_post_meta( $post_id, '_eca_booking_type', true ),
+			'status'              => get_post_meta( $post_id, '_eca_status', true ),
+			'url'                 => get_permalink( $post_id ),
 		);
 	}
 }
