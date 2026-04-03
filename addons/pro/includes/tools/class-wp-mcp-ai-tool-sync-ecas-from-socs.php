@@ -518,6 +518,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 				'meta_value'     => $socs_id,
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
+				'no_found_rows'  => true,
 			)
 		);
 
@@ -539,6 +540,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_SOCS implements WP_MCP_AI_Tool_Interface, WP
 				'meta_value'     => $socs_student_id,
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
+				'no_found_rows'  => true,
 			)
 		);
 

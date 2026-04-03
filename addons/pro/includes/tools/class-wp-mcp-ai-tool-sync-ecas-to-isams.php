@@ -304,6 +304,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS implements WP_MCP_AI_Tool_Interface, WP_
 					'meta_compare'   => 'EXISTS',
 					'posts_per_page' => 200,
 					'fields'         => 'ids',
+					'no_found_rows'  => true,
 				)
 			);
 
