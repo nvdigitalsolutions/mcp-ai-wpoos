@@ -31,7 +31,7 @@ $bubble_animation = isset( $attributes['bubbleAnimation'] ) ? sanitize_key( $att
 $bubble_tooltip   = isset( $attributes['bubbleTooltip'] ) ? trim( sanitize_text_field( $attributes['bubbleTooltip'] ) ) : '';
 
 // Panel settings.
-$panel_title = isset( $attributes['panelTitle'] ) ? sanitize_text_field( $attributes['panelTitle'] ) : __( 'Chat with AI', 'wp-mcp-ai' );
+$panel_title = isset( $attributes['panelTitle'] ) ? sanitize_text_field( $attributes['panelTitle'] ) : __( 'Chat with AI', 'mcp-ai-wpoos' );
 $panel_width = isset( $attributes['panelWidth'] ) ? absint( $attributes['panelWidth'] ) : 400;
 $panel_height = isset( $attributes['panelHeight'] ) ? absint( $attributes['panelHeight'] ) : 550;
 
@@ -160,7 +160,7 @@ echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.Esc
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $data_attrs built with esc_attr(), $css_vars_string built with sanitize_hex_color() and absint().
 echo '<div class="' . esc_attr( $classes ) . '" ' . $data_attrs . ' style="' . esc_attr( $css_vars_string ) . '">';
 
-echo '<button class="wp-mcp-ai-chat-bubble__trigger" aria-expanded="false" aria-label="' . esc_attr__( 'Open chat', 'wp-mcp-ai' ) . '">';
+echo '<button class="wp-mcp-ai-chat-bubble__trigger" aria-expanded="false" aria-label="' . esc_attr__( 'Open chat', 'mcp-ai-wpoos' ) . '">';
 echo '<span class="wp-mcp-ai-chat-bubble__trigger-icon">';
 echo '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 echo '</span>';
@@ -178,7 +178,7 @@ echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . es
 
 echo '<div class="wp-mcp-ai-chat-bubble__panel-header">';
 echo '<span class="wp-mcp-ai-chat-bubble__panel-title">' . esc_html( $panel_title ) . '</span>';
-echo '<button class="wp-mcp-ai-chat-bubble__panel-close" aria-label="' . esc_attr__( 'Close chat', 'wp-mcp-ai' ) . '">';
+echo '<button class="wp-mcp-ai-chat-bubble__panel-close" aria-label="' . esc_attr__( 'Close chat', 'mcp-ai-wpoos' ) . '">';
 echo '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 echo '</button>';
 echo '</div>';
