@@ -1058,6 +1058,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$attachment_id = $this->find_attachment_id_for_file_id( $file_id );
 
 			if ( ! $attachment_id ) {
+				// When the file_id looks like a remote OpenAI file but has no linked
+				// WordPress attachment, verify it exists via the OpenAI Files API so
+				// that externally uploaded files can still be referenced.
+				if ( 0 === strpos( $file_id, 'file-' ) && 'openai' === $this->provider ) {
+					return $this->resolve_remote_openai_file( $file_id );
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_unknown_file_reference',
 					__( 'The referenced file could not be found.', 'mcp-ai-wpoos' ),
@@ -1123,6 +1130,52 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				'metadata'      => $metadata,
 				'title'         => $title,
 				'caption'       => $caption,
+			);
+		}
+
+		/**
+		 * Verify a remote OpenAI file exists via the Files API and return its metadata.
+		 *
+		 * Called when a file_id has no linked WordPress attachment but looks like
+		 * a valid OpenAI identifier (starts with "file-"). The method contacts the
+		 * OpenAI Files API to confirm the file exists and returns a metadata array
+		 * compatible with the rest of the attachment pipeline.
+		 *
+		 * @param string $file_id OpenAI file identifier.
+		 * @return array|WP_Error Metadata array on success, WP_Error on failure.
+		 */
+		protected function resolve_remote_openai_file( $file_id ) {
+			if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
+			}
+
+			$client   = new WP_MCP_AI_OpenAI_Client();
+			$response = $client->retrieve_file( $file_id );
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_unknown_file_reference',
+					sprintf(
+						/* translators: %s: OpenAI file identifier */
+						__( 'The OpenAI file "%s" could not be verified. It may not exist or may belong to a different organisation.', 'mcp-ai-wpoos' ),
+						$file_id
+					),
+					array( 'status' => 400 )
+				);
+			}
+
+			$filename = isset( $response['filename'] ) ? sanitize_file_name( $response['filename'] ) : '';
+			$bytes    = isset( $response['bytes'] ) ? absint( $response['bytes'] ) : 0;
+
+			return array(
+				'attachment_id' => 0,
+				'metadata'      => array(
+					'file_id'  => $file_id,
+					'filename' => $filename,
+					'bytes'    => $bytes,
+				),
+				'title'         => '' !== $filename ? $filename : $file_id,
+				'caption'       => '',
 			);
 		}
 
