@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		);
 
 		// Include enrollments if requested.
-		$include_enrollments = ! empty( $arguments['include_enrollments'] );
+		$include_enrollments = isset( $arguments['include_enrollments'] ) && (bool) $arguments['include_enrollments'];
 		if ( $include_enrollments ) {
 			$eca_data['enrollments'] = $this->get_enrollments( $eca_id );
 		}
@@ -231,7 +231,7 @@ class WP_MCP_AI_Tool_Get_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			$student = get_post( $student_id );
 			$entry   = array(
 				'student_id'      => $student_id,
-				'student_name'    => $student ? $student->post_title : __( 'Unknown', 'mcp-ai-wpoos-pro' ),
+				'student_name'    => $student ? sanitize_text_field( $student->post_title ) : __( 'Unknown', 'mcp-ai-wpoos-pro' ),
 				'enrollment_type' => isset( $enrollment['enrollment_type'] ) ? $enrollment['enrollment_type'] : 'confirmed',
 				'enrollment_date' => isset( $enrollment['enrollment_date'] ) ? $enrollment['enrollment_date'] : '',
 				'payment_status'  => isset( $enrollment['payment_status'] ) ? $enrollment['payment_status'] : '',
