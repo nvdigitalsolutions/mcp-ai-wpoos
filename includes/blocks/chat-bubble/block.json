@@ -1,0 +1,103 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-wpoos/chat-bubble",
+	"version": "1.0.0",
+	"title": "AI Chat Bubble",
+	"category": "mcp-ai-wpoos",
+	"icon": "format-status",
+	"description": "Display a floating chat bubble that opens an AI chat panel powered by NV oOS.",
+	"keywords": [ "ai", "chat", "bubble", "floating", "widget" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"assistantId": {
+			"type": "number",
+			"default": 0
+		},
+		"allowGuests": {
+			"type": "boolean",
+			"default": false
+		},
+		"saveTranscript": {
+			"type": "boolean",
+			"default": true
+		},
+		"enableStreaming": {
+			"type": "boolean",
+			"default": true
+		},
+		"allowSensitiveTools": {
+			"type": "boolean",
+			"default": false
+		},
+		"template": {
+			"type": "string",
+			"default": "compact",
+			"enum": [ "classic", "speech-bubbles", "compact", "sidebar" ]
+		},
+		"bubblePosition": {
+			"type": "string",
+			"default": "bottom-right",
+			"enum": [ "bottom-right", "bottom-left", "top-right", "top-left" ]
+		},
+		"bubbleSize": {
+			"type": "string",
+			"default": "medium",
+			"enum": [ "small", "medium", "large" ]
+		},
+		"bubbleAnimation": {
+			"type": "string",
+			"default": "bounce",
+			"enum": [ "bounce", "pulse", "none" ]
+		},
+		"bubbleTooltip": {
+			"type": "string",
+			"default": ""
+		},
+		"panelTitle": {
+			"type": "string",
+			"default": "Chat with AI"
+		},
+		"panelWidth": {
+			"type": "number",
+			"default": 400
+		},
+		"panelHeight": {
+			"type": "number",
+			"default": 550
+		},
+		"autoOpenDelay": {
+			"type": "number",
+			"default": 0
+		},
+		"rememberState": {
+			"type": "boolean",
+			"default": false
+		},
+		"notificationBadge": {
+			"type": "boolean",
+			"default": false
+		},
+		"bubbleColor": {
+			"type": "string",
+			"default": "#4f46e5"
+		},
+		"bubbleTextColor": {
+			"type": "string",
+			"default": "#ffffff"
+		},
+		"headerBackground": {
+			"type": "string",
+			"default": ""
+		},
+		"headerTextColor": {
+			"type": "string",
+			"default": "#ffffff"
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"html": false
+	},
+	"render": "file:./render.php"
+}
