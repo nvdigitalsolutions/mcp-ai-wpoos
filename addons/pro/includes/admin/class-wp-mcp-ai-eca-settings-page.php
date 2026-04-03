@@ -46,7 +46,7 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		?>
 		<h2><?php esc_html_e( 'Extra-Curricular Activities (ECA) Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 
-		<p><?php esc_html_e( 'Comprehensive toolkit for managing school extra-curricular activities with 32 AI-powered tools covering activity management, student enrollment, attendance tracking, waitlist automation, scheduling, notifications, analytics, iSAMS/SOCS integration, term management, workflow rules, and CSV import/export.', 'mcp-ai-wpoos-pro' ); ?></p>
+		<p><?php esc_html_e( 'Comprehensive toolkit for managing school extra-curricular activities with 35 AI-powered tools covering activity management, student enrollment, attendance tracking, waitlist automation, scheduling, notifications, analytics, iSAMS/SOCS integration, term management, workflow rules, and CSV import/export.', 'mcp-ai-wpoos-pro' ); ?></p>
 
 		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 		<ul>
@@ -89,7 +89,7 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	/**
 	 * Get tools list.
 	 *
-	 * Returns all 32 ECA management tools organized by category.
+	 * Returns all 35 ECA management tools organized by category.
 	 *
 	 * @since 1.2.0
 	 * @return array Tools list with slugs and names.
@@ -139,7 +139,7 @@ class WP_MCP_AI_ECA_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			'sync_students_from_isams'          => __( 'Sync Students from iSAMS', 'mcp-ai-wpoos-pro' ),
 			// Term & Workflow (3 tools).
 			'manage_eca_term'                   => __( 'Manage ECA Term', 'mcp-ai-wpoos-pro' ),
-			'create_eca_workflow_rule'           => __( 'Create ECA Workflow Rule', 'mcp-ai-wpoos-pro' ),
+			'create_eca_workflow_rule'          => __( 'Create ECA Workflow Rule', 'mcp-ai-wpoos-pro' ),
 			'import_ecas_csv'                   => __( 'Import ECAs from CSV', 'mcp-ai-wpoos-pro' ),
 		);
 	}

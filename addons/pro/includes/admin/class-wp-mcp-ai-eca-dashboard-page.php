@@ -280,6 +280,7 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 					'total_ecas'            => $total_ecas,
 					'total_students'        => $total_students,
 					'total_enrollments'     => $total_enrollments,
+					'total_capacity'        => $total_capacity,
 					'students_with_eca'     => $students_with_eca,
 					'participation_rate'    => $participation_rate,
 					'attendance_rate'       => $attendance_rate,
@@ -625,7 +626,8 @@ function renderDashboard(data){
 
 	$('#eca-kpi-capacity-rate').text(k.capacity_rate > 0 ? k.capacity_rate+'%' : '—');
 	var cCls = k.capacity_rate >= 90 ? 'status-low' : k.capacity_rate >= 60 ? 'status-ok' : 'status-good';
-	$('#eca-kpi-capacity-detail').text(k.total_enrollments+' / '+(k.total_enrollments + k.total_waitlisted)+' spots used').removeClass().addClass('eca-dash-kpi-sub '+cCls);
+	var capLabel = k.total_capacity > 0 ? k.total_enrollments+' / '+k.total_capacity+' spots used' : k.total_enrollments+' enrolled (no capacity limits set)';
+	$('#eca-kpi-capacity-detail').text(capLabel).removeClass().addClass('eca-dash-kpi-sub '+cCls);
 
 	$('#eca-kpi-waitlisted').text(k.total_waitlisted);
 	$('#eca-kpi-waitlist-detail').text(k.total_waitlisted > 0 ? 'Across all activities' : 'No waitlists');
