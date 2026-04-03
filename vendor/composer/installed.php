@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-chat-bubble-widget',
+        'version' => 'dev-copilot/add-chat-bubble-widget',
+        'reference' => '6f8c6d1d45622d63a714c498b7f32ac7c5043115',
         'pretty_version' => 'dev-copilot/update-ai-model-pricing',
         'version' => 'dev-copilot/update-ai-model-pricing',
         'reference' => '0ec5c43a7c05416da04fb44a3ca71352318d4f45',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-chat-bubble-widget',
+            'version' => 'dev-copilot/add-chat-bubble-widget',
+            'reference' => '6f8c6d1d45622d63a714c498b7f32ac7c5043115',
             'pretty_version' => 'dev-copilot/update-ai-model-pricing',
             'version' => 'dev-copilot/update-ai-model-pricing',
             'reference' => '0ec5c43a7c05416da04fb44a3ca71352318d4f45',
