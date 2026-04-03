@@ -52,7 +52,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'endpoint'      => array(
 					'type'        => 'string',
-					'description' => __( 'API endpoint to query. Available: pupils, employees, departments, houses, terms, subjects, year_groups', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'API endpoint to query. Available: pupils, employees, departments, houses, terms, subjects, year_groups, admission_applicants, activities, co_curricular', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'pupils',
 						'employees',
@@ -62,6 +62,8 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 						'subjects',
 						'year_groups',
 						'admission_applicants',
+						'activities',
+						'co_curricular',
 					),
 				),
 				'id'            => array(
@@ -335,6 +337,8 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'subjects'             => 'api/teaching/subjects',
 			'year_groups'          => 'api/school/yeargroups',
 			'admission_applicants' => 'api/admissions/applicants',
+			'activities'           => 'api/cocurricular/activities',
+			'co_curricular'        => 'api/cocurricular/activities',
 		);
 
 		if ( ! isset( $endpoints[ $endpoint ] ) ) {

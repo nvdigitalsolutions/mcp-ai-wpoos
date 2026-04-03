@@ -65,6 +65,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_office365_auto_reply', array( $this, 'ajax_test_office365_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_live', array( $this, 'ajax_test_icloud_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_auto_reply', array( $this, 'ajax_test_icloud_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_isams_sync', array( $this, 'ajax_isams_sync' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_isams_sync_status', array( $this, 'ajax_isams_sync_status' ) );
 	}
 
 	/**
@@ -5445,6 +5447,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<div id="wp_mcp_ai_test_result" style="display: none; margin-top: 10px;"></div>
 			<?php endif; ?>
 		</form>
+
+		<?php
+		// Render iSAMS Data Sync section for saved iSAMS connections.
+		if ( $is_edit && $editing && isset( $connection['connection_type'] ) && 'isams' === $connection['connection_type'] ) {
+			$this->render_isams_sync_section( $connection );
+		}
+		?>
 
 		<script type="text/javascript">
 		var wpMcpAiAjax = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
