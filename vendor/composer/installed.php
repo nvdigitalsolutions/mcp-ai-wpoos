@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/rebuild-toolkit-zips-config',
+        'version' => 'dev-copilot/rebuild-toolkit-zips-config',
+        'reference' => 'f7bf97dee7114103db99555b9a5ce11b61c697e9',
         'pretty_version' => 'dev-copilot/enhance-eca-pro-toolkit',
         'version' => 'dev-copilot/enhance-eca-pro-toolkit',
         'reference' => '5bac7885accb81bbbe99ed2c7ff601f610a85444',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/rebuild-toolkit-zips-config',
+            'version' => 'dev-copilot/rebuild-toolkit-zips-config',
+            'reference' => 'f7bf97dee7114103db99555b9a5ce11b61c697e9',
             'pretty_version' => 'dev-copilot/enhance-eca-pro-toolkit',
             'version' => 'dev-copilot/enhance-eca-pro-toolkit',
             'reference' => '5bac7885accb81bbbe99ed2c7ff601f610a85444',
