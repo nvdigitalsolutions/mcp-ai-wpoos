@@ -25,6 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_BATCH_EMBED_CONTENT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
 		const API_CORPORA_ENDPOINT    = 'https://generativelanguage.googleapis.com/v1beta/corpora';
 		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
+		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
 		/**
 		 * Retrieve the configured API key.
@@ -35,6 +36,80 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		}
+
+		/**
+		 * Retrieve the configured base URL for the Gemini API.
+		 *
+		 * When a custom base URL is configured (e.g. for Vertex AI Enterprise
+		 * or a Gemini-compatible proxy), all requests are routed through it.
+		 *
+		 * @return string Base URL without trailing slash.
+		 */
+		public function get_custom_base_url() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$base_url = isset( $settings['gemini_base_url'] ) ? trim( $settings['gemini_base_url'] ) : '';
+
+			if ( '' === $base_url ) {
+				$base_url = self::DEFAULT_BASE_URL;
+			}
+
+			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Resolve a full endpoint URL respecting any custom base URL.
+		 *
+		 * Replaces the default Gemini API base with the configured base URL
+		 * so that all requests honour custom proxy / Vertex AI endpoints.
+		 *
+		 * @param string $default_url The default Gemini endpoint URL.
+		 * @return string Resolved endpoint URL.
+		 */
+		public function resolve_endpoint( $default_url ) {
+			$base_url = $this->get_custom_base_url();
+
+			if ( self::DEFAULT_BASE_URL === $base_url ) {
+				return $default_url;
+			}
+
+			// Replace the default base with the custom base.
+			$path = str_replace( self::DEFAULT_BASE_URL, '', $default_url );
+
+			return $base_url . $path;
+		}
+
+		/**
+		 * Build the standard HTTP request headers for Gemini API calls.
+		 *
+		 * Includes x-goog-api-key and Content-Type headers.
+		 * Follows Google's API authentication standards including support
+		 * for Gemini Enterprise and Vertex AI deployment keys.
+		 *
+		 * @param string $api_key      API key for the x-goog-api-key header.
+		 * @param string $content_type Content-Type header value. Default 'application/json'.
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Content-Type'   => $content_type,
+				'x-goog-api-key' => $api_key,
+			);
+
+			/**
+			 * Filter the Gemini request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * Gemini API requests (e.g. adding custom tracking or proxy headers).
+			 *
+			 * @since 2.6.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 */
+			$headers = apply_filters( 'wp_mcp_ai_gemini_request_headers', $headers, $api_key );
+
+			return $headers;
 		}
 
 		/**
@@ -81,14 +156,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -253,14 +325,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
 			);
@@ -503,14 +572,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
 			);
@@ -712,7 +778,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Array of models or WP_Error on failure.
 		 */
 		private function fetch_models_from_api( $api_key, $options ) {
-			$url = self::API_LIST_MODELS;
+			$url = $this->resolve_endpoint( self::API_LIST_MODELS );
 
 			$query_args = array();
 
@@ -729,9 +795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers' => array(
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
 
@@ -892,14 +956,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -1118,14 +1179,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_embedding_payload', $payload, $options, $text );
 
-			$endpoint = sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -1366,14 +1424,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_payload', $payload, $options, $texts );
 
-			$endpoint = sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -1489,14 +1544,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = add_query_arg( 'alt', 'sse', $endpoint );
 
 			$request_args = array(
-				'headers'  => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers'  => $this->build_request_headers( $api_key ),
 				'body'     => wp_json_encode( $payload ),
 				'timeout'  => $this->resolve_timeout( $options ),
 				'stream'   => true,
@@ -1787,14 +1839,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_geospatial_payload', $payload, $options, $query );
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -4543,10 +4592,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$args = array(
 				'method'  => $method,
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'X-Goog-Api-Key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => max( 5, $timeout ),
 			);
 
@@ -4588,7 +4634,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'gemini_corpus_create', 'Creating Gemini corpus.', array( 'display_name' => $display_name ) );
 
-			$response = wp_remote_post( self::API_CORPORA_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::API_CORPORA_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_event( 'gemini_corpus_create_error', 'Gemini corpus creation failed.', array( 'error' => $response->get_error_message() ) );
@@ -4635,7 +4681,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
 			}
 
-			$endpoint = self::API_CORPORA_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( self::API_CORPORA_ENDPOINT );
 			if ( ! empty( $query_args ) ) {
 				$endpoint = add_query_arg( $query_args, $endpoint );
 			}
@@ -4691,7 +4737,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name;
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name );
 			$response = wp_remote_get( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {
@@ -4742,7 +4788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name;
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name );
 			if ( ! empty( $options['force'] ) ) {
 				$endpoint = add_query_arg( 'force', 'true', $endpoint );
 			}
@@ -4832,7 +4878,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name . ':query';
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name . ':query' );
 			$response = wp_remote_post( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {
