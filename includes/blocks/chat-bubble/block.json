@@ -8,7 +8,7 @@
 	"icon": "format-status",
 	"description": "Display a floating chat bubble that opens an AI chat panel powered by NV oOS.",
 	"keywords": [ "ai", "chat", "bubble", "floating", "widget" ],
-	"textdomain": "wp-mcp-ai",
+	"textdomain": "mcp-ai-wpoos",
 	"attributes": {
 		"assistantId": {
 			"type": "number",

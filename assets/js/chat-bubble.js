@@ -221,7 +221,7 @@
 			if ( ! self.isOpen ) {
 				self.open();
 			}
-		}, this.autoOpenDelay );
+		}, this.autoOpenDelay * 1000 );
 	};
 
 	/**

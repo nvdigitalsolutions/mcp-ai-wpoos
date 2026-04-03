@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-chat-bubble-widget',
         'version' => 'dev-copilot/add-chat-bubble-widget',
-        'reference' => '89fce34ff5b175a3f73249c3b98b33ad9f73aa5c',
+        'reference' => '6f8c6d1d45622d63a714c498b7f32ac7c5043115',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-chat-bubble-widget',
             'version' => 'dev-copilot/add-chat-bubble-widget',
-            'reference' => '89fce34ff5b175a3f73249c3b98b33ad9f73aa5c',
+            'reference' => '6f8c6d1d45622d63a714c498b7f32ac7c5043115',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

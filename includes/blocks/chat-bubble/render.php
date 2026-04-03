@@ -35,7 +35,7 @@ $panel_title  = isset( $attributes['panelTitle'] ) ? sanitize_text_field( $attri
 $panel_width  = isset( $attributes['panelWidth'] ) ? absint( $attributes['panelWidth'] ) : 400;
 $panel_height = isset( $attributes['panelHeight'] ) ? absint( $attributes['panelHeight'] ) : 550;
 
-// Behaviour.
+// Behavior.
 $auto_open_delay    = isset( $attributes['autoOpenDelay'] ) ? absint( $attributes['autoOpenDelay'] ) : 0;
 $remember_state     = ! empty( $attributes['rememberState'] );
 $notification_badge = ! empty( $attributes['notificationBadge'] );
