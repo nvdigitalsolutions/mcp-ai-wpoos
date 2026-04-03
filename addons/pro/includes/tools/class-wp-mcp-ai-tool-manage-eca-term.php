@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Term implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$terms = array();
 		}
 
-		$term_id = 'term_' . uniqid();
+		$term_id = 'term_' . uniqid( '', true );
 
 		$new_term = array(
 			'id'            => $term_id,
