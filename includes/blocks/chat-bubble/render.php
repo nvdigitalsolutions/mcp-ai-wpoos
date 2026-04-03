@@ -31,8 +31,8 @@ $bubble_animation = isset( $attributes['bubbleAnimation'] ) ? sanitize_key( $att
 $bubble_tooltip   = isset( $attributes['bubbleTooltip'] ) ? trim( sanitize_text_field( $attributes['bubbleTooltip'] ) ) : '';
 
 // Panel settings.
-$panel_title = isset( $attributes['panelTitle'] ) ? sanitize_text_field( $attributes['panelTitle'] ) : __( 'Chat with AI', 'mcp-ai-wpoos' );
-$panel_width = isset( $attributes['panelWidth'] ) ? absint( $attributes['panelWidth'] ) : 400;
+$panel_title  = isset( $attributes['panelTitle'] ) ? sanitize_text_field( $attributes['panelTitle'] ) : __( 'Chat with AI', 'mcp-ai-wpoos' );
+$panel_width  = isset( $attributes['panelWidth'] ) ? absint( $attributes['panelWidth'] ) : 400;
 $panel_height = isset( $attributes['panelHeight'] ) ? absint( $attributes['panelHeight'] ) : 550;
 
 // Behaviour.
@@ -41,10 +41,10 @@ $remember_state     = ! empty( $attributes['rememberState'] );
 $notification_badge = ! empty( $attributes['notificationBadge'] );
 
 // Colors.
-$bubble_color       = isset( $attributes['bubbleColor'] ) ? sanitize_hex_color( $attributes['bubbleColor'] ) : '#4f46e5';
-$bubble_text_color  = isset( $attributes['bubbleTextColor'] ) ? sanitize_hex_color( $attributes['bubbleTextColor'] ) : '#ffffff';
-$header_background  = isset( $attributes['headerBackground'] ) ? sanitize_hex_color( $attributes['headerBackground'] ) : '';
-$header_text_color  = isset( $attributes['headerTextColor'] ) ? sanitize_hex_color( $attributes['headerTextColor'] ) : '#ffffff';
+$bubble_color      = isset( $attributes['bubbleColor'] ) ? sanitize_hex_color( $attributes['bubbleColor'] ) : '#4f46e5';
+$bubble_text_color = isset( $attributes['bubbleTextColor'] ) ? sanitize_hex_color( $attributes['bubbleTextColor'] ) : '#ffffff';
+$header_background = isset( $attributes['headerBackground'] ) ? sanitize_hex_color( $attributes['headerBackground'] ) : '';
+$header_text_color = isset( $attributes['headerTextColor'] ) ? sanitize_hex_color( $attributes['headerTextColor'] ) : '#ffffff';
 
 /*
  * ── Enqueue bubble assets ────────────────────────────────────────────
@@ -92,27 +92,27 @@ $shortcode = '[mcp_ai_chat ' . implode( ' ', $shortcode_atts ) . ']';
 $css_vars = array();
 
 if ( '#4f46e5' !== $bubble_color && '' !== $bubble_color ) {
-	$css_vars[] = '--wp-mcp-ai-bubble-color:' . $bubble_color;
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-color:' . $bubble_color;
 }
 
 if ( '#ffffff' !== $bubble_text_color && '' !== $bubble_text_color ) {
-	$css_vars[] = '--wp-mcp-ai-bubble-text-color:' . $bubble_text_color;
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-text-color:' . $bubble_text_color;
 }
 
 if ( '' !== $header_background ) {
-	$css_vars[] = '--wp-mcp-ai-header-background:' . $header_background;
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-header-background:' . $header_background;
 }
 
 if ( '#ffffff' !== $header_text_color && '' !== $header_text_color ) {
-	$css_vars[] = '--wp-mcp-ai-header-text-color:' . $header_text_color;
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-header-text-color:' . $header_text_color;
 }
 
 if ( 400 !== $panel_width ) {
-	$css_vars[] = '--wp-mcp-ai-panel-width:' . $panel_width . 'px';
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-panel-width:' . $panel_width . 'px';
 }
 
 if ( 550 !== $panel_height ) {
-	$css_vars[] = '--wp-mcp-ai-panel-height:' . $panel_height . 'px';
+	$css_vars[] = '--wp-mcp-ai-chat-bubble-panel-height:' . $panel_height . 'px';
 }
 
 $css_vars_string = implode( ';', $css_vars );

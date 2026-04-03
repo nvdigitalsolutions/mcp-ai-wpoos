@@ -569,13 +569,13 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		$vars = array();
 
 		$color_map = array(
-			'bubble_color'      => '--wp-mcp-ai-bubble-color',
-			'bubble_text_color' => '--wp-mcp-ai-bubble-text-color',
-			'bubble_hover_color' => '--wp-mcp-ai-bubble-hover-color',
-			'badge_color'       => '--wp-mcp-ai-badge-color',
-			'badge_text_color'  => '--wp-mcp-ai-badge-text-color',
-			'panel_background'  => '--wp-mcp-ai-panel-background',
-			'header_text_color' => '--wp-mcp-ai-header-text-color',
+			'bubble_color'       => '--wp-mcp-ai-chat-bubble-color',
+			'bubble_text_color'  => '--wp-mcp-ai-chat-bubble-text-color',
+			'bubble_hover_color' => '--wp-mcp-ai-chat-bubble-hover-color',
+			'badge_color'        => '--wp-mcp-ai-chat-bubble-badge-color',
+			'badge_text_color'   => '--wp-mcp-ai-chat-bubble-badge-text-color',
+			'panel_background'   => '--wp-mcp-ai-chat-bubble-panel-background',
+			'header_text_color'  => '--wp-mcp-ai-chat-bubble-header-text-color',
 		);
 
 		foreach ( $color_map as $setting_key => $css_var ) {
@@ -587,18 +587,18 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		$header_bg = ! empty( $settings['header_background'] )
 			? $settings['header_background']
 			: ( ! empty( $settings['bubble_color'] ) ? $settings['bubble_color'] : '#4f46e5' );
-		$vars[]    = '--wp-mcp-ai-header-background:' . sanitize_hex_color( $header_bg );
+		$vars[]    = '--wp-mcp-ai-chat-bubble-header-background:' . sanitize_hex_color( $header_bg );
 
 		if ( ! empty( $settings['panel_border_radius']['size'] ) ) {
-			$vars[] = '--wp-mcp-ai-panel-border-radius:' . absint( $settings['panel_border_radius']['size'] ) . 'px';
+			$vars[] = '--wp-mcp-ai-chat-bubble-panel-border-radius:' . absint( $settings['panel_border_radius']['size'] ) . 'px';
 		}
 
 		if ( ! empty( $settings['panel_width']['size'] ) ) {
-			$vars[] = '--wp-mcp-ai-panel-width:' . absint( $settings['panel_width']['size'] ) . 'px';
+			$vars[] = '--wp-mcp-ai-chat-bubble-panel-width:' . absint( $settings['panel_width']['size'] ) . 'px';
 		}
 
 		if ( ! empty( $settings['panel_height']['size'] ) ) {
-			$vars[] = '--wp-mcp-ai-panel-height:' . absint( $settings['panel_height']['size'] ) . 'px';
+			$vars[] = '--wp-mcp-ai-chat-bubble-panel-height:' . absint( $settings['panel_height']['size'] ) . 'px';
 		}
 
 		return implode( ';', $vars );
