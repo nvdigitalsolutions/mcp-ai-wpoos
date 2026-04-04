@@ -5,6 +5,9 @@
  * @package WP_MCP_AI
  * @since 1.1.0
  * @phase Phase 2.9
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -207,6 +210,14 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Apply changes if requested and file path provided.
 		if ( $apply_changes && ! empty( $file_path ) ) {
+			// Enforce that the user can manage the site before writing files.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'You do not have permission to apply file changes.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
 			$backup_path = $file_path . '.backup-' . time();
 
 			// Create backup.
@@ -217,7 +228,8 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 
 			if ( false !== $bytes_written ) {
 				$result['changes_applied'] = true;
-				$result['backup_path']     = $backup_path;
+				// Return only the sanitized filename, not the full server path, to avoid leaking filesystem layout.
+				$result['backup_filename'] = sanitize_file_name( basename( $backup_path ) );
 				$result['message']         = __( 'Code refactored and changes applied successfully.', 'mcp-ai-wpoos-pro' );
 			} else {
 				$result['warning'] = __( 'Failed to write changes to file.', 'mcp-ai-wpoos-pro' );

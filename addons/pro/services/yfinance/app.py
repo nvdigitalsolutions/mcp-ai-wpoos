@@ -24,9 +24,14 @@ import os
 import json
 import logging
 import time
+import hashlib
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
+import hashlib
+
+import re
+import hashlib
 
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
@@ -109,9 +114,57 @@ class SimpleCache:
         self.ttl = timedelta(minutes=ttl_minutes)
     
     def _get_cache_path(self, key: str) -> str:
+        """
+        Return a filesystem-safe cache file path for the given logical key.
+
+        The key may contain user-controlled data, so we derive the filename
+        from a SHA-256 hash of the key instead of using it directly. This
+        prevents path traversal and other unsafe characters from influencing
+        the cache path while preserving a stable mapping from key to file.
+        """
+        safe_key = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        return os.path.join(self.cache_dir, f"{safe_key}.json")
         """Generate cache file path."""
         safe_key = key.replace('/', '_').replace('\\', '_')
+        """Generate cache file path from an arbitrary cache key.
+
+        The key may be derived from user input, so we must ensure that it
+        cannot influence the directory structure. We therefore map it to a
+        flat, filesystem-safe filename using a conservative allow-list.
+        """
+        # Ensure we are working with a string representation
+        key_str = str(key)
+        # Replace path separators with underscore
+        key_str = key_str.replace('/', '_').replace('\\', '_')
+        # Allow only alphanumeric characters, dot, dash and underscore; replace others
+        safe_key = re.sub(r'[^A-Za-z0-9_.-]', '_', key_str)
         return os.path.join(self.cache_dir, f"{safe_key}.json")
+        """Generate a safe cache file path under the cache directory."""
+        # Allow only a restricted set of characters in the filename
+        safe_key = re.sub(r'[^A-Za-z0-9_.-]', '_', key)
+        # Avoid empty or extremely long filenames by falling back to a hash
+        if not safe_key or len(safe_key) > 150:
+            digest = hashlib.sha256(key.encode('utf-8', errors='ignore')).hexdigest()
+            safe_key = digest[:32]
+        filename = f"{safe_key}.json"
+        # Build absolute path and ensure it stays within the cache directory
+        cache_root = os.path.abspath(self.cache_dir)
+        full_path = os.path.abspath(os.path.join(cache_root, filename))
+        if os.path.commonpath([cache_root, full_path]) != cache_root:
+            raise ValueError("Computed cache path escapes cache directory")
+        # Allow only a restricted set of characters in the cache file name
+        safe_key = ''.join(
+            c if c.isalnum() or c in ('-', '_', '.') else '_'
+            for c in str(key)
+        )
+        filename = f"{safe_key}.json"
+        raw_path = os.path.join(self.cache_dir, filename)
+        # Normalize and ensure the path stays within the cache directory
+        cache_dir_abs = os.path.abspath(self.cache_dir)
+        full_path = os.path.abspath(raw_path)
+        if os.path.commonpath([cache_dir_abs, full_path]) != cache_dir_abs:
+            raise ValueError("Resolved cache path escapes cache directory")
+        return full_path
     
     def get(self, key: str) -> Optional[Any]:
         """Get cached value if not expired."""
@@ -266,7 +319,7 @@ def get_ticker_info(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch ticker information. Please try again later.'}), 500
 
 
 @app.route('/price/<symbol>', methods=['GET'])
@@ -328,7 +381,7 @@ def get_current_price(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching price for {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch price data. Please try again later.'}), 500
 
 
 @app.route('/prices', methods=['POST'])
@@ -408,7 +461,7 @@ def get_multiple_prices():
         
     except Exception as e:
         logger.error(f"Error fetching batch prices: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch batch price data. Please try again later.'}), 500
 
 
 @app.route('/history/<symbol>', methods=['GET'])
@@ -469,7 +522,7 @@ def get_price_history(symbol: str):
         
     except Exception as e:
         logger.error(f"Error fetching history for {symbol}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to fetch price history. Please try again later.'}), 500
 
 
 @app.route('/search', methods=['GET'])
@@ -541,7 +594,7 @@ def clear_cache():
         })
     except Exception as e:
         logger.error(f"Error clearing cache: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to clear cache. Please try again later.'}), 500
 
 
 @app.errorhandler(404)

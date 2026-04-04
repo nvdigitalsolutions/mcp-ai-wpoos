@@ -3,6 +3,9 @@
  * Gemini API client wrapper.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,6 +25,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_BATCH_EMBED_CONTENT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
 		const API_CORPORA_ENDPOINT    = 'https://generativelanguage.googleapis.com/v1beta/corpora';
 		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
+		const DEFAULT_BASE_URL        = 'https://generativelanguage.googleapis.com/v1beta';
 
 		/**
 		 * Retrieve the configured API key.
@@ -32,6 +36,80 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		}
+
+		/**
+		 * Retrieve the configured base URL for the Gemini API.
+		 *
+		 * When a custom base URL is configured (e.g. for Vertex AI Enterprise
+		 * or a Gemini-compatible proxy), all requests are routed through it.
+		 *
+		 * @return string Base URL without trailing slash.
+		 */
+		public function get_custom_base_url() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$base_url = isset( $settings['gemini_base_url'] ) ? trim( $settings['gemini_base_url'] ) : '';
+
+			if ( '' === $base_url ) {
+				$base_url = self::DEFAULT_BASE_URL;
+			}
+
+			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Resolve a full endpoint URL respecting any custom base URL.
+		 *
+		 * Replaces the default Gemini API base with the configured base URL
+		 * so that all requests honour custom proxy / Vertex AI endpoints.
+		 *
+		 * @param string $default_url The default Gemini endpoint URL.
+		 * @return string Resolved endpoint URL.
+		 */
+		public function resolve_endpoint( $default_url ) {
+			$base_url = $this->get_custom_base_url();
+
+			if ( self::DEFAULT_BASE_URL === $base_url ) {
+				return $default_url;
+			}
+
+			// Replace the default base with the custom base.
+			$path = str_replace( self::DEFAULT_BASE_URL, '', $default_url );
+
+			return $base_url . $path;
+		}
+
+		/**
+		 * Build the standard HTTP request headers for Gemini API calls.
+		 *
+		 * Includes x-goog-api-key and Content-Type headers.
+		 * Follows Google's API authentication standards including support
+		 * for Gemini Enterprise and Vertex AI deployment keys.
+		 *
+		 * @param string $api_key      API key for the x-goog-api-key header.
+		 * @param string $content_type Content-Type header value. Default 'application/json'.
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Content-Type'   => $content_type,
+				'x-goog-api-key' => $api_key,
+			);
+
+			/**
+			 * Filter the Gemini request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * Gemini API requests (e.g. adding custom tracking or proxy headers).
+			 *
+			 * @since 2.6.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 */
+			$headers = apply_filters( 'wp_mcp_ai_gemini_request_headers', $headers, $api_key );
+
+			return $headers;
 		}
 
 		/**
@@ -78,14 +156,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -250,14 +325,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
 			);
@@ -500,14 +572,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'mcp-ai-wpoos' ) );
 			}
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
 			);
@@ -709,7 +778,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Array of models or WP_Error on failure.
 		 */
 		private function fetch_models_from_api( $api_key, $options ) {
-			$url = self::API_LIST_MODELS;
+			$url = $this->resolve_endpoint( self::API_LIST_MODELS );
 
 			$query_args = array();
 
@@ -726,9 +795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers' => array(
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
 
@@ -889,14 +956,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -957,7 +1021,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * Create text embeddings for RAG/semantic search.
 		 *
 		 * @param string $text    Text content to embed.
-		 * @param array  $options Additional options (model, task_type, title, timeout, bypass_cache).
+		 * @param array  $options Additional options:
+		 *                        - model (string): Embedding model. Defaults to 'gemini-embedding-001'.
+		 *                        - task_type (string): Optimisation hint — RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT,
+		 *                          SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING,
+		 *                          FACT_VERIFICATION, CODE_RETRIEVAL_QUERY.
+		 *                        - title (string): Optional document title (RETRIEVAL_DOCUMENT only).
+		 *                        - output_dimensionality (int): Reduce embedding dimensions (e.g. 768, 1536, 3072).
+		 *                        - timeout (int): HTTP request timeout in seconds.
+		 *                        - bypass_cache (bool): Skip transient cache for this request.
 		 * @return array|WP_Error Embedding data or WP_Error on failure.
 		 */
 		public function create_embedding( $text, array $options = array() ) {
@@ -1007,15 +1079,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			if ( $use_cache && ! $bypass_cache ) {
 				// Build cache key from text and relevant options.
-				$model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
-				$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
-				$title     = isset( $options['title'] ) && '' !== $options['title'] ? sanitize_text_field( $options['title'] ) : '';
+				$model       = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+				$task_type   = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$title       = isset( $options['title'] ) && '' !== $options['title'] ? sanitize_text_field( $options['title'] ) : '';
+				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'text'      => $text,
-					'model'     => $model,
-					'task_type' => $task_type,
-					'title'     => $title,
+					'text'                  => $text,
+					'model'                 => $model,
+					'task_type'             => $task_type,
+					'title'                 => $title,
+					'output_dimensionality' => $output_dims,
 				);
 
 				$cache_key = 'gemini_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -1052,8 +1126,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Embedding data or WP_Error on failure.
 		 */
 		private function fetch_embedding_from_api( $api_key, $text, $options ) {
-			// Default to text-embedding-004 model for embeddings.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+			// Default to gemini-embedding-001 model (GA, replaces deprecated text-embedding-004).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
 
 			$payload = array(
 				'content' => array(
@@ -1065,16 +1139,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				),
 			);
 
-			// Optional task type for optimized embeddings.
+			// Optional task type for optimised embeddings.
 			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
 				$task_type = sanitize_text_field( $options['task_type'] );
-				// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
+				// Valid task types per Gemini API docs.
 				$allowed_task_types = array(
 					'RETRIEVAL_QUERY',
 					'RETRIEVAL_DOCUMENT',
 					'SEMANTIC_SIMILARITY',
 					'CLASSIFICATION',
 					'CLUSTERING',
+					'QUESTION_ANSWERING',
+					'FACT_VERIFICATION',
+					'CODE_RETRIEVAL_QUERY',
 				);
 
 				if ( in_array( $task_type, $allowed_task_types, true ) ) {
@@ -1087,6 +1164,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['title'] = sanitize_text_field( $options['title'] );
 			}
 
+			// Optional output dimensionality — reduces vector size for storage/latency trade-offs.
+			// Typical values for gemini-embedding-001: 768, 1536, 3072. The API validates the value.
+			if ( isset( $options['output_dimensionality'] ) && $options['output_dimensionality'] > 0 ) {
+				$payload['outputDimensionality'] = absint( $options['output_dimensionality'] );
+			}
+
 			/**
 			 * Allow third parties to filter the Gemini embedding payload prior to dispatch.
 			 *
@@ -1096,14 +1179,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_embedding_payload', $payload, $options, $text );
 
-			$endpoint = sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -1168,8 +1248,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 *
 		 * @param array $texts   Array of text strings to embed.
 		 * @param array $options Optional parameters:
-		 *                       - model (string): Embedding model (default: 'text-embedding-004').
-		 *                       - task_type (string): Task optimization type.
+		 *                       - model (string): Embedding model (default: 'gemini-embedding-001').
+		 *                       - task_type (string): Optimisation hint — RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT,
+		 *                         SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING,
+		 *                         FACT_VERIFICATION, CODE_RETRIEVAL_QUERY.
+		 *                       - output_dimensionality (int): Reduce embedding dimensions (e.g. 768, 1536, 3072).
 		 *                       - timeout (int): Request timeout in seconds.
 		 *                       - bypass_cache (bool): Skip cache for this request.
 		 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
@@ -1219,13 +1302,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			if ( $use_cache && ! $bypass_cache ) {
 				// Build cache key from texts and relevant options.
-				$model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
-				$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$model       = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+				$task_type   = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'texts'     => $texts,
-					'model'     => $model,
-					'task_type' => $task_type,
+					'texts'                 => $texts,
+					'model'                 => $model,
+					'task_type'             => $task_type,
+					'output_dimensionality' => $output_dims,
 				);
 
 				$cache_key = 'gemini_batch_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -1262,8 +1347,34 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Batch embedding data or WP_Error on failure.
 		 */
 		private function fetch_batch_embeddings_from_api( $api_key, $texts, $options ) {
-			// Default to text-embedding-004 model for embeddings.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+			// Default to gemini-embedding-001 model (GA, replaces deprecated text-embedding-004).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+
+			// Resolve shared options once before the loop.
+			$task_type             = '';
+			$output_dimensionality = 0;
+
+			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
+				$candidate = sanitize_text_field( $options['task_type'] );
+				// Valid task types per Gemini API docs.
+				$allowed_task_types = array(
+					'RETRIEVAL_QUERY',
+					'RETRIEVAL_DOCUMENT',
+					'SEMANTIC_SIMILARITY',
+					'CLASSIFICATION',
+					'CLUSTERING',
+					'QUESTION_ANSWERING',
+					'FACT_VERIFICATION',
+					'CODE_RETRIEVAL_QUERY',
+				);
+				if ( in_array( $candidate, $allowed_task_types, true ) ) {
+					$task_type = $candidate;
+				}
+			}
+
+			if ( isset( $options['output_dimensionality'] ) && $options['output_dimensionality'] > 0 ) {
+				$output_dimensionality = absint( $options['output_dimensionality'] );
+			}
 
 			// Build requests array.
 			$requests = array();
@@ -1274,6 +1385,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				$request = array(
+					// model is always required per-request in batchEmbedContents.
+					'model'   => 'models/' . $model,
 					'content' => array(
 						'parts' => array(
 							array( 'text' => $sanitized_text ),
@@ -1281,21 +1394,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					),
 				);
 
-				// Optional task type for optimized embeddings.
-				if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
-					$task_type = sanitize_text_field( $options['task_type'] );
-					// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
-					$allowed_task_types = array(
-						'RETRIEVAL_QUERY',
-						'RETRIEVAL_DOCUMENT',
-						'SEMANTIC_SIMILARITY',
-						'CLASSIFICATION',
-						'CLUSTERING',
-					);
+				if ( '' !== $task_type ) {
+					$request['taskType'] = $task_type;
+				}
 
-					if ( in_array( $task_type, $allowed_task_types, true ) ) {
-						$request['taskType'] = $task_type;
-					}
+				if ( $output_dimensionality > 0 ) {
+					$request['outputDimensionality'] = $output_dimensionality;
 				}
 
 				$requests[] = $request;
@@ -1320,14 +1424,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_payload', $payload, $options, $texts );
 
-			$endpoint = sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -1443,14 +1544,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $payload;
 			}
 
-			$endpoint = sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = add_query_arg( 'alt', 'sse', $endpoint );
 
 			$request_args = array(
-				'headers'  => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers'  => $this->build_request_headers( $api_key ),
 				'body'     => wp_json_encode( $payload ),
 				'timeout'  => $this->resolve_timeout( $options ),
 				'stream'   => true,
@@ -1741,14 +1839,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			 */
 			$payload = apply_filters( 'wp_mcp_ai_gemini_geospatial_payload', $payload, $options, $query );
 
-			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$endpoint = $this->resolve_endpoint( sprintf( self::API_ENDPOINT, rawurlencode( $model ) ) );
 			$url      = $endpoint;
 
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -2395,11 +2490,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
 
-				// Handle file segments.
+				// Handle file segments (video/audio uploaded via Gemini File API).
 				if ( 'file' === $type || 'input_file' === $type ) {
 					$file_part = $this->format_file_part( $segment );
 					if ( null !== $file_part ) {
 						$file_parts[] = $file_part;
+					}
+				}
+
+				// Handle image segments – use inlineData (base64) or fileData (Gemini File API).
+				if ( 'input_image' === $type || 'image_url' === $type || 'image_file' === $type ) {
+					$image_part = $this->format_image_part( $segment );
+					if ( null !== $image_part ) {
+						$file_parts[] = $image_part;
 					}
 				}
 			}
@@ -2447,6 +2550,139 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'mimeType' => $mime_type,
 				),
 			);
+		}
+
+		/**
+		 * Format an image segment as a Gemini inlineData or fileData part.
+		 *
+		 * Priority order:
+		 * 1. Gemini File API name (file_id starting with "files/") -- fileData
+		 * 2. Explicit Gemini file URI (file_uri / uri) -- fileData
+		 * 3. Local WordPress attachment file (via attachment_id) -- inlineData
+		 * 4. Remote image URL (image_url.url / url) -- inlineData via HTTP download
+		 *
+		 * @param array $segment {
+		 *     Image segment of type input_image / image_url / image_file.
+		 *
+		 *     @type string $file_id       Optional. Gemini File API name (e.g., "files/abc123") or OpenAI file ID.
+		 *     @type string $file_uri      Optional. Full Gemini File API URI.
+		 *     @type string $uri           Optional. Alias for file_uri.
+		 *     @type int    $attachment_id Optional. WordPress attachment post ID for local file reads.
+		 *     @type array  $image_url     Optional. Array with 'url' key for remote image download.
+		 *     @type string $url           Optional. Direct image URL fallback.
+		 *     @type string $mime_type     Optional. MIME type of the image (e.g., "image/jpeg").
+		 *     @type string $mimeType      Optional. Camel-case alias for mime_type.
+		 * }
+		 * @return array|null Gemini inlineData or fileData part, or null if unable to build one.
+		 */
+		protected function format_image_part( array $segment ) {
+			$mime_type = '';
+			if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+				$mime_type = sanitize_mime_type( $segment['mime_type'] );
+			} elseif ( isset( $segment['mimeType'] ) && '' !== $segment['mimeType'] ) {
+				$mime_type = sanitize_mime_type( $segment['mimeType'] );
+			}
+
+			// 1. Check for a Gemini File API name (e.g., "files/abc123").
+			if ( ! empty( $segment['file_id'] ) ) {
+				$file_id = sanitize_text_field( wp_unslash( $segment['file_id'] ) );
+
+				if ( 0 === strpos( $file_id, 'files/' ) ) {
+					// Construct the full Gemini File API URI from the name.
+					$file_uri = 'https://generativelanguage.googleapis.com/v1beta/' . rawurlencode( $file_id );
+
+					if ( empty( $mime_type ) ) {
+						// Without a MIME type Gemini rejects the request.
+						return null;
+					}
+
+					return array(
+						'fileData' => array(
+							'fileUri'  => $file_uri,
+							'mimeType' => $mime_type,
+						),
+					);
+				}
+			}
+
+			// 2. Explicit Gemini file URI already stored in the segment.
+			$file_uri = '';
+			if ( ! empty( $segment['file_uri'] ) ) {
+				$file_uri = esc_url_raw( $segment['file_uri'] );
+			} elseif ( ! empty( $segment['uri'] ) ) {
+				$file_uri = esc_url_raw( $segment['uri'] );
+			}
+
+			if ( '' !== $file_uri && false !== strpos( $file_uri, 'generativelanguage.googleapis.com' ) ) {
+				if ( ! empty( $mime_type ) ) {
+					return array(
+						'fileData' => array(
+							'fileUri'  => $file_uri,
+							'mimeType' => $mime_type,
+						),
+					);
+				}
+			}
+
+			// 3. Read binary data from the local WordPress attachment (fastest path).
+			if ( ! empty( $segment['attachment_id'] ) ) {
+				$attachment_id = absint( $segment['attachment_id'] );
+				$file_path     = get_attached_file( $attachment_id );
+
+				if ( $file_path && file_exists( $file_path ) ) {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local file; not a remote URL.
+					$data = file_get_contents( $file_path );
+
+					if ( false !== $data && '' !== $data ) {
+						if ( empty( $mime_type ) ) {
+							$mime_type = get_post_mime_type( $attachment_id );
+						}
+						$mime_type = $mime_type ? sanitize_mime_type( $mime_type ) : '';
+
+						if ( '' !== $mime_type ) {
+							return array(
+								'inlineData' => array(
+									// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding binary image for Gemini inlineData.
+									'data'     => base64_encode( $data ),
+									'mimeType' => $mime_type,
+								),
+							);
+						}
+					}
+				}
+			}
+
+			// 4. Download from URL as a last resort.
+			$url = '';
+			if ( ! empty( $segment['image_url'] ) && is_array( $segment['image_url'] ) && ! empty( $segment['image_url']['url'] ) ) {
+				$url = esc_url_raw( $segment['image_url']['url'] );
+			} elseif ( ! empty( $segment['url'] ) ) {
+				$url = esc_url_raw( $segment['url'] );
+			}
+
+			if ( '' !== $url ) {
+				$download = $this->download_image_from_url( $url, array() );
+
+				if ( ! is_wp_error( $download ) && ! empty( $download['body'] ) ) {
+					if ( empty( $mime_type ) && ! empty( $download['content_type'] ) ) {
+						$ct_parts  = explode( ';', $download['content_type'] );
+						$raw_ct    = strtolower( trim( $ct_parts[0] ) );
+						$mime_type = sanitize_mime_type( $raw_ct );
+					}
+
+					if ( '' !== $mime_type ) {
+						return array(
+							'inlineData' => array(
+								// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Encoding downloaded image for Gemini inlineData.
+								'data'     => base64_encode( $download['body'] ),
+								'mimeType' => $mime_type,
+							),
+						);
+					}
+				}
+			}
+
+			return null;
 		}
 
 		/**
@@ -2826,10 +3062,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					continue;
 				}
 
-				// Handle 'enum' field - ensure it's not recursively processed as a nested schema.
-				// Enum values should be preserved as-is (array of scalars).
+				// Handle 'enum' field - Gemini API requires all enum values to be strings (TYPE_STRING).
+				// Cast any non-string scalar values (e.g. integers like 0, 90, 180, 270) to strings.
 				if ( 'enum' === $key && is_array( $value ) ) {
-					$sanitized[ $key ] = $value;
+					$sanitized[ $key ] = array_map( 'strval', $value );
 					continue;
 				}
 
@@ -2915,6 +3151,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						'reason'        => $reason,
 					)
 				);
+			}
+
+			// Gemini API requires enum values to be TYPE_STRING. When a schema property
+			// declares a numeric type (integer/number) together with an enum, the type must
+			// be changed to 'string' so it matches the now-stringified enum values.
+			if ( isset( $sanitized['enum'] ) && isset( $sanitized['type'] ) && in_array( $sanitized['type'], array( 'integer', 'number' ), true ) ) {
+				$sanitized['type'] = 'string';
 			}
 
 			return $sanitized;
@@ -4349,10 +4592,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$args = array(
 				'method'  => $method,
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'X-Goog-Api-Key' => $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => max( 5, $timeout ),
 			);
 
@@ -4394,7 +4634,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'gemini_corpus_create', 'Creating Gemini corpus.', array( 'display_name' => $display_name ) );
 
-			$response = wp_remote_post( self::API_CORPORA_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::API_CORPORA_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_event( 'gemini_corpus_create_error', 'Gemini corpus creation failed.', array( 'error' => $response->get_error_message() ) );
@@ -4441,7 +4681,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
 			}
 
-			$endpoint = self::API_CORPORA_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( self::API_CORPORA_ENDPOINT );
 			if ( ! empty( $query_args ) ) {
 				$endpoint = add_query_arg( $query_args, $endpoint );
 			}
@@ -4497,7 +4737,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name;
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name );
 			$response = wp_remote_get( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {
@@ -4548,7 +4788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name;
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name );
 			if ( ! empty( $options['force'] ) ) {
 				$endpoint = add_query_arg( 'force', 'true', $endpoint );
 			}
@@ -4638,7 +4878,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return $request_args;
 			}
 
-			$endpoint = self::API_BASE_URL . $corpus_name . ':query';
+			$endpoint = $this->resolve_endpoint( self::API_BASE_URL . $corpus_name . ':query' );
 			$response = wp_remote_post( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {

@@ -5,6 +5,9 @@
  * Uses direct HTML rendering for reliable inline display.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 (function ($) {
@@ -252,7 +255,9 @@ return div.innerHTML;
  * @return {string} Session key.
  */
 function generateSessionKey() {
-return 'pm-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+const array = new Uint8Array( 16 );
+crypto.getRandomValues( array );
+return 'pm-' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 }
 
 /**

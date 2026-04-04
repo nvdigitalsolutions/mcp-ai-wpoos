@@ -8,6 +8,9 @@
  * @package WP_MCP_AI
  * @since   1.7.0
  * @see     https://agentskills.io/specification
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -100,6 +103,16 @@ class WP_MCP_AI_Skill_Registry {
 	 * @var string[]
 	 */
 	const ALLOWED_EXTRA_EXTENSIONS = array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp' );
+
+	/**
+	 * Maximum total decompressed size (in bytes) allowed from a ZIP archive (16 MB).
+	 *
+	 * Prevents zip-bomb (decompression bomb) attacks where a small compressed file
+	 * expands into an arbitrarily large payload that exhausts server memory or disk.
+	 *
+	 * @var int
+	 */
+	const MAX_ZIP_DECOMPRESSED_BYTES = 16 * 1024 * 1024; // 16 MB.
 
 	/**
 	 * Ensure the skills directory exists with proper protections.
@@ -288,6 +301,7 @@ class WP_MCP_AI_Skill_Registry {
 		}
 
 		// Write any extra files (e.g., examples, resources).
+		$decompressed_bytes = strlen( $content ); // Count SKILL.md itself.
 		foreach ( $extra_files as $relative_path => $file_content ) {
 			// Prevent directory traversal.
 			$safe_path = ltrim( $relative_path, '/' );
@@ -300,6 +314,17 @@ class WP_MCP_AI_Skill_Registry {
 			$ext = strtolower( pathinfo( $safe_path, PATHINFO_EXTENSION ) );
 			if ( ! in_array( $ext, self::ALLOWED_EXTRA_EXTENSIONS, true ) ) {
 				continue;
+			}
+
+			// Guard against decompression bombs: reject the whole archive if the
+			// cumulative decompressed size exceeds the configured limit.
+			$decompressed_bytes += strlen( $file_content );
+			if ( $decompressed_bytes > self::MAX_ZIP_DECOMPRESSED_BYTES ) {
+				return new WP_Error(
+					'wp_mcp_ai_skill_zip_too_large',
+					__( 'The ZIP archive decompresses to more than the allowed 16 MB. Please reduce the archive size.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
 			}
 
 			$full_path   = $skill_dir . '/' . $safe_path;
@@ -468,6 +493,31 @@ class WP_MCP_AI_Skill_Registry {
 		$bundled_dir = defined( 'WP_MCP_AI_PATH' )
 			? trailingslashit( WP_MCP_AI_PATH ) . 'includes/bundled-skills'
 			: '';
+
+		if ( empty( $bundled_dir ) || ! is_dir( $bundled_dir ) ) {
+			return array(
+				'installed' => 0,
+				'skipped'   => 0,
+				'errors'    => array( __( 'Bundled skills directory not found.', 'mcp-ai-wpoos' ) ),
+			);
+		}
+
+		return $this->install_bundled_skills_from_dir( $bundled_dir );
+	}
+
+	/**
+	 * Install bundled skills from a specific directory.
+	 *
+	 * Copies SKILL.md files from the given directory to the uploads skill
+	 * storage. Skips skills that are already installed. This method allows
+	 * add-ons (e.g. the Pro addon) to bundle their own skills independently.
+	 *
+	 * @since 1.7.2
+	 * @param string $bundled_dir Absolute path to a directory containing skill subdirectories.
+	 * @return array Array with 'installed' and 'skipped' counts plus any 'errors'.
+	 */
+	public function install_bundled_skills_from_dir( $bundled_dir ) {
+		$bundled_dir = (string) $bundled_dir;
 
 		if ( empty( $bundled_dir ) || ! is_dir( $bundled_dir ) ) {
 			return array(

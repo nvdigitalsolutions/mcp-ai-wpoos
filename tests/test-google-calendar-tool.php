@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Google Calendar tool.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
 

@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -242,12 +245,14 @@ class WP_MCP_AI_Report_Generator {
 	private function get_evidence_summary() {
 		if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 			global $wpdb;
-			$evidence_table = $wpdb->prefix . 'mcp_ai_evidence';
-			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
+			$evidence_table = esc_sql( $wpdb->prefix . 'mcp_ai_evidence' );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table with esc_sql()-escaped table name; no WP API for custom tables.
+			$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$evidence_table}" );
 
 			return array(
 				'total_evidence' => (int) $count,
-				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table with esc_sql()-escaped table name; no WP API for custom tables.
+				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$evidence_table} WHERE is_valid = 1" ),
 			);
 		}
 

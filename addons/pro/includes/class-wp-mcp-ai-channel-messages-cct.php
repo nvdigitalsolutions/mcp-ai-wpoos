@@ -8,6 +8,9 @@
  * Chat Channels inbox dashboard.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -34,6 +37,54 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_connection_id' ), 102 );
+	}
+
+	/**
+	 * Ensure the conversation_type column exists in the messages CCT table.
+	 */
+	public static function maybe_migrate_conversation_type() {
+		if ( get_option( 'wp_mcp_ai_channel_messages_migration_v1' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'conversation_type', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
+		}
+		update_option( 'wp_mcp_ai_channel_messages_migration_v1', true );
+	}
+
+	/**
+	 * Ensure the connection_id column exists in the messages CCT table.
+	 *
+	 * Older installations that created the CCT before this field was added to
+	 * the schema will not have the column, causing queries that reference it
+	 * to fail silently and break the inbox.
+	 */
+	public static function maybe_migrate_connection_id() {
+		if ( get_option( 'wp_mcp_ai_channel_messages_migration_v2' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'connection_id', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `connection_id` VARCHAR(100) NOT NULL DEFAULT ''" );
+		}
+		update_option( 'wp_mcp_ai_channel_messages_migration_v2', true );
 	}
 
 	/**
@@ -110,6 +161,7 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			'cct_status'         => 'publish',
 			'reply_sent'         => ! empty( $data['reply_sent'] ) ? 1 : 0,
 			'assigned_agent'     => isset( $data['assigned_agent'] ) ? sanitize_text_field( $data['assigned_agent'] ) : '',
+			'conversation_type'  => isset( $data['conversation_type'] ) ? sanitize_key( $data['conversation_type'] ) : 'dm',
 		);
 
 		// Store Unix timestamp as integer.
@@ -120,13 +172,19 @@ class WP_MCP_AI_Channel_Messages_CCT {
 			return is_numeric( $result ) ? (int) $result : false;
 		}
 
-		// Fallback: direct DB insert when JetEngine is not available.
+		// Fallback: direct DB insert when JetEngine is not available but table exists.
 		if ( self::table_exists() ) {
 			global $wpdb;
 			$table = self::get_table_name();
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( $table, $row );
 			return $wpdb->insert_id ? $wpdb->insert_id : false;
+		}
+
+		// Final fallback: use the CPT store when neither JetEngine nor the table
+		// is available (e.g. first run without JetEngine installed).
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+			return WP_MCP_AI_Channel_Messages_CPT::insert( $data );
 		}
 
 		return false;
@@ -154,6 +212,10 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 */
 	public static function get_recent_messages( $channel, $contact_id, $connection_id, $limit = 10 ) {
 		if ( ! self::table_exists() ) {
+			// Fall back to the CPT store when the CCT table is unavailable.
+			if ( class_exists( 'WP_MCP_AI_Channel_Messages_CPT' ) ) {
+				return WP_MCP_AI_Channel_Messages_CPT::get_recent_messages( $channel, $contact_id, $connection_id, $limit );
+			}
 			return array();
 		}
 
@@ -236,6 +298,11 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	 * Register the CCT in JetEngine if it has not been registered yet.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 		if ( ! $module ) {
 			return;
@@ -538,6 +605,21 @@ class WP_MCP_AI_Channel_Messages_CCT {
 				'width'       => '100%',
 				'default_val' => '',
 				'description' => __( 'Post ID of the AI assistant assigned to this conversation', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 15,
+				'title'       => __( 'Conversation Type', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'conversation_type',
+				'type'        => 'select',
+				'search'      => true,
+				'width'       => '100%',
+				'default_val' => 'dm',
+				'options'     => array(
+					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+				),
+				'description' => __( 'Whether this message is from a DM, channel, or group conversation', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

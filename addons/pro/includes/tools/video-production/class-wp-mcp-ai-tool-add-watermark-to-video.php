@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -87,7 +90,7 @@ class WP_MCP_AI_Tool_Add_Watermark_To_Video implements WP_MCP_AI_Tool_Interface,
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// TODO: Implement add_watermark_to_video logic
 		// This requires FFmpeg or similar video processing library
 

@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.3.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -234,8 +237,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			$cache_key = 'vault_rl_u_' . $user_id;
 		} else {
 			// Validate the IP before using it as a cache key.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated with filter_var immediately below.
-			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? wp_unslash( $_SERVER['REMOTE_ADDR'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated with filter_var immediately below.
 			$ip        = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
 			$cache_key = 'vault_rl_g_' . md5( $ip );
 		}
@@ -266,12 +268,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$folder_id = $request->get_param( 'folder_id' );
 
 		$args = array(
-			'post_type'      => 'mcp_vault_item',
-			'author'         => $user_id,
-			'posts_per_page' => min( $per_page, 100 ), // Max 100 items.
-			'paged'          => $page,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'        => 'mcp_vault_item',
+			'author'           => $user_id,
+			'posts_per_page'   => min( $per_page, 100 ), // Max 100 items.
+			'paged'            => $page,
+			'orderby'          => 'title',
+			'order'            => 'ASC',
+			'suppress_filters' => true,
+			'no_found_rows'    => false,
 		);
 
 		if ( $item_type ) {
@@ -552,11 +556,13 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$user_id = get_current_user_id();
 
 		$args = array(
-			'post_type'      => 'mcp_vault_folder',
-			'author'         => $user_id,
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'        => 'mcp_vault_folder',
+			'author'           => $user_id,
+			'posts_per_page'   => -1,
+			'orderby'          => 'title',
+			'order'            => 'ASC',
+			'suppress_filters' => true,
+			'no_found_rows'    => true,
 		);
 
 		$query = new WP_Query( $args );
@@ -681,10 +687,12 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$folder_id = $request->get_param( 'folder_id' );
 
 		$args = array(
-			'post_type'      => 'mcp_vault_item',
-			'author'         => $user_id,
-			'posts_per_page' => 50,
-			's'              => $query,
+			'post_type'        => 'mcp_vault_item',
+			'author'           => $user_id,
+			'posts_per_page'   => 50,
+			's'                => $query,
+			'suppress_filters' => true,
+			'no_found_rows'    => true,
 		);
 
 		if ( $item_type ) {

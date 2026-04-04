@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -533,6 +536,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function generate_excel_document( array $document_data, array $arguments, array $context ) {
 		// Create temporary file for document output.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$upload_dir = wp_upload_dir();
 		$temp_file  = wp_tempnam( 'xlsx-' . time() );
 		$xlsx_file  = $temp_file . '.xlsx';

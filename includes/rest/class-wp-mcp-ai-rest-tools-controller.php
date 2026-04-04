@@ -10,6 +10,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -195,6 +198,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
+						),
+						'_fields'      => array(
+							'description'       => __( 'Comma-separated list of tool fields to include in each item (name, description, inputSchema). Defaults to all fields.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),

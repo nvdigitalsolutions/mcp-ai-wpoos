@@ -14,6 +14,9 @@
  * site is running the Pro version of the plugin.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -217,12 +220,15 @@ class WP_MCP_AI_Chat_Channels_Menu {
 				'wp-mcp-ai-chat-channels',
 				'wpMcpAiChatChannels',
 				array(
-					'restUrl'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'currentPage'   => $this->current_page_slug( $hook ),
+					'restUrl'         => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
+					'nonce'           => wp_create_nonce( 'wp_rest' ),
+					'currentPage'     => $this->current_page_slug( $hook ),
+					'refreshInterval' => (int) apply_filters( 'wp_mcp_ai_chat_channels_refresh_interval', 30 ),
 					'i18n'          => array(
 						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 						'noConversations' => __( 'No conversations found.', 'mcp-ai-wpoos-pro' ),
+						'noMessages'      => __( 'No messages yet.', 'mcp-ai-wpoos-pro' ),
+						'errorLoading'    => __( 'Error loading data. Please try again.', 'mcp-ai-wpoos-pro' ),
 						'sendReply'       => __( 'Send Reply', 'mcp-ai-wpoos-pro' ),
 						'humanTakeover'   => __( 'Human Takeover', 'mcp-ai-wpoos-pro' ),
 						'resumeAI'        => __( 'Resume AI', 'mcp-ai-wpoos-pro' ),
@@ -232,6 +238,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						'replySent'       => __( 'Reply sent.', 'mcp-ai-wpoos-pro' ),
 						'errorSending'    => __( 'Failed to send reply. Please try again.', 'mcp-ai-wpoos-pro' ),
 						'allChannels'     => __( 'All Channels', 'mcp-ai-wpoos-pro' ),
+						'convTypeDM'      => __( 'DM', 'mcp-ai-wpoos-pro' ),
+						'convTypeChannel' => __( 'Channel', 'mcp-ai-wpoos-pro' ),
+						'convTypeGroup'   => __( 'Group', 'mcp-ai-wpoos-pro' ),
+						'allTypes'        => __( 'All Types', 'mcp-ai-wpoos-pro' ),
 					),
 					'channelLabels' => array(
 						'whatsapp'    => 'WhatsApp',
@@ -403,6 +413,12 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						<option value="active"><?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="resolved"><?php esc_html_e( 'Resolved', 'mcp-ai-wpoos-pro' ); ?></option>
 					</select>
+					<select id="cc-filter-conv-type" class="cc-select">
+						<option value=""><?php esc_html_e( 'All Types', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="dm"><?php esc_html_e( 'Direct Messages', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="channel"><?php esc_html_e( 'Channels', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="group"><?php esc_html_e( 'Groups', 'mcp-ai-wpoos-pro' ); ?></option>
+					</select>
 					<input type="search" id="cc-search" class="cc-input" placeholder="<?php esc_attr_e( 'Search conversations…', 'mcp-ai-wpoos-pro' ); ?>" />
 				</div>
 				<button id="cc-refresh" class="button"><?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?></button>
@@ -430,6 +446,8 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						<div class="cc-thread-header" id="cc-thread-header"></div>
 						<!-- Messages -->
 						<div class="cc-messages" id="cc-messages"></div>
+						<!-- Message pagination -->
+						<div class="cc-msg-pagination" id="cc-msg-pagination"></div>
 						<!-- Reply box – hidden when human takeover is off for this contact -->
 						<div class="cc-reply-box" id="cc-reply-box">
 							<textarea id="cc-reply-text" class="cc-reply-textarea" rows="3" placeholder="<?php esc_attr_e( 'Type a reply…', 'mcp-ai-wpoos-pro' ); ?>"></textarea>

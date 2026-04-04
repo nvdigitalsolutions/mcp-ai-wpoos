@@ -7,6 +7,9 @@
  * 2. Paid: remove.bg API service (requires API key in settings)
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -262,6 +265,9 @@ except Exception as e:
     sys.exit(3)
 PYTHON;
 
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$script_path = wp_tempnam( 'rembg-', '.py' );
 		if ( ! $script_path ) {
 			return new WP_Error(

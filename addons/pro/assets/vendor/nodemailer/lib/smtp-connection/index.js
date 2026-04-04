@@ -1,13 +1,13 @@
 'use strict';
 
 const packageInfo = require('../../package.json');
-const EventEmitter = require('events').EventEmitter;
+const { EventEmitter } = require('events');
 const net = require('net');
 const tls = require('tls');
 const os = require('os');
 const crypto = require('crypto');
 const DataStream = require('./data-stream');
-const PassThrough = require('stream').PassThrough;
+const { PassThrough } = require('stream');
 const shared = require('../shared');
 
 // default timeout values in ms
@@ -15,6 +15,7 @@ const CONNECTION_TIMEOUT = 2 * 60 * 1000; // how much to wait for the connection
 const SOCKET_TIMEOUT = 10 * 60 * 1000; // how much to wait for socket inactivity before disconnecting the client
 const GREETING_TIMEOUT = 30 * 1000; // how much to wait after connection is established but SMTP greeting is not receieved
 const DNS_TIMEOUT = 30 * 1000; // how much to wait for resolveHostname
+const TEARDOWN_NOOP = () => {}; // reusable no-op handler for absorbing errors during socket teardown
 
 /**
  * Generates a SMTP connection object
@@ -75,13 +76,12 @@ class SMTPConnection extends EventEmitter {
         });
 
         this.customAuth = new Map();
-        Object.keys(this.options.customAuth || {}).forEach(key => {
-            let mapKey = (key || '').toString().trim().toUpperCase();
-            if (!mapKey) {
-                return;
+        for (const key of Object.keys(this.options.customAuth || {})) {
+            const mapKey = (key || '').toString().trim().toUpperCase();
+            if (mapKey) {
+                this.customAuth.set(mapKey, this.options.customAuth[key]);
             }
-            this.customAuth.set(mapKey, this.options.customAuth[key]);
-        });
+        }
 
         /**
          * Expose version nr, just for the reference
@@ -197,6 +197,17 @@ class SMTPConnection extends EventEmitter {
         this._onSocketClose = () => this._onClose();
         this._onSocketEnd = () => this._onEnd();
         this._onSocketTimeout = () => this._onTimeout();
+
+        /**
+         * Connection-phase error handler (supports fallback to alternative addresses)
+         */
+        this._onConnectionSocketError = err => this._onConnectionError(err, 'ESOCKET');
+
+        /**
+         * Connection attempt counter for fallback race condition protection
+         * @private
+         */
+        this._connectionAttemptId = 0;
     }
 
     /**
@@ -232,18 +243,10 @@ class SMTPConnection extends EventEmitter {
             opts.localAddress = this.options.localAddress;
         }
 
-        let setupConnectionHandlers = () => {
-            this._connectionTimeout = setTimeout(() => {
-                this._onError('Connection timeout', 'ETIMEDOUT', false, 'CONN');
-            }, this.options.connectionTimeout || CONNECTION_TIMEOUT);
-
-            this._socket.on('error', this._onSocketError);
-        };
-
         if (this.options.connection) {
             // connection is already opened
             this._socket = this.options.connection;
-            setupConnectionHandlers();
+            this._setupConnectionHandlers();
 
             if (this.secureConnection && !this.alreadySecured) {
                 setImmediate(() =>
@@ -262,115 +265,153 @@ class SMTPConnection extends EventEmitter {
         } else if (this.options.socket) {
             // socket object is set up but not yet connected
             this._socket = this.options.socket;
-            return shared.resolveHostname(opts, (err, resolved) => {
-                if (err) {
-                    return setImmediate(() => this._onError(err, 'EDNS', false, 'CONN'));
-                }
-                this.logger.debug(
-                    {
-                        tnx: 'dns',
-                        source: opts.host,
-                        resolved: resolved.host,
-                        cached: !!resolved.cached
-                    },
-                    'Resolved %s as %s [cache %s]',
-                    opts.host,
-                    resolved.host,
-                    resolved.cached ? 'hit' : 'miss'
-                );
-                Object.keys(resolved).forEach(key => {
-                    if (key.charAt(0) !== '_' && resolved[key]) {
-                        opts[key] = resolved[key];
-                    }
-                });
+            return this._resolveAndConnect(opts, _resolved => {
                 try {
                     this._socket.connect(this.port, this.host, () => {
                         this._socket.setKeepAlive(true);
                         this._onConnect();
                     });
-                    setupConnectionHandlers();
-                } catch (E) {
-                    return setImmediate(() => this._onError(E, 'ECONNECTION', false, 'CONN'));
-                }
-            });
-        } else if (this.secureConnection) {
-            // connect using tls
-            if (this.options.tls) {
-                Object.keys(this.options.tls).forEach(key => {
-                    opts[key] = this.options.tls[key];
-                });
-            }
-
-            // ensure servername for SNI
-            if (this.servername && !opts.servername) {
-                opts.servername = this.servername;
-            }
-
-            return shared.resolveHostname(opts, (err, resolved) => {
-                if (err) {
-                    return setImmediate(() => this._onError(err, 'EDNS', false, 'CONN'));
-                }
-                this.logger.debug(
-                    {
-                        tnx: 'dns',
-                        source: opts.host,
-                        resolved: resolved.host,
-                        cached: !!resolved.cached
-                    },
-                    'Resolved %s as %s [cache %s]',
-                    opts.host,
-                    resolved.host,
-                    resolved.cached ? 'hit' : 'miss'
-                );
-                Object.keys(resolved).forEach(key => {
-                    if (key.charAt(0) !== '_' && resolved[key]) {
-                        opts[key] = resolved[key];
-                    }
-                });
-                try {
-                    this._socket = tls.connect(opts, () => {
-                        this._socket.setKeepAlive(true);
-                        this._onConnect();
-                    });
-                    setupConnectionHandlers();
+                    this._setupConnectionHandlers();
                 } catch (E) {
                     return setImmediate(() => this._onError(E, 'ECONNECTION', false, 'CONN'));
                 }
             });
         } else {
-            // connect using plaintext
-            return shared.resolveHostname(opts, (err, resolved) => {
-                if (err) {
-                    return setImmediate(() => this._onError(err, 'EDNS', false, 'CONN'));
+            if (this.secureConnection) {
+                Object.assign(opts, this.options.tls || {});
+
+                // ensure servername for SNI
+                if (this.servername && !opts.servername) {
+                    opts.servername = this.servername;
                 }
-                this.logger.debug(
-                    {
-                        tnx: 'dns',
-                        source: opts.host,
-                        resolved: resolved.host,
-                        cached: !!resolved.cached
-                    },
-                    'Resolved %s as %s [cache %s]',
-                    opts.host,
-                    resolved.host,
-                    resolved.cached ? 'hit' : 'miss'
-                );
-                Object.keys(resolved).forEach(key => {
-                    if (key.charAt(0) !== '_' && resolved[key]) {
-                        opts[key] = resolved[key];
-                    }
-                });
-                try {
-                    this._socket = net.connect(opts, () => {
-                        this._socket.setKeepAlive(true);
-                        this._onConnect();
-                    });
-                    setupConnectionHandlers();
-                } catch (E) {
-                    return setImmediate(() => this._onError(E, 'ECONNECTION', false, 'CONN'));
-                }
+            }
+
+            return this._resolveAndConnect(opts, resolved => {
+                // Store fallback addresses for retry on connection failure
+                this._fallbackAddresses = (resolved._addresses || []).filter(addr => addr !== opts.host);
+                this._connectOpts = Object.assign({}, opts);
+
+                this._connectToHost(opts, this.secureConnection);
             });
         }
+    }
+
+    /**
+     * Resolves the hostname and applies resolved values to opts,
+     * then calls the provided callback with the resolved data
+     *
+     * @param {Object} opts Connection options (modified in place)
+     * @param {Function} callback Called with resolved data on success
+     */
+    _resolveAndConnect(opts, callback) {
+        return shared.resolveHostname(opts, (err, resolved) => {
+            if (err) {
+                return setImmediate(() => this._onError(err, 'EDNS', false, 'CONN'));
+            }
+            this.logger.debug(
+                {
+                    tnx: 'dns',
+                    source: opts.host,
+                    resolved: resolved.host,
+                    cached: !!resolved.cached
+                },
+                'Resolved %s as %s [cache %s]',
+                opts.host,
+                resolved.host,
+                resolved.cached ? 'hit' : 'miss'
+            );
+            for (const key of Object.keys(resolved)) {
+                if (key.charAt(0) !== '_' && resolved[key]) {
+                    opts[key] = resolved[key];
+                }
+            }
+            callback(resolved);
+        });
+    }
+
+    /**
+     * Attempts to connect to the specified host address
+     *
+     * @param {Object} opts Connection options
+     * @param {Boolean} secure Whether to use TLS
+     */
+    _connectToHost(opts, secure) {
+        this._connectionAttemptId++;
+        const currentAttemptId = this._connectionAttemptId;
+
+        const connectFn = secure ? tls.connect : net.connect;
+        try {
+            this._socket = connectFn(opts, () => {
+                // Ignore callback if this is a stale connection attempt
+                if (this._connectionAttemptId !== currentAttemptId) {
+                    return;
+                }
+                this._socket.setKeepAlive(true);
+                this._onConnect();
+            });
+            this._setupConnectionHandlers();
+        } catch (E) {
+            return setImmediate(() => this._onError(E, 'ECONNECTION', false, 'CONN'));
+        }
+    }
+
+    /**
+     * Sets up connection timeout and error handlers
+     */
+    _setupConnectionHandlers() {
+        this._connectionTimeout = setTimeout(() => {
+            this._onConnectionError('Connection timeout', 'ETIMEDOUT');
+        }, this.options.connectionTimeout || CONNECTION_TIMEOUT);
+
+        this._socket.on('error', this._onConnectionSocketError);
+    }
+
+    /**
+     * Handles connection errors with fallback to alternative addresses
+     *
+     * @param {Error|String} err Error object or message
+     * @param {String} code Error code
+     */
+    _onConnectionError(err, code) {
+        clearTimeout(this._connectionTimeout);
+
+        // Check if we have fallback addresses to try
+        const canFallback = this._fallbackAddresses && this._fallbackAddresses.length && this.stage === 'init' && !this._destroyed;
+
+        if (!canFallback) {
+            // No more fallback addresses, report the error
+            this._onError(err, code, false, 'CONN');
+            return;
+        }
+
+        const nextHost = this._fallbackAddresses.shift();
+
+        this.logger.info(
+            {
+                tnx: 'network',
+                failedHost: this._connectOpts.host,
+                nextHost,
+                error: err.message || err
+            },
+            'Connection to %s failed, trying %s',
+            this._connectOpts.host,
+            nextHost
+        );
+
+        // Clean up current socket
+        if (this._socket) {
+            try {
+                this._socket.removeListener('error', this._onConnectionSocketError);
+                this._socket.destroy();
+            } catch (_E) {
+                // ignore
+            }
+            this._socket = null;
+        }
+
+        // Update host and retry
+        this._connectOpts.host = nextHost;
+        this._connectToHost(this._connectOpts, this.secureConnection);
     }
 
     /**
@@ -395,12 +436,7 @@ class SMTPConnection extends EventEmitter {
         }
         this._closing = true;
 
-        let closeMethod = 'end';
-
-        if (this.stage === 'init') {
-            // Close the socket immediately when connection timed out
-            closeMethod = 'destroy';
-        }
+        const closeMethod = this.stage === 'init' ? 'destroy' : 'end';
 
         this.logger.debug(
             {
@@ -410,10 +446,22 @@ class SMTPConnection extends EventEmitter {
             closeMethod
         );
 
-        let socket = (this._socket && this._socket.socket) || this._socket;
+        const socket = (this._socket && this._socket.socket) || this._socket;
 
         if (socket && !socket.destroyed) {
             try {
+                // Clear socket timeout to prevent timer leaks
+                socket.setTimeout(0);
+                // Remove all listeners to allow proper garbage collection
+                socket.removeListener('data', this._onSocketData);
+                socket.removeListener('timeout', this._onSocketTimeout);
+                socket.removeListener('close', this._onSocketClose);
+                socket.removeListener('end', this._onSocketEnd);
+                socket.removeListener('error', this._onSocketError);
+                socket.removeListener('error', this._onConnectionSocketError);
+                // Absorb errors that may fire during socket teardown (e.g. server
+                // sending cleartext after TLS shutdown triggers ERR_SSL_BAD_RECORD_TYPE)
+                socket.on('error', TEARDOWN_NOOP);
                 socket[closeMethod]();
             } catch (_E) {
                 // just ignore
@@ -456,11 +504,11 @@ class SMTPConnection extends EventEmitter {
         }
 
         if (this.customAuth.has(this._authMethod)) {
-            let handler = this.customAuth.get(this._authMethod);
+            const handler = this.customAuth.get(this._authMethod);
             let lastResponse;
             let returned = false;
 
-            let resolve = () => {
+            const resolve = () => {
                 if (returned) {
                     return;
                 }
@@ -479,7 +527,7 @@ class SMTPConnection extends EventEmitter {
                 callback(null, true);
             };
 
-            let reject = err => {
+            const reject = err => {
                 if (returned) {
                     return;
                 }
@@ -487,7 +535,7 @@ class SMTPConnection extends EventEmitter {
                 callback(this._formatError(err, 'EAUTH', lastResponse, 'AUTH ' + this._authMethod));
             };
 
-            let handlerResponse = handler({
+            const handlerResponse = handler({
                 auth: this._auth,
                 method: this._authMethod,
 
@@ -614,7 +662,7 @@ class SMTPConnection extends EventEmitter {
 
         // ensure that callback is only called once
         let returned = false;
-        let callback = function () {
+        const callback = function () {
             if (returned) {
                 return;
             }
@@ -627,11 +675,11 @@ class SMTPConnection extends EventEmitter {
             message.on('error', err => callback(this._formatError(err, 'ESTREAM', false, 'API')));
         }
 
-        let startTime = Date.now();
+        const startTime = Date.now();
         this._setEnvelope(envelope, (err, info) => {
             if (err) {
                 // create passthrough stream to consume to prevent OOM
-                let stream = new PassThrough();
+                const stream = new PassThrough();
                 if (typeof message.pipe === 'function') {
                     message.pipe(stream);
                 } else {
@@ -641,8 +689,8 @@ class SMTPConnection extends EventEmitter {
 
                 return callback(err);
             }
-            let envelopeTime = Date.now();
-            let stream = this._createSendStream((err, str) => {
+            const envelopeTime = Date.now();
+            const stream = this._createSendStream((err, str) => {
                 if (err) {
                     return callback(err);
                 }
@@ -715,7 +763,10 @@ class SMTPConnection extends EventEmitter {
         this._socket.removeListener('timeout', this._onSocketTimeout);
         this._socket.removeListener('close', this._onSocketClose);
         this._socket.removeListener('end', this._onSocketEnd);
+        // Switch from connection-phase error handler to normal error handler
+        this._socket.removeListener('error', this._onConnectionSocketError);
 
+        this._socket.on('error', this._onSocketError);
         this._socket.on('data', this._onSocketData);
         this._socket.once('close', this._onSocketClose);
         this._socket.once('end', this._onSocketEnd);
@@ -823,7 +874,7 @@ class SMTPConnection extends EventEmitter {
             err.message += ': ' + response;
         }
 
-        let responseCode = (typeof response === 'string' && Number((response.match(/^\d+/) || [])[0])) || false;
+        const responseCode = (typeof response === 'string' && Number((response.match(/^\d+/) || [])[0])) || false;
         if (responseCode) {
             err.responseCode = responseCode;
         }
@@ -918,15 +969,14 @@ class SMTPConnection extends EventEmitter {
         this._socket.removeListener('data', this._onSocketData); // incoming data is going to be gibberish from this point onwards
         this._socket.removeListener('timeout', this._onSocketTimeout); // timeout will be re-set for the new socket object
 
-        let socketPlain = this._socket;
-        let opts = {
-            socket: this._socket,
-            host: this.host
-        };
-
-        Object.keys(this.options.tls || {}).forEach(key => {
-            opts[key] = this.options.tls[key];
-        });
+        const socketPlain = this._socket;
+        const opts = Object.assign(
+            {
+                socket: this._socket,
+                host: this.host
+            },
+            this.options.tls || {}
+        );
 
         // ensure servername for SNI
         if (this.servername && !opts.servername) {
@@ -941,8 +991,10 @@ class SMTPConnection extends EventEmitter {
                 this.upgrading = false;
                 this._socket.on('data', this._onSocketData);
 
+                // Remove all listeners from the plain socket to allow proper garbage collection
                 socketPlain.removeListener('close', this._onSocketClose);
                 socketPlain.removeListener('end', this._onSocketEnd);
+                socketPlain.removeListener('error', this._onSocketError);
 
                 return callback(null, true);
             });
@@ -992,7 +1044,7 @@ class SMTPConnection extends EventEmitter {
             setImmediate(() => this._processResponse());
         }
 
-        let action = this._responseActions.shift();
+        const action = this._responseActions.shift();
 
         if (typeof action === 'function') {
             action.call(this, str);
@@ -1040,7 +1092,7 @@ class SMTPConnection extends EventEmitter {
      *        {from:{address:'...',name:'...'}, to:[address:'...',name:'...']}
      */
     _setEnvelope(envelope, callback) {
-        let args = [];
+        const args = [];
         let useSmtpUtf8 = false;
 
         this._envelope = envelope || {};
@@ -1075,7 +1127,7 @@ class SMTPConnection extends EventEmitter {
         }
 
         // clone the recipients array for latter manipulation
-        this._envelope.rcptQueue = JSON.parse(JSON.stringify(this._envelope.to || []));
+        this._envelope.rcptQueue = [].concat(this._envelope.to || []);
         this._envelope.rejected = [];
         this._envelope.rejectedErrors = [];
         this._envelope.accepted = [];
@@ -1107,7 +1159,10 @@ class SMTPConnection extends EventEmitter {
         }
 
         if (this._envelope.size && this._supportedExtensions.includes('SIZE')) {
-            args.push('SIZE=' + this._envelope.size);
+            const sizeValue = Number(this._envelope.size) || 0;
+            if (sizeValue > 0) {
+                args.push('SIZE=' + sizeValue);
+            }
         }
 
         // If the server supports DSN and the envelope includes an DSN prop
@@ -1160,7 +1215,7 @@ class SMTPConnection extends EventEmitter {
             throw new Error('ret: ' + JSON.stringify(ret));
         }
 
-        let envid = (params.envid || params.id || '').toString() || null;
+        const envid = (params.envid || params.id || '').toString() || null;
 
         let notify = params.notify || null;
         if (notify) {
@@ -1168,8 +1223,8 @@ class SMTPConnection extends EventEmitter {
                 notify = notify.split(',');
             }
             notify = notify.map(n => n.trim().toUpperCase());
-            let validNotify = ['NEVER', 'SUCCESS', 'FAILURE', 'DELAY'];
-            let invalidNotify = notify.filter(n => !validNotify.includes(n));
+            const validNotify = ['NEVER', 'SUCCESS', 'FAILURE', 'DELAY'];
+            const invalidNotify = notify.filter(n => !validNotify.includes(n));
             if (invalidNotify.length || (notify.length > 1 && notify.includes('NEVER'))) {
                 throw new Error('notify: ' + JSON.stringify(notify.join(',')));
             }
@@ -1190,7 +1245,7 @@ class SMTPConnection extends EventEmitter {
     }
 
     _getDsnRcptToArgs() {
-        let args = [];
+        const args = [];
         // If the server supports DSN and the envelope includes an DSN prop
         // then append DSN params to the RCPT TO command
         if (this._envelope.dsn && this._supportedExtensions.includes('DSN')) {
@@ -1205,12 +1260,11 @@ class SMTPConnection extends EventEmitter {
     }
 
     _createSendStream(callback) {
-        let dataStream = new DataStream();
-        let logStream;
+        const dataStream = new DataStream();
 
         if (this.options.lmtp) {
             this._envelope.accepted.forEach((recipient, i) => {
-                let final = i === this._envelope.accepted.length - 1;
+                const final = i === this._envelope.accepted.length - 1;
                 this._responseActions.push(str => {
                     this._actionLMTPStream(recipient, final, str, callback);
                 });
@@ -1226,7 +1280,7 @@ class SMTPConnection extends EventEmitter {
         });
 
         if (this.options.debug) {
-            logStream = new PassThrough();
+            const logStream = new PassThrough();
             logStream.on('readable', () => {
                 let chunk;
                 while ((chunk = logStream.read())) {
@@ -1504,24 +1558,21 @@ class SMTPConnection extends EventEmitter {
      * @param {String} str Message from the server
      */
     _actionAUTH_CRAM_MD5(str, callback) {
-        let challengeMatch = str.match(/^334\s+(.+)$/);
-        let challengeString = '';
+        const challengeMatch = str.match(/^334\s+(.+)$/);
 
         if (!challengeMatch) {
             return callback(
                 this._formatError('Invalid login sequence while waiting for server challenge string', 'EAUTH', str, 'AUTH CRAM-MD5')
             );
-        } else {
-            challengeString = challengeMatch[1];
         }
 
         // Decode from base64
-        let base64decoded = Buffer.from(challengeString, 'base64').toString('ascii'),
-            hmacMD5 = crypto.createHmac('md5', this._auth.credentials.pass);
+        const base64decoded = Buffer.from(challengeMatch[1], 'base64').toString('ascii');
+        const hmacMD5 = crypto.createHmac('md5', this._auth.credentials.pass);
 
         hmacMD5.update(base64decoded);
 
-        let prepended = this._auth.credentials.user + ' ' + hmacMD5.digest('hex');
+        const prepended = this._auth.credentials.user + ' ' + hmacMD5.digest('hex');
 
         this._responseActions.push(str => {
             this._actionAUTH_CRAM_MD5_PASS(str, callback);
@@ -1642,39 +1693,29 @@ class SMTPConnection extends EventEmitter {
      * @param {String} str Message from the server
      */
     _actionMAIL(str, callback) {
-        let message, curRecipient;
         if (Number(str.charAt(0)) !== 2) {
-            if (this._usingSmtpUtf8 && /^550 /.test(str) && /[\x80-\uFFFF]/.test(this._envelope.from)) {
-                message = 'Internationalized mailbox name not allowed';
-            } else {
-                message = 'Mail command failed';
-            }
+            const message =
+                this._usingSmtpUtf8 && /^550 /.test(str) && /[\x80-\uFFFF]/.test(this._envelope.from)
+                    ? 'Internationalized mailbox name not allowed'
+                    : 'Mail command failed';
             return callback(this._formatError(message, 'EENVELOPE', str, 'MAIL FROM'));
         }
 
         if (!this._envelope.rcptQueue.length) {
             return callback(this._formatError("Can't send mail - no recipients defined", 'EENVELOPE', false, 'API'));
-        } else {
-            this._recipientQueue = [];
-
-            if (this._supportedExtensions.includes('PIPELINING')) {
-                while (this._envelope.rcptQueue.length) {
-                    curRecipient = this._envelope.rcptQueue.shift();
-                    this._recipientQueue.push(curRecipient);
-                    this._responseActions.push(str => {
-                        this._actionRCPT(str, callback);
-                    });
-                    this._sendCommand('RCPT TO:<' + curRecipient + '>' + this._getDsnRcptToArgs());
-                }
-            } else {
-                curRecipient = this._envelope.rcptQueue.shift();
-                this._recipientQueue.push(curRecipient);
-                this._responseActions.push(str => {
-                    this._actionRCPT(str, callback);
-                });
-                this._sendCommand('RCPT TO:<' + curRecipient + '>' + this._getDsnRcptToArgs());
-            }
         }
+
+        this._recipientQueue = [];
+        const usePipelining = this._supportedExtensions.includes('PIPELINING');
+
+        do {
+            const curRecipient = this._envelope.rcptQueue.shift();
+            this._recipientQueue.push(curRecipient);
+            this._responseActions.push(str => {
+                this._actionRCPT(str, callback);
+            });
+            this._sendCommand('RCPT TO:<' + curRecipient + '>' + this._getDsnRcptToArgs());
+        } while (usePipelining && this._envelope.rcptQueue.length);
     }
 
     /**
@@ -1683,16 +1724,14 @@ class SMTPConnection extends EventEmitter {
      * @param {String} str Message from the server
      */
     _actionRCPT(str, callback) {
-        let message,
-            err,
-            curRecipient = this._recipientQueue.shift();
+        let err;
+        const curRecipient = this._recipientQueue.shift();
         if (Number(str.charAt(0)) !== 2) {
             // this is a soft error
-            if (this._usingSmtpUtf8 && /^553 /.test(str) && /[\x80-\uFFFF]/.test(curRecipient)) {
-                message = 'Internationalized mailbox name not allowed';
-            } else {
-                message = 'Recipient command failed';
-            }
+            const message =
+                this._usingSmtpUtf8 && /^553 /.test(str) && /[\x80-\uFFFF]/.test(curRecipient)
+                    ? 'Internationalized mailbox name not allowed'
+                    : 'Recipient command failed';
             this._envelope.rejected.push(curRecipient);
             // store error for the failed recipient
             err = this._formatError(message, 'EENVELOPE', str, 'RCPT TO');
@@ -1715,12 +1754,12 @@ class SMTPConnection extends EventEmitter {
                 return callback(err);
             }
         } else if (this._envelope.rcptQueue.length) {
-            curRecipient = this._envelope.rcptQueue.shift();
-            this._recipientQueue.push(curRecipient);
+            const nextRecipient = this._envelope.rcptQueue.shift();
+            this._recipientQueue.push(nextRecipient);
             this._responseActions.push(str => {
                 this._actionRCPT(str, callback);
             });
-            this._sendCommand('RCPT TO:<' + curRecipient + '>' + this._getDsnRcptToArgs());
+            this._sendCommand('RCPT TO:<' + nextRecipient + '>' + this._getDsnRcptToArgs());
         }
     }
 
@@ -1736,7 +1775,7 @@ class SMTPConnection extends EventEmitter {
             return callback(this._formatError('Data command failed', 'EENVELOPE', str, 'DATA'));
         }
 
-        let response = {
+        const response = {
             accepted: this._envelope.accepted,
             rejected: this._envelope.rejected
         };
@@ -1760,12 +1799,9 @@ class SMTPConnection extends EventEmitter {
      */
     _actionSMTPStream(str, callback) {
         if (Number(str.charAt(0)) !== 2) {
-            // Message failed
             return callback(this._formatError('Message failed', 'EMESSAGE', str, 'DATA'));
-        } else {
-            // Message sent succesfully
-            return callback(null, str);
         }
+        return callback(null, str);
     }
 
     /**

@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI
  * @version 1.0.1
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 (function ($) {
@@ -565,7 +568,9 @@
 	 * @return {string} Session key.
 	 */
 	function generateSessionKey() {
-		return 'pm-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+		const array = new Uint8Array( 16 );
+		crypto.getRandomValues( array );
+		return 'pm-' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 	}
 
 	// Initialize when DOM is ready

@@ -6,6 +6,9 @@
  * for members with an agentic flow to guide users through adding necessary records.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,47 +30,69 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	/**
 	 * Default tools for health consolidation chat interface.
 	 *
+	 * Covers all USCDI data classes and full CPT CRUD for data entry.
+	 *
 	 * @var array
 	 */
 	const CHAT_TOOLS = array(
-		// Member management.
+		// Member management (USCDI: Patient Demographics).
 		'create_member',
 		'get_member',
 		'list_members',
 		'update_member',
 		'delete_member',
 		'get_member_health_summary',
-		// Medical records.
+		// Policy/insurance management (USCDI: Insurance Coverage — FHIR Coverage).
+		'create_policy',
+		'get_policy',
+		'list_policies',
+		'update_policy',
+		'delete_policy',
+		'search_policies',
+		'research_policy',
+		// Medical records (USCDI: Problems/Conditions — FHIR Condition/ICD-10).
 		'create_medical_record',
 		'get_medical_record',
 		'list_medical_records',
 		'update_medical_record',
 		'delete_medical_record',
 		'search_medical_records',
-		// Checkups.
+		// Checkups (USCDI: Encounters — FHIR Encounter).
 		'create_checkup',
 		'get_checkup',
 		'list_checkups',
 		'update_checkup',
 		'delete_checkup',
 		'get_upcoming_checkups',
-		// Prescriptions.
+		// Prescriptions (USCDI: Medications — FHIR MedicationStatement/NDC/RxNorm).
 		'create_prescription',
 		'get_prescription',
 		'list_prescriptions',
 		'update_prescription',
 		'delete_prescription',
 		'search_prescriptions',
-		// Allergies.
+		// Allergies (USCDI: Allergies & Intolerances — FHIR AllergyIntolerance).
 		'create_allergy',
 		'get_allergy',
 		'list_allergies',
 		'update_allergy',
 		'delete_allergy',
-		// Vital signs (CCT storage + trend analysis).
+		// Vital signs (USCDI: Vital Signs — FHIR Observation/LOINC CCT storage).
 		'log_vital_signs',
-		// Health tools.
+		'import_vitals',
+		// Immunizations (USCDI: Immunizations — FHIR Immunization).
+		'track_vaccinations',
+		// Specialized health tools.
+		'get_medication_schedule',
+		'create_health_reminder',
+		'log_health_metrics',
 		'generate_health_chart',
+		'analyze_loop_health',
+		// Data operations & interoperability.
+		'export_fhir_data',
+		'manage_care_plan',
+		'compile_health_research_data',
+		// AI-assisted data entry (agentic flow — USCDI-aligned completeness).
 		'guide_health_record_creation',
 		'parse_health_information',
 		// Document processing tools (from Document Generation toolkit).
@@ -136,6 +161,14 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
+
+		// Enqueue the shared research-page stylesheet so .wp-mcp-ai-research-chat is styled.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
 
 		// Enqueue consolidation page specific styles.
 		wp_enqueue_style(
@@ -330,7 +363,12 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 					<div class="wp-mcp-ai-workflow-selector">
 						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<div class="workflow-options">
-							<button type="button" class="workflow-option active" data-workflow="bulk">
+							<button type="button" class="workflow-option active" data-workflow="ai">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and manage records with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="bulk">
 								<span class="dashicons dashicons-upload"></span>
 								<strong><?php esc_html_e( 'Quick Import', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<p><?php esc_html_e( 'Dump everything - AI organizes it', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -353,8 +391,39 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						</div>
 					</div>
 
+					<!-- AI Research Mode (default) -->
+					<div id="workflow-ai" class="workflow-content active">
+						<div class="wp-mcp-ai-research-chat">
+							<?php if ( $assistant_id > 0 ) : ?>
+								<?php
+								// Render chat interface with all H&W tools, matching the quiz research page pattern.
+								// Tools cover the full USCDI data model: members, records, checkups,
+								// prescriptions, allergies, vital signs, immunizations, and more.
+								$hw_tools = self::CHAT_TOOLS;
+								echo do_shortcode(
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $hw_tools ) ) . '"]'
+								);
+								?>
+							<?php else : ?>
+								<div class="notice notice-error inline">
+									<p>
+										<?php
+										echo wp_kses_post(
+											sprintf(
+												/* translators: %s: Link to create assistant */
+												__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first to enable AI-guided record management.', 'mcp-ai-wpoos-pro' ),
+												admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+											)
+										);
+										?>
+									</p>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+
 					<!-- Quick Import Mode -->
-					<div id="workflow-bulk" class="workflow-content active">
+					<div id="workflow-bulk" class="workflow-content">
 						<div class="wp-mcp-ai-bulk-import-section">
 							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'mcp-ai-wpoos-pro' ); ?></h2>
 							<p class="description">
@@ -731,77 +800,6 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						</div><!-- .wp-mcp-ai-vitals-section -->
 					</div><!-- #workflow-vitals -->
 
-					<hr class="wp-mcp-ai-section-divider">
-
-					<?php if ( $assistant_id > 0 ) : ?>
-						<div class="wp-mcp-ai-consolidate-ai-section">
-							<h2><?php esc_html_e( 'AI Assistant for Record Management', 'mcp-ai-wpoos-pro' ); ?></h2>
-							<p class="description">
-								<?php esc_html_e( 'Use the AI assistant below to help you create and manage health records. The AI can guide you through adding missing records, suggest necessary checkups, and help maintain complete health profiles.', 'mcp-ai-wpoos-pro' ); ?>
-							</p>
-							
-							<div class="wp-mcp-ai-document-capabilities">
-								<h3>
-									<span class="dashicons dashicons-media-document"></span>
-									<?php esc_html_e( 'Document Processing Capabilities', 'mcp-ai-wpoos-pro' ); ?>
-								</h3>
-								<div class="wp-mcp-ai-document-capabilities-grid">
-									<div>
-										<strong><?php esc_html_e( '📥 Extract & Import:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'Extract text from PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Import Excel data', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-									<div>
-										<strong><?php esc_html_e( '📄 Generate Documents:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'PDF health reports', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Word documents', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Excel spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-									<div>
-										<strong><?php esc_html_e( '🔧 Manage Files:', 'mcp-ai-wpoos-pro' ); ?></strong>
-										<ul>
-											<li><?php esc_html_e( 'Merge PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Add watermarks', 'mcp-ai-wpoos-pro' ); ?></li>
-											<li><?php esc_html_e( 'Generate invoices', 'mcp-ai-wpoos-pro' ); ?></li>
-										</ul>
-									</div>
-								</div>
-								<p class="wp-mcp-ai-document-capabilities-examples">
-									<strong><?php esc_html_e( '💡 Example prompts:', 'mcp-ai-wpoos-pro' ); ?></strong><br>
-									<em>
-										<?php esc_html_e( '"Extract text from the uploaded lab report" • "Generate a health summary PDF for John Doe" • "Merge all medical documents into one PDF" • "Export medication list to Excel"', 'mcp-ai-wpoos-pro' ); ?>
-									</em>
-								</p>
-							</div>
-							
-							<div class="wp-mcp-ai-consolidate-chat">
-								<?php
-								// Render chat interface with comprehensive health management tools.
-								echo do_shortcode(
-									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', self::CHAT_TOOLS ) ) . '"]'
-								);
-								?>
-							</div>
-						</div>
-					<?php else : ?>
-						<div class="notice notice-error inline">
-							<p>
-								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to create assistant */
-										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first to enable AI-guided record management.', 'mcp-ai-wpoos-pro' ),
-										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
-									)
-								);
-								?>
-							</p>
-						</div>
-					<?php endif; ?>
 				</div>
 			</div>
 		</div>
@@ -1596,14 +1594,30 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized inside helper.
 		$data = self::sanitize_vitals_post_data( $_POST );
 
-		if ( empty( array_filter( $data ) ) ) {
+		// Require at least one numeric vital sign measurement (server-side defence).
+		if ( ! self::has_numeric_vitals( $data ) ) {
 			wp_send_json_error( array( 'message' => __( 'No vital sign data provided. Please fill in at least one measurement.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$data['logged_by'] = get_current_user_id();
-		$data['source']    = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+		// Ensure measurement date/time are always populated.
+		if ( empty( $data['measurement_date'] ) ) {
+			$data['measurement_date'] = current_time( 'Y-m-d' );
+		}
+		if ( empty( $data['measurement_time'] ) ) {
+			$data['measurement_time'] = current_time( 'H:i' );
+		}
 
-		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $data );
+		// Validate source against the CCT allowed option list.
+		$allowed_sources = array( 'manual', 'tma', 'api', 'import' );
+		$raw_source      = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+		$data['source']  = in_array( $raw_source, $allowed_sources, true ) ? $raw_source : 'manual';
+
+		// Stamp the entry with an audit trail — these mirror what log_vital_signs tool sets.
+		$data['logged_at'] = current_time( 'mysql' );
+		$data['logged_by'] = get_current_user_id();
+		$data['entry_id']  = 'vs_' . time() . '_' . wp_rand( 1000, 9999 );
+
+		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $data );
 
 		if ( ! $item_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'mcp-ai-wpoos-pro' ) ) );
@@ -1622,30 +1636,52 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	}
 
 	/**
+	 * Return true when $data contains at least one numeric vital sign field.
+	 *
+	 * Meta-only payloads (date, time, units, notes, source) must not be saved
+	 * as empty vitals entries.
+	 *
+	 * @param array $data Sanitized POST data.
+	 * @return bool
+	 */
+	private static function has_numeric_vitals( array $data ) {
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+				'respiratory_rate', 'egfr', 'creatinine', 'bun',
+				'potassium', 'sodium', 'phosphorus', 'albumin',
+			);
+
+		foreach ( $numeric_fields as $field ) {
+			if ( isset( $data[ $field ] ) && '' !== (string) $data[ $field ] ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Sanitize vitals data from a POST payload.
 	 *
 	 * @param array $post Raw POST data.
 	 * @return array      Sanitized key/value pairs matching the CCT schema.
 	 */
 	private static function sanitize_vitals_post_data( array $post ) {
-		$numeric_fields = array(
-			'bp_systolic',
-			'bp_diastolic',
-			'heart_rate',
-			'temperature',
-			'weight',
-			'bmi',
-			'blood_glucose',
-			'oxygen_saturation',
-			'respiratory_rate',
-			'egfr',
-			'creatinine',
-			'bun',
-			'potassium',
-			'sodium',
-			'phosphorus',
-			'albumin',
-		);
+		// Delegate to the CCT class for the authoritative field list so that
+		// adding a new vital field only requires a change in one place.
+		$numeric_fields = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' )
+			? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_numeric_vital_fields()
+			: array(
+				'bp_systolic', 'bp_diastolic', 'heart_rate', 'temperature',
+				'weight', 'bmi', 'blood_glucose', 'oxygen_saturation',
+				'respiratory_rate', 'egfr', 'creatinine', 'bun',
+				'potassium', 'sodium', 'phosphorus', 'albumin',
+			);
 
 		$data = array();
 

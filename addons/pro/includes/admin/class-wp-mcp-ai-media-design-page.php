@@ -6,6 +6,9 @@
  * with full chat interface for AI assistance.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -704,8 +707,9 @@ class WP_MCP_AI_Media_Design_Page {
 								</td>
 								<td><?php echo esc_html( get_the_date( '', $template ) ); ?></td>
 								<td>
-									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 									</a>
 								</td>
 							</tr>
@@ -796,8 +800,9 @@ class WP_MCP_AI_Media_Design_Page {
 								</td>
 								<td><?php echo esc_html( get_the_date( '', $collection ) ); ?></td>
 								<td>
-									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></span>
 									</a>
 								</td>
 							</tr>

@@ -1,0 +1,53 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-dom-batcher",
+  "version": "0.1.0-alpha.1",
+  "description": "requestAnimationFrame DOM update batcher, scroll batcher, and UI utilities for high-frequency streaming UIs - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-dom-batcher.js",
+  "module": "dist/nvoos-dom-batcher.js",
+  "types": "dist/nvoos-dom-batcher.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-dom-batcher.js",
+      "default": "./dist/nvoos-dom-batcher.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-dom-batcher",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-dom-batcher"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "dom-batcher",
+    "raf",
+    "requestAnimationFrame",
+    "performance",
+    "streaming-ui",
+    "scroll",
+    "dom-utilities",
+    "browser",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

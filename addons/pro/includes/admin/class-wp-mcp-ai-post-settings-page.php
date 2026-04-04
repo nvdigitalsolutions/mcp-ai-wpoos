@@ -6,6 +6,9 @@
  * for Post Research & Add functionality.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -111,6 +114,7 @@ class WP_MCP_AI_Post_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			'wp_save_post'          => __( 'Save Post', 'mcp-ai-wpoos-pro' ),
 			'wp_get_recent_posts'   => __( 'Get Recent Posts', 'mcp-ai-wpoos-pro' ),
 			'research_post'         => __( 'Research Post Topic', 'mcp-ai-wpoos-pro' ),
+			'research_blog_post'    => __( 'Research Blog Post (Rich Media)', 'mcp-ai-wpoos-pro' ),
 			'generate_post_excerpt' => __( 'Generate Post Excerpt', 'mcp-ai-wpoos-pro' ),
 			'wp_search_content'     => __( 'Search Content', 'mcp-ai-wpoos-pro' ),
 			'wp_get_post_meta'      => __( 'Get Post Metadata', 'mcp-ai-wpoos-pro' ),

@@ -4,6 +4,9 @@
  * Provides modal-based chat interface and quick action buttons for content editing.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 (function ($) {
@@ -27,7 +30,9 @@
 	 * @return {string} Session key.
 	 */
 	function generateSessionKey() {
-		return 'ca_' + Math.random().toString(36).substring(2, 15) + Date.now();
+		const array = new Uint8Array( 16 );
+		crypto.getRandomValues( array );
+		return 'ca_' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 	}
 
 	/**

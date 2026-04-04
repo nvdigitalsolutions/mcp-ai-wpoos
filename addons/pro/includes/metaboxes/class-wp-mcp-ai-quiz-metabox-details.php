@@ -3,6 +3,9 @@
  * Quiz Details Metabox.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -125,7 +128,7 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Check nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_quiz_details_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_quiz_details_nonce'], 'wp_mcp_ai_quiz_details_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_quiz_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_quiz_details_nonce'] ) ), 'wp_mcp_ai_quiz_details_nonce' ) ) {
 			return;
 		}
 

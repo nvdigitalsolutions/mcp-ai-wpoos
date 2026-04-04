@@ -5,6 +5,9 @@
  * Allows AI assistants to search prescriptions with advanced filtering.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,8 +63,8 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				),
 				'active_only' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Only show currently active prescriptions (optional, default: true)', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'description' => __( 'Only show prescriptions with status "active" (optional, default: false)', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 				'start_date'  => array(
 					'type'        => 'string',
@@ -99,6 +102,24 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_prescription',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'pharmacist' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -134,7 +155,7 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 		$member_id   = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$medication  = isset( $arguments['medication'] ) ? sanitize_text_field( $arguments['medication'] ) : '';
 		$prescriber  = isset( $arguments['prescriber'] ) ? sanitize_text_field( $arguments['prescriber'] ) : '';
-		$active_only = isset( $arguments['active_only'] ) ? (bool) $arguments['active_only'] : true;
+		$active_only = isset( $arguments['active_only'] ) ? (bool) $arguments['active_only'] : false;
 		$start_date  = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : '';
 		$end_date    = isset( $arguments['end_date'] ) ? sanitize_text_field( $arguments['end_date'] ) : '';
 		$search      = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
@@ -159,8 +180,11 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 			'order'          => 'ASC',
 		);
 
-		// Add search if provided.
-		if ( $search ) {
+		// Medication name searches post title (medication_name = post_title).
+		// The broader 'search' param also searches content via WordPress text search.
+		if ( $medication ) {
+			$query_args['s'] = $medication;
+		} elseif ( $search ) {
 			$query_args['s'] = $search;
 		}
 
@@ -175,10 +199,10 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		// Filter by prescriber.
+		// Filter by prescriber (correct meta key: _prescription_doctor).
 		if ( $prescriber ) {
 			$meta_query[] = array(
-				'key'     => '_prescription_prescriber',
+				'key'     => '_prescription_doctor',
 				'value'   => $prescriber,
 				'compare' => 'LIKE',
 			);
@@ -204,22 +228,12 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		// Filter active only.
+		// Filter active only: match by status field (more reliable than date ranges,
+		// which fail when start_date or end_date are not set on a prescription).
 		if ( $active_only ) {
 			$meta_query[] = array(
-				'relation' => 'AND',
-				array(
-					'key'     => '_prescription_start_date',
-					'value'   => current_time( 'Y-m-d' ),
-					'compare' => '<=',
-					'type'    => 'DATE',
-				),
-				array(
-					'key'     => '_prescription_end_date',
-					'value'   => current_time( 'Y-m-d' ),
-					'compare' => '>=',
-					'type'    => 'DATE',
-				),
+				'key'   => '_prescription_status',
+				'value' => 'active',
 			);
 		}
 
@@ -238,10 +252,10 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				$prescription_id = get_the_ID();
 
 				// Get member info.
-				$member_id   = get_post_meta( $prescription_id, '_prescription_member_id', true );
-				$member_name = '';
-				if ( $member_id ) {
-					$member      = get_post( $member_id );
+				$rx_member_id = get_post_meta( $prescription_id, '_prescription_member_id', true );
+				$member_name  = '';
+				if ( $rx_member_id ) {
+					$member      = get_post( $rx_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 
@@ -252,17 +266,18 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				$is_active = ( ! $start || $start <= $today ) && ( ! $end || $end >= $today );
 
 				$prescriptions[] = array(
-					'id'           => $prescription_id,
-					'medication'   => get_the_title(),
-					'member_id'    => $member_id,
-					'member_name'  => $member_name,
-					'dosage'       => get_post_meta( $prescription_id, '_prescription_dosage', true ),
-					'frequency'    => get_post_meta( $prescription_id, '_prescription_frequency', true ),
-					'prescriber'   => get_post_meta( $prescription_id, '_prescription_prescriber', true ),
-					'start_date'   => $start,
-					'end_date'     => $end,
-					'is_active'    => $is_active,
-					'instructions' => wp_trim_words( get_the_content(), 20 ),
+					'id'                 => $prescription_id,
+					'medication_name'    => get_the_title(),
+					'member_id'          => $rx_member_id,
+					'member_name'        => $member_name,
+					'dosage'             => get_post_meta( $prescription_id, '_prescription_dosage', true ),
+					'frequency'          => get_post_meta( $prescription_id, '_prescription_frequency', true ),
+					'prescribing_doctor' => get_post_meta( $prescription_id, '_prescription_doctor', true ),
+					'start_date'         => $start,
+					'end_date'           => $end,
+					'status'             => get_post_meta( $prescription_id, '_prescription_status', true ),
+					'is_active'          => $is_active,
+					'notes'              => wp_trim_words( get_the_content(), 20 ),
 				);
 			}
 			wp_reset_postdata();

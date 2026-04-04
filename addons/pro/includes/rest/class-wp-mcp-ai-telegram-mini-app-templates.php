@@ -15,6 +15,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.1.3
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -88,7 +91,12 @@ abstract class WP_MCP_AI_Telegram_Mini_App_Template_Base {
 	 *                    media_url, settings_url, analytics_url, shop_url,
 	 *                    login_url, chart_js_url, site_name, nonce, page_title,
 	 *                    assistant_id (resolved Mini App assistant ID string),
-	 *                    chat_url (absolute URL to /mcp-ai/v1/chat-client).
+	 *                    chat_url (absolute URL to /mcp-ai/v1/telegram-mini-app/chat –
+	 *                    a TMA-aware endpoint that accepts both WordPress nonces and the
+	 *                    TMA session token returned by validate_url),
+	 *                    validate_url (absolute URL to /mcp-ai/v1/telegram-mini-app/validate –
+	 *                    call this on page load to authenticate the Telegram user and
+	 *                    receive a fresh wp_nonce and tma_token for subsequent requests).
 	 * @return string
 	 */
 	abstract public function render_html( array $ctx );
@@ -103,6 +111,12 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	 * WordPress option key that stores the selected template slug.
 	 */
 	const OPTION_KEY = 'wp_mcp_ai_telegram_mini_app_template';
+
+	/**
+	 * Prefix for per-template customization option keys.
+	 * Full key: wp_mcp_ai_tma_custom_{slug}
+	 */
+	const CUSTOM_OPTION_PREFIX = 'wp_mcp_ai_tma_custom_';
 
 	/**
 	 * Registered templates indexed by slug.
@@ -205,25 +219,186 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	/**
 	 * Static proxy: return metadata arrays for all registered templates.
 	 *
-	 * Each item contains: slug, name, description, icon, accent_color, toolkit.
+	 * Each item contains: slug, name, description, icon, accent_color, toolkit,
+	 * has_customizations, custom_css.  When a template has saved customizations
+	 * the display fields (name, description, icon, accent_color) are merged so
+	 * the React picker always shows the user-edited values.
 	 *
 	 * @since 1.1.3
 	 *
-	 * @return array<int,array<string,string>>
+	 * @return array<int,array<string,mixed>>
 	 */
 	public static function get_all_meta() {
 		$meta = array();
 		foreach ( self::instance()->all() as $tpl ) {
+			$custom = self::get_customizations( $tpl->get_slug() );
 			$meta[] = array(
-				'slug'         => $tpl->get_slug(),
-				'name'         => $tpl->get_name(),
-				'description'  => $tpl->get_description(),
-				'icon'         => $tpl->get_icon(),
-				'accent_color' => $tpl->get_accent_color(),
-				'toolkit'      => $tpl->get_toolkit(),
+				'slug'                 => $tpl->get_slug(),
+				'name'                 => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+				'description'          => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+				'icon'                 => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+				'accent_color'         => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+				'toolkit'              => $tpl->get_toolkit(),
+				'has_customizations'   => ! empty( $custom ),
+				'custom_css'           => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+				// Base (original) values always available for the editor to show defaults.
+				'base_name'            => $tpl->get_name(),
+				'base_description'     => $tpl->get_description(),
+				'base_icon'            => $tpl->get_icon(),
+				'base_accent_color'    => $tpl->get_accent_color(),
 			);
 		}
 		return $meta;
+	}
+
+	/**
+	 * Return the full metadata for a single registered template, including any
+	 * saved customizations.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array|null   Metadata array or null if the slug is not registered.
+	 */
+	public static function get_meta( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$tpl  = self::get( $slug );
+		if ( ! $tpl ) {
+			return null;
+		}
+		$custom = self::get_customizations( $slug );
+		return array(
+			'slug'               => $tpl->get_slug(),
+			'name'               => ! empty( $custom['name'] ) ? $custom['name'] : $tpl->get_name(),
+			'description'        => ! empty( $custom['description'] ) ? $custom['description'] : $tpl->get_description(),
+			'icon'               => ! empty( $custom['icon'] ) ? $custom['icon'] : $tpl->get_icon(),
+			'accent_color'       => ! empty( $custom['accent_color'] ) ? $custom['accent_color'] : $tpl->get_accent_color(),
+			'toolkit'            => $tpl->get_toolkit(),
+			'has_customizations' => ! empty( $custom ),
+			'custom_css'         => isset( $custom['custom_css'] ) ? $custom['custom_css'] : '',
+			'base_name'          => $tpl->get_name(),
+			'base_description'   => $tpl->get_description(),
+			'base_icon'          => $tpl->get_icon(),
+			'base_accent_color'  => $tpl->get_accent_color(),
+		);
+	}
+
+	// ── Per-template customization helpers ──────────────────────────────────
+
+	/**
+	 * Return saved customizations for a template slug.
+	 *
+	 * Returns an associative array with keys: name, description, icon,
+	 * accent_color, custom_css.  Returns an empty array when no customizations
+	 * have been saved.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return array
+	 */
+	public static function get_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		$data = get_option( self::CUSTOM_OPTION_PREFIX . $slug, array() );
+		return is_array( $data ) ? $data : array();
+	}
+
+	/**
+	 * Save per-template customizations.
+	 *
+	 * Only the following keys are accepted; all values are sanitized.
+	 *   name         – display name shown in the picker card (≤ 120 chars)
+	 *   description  – short description shown below the name (≤ 500 chars)
+	 *   icon         – emoji / short string shown as the card icon (≤ 10 chars)
+	 *   accent_color – valid CSS colour value (≤ 30 chars)
+	 *   custom_css   – raw CSS injected into the rendered Mini App <head>
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @param  array  $data Associative array of fields to save.
+	 * @return bool         True on success.
+	 */
+	public static function save_customizations( $slug, array $data ) {
+		$slug = sanitize_key( (string) $slug );
+		if ( ! self::instance()->has( $slug ) ) {
+			return false;
+		}
+
+		$allowed = array( 'name', 'description', 'icon', 'accent_color', 'custom_css' );
+		$current = self::get_customizations( $slug );
+		$merged  = $current;
+
+		foreach ( $allowed as $key ) {
+			if ( ! array_key_exists( $key, $data ) ) {
+				continue;
+			}
+			switch ( $key ) {
+				case 'name':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 120 );
+					break;
+				case 'description':
+					$merged[ $key ] = substr( sanitize_textarea_field( (string) $data[ $key ] ), 0, 500 );
+					break;
+				case 'icon':
+					$merged[ $key ] = substr( sanitize_text_field( (string) $data[ $key ] ), 0, 10 );
+					break;
+				case 'accent_color':
+					// Allow only CSS-safe colour strings (hex, rgb/rgba, hsl/hsla, named colours).
+					// Pattern matches: #rgb, #rrggbb, #rrggbbaa, rgb(...), rgba(...), hsl(...), hsla(...), CSS named colours.
+					$color = sanitize_text_field( (string) $data[ $key ] );
+					if ( preg_match( '/^(#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6,8})|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+[\s,.\d]*\)|hsla?\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%[\s,.\d]*\)|[a-zA-Z]{2,30})$/', $color ) ) {
+						$merged[ $key ] = $color;
+					}
+					break;
+				case 'custom_css':
+					// Strip PHP/HTML tags and @import directives to prevent loading external
+					// stylesheets via the Mini App page (admins-only feature, but defence-in-depth).
+					$css = wp_strip_all_tags( (string) $data[ $key ] );
+					// Remove @import rules (case-insensitive, with optional whitespace).
+					$css = preg_replace( '/@import\s[^;]+;?/i', '', $css );
+					$merged[ $key ] = $css;
+					break;
+			}
+		}
+
+		// Remove empty strings to keep the stored value compact.
+		$merged = array_filter(
+			$merged,
+			function( $v ) {
+				return '' !== $v;
+			}
+		);
+
+		return update_option( self::CUSTOM_OPTION_PREFIX . $slug, $merged, false );
+	}
+
+	/**
+	 * Delete all customizations for a template slug, restoring defaults.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return bool         True if the option was successfully deleted or did not exist.
+	 */
+	public static function reset_customizations( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+		return delete_option( self::CUSTOM_OPTION_PREFIX . $slug );
+	}
+
+	/**
+	 * Return any saved custom CSS for a template slug (empty string if none).
+	 *
+	 * Convenience helper used by the REST controller when rendering HTML.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param  string $slug Template slug.
+	 * @return string
+	 */
+	public static function get_custom_css( $slug ) {
+		$custom = self::get_customizations( sanitize_key( (string) $slug ) );
+		return isset( $custom['custom_css'] ) ? $custom['custom_css'] : '';
 	}
 
 	/**
@@ -257,6 +432,8 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_Default() );
 		$this->register( new WP_MCP_AI_TMA_Template_AI_Chat() );
 		$this->register( new WP_MCP_AI_TMA_Template_Ecommerce() );
+		$this->register( new WP_MCP_AI_TMA_Template_Woo_Shop() );
+		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Jewelry() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -371,6 +548,13 @@ function wp_mcp_ai_tma_base_js() {
 		'document.documentElement.style.setProperty("--tma-vh",h+"px");' .
 	'}' .
 	'function tmaHaptic(t){if(twa&&twa.HapticFeedback)twa.HapticFeedback.impactOccurred(t||"light");}' .
+	/* Build tool-execution request headers, including TMA token when available */
+	'function tmaToolHeaders(){' .
+		'var h={"Content-Type":"application/json"};' .
+		'if(typeof NONCE!=="undefined"&&NONCE){h["X-WP-Nonce"]=NONCE;}' .
+		'if(typeof TMA_TOKEN!=="undefined"&&TMA_TOKEN){h["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+		'return h;' .
+	'}' .
 	'tmaApplyTheme();tmaUpdateVH();' .
 	'if(twa){twa.onEvent("viewportChanged",tmaUpdateVH);twa.onEvent("themeChanged",tmaApplyTheme);twa.ready();}' .
 	'window.addEventListener("resize",tmaUpdateVH);';
@@ -1286,11 +1470,26 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
-		$chart_js_url = $ctx['chart_js_url'];
+		$site_name       = esc_html( $ctx['site_name'] );
+		$tools_exec      = $ctx['tools_url'] . '/execute';
+		$chat_url        = $ctx['chat_url'];
+		$validate_url    = $ctx['validate_url'] ?? '';
+		$assistant_id    = $ctx['assistant_id'];
+		$chart_js_url    = $ctx['chart_js_url'];
+		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
+
+		// Resolve the member linked to the current WordPress user so the mini app
+		// can auto-select without showing the picker on the very first load.
+		$server_member_id   = absint( $ctx['member_id'] ?? 0 );
+		$server_member_name = '';
+		if ( $server_member_id ) {
+			$member_post = get_post( $server_member_id );
+			if ( $member_post && 'mcp_ai_member' === $member_post->post_type ) {
+				$server_member_name = $member_post->post_title;
+			} else {
+				$server_member_id = 0;
+			}
+		}
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-health-wellness-template">' .
@@ -1392,7 +1591,70 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'.tma-hw-coach-send{width:36px;height:36px;border-radius:50%;border:none;' .
 			'background:var(--tma-btn);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;' .
 			'display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' .
+
+		/* Member picker overlay */
+		'.tma-member-picker{position:fixed;inset:0;background:var(--tma-bg);z-index:900;' .
+			'display:none;flex-direction:column;align-items:center;padding:28px 16px 16px;overflow-y:auto}' .
+		'.tma-member-picker-icon{font-size:48px;line-height:1;margin-bottom:12px}' .
+		'.tma-member-picker-title{font-size:20px;font-weight:700;color:var(--tma-text);margin-bottom:4px;text-align:center}' .
+		'.tma-member-picker-sub{font-size:13px;color:var(--tma-hint);margin-bottom:20px;text-align:center;max-width:280px}' .
+		'.tma-member-list{width:100%;max-width:420px}' .
+		'.tma-member-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;' .
+			'display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:transparent}' .
+		'.tma-member-card:active{background:var(--tma-secondary-bg)}' .
+		'.tma-member-card-icon{width:40px;height:40px;border-radius:50%;background:var(--tma-btn);' .
+			'color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}' .
+		'.tma-member-card-name{font-size:15px;font-weight:600;color:var(--tma-text)}' .
+		'.tma-member-card-type{font-size:12px;color:var(--tma-hint);text-transform:capitalize}' .
+		'.tma-member-msg{color:var(--tma-hint);font-size:14px;text-align:center;padding:20px 0}' .
+		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
+			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
+
+		/* New-member creation form inside the member picker */
+		'.hw-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
+			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
+		'.hw-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
+		'.hw-new-member-type-row{display:flex;gap:8px;margin-bottom:12px}' .
+		'.hw-type-btn{flex:1;padding:8px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:13px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.hw-type-btn.active{border-color:var(--tma-btn);color:var(--tma-btn);background:var(--tma-secondary-bg);font-weight:600}' .
+		'.hw-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
+		'.hw-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
 		'</style>' .
+
+		/* ── Member picker overlay ─────────────────────────────────────────── */
+		'<div class="tma-member-picker" id="tma-member-picker">' .
+			'<div class="tma-member-picker-icon">&#128101;</div>' .
+			'<div class="tma-member-picker-title">' . esc_html__( 'Select Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'<div class="tma-member-picker-sub">' . esc_html__( 'Choose a member to view their health & wellness data.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'<div class="tma-member-list" id="tma-hw-member-list">' .
+				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'</div>' .
+			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+			'<div class="hw-new-member-form" id="hw-new-member-form">' .
+				'<div class="hw-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="hw-new-member-type-row">' .
+					'<button class="hw-type-btn active" id="hw-type-btn-person" onclick="hwSetMemberType(\'person\',this)">' . esc_html__( '👤 Person', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="hw-type-btn" id="hw-type-btn-pet" onclick="hwSetMemberType(\'pet\',this)">' . esc_html__( '🐶 Pet', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="tma-hw-log-label" for="hw-new-member-name">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="text" id="hw-new-member-name" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'Full name…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+				'<div style="margin-bottom:14px">' .
+					'<label class="tma-hw-log-label" for="hw-new-member-dob">' . esc_html__( 'Date of Birth', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="date" id="hw-new-member-dob" class="tma-input" style="width:100%" />' .
+				'</div>' .
+				'<div class="hw-new-member-err" id="hw-new-member-err"></div>' .
+				'<div class="hw-new-member-saving" id="hw-new-member-saving">' . esc_html__( 'Saving…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div style="display:flex;gap:8px">' .
+					'<button class="tma-btn tma-btn-secondary" style="flex:1" onclick="hwHideNewMemberForm()">' . esc_html__( 'Cancel', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="tma-btn tma-btn-primary" style="flex:1" onclick="hwSubmitNewMember()">' . esc_html__( 'Create', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+			'</div>' .
+		'</div>' .
 
 		/* ── Shell ─────────────────────────────────────────────────────────── */
 		'<div class="tma-shell" id="tma-shell">' .
@@ -1403,8 +1665,12 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'<div class="tma-header-info">' .
 				'<div class="tma-header-name">' . $site_name . '</div>' .
 				'<div class="tma-header-status">' . esc_html__( 'Health & Wellness', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="tma-header-member" id="tma-hw-member-label"></div>' .
 			'</div>' .
 			'<div class="tma-header-actions">' .
+				'<button class="tma-icon-btn" title="' . esc_attr__( 'Switch Member', 'mcp-ai-wpoos-pro' ) . '" onclick="hwSwitchMember()">' .
+					'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' .
+				'</button>' .
 				'<button class="tma-icon-btn" title="' . esc_attr__( 'Refresh', 'mcp-ai-wpoos-pro' ) . '" onclick="hwRefresh()">' .
 					'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' .
 				'</button>' .
@@ -1559,9 +1825,66 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var MARKDOWN_JS_URL=' . wp_json_encode( $markdown_js_url ) . ';' .
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var MEMBER_ID=0;' .
+		'var MEMBER_NAME="";' .
+		'var TMA_TOKEN="";' .
 		'var coachHist=[];' .
+		/* Server-resolved member for the current WordPress user (0 when unknown) */
+		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
+		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
+
+		/* ── Markdown renderer loader ── */
+		/* Load the lightweight TMA markdown renderer on demand so coach     */
+		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		'function hwLoadMarkdown(cb){' .
+			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
+			'if(!MARKDOWN_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=MARKDOWN_JS_URL;' .
+			's.onload=function(){cb();};s.onerror=function(){cb();};' .
+			'document.head.appendChild(s);' .
+		'}' .
+
+		/* ── Render reply using the preferred markdown method ── */
+		'function hwRenderReply(el,text){' .
+			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
+				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
+			'}else if(el){' .
+				'el.textContent=text;' .
+			'}' .
+		'}' .
+
+		/* ── Session init: authenticate via Telegram initData ── */
+		/* Calls /validate so the coach tab chat requests are authenticated  */
+		/* even when Telegram's WebView does not persist the auth cookie.    */
+		'function hwInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",' .
+				'headers:{"Content-Type":"application/json"},' .
+				'body:JSON.stringify({init_data:initData})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d)return;' .
+				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
+				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+				/* Re-fetch members with fresh auth if the picker is still open */
+				'var picker=document.getElementById("tma-member-picker");' .
+				'if(picker&&picker.style.display==="flex"){hwFetchMembers();}' .
+				/* Re-sync server health metrics now that auth is established.
+				 * hwSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)hwSyncFromServer();' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── Storage helpers ── */
 		'var SK_PREFIX="hw_";' .
@@ -1599,6 +1922,184 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		/* HTML-escape helper */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
+
+		/* ── Member picker ── */
+		'function hwLoadSavedMember(){' .
+			'try{' .
+				'var d=JSON.parse(localStorage.getItem("hw_member_id")||"null");' .
+				'if(d&&d.id){MEMBER_ID=d.id;MEMBER_NAME=d.name||"";}' .
+			'}catch(e){}' .
+		'}' .
+
+		'function hwShowMemberPicker(){' .
+			'var p=document.getElementById("tma-member-picker");' .
+			'if(p)p.style.display="flex";' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * hwInitSession().  Calling hwFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; hwInitSession() will call
+			 * hwFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'hwFetchMembers();' .
+			'}' .
+		'}' .
+
+		'function hwHideMemberPicker(){' .
+			'var p=document.getElementById("tma-member-picker");' .
+			'if(p)p.style.display="none";' .
+		'}' .
+
+		'window.hwFetchMembers=function(){' .
+			'var list=document.getElementById("tma-hw-member-list");' .
+			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var hwErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="hwFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
+			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				/* If the request failed (auth not yet established), keep the Loading… placeholder
+				 * so hwInitSession() can re-call hwFetchMembers() once auth succeeds.
+				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				'if(!d){if(list)list.innerHTML=hwErrHtml;return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
+				/* Auto-select when exactly one member exists — skip picker entirely */
+				'if(members.length===1){hwSelectMember(members[0].id,members[0].name);return;}' .
+				/* Build member cards (may be empty) then always append "+ New Member" */
+				'var cards=members.map(function(m){' .
+					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
+					'return\'<div class="tma-member-card" onclick="hwSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
+						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
+						'+\'<div><div class="tma-member-card-name">\'+escH(m.name)+\'</div>\'' .
+						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
+						'+\'</div>\';' .
+				'}).join("");' .
+				/* Always show the New Member card at the bottom */
+				'var newCard=\'<div class="tma-member-card" onclick="hwShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
+					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
+					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
+					'+\'<div class="tma-member-card-type">' . esc_js( __( 'Create a new profile', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'' .
+					'+\'</div>\';' .
+				'list.innerHTML=cards+newCard;' .
+			'})' .
+			'.catch(function(){if(list)list.innerHTML=hwErrHtml;});' .
+		'};' .
+
+		'window.hwSelectMember=function(id,name){' .
+			'MEMBER_ID=id;MEMBER_NAME=name;' .
+			'try{localStorage.setItem("hw_member_id",JSON.stringify({id:id,name:name}));}catch(e){}' .
+			'hwHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-hw-member-label");' .
+			'if(lbl)lbl.textContent=name;' .
+			'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+			'hwSyncFromServer();' .
+		'};' .
+
+		'window.hwSwitchMember=function(){hwHideNewMemberForm();hwShowMemberPicker();};' .
+
+		/* ── Server sync: pull stored health metrics into localStorage ── */
+		/* Calls log_health_metrics get_history and merges server entries   */
+		/* into localStorage so historical data survives device changes.    */
+		'function hwSyncFromServer(){' .
+			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
+			/* 90 days gives 3 months of history for streak/goal calculations */
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"log_health_metrics",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
+				'd.result.history.forEach(function(row){' .
+					'var k=row.date;if(!k)return;' .
+					/* Only fill dates that have no local data yet */
+					'var existing=null;try{existing=localStorage.getItem(SK_PREFIX+k);}catch(e){}' .
+					'if(!existing){' .
+						'try{localStorage.setItem(SK_PREFIX+k,JSON.stringify({' .
+							'steps:row.steps||0,water:row.water||0,sleep:row.sleep||0,' .
+							'calories:row.calories||0,sodium:row.sodium||0,mood:row.mood||0' .
+						'}));}catch(e){}' .
+					'}' .
+				'});' .
+				'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── New member form ── */
+		'var hwNewMemberType="person";' .
+
+		'window.hwSetMemberType=function(type,btn){' .
+			'hwNewMemberType=type;' .
+			'var btns=document.querySelectorAll(".hw-type-btn");' .
+			'btns.forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+		'};' .
+
+		'window.hwShowNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-hw-member-list");' .
+			'var form=document.getElementById("hw-new-member-form");' .
+			'if(list)list.style.display="none";' .
+			'if(form)form.style.display="block";' .
+			/* Reset form state */
+			'hwNewMemberType="person";' .
+			'var btnPerson=document.getElementById("hw-type-btn-person");' .
+			'var btnPet=document.getElementById("hw-type-btn-pet");' .
+			'if(btnPerson)btnPerson.classList.add("active");' .
+			'if(btnPet)btnPet.classList.remove("active");' .
+			'var nameEl=document.getElementById("hw-new-member-name");if(nameEl)nameEl.value="";' .
+			'var dobEl=document.getElementById("hw-new-member-dob");if(dobEl)dobEl.value="";' .
+			'var errEl=document.getElementById("hw-new-member-err");if(errEl)errEl.style.display="none";' .
+			'var savingEl=document.getElementById("hw-new-member-saving");if(savingEl)savingEl.style.display="none";' .
+		'};' .
+
+		'window.hwHideNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-hw-member-list");' .
+			'var form=document.getElementById("hw-new-member-form");' .
+			'if(form)form.style.display="none";' .
+			'if(list)list.style.display="block";' .
+		'};' .
+
+		'window.hwSubmitNewMember=function(){' .
+			'var nameEl=document.getElementById("hw-new-member-name");' .
+			'var name=(nameEl?nameEl.value:"").trim();' .
+			'var errEl=document.getElementById("hw-new-member-err");' .
+			'var savingEl=document.getElementById("hw-new-member-saving");' .
+			'if(!name){' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Name is required.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+				'return;' .
+			'}' .
+			'if(errEl)errEl.style.display="none";' .
+			'if(savingEl)savingEl.style.display="block";' .
+			'var args={name:name,type:hwNewMemberType};' .
+			'var dobEl=document.getElementById("hw-new-member-dob");' .
+			'var dob=(dobEl?dobEl.value:"").trim();if(dob)args.date_of_birth=dob;' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"create_member",arguments:args})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'var memberId=d&&d.result&&d.result.member_id?d.result.member_id:0;' .
+				'if(!memberId){' .
+					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+					'return;' .
+				'}' .
+				/* Auto-select the newly created member */
+				'hwSelectMember(memberId,name);' .
+			'})' .
+			'.catch(function(){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+			'});' .
+		'};' .
 
 		/* ── Tab switcher ── */
 		'window.hwTab=function(tab,btn){' .
@@ -1718,12 +2219,15 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'window.hwSaveLog=function(){' .
 			'hwStoreLog(LOG);tmaHaptic("success");' .
-			/* Optional server-side persistence — silent on error */
-			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
-				'body:JSON.stringify({tool:"log_health_metrics",arguments:{date:hwTodayKey(),' .
-					'steps:LOG.steps,water:LOG.water,sleep:LOG.sleep,calories:LOG.calories,sodium:LOG.sodium||0,mood:LOG.mood}})' .
-			'}).catch(function(){});' .
+			/* Optional server-side persistence when a member is resolved — silent on error */
+			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
+				'fetch(TOOLS_EXEC,{method:"POST",' .
+					'headers:tmaToolHeaders(),' .
+					'body:JSON.stringify({slug:"log_health_metrics",arguments:{date:hwTodayKey(),' .
+						'member_id:MEMBER_ID,steps:LOG.steps,water:LOG.water,sleep:LOG.sleep,' .
+						'calories:LOG.calories,sodium:LOG.sodium||0,mood:LOG.mood}})' .
+				'}).catch(function(){});' .
+			'}' .
 			'var msg=document.getElementById("tma-hw-log-saved");' .
 			'if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
 		'};' .
@@ -1797,8 +2301,11 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'coachHist.push({role:"user",content:msg});' .
 			'var body={messages:coachHist.slice(-20)};' .
 			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var hdrs={"Content-Type":"application/json","X-WP-Nonce":NONCE};' .
+			'if(TMA_TOKEN){hdrs["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+			'hwLoadMarkdown(function(){' .
 			'fetch(CHAT_URL,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:hdrs,' .
 				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
@@ -1806,18 +2313,44 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'var data=d&&d.data?d.data:{};' .
 				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
 					'||(data.content)||(data.response)||"' . esc_js( __( 'Keep up the great work! Stay consistent with your goals, hydrate well, and aim for 7-9 hours of sleep. 💪', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(loadEl)loadEl.textContent=reply;' .
+				'hwRenderReply(loadEl,reply);' .
 				'coachHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Stay hydrated! Aim for 8 glasses of water today. 💧', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'A 20-minute walk can boost your mood and energy. 🚶', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Quality sleep is foundational to health. Aim for 7-9 hours tonight. 😴', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Consistency is the key to long-term wellness. 🌟', 'mcp-ai-wpoos-pro' ) ) . '"];' .
-				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
+				'hwRenderReply(loadEl,tips[Math.floor(Math.random()*tips.length)]);' .
 			'}).finally(function(){if(msgs)msgs.scrollTop=msgs.scrollHeight;});' .
+			'});' .
 		'};' .
 
 		/* ── Init ── */
-		'LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function hwActivateMember(){' .
+			'hwHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-hw-member-label");' .
+			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
+		/* Priority order for member selection:                                  */
+		/*  1. localStorage (fastest – avoids any flicker)                       */
+		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
+		/*  3. Show member picker (user must choose or create)                   */
+		'hwLoadSavedMember();' .
+		'if(MEMBER_ID){' .
+			'hwActivateMember();' .
+		'}else if(SERVER_MEMBER_ID){' .
+			/* Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so data loads immediately. */
+			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
+			'try{localStorage.setItem("hw_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
+			'hwActivateMember();' .
+		'}else{' .
+			'hwShowMemberPicker();' .
+		'}' .
+		'hwInitSession();LOG=hwLoadLog();hwSyncUI();hwRefresh();' .
 		/* Restore saved mood selection */
 		'if(LOG.mood){var mb=document.querySelector(".tma-hw-mood-btn[data-mood=\'"+LOG.mood+"\']");if(mb)mb.classList.add("selected");}' .
+		'if(MEMBER_ID)hwSyncFromServer();' .
 		'})();</script></body>';
 		// phpcs:enable
 	}
@@ -1872,11 +2405,26 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
-		$chart_js_url = $ctx['chart_js_url'];
+		$site_name       = esc_html( $ctx['site_name'] );
+		$tools_exec      = $ctx['tools_url'] . '/execute';
+		$chat_url        = $ctx['chat_url'];
+		$validate_url    = $ctx['validate_url'] ?? '';
+		$assistant_id    = $ctx['assistant_id'];
+		$chart_js_url    = $ctx['chart_js_url'];
+		$markdown_js_url = $ctx['markdown_js_url'] ?? '';
+
+		// Resolve the member linked to the current WordPress user so the mini app
+		// can auto-select without showing the picker on the very first load.
+		$server_member_id   = absint( $ctx['member_id'] ?? 0 );
+		$server_member_name = '';
+		if ( $server_member_id ) {
+			$member_post = get_post( $server_member_id );
+			if ( $member_post && 'mcp_ai_member' === $member_post->post_type ) {
+				$server_member_name = $member_post->post_title;
+			} else {
+				$server_member_id = 0;
+			}
+		}
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-medical-vitals-template">' .
@@ -1970,7 +2518,174 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-doctor-send{width:36px;height:36px;border-radius:50%;border:none;' .
 			'background:var(--tma-btn);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;' .
 			'display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}' .
+
+		/* Member picker overlay — shared styles (duplicated from hw template so each template is self-contained) */
+		'.tma-member-picker{position:fixed;inset:0;background:var(--tma-bg);z-index:900;' .
+			'display:none;flex-direction:column;align-items:center;padding:28px 16px 16px;overflow-y:auto}' .
+		'.tma-member-picker-icon{font-size:48px;line-height:1;margin-bottom:12px}' .
+		'.tma-member-picker-title{font-size:20px;font-weight:700;color:var(--tma-text);margin-bottom:4px;text-align:center}' .
+		'.tma-member-picker-sub{font-size:13px;color:var(--tma-hint);margin-bottom:20px;text-align:center;max-width:280px}' .
+		'.tma-member-list{width:100%;max-width:420px}' .
+		'.tma-member-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:14px 16px;margin-bottom:10px;cursor:pointer;' .
+			'display:flex;align-items:center;gap:12px;-webkit-tap-highlight-color:transparent}' .
+		'.tma-member-card:active{background:var(--tma-secondary-bg)}' .
+		'.tma-member-card-icon{width:40px;height:40px;border-radius:50%;background:var(--tma-btn);' .
+			'color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}' .
+		'.tma-member-card-name{font-size:15px;font-weight:600;color:var(--tma-text)}' .
+		'.tma-member-card-type{font-size:12px;color:var(--tma-hint);text-transform:capitalize}' .
+		'.tma-member-msg{color:var(--tma-hint);font-size:14px;text-align:center;padding:20px 0}' .
+		'.tma-header-member{font-size:11px;color:var(--tma-btn);font-weight:600;' .
+			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}' .
+
+		/* New-member creation form inside the member picker */
+		'.mv-new-member-form{width:100%;max-width:420px;background:var(--tma-section-bg);' .
+			'border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;display:none}' .
+		'.mv-new-member-form-title{font-size:15px;font-weight:700;color:var(--tma-text);margin-bottom:12px}' .
+		'.mv-new-member-type-row{display:flex;gap:8px;margin-bottom:12px}' .
+		'.mv-type-btn{flex:1;padding:8px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:13px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.mv-type-btn.active{border-color:var(--tma-btn);color:var(--tma-btn);background:var(--tma-secondary-bg);font-weight:600}' .
+		'.mv-new-member-err{color:#c62828;font-size:12px;margin-bottom:8px;display:none}' .
+		'.mv-new-member-saving{color:var(--tma-hint);font-size:12px;margin-bottom:8px;display:none;text-align:center}' .
+
+		/* Date range segmented control (trends tab) */
+		'.mv-range-bar{display:flex;gap:0;border:1px solid var(--tma-border);border-radius:20px;overflow:hidden;margin:10px 12px 6px}' .
+		'.mv-range-btn{flex:1;padding:6px 0;border:none;background:transparent;color:var(--tma-hint);' .
+			'font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}' .
+		'.mv-range-btn.active{background:var(--tma-btn);color:#fff}' .
+
+		/* Settings tab */
+		'.mv-settings-wrap{padding:12px}' .
+		'.mv-settings-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:14px;margin-bottom:12px}' .
+		'.mv-settings-card-title{font-size:12px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;' .
+			'letter-spacing:.5px;margin-bottom:10px}' .
+		'.mv-settings-row{display:flex;justify-content:space-between;align-items:center;' .
+			'padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.mv-settings-row:last-child{border-bottom:none}' .
+		'.mv-settings-label{font-size:13px;color:var(--tma-text)}' .
+		'.mv-settings-value{font-size:13px;color:var(--tma-hint)}' .
+		'.mv-settings-btn{font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid var(--tma-btn);' .
+			'background:none;color:var(--tma-btn);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
+		'.mv-settings-btn.danger{border-color:#c62828;color:#c62828}' .
+
+		/* Inline member row inside settings — compact version of the picker cards */
+		'.mv-settings-member-row{display:flex;align-items:center;gap:10px;padding:10px 0;' .
+			'border-bottom:1px solid var(--tma-border);cursor:pointer;-webkit-tap-highlight-color:transparent}' .
+		'.mv-settings-member-row:last-child{border-bottom:none}' .
+		'.mv-settings-member-row.selected .tma-member-card-icon{background:#1565c0}' .
+		'.mv-settings-member-check{margin-left:auto;font-size:16px;color:var(--tma-btn);opacity:0}' .
+		'.mv-settings-member-row.selected .mv-settings-member-check{opacity:1}' .
+
+		/* Prescription cards */
+		'.mv-rx-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:12px;margin-bottom:10px;position:relative;overflow:hidden}' .
+		'.mv-rx-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--mv-rx-color,#1565c0)}' .
+		'.mv-rx-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}' .
+		'.mv-rx-icon{font-size:20px;flex-shrink:0}' .
+		'.mv-rx-name{font-size:14px;font-weight:600;flex:1}' .
+		'.mv-rx-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid;display:inline-block;flex-shrink:0}' .
+		'.mv-rx-badge.active{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.mv-rx-badge.completed{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.mv-rx-badge.discontinued{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.mv-rx-badge.expired{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.mv-rx-detail{font-size:12px;color:var(--tma-hint);margin-bottom:2px}' .
+
+		/* History log cards */
+		'.mv-hist-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);padding:12px;margin-bottom:8px;cursor:pointer;' .
+			'-webkit-tap-highlight-color:transparent}' .
+		'.mv-hist-card:active{background:var(--tma-secondary-bg)}' .
+		'.mv-hist-date{font-size:14px;font-weight:600;color:var(--tma-text);margin-bottom:4px;display:flex;align-items:center;gap:6px}' .
+		'.mv-hist-date-icon{font-size:16px}' .
+		'.mv-hist-chips{display:flex;flex-wrap:wrap;gap:4px}' .
+		'.mv-hist-chip{font-size:10px;padding:2px 6px;border-radius:10px;' .
+			'background:var(--tma-secondary-bg);color:var(--tma-hint);border:1px solid var(--tma-border)}' .
+		'.mv-hist-detail{margin-top:8px;padding-top:8px;border-top:1px solid var(--tma-border);display:none}' .
+		'.mv-hist-detail.open{display:block}' .
+		'.mv-hist-detail-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}' .
+		'.mv-hist-detail-label{color:var(--tma-hint)}' .
+		'.mv-hist-detail-val{font-weight:600;color:var(--tma-text)}' .
+
+		/* Font size setting buttons */
+		'.mv-font-btn{min-width:36px;text-align:center;font-weight:600}' .
+		'.mv-font-btn.active{background:var(--tma-btn);color:#fff;border-color:var(--tma-btn)}' .
+
+		/* Toggle switch knob */
+		'input:checked+span{background:var(--tma-btn) !important}' .
+		'input:checked+span+.mv-toggle-knob{transform:translateX(18px)}' .
+
+		/* Font size CSS custom properties (medium is default) */
+		'.mv-font-small{--mv-base:12px;--mv-label:10px;--mv-kpi:17px;--mv-section:12px;--mv-hint:9px}' .
+		'.mv-font-large{--mv-base:16px;--mv-label:14px;--mv-kpi:24px;--mv-section:16px;--mv-hint:12px}' .
+		'.mv-font-small .mv-kpi-val{font-size:var(--mv-kpi)}' .
+		'.mv-font-small .mv-kpi-label,.mv-font-small .mv-log-label{font-size:var(--mv-label)}' .
+		'.mv-font-small .mv-kpi-unit,.mv-font-small .mv-kpi-time{font-size:var(--mv-hint)}' .
+		'.mv-font-small .mv-med-name,.mv-font-small .mv-rx-name,.mv-font-small .mv-hist-date{font-size:var(--mv-base)}' .
+		'.mv-font-small .tma-section-title{font-size:var(--mv-section)}' .
+		'.mv-font-large .mv-kpi-val{font-size:var(--mv-kpi)}' .
+		'.mv-font-large .mv-kpi-label,.mv-font-large .mv-log-label{font-size:var(--mv-label)}' .
+		'.mv-font-large .mv-kpi-unit,.mv-font-large .mv-kpi-time{font-size:var(--mv-hint)}' .
+		'.mv-font-large .mv-med-name,.mv-font-large .mv-rx-name,.mv-font-large .mv-hist-date{font-size:var(--mv-base)}' .
+		'.mv-font-large .tma-section-title{font-size:var(--mv-section)}' .
+		'.mv-font-large .mv-med-dose,.mv-font-large .mv-med-schedule,.mv-font-large .mv-rx-detail{font-size:14px}' .
+		'.mv-font-large .mv-settings-label,.mv-font-large .mv-settings-value{font-size:15px}' .
+		'.mv-font-large .tma-input{font-size:15px}' .
+		'.mv-font-small .mv-med-dose,.mv-font-small .mv-med-schedule,.mv-font-small .mv-rx-detail{font-size:10px}' .
+		'.mv-font-small .mv-settings-label,.mv-font-small .mv-settings-value{font-size:11px}' .
+		'.mv-font-small .tma-input{font-size:11px}' .
+
+		/* Compact mode */
+		'.mv-compact .mv-kpi{padding:8px}' .
+		'.mv-compact .mv-kpi-grid{gap:6px;padding:6px 8px}' .
+		'.mv-compact .mv-med-card,.mv-compact .mv-rx-card,.mv-compact .mv-hist-card{padding:8px;margin-bottom:6px}' .
+		'.mv-compact .mv-log-section{margin-bottom:8px}' .
+		'.mv-compact .mv-banner{padding:8px 10px;margin:6px 8px}' .
 		'</style>' .
+
+		/* ── Member picker overlay ─────────────────────────────────────────── */
+		'<div class="tma-member-picker" id="tma-member-picker">' .
+			'<div class="tma-member-picker-icon">&#128101;</div>' .
+			'<div class="tma-member-picker-title">' . esc_html__( 'Select Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'<div class="tma-member-picker-sub">' . esc_html__( 'Choose a member to view their medical vitals data.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'<div class="tma-member-list" id="tma-mv-member-list">' .
+				'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+			'</div>' .
+			/* New member creation form (hidden by default, shown on "+ New Member" tap) */
+			'<div class="mv-new-member-form" id="mv-new-member-form">' .
+				'<div class="mv-new-member-form-title">&#128100; ' . esc_html__( 'Add New Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="mv-new-member-type-row">' .
+					'<button class="mv-type-btn active" id="mv-type-btn-person" onclick="mvSetMemberType(\'person\',this)">' . esc_html__( '👤 Person', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-type-btn" id="mv-type-btn-pet" onclick="mvSetMemberType(\'pet\',this)">' . esc_html__( '🐶 Pet', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="text" id="mv-new-member-name" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'Full name…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+				'<div style="margin-bottom:10px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Date of Birth', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<input type="date" id="mv-new-member-dob" class="tma-input" style="width:100%" />' .
+				'</div>' .
+				'<div style="margin-bottom:14px">' .
+					'<label class="mv-log-label">' . esc_html__( 'Blood Type', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<select id="mv-new-member-blood" class="tma-input" style="width:100%">' .
+						'<option value="">' . esc_html__( '— Select —', 'mcp-ai-wpoos-pro' ) . '</option>' .
+						'<option value="A+">A+</option><option value="A-">A-</option>' .
+						'<option value="B+">B+</option><option value="B-">B-</option>' .
+						'<option value="AB+">AB+</option><option value="AB-">AB-</option>' .
+						'<option value="O+">O+</option><option value="O-">O-</option>' .
+					'</select>' .
+				'</div>' .
+				'<div class="mv-new-member-err" id="mv-new-member-err"></div>' .
+				'<div class="mv-new-member-saving" id="mv-new-member-saving">' . esc_html__( 'Saving…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div style="display:flex;gap:8px">' .
+					'<button class="tma-btn tma-btn-secondary" style="flex:1" onclick="mvHideNewMemberForm()">' . esc_html__( 'Cancel', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="tma-btn tma-btn-primary" style="flex:1" onclick="mvSubmitNewMember()">' . esc_html__( 'Create', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
+			'</div>' .
+		'</div>' .
 
 		/* ── Shell ─────────────────────────────────────────────────────────── */
 		'<div class="tma-shell" id="tma-shell">' .
@@ -1981,8 +2696,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'<div class="tma-header-info">' .
 				'<div class="tma-header-name">' . $site_name . '</div>' .
 				'<div class="tma-header-status">' . esc_html__( 'Medical Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="tma-header-member" id="tma-mv-member-label"></div>' .
 			'</div>' .
 			'<div class="tma-header-actions">' .
+				'<button class="tma-icon-btn" title="' . esc_attr__( 'Switch Member', 'mcp-ai-wpoos-pro' ) . '" onclick="mvSwitchMember()">' .
+					'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' .
+				'</button>' .
 				'<button class="tma-icon-btn" title="' . esc_attr__( 'Refresh', 'mcp-ai-wpoos-pro' ) . '" onclick="mvRefresh()">' .
 					'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' .
 				'</button>' .
@@ -2009,6 +2728,12 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<div class="mv-kpi-grid" id="mv-kidney-kpi-grid" style="padding-top:6px">' .
 					'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_html__( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
+				'<div class="mv-range-bar" id="mv-dash-range-bar" role="group" aria-label="' . esc_attr__( 'Chart date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetDashChartRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetDashChartRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'</div>' .
 				'<div id="mv-dash-chart" style="padding-bottom:12px"></div>' .
 			'</div>' .
 		'</div>' .
@@ -2017,92 +2742,114 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-log">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-log-wrap">' .
-					'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Blood Pressure */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129728; ' . esc_html__( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<div class="mv-bp-row">' .
-							'<input type="number" id="mv-bp-sys" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Systolic', 'mcp-ai-wpoos-pro' ) . '" min="60" max="250" />' .
-							'<span class="mv-bp-sep">/</span>' .
-							'<input type="number" id="mv-bp-dia" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Diastolic', 'mcp-ai-wpoos-pro' ) . '" min="40" max="150" />' .
+					/* History list (default view) */
+					'<div id="mv-log-history-view">' .
+						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+							'<div class="tma-section-title" style="padding:0">&#128197; ' . esc_html__( 'Vitals History', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<button class="tma-btn tma-btn-primary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogForm()" aria-label="' . esc_attr__( 'Create new vitals entry', 'mcp-ai-wpoos-pro' ) . '">+ ' . esc_html__( 'New Entry', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
+						'<div id="mv-log-history-list"><div class="mv-empty">' . esc_html__( 'No vitals recorded yet.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 					'</div>' .
 
-					/* Heart Rate */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#10084; ' . esc_html__( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-hr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="30" max="250" />' .
-					'</div>' .
-
-					/* SpO2 */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128164; ' . esc_html__( 'Blood Oxygen SpO₂ (%)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-spo2" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98', 'mcp-ai-wpoos-pro' ) . '" min="70" max="100" step="1" />' .
-					'</div>' .
-
-					/* Temperature */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#127777; ' . esc_html__( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-temp" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98.6', 'mcp-ai-wpoos-pro' ) . '" min="90" max="110" step="0.1" />' .
-					'</div>' .
-
-					/* Glucose */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
-					'</div>' .
-
-					/* ── Kidney Lab Values ── */
-					'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
-
-					/* eGFR */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
-						'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
-					'</div>' .
-
-					/* Creatinine */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
-					'</div>' .
-
-					/* BUN */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
-					'</div>' .
-
-					/* Two-column row: Potassium + Sodium */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<div style="display:flex;gap:8px">' .
-							'<div style="flex:1"><input type="number" id="mv-potassium" class="tma-input" placeholder="K\u207a ' . esc_attr__( 'Potassium', 'mcp-ai-wpoos-pro' ) . '" min="1" max="10" step="0.1" /></div>' .
-							'<div style="flex:1"><input type="number" id="mv-sodium" class="tma-input" placeholder="Na\u207a ' . esc_attr__( 'Sodium', 'mcp-ai-wpoos-pro' ) . '" min="100" max="180" step="1" /></div>' .
+					/* Record form (hidden by default) */
+					'<div id="mv-log-form-view" style="display:none">' .
+						'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+							'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Record Vitals', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 14px" onclick="mvShowLogHistory()" aria-label="' . esc_attr__( 'Back to vitals history', 'mcp-ai-wpoos-pro' ) . '">&larr; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
 						'</div>' .
-					'</div>' .
+						'<div class="mv-log-saved" id="mv-log-saved">&#10003; ' . esc_html__( 'Reading saved!', 'mcp-ai-wpoos-pro' ) . '</div>' .
 
-					/* Phosphorus */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
-					'</div>' .
+						/* Blood Pressure */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129728; ' . esc_html__( 'Blood Pressure (mmHg)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<div class="mv-bp-row">' .
+								'<input type="number" id="mv-bp-sys" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Systolic', 'mcp-ai-wpoos-pro' ) . '" min="60" max="250" />' .
+								'<span class="mv-bp-sep">/</span>' .
+								'<input type="number" id="mv-bp-dia" class="tma-input" style="flex:1" placeholder="' . esc_attr__( 'Diastolic', 'mcp-ai-wpoos-pro' ) . '" min="40" max="150" />' .
+							'</div>' .
+						'</div>' .
 
-					/* Albumin */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
-					'</div>' .
+						/* Heart Rate */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#10084; ' . esc_html__( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-hr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="30" max="250" />' .
+						'</div>' .
 
-					/* Notes */
-					'<div class="mv-log-section">' .
-						'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<textarea id="mv-notes" class="tma-input" rows="3" style="resize:none;width:100%" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
-					'</div>' .
+						/* SpO2 */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128164; ' . esc_html__( 'Blood Oxygen SpO₂ (%)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-spo2" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98', 'mcp-ai-wpoos-pro' ) . '" min="70" max="100" step="1" />' .
+						'</div>' .
 
-					'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="mvSaveReading()">' . esc_html__( 'Save Reading', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						/* Temperature */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#127777; ' . esc_html__( 'Temperature (°F)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-temp" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 98.6', 'mcp-ai-wpoos-pro' ) . '" min="90" max="110" step="0.1" />' .
+						'</div>' .
+
+						/* Glucose */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
+						'</div>' .
+
+						/* ── Kidney Lab Values ── */
+						'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+						/* eGFR */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
+							'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
+						'</div>' .
+
+						/* Creatinine */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
+						'</div>' .
+
+						/* BUN */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
+						'</div>' .
+
+						/* Two-column row: Potassium + Sodium */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<div style="display:flex;gap:8px">' .
+								'<div style="flex:1"><input type="number" id="mv-potassium" class="tma-input" placeholder="K\u207a ' . esc_attr__( 'Potassium', 'mcp-ai-wpoos-pro' ) . '" min="1" max="10" step="0.1" /></div>' .
+								'<div style="flex:1"><input type="number" id="mv-sodium" class="tma-input" placeholder="Na\u207a ' . esc_attr__( 'Sodium', 'mcp-ai-wpoos-pro' ) . '" min="100" max="180" step="1" /></div>' .
+							'</div>' .
+						'</div>' .
+
+						/* Phosphorus */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
+						'</div>' .
+
+						/* Albumin */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
+						'</div>' .
+
+						/* Hemoglobin */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#129978; ' . esc_html__( 'Hemoglobin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="number" id="mv-hemoglobin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 13.5', 'mcp-ai-wpoos-pro' ) . '" min="1" max="25" step="0.1" />' .
+						'</div>' .
+
+						/* Notes */
+						'<div class="mv-log-section">' .
+							'<label class="mv-log-label">&#128221; ' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<textarea id="mv-notes" class="tma-input" rows="3" style="resize:none;width:100%" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
+						'</div>' .
+
+						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="mvSaveReading()">' . esc_html__( 'Save Reading', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
 				'</div>' .
 			'</div>' .
 		'</div>' .
@@ -2111,8 +2858,14 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-trends">' .
 			'<div class="mv-scroll" id="mv-trends-scroll">' .
 				'<div style="padding:10px 12px 0">' .
-					'<div class="tma-section-title" style="padding:0 0 4px">' . esc_html__( '7-Day Trends', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-section-title" style="padding:0 0 4px" id="mv-trends-title">' . esc_html__( '7-Day Trends', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'<div style="font-size:12px;color:var(--tma-hint)">' . esc_html__( 'Shaded bands show normal reference ranges.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
+				'<div class="mv-range-bar" role="group" aria-label="' . esc_attr__( 'Trend date range', 'mcp-ai-wpoos-pro' ) . '">' .
+					'<button class="mv-range-btn active" aria-pressed="true" onclick="mvSetTrendRange(7,this)">' . esc_html__( '7 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(14,this)">' . esc_html__( '14 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(30,this)">' . esc_html__( '30 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<button class="mv-range-btn" aria-pressed="false" onclick="mvSetTrendRange(90,this)">' . esc_html__( '90 D', 'mcp-ai-wpoos-pro' ) . '</button>' .
 				'</div>' .
 				'<div id="mv-trends-content" style="padding-bottom:12px"><div class="tma-empty">' . esc_html__( 'Loading charts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 			'</div>' .
@@ -2122,6 +2875,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'<div class="tma-tab-pane" id="mv-tab-dosage">' .
 			'<div class="mv-scroll">' .
 				'<div class="mv-dosage-wrap">' .
+
+					/* Server prescriptions section */
+					'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
+						'<div class="tma-section-title" style="padding:0">&#128203; ' . esc_html__( 'Prescriptions', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvFetchPrescriptions()">' . esc_html__( '↻ Refresh', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div id="mv-rx-list"><div class="mv-empty">' . esc_html__( 'Loading prescriptions…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+
+					'<div class="mv-lab-divider">&#128138; ' . esc_html__( 'Quick Medications', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
 					'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' .
 						'<div class="tma-section-title" style="padding:0">' . esc_html__( 'Medications & Dosage', 'mcp-ai-wpoos-pro' ) . '</div>' .
 						'<button class="tma-btn tma-btn-secondary" style="font-size:12px;padding:5px 12px" onclick="mvToggleAddMed()">' . esc_html__( '+ Add', 'mcp-ai-wpoos-pro' ) . '</button>' .
@@ -2164,6 +2927,79 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'</div>' .
 		'</div>' .
 
+		/* ── Settings ── */
+		'<div class="tma-tab-pane" id="mv-tab-settings">' .
+			'<div class="mv-scroll">' .
+				'<div class="mv-settings-wrap">' .
+
+					/* Default member selector card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#128101; ' . esc_html__( 'Default Member', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Select the member whose data is loaded by default when the app opens.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div id="mv-settings-member-list">' .
+							'<div class="tma-member-msg">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'</div>' .
+						'<div style="margin-top:8px">' .
+							'<button class="mv-settings-btn" onclick="mvSettingsAddMember()">' . esc_html__( '+ Add New Member', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data management card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#128266; ' . esc_html__( 'Local Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Readings stored', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value" id="mv-settings-reading-count">—</span>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Medications stored', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value" id="mv-settings-med-count">—</span>' .
+						'</div>' .
+						'<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">' .
+							'<button class="mv-settings-btn" onclick="mvSettingsSyncServer()">' . esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="mv-settings-btn danger" onclick="mvSettingsClearData()">' . esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Display / font size card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#127912; ' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div style="font-size:12px;color:var(--tma-hint);margin-bottom:10px">' . esc_html__( 'Adjust the font size and styling of the app.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div id="mv-font-size-btns" style="display:flex;gap:4px">' .
+								'<button class="mv-settings-btn mv-font-btn" data-size="small" onclick="mvSetFontSize(\'small\',this)">A<span style="font-size:9px">&#8722;</span></button>' .
+								'<button class="mv-settings-btn mv-font-btn active" data-size="medium" onclick="mvSetFontSize(\'medium\',this)">A</button>' .
+								'<button class="mv-settings-btn mv-font-btn" data-size="large" onclick="mvSetFontSize(\'large\',this)">A<span style="font-size:9px">+</span></button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0">' .
+								'<input type="checkbox" id="mv-compact-toggle" onchange="mvToggleCompact(this.checked)" style="opacity:0;width:0;height:0">' .
+								'<span style="position:absolute;cursor:pointer;inset:0;background:var(--tma-border);border-radius:24px;transition:.2s"></span>' .
+								'<span class="mv-toggle-knob" style="position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s"></span>' .
+							'</label>' .
+						'</div>' .
+					'</div>' .
+
+					/* About card */
+					'<div class="mv-settings-card">' .
+						'<div class="mv-settings-card-title">&#8505; ' . esc_html__( 'About', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Template', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value">' . esc_html__( 'Medical Vitals', 'mcp-ai-wpoos-pro' ) . '</span>' .
+						'</div>' .
+						'<div class="mv-settings-row">' .
+							'<span class="mv-settings-label">' . esc_html__( 'Site', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="mv-settings-value">' . $site_name . '</span>' .
+						'</div>' .
+					'</div>' .
+
+				'</div>' .
+			'</div>' .
+		'</div>' .
+
 		'</div>' . /* .tma-content */
 
 		/* Bottom navigation */
@@ -2173,7 +3009,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				esc_html__( 'Dashboard', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
 			'<button class="tma-nav-btn" id="mv-nav-log" onclick="mvTab(\'log\',this)">' .
-				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' .
+				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' .
 				esc_html__( 'Log', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
 			'<button class="tma-nav-btn" id="mv-nav-trends" onclick="mvTab(\'trends\',this)">' .
@@ -2188,6 +3024,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
 				esc_html__( 'Doctor', 'mcp-ai-wpoos-pro' ) .
 			'</button>' .
+			'<button class="tma-nav-btn" id="mv-nav-settings" onclick="mvTab(\'settings\',this)">' .
+				'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+				esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) .
+			'</button>' .
 		'</nav>' .
 
 		'</div>' . /* .tma-shell */
@@ -2200,10 +3040,69 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var MARKDOWN_JS_URL=' . wp_json_encode( $markdown_js_url ) . ';' .
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
-		'var MEMBER_ID=' . (int) ( $ctx['member_id'] ?? 0 ) . ';' .
+		'var MEMBER_ID=0;' .
+		'var MEMBER_NAME="";' .
+		'var TMA_TOKEN="";' .
 		'var doctorHist=[];' .
+		/* Server-resolved member for the current WordPress user (0 when unknown) */
+		'var SERVER_MEMBER_ID=' . wp_json_encode( $server_member_id ) . ';' .
+		'var SERVER_MEMBER_NAME=' . wp_json_encode( $server_member_name ) . ';' .
+
+		/* ── Markdown renderer loader ── */
+		/* Load the lightweight TMA markdown renderer on demand so doctor    */
+		/* replies are displayed as formatted HTML instead of raw markdown.  */
+		'function mvLoadMarkdown(cb){' .
+			'if(window.wpMcpAiChatMarkdown){cb();return;}' .
+			'if(!MARKDOWN_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=MARKDOWN_JS_URL;' .
+			's.onload=function(){cb();};s.onerror=function(){cb();};' .
+			'document.head.appendChild(s);' .
+		'}' .
+
+		/* ── Render reply using the preferred markdown method ── */
+		'function mvRenderReply(el,text){' .
+			'if(el&&window.wpMcpAiChatMarkdown&&window.wpMcpAiChatMarkdown.renderMarkdown){' .
+				'el.innerHTML=window.wpMcpAiChatMarkdown.renderMarkdown(text);' .
+			'}else if(el){' .
+				'el.textContent=text;' .
+			'}' .
+		'}' .
+
+		/* ── Session init: authenticate via Telegram initData ── */
+		/* Calls /validate on page load so the doctor tab chat requests are  */
+		/* authenticated even when Telegram's WebView does not persist the   */
+		/* WordPress auth cookie between page loads.                          */
+		'function mvInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",' .
+				'headers:{"Content-Type":"application/json"},' .
+				'body:JSON.stringify({init_data:initData})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d)return;' .
+				/* Update the REST nonce so authenticated requests succeed. */
+				'if(d.wp_nonce){NONCE=d.wp_nonce;}' .
+				/* Store the TMA session token for authenticated headers. */
+				'if(d.tma_token){TMA_TOKEN=d.tma_token;}' .
+				/* Re-fetch members with fresh auth if the picker is still open */
+				'var picker=document.getElementById("tma-member-picker");' .
+				'if(picker&&picker.style.display==="flex"){mvFetchMembers();}' .
+				/* Re-sync server vitals now that auth is established.
+				 * mvSyncFromServer() is called at page-init before this async
+				 * /validate response arrives, so Telegram users whose WP auth
+				 * cookie did not persist get a silent auth failure on the first
+				 * attempt.  Retry here with the fresh nonce / TMA token. */
+				'if(MEMBER_ID)mvSyncFromServer();' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── Storage helpers ── */
 		'var SK_READINGS="mv_readings";' .
@@ -2221,13 +3120,14 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'try{localStorage.setItem(SK_READINGS,JSON.stringify(arr));}catch(e){}' .
 		'}' .
 
-		/* Load last 7 days of readings (one per day, last reading of that day) */
-		'function mvLoadHistory(){' .
+		/* Load last N days of readings (one per day, last reading of that day) */
+		'function mvLoadHistory(days){' .
+			'if(!days)days=7;' .
 			'var all=mvLoadReadings();' .
 			'var byDay={};' .
 			'all.forEach(function(r){var d=r.ts?r.ts.slice(0,10):mvTodayKey();byDay[d]=r;});' .
 			'var hist=[];var base=new Date();' .
-			'for(var i=6;i>=0;i--){' .
+			'for(var i=days-1;i>=0;i--){' .
 				'var dd=new Date(base);dd.setDate(dd.getDate()-i);' .
 				'var dk=dd.toISOString().slice(0,10);' .
 				'hist.push(byDay[dk]||{date:dk});' .
@@ -2248,7 +3148,169 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		/* HTML-escape helper */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 
-		/* ── Status helpers ── */
+		/* ── Member picker ── */
+		'function mvLoadSavedMember(){' .
+			'try{' .
+				'var d=JSON.parse(localStorage.getItem("mv_member_id")||"null");' .
+				'if(d&&d.id){MEMBER_ID=d.id;MEMBER_NAME=d.name||"";}' .
+			'}catch(e){}' .
+		'}' .
+
+		'function mvShowMemberPicker(){' .
+			'var p=document.getElementById("tma-member-picker");' .
+			'if(p)p.style.display="flex";' .
+			/* In Telegram WebView the TMA token is obtained asynchronously by
+			 * mvInitSession().  Calling mvFetchMembers() before the token is
+			 * available sends an unauthenticated request that returns 403.
+			 * Skip the immediate fetch when we are inside a Telegram WebApp and
+			 * TMA_TOKEN has not yet been set; mvInitSession() will call
+			 * mvFetchMembers() once auth is established.  When the token is
+			 * already present (e.g. member-switch after first load) or we are
+			 * in a regular browser (no Telegram WebApp API), fetch immediately. */
+			'if(TMA_TOKEN||!(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)){' .
+				'mvFetchMembers();' .
+			'}' .
+		'}' .
+
+		'function mvHideMemberPicker(){' .
+			'var p=document.getElementById("tma-member-picker");' .
+			'if(p)p.style.display="none";' .
+		'}' .
+
+		'window.mvFetchMembers=function(){' .
+			'var list=document.getElementById("tma-mv-member-list");' .
+			'if(!list)return;' .
+			/* Shared error markup — used in both the failed-response and catch paths */
+			'var mvErrHtml=\'<div class="tma-member-msg">' . esc_js( __( 'Could not load members.', 'mcp-ai-wpoos-pro' ) ) . ' <button onclick="mvFetchMembers()" style="margin-left:6px;padding:4px 10px;border:1px solid var(--tma-btn);border-radius:8px;background:none;color:var(--tma-btn);font-size:12px;cursor:pointer">' . esc_js( __( 'Retry', 'mcp-ai-wpoos-pro' ) ) . '</button></div>\';' .
+			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				/* If the request failed (auth not yet established), keep the Loading… placeholder
+				 * so mvInitSession() can re-call mvFetchMembers() once auth succeeds.
+				 * Outside Telegram we also add a manual retry button so users are not stuck. */
+				'if(!d){if(list)list.innerHTML=mvErrHtml;return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
+				/* Auto-select when exactly one member exists — skip picker entirely */
+				'if(members.length===1){mvSelectMember(members[0].id,members[0].name);return;}' .
+				/* Build member cards (may be empty) then always append "+ New Member" */
+				'var cards=members.map(function(m){' .
+					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
+					'return\'<div class="tma-member-card" onclick="mvSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
+						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
+						'+\'<div><div class="tma-member-card-name">\'+escH(m.name)+\'</div>\'' .
+						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
+						'+\'</div>\';' .
+				'}).join("");' .
+				/* Always show the New Member card at the bottom */
+				'var newCard=\'<div class="tma-member-card" onclick="mvShowNewMemberForm()" style="border-style:dashed;opacity:.85">\'' .
+					'+\'<div class="tma-member-card-icon" style="background:#78909c">+</div>\'' .
+					'+\'<div><div class="tma-member-card-name">' . esc_js( __( '+ New Member', 'mcp-ai-wpoos-pro' ) ) . '</div>\'' .
+					'+\'<div class="tma-member-card-type">' . esc_js( __( 'Create a new profile', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'' .
+					'+\'</div>\';' .
+				'list.innerHTML=cards+newCard;' .
+			'})' .
+			'.catch(function(){if(list)list.innerHTML=mvErrHtml;});' .
+		'};' .
+
+		'window.mvSelectMember=function(id,name){' .
+			'MEMBER_ID=id;MEMBER_NAME=name;' .
+			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:id,name:name}));}catch(e){}' .
+			'mvHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-mv-member-label");' .
+			'if(lbl)lbl.textContent=name;' .
+			/* Clear cached readings and pull fresh data from server for this member */
+			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
+			'mvRefresh();mvRenderMeds();mvSyncFromServer();mvFetchPrescriptions();' .
+		'};' .
+
+		'window.mvSwitchMember=function(){' .
+			'mvHideNewMemberForm();' .
+			'mvShowMemberPicker();' .
+		'};' .
+
+		/* ── New member form ── */
+		'var mvNewMemberType="person";' .
+		'var mvNewMemberFromSettings=false;' .
+
+		'window.mvSetMemberType=function(type,btn){' .
+			'mvNewMemberType=type;' .
+			'var btns=document.querySelectorAll(".mv-type-btn");' .
+			'btns.forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+		'};' .
+
+		'window.mvShowNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-mv-member-list");' .
+			'var form=document.getElementById("mv-new-member-form");' .
+			'if(list)list.style.display="none";' .
+			'if(form)form.style.display="block";' .
+			/* Reset form state */
+			'mvNewMemberType="person";' .
+			'var btnPerson=document.getElementById("mv-type-btn-person");' .
+			'var btnPet=document.getElementById("mv-type-btn-pet");' .
+			'if(btnPerson)btnPerson.classList.add("active");' .
+			'if(btnPet)btnPet.classList.remove("active");' .
+			'var nameEl=document.getElementById("mv-new-member-name");if(nameEl)nameEl.value="";' .
+			'var dobEl=document.getElementById("mv-new-member-dob");if(dobEl)dobEl.value="";' .
+			'var bloodEl=document.getElementById("mv-new-member-blood");if(bloodEl)bloodEl.value="";' .
+			'var errEl=document.getElementById("mv-new-member-err");if(errEl)errEl.style.display="none";' .
+			'var savingEl=document.getElementById("mv-new-member-saving");if(savingEl)savingEl.style.display="none";' .
+		'};' .
+
+		'window.mvHideNewMemberForm=function(){' .
+			'var list=document.getElementById("tma-mv-member-list");' .
+			'var form=document.getElementById("mv-new-member-form");' .
+			'if(form)form.style.display="none";' .
+			'if(list)list.style.display="block";' .
+		'};' .
+
+		'window.mvSubmitNewMember=function(){' .
+			'var nameEl=document.getElementById("mv-new-member-name");' .
+			'var name=(nameEl?nameEl.value:"").trim();' .
+			'var errEl=document.getElementById("mv-new-member-err");' .
+			'var savingEl=document.getElementById("mv-new-member-saving");' .
+			'if(!name){' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Name is required.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+				'return;' .
+			'}' .
+			'if(errEl)errEl.style.display="none";' .
+			'if(savingEl)savingEl.style.display="block";' .
+			'var args={name:name,type:mvNewMemberType};' .
+			'var dobEl=document.getElementById("mv-new-member-dob");' .
+			'var dob=(dobEl?dobEl.value:"").trim();if(dob)args.date_of_birth=dob;' .
+			'var bloodEl=document.getElementById("mv-new-member-blood");' .
+			'var blood=(bloodEl?bloodEl.value:"").trim();if(blood)args.blood_type=blood;' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"create_member",arguments:args})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'var memberId=d&&d.result&&d.result.member_id?d.result.member_id:0;' .
+				'if(!memberId){' .
+					'if(errEl){errEl.textContent="' . esc_js( __( 'Could not create member. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+					'return;' .
+				'}' .
+				/* Auto-select the newly created member */
+				'var fromSettings=mvNewMemberFromSettings;' .
+				'mvNewMemberFromSettings=false;' .
+				'mvSelectMember(memberId,name);' .
+				/* If triggered from Settings, navigate back to the settings tab */
+				'if(fromSettings){' .
+					'var settingsBtn=document.getElementById("mv-nav-settings");' .
+					'mvTab("settings",settingsBtn);' .
+				'}' .
+			'})' .
+			'.catch(function(){' .
+				'if(savingEl)savingEl.style.display="none";' .
+				'if(errEl){errEl.textContent="' . esc_js( __( 'Network error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";errEl.style.display="block";}' .
+			'});' .
+		'};' .
 		/* Returns "normal" | "warning" | "alert" */
 		'function mvBpStatus(sys,dia){' .
 			'if(!sys||!dia)return"";' .
@@ -2358,8 +3420,259 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(btn)btn.classList.add("tma-active");' .
 			'tmaHaptic("light");' .
 			'if(tab==="dashboard")mvRefresh();' .
+			'if(tab==="log")mvRenderLogHistory();' .
 			'if(tab==="trends")mvRenderTrends();' .
-			'if(tab==="dosage")mvRenderMeds();' .
+			'if(tab==="dosage"){mvRenderMeds();mvFetchPrescriptions();}' .
+			'if(tab==="settings")mvRenderSettings();' .
+		'};' .
+
+		/* ── Settings tab ── */
+		'window.mvRenderSettings=function(){' .
+			/* Update data counts */
+			'var readingCountEl=document.getElementById("mv-settings-reading-count");' .
+			'if(readingCountEl)readingCountEl.textContent=mvLoadReadings().length;' .
+			'var medCountEl=document.getElementById("mv-settings-med-count");' .
+			'if(medCountEl)medCountEl.textContent=mvLoadMeds().length;' .
+			/* Restore display settings UI */
+			'mvRestoreDisplayUI();' .
+			/* Fetch members and render inline member selector */
+			'var list=document.getElementById("mv-settings-member-list");' .
+			'if(!list)return;' .
+			'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_members",arguments:{per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				/* Auth failure – keep the Loading… placeholder rather than showing
+				 * 'No members yet' when the list may actually be non-empty. */
+				'if(!d){return;}' .
+				'var members=d.result&&d.result.members?d.result.members:[];' .
+				'if(!members.length){' .
+					'list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'No members yet. Use "+ Add New Member" below to create one.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+					'return;' .
+				'}' .
+				'list.innerHTML=members.map(function(m){' .
+					'var icon=m.type==="pet"?"&#128062;":"&#128100;";' .
+					'var sel=m.id===MEMBER_ID?" selected":"";' .
+					'return\'<div class="mv-settings-member-row\'+sel+\'" onclick="mvSettingsSelectMember(\'+m.id+\',\'+JSON.stringify(m.name)+\')">\'' .
+						'+\'<div class="tma-member-card-icon">\'+icon+\'</div>\'' .
+						'+\'<div><div class="tma-member-card-name">\'+escH(m.name)+\'</div>\'' .
+						'+\'<div class="tma-member-card-type">\'+escH(m.type||"person")+\'</div></div>\'' .
+						'+\'<span class="mv-settings-member-check">&#10003;</span>\'' .
+						'+\'</div>\';' .
+				'}).join("");' .
+			'})' .
+			'.catch(function(){' .
+				'if(list)list.innerHTML=\'<div class="tma-member-msg">' . esc_js( __( 'Unable to load members. Please check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'};' .
+
+		/* Select a member as default directly from the Settings tab */
+		'window.mvSettingsSelectMember=function(id,name){' .
+			'MEMBER_ID=id;MEMBER_NAME=name;' .
+			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:id,name:name}));}catch(e){}' .
+			/* Update header label */
+			'var lbl=document.getElementById("tma-mv-member-label");' .
+			'if(lbl)lbl.textContent=name;' .
+			/* Clear cached readings so fresh data is loaded for the new default member */
+			'try{localStorage.removeItem(SK_READINGS);}catch(e){}' .
+			'tmaHaptic("success");' .
+			/* Re-render the settings list to show the new selection, then sync */
+			'mvRenderSettings();' .
+			'mvSyncFromServer();' .
+			'mvFetchPrescriptions();' .
+		'};' .
+
+		/* Open new-member form from the Settings tab */
+		'window.mvSettingsAddMember=function(){' .
+			'mvNewMemberFromSettings=true;' .
+			'mvHideNewMemberForm();' .
+			'mvShowMemberPicker();' .
+			'mvShowNewMemberForm();' .
+		'};' .
+
+		'window.mvSettingsSyncServer=function(){' .
+			'if(!MEMBER_ID){window.alert("' . esc_js( __( 'Please select a member first.', 'mcp-ai-wpoos-pro' ) ) . '");return;}' .
+			'mvSyncFromServer();' .
+			'tmaHaptic("success");' .
+		'};' .
+
+		'window.mvSettingsClearData=function(){' .
+			'if(!window.confirm("' . esc_js( __( 'Clear all locally stored readings and medications? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '"))return;' .
+			'try{localStorage.removeItem(SK_READINGS);localStorage.removeItem(SK_MEDS);}catch(e){}' .
+			'tmaHaptic("medium");' .
+			'mvRenderSettings();' .
+		'};' .
+
+		/* ── Display / font size settings ── */
+		'function mvApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=localStorage.getItem("mv_font_size")||"medium";' .
+				'shell.classList.remove("mv-font-small","mv-font-large");' .
+				'if(size==="small")shell.classList.add("mv-font-small");' .
+				'else if(size==="large")shell.classList.add("mv-font-large");' .
+				'var compact=localStorage.getItem("mv_compact")==="true";' .
+				'if(compact)shell.classList.add("mv-compact");' .
+				'else shell.classList.remove("mv-compact");' .
+			'}catch(e){}' .
+		'}' .
+
+		'window.mvSetFontSize=function(size,btn){' .
+			'try{localStorage.setItem("mv_font_size",size);}catch(e){}' .
+			'document.querySelectorAll(".mv-font-btn").forEach(function(b){b.classList.remove("active");});' .
+			'if(btn)btn.classList.add("active");' .
+			'mvApplyDisplaySettings();' .
+			'tmaHaptic("light");' .
+		'};' .
+
+		'window.mvToggleCompact=function(checked){' .
+			'try{localStorage.setItem("mv_compact",checked?"true":"false");}catch(e){}' .
+			'mvApplyDisplaySettings();' .
+			'tmaHaptic("light");' .
+		'};' .
+
+		/* Restore display settings on render */
+		'function mvRestoreDisplayUI(){' .
+			'try{' .
+				'var size=localStorage.getItem("mv_font_size")||"medium";' .
+				'document.querySelectorAll(".mv-font-btn").forEach(function(b){' .
+					'b.classList.toggle("active",b.getAttribute("data-size")===size);' .
+				'});' .
+				'var compact=localStorage.getItem("mv_compact")==="true";' .
+				'var toggle=document.getElementById("mv-compact-toggle");' .
+				'if(toggle)toggle.checked=compact;' .
+			'}catch(e){}' .
+		'}' .
+
+		/* ── Prescription fetching (Dosage tab) ── */
+		'window.mvFetchPrescriptions=function(){' .
+			'var list=document.getElementById("mv-rx-list");if(!list)return;' .
+			'if(!MEMBER_ID){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Select a member to view prescriptions.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Loading prescriptions…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_prescriptions",arguments:{member_id:MEMBER_ID,per_page:50}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Unable to load prescriptions.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'var rxs=d.result.prescriptions||[];' .
+				'if(!rxs.length){list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'No prescriptions found for this member.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'list.innerHTML=rxs.map(function(rx){' .
+					'var st=rx.status||"active";' .
+					'var stColor=st==="active"?"#2e7d32":st==="completed"?"#1565c0":st==="discontinued"?"#e65100":"#c62828";' .
+					'return \'<div class="mv-rx-card" style="--mv-rx-color:\'+stColor+\'">\'+' .
+						'\'<div class="mv-rx-header">\'+' .
+							'\'<div class="mv-rx-icon">&#128138;</div>\'+' .
+							'\'<div class="mv-rx-name">\'+escH(rx.medication_name||"")+\'</div>\'+' .
+							'\'<span class="mv-rx-badge \'+st+\'">\'+escH(st)+\'</span>\'+' .
+						'\'</div>\'+' .
+						'(rx.dosage?\'<div class="mv-rx-detail">&#128137; ' . esc_js( __( 'Dosage:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.dosage)+\'</div>\':"")+' .
+						'(rx.frequency?\'<div class="mv-rx-detail">&#128337; ' . esc_js( __( 'Frequency:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.frequency)+\'</div>\':"")+' .
+						'(rx.prescribing_doctor?\'<div class="mv-rx-detail">&#129658; ' . esc_js( __( 'Doctor:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.prescribing_doctor)+\'</div>\':"")+' .
+						'(rx.start_date?\'<div class="mv-rx-detail">&#128197; \'+escH(rx.start_date)+(rx.end_date?" \u2013 "+escH(rx.end_date):"")+\'</div>\':"")+' .
+						'(rx.refills_remaining?\'<div class="mv-rx-detail">&#128260; ' . esc_js( __( 'Refills:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(rx.refills_remaining)+\'</div>\':"")+' .
+					'\'</div>\';' .
+				'}).join("");' .
+			'})' .
+			'.catch(function(){' .
+				'if(list)list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'Could not load prescriptions. Check your connection.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'};' .
+
+		/* ── Log tab: history view ── */
+		'window.mvShowLogForm=function(){' .
+			'var hist=document.getElementById("mv-log-history-view");' .
+			'var form=document.getElementById("mv-log-form-view");' .
+			'if(hist)hist.style.display="none";' .
+			'if(form)form.style.display="block";' .
+		'};' .
+		'window.mvShowLogHistory=function(){' .
+			'var hist=document.getElementById("mv-log-history-view");' .
+			'var form=document.getElementById("mv-log-form-view");' .
+			'if(form)form.style.display="none";' .
+			'if(hist)hist.style.display="block";' .
+			'mvRenderLogHistory();' .
+		'};' .
+
+		'window.mvRenderLogHistory=function(){' .
+			'var list=document.getElementById("mv-log-history-list");if(!list)return;' .
+			'var readings=mvLoadReadings();' .
+			/* Group readings by date, only include dates that have real vital data */
+			'var byDay={};' .
+			'readings.forEach(function(r){' .
+				'var k=r.ts?r.ts.slice(0,10):"";if(!k)return;' .
+				/* Check if this reading has at least one non-zero vital value */
+				'var hasData=r.bp_sys||r.bp_dia||r.hr||r.spo2||r.temp||r.glucose||' .
+					'r.egfr||r.creatinine||r.bun||r.potassium||r.sodium||r.phosphorus||r.albumin||r.hemoglobin;' .
+				'if(!hasData)return;' .
+				'if(!byDay[k])byDay[k]=[];' .
+				'byDay[k].push(r);' .
+			'});' .
+			'var dates=Object.keys(byDay).sort().reverse();' .
+			'if(!dates.length){' .
+				'list.innerHTML=\'<div class="mv-empty">' . esc_js( __( 'No vitals recorded yet. Tap "+ New Entry" to log your first reading.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+				'return;' .
+			'}' .
+			'list.innerHTML=dates.map(function(dk){' .
+				'var entries=byDay[dk];' .
+				'var r=entries[0];' . /* Use first entry for summary chips */
+				/* Collect non-zero vital labels for chips */
+				'var chips=[];' .
+				'entries.forEach(function(e){' .
+					'if(e.bp_sys&&e.bp_dia)chips.push("BP "+e.bp_sys+"/"+e.bp_dia);' .
+					'if(e.hr)chips.push("HR "+e.hr);' .
+					'if(e.spo2)chips.push("SpO\u2082 "+e.spo2+"%");' .
+					'if(e.temp)chips.push(e.temp+"\u00b0F");' .
+					'if(e.glucose)chips.push("Gluc "+e.glucose);' .
+					'if(e.egfr)chips.push("eGFR "+e.egfr);' .
+					'if(e.creatinine)chips.push("Cr "+e.creatinine);' .
+					'if(e.hemoglobin)chips.push("Hgb "+e.hemoglobin);' .
+				'});' .
+				/* Deduplicate chips */
+				'var seen={};chips=chips.filter(function(c){if(seen[c])return false;seen[c]=true;return true;});' .
+				/* Format date for display */
+				'var dd=new Date(dk+"T12:00:00");' .
+				'var dayStr=dd.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});' .
+				/* Build detail section from all entries for that day */
+				'var detailRows=[];' .
+				'entries.forEach(function(e){' .
+					'if(e.bp_sys&&e.bp_dia)detailRows.push(["' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . '",e.bp_sys+"/"+e.bp_dia+" mmHg"]);' .
+					'if(e.hr)detailRows.push(["' . esc_js( __( 'Heart Rate', 'mcp-ai-wpoos-pro' ) ) . '",e.hr+" bpm"]);' .
+					'if(e.spo2)detailRows.push(["SpO\u2082",e.spo2+"%"]);' .
+					'if(e.temp)detailRows.push(["' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",e.temp+"\u00b0F"]);' .
+					'if(e.glucose)detailRows.push(["' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",e.glucose+" mg/dL"]);' .
+					'if(e.egfr)detailRows.push(["eGFR",e.egfr+" mL/min"]);' .
+					'if(e.creatinine)detailRows.push(["' . esc_js( __( 'Creatinine', 'mcp-ai-wpoos-pro' ) ) . '",e.creatinine+" mg/dL"]);' .
+					'if(e.bun)detailRows.push(["BUN",e.bun+" mg/dL"]);' .
+					'if(e.potassium)detailRows.push(["K\u207a",e.potassium+" mEq/L"]);' .
+					'if(e.sodium)detailRows.push(["Na\u207a",e.sodium+" mEq/L"]);' .
+					'if(e.phosphorus)detailRows.push(["' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",e.phosphorus+" mg/dL"]);' .
+					'if(e.albumin)detailRows.push(["' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",e.albumin+" g/dL"]);' .
+					'if(e.hemoglobin)detailRows.push(["' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",e.hemoglobin+" g/dL"]);' .
+					'if(e.notes)detailRows.push(["' . esc_js( __( 'Notes', 'mcp-ai-wpoos-pro' ) ) . '",e.notes]);' .
+				'});' .
+				/* Deduplicate detail rows */
+				'var dSeen={};detailRows=detailRows.filter(function(dr){var key=dr[0]+":"+dr[1];if(dSeen[key])return false;dSeen[key]=true;return true;});' .
+				'var detailHtml=detailRows.map(function(dr){' .
+					'return\'<div class="mv-hist-detail-row"><span class="mv-hist-detail-label">\'+escH(dr[0])+\'</span><span class="mv-hist-detail-val">\'+escH(dr[1])+\'</span></div>\';' .
+				'}).join("");' .
+				'var cardId="mv-hist-"+dk;' .
+				'return\'<div class="mv-hist-card" onclick="mvToggleHistDetail(\\\'\'+cardId+\'\\\')">\'+' .
+					'\'<div class="mv-hist-date"><span class="mv-hist-date-icon">&#128197;</span>\'+escH(dayStr)+\'</div>\'+' .
+					'\'<div class="mv-hist-chips">\'+chips.slice(0,5).map(function(c){return\'<span class="mv-hist-chip">\'+escH(c)+\'</span>\';}).join("")+\'</div>\'+' .
+					'\'<div class="mv-hist-detail" id="\'+cardId+\'">\'+detailHtml+\'</div>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'};' .
+
+		'window.mvToggleHistDetail=function(id){' .
+			'var el=document.getElementById(id);if(!el)return;' .
+			'el.classList.toggle("open");' .
+			'tmaHaptic("light");' .
 		'};' .
 
 		/* ── Dashboard ── */
@@ -2369,11 +3682,25 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Update last-read time */
 			'var lt=document.getElementById("mv-last-time");' .
 			'if(lt){if(latest&&latest.ts){var d=new Date(latest.ts);lt.textContent="' . esc_js( __( 'Last reading: ', 'mcp-ai-wpoos-pro' ) ) . '"+d.toLocaleString();}else{lt.textContent="' . esc_js( __( 'No readings yet', 'mcp-ai-wpoos-pro' ) ) . '";}}' .
+
+			/* Scan all readings to find the most recent non-zero value for each
+			 * metric.  Records are often stored as separate rows per measurement
+			 * type (e.g. one row for BP/HR/SpO2 and another for renal labs), so
+			 * the chronologically last entry cannot reliably represent all KPIs
+			 * on its own — matching the admin dashboard latestFor() pattern. */
+			'function mvLatestFor(field){' .
+				'for(var i=0;i<readings.length;i++){' .
+					'var v=parseFloat(readings[i][field]);' .
+					'if(v>0)return v;' .
+				'}' .
+				'return 0;' .
+			'}' .
+
 			/* KPI cards */
 			'var g=document.getElementById("mv-kpi-grid");if(!g)return;' .
-			'if(!latest){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-			'var bpSys=latest.bp_sys||0;var bpDia=latest.bp_dia||0;' .
-			'var hr=latest.hr||0;var spo2=latest.spo2||0;var temp=latest.temp||0;var glucose=latest.glucose||0;' .
+			'if(!readings.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No readings yet. Log a reading to see your vitals here.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'var bpSys=mvLatestFor("bp_sys");var bpDia=mvLatestFor("bp_dia");' .
+			'var hr=mvLatestFor("hr");var spo2=mvLatestFor("spo2");var temp=mvLatestFor("temp");var glucose=mvLatestFor("glucose");' .
 			'var bpSt=mvBpStatus(bpSys,bpDia);' .
 			'var hrSt=mvHrStatus(hr);' .
 			'var spo2St=mvSpo2Status(spo2);' .
@@ -2405,15 +3732,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			/* Kidney KPI section */
 			'var kg=document.getElementById("mv-kidney-kpi-grid");' .
 			'if(kg){' .
-				'var egfr=latest.egfr||0;var creat=latest.creatinine||0;var bun=latest.bun||0;' .
-				'var kpot=latest.potassium||0;var kna=latest.sodium||0;var phos=latest.phosphorus||0;var alb=latest.albumin||0;' .
-				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb;' .
+				'var egfr=mvLatestFor("egfr");var creat=mvLatestFor("creatinine");var bun=mvLatestFor("bun");' .
+				'var kpot=mvLatestFor("potassium");var kna=mvLatestFor("sodium");var phos=mvLatestFor("phosphorus");var alb=mvLatestFor("albumin");' .
+				'var hgb=mvLatestFor("hemoglobin");' .
+				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb||hgb;' .
 				'if(!hasKidney){' .
 					'kg.innerHTML=\'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_js( __( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 				'}else{' .
 					'var egfrSt=mvEgfrStatus(egfr);var creatSt=mvCreatinineStatus(creat);' .
 					'var bunSt=mvBunStatus(bun);var potSt=mvPotassiumStatus(kpot);' .
 					'var naSt=mvSodiumStatus(kna);var phosSt=mvPhosphorusStatus(phos);var albSt=mvAlbuminStatus(alb);' .
+					'var hgbSt=hgb>=12?"normal":hgb>=11?"warning":"alert";' .
 					'var egfrColor=egfrSt==="alert"?"#c62828":egfrSt==="warning"?"#e65100":"#1565c0";' .
 					'var creatColor=creatSt==="alert"?"#c62828":creatSt==="warning"?"#e65100":"#00796b";' .
 					'var bunColor=bunSt==="alert"?"#c62828":bunSt==="warning"?"#e65100":"#00796b";' .
@@ -2421,6 +3750,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'var naColor=naSt==="alert"?"#c62828":naSt==="warning"?"#e65100":"#0277bd";' .
 					'var phosColor=phosSt==="alert"?"#c62828":phosSt==="warning"?"#e65100":"#558b2f";' .
 					'var albColor=albSt==="alert"?"#c62828":albSt==="warning"?"#e65100":"#4527a0";' .
+					'var hgbColor=hgbSt==="alert"?"#c62828":hgbSt==="warning"?"#e65100":"#b71c1c";' .
 					'var egfrLabel=egfr?mvEgfrStageLabel(egfr):"--";' .
 					'kg.innerHTML=' .
 						'(egfr?kpiCard(egfrColor,"&#129506;","eGFR",egfr,"mL/min",egfrSt)+\'<div style="grid-column:span 2;margin:-8px 0 4px;font-size:11px;color:\'+egfrColor+\';font-weight:600;padding-left:4px">&#9679; \'+escH(egfrLabel)+\'</div>\':"")  +' .
@@ -2429,15 +3759,17 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 						'(kpot?kpiCard(potColor,"&#9889;","K\u207a ' . esc_js( __( 'Potassium', 'mcp-ai-wpoos-pro' ) ) . '",kpot,"mEq/L",potSt):"")  +' .
 						'(kna?kpiCard(naColor,"&#9889;","Na\u207a ' . esc_js( __( 'Sodium', 'mcp-ai-wpoos-pro' ) ) . '",kna,"mEq/L",naSt):"")  +' .
 						'(phos?kpiCard(phosColor,"&#129514;","' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",phos,"mg/dL",phosSt):"")  +' .
-						'(alb?kpiCard(albColor,"&#129514;","' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",alb,"g/dL",albSt):"")  ;' .
+						'(alb?kpiCard(albColor,"&#129514;","' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",alb,"g/dL",albSt):"")  +' .
+						'(hgb?kpiCard(hgbColor,"&#129978;","' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",hgb,"g/dL",hgbSt):"")  ;' .
 				'}' .
 			'}' .
 			/* Mini sparkline chart */
 			'mvLoadDashChart();' .
 		'};' .
 
-		/* Dash chart – 7-day systolic BP sparkline */
+		/* Dash chart – systolic BP sparkline */
 		'var dashChartInst=null;' .
+		'var mvDashChartDays=7;' .
 		'function mvLoadDashChart(){' .
 			'if(window.Chart){mvRenderDashChart();return;}' .
 			'if(!CHART_JS_URL)return;' .
@@ -2447,11 +3779,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvRenderDashChart(){' .
 			'var cw=document.getElementById("mv-dash-chart");if(!cw)return;' .
-			'var hist=mvLoadHistory();' .
+			'var hist=mvLoadHistory(mvDashChartDays);' .
 			'var labels=hist.map(function(h){return h.date?h.date.slice(5):"";});' .
 			'var sysData=hist.map(function(h){return h.bp_sys||null;});' .
 			'var diaData=hist.map(function(h){return h.bp_dia||null;});' .
-			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure — 7 Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
+			'cw.innerHTML=\'<div class="mv-chart-card"><div class="mv-chart-title">&#129728; ' . esc_js( __( 'Blood Pressure', 'mcp-ai-wpoos-pro' ) ) . ' \u2014 \'+mvDashChartDays+\' ' . esc_js( __( 'Days', 'mcp-ai-wpoos-pro' ) ) . '<span class="mv-chart-range">' . esc_js( __( 'Normal <120/80', 'mcp-ai-wpoos-pro' ) ) . '</span></div><canvas id="mv-dash-bp-canvas" height="130"></canvas></div>\';' .
 			'if(!window.Chart)return;' .
 			'var c=document.getElementById("mv-dash-bp-canvas");if(!c)return;' .
 			'if(dashChartInst)dashChartInst.destroy();' .
@@ -2462,6 +3794,15 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'scales:{x:{ticks:{font:{size:10},color:"#999"}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,suggestedMin:60,suggestedMax:180,grid:{color:"rgba(0,0,0,.06)"}}}' .
 			'}});' .
 		'}' .
+
+		/* Dashboard chart range selector */
+		'window.mvSetDashChartRange=function(days,btn){' .
+			'mvDashChartDays=days;' .
+			'document.querySelectorAll("#mv-dash-range-bar .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
+			'tmaHaptic("light");' .
+			'mvRenderDashChart();' .
+		'};' .
 
 		/* ── Log tab ── */
 		'window.mvSaveReading=function(){' .
@@ -2479,18 +3820,19 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var sodium=parseFloat((document.getElementById("mv-sodium")||{}).value||"")||0;' .
 			'var phosphorus=parseFloat((document.getElementById("mv-phosphorus")||{}).value||"")||0;' .
 			'var albumin=parseFloat((document.getElementById("mv-albumin")||{}).value||"")||0;' .
+			'var hemoglobin=parseFloat((document.getElementById("mv-hemoglobin")||{}).value||"")||0;' .
 			'var notes=((document.getElementById("mv-notes")||{}).value||"").trim();' .
 			/* Require at least one field */
-			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin)return;' .
+			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin&&!hemoglobin)return;' .
 			'var reading={ts:new Date().toISOString(),bp_sys:sys,bp_dia:dia,hr:hr,spo2:spo2,temp:temp,glucose:glucose,' .
 				'egfr:egfr,creatinine:creatinine,bun:bun,potassium:potassium,sodium:sodium,phosphorus:phosphorus,albumin:albumin,' .
-				'notes:notes};' .
+				'hemoglobin:hemoglobin,notes:notes};' .
 			'var arr=mvLoadReadings();arr.unshift(reading);if(arr.length>200)arr=arr.slice(0,200);' .
 			'mvStoreReadings(arr);tmaHaptic("success");' .
 			/* Clear fields */
-			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
-			/* Show saved message */
-			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
+			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-hemoglobin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
+			/* Show saved message, then switch back to history view */
+			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";mvShowLogHistory();},3000);}' .
 			/* Server sync via log_vital_signs tool when a member is resolved */
 			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
 				'var sArgs={action:"log",member_id:MEMBER_ID,source:"tma",' .
@@ -2508,41 +3850,51 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'if(reading.sodium)sArgs.sodium=reading.sodium;' .
 				'if(reading.phosphorus)sArgs.phosphorus=reading.phosphorus;' .
 				'if(reading.albumin)sArgs.albumin=reading.albumin;' .
+				'if(reading.hemoglobin)sArgs.hemoglobin=reading.hemoglobin;' .
 				'if(reading.notes)sArgs.notes=reading.notes;' .
 				'fetch(TOOLS_EXEC,{method:"POST",' .
-					'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+					'headers:tmaToolHeaders(),' .
 					'body:JSON.stringify({slug:"log_vital_signs",arguments:sArgs})' .
 				'}).catch(function(){});' .
 			'}' .
 		'};' .
 
 		/* ── Pull server history into localStorage on first load ── */
+		/* Normalise a server row to the local schema.
+		 * Handles both flat CCT format (measurement_date, bp_systolic …)
+		 * and nested options format (date, measurements.blood_pressure.systolic …). */
+		'function mvNormaliseRow(row){' .
+			'function pf(v){var n=parseFloat(v);return isNaN(n)?0:n;}' .
+			'var m=row.measurements||{};var bp=m.blood_pressure||{};' .
+			'return{ts:(row.measurement_date||row.date||"")+"T"+String(row.measurement_time||row.time||"00:00").slice(0,5)+":00.000Z",' .
+				'bp_sys:pf(row.bp_systolic)||pf(bp.systolic),' .
+				'bp_dia:pf(row.bp_diastolic)||pf(bp.diastolic),' .
+				'hr:pf(row.heart_rate)||pf(m.heart_rate&&m.heart_rate.value),' .
+				'spo2:pf(row.oxygen_saturation)||pf(m.oxygen_saturation&&m.oxygen_saturation.value),' .
+				'temp:pf(row.temperature)||pf(m.temperature&&m.temperature.value),' .
+				'glucose:pf(row.blood_glucose)||pf(m.blood_glucose&&m.blood_glucose.value),' .
+				'egfr:pf(row.egfr)||pf(m.egfr&&m.egfr.value),' .
+				'creatinine:pf(row.creatinine)||pf(m.creatinine&&m.creatinine.value),' .
+				'bun:pf(row.bun)||pf(m.bun&&m.bun.value),' .
+				'potassium:pf(row.potassium)||pf(m.potassium&&m.potassium.value),' .
+				'sodium:pf(row.sodium)||pf(m.sodium&&m.sodium.value),' .
+				'phosphorus:pf(row.phosphorus)||pf(m.phosphorus&&m.phosphorus.value),' .
+				'albumin:pf(row.albumin)||pf(m.albumin&&m.albumin.value),' .
+				'hemoglobin:pf(row.hemoglobin)||pf(m.hemoglobin&&m.hemoglobin.value),' .
+				'notes:row.notes||""};' .
+		'}' .
+
 		'function mvSyncFromServer(){' .
 			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
+			/* Fetch 90-day history for trends/charts */
 			'fetch(TOOLS_EXEC,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
 			'})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
 			'.then(function(d){' .
 				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
-				'var serverRows=d.result.history.map(function(row){' .
-					'return{ts:(row.measurement_date||"")+"T"+(row.measurement_time||"00:00")+":00.000Z",' .
-						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
-						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
-						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
-						'spo2:row.oxygen_saturation?parseFloat(row.oxygen_saturation):0,' .
-						'temp:row.temperature?parseFloat(row.temperature):0,' .
-						'glucose:row.blood_glucose?parseFloat(row.blood_glucose):0,' .
-						'egfr:row.egfr?parseFloat(row.egfr):0,' .
-						'creatinine:row.creatinine?parseFloat(row.creatinine):0,' .
-						'bun:row.bun?parseFloat(row.bun):0,' .
-						'potassium:row.potassium?parseFloat(row.potassium):0,' .
-						'sodium:row.sodium?parseFloat(row.sodium):0,' .
-						'phosphorus:row.phosphorus?parseFloat(row.phosphorus):0,' .
-						'albumin:row.albumin?parseFloat(row.albumin):0,' .
-						'notes:row.notes||""};' .
-				'});' .
+				'var serverRows=d.result.history.map(mvNormaliseRow);' .
 				/* Merge: server rows keyed by day, local-only days preserved */
 				'var local=mvLoadReadings();' .
 				'var byDay={};' .
@@ -2550,13 +3902,49 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'local.forEach(function(r){var k=r.ts?r.ts.slice(0,10):"";if(k&&!byDay[k])byDay[k]=r;});' .
 				'var merged=Object.keys(byDay).sort().reverse().map(function(k){return byDay[k];});' .
 				'mvStoreReadings(merged);' .
-				'mvRenderDashboard();' .
+				'mvRefresh();' .
+			'})' .
+			'.catch(function(){});' .
+			/* Fetch the single most-recent reading with NO time restriction
+			 * so the dashboard always shows the last record even if it is
+			 * older than 90 days. */
+			'fetch(TOOLS_EXEC,{method:"POST",' .
+				'headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_latest",member_id:MEMBER_ID}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.latest)return;' .
+				'var entry=mvNormaliseRow(d.result.latest);' .
+				'var k=entry.ts?entry.ts.slice(0,10):"";' .
+				'if(!k)return;' .
+				/* Merge into localStorage only if that day is not already present */
+				'var local=mvLoadReadings();' .
+				'var exists=local.some(function(r){return r.ts&&r.ts.slice(0,10)===k;});' .
+				'if(!exists){' .
+					'local.push(entry);' .
+					'local.sort(function(a,b){return(b.ts||"").localeCompare(a.ts||"");});' .
+					'mvStoreReadings(local);' .
+					'mvRefresh();' .
+				'}' .
 			'})' .
 			'.catch(function(){});' .
 		'}' .
 
 		/* ── Trends tab ── */
 		'var trendsChartInsts=[];' .
+		'var mvTrendsDays=7;' .
+
+		'window.mvSetTrendRange=function(days,btn){' .
+			'mvTrendsDays=days;' .
+			'document.querySelectorAll("#mv-tab-trends .mv-range-btn").forEach(function(b){b.classList.remove("active");b.setAttribute("aria-pressed","false");});' .
+			'if(btn){btn.classList.add("active");btn.setAttribute("aria-pressed","true");}' .
+			'var tt=document.getElementById("mv-trends-title");' .
+			'if(tt)tt.textContent=days+"' . esc_js( __( '-Day Trends', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'tmaHaptic("light");' .
+			'mvRenderTrends();' .
+		'};' .
+
 		'function mvRenderTrends(){' .
 			'if(window.Chart){mvBuildTrendCharts();return;}' .
 			'if(!CHART_JS_URL){mvBuildTrendCharts();return;}' .
@@ -2566,7 +3954,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 		'function mvBuildTrendCharts(){' .
 			'trendsChartInsts.forEach(function(c){if(c)c.destroy();});trendsChartInsts=[];' .
-			'var hist=mvLoadHistory();' .
+			'var hist=mvLoadHistory(mvTrendsDays);' .
 			'var labels=hist.map(function(h){return h.date?h.date.slice(5):"";});' .
 			'var cw=document.getElementById("mv-trends-content");if(!cw)return;' .
 
@@ -2599,7 +3987,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'{id:"mv-tc-phos",icon:"&#129514;",title:"' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 2.5–4.5 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
 					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.phosphorus||null;}),color:"#ef6c00"}]},' .
 				'{id:"mv-tc-alb",icon:"&#129514;",title:"' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 3.5–5.0 g/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
-					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.albumin||null;}),color:"#4527a0"}]}' .
+					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.albumin||null;}),color:"#4527a0"}]},' .
+				'{id:"mv-tc-hgb",icon:"&#129978;",title:"' . esc_js( __( 'Hemoglobin', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal ≥12 g/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.hemoglobin||null;}),color:"#b71c1c"}]}' .
 			'];' .
 
 			'cw.innerHTML=charts.map(function(ch){' .
@@ -2608,13 +3998,16 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 			'if(!window.Chart)return;' .
 
+			'var pRadius=mvTrendsDays>30?1:mvTrendsDays>14?2:3;' .
+			'var maxTicks=mvTrendsDays>30?10:mvTrendsDays>14?14:undefined;' .
+
 			'charts.forEach(function(ch){' .
 				'var el=document.getElementById(ch.id);if(!el)return;' .
 				'var inst=new Chart(el,{type:"line",data:{labels:labels,datasets:ch.datasets.map(function(ds){' .
-					'return{label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+"22",tension:.4,fill:false,pointRadius:3,spanGaps:true};' .
+					'return{label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+"22",tension:.4,fill:false,pointRadius:pRadius,spanGaps:true};' .
 				'})},options:{responsive:true,' .
 					'plugins:{legend:{display:ch.datasets.length>1,labels:{font:{size:10},boxWidth:8}}},' .
-					'scales:{x:{ticks:{font:{size:10},color:"#999"}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,grid:{color:"rgba(0,0,0,.06)"}}}' .
+					'scales:{x:{ticks:{font:{size:10},color:"#999",maxTicksLimit:maxTicks,maxRotation:45}},y:{ticks:{font:{size:10},color:"#999"},beginAtZero:false,grid:{color:"rgba(0,0,0,.06)"}}}' .
 				'}});' .
 				'trendsChartInsts.push(inst);' .
 			'});' .
@@ -2653,7 +4046,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'mvStoreMeds(meds);tmaHaptic("light");' .
 			/* Optional server sync */
 			'var med=meds.find(function(m){return m.id===id;});' .
-			'if(med){fetch(TOOLS_EXEC,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+			'if(med){fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
 				'body:JSON.stringify({tool:"log_medication_taken",arguments:{medication:med.name,dose:med.dose,taken:med.taken_today,ts:med.taken_ts}})' .
 			'}).catch(function(){});}' .
 			'mvRenderMeds();' .
@@ -2709,6 +4102,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'+", Na+: "+(latest.sodium||"?")+" mEq/L"' .
 				'+", Phosphorus: "+(latest.phosphorus||"?")+" mg/dL"' .
 				'+", Albumin: "+(latest.albumin||"?")+" g/dL"' .
+				'+", Hemoglobin: "+(latest.hemoglobin||"?")+" g/dL"' .
 				'+(latest.notes?". Notes: "+latest.notes:"")+".";' .
 				'doctorHist.push({role:"user",content:vitCtx});' .
 				'doctorHist.push({role:"assistant",content:"' . esc_js( __( 'I have your latest vitals on file. How can I help you today?', 'mcp-ai-wpoos-pro' ) ) . '"});' .
@@ -2716,8 +4110,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'doctorHist.push({role:"user",content:msg});' .
 			'var body={messages:doctorHist.slice(-20)};' .
 			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var hdrs={"Content-Type":"application/json","X-WP-Nonce":NONCE};' .
+			'if(TMA_TOKEN){hdrs["X-WP-MCP-AI-TMA-Token"]=TMA_TOKEN;}' .
+			'mvLoadMarkdown(function(){' .
 			'fetch(CHAT_URL,{method:"POST",' .
-				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+				'headers:hdrs,' .
 				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
@@ -2725,17 +4122,245 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'var data=d&&d.data?d.data:{};' .
 				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
 					'||(data.content)||(data.response)||"' . esc_js( __( 'I\'m unable to retrieve a response right now. Please consult your healthcare provider for medical advice.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(loadEl)loadEl.textContent=reply;' .
+				'mvRenderReply(loadEl,reply);' .
 				'doctorHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Monitor your blood pressure regularly and note any significant changes. 📊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Stay consistent with your medication schedule for best treatment outcomes. 💊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Track your vitals at the same time each day for more accurate trends. ⏰', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Always consult your doctor before adjusting any treatment plan. 🩺', 'mcp-ai-wpoos-pro' ) ) . '"];' .
-				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
+				'mvRenderReply(loadEl,tips[Math.floor(Math.random()*tips.length)]);' .
 			'}).finally(function(){if(msgs)msgs.scrollTop=msgs.scrollHeight;});' .
+			'});' .
 		'};' .
 
 		/* ── Init ── */
-		'mvRefresh();mvRenderMeds();mvSyncFromServer();' .
+		/* Helper: hide the member picker overlay and update the header label.    */
+		/* Called from both the localStorage branch and the server-ID branch.    */
+		'function mvActivateMember(){' .
+			'mvHideMemberPicker();' .
+			'var lbl=document.getElementById("tma-mv-member-label");' .
+			'if(lbl&&MEMBER_NAME)lbl.textContent=MEMBER_NAME;' .
+		'}' .
+
+		/* Priority order for member selection:                                  */
+		/*  1. localStorage (fastest – avoids any flicker)                       */
+		/*  2. SERVER_MEMBER_ID (server resolved the WP user's linked member)    */
+		/*  3. Show member picker (user must choose or create)                   */
+		'mvLoadSavedMember();' .
+		'if(MEMBER_ID){' .
+			'mvActivateMember();' .
+		'}else if(SERVER_MEMBER_ID){' .
+			/* Server already knows which member belongs to this user – auto-select
+			 * without showing the picker so vitals data loads immediately. */
+			'MEMBER_ID=SERVER_MEMBER_ID;MEMBER_NAME=SERVER_MEMBER_NAME;' .
+			'try{localStorage.setItem("mv_member_id",JSON.stringify({id:MEMBER_ID,name:MEMBER_NAME}));}catch(e){}' .
+			'mvActivateMember();' .
+		'}else{' .
+			'mvShowMemberPicker();' .
+		'}' .
+		'mvApplyDisplaySettings();' .
+		'mvInitSession();mvRefresh();mvRenderMeds();' .
+		'if(MEMBER_ID){mvSyncFromServer();mvFetchPrescriptions();}' .
 		'})();</script></body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   WooCommerce Shop React SPA Template
+   ========================================================================== */
+
+/**
+ * WooCommerce Shop Mini App template – React SPA.
+ *
+ * Renders an HTML shell that mounts the compiled React SPA
+ * (addons/pro/build/tma-woo-shop/tma-woo-shop.js) into a root div.
+ *
+ * The PHP context is serialised into `window.wpTmaWooConfig` so the React
+ * app can reach the plugin's REST endpoints and knows which WooCommerce data
+ * source to use:
+ *
+ *   wooSource         – 'local' | 'remote'
+ *   wooConnectionId   – remote connection ID (only when wooSource === 'remote')
+ *
+ * When wooSource is 'local', the React app calls the built-in local WooCommerce
+ * tool endpoints (get_woo_products, get_woo_recent_orders).
+ * When wooSource is 'remote', every fetch goes through the remote_wp_connection
+ * tool with the supplied connection ID.
+ *
+ * @since 1.1.5
+ */
+class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'woo_shop';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'WooCommerce Shop (React)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Full-featured React SPA with product catalog, filters, product pages, cart, checkout and AI shopping assistant. Connect to local WooCommerce or any configured remote store.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '🛍️';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#7c3aed';
+	}
+
+	/** @inheritdoc */
+	public function render_html( array $ctx ) {
+		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.js' : '';
+		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.css' : '';
+
+		// Serialise all values the React app needs.  wp_json_encode escapes
+		// characters that could break out of a <script> tag.
+		$config = wp_json_encode(
+			array(
+				'validateUrl'     => $ctx['validate_url'] ?? '',
+				'toolsUrl'        => $ctx['tools_url'] ?? '',
+				'chatUrl'         => $ctx['chat_url'] ?? '',
+				'nonce'           => $ctx['nonce'] ?? '',
+				'assistantId'     => $ctx['assistant_id'] ?? '',
+				'siteName'        => $ctx['site_name'] ?? get_bloginfo( 'name' ),
+				'siteUrl'         => home_url(),
+				'wooSource'       => $ctx['woo_source'] ?? 'local',
+				'wooConnectionId' => $ctx['woo_connection_id'] ?? '',
+			)
+		);
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure; dynamic values escaped individually.
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-woo-shop-template">' .
+			'<div id="tma-woo-shop-root"></div>' .
+			'<script>window.wpTmaWooConfig=' . $config . ';</script>' .
+			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			'</body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   TEMPLATE: Shopify Jewelry Shop
+   ========================================================================== */
+
+/**
+ * Jewelry Shop Telegram Mini App template (Shopify-powered).
+ *
+ * Gold-themed React SPA for jewelry retailers connected to a Shopify store via
+ * the plugin's Remote Sites / Shopify tools infrastructure. Provides:
+ *
+ *  - Product catalog with debounced search
+ *  - Product detail page with add-to-cart
+ *  - Shopping cart with quantity controls
+ *  - Checkout / order enquiry form
+ *  - Shopify order history
+ *  - AI jewelry concierge chat
+ *
+ * The compiled React bundle lives at:
+ *   addons/pro/build/tma-shopify-jewelry/tma-shopify-jewelry.js
+ *   addons/pro/build/tma-shopify-jewelry/tma-shopify-jewelry.css
+ *
+ * Build with: npm run build:tma-shopify-jewelry
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'jewelry_shop';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'Jewelry Shop (Shopify)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Gold-themed React SPA for jewelry retailers. Connects to any Shopify store via Remote Sites. Includes product catalog, cart, checkout and an AI jewelry concierge.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '💍';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#c9a227';
+	}
+
+	/**
+	 * Render the body HTML for this template.
+	 *
+	 * Injects a `window.wpTmaJewelryConfig` JS object with all URLs and IDs
+	 * the React SPA needs, then loads the compiled bundle from the pro addon's
+	 * build directory.
+	 *
+	 * Context keys used:
+	 *   validate_url         – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
+	 *   tools_url            – Base URL for the tool-execution endpoint.
+	 *   chat_url             – TMA-aware chat endpoint.
+	 *   nonce                – Initial WordPress nonce.
+	 *   assistant_id         – Resolved Mini App assistant ID.
+	 *   site_name            – Site display name.
+	 *   shopify_connection_id – Shopify Remote Sites connection ID (optional; falls back to global option).
+	 *
+	 * @param  array $ctx Context variables injected by the TMA controller.
+	 * @return string     HTML body fragment.
+	 */
+	public function render_html( array $ctx ) {
+		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-jewelry/tma-shopify-jewelry.js' : '';
+		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-jewelry/tma-shopify-jewelry.css' : '';
+
+		// Resolve the Shopify connection ID: per-context value, then global option.
+		$connection_id = '';
+		if ( ! empty( $ctx['shopify_connection_id'] ) ) {
+			$connection_id = sanitize_key( $ctx['shopify_connection_id'] );
+		} else {
+			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_shopify_jewelry_connection_id', '' ) );
+		}
+
+		// wp_json_encode() uses JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+		// ensuring the output is safe for inline <script> embedding.
+		$config = wp_json_encode(
+			array(
+				'validateUrl'  => $ctx['validate_url']  ?? '',
+				'toolsUrl'     => $ctx['tools_url']     ?? '',
+				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'nonce'        => $ctx['nonce']         ?? '',
+				'assistantId'  => $ctx['assistant_id']  ?? '',
+				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'connectionId' => $connection_id,
+			)
+		);
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $config produced by wp_json_encode (HTML-safe); CSS/JS URLs escaped with esc_url().
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-jw-template">' .
+			'<div id="tma-shopify-jewelry-root"></div>' .
+			'<script>window.wpTmaJewelryConfig=' . $config . ';</script>' .
+			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			'</body>';
 		// phpcs:enable
 	}
 }

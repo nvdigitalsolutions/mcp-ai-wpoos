@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -286,12 +289,12 @@ class WP_MCP_AI_Financial_Account_CPT {
 	public static function save_meta_boxes( $post_id, $post ) {
 		// Check nonces.
 		if ( ! isset( $_POST['mcp_ai_account_details_nonce'] ) ||
-			! wp_verify_nonce( $_POST['mcp_ai_account_details_nonce'], 'mcp_ai_account_details' ) ) {
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_ai_account_details_nonce'] ) ), 'mcp_ai_account_details' ) ) {
 			return;
 		}
 
 		if ( ! isset( $_POST['mcp_ai_account_sync_nonce'] ) ||
-			! wp_verify_nonce( $_POST['mcp_ai_account_sync_nonce'], 'mcp_ai_account_sync' ) ) {
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_ai_account_sync_nonce'] ) ), 'mcp_ai_account_sync' ) ) {
 			return;
 		}
 
@@ -307,12 +310,12 @@ class WP_MCP_AI_Financial_Account_CPT {
 
 		// Save account details.
 		if ( isset( $_POST['institution'] ) ) {
-			update_post_meta( $post_id, '_institution', sanitize_text_field( $_POST['institution'] ) );
+			update_post_meta( $post_id, '_institution', sanitize_text_field( wp_unslash( $_POST['institution'] ) ) );
 		}
 
 		if ( isset( $_POST['account_number'] ) ) {
 			// In production, this should be encrypted.
-			update_post_meta( $post_id, '_account_number', sanitize_text_field( $_POST['account_number'] ) );
+			update_post_meta( $post_id, '_account_number', sanitize_text_field( wp_unslash( $_POST['account_number'] ) ) );
 		}
 
 		if ( isset( $_POST['balance'] ) ) {
@@ -320,7 +323,7 @@ class WP_MCP_AI_Financial_Account_CPT {
 		}
 
 		if ( isset( $_POST['currency'] ) ) {
-			update_post_meta( $post_id, '_currency', sanitize_text_field( $_POST['currency'] ) );
+			update_post_meta( $post_id, '_currency', sanitize_text_field( wp_unslash( $_POST['currency'] ) ) );
 		}
 
 		if ( isset( $_POST['interest_rate'] ) ) {
@@ -332,7 +335,7 @@ class WP_MCP_AI_Financial_Account_CPT {
 		}
 
 		if ( isset( $_POST['notes'] ) ) {
-			update_post_meta( $post_id, '_notes', sanitize_textarea_field( $_POST['notes'] ) );
+			update_post_meta( $post_id, '_notes', sanitize_textarea_field( wp_unslash( $_POST['notes'] ) ) );
 		}
 
 		// Save sync settings.
@@ -340,7 +343,7 @@ class WP_MCP_AI_Financial_Account_CPT {
 		update_post_meta( $post_id, '_sync_enabled', $sync_enabled );
 
 		if ( isset( $_POST['sync_provider'] ) ) {
-			update_post_meta( $post_id, '_sync_provider', sanitize_text_field( $_POST['sync_provider'] ) );
+			update_post_meta( $post_id, '_sync_provider', sanitize_text_field( wp_unslash( $_POST['sync_provider'] ) ) );
 		}
 	}
 }

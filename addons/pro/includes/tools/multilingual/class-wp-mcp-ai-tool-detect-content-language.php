@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -72,11 +75,46 @@ class WP_MCP_AI_Tool_Detect_Content_Language implements WP_MCP_AI_Tool_Interface
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement detect_content_language logic
+		$text    = isset( $arguments['text'] ) ? sanitize_textarea_field( $arguments['text'] ) : '';
+		$post_id = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
+
+		// Resolve text from post if no direct text provided.
+		if ( '' === $text && $post_id > 0 ) {
+			$post = get_post( $post_id );
+			if ( ! $post ) {
+				return new WP_Error(
+					'post_not_found',
+					/* translators: %d: post ID */
+					sprintf( __( 'Post %d not found.', 'mcp-ai-wpoos-pro' ), $post_id )
+				);
+			}
+			$text = wp_strip_all_tags( $post->post_content . ' ' . $post->post_title );
+		}
+
+		if ( '' === $text ) {
+			return new WP_Error(
+				'no_text',
+				__( 'Provide text or a post_id to detect language.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-language-detection-service.php';
+		$service = new WP_MCP_AI_Language_Detection_Service();
+		$result  = $service->detect_language( $text );
 
 		return array(
-			'success' => true,
-			'message' => __( 'Detect Content Language executed successfully.', 'mcp-ai-wpoos-pro' ),
+			'success'       => true,
+			'language_code' => $result['code'],
+			'language_name' => $result['name'],
+			'confidence'    => $result['confidence'],
+			'alternatives'  => $result['alternatives'],
+			'source'        => $result['source'],
+			'message'       => sprintf(
+				/* translators: 1: language name, 2: confidence percentage */
+				__( 'Detected language: %1$s (%.0f%% confidence).', 'mcp-ai-wpoos-pro' ),
+				$result['name'],
+				$result['confidence'] * 100
+			),
 		);
 	}
 }

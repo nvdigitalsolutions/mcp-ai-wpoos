@@ -3,6 +3,9 @@
  * Tool that generates embeddings for multiple posts/pages in batch.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -81,8 +84,8 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'model'           => array(
 					'type'        => 'string',
-					'enum'        => array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002', 'text-embedding-004', 'text-embedding-005' ),
-					'description' => __( 'Embedding model to use. OpenAI: text-embedding-3-small/large/ada-002. Gemini: text-embedding-004/005.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002', 'gemini-embedding-001', 'text-embedding-004', 'text-embedding-005' ),
+					'description' => __( 'Embedding model to use. OpenAI: text-embedding-3-small/large/ada-002. Gemini: gemini-embedding-001 (recommended), text-embedding-004, text-embedding-005.', 'mcp-ai-wpoos' ),
 					'default'     => 'text-embedding-3-small',
 				),
 				'store_in_meta'   => array(
@@ -305,8 +308,9 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 
 		// Model pricing (per 1M tokens) - Gemini embedding pricing.
 		$pricing = array(
-			'text-embedding-004' => 0.00001,  // $0.00001 per 1K tokens = $0.01 per 1M tokens.
-			'text-embedding-005' => 0.00001,
+			'gemini-embedding-001' => 0.15,     // $0.15 per 1M tokens (GA model, July 2025+).
+			'text-embedding-004'   => 0.00001,  // $0.00001 per 1K tokens = $0.01 per 1M tokens.
+			'text-embedding-005'   => 0.00001,
 		);
 
 		$model_cost_per_1m = isset( $pricing[ $model ] ) ? $pricing[ $model ] : 0.00001;

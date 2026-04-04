@@ -3,6 +3,9 @@
  * Helper for invoking JetEngine REST controllers on behalf of MCP tools.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -521,8 +524,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 				$args['cookies'][] = new WP_Http_Cookie(
 					array(
-						'name'  => $cookie_name,
-						'value' => $cookie_value,
+						'name'  => sanitize_text_field( $cookie_name ),
+						'value' => sanitize_text_field( $cookie_value ),
 					)
 				);
 			}

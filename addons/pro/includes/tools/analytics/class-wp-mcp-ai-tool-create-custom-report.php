@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -173,7 +176,7 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Report data or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$report_name    = sanitize_text_field( $arguments['report_name'] );
 		$template       = ! empty( $arguments['template'] ) ? sanitize_text_field( $arguments['template'] ) : 'executive';
 		$metrics        = ! empty( $arguments['metrics'] ) ? array_map( 'sanitize_text_field', $arguments['metrics'] ) : array( 'revenue', 'orders' );

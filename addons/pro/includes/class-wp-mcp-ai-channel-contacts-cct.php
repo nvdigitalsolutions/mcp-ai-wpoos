@@ -8,6 +8,9 @@
  * to the right people.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,6 +45,54 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 */
 	public static function bootstrap() {
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_conversation_type' ), 101 );
+		add_action( 'init', array( __CLASS__, 'maybe_migrate_connection_id' ), 102 );
+	}
+
+	/**
+	 * Ensure the conversation_type column exists in the contacts CCT table.
+	 */
+	public static function maybe_migrate_conversation_type() {
+		if ( get_option( 'wp_mcp_ai_channel_contacts_migration_v1' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'conversation_type', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `conversation_type` VARCHAR(20) NOT NULL DEFAULT 'dm'" );
+		}
+		update_option( 'wp_mcp_ai_channel_contacts_migration_v1', true );
+	}
+
+	/**
+	 * Ensure the connection_id column exists in the contacts CCT table.
+	 *
+	 * Older installations that created the CCT before this field was added to
+	 * the schema will not have the column, causing queries that reference it
+	 * to fail silently and break the inbox.
+	 */
+	public static function maybe_migrate_connection_id() {
+		if ( get_option( 'wp_mcp_ai_channel_contacts_migration_v2' ) ) {
+			return;
+		}
+		if ( ! self::table_exists() ) {
+			return;
+		}
+		global $wpdb;
+		$table = self::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_cols = $wpdb->get_col( "DESCRIBE `{$table}`", 0 );
+		if ( ! in_array( 'connection_id', $existing_cols, true ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `connection_id` VARCHAR(100) NOT NULL DEFAULT ''" );
+		}
+		update_option( 'wp_mcp_ai_channel_contacts_migration_v2', true );
 	}
 
 	/**
@@ -78,10 +129,18 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	/**
 	 * Find or create a contact record for the given platform + contact ID.
 	 *
+	 * When `connection_id` is supplied in `$extra`, the lookup uses all three
+	 * of `channel`, `channel_contact_id`, and `connection_id` so that the same
+	 * platform contact on two different connections appears as two distinct
+	 * records. This keeps per-connection conversation threads isolated in the
+	 * inbox and ensures that human-takeover state, CRM status, and message
+	 * history are never shared across connections.
+	 *
 	 * @param string $channel           Platform slug, e.g. 'whatsapp'.
 	 * @param string $channel_contact_id  Platform-side contact identifier.
 	 * @param array  $extra             Optional extra fields to merge on creation:
-	 *                                  display_name, phone_number, email, metadata.
+	 *                                  display_name, phone_number, email, metadata,
+	 *                                  connection_id.
 	 * @return int|false Contact CCT item ID, or false on failure.
 	 */
 	public static function find_or_create( $channel, $channel_contact_id, array $extra = array() ) {
@@ -94,21 +153,72 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			return false;
 		}
 
+		$connection_id     = isset( $extra['connection_id'] ) ? sanitize_text_field( $extra['connection_id'] ) : '';
+		$conversation_type = isset( $extra['conversation_type'] ) ? sanitize_key( $extra['conversation_type'] ) : 'dm';
+
 		// Try to look up the existing contact directly in the CCT table.
 		if ( self::table_exists() ) {
 			$table = self::get_table_name();
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$existing_id = $wpdb->get_var(
-				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
-					$channel,
-					$channel_contact_id
-				)
-			);
 
-			if ( $existing_id ) {
-				return (int) $existing_id;
+			if ( '' !== $connection_id ) {
+				// Connection-scoped lookup: same contact on two connections = two records.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$existing_id = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+						$channel,
+						$channel_contact_id,
+						$connection_id
+					)
+				);
+
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
+
+				// Adopt an older record that has no connection_id yet so the
+				// contact is not duplicated and gains the connection_id needed
+				// for bot_username resolution in the inbox.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$legacy_id = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = '' LIMIT 1",
+						$channel,
+						$channel_contact_id
+					)
+				);
+
+				if ( $legacy_id ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->update(
+						$table,
+						array(
+							'connection_id'    => $connection_id,
+							'conversation_type' => $conversation_type,
+						),
+						array( '_ID' => (int) $legacy_id ),
+						array( '%s', '%s' ),
+						array( '%d' )
+					);
+					return (int) $legacy_id;
+				}
+			} else {
+				// Backward-compatible lookup for callers that do not supply connection_id.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$existing_id = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						$channel,
+						$channel_contact_id
+					)
+				);
+
+				if ( $existing_id ) {
+					return (int) $existing_id;
+				}
 			}
 		}
 
@@ -121,6 +231,8 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 		$data = array(
 			'channel'            => $channel,
 			'channel_contact_id' => $channel_contact_id,
+			'connection_id'      => $connection_id,
+			'conversation_type'  => $conversation_type,
 			'display_name'       => $display_name ? $display_name : $channel_contact_id,
 			'phone_number'       => $phone_number,
 			'email'              => $email,
@@ -144,6 +256,11 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->insert( self::get_table_name(), $data );
 			return $wpdb->insert_id ? $wpdb->insert_id : false;
+		}
+
+		// Fall back to the CPT store when JetEngine is not available.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+			return WP_MCP_AI_Channel_Contacts_CPT::find_or_create( $channel, $channel_contact_id, $extra );
 		}
 
 		return false;
@@ -241,27 +358,67 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	/**
 	 * Check whether human takeover is active for a given channel + contact.
 	 *
+	 * When `$connection_id` is non-empty the lookup is scoped to the specific
+	 * connection, matching the per-connection contact records created by
+	 * {@see find_or_create()}. Falls back to a channel+contact-only lookup when
+	 * `$connection_id` is omitted or empty for backward compatibility.
+	 *
 	 * @param string $channel            Platform slug.
 	 * @param string $channel_contact_id Platform contact ID.
+	 * @param string $connection_id      Optional connection identifier.
 	 * @return bool
 	 */
-	public static function is_human_takeover_active( $channel, $channel_contact_id ) {
+	public static function is_human_takeover_active( $channel, $channel_contact_id, $connection_id = '' ) {
 		if ( ! self::table_exists() ) {
+			// Fall back to the CPT store when the CCT table is unavailable.
+			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CPT' ) ) {
+				return WP_MCP_AI_Channel_Contacts_CPT::is_human_takeover_active( $channel, $channel_contact_id, $connection_id );
+			}
 			return false;
 		}
 
 		global $wpdb;
-		$table = self::get_table_name();
+		$table         = self::get_table_name();
+		$channel       = sanitize_key( $channel );
+		$contact_id    = sanitize_text_field( $channel_contact_id );
+		$connection_id = sanitize_text_field( $connection_id );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$result = $wpdb->get_var(
-			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
-				sanitize_key( $channel ),
-				sanitize_text_field( $channel_contact_id )
-			)
-		);
+		if ( '' !== $connection_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s AND connection_id = %s LIMIT 1",
+					$channel,
+					$contact_id,
+					$connection_id
+				)
+			);
+
+			// Fall back to an unscoped lookup when no connection-specific record
+			// exists yet (e.g. contacts created before this feature was deployed).
+			if ( null === $result ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$result = $wpdb->get_var(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+						$channel,
+						$contact_id
+					)
+				);
+			}
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->get_var(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT human_takeover FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+					$channel,
+					$contact_id
+				)
+			);
+		}
 
 		return (bool) $result;
 	}
@@ -293,6 +450,11 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	 * Register the CCT in JetEngine if not already registered.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 		if ( ! $module ) {
 			return;
@@ -560,6 +722,31 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'width'       => '100%',
 				'default_val' => '',
 				'description' => __( 'JSON metadata for platform-specific contact fields', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 13,
+				'title'       => __( 'Connection ID', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'connection_id',
+				'type'        => 'text',
+				'search'      => true,
+				'width'       => '100%',
+				'default_val' => '',
+				'description' => __( 'Plugin connection/account identifier this contact belongs to', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'id'          => $b + 14,
+				'title'       => __( 'Conversation Type', 'mcp-ai-wpoos-pro' ),
+				'name'        => 'conversation_type',
+				'type'        => 'select',
+				'search'      => true,
+				'width'       => '100%',
+				'default_val' => 'dm',
+				'options'     => array(
+					array( 'key' => 'dm',      'value' => __( 'Direct Message', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'channel', 'value' => __( 'Channel', 'mcp-ai-wpoos-pro' ) ),
+					array( 'key' => 'group',   'value' => __( 'Group', 'mcp-ai-wpoos-pro' ) ),
+				),
+				'description' => __( 'Whether this is a direct message, a channel (Slack/Teams/Discord), or a group chat', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 

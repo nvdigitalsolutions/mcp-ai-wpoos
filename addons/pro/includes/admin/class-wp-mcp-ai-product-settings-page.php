@@ -6,6 +6,9 @@
  * for WooCommerce Product Research & Add functionality.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -160,7 +163,7 @@ class WP_MCP_AI_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
 				<a
 					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug ) ); ?>"
-					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded CSS class. ?>"
 				>
 					<?php echo esc_html( $tab_title ); ?>
 				</a>

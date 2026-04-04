@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -182,7 +185,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$cohort_by          = ! empty( $arguments['cohort_by'] ) ? sanitize_text_field( $arguments['cohort_by'] ) : 'first_purchase';
 		$cohort_period      = ! empty( $arguments['cohort_period'] ) ? sanitize_text_field( $arguments['cohort_period'] ) : 'monthly';

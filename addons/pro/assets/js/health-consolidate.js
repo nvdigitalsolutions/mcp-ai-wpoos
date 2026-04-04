@@ -2,10 +2,43 @@
  * Health Records Consolidate & Add Page JavaScript
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 ( function( $ ) {
 	'use strict';
+
+	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml( text ) {
+		const d = document.createElement( 'div' );
+		d.textContent = String( text );
+		return d.innerHTML.replace( /"/g, '&quot;' );
+	}
+
+	/**
+	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
+	 *
+	 * @param {string} url URL to validate.
+	 * @return {string} The original URL if safe, otherwise '#'.
+	 */
+	function safeUrl( url ) {
+		const str = String( url );
+		if ( ! /^https?:\/\//i.test( str ) ) {
+			return '#';
+		}
+		return str
+			.replace( /&/g, '&amp;' )
+			.replace( /"/g, '&quot;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' );
+	}
 
 	/**
 	 * Initialize the health consolidate page.
@@ -454,8 +487,8 @@
 				// Update the guided form container with instructions.
 				guidedFormContainer.html(
 					'<div class="notice notice-success inline">' +
-					'<p><strong>' + wpMcpAiHealthConsolidate.strings.aiAssisting + '</strong></p>' +
-					'<p>The AI assistant below will guide you through creating a ' + recordTypeName + ' for ' + memberName + '.</p>' +
+					'<p><strong>' + escapeHtml( wpMcpAiHealthConsolidate.strings.aiAssisting ) + '</strong></p>' +
+					'<p>The AI assistant below will guide you through creating a ' + escapeHtml( recordTypeName ) + ' for ' + escapeHtml( memberName ) + '.</p>' +
 					'</div>'
 				).show();
 			} else {
@@ -463,7 +496,7 @@
 				const addUrl = getAddUrl( recordType );
 				guidedFormContainer.html(
 					'<div class="notice notice-warning inline">' +
-					'<p>AI assistant not available. <a href="' + addUrl + '" class="button">Create ' + recordTypeName + ' manually</a></p>' +
+					'<p>AI assistant not available. <a href="' + safeUrl( addUrl ) + '" class="button">Create ' + escapeHtml( recordTypeName ) + ' manually</a></p>' +
 					'</div>'
 				).show();
 			}

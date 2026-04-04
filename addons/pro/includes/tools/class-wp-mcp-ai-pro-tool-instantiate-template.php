@@ -5,6 +5,9 @@
  * Creates a task plan from a template by replacing placeholders with actual values
  *
  * @package MCP_AI_WP_OOS_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -3,6 +3,9 @@
  * Tests for Run Crawl4AI Job Validated Tool
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -226,5 +229,59 @@ class Test_WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_UnitTestCase {
 	public function test_capability_flags() {
 		$flags = $this->tool->get_capability_flags();
 		$this->assertIsArray( $flags );
+	}
+
+	/**
+	 * Test that the validator service can be serialized without errors.
+	 *
+	 * Regression test for: "Serialization of
+	 * 'Symfony\Contracts\Translation\TranslatorInterface@anonymous' is not allowed."
+	 * The fix uses a named WP_MCP_AI_Identity_Translator instead of Symfony's
+	 * anonymous-class fallback, and adds __sleep()/__wakeup() as a safety net.
+	 */
+	public function test_validator_service_is_serializable() {
+		$service = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+
+		$this->assertNotNull( $service, 'Validator service must be available.' );
+
+		// This must not throw "Serialization of … is not allowed".
+		$serialized = serialize( $service );
+		$this->assertIsString( $serialized, 'Serialized validator service must be a string.' );
+
+		// Unserialized instance must still validate correctly.
+		$restored = unserialize( $serialized ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+		$this->assertInstanceOf(
+			\WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::class,
+			$restored,
+			'Unserialized validator service must be an instance of WP_MCP_AI_Validator_Service.'
+		);
+	}
+
+	/**
+	 * Test that a validated tool instance can be serialized without errors.
+	 *
+	 * The WP_MCP_AI_Validated_Tool base class holds a $validator_service
+	 * reference. __sleep() excludes it and __wakeup() restores it so that
+	 * serializing the tool (e.g. when stored in a WordPress transient) never
+	 * throws a fatal error.
+	 */
+	public function test_validated_tool_is_serializable() {
+		// This must not throw.
+		$serialized = serialize( $this->tool );
+		$this->assertIsString( $serialized, 'Serialized tool must be a string.' );
+
+		$restored = unserialize( $serialized ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+		$this->assertInstanceOf(
+			WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated::class,
+			$restored,
+			'Unserialized tool must be an instance of WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated.'
+		);
+
+		// The restored tool must still be operational (slug is set, service is back).
+		$this->assertSame(
+			'run_crawl4ai_job_validated',
+			$restored->get_slug(),
+			'Restored tool must return the correct slug.'
+		);
 	}
 }

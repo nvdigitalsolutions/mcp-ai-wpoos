@@ -42,7 +42,14 @@
 	},
 	"overrides": [
 		{
-			"files": ["**/chat-markdown-service.js", "**/chat-http-client-service.js", "**/chat-bundle.js"],
+			"files": [
+				"**/chat-markdown-service.js",
+				"**/chat-http-client-service.js",
+				"**/chat-bundle.js",
+				"**/orchestration/autonomous-orchestrator.js",
+				"**/orchestration/browser-circuit-breaker.js",
+				"**/orchestration/research-compiler.js"
+			],
 			"parserOptions": {
 				"sourceType": "module"
 			}

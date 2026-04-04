@@ -5,10 +5,31 @@
  * including quick apply, preview, and bulk operations.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 (function ($) {
 	'use strict';
+
+	/**
+	 * Validate that a URL uses a safe scheme (http or https) for use in href attributes.
+	 *
+	 * @param {string} url URL to validate.
+	 * @return {string} The URL HTML-encoded if safe, otherwise '#'.
+	 */
+	function safeUrl( url ) {
+		const str = String( url );
+		if ( ! /^https?:\/\//i.test( str ) ) {
+			return '#';
+		}
+		return str
+			.replace( /&/g, '&amp;' )
+			.replace( /"/g, '&quot;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' );
+	}
 
 	const MediaTemplateAdmin = {
 		/**
@@ -227,11 +248,15 @@
 			const exportKey = urlParams.get('export_key');
 
 			if (exportedCount && exportKey) {
+				const safeCount = parseInt( exportedCount, 10 );
+				const safeKey = encodeURIComponent( exportKey );
+				const safeNonce = encodeURIComponent( mcpAiMediaTemplate.nonce );
+				const safeAjaxUrl = safeUrl( mcpAiMediaTemplate.ajaxUrl );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
-						<p><strong>Export Complete!</strong> ${exportedCount} template(s) exported.</p>
+						<p><strong>Export Complete!</strong> ${safeCount} template(s) exported.</p>
 						<p>
-							<a href="${mcpAiMediaTemplate.ajaxUrl}?action=mcp_ai_download_export&key=${exportKey}&_wpnonce=${mcpAiMediaTemplate.nonce}" 
+							<a href="${safeAjaxUrl}?action=mcp_ai_download_export&key=${safeKey}&_wpnonce=${safeNonce}" 
 							   class="template-export-link" download="media-templates-export.json">
 								<span class="dashicons dashicons-download"></span>
 								Download Export File
@@ -250,9 +275,10 @@
 			// Handle duplicated notice.
 			const duplicatedCount = urlParams.get('duplicated_templates');
 			if (duplicatedCount) {
+				const safeCount = parseInt( duplicatedCount, 10 );
 				const message = `
 					<div class="notice notice-success template-bulk-action is-dismissible">
-						<p><strong>Templates Duplicated!</strong> ${duplicatedCount} template(s) duplicated successfully.</p>
+						<p><strong>Templates Duplicated!</strong> ${safeCount} template(s) duplicated successfully.</p>
 					</div>
 				`;
 

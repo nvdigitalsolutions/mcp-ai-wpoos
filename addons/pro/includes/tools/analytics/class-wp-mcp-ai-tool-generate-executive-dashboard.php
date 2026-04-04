@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -185,7 +188,7 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$period                 = ! empty( $arguments['period'] ) ? sanitize_text_field( $arguments['period'] ) : 'monthly';
 		$compare_previous       = ! isset( $arguments['compare_previous'] ) || $arguments['compare_previous'];

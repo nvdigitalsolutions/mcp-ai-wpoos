@@ -5,6 +5,9 @@
  * @package WP_MCP_AI_Pro
  * @subpackage Image_Production_Toolkit
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -360,6 +363,7 @@ class WP_MCP_AI_Image_Template_CPT {
 
 		foreach ( $fields as $field => $sanitize_callback ) {
 			if ( isset( $_POST[ $field ] ) ) {
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via call_user_func() with the mapped callback.
 				update_post_meta( $post_id, '_' . $field, call_user_func( $sanitize_callback, wp_unslash( $_POST[ $field ] ) ) );
 			}
 		}

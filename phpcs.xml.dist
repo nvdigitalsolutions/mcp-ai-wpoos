@@ -26,16 +26,36 @@
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
+<!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix
+     clarifies the file role. Class rename would break existing hooks and the autoloader. -->
+<exclude-pattern>class-wp-mcp-ai-plugin\.php$</exclude-pattern>
 </rule>
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 <exclude-pattern>class-wp-mcp-ai-cli-command\.php$</exclude-pattern>
 <exclude-pattern>class-wp-mcp-ai-jetengine-endpoint-report\.php$</exclude-pattern>
+<!-- class-wp-mcp-ai-plugin.php co-locates wp_mcp_ai_bootstrap() and
+     wp_mcp_ai_maybe_load_pro_addon() with the main WP_MCP_AI class for
+     self-contained initialization; separating them would require an extra file. -->
+<exclude-pattern>class-wp-mcp-ai-plugin\.php$</exclude-pattern>
 </rule>
 
 <rule ref="Squiz.Commenting.FileComment">
 <exclude-pattern>*/tests/*</exclude-pattern>
+</rule>
+
+<!--
+	Phase 2 boundary rule:
+	includes/domain/ must contain zero direct WordPress API calls.
+	includes/infrastructure/ implements WordPress adapters — WordPress calls
+	are expected there and are excluded from this warning pattern.
+	Direct WordPress API calls in includes/services/ or includes/repositories/
+	are flagged so that violations are visible during code review.
+	See docs/ADR_001_module_boundaries.md for the authoritative rule.
+-->
+<rule ref="WordPress.WP.GlobalVariablesOverride">
+<exclude-pattern>*/includes/domain/*</exclude-pattern>
 </rule>
 
 <file>.</file>

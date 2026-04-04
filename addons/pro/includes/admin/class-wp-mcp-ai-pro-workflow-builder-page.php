@@ -8,6 +8,9 @@
  * @package WP_MCP_AI
  * @subpackage Admin
  * @since 2.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -63,6 +66,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_save_workflow_execution', array( $this, 'ajax_save_workflow_execution' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_list_pro_workflows', array( $this, 'ajax_list_workflows' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_export_pro_workflow', array( $this, 'ajax_export_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_duplicate_pro_workflow', array( $this, 'ajax_duplicate_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_rename_pro_workflow', array( $this, 'ajax_rename_workflow' ) );
+
+		// Workflow presets AJAX handlers.
+		add_action( 'wp_ajax_wp_mcp_ai_get_workflow_presets', array( $this, 'ajax_get_workflow_presets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_install_workflow_preset', array( $this, 'ajax_install_workflow_preset' ) );
 	}
 
 	/**
@@ -108,59 +117,56 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Enqueue the React-based workflow builder.
-		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/workflow-builder.asset.php';
-		
-		if ( file_exists( $asset_file ) ) {
-			$asset = require $asset_file;
-			
-			// Debug logging.
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
+			// Built assets are missing. Show an admin notice via render_page() — do NOT
+			// attempt to load the raw src/workflow-builder/index.jsx source file, as
+			// browsers cannot execute JSX and web servers typically return a 404 for it.
 			if ( $this->is_debug_logging_enabled() ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-				error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
+				error_log( sprintf( 'Workflow Builder: Built asset file not found: %s', $asset_file ) );
 			}
-			
-			wp_enqueue_script(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.js',
-				$asset['dependencies'],
-				$asset['version'],
-				true
-			);
+			return;
+		}
 
+		$asset = require $asset_file;
+
+		// Debug logging.
+		if ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
+		}
+
+		wp_enqueue_script(
+			'mcp-ai-pro-workflow-builder',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.js',
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+
+		wp_enqueue_style(
+			'mcp-ai-pro-workflow-builder',
+			WP_MCP_AI_PRO_URL . 'build/workflow-builder/workflow-builder.css',
+			array(),
+			$asset['version']
+		);
+
+		// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
+		// by wp-scripts into a separate style-*.css file. Without this, the canvas
+		// area has no layout and nodes/edges do not render correctly.
+		$style_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/style-workflow-builder.css';
+		if ( file_exists( $style_file ) ) {
 			wp_enqueue_style(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.css',
+				'mcp-ai-pro-workflow-builder-reactflow',
+				WP_MCP_AI_PRO_URL . 'build/workflow-builder/style-workflow-builder.css',
 				array(),
 				$asset['version']
 			);
-
-			// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
-			// by wp-scripts into a separate style-*.css file. Without this, the canvas
-			// area has no layout and nodes/edges do not render correctly.
-			$style_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/style-workflow-builder.css';
-			if ( file_exists( $style_file ) ) {
-				wp_enqueue_style(
-					'mcp-ai-pro-workflow-builder-reactflow',
-					WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/style-workflow-builder.css',
-					array(),
-					$asset['version']
-				);
-			}
-		} else {
-			// Fallback for development - load from src.
-			// Debug logging.
-			if ( $this->is_debug_logging_enabled() ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-				error_log( 'Workflow Builder: Built assets not found, using development fallback' );
-			}
-			
-			wp_enqueue_script(
-				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'src/workflow-builder/index.jsx',
-				array( 'wp-element', 'wp-i18n' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
+		} elseif ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: ReactFlow style file not found: %s', $style_file ) );
 		}
 
 		// Localize script with data.
@@ -168,12 +174,13 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			'mcp-ai-pro-workflow-builder',
 			'mcpAiWorkflowBuilder',
 			array(
-				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
-				'nonce'          => wp_create_nonce( 'mcp_ai_pro_workflow_builder' ),
-				'workflows'      => $this->get_all_workflows(),
-				'templates'      => $this->get_workflow_templates(),
-				'availableTools' => $this->get_available_tools(),
-				'assistants'     => $this->get_available_assistants(),
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'mcp_ai_pro_workflow_builder' ),
+				'workflows'       => $this->get_all_workflows(),
+				'templates'       => $this->get_workflow_templates(),
+				'workflowPresets' => $this->get_all_workflow_presets(),
+				'availableTools'  => $this->get_available_tools(),
+				'assistants'      => $this->get_available_assistants(),
 			)
 		);
 	}
@@ -184,11 +191,390 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function render_page() {
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.asset.php';
+
+		if ( ! file_exists( $asset_file ) ) {
+			?>
+			<div class="wrap">
+				<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>
+				<div class="notice notice-error">
+					<p>
+						<?php
+						esc_html_e(
+							'The Workflow Builder compiled assets are missing. Please run `npm install && npm run build` in the plugin directory to generate the required files, then reload this page.',
+							'mcp-ai-wpoos'
+						);
+						?>
+					</p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>
 			<div id="mcp-ai-pro-workflow-builder-root"></div>
+
+			<?php $this->render_workflow_presets(); ?>
+			<?php $this->render_workflow_listing(); ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render the saved workflows CRUD listing table below the builder.
+	 *
+	 * Provides a WP-admin-styled table with Name, Description, Nodes, Edges,
+	 * Created/Updated timestamps, and row actions (Edit, Duplicate, Export, Delete).
+	 * The table is AJAX-powered so it refreshes without a full page reload.
+	 *
+	 * @since 2.1.0
+	 */
+	protected function render_workflow_listing() {
+		$workflows = $this->get_all_workflows();
+		?>
+		<div id="mcp-ai-pro-workflow-listing" class="mcp-ai-pro-workflow-listing">
+			<div class="mcp-ai-pro-workflow-listing-header">
+				<h2>
+					<span class="dashicons dashicons-list-view"></span>
+					<?php esc_html_e( 'Saved Workflows', 'mcp-ai-wpoos' ); ?>
+					<span class="mcp-ai-pro-workflow-count">(<?php echo count( $workflows ); ?>)</span>
+				</h2>
+				<div class="mcp-ai-pro-workflow-listing-actions">
+					<button type="button" class="button" id="mcp-ai-wf-refresh" title="<?php esc_attr_e( 'Refresh', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<table class="wp-list-table widefat fixed striped" id="mcp-ai-wf-table">
+				<thead>
+					<tr>
+						<th class="column-name" scope="col"><?php esc_html_e( 'Name', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-description" scope="col"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-nodes" scope="col"><?php esc_html_e( 'Nodes', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-edges" scope="col"><?php esc_html_e( 'Edges', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-created" scope="col"><?php esc_html_e( 'Created', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-updated" scope="col"><?php esc_html_e( 'Last Modified', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody id="mcp-ai-wf-table-body">
+					<?php if ( empty( $workflows ) ) : ?>
+						<tr class="mcp-ai-wf-empty-row">
+							<td colspan="6"><?php esc_html_e( 'No saved workflows yet. Use the builder above to create one.', 'mcp-ai-wpoos' ); ?></td>
+						</tr>
+					<?php else : ?>
+						<?php foreach ( $workflows as $id => $wf ) : ?>
+							<?php $this->render_workflow_row( $id, $wf ); ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+				<tfoot>
+					<tr>
+						<th class="column-name" scope="col"><?php esc_html_e( 'Name', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-description" scope="col"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-nodes" scope="col"><?php esc_html_e( 'Nodes', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-edges" scope="col"><?php esc_html_e( 'Edges', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-created" scope="col"><?php esc_html_e( 'Created', 'mcp-ai-wpoos' ); ?></th>
+						<th class="column-updated" scope="col"><?php esc_html_e( 'Last Modified', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+
+		<style>
+			.mcp-ai-pro-workflow-listing {
+				margin-top: 30px;
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 0;
+			}
+			.mcp-ai-pro-workflow-listing-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 12px 16px;
+				border-bottom: 1px solid #c3c4c7;
+				background: #f6f7f7;
+			}
+			.mcp-ai-pro-workflow-listing-header h2 {
+				margin: 0;
+				font-size: 14px;
+				font-weight: 600;
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+			.mcp-ai-pro-workflow-listing-header h2 .dashicons {
+				color: #2271b1;
+			}
+			.mcp-ai-pro-workflow-count {
+				color: #787c82;
+				font-weight: 400;
+			}
+			#mcp-ai-wf-table {
+				border: none;
+				border-radius: 0;
+				margin: 0;
+			}
+			#mcp-ai-wf-table .column-name { width: 22%; }
+			#mcp-ai-wf-table .column-description { width: 30%; }
+			#mcp-ai-wf-table .column-nodes,
+			#mcp-ai-wf-table .column-edges { width: 8%; text-align: center; }
+			#mcp-ai-wf-table .column-created,
+			#mcp-ai-wf-table .column-updated { width: 16%; }
+			#mcp-ai-wf-table .row-actions {
+				visibility: hidden;
+				padding: 2px 0 0;
+			}
+			#mcp-ai-wf-table tr:hover .row-actions {
+				visibility: visible;
+			}
+			#mcp-ai-wf-table .row-actions a {
+				cursor: pointer;
+			}
+			#mcp-ai-wf-table .row-actions .delete a {
+				color: #b32d2e;
+			}
+			#mcp-ai-wf-table .row-actions .delete a:hover {
+				color: #a00;
+			}
+			.mcp-ai-wf-empty-row td {
+				text-align: center;
+				color: #787c82;
+				padding: 20px !important;
+			}
+			.mcp-ai-pro-wf-node-count {
+				display: inline-block;
+				min-width: 24px;
+				text-align: center;
+				background: #f0f0f1;
+				border-radius: 10px;
+				padding: 2px 8px;
+				font-size: 12px;
+			}
+			.mcp-ai-wf-rename-input {
+				width: 100%;
+				max-width: 200px;
+			}
+		</style>
+
+		<script>
+		( function( $ ) {
+			'use strict';
+
+			var WF_NONCE = ( typeof mcpAiWorkflowBuilder !== 'undefined' ) ? mcpAiWorkflowBuilder.nonce : '';
+			var AJAX_URL = ( typeof mcpAiWorkflowBuilder !== 'undefined' ) ? mcpAiWorkflowBuilder.ajaxUrl : ajaxurl;
+
+			function formatDate( ts ) {
+				if ( ! ts ) { return '—'; }
+				var d = new Date( ts * 1000 );
+				return d.toLocaleDateString() + ' ' + d.toLocaleTimeString( [], { hour: '2-digit', minute: '2-digit' } );
+			}
+
+			function escHtml( str ) {
+				var div = document.createElement( 'div' );
+				div.appendChild( document.createTextNode( str || '' ) );
+				return div.innerHTML;
+			}
+
+			function buildRow( id, wf ) {
+				var nodes = ( wf.nodes && Array.isArray( wf.nodes ) ) ? wf.nodes.length : 0;
+				var edges = ( wf.edges && Array.isArray( wf.edges ) ) ? wf.edges.length : 0;
+				var html = '<tr data-workflow-id="' + escHtml( id ) + '">';
+				html += '<td class="column-name"><strong>' + escHtml( wf.name || id ) + '</strong>';
+				html += '<div class="row-actions">';
+				html += '<span class="edit"><a data-action="edit" data-id="' + escHtml( id ) + '">' + '<?php echo esc_js( __( 'Edit in Builder', 'mcp-ai-wpoos' ) ); ?>' + '</a> | </span>';
+				html += '<span class="duplicate"><a data-action="duplicate" data-id="' + escHtml( id ) + '">' + '<?php echo esc_js( __( 'Duplicate', 'mcp-ai-wpoos' ) ); ?>' + '</a> | </span>';
+				html += '<span class="export"><a data-action="export" data-id="' + escHtml( id ) + '">' + '<?php echo esc_js( __( 'Export JSON', 'mcp-ai-wpoos' ) ); ?>' + '</a> | </span>';
+				html += '<span class="rename"><a data-action="rename" data-id="' + escHtml( id ) + '">' + '<?php echo esc_js( __( 'Rename', 'mcp-ai-wpoos' ) ); ?>' + '</a> | </span>';
+				html += '<span class="delete"><a data-action="delete" data-id="' + escHtml( id ) + '">' + '<?php echo esc_js( __( 'Delete', 'mcp-ai-wpoos' ) ); ?>' + '</a></span>';
+				html += '</div></td>';
+				html += '<td class="column-description">' + escHtml( wf.description || '' ) + '</td>';
+				html += '<td class="column-nodes"><span class="mcp-ai-pro-wf-node-count">' + nodes + '</span></td>';
+				html += '<td class="column-edges"><span class="mcp-ai-pro-wf-node-count">' + edges + '</span></td>';
+				html += '<td class="column-created">' + formatDate( wf.created_at ) + '</td>';
+				html += '<td class="column-updated">' + formatDate( wf.updated_at ) + '</td>';
+				html += '</tr>';
+				return html;
+			}
+
+			function refreshTable() {
+				$.post( AJAX_URL, {
+					action: 'wp_mcp_ai_list_pro_workflows',
+					nonce:  WF_NONCE
+				}, function( res ) {
+					if ( ! res.success ) { return; }
+					var workflows = res.data.workflows || [];
+					var $body = $( '#mcp-ai-wf-table-body' );
+					$body.empty();
+					$( '.mcp-ai-pro-workflow-count' ).text( '(' + workflows.length + ')' );
+					if ( ! workflows.length ) {
+						$body.html( '<tr class="mcp-ai-wf-empty-row"><td colspan="6">' +
+							'<?php echo esc_js( __( 'No saved workflows yet. Use the builder above to create one.', 'mcp-ai-wpoos' ) ); ?>' +
+							'</td></tr>' );
+						return;
+					}
+					$.each( workflows, function( _, wf ) {
+						$body.append( buildRow( wf.id, wf ) );
+					} );
+				} );
+			}
+
+			$( document ).on( 'click', '#mcp-ai-wf-refresh', refreshTable );
+
+			// Listen for React builder save events (custom event dispatched by the React app).
+			window.addEventListener( 'mcpAiWorkflowSaved', refreshTable );
+
+			// Row actions.
+			$( document ).on( 'click', '#mcp-ai-wf-table [data-action]', function( e ) {
+				e.preventDefault();
+				var $el    = $( this );
+				var action = $el.data( 'action' );
+				var id     = $el.data( 'id' );
+
+				switch ( action ) {
+					case 'edit':
+						// Dispatch custom event for the React builder to load this workflow.
+						window.dispatchEvent( new CustomEvent( 'mcpAiLoadWorkflow', { detail: { workflowId: id } } ) );
+						// Scroll to builder.
+						$( 'html, body' ).animate( { scrollTop: $( '#mcp-ai-pro-workflow-builder-root' ).offset().top - 40 }, 300 );
+						break;
+
+					case 'duplicate':
+						if ( ! window.confirm( '<?php echo esc_js( __( 'Duplicate this workflow?', 'mcp-ai-wpoos' ) ); ?>' ) ) { return; }
+						$.post( AJAX_URL, {
+							action:      'wp_mcp_ai_duplicate_pro_workflow',
+							nonce:       WF_NONCE,
+							workflow_id: id
+						}, function( res ) {
+							if ( res.success ) {
+								refreshTable();
+							} else {
+								alert( res.data && res.data.message ? res.data.message : '<?php echo esc_js( __( 'Failed to duplicate workflow.', 'mcp-ai-wpoos' ) ); ?>' );
+							}
+						} );
+						break;
+
+					case 'export':
+						$.post( AJAX_URL, {
+							action:      'wp_mcp_ai_export_pro_workflow',
+							nonce:       WF_NONCE,
+							workflow_id: id
+						}, function( res ) {
+							if ( res.success && res.data.workflow ) {
+								var blob = new Blob( [ JSON.stringify( res.data.workflow, null, 2 ) ], { type: 'application/json' } );
+								var url  = URL.createObjectURL( blob );
+								var a    = document.createElement( 'a' );
+								a.href     = url;
+								a.download = ( res.data.workflow.name || id ) + '.json';
+								document.body.appendChild( a );
+								a.click();
+								document.body.removeChild( a );
+								URL.revokeObjectURL( url );
+							} else {
+								alert( res.data && res.data.message ? res.data.message : '<?php echo esc_js( __( 'Failed to export workflow.', 'mcp-ai-wpoos' ) ); ?>' );
+							}
+						} );
+						break;
+
+					case 'rename':
+						var $td   = $el.closest( 'td' );
+						var $strong = $td.find( 'strong' );
+						var current = $strong.text();
+						var $input = $( '<input>' ).attr( { type: 'text', 'class': 'mcp-ai-wf-rename-input' } ).val( current );
+						$strong.empty().append( $input );
+						$input.focus().select();
+						$input.on( 'blur keydown', function( ev ) {
+							if ( ev.type === 'keydown' && ev.which !== 13 && ev.which !== 27 ) { return; }
+							if ( ev.type === 'keydown' && ev.which === 27 ) {
+								$strong.text( current );
+								return;
+							}
+							var newName = $input.val().trim();
+							if ( ! newName || newName === current ) {
+								$strong.text( current );
+								return;
+							}
+							$.post( AJAX_URL, {
+								action:      'wp_mcp_ai_rename_pro_workflow',
+								nonce:       WF_NONCE,
+								workflow_id: id,
+								new_name:    newName
+							}, function( res ) {
+								if ( res.success ) {
+									refreshTable();
+								} else {
+									$strong.text( current );
+									alert( res.data && res.data.message ? res.data.message : '<?php echo esc_js( __( 'Failed to rename workflow.', 'mcp-ai-wpoos' ) ); ?>' );
+								}
+							} );
+						} );
+						break;
+
+					case 'delete':
+						if ( ! window.confirm( '<?php echo esc_js( __( 'Are you sure you want to delete this workflow? This cannot be undone.', 'mcp-ai-wpoos' ) ); ?>' ) ) { return; }
+						$.post( AJAX_URL, {
+							action:      'wp_mcp_ai_delete_pro_workflow',
+							nonce:       WF_NONCE,
+							workflow_id: id
+						}, function( res ) {
+							if ( res.success ) {
+								refreshTable();
+							} else {
+								alert( res.data && res.data.message ? res.data.message : '<?php echo esc_js( __( 'Failed to delete workflow.', 'mcp-ai-wpoos' ) ); ?>' );
+							}
+						} );
+						break;
+				}
+			} );
+		} )( jQuery );
+		</script>
+		<?php
+	}
+
+	/**
+	 * Render a single workflow table row.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $id Workflow ID (key).
+	 * @param array  $wf Workflow data.
+	 */
+	protected function render_workflow_row( $id, $wf ) {
+		$nodes = isset( $wf['nodes'] ) && is_array( $wf['nodes'] ) ? count( $wf['nodes'] ) : 0;
+		$edges = isset( $wf['edges'] ) && is_array( $wf['edges'] ) ? count( $wf['edges'] ) : 0;
+		?>
+		<tr data-workflow-id="<?php echo esc_attr( $id ); ?>">
+			<td class="column-name">
+				<strong><?php echo esc_html( ! empty( $wf['name'] ) ? $wf['name'] : $id ); ?></strong>
+				<div class="row-actions">
+					<span class="edit">
+						<a data-action="edit" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Edit in Builder', 'mcp-ai-wpoos' ); ?></a> |
+					</span>
+					<span class="duplicate">
+						<a data-action="duplicate" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Duplicate', 'mcp-ai-wpoos' ); ?></a> |
+					</span>
+					<span class="export">
+						<a data-action="export" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Export JSON', 'mcp-ai-wpoos' ); ?></a> |
+					</span>
+					<span class="rename">
+						<a data-action="rename" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Rename', 'mcp-ai-wpoos' ); ?></a> |
+					</span>
+					<span class="delete">
+						<a data-action="delete" data-id="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?></a>
+					</span>
+				</div>
+			</td>
+			<td class="column-description"><?php echo esc_html( $wf['description'] ?? '' ); ?></td>
+			<td class="column-nodes"><span class="mcp-ai-pro-wf-node-count"><?php echo (int) $nodes; ?></span></td>
+			<td class="column-edges"><span class="mcp-ai-pro-wf-node-count"><?php echo (int) $edges; ?></span></td>
+			<td class="column-created"><?php echo esc_html( ! empty( $wf['created_at'] ) ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $wf['created_at'] ) : '—' ); ?></td>
+			<td class="column-updated"><?php echo esc_html( ! empty( $wf['updated_at'] ) ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $wf['updated_at'] ) : '—' ); ?></td>
+		</tr>
 		<?php
 	}
 
@@ -257,7 +643,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflow_json = isset( $_POST['workflow'] ) ? wp_unslash( $_POST['workflow'] ) : '';
+		$workflow_json = isset( $_POST['workflow'] ) ? wp_unslash( $_POST['workflow'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 		
 		if ( empty( $workflow_json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow data required.', 'mcp-ai-wpoos' ) ) );
@@ -440,6 +826,128 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 
 	/**
+	 * AJAX handler for duplicating a workflow.
+	 *
+	 * Creates a copy of the specified workflow with a " (Copy)" suffix.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_duplicate_workflow() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_key( $_POST['workflow_id'] ) : '';
+
+		if ( empty( $workflow_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow ID required.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflows = $this->get_all_workflows();
+
+		if ( ! isset( $workflows[ $workflow_id ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$original  = $workflows[ $workflow_id ];
+		$copy_name = sanitize_text_field( $original['name'] . ' (Copy)' );
+		$copy_id   = sanitize_key( $copy_name );
+
+		// Ensure uniqueness.
+		$suffix = 2;
+		while ( isset( $workflows[ $copy_id ] ) ) {
+			$copy_name = sanitize_text_field( $original['name'] . ' (Copy ' . $suffix . ')' );
+			$copy_id   = sanitize_key( $copy_name );
+			++$suffix;
+		}
+
+		$workflows[ $copy_id ] = array(
+			'id'          => $copy_id,
+			'name'        => $copy_name,
+			'description' => $original['description'] ?? '',
+			'nodes'       => $original['nodes'] ?? array(),
+			'edges'       => $original['edges'] ?? array(),
+			'created_at'  => time(),
+			'updated_at'  => time(),
+		);
+
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		// update_option returns false both on failure and when the value is unchanged.
+		// Since we always add a new key, verify success by checking the stored data.
+		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $copy_id ] ) ) {
+			wp_send_json_success( array(
+				'message'  => __( 'Workflow duplicated successfully.', 'mcp-ai-wpoos' ),
+				'workflow' => $workflows[ $copy_id ],
+			) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to duplicate workflow.', 'mcp-ai-wpoos' ) ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for renaming a workflow.
+	 *
+	 * Updates the workflow name and re-keys the workflow in storage.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_rename_workflow() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_key( $_POST['workflow_id'] ) : '';
+		$new_name    = isset( $_POST['new_name'] ) ? sanitize_text_field( wp_unslash( $_POST['new_name'] ) ) : '';
+
+		if ( empty( $workflow_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow ID required.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		if ( empty( $new_name ) ) {
+			wp_send_json_error( array( 'message' => __( 'New name is required.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflows = $this->get_all_workflows();
+
+		if ( ! isset( $workflows[ $workflow_id ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$new_id = sanitize_key( $new_name );
+
+		// If the ID changed, re-key the workflow.
+		if ( $new_id !== $workflow_id ) {
+			if ( isset( $workflows[ $new_id ] ) ) {
+				wp_send_json_error( array( 'message' => __( 'A workflow with that name already exists.', 'mcp-ai-wpoos' ) ) );
+			}
+			$workflows[ $new_id ] = $workflows[ $workflow_id ];
+			unset( $workflows[ $workflow_id ] );
+		}
+
+		$workflows[ $new_id ]['id']         = $new_id;
+		$workflows[ $new_id ]['name']       = $new_name;
+		$workflows[ $new_id ]['updated_at'] = time();
+
+		$result = update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		// update_option returns false both on failure and when the value is unchanged.
+		// Verify success by checking the stored data contains the new key.
+		if ( $result || isset( get_option( 'wp_mcp_ai_pro_workflows', array() )[ $new_id ] ) ) {
+			wp_send_json_success( array(
+				'message'  => __( 'Workflow renamed successfully.', 'mcp-ai-wpoos' ),
+				'workflow' => $workflows[ $new_id ],
+			) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to rename workflow.', 'mcp-ai-wpoos' ) ) );
+		}
+	}
+
+	/**
 	 * AJAX handler for executing a workflow node.
 	 *
 	 * Dispatches to the appropriate execution method based on node type.
@@ -460,7 +968,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Parse the execution context (results from previous nodes).
-		$context_json = isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '{}';
+		$context_json = isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '{}'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 		$context      = json_decode( $context_json, true );
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			$context = array();
@@ -500,7 +1008,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_action_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$command = isset( $_POST['command'] ) ? sanitize_text_field( wp_unslash( $_POST['command'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
 		$params  = isset( $_POST['params'] ) ? wp_unslash( $_POST['params'] ) : '{}';
 
 		if ( empty( $command ) ) {
@@ -549,7 +1059,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_tool_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$tool_name = isset( $_POST['tool_name'] ) ? sanitize_text_field( wp_unslash( $_POST['tool_name'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in caller; JSON payload decoded with json_decode().
 		$args_json = isset( $_POST['tool_arguments'] ) ? wp_unslash( $_POST['tool_arguments'] ) : '{}';
 
 		if ( empty( $tool_name ) ) {
@@ -613,7 +1125,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array|WP_Error Execution result.
 	 */
 	private function execute_agent_node( $context ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$agent_id = isset( $_POST['agent_id'] ) ? sanitize_text_field( wp_unslash( $_POST['agent_id'] ) ) : 'default';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via check_ajax_referer() in ajax_execute_workflow_node().
 		$prompt   = isset( $_POST['prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['prompt'] ) ) : '';
 
 		if ( empty( $prompt ) ) {
@@ -720,7 +1234,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$execution_json = isset( $_POST['execution'] ) ? wp_unslash( $_POST['execution'] ) : '';
+		$execution_json = isset( $_POST['execution'] ) ? wp_unslash( $_POST['execution'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON payload decoded with json_decode() and validated downstream.
 
 		if ( empty( $execution_json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Execution data required.', 'mcp-ai-wpoos' ) ) );
@@ -836,6 +1350,292 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		wp_reset_postdata();
 
 		return $assistants;
+	}
+
+	// -------------------------------------------------------------------------
+	// Workflow Presets
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Retrieve all workflow presets.
+	 *
+	 * @since  2.1.0
+	 * @return array Presets array suitable for JS localization.
+	 */
+	protected function get_all_workflow_presets() {
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			return array();
+		}
+		require_once $presets_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
+			return array();
+		}
+
+		$raw    = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+		$output = array();
+
+		foreach ( $raw as $id => $preset ) {
+			$output[] = array(
+				'id'          => $id,
+				'name'        => isset( $preset['name'] ) ? $preset['name'] : '',
+				'description' => isset( $preset['description'] ) ? $preset['description'] : '',
+				'category'    => isset( $preset['category'] ) ? $preset['category'] : '',
+				'icon'        => isset( $preset['icon'] ) ? $preset['icon'] : 'dashicons-randomize',
+				'tags'        => isset( $preset['tags'] ) ? $preset['tags'] : array(),
+				'nodes'       => isset( $preset['nodes'] ) ? $preset['nodes'] : array(),
+				'edges'       => isset( $preset['edges'] ) ? $preset['edges'] : array(),
+			);
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Render the workflow presets browser below the builder canvas.
+	 *
+	 * @since 2.1.0
+	 */
+	protected function render_workflow_presets() {
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			return;
+		}
+		require_once $presets_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
+			return;
+		}
+
+		$categories = WP_MCP_AI_Pro_Workflow_Presets::get_categories();
+		$presets    = WP_MCP_AI_Pro_Workflow_Presets::get_presets();
+		?>
+		<div id="mcp-ai-pro-workflow-presets" class="mcp-ai-pro-workflow-presets" style="margin-top:24px;">
+			<div class="mcp-ai-pro-workflow-presets-header">
+				<h2>
+					<span class="dashicons dashicons-welcome-widgets-menus"></span>
+					<?php esc_html_e( 'Workflow Presets', 'mcp-ai-wpoos-pro' ); ?>
+					<span class="mcp-ai-pro-workflow-preset-count">(<?php echo count( $presets ); ?>)</span>
+				</h2>
+				<div class="mcp-ai-pro-workflow-presets-filters">
+					<select id="mcp-ai-wf-preset-category" class="mcp-ai-pro-wf-filter">
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos-pro' ); ?></option>
+						<?php foreach ( $categories as $slug => $label ) : ?>
+							<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<input type="search" id="mcp-ai-wf-preset-search" class="mcp-ai-pro-wf-filter" placeholder="<?php esc_attr_e( 'Search presets…', 'mcp-ai-wpoos-pro' ); ?>">
+				</div>
+			</div>
+
+			<div id="mcp-ai-wf-presets-grid" class="mcp-ai-pro-workflow-presets-grid">
+				<?php foreach ( $presets as $id => $preset ) : ?>
+					<div class="mcp-ai-pro-workflow-preset-card" data-category="<?php echo esc_attr( $preset['category'] ); ?>">
+						<div class="mcp-ai-pro-workflow-preset-card-header">
+							<span class="dashicons <?php echo esc_attr( $preset['icon'] ); ?>"></span>
+							<strong><?php echo esc_html( $preset['name'] ); ?></strong>
+						</div>
+						<p class="mcp-ai-pro-workflow-preset-desc"><?php echo esc_html( $preset['description'] ); ?></p>
+						<div class="mcp-ai-pro-workflow-preset-meta">
+							<span class="mcp-ai-pro-workflow-preset-category"><?php echo esc_html( $preset['category'] ); ?></span>
+							<span class="mcp-ai-pro-workflow-preset-nodes"><?php echo esc_html( count( $preset['nodes'] ) ); ?> <?php esc_html_e( 'nodes', 'mcp-ai-wpoos-pro' ); ?></span>
+						</div>
+						<?php if ( ! empty( $preset['tags'] ) ) : ?>
+							<div class="mcp-ai-pro-workflow-preset-tags">
+								<?php foreach ( $preset['tags'] as $tag ) : ?>
+									<span class="mcp-ai-pro-workflow-preset-tag"><?php echo esc_html( $tag ); ?></span>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+						<button type="button" class="button button-primary button-small" data-wf-preset-install="<?php echo esc_attr( $id ); ?>">
+							<?php esc_html_e( 'Load into Builder', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<style>
+			.mcp-ai-pro-workflow-presets-header {
+				display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;
+			}
+			.mcp-ai-pro-workflow-presets-header h2 {
+				display: flex; align-items: center; gap: 6px; margin: 0; font-size: 1.1em;
+			}
+			.mcp-ai-pro-workflow-presets-filters {
+				display: flex; gap: 8px; align-items: center; margin-left: auto;
+			}
+			.mcp-ai-pro-wf-filter { min-width: 150px; }
+			.mcp-ai-pro-workflow-presets-grid {
+				display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+			}
+			.mcp-ai-pro-workflow-preset-card {
+				background: #f9f9f9; border: 1px solid #dcdcde; border-radius: 6px;
+				padding: 16px; display: flex; flex-direction: column; gap: 8px;
+				transition: box-shadow 0.15s, border-color 0.15s;
+			}
+			.mcp-ai-pro-workflow-preset-card:hover {
+				border-color: #2271b1; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+			}
+			.mcp-ai-pro-workflow-preset-card-header {
+				display: flex; align-items: center; gap: 8px;
+			}
+			.mcp-ai-pro-workflow-preset-card-header .dashicons {
+				color: #2271b1; font-size: 20px; width: 20px; height: 20px;
+			}
+			.mcp-ai-pro-workflow-preset-desc {
+				color: #50575e; font-size: 0.85em; line-height: 1.5; margin: 0; flex: 1;
+			}
+			.mcp-ai-pro-workflow-preset-meta {
+				display: flex; gap: 8px; flex-wrap: wrap;
+			}
+			.mcp-ai-pro-workflow-preset-category,
+			.mcp-ai-pro-workflow-preset-nodes {
+				display: inline-block; padding: 2px 7px; border-radius: 3px;
+				font-size: 0.75em; font-weight: 600; white-space: nowrap;
+				background: #e0f0ff; color: #135e96;
+			}
+			.mcp-ai-pro-workflow-preset-nodes {
+				background: #f0f0f1; color: #50575e;
+			}
+			.mcp-ai-pro-workflow-preset-tags {
+				display: flex; gap: 4px; flex-wrap: wrap;
+			}
+			.mcp-ai-pro-workflow-preset-tag {
+				display: inline-block; padding: 1px 6px; border-radius: 2px;
+				font-size: 0.7em; background: #e8e8e8; color: #646970;
+			}
+			.mcp-ai-pro-workflow-preset-card .button { align-self: flex-start; margin-top: 4px; }
+			.mcp-ai-pro-workflow-preset-card[style*="display: none"] { display: none !important; }
+		</style>
+		<script>
+		( function( $ ) {
+			'use strict';
+
+			function filterWfPresets() {
+				var category = $( '#mcp-ai-wf-preset-category' ).val(),
+					search   = ( $( '#mcp-ai-wf-preset-search' ).val() || '' ).toLowerCase();
+
+				$( '#mcp-ai-wf-presets-grid .mcp-ai-pro-workflow-preset-card' ).each( function() {
+					var $card = $( this ),
+						cat   = $card.data( 'category' ) || '',
+						text  = $card.text().toLowerCase(),
+						show  = true;
+
+					if ( category && cat !== category ) {
+						show = false;
+					}
+					if ( search && text.indexOf( search ) === -1 ) {
+						show = false;
+					}
+					$card.toggle( show );
+				} );
+			}
+
+			$( document ).on( 'change', '#mcp-ai-wf-preset-category', filterWfPresets );
+			$( document ).on( 'input', '#mcp-ai-wf-preset-search', filterWfPresets );
+
+			$( document ).on( 'click', '[data-wf-preset-install]', function( e ) {
+				e.preventDefault();
+				var $btn     = $( this ),
+					presetId = $btn.data( 'wf-preset-install' ),
+					nonce    = window.mcpAiWorkflowBuilder ? mcpAiWorkflowBuilder.nonce : '',
+					ajaxUrl  = window.mcpAiWorkflowBuilder ? mcpAiWorkflowBuilder.ajaxUrl : '';
+
+				if ( ! ajaxUrl || ! nonce ) {
+					return;
+				}
+
+				// eslint-disable-next-line no-alert
+				if ( ! window.confirm( 'Load this workflow preset into the builder?' ) ) {
+					return;
+				}
+
+				$btn.prop( 'disabled', true ).text( 'Loading…' );
+
+				$.post( ajaxUrl, {
+					action:    'wp_mcp_ai_install_workflow_preset',
+					nonce:     nonce,
+					preset_id: presetId,
+				} ).done( function( resp ) {
+					if ( resp.success && resp.data && resp.data.workflow ) {
+						// Dispatch custom event that the React workflow builder can listen for.
+						var evt = new CustomEvent( 'mcpAiLoadWorkflowPreset', {
+							detail: resp.data.workflow,
+						} );
+						document.dispatchEvent( evt );
+						$btn.text( '✓ Loaded' );
+					} else {
+						$btn.text( 'Error' );
+					}
+				} ).fail( function() {
+					$btn.text( 'Error' );
+				} ).always( function() {
+					setTimeout( function() {
+						$btn.prop( 'disabled', false ).text( 'Load into Builder' );
+					}, 2000 );
+				} );
+			} );
+		} )( jQuery );
+		</script>
+		<?php
+	}
+
+	/**
+	 * AJAX: Return workflow presets.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_get_workflow_presets() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		wp_send_json_success( array( 'presets' => $this->get_all_workflow_presets() ) );
+	}
+
+	/**
+	 * AJAX: Install (load) a workflow preset.
+	 *
+	 * Returns the workflow data (nodes + edges) for the React builder to load.
+	 *
+	 * @since 2.1.0
+	 */
+	public function ajax_install_workflow_preset() {
+		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$presets_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets.php';
+		if ( ! file_exists( $presets_file ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow presets not available.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+		require_once $presets_file;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above via check_ajax_referer().
+		$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
+
+		if ( '' === $preset_id ) {
+			wp_send_json_error( array( 'message' => __( 'No preset ID provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$workflow = WP_MCP_AI_Pro_Workflow_Presets::install_preset( $preset_id );
+
+		if ( null === $workflow || is_wp_error( $workflow ) ) {
+			$msg = is_wp_error( $workflow ) ? esc_html( $workflow->get_error_message() ) : __( 'Workflow preset not found.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $msg ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'workflow' => $workflow,
+				'message'  => __( 'Workflow preset loaded.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
 	}
 }
 

@@ -3,6 +3,9 @@
  * Tool for converting image formats.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -159,8 +162,10 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			return $image_editor;
 		}
 
-		// Get original MIME type using public method.
-		$original_mime = $image_editor->get_mime_type();
+		// Get original MIME type from source arguments.
+		// WP_Image_Editor::get_mime_type() is protected and cannot be called externally;
+		// use the resolve_source_mime_type() helper that derives MIME from the arguments.
+		$original_mime = $this->resolve_source_mime_type( $arguments );
 
 		// Handle SVG conversion separately.
 		if ( 'svg' === $format ) {

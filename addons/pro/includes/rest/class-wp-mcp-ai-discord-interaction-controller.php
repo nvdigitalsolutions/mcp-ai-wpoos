@@ -20,6 +20,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -106,6 +109,15 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 	const CONVERSATION_HISTORY_TTL = 86400;
 
 	/**
+	 * Maximum age in seconds for the X-Signature-Timestamp header.
+	 *
+	 * Discord requires the timestamp to be within this window to prevent replay attacks.
+	 *
+	 * @see https://discord.com/developers/docs/interactions/receiving-and-responding#security-and-authorization
+	 */
+	const MAX_TIMESTAMP_AGE = 5;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -179,6 +191,13 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 
 		if ( empty( $signature ) || empty( $timestamp ) ) {
 			WP_MCP_AI_Logger::log_error( 'Discord interaction rejected: missing signature or timestamp header.' );
+			return false;
+		}
+
+		// Reject requests with a stale timestamp to prevent replay attacks.
+		// Discord requires the timestamp to be within 5 seconds of the current time.
+		if ( ! is_numeric( $timestamp ) || abs( time() - (int) $timestamp ) > self::MAX_TIMESTAMP_AGE ) {
+			WP_MCP_AI_Logger::log_error( 'Discord interaction rejected: timestamp is stale or non-numeric (replay attack prevention).' );
 			return false;
 		}
 
@@ -278,8 +297,8 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 							$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 								'discord',
-								$user_id,
-								array( 'display_name' => $user_id )
+								$channel_id,
+								array( 'display_name' => '#' . $channel_id, 'connection_id' => $connection_id, 'conversation_type' => 'channel' )
 							);
 							if ( $contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -291,7 +310,7 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 							WP_MCP_AI_Channel_Messages_CCT::insert(
 								array(
 									'channel'            => 'discord',
-									'channel_contact_id' => $user_id,
+									'channel_contact_id' => $channel_id,
 									'direction'          => 'inbound',
 									'message_id'         => $interaction_id,
 									'message_type'       => 'text',
@@ -302,6 +321,7 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 									'timestamp'          => time(),
 									'reply_sent'         => 0,
 									'assigned_agent'     => (string) $assigned_assistant_ids[0],
+									'conversation_type'  => 'channel',
 								)
 							);
 						}
@@ -539,7 +559,7 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 							WP_MCP_AI_Channel_Messages_CCT::insert(
 								array(
 									'channel'            => 'discord',
-									'channel_contact_id' => $user_id,
+									'channel_contact_id' => $channel_id,
 									'direction'          => 'outbound',
 									'message_type'       => 'text',
 									'content'            => $content,
@@ -549,12 +569,13 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 									'timestamp'          => time(),
 									'reply_sent'         => 1,
 									'assigned_agent'     => (string) $assistant_id,
+									'conversation_type'  => 'channel',
 								)
 							);
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $user_id );
+							$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $channel_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'channel' ) );
 							if ( $ds_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $ds_contact_row_id );
 							}
@@ -635,7 +656,7 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 				WP_MCP_AI_Channel_Messages_CCT::insert(
 					array(
 						'channel'            => 'discord',
-						'channel_contact_id' => $user_id,
+						'channel_contact_id' => $channel_id,
 						'direction'          => 'outbound',
 						'message_type'       => 'text',
 						'content'            => $content,
@@ -645,12 +666,13 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 						'timestamp'          => time(),
 						'reply_sent'         => 1,
 						'assigned_agent'     => (string) $assistant_id,
+						'conversation_type'  => 'channel',
 					)
 				);
 			}
 			// Touch the contact record to update last_message_at.
 			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-				$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $user_id );
+				$ds_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'discord', $channel_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'channel' ) );
 				if ( $ds_contact_row_id ) {
 					WP_MCP_AI_Channel_Contacts_CCT::touch( $ds_contact_row_id );
 				}

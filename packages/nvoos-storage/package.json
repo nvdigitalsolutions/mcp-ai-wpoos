@@ -3,7 +3,14 @@
   "version": "0.1.0-alpha.1",
   "description": "Async storage utilities with Web Worker optimization - Extracted from NV Open Operator System",
   "main": "dist/nvoos-storage.js",
+  "module": "dist/nvoos-storage.js",
   "types": "dist/nvoos-storage.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-storage.js",
+      "default": "./dist/nvoos-storage.js"
+    }
+  },
   "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
   "license": "MIT",
   "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-storage",
@@ -27,9 +34,13 @@
   ],
   "files": [
     "dist",
+    "storage-worker.js",
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node adapt-for-npm.js",
     "test": "echo \"Error: tests not yet implemented\" && exit 0",

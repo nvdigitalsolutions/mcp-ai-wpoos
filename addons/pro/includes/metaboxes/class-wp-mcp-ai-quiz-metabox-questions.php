@@ -3,6 +3,9 @@
  * Quiz Questions Metabox.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -214,7 +217,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Check nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_quiz_questions_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_quiz_questions_nonce'], 'wp_mcp_ai_quiz_questions_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_quiz_questions_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_quiz_questions_nonce'] ) ), 'wp_mcp_ai_quiz_questions_nonce' ) ) {
 			return;
 		}
 
@@ -233,7 +236,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		$total_points = 0;
 
 		if ( isset( $_POST['wp_mcp_ai_questions'] ) && is_array( $_POST['wp_mcp_ai_questions'] ) ) {
-			foreach ( $_POST['wp_mcp_ai_questions'] as $question_data ) {
+			foreach ( wp_unslash( $_POST['wp_mcp_ai_questions'] ) as $question_data ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array elements sanitized individually below.
 				// Validate question text.
 				if ( empty( $question_data['question'] ) ) {
 					continue;
@@ -273,7 +276,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 
 		// Also save description from content editor.
 		if ( isset( $_POST['content'] ) ) {
-			$description = wp_kses_post( $_POST['content'] );
+			$description = wp_kses_post( wp_unslash( $_POST['content'] ) );
 			update_post_meta( $post_id, '_mcp_ai_quiz_description', $description );
 		}
 	}

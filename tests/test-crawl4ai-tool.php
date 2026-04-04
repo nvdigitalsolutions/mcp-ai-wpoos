@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Crawl4AI tool integration.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
 

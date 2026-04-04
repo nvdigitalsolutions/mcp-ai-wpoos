@@ -6,6 +6,9 @@
  * for querying posts, media, products, orders, and other data.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,6 +23,8 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Product_Card;
 
 	/**
 	 * Essential WooCommerce product fields to retrieve.
@@ -45,6 +50,55 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 */
 	const VARIATION_FIELDS = 'id,sku,price,regular_price,sale_price,on_sale,' .
 		'stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
+
+	/**
+	 * Essential WordPress post fields to retrieve via WP REST API.
+	 *
+	 * Excludes verbose fields like content (full HTML), meta, _links, yoast_head, etc.
+	 * Fields included: id, date, modified, title, slug, link, status, type,
+	 * excerpt, author, categories, tags.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const POST_FIELDS = 'id,date,modified,title,slug,link,status,type,excerpt,author,categories,tags';
+
+	/**
+	 * Essential WordPress media fields to retrieve via WP REST API.
+	 *
+	 * Excludes verbose fields like media_details (all image size variants), meta, _links.
+	 * Fields included: id, date, title, alt_text, source_url, media_type, mime_type, post.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const MEDIA_FIELDS = 'id,date,title,alt_text,source_url,media_type,mime_type,post';
+
+	/**
+	 * Essential WooCommerce order fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, fee_lines, tax_lines, refunds, _links.
+	 * Fields included: id, number, status, date_created, total, currency,
+	 * customer_id, billing, shipping, line_items, payment_method_title.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const ORDER_FIELDS = 'id,number,status,date_created,total,currency,' .
+		'customer_id,billing,shipping,line_items,payment_method_title';
+
+	/**
+	 * Essential WooCommerce customer fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, _links, avatar_url.
+	 * Fields included: id, date_created, email, first_name, last_name,
+	 * username, billing, shipping, orders_count, total_spent.
+	 *
+	 * @since 1.1.0
+	 * @var string
+	 */
+	const CUSTOMER_FIELDS = 'id,date_created,email,first_name,last_name,' .
+		'username,billing,shipping,orders_count,total_spent';
 
 	/**
 	 * {@inheritdoc}
@@ -481,6 +535,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::POST_FIELDS,
 		);
 
 		if ( ! empty( $arguments['search'] ) ) {
@@ -599,6 +654,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::MEDIA_FIELDS,
 		);
 
 		$endpoint = 'wp/v2/media';
@@ -808,6 +864,17 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Generate rich product cards for chat display.
+		$source_label = ! empty( $connection['name'] ) ? $connection['name'] : 'WooCommerce';
+		$cards_message = $this->format_product_cards(
+			$all_products,
+			'woocommerce',
+			array( 'source_label' => $source_label )
+		);
+		if ( ! empty( $cards_message ) ) {
+			$summary .= "\n\n" . $cards_message;
+		}
+
 		return array(
 			'summary'         => $summary,
 			'products'        => $all_products,
@@ -866,8 +933,15 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$product       = $product_array[0];
 		}
 
+		// Generate rich product card for chat display.
+		$card_message = $this->format_single_product_card( $product, 'woocommerce', array( 'max_description' => 200 ) );
+		$summary      = __( 'Product retrieved successfully', 'mcp-ai-wpoos-pro' );
+		if ( ! empty( $card_message ) ) {
+			$summary .= "\n\n" . $card_message;
+		}
+
 		return array(
-			'summary' => __( 'Product retrieved successfully', 'mcp-ai-wpoos-pro' ),
+			'summary' => $summary,
 			'product' => $product,
 		);
 	}
@@ -1262,6 +1336,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::ORDER_FIELDS,
 		);
 
 		if ( ! empty( $arguments['status'] ) ) {
@@ -1370,6 +1445,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			'_fields'  => self::CUSTOMER_FIELDS,
 		);
 
 		$endpoint = 'wc/v3/customers';

@@ -3,6 +3,9 @@
  * Security Monitor Admin Interface
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -269,7 +272,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
 							if ( isset( $_GET['error'] ) ) {
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
-								echo esc_html( urldecode( sanitize_text_field( wp_unslash( $_GET['error'] ) ) ) );
+								echo esc_html( sanitize_text_field( wp_unslash( $_GET['error'] ) ) );
 							} else {
 								esc_html_e( 'Invalid root security key provided.', 'mcp-ai-wpoos' );
 							}

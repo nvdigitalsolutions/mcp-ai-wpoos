@@ -21,6 +21,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -442,7 +445,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
 				'twitter',
 				$sender_id,
-				array( 'display_name' => $sender_id )
+				array( 'display_name' => $sender_id, 'connection_id' => $resolved_connection_id, 'conversation_type' => 'dm' )
 			);
 			if ( $contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
@@ -465,6 +468,7 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) reset( $assigned_assistant_ids ),
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
@@ -682,13 +686,14 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'twitter', $sender_id );
+			$tw_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'twitter', $sender_id, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
 			if ( $tw_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $tw_contact_row_id );
 			}

@@ -6,6 +6,9 @@
  * messages to groups and channels are properly registered.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -347,5 +350,67 @@ class Test_Chat_Channel_Test_Handlers extends WP_UnitTestCase {
 		$this->assertEquals( 'test-tenant-id-12345', $saved['tenant_id'] );
 		$this->assertIsArray( $saved['assigned_assistant_ids'] );
 		$this->assertCount( 3, $saved['assigned_assistant_ids'] );
+	}
+
+	/**
+	 * Test that WP_MCP_AI_Pro_Remote_Site_Manager has a test_slack_connection() method.
+	 */
+	public function test_remote_site_manager_has_slack_connection_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Remote_Site_Manager' );
+		$this->assertTrue(
+			$reflection->hasMethod( 'test_slack_connection' ),
+			'WP_MCP_AI_Pro_Remote_Site_Manager should have a test_slack_connection() method'
+		);
+
+		$method = $reflection->getMethod( 'test_slack_connection' );
+		$this->assertTrue(
+			$method->isProtected() || $method->isPublic(),
+			'test_slack_connection() should be at least protected'
+		);
+	}
+
+	/**
+	 * Test that test_connection() dispatches Slack connections to test_slack_connection()
+	 * rather than the generic WordPress REST API test (which would 404 on slack.com/api).
+	 * Specifically, verify it returns a WP_Error (missing token) rather than a WordPress
+	 * REST API result when the connection has no api_key configured.
+	 */
+	public function test_test_connection_routes_slack_to_dedicated_handler() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Slack No Token',
+			'url'             => 'https://slack.com/api',
+			'connection_type' => 'slack',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+		// Without a bot token the Slack-specific handler returns a WP_Error.
+		// This proves the generic WordPress REST handler (which would try to call
+		// slack.com/api/wp/v2/types and return a different error) is NOT used.
+		$this->assertInstanceOf(
+			'WP_Error',
+			$result,
+			'test_connection() for Slack with no token should return WP_Error from Slack handler'
+		);
+		$this->assertStringContainsString(
+			'slack',
+			strtolower( $result->get_error_code() ),
+			'WP_Error code should identify the Slack handler'
+		);
 	}
 }

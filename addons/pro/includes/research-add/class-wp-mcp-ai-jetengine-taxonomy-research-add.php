@@ -19,6 +19,9 @@
  * @package WP_MCP_AI_Pro
  * @since 2.0.0
  * @see https://crocoblock.com/knowledge-base/jetengine/creating-custom-taxonomy-with-jetengine/
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

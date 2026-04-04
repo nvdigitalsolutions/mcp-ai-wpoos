@@ -13,10 +13,41 @@
  *
  * @package WP_MCP_AI
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+
+/**
+ * Get the map of document generation packages to their pre-packed bundle files.
+ *
+ * @return array Map of package name => relative path to bundle within WP_MCP_AI_PRO_PATH.
+ */
+function wp_mcp_ai_doc_gen_bundle_map() {
+	return array(
+		'pdfkit'  => 'bin/generate-pdf.bundle.js',
+		'docx'    => 'bin/generate-word.bundle.js',
+		'exceljs' => 'bin/generate-excel.bundle.js',
+	);
+}
+
+/**
+ * Get the list of Cornerstone3D package names.
+ *
+ * These are loaded at runtime via the esm.sh CDN by imaging-viewer.js.
+ *
+ * @return array List of @cornerstonejs/* package names.
+ */
+function wp_mcp_ai_cornerstone_package_names() {
+	return array(
+		'@cornerstonejs/core',
+		'@cornerstonejs/tools',
+		'@cornerstonejs/dicom-image-loader',
+	);
 }
 
 /**
@@ -47,6 +78,21 @@ function wp_mcp_ai_is_npm_package_available( $package_name ) {
 	$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
 	if ( is_dir( $node_modules_path ) || file_exists( $node_modules_path . '/package.json' ) ) {
 		return true;
+	}
+
+	// Check for document generation packages bundled into Node.js scripts.
+	$doc_gen_bundles = wp_mcp_ai_doc_gen_bundle_map();
+	if ( isset( $doc_gen_bundles[ $package_name ] ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . $doc_gen_bundles[ $package_name ] ) ) {
+			return true;
+		}
+	}
+
+	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
+			return true;
+		}
 	}
 
 	return false;
@@ -96,6 +142,61 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 				$package_name
 			),
 		);
+	}
+
+	// Check for document generation packages bundled into Node.js scripts.
+	$doc_gen_bundles = wp_mcp_ai_doc_gen_bundle_map();
+	if ( isset( $doc_gen_bundles[ $package_name ] ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . $doc_gen_bundles[ $package_name ] ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'bundled',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Pre-packed)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
+	}
+
+	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'cdn',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Pre-packed / CDN)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
+	}
+
+	// Check for canvas: prefer the NV oOS Canvas Addon plugin (pre-compiled
+	// binaries), then fall back to canvas-service.js + node_modules.
+	if ( 'canvas' === $package_name ) {
+		// Priority 1: NV oOS Canvas Addon plugin provides pre-compiled binaries.
+		if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+			return array(
+				'available' => true,
+				'source'    => 'canvas-addon',
+				'message'   => __( 'canvas (NV oOS Canvas Addon)', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Priority 2: canvas-service.js present AND canvas in node_modules.
+		$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+		$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+		if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'node_modules',
+				'message'   => __( 'canvas (Installed)', 'mcp-ai-wpoos-pro' ),
+			);
+		}
 	}
 
 	// Not available.
@@ -580,6 +681,130 @@ function wp_mcp_ai_yfinance_health_check_handler( $result, $params ) {
 
 /**
  * ============================================================================
+ * CANVAS FILTER HANDLERS
+ * ============================================================================
+ */
+
+/**
+ * Generate an image using the canvas npm package (server-side).
+ *
+ * Handles the `wp_mcp_ai_canvas_generate_image` filter. Requires the
+ * NV oOS Canvas Addon plugin, or canvas installed via npm install canvas@2.
+ *
+ * @param array|false $result Result from a previous filter handler (pass-through).
+ * @param array       $params {
+ *     Image generation parameters.
+ *
+ *     @type string $output     Absolute path for the output PNG file (required).
+ *     @type int    $width      Canvas width in pixels (default 800).
+ *     @type int    $height     Canvas height in pixels (default 600).
+ *     @type string $background CSS background colour (default #ffffff).
+ *     @type array  $commands   Drawing commands array (optional).
+ * }
+ * @return array|WP_Error Result array with 'output_path', 'width', 'height' on success.
+ */
+function wp_mcp_ai_canvas_generate_image_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'generate', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || empty( $result_data['success'] ) ) {
+		return new WP_Error(
+			'canvas_generate_failed',
+			isset( $result_data['error'] ) ? $result_data['error'] : __( 'Canvas image generation failed.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return array(
+		'output_path' => $result_data['output_path'],
+		'width'       => $result_data['width'],
+		'height'      => $result_data['height'],
+	);
+}
+
+/**
+ * Render a Chart.js configuration to a PNG image using canvas.
+ *
+ * Handles the `wp_mcp_ai_chartjs_generate_image` filter. Both the canvas
+ * and chart.js npm packages must be available.
+ *
+ * @param array|false $result Result from a previous filter handler (pass-through).
+ * @param array       $config Chart.js configuration array with 'type', 'data', and 'options' keys.
+ * @return array|WP_Error Result array with 'url', 'path', 'width', 'height' on success.
+ */
+function wp_mcp_ai_chartjs_generate_image_handler( $result, $config ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+
+	// Canvas service file must exist.
+	if ( ! file_exists( $service_file ) ) {
+		return false;
+	}
+
+	// Canvas npm package must be installed.
+	$canvas_npm_path = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+	if ( ! is_dir( $canvas_npm_path ) ) {
+		return false;
+	}
+
+	// Build a temporary output path inside the WordPress uploads directory.
+	$upload_dir  = wp_upload_dir();
+	if ( ! empty( $upload_dir['error'] ) ) {
+		return new WP_Error( 'canvas_upload_dir', $upload_dir['error'] );
+	}
+	$output_dir  = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/charts/';
+	if ( ! wp_mkdir_p( $output_dir ) ) {
+		return new WP_Error( 'canvas_dir_failed', __( 'Failed to create chart output directory.', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	$filename    = 'chart-' . wp_generate_uuid4() . '.png';
+	$output_path = $output_dir . $filename;
+	$output_url  = trailingslashit( $upload_dir['baseurl'] ) . 'mcp-ai-wpoos/charts/' . $filename;
+
+	$params = array(
+		'output' => $output_path,
+		'width'  => 800,
+		'height' => 400,
+		'config' => $config,
+	);
+
+	$output = wp_mcp_ai_exec_node_service( $service_file, 'render_chart', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || empty( $result_data['success'] ) ) {
+		return new WP_Error(
+			'chartjs_render_failed',
+			isset( $result_data['error'] ) ? $result_data['error'] : __( 'Chart image rendering failed.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return array(
+		'url'    => $output_url,
+		'path'   => $output_path,
+		'width'  => $result_data['width'],
+		'height' => $result_data['height'],
+	);
+}
+
+/**
+ * ============================================================================
  * REGISTRATION FUNCTIONS
  * ============================================================================
  */
@@ -621,6 +846,14 @@ function wp_mcp_ai_register_yfinance_filters() {
 }
 
 /**
+ * Register canvas filter handlers
+ */
+function wp_mcp_ai_register_canvas_filters() {
+	add_filter( 'wp_mcp_ai_canvas_generate_image', 'wp_mcp_ai_canvas_generate_image_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_chartjs_generate_image', 'wp_mcp_ai_chartjs_generate_image_handler', 10, 2 );
+}
+
+/**
  * Register all NPM package filter handlers
  *
  * Call this function to enable all NPM package integrations at once.
@@ -630,6 +863,8 @@ function wp_mcp_ai_register_all_npm_filters() {
 	wp_mcp_ai_register_mjml_filters();
 	wp_mcp_ai_register_ffmpeg_filters();
 	wp_mcp_ai_register_yfinance_filters();
+	wp_mcp_ai_register_canvas_filters();
+	wp_mcp_ai_register_language_filters();
 }
 
 /**
@@ -949,3 +1184,179 @@ function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = arr
  * @since 1.3.0
  */
 add_filter( 'wp_mcp_ai_generate_qr_code', 'wp_mcp_ai_generate_qr_code', 10, 3 );
+
+// =============================================================================
+// LANGUAGE DETECTION FILTER HANDLERS (franc + iso-639-1)
+// =============================================================================
+
+/**
+ * Detect language of text using the franc Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result (false = not yet handled).
+ * @param array       $params Parameters including 'text'.
+ * @return false|array Detection result or false on failure.
+ */
+function wp_mcp_ai_lang_detect_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/lang-detect-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'detect', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Look up ISO 639-1 language code info using the lang-detect Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'code'.
+ * @return false|array Language info or false on failure.
+ */
+function wp_mcp_ai_lang_code_info_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/lang-detect-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'validate_code', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Format / validate a phone number using the phone-format Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'phone' and 'country_code'.
+ * @return false|array Formatted phone data or false on failure.
+ */
+function wp_mcp_ai_phone_format_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/phone-format-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'format', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Validate a phone number using libphonenumber-js via Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|bool|WP_Error $result Existing result.
+ * @param array               $params Parameters including 'phone' and 'country'.
+ * @return false|bool|WP_Error Validation result or false if Node.js unavailable.
+ */
+function wp_mcp_ai_validator_phone_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/phone-format-service.js';
+	$output       = wp_mcp_ai_exec_node_service(
+		$service_file,
+		'validate',
+		array(
+			'phone'        => isset( $params['phone'] ) ? $params['phone'] : '',
+			'country_code' => isset( $params['country'] ) ? $params['country'] : 'US',
+		),
+		10
+	);
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result']['valid'] ) ) {
+		if ( ! $data['result']['valid'] ) {
+			return new WP_Error(
+				'invalid_phone',
+				__( 'Invalid phone number.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Translate text using the google-translate-api-x Node.js service.
+ *
+ * @since 1.4.0
+ *
+ * @param false|array $result Existing result.
+ * @param array       $params Parameters including 'text', 'target_language', 'source_language'.
+ * @return false|array Translation result or false on failure.
+ */
+function wp_mcp_ai_translate_text_handler( $result, $params ) {
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/translate-service.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'translate', $params, 30 );
+
+	if ( is_wp_error( $output ) ) {
+		return false;
+	}
+
+	$data = json_decode( $output, true );
+	if ( $data && ! empty( $data['success'] ) && isset( $data['result'] ) ) {
+		return $data['result'];
+	}
+
+	return false;
+}
+
+/**
+ * Register language detection filter handlers.
+ *
+ * @since 1.4.0
+ */
+function wp_mcp_ai_register_language_filters() {
+	add_filter( 'wp_mcp_ai_lang_detect', 'wp_mcp_ai_lang_detect_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_lang_code_info', 'wp_mcp_ai_lang_code_info_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_phone_format', 'wp_mcp_ai_phone_format_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_validator_phone', 'wp_mcp_ai_validator_phone_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_translate_text', 'wp_mcp_ai_translate_text_handler', 10, 2 );
+}

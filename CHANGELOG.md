@@ -1,7 +1,243 @@
 # oOS – Changelog
 
 
-## [Unreleased]
+## [1.1.6] - 2026-04-02
+
+### WordPress.org Compliance — Final Pass Before Resubmission
+
+This release addresses all issues identified by the WordPress.org automated review system
+on April 2, 2026, plus the compliance work from March 24, 2026.
+
+### Added
+- **NVIDIA NIM Provider in Getting Started Wizard (April 2, 2026)**: Added NVIDIA NIM as the 8th AI provider in the onboarding wizard (Step 2). Users can now enter their NVIDIA API key and test the connection during initial setup. Saving the key automatically enables the provider. 40+ NVIDIA models available including Llama, Mistral, Nemotron, Gemma, and Qwen families via `integrate.api.nvidia.com` or self-hosted NIM containers.
+- **Vehicle Estimation Tools (March 31, 2026)** (PR #4526): Three always-available Pro tools for automotive estimation.
+  - `vin_decode` — ISO 3779 check-digit validation, NHTSA vPIC API decode with 24h transient cache, 28-field vehicle descriptor.
+  - `vehicle_repair_estimate` — 5-step image-to-estimate pipeline: image intake → VIN identification → damage analysis → price-sheet mapping → estimate generation. Heuristic fallback costs for 20+ parts; ADAS calibration for 2018+ windshield replacements.
+  - `vehicle_cleaning_estimate` — Car wash package & add-on pricing engine with LLM vision vehicle size classification, 4 packages, 7 add-ons, and `wp_mcp_ai_vehicle_cleaning_menu` filter.
+  - 60 PHPUnit tests covering tool contracts, pricing scenarios, and permission checks.
+- **Shopify Connection Auto-Resolve + `remote_shopify_connection` Tool (March 31, 2026)** (PR #4521): New `WP_MCP_AI_Shopify_Connection_Resolver` trait auto-resolves `connection_id` from assistant context for all 5 Shopify tools. New `remote_shopify_connection` tool for listing and testing Shopify connections. 14 PHPUnit tests.
+- **Webhook Status Admin Page (March 31, 2026)** (PR #4517): New submenu under NV oOS Pro (`nvoos-pro-webhook-status`) for centralized webhook monitoring across all 9 webhook-capable connection types. Summary cards, live Telegram checks via `getMe` + `getWebhookInfo`, action buttons for set/remove webhook. 30 PHPUnit tests.
+- **QuickBooks Desktop Sync Tool (March 30, 2026)** (PR #4507): New `quickbooks_desktop_sync` Pro tool connecting to QuickBooks Desktop via QODBC relay API on Windows. New `quickbooks_desktop` remote connection type with relay URL, API key, and DSN fields. 14 PHPUnit tests.
+- **Listing Image Download Tools (March 29, 2026)** (PR #4503): Three new always-on Pro tools for bulk-downloading business listing images: `download_google_maps_images` (Places API), `download_facebook_page_images` (Graph API v21.0), `download_instagram_page_images` (Graph API v21.0). Shared `media_handle_sideload()` import, optional ZIP export. 39 PHPUnit tests.
+- **15 Schedule Presets (March 30, 2026)** (PR #4509): CRM Email Correspondence (5), Document Management & Sharing (5), and Upwork Freelancer (5, new `upwork_freelancer` toolkit). Total presets: 100 → 115.
+- **Registration Product Research Page Enhancement (March 31, 2026)** (PR #4519): Quick Import and Guided Entry tabs, 13 document processing tools added to AI chat, product selector sidebar, 3 new AJAX handlers for bulk import, document upload, and product preview.
+- **Author/Copyright/License Attribution (March 30, 2026)** (PR #4510): Consistent `@author`, `@copyright`, `@license` tags added across 2,535 PHP files, 101 JS files, 58 CSS files. Base: GPL-3.0-or-later; Pro: Proprietary. Copyright year updated to 2025-2026.
+- **dvdoug/boxpacker Pre-Packaged (March 31, 2026)** (PR #4527): `dvdoug/boxpacker` (`^3.12 || ^4.0`) v3.12.1 + psr/log 3.0.2 pre-packaged in `addons/pro/vendor/`. Production autoload docs aligned to `composer install --no-dev --classmap-authoritative`.
+- **Onboarding Wizard Enhancement — Preset Assistant Seeding & Accessibility (March 28, 2026)**: Complete code review and enhancement of the Getting Started wizard (`/wp-admin/admin.php?page=wp-mcp-ai-getting-started`).
+  - **8 use-case presets** with comprehensive tool lists, system prompts, and temperatures: Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools).
+  - **Assistant seeding**: Selecting presets in Step 3 now creates fully-configured `mcp_ai_assistant` CPT posts with tools, system prompt, provider, model, and temperature — users get a working system out of the box.
+  - **First assistant auto-default**: The first seeded assistant is automatically set as the site's default assistant.
+  - **Copy-to-clipboard**: Shortcode display on Step 4 includes a copy button with accessible feedback.
+  - **Explicit wizard completion**: Step 4 no longer marks the wizard as complete on page render; users must click "Mark Setup Complete" to finalize.
+  - **External JavaScript**: All inline `<script>` blocks extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n strings, improving CSP compliance and cacheability.
+  - **WCAG 2.1 accessibility**: WAI-ARIA `tablist`/`tab`/`tabpanel` pattern for provider tabs with keyboard navigation (Arrow keys, Home, End), `aria-current="step"` progress indicators, `aria-live="polite"` regions for dynamic feedback, `focus-visible` outlines.
+  - **New filter**: `wp_mcp_ai_onboarding_presets` — third-party addons can add or modify onboarding presets.
+  - **New action**: `wp_mcp_ai_onboarding_presets_seeded` — fires after preset assistants are created.
+  - **22 PHPUnit tests** covering presets structure, assistant seeding, duplicate prevention, model resolution, and masked key detection.
+
+### Changed
+- **Transformers.js Upgrade to v3.8.1 (March 30, 2026)** (PR #4514): CDN upgraded from deprecated `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`. WebGPU auto-detect with WASM fallback. Quantization API migrated: `quantized: true` → `dtype: 'q8'`. 4 Qwen3 models added to embedded LLM catalog.
+- **Medical Vitals Dashboard Enhancements (March 31, 2026)** (PR #4523): "Most Recent Reading" card with relative timestamps and colour-coded status dots. Configurable trend date range selector: 7D/14D/30D/90D.
+- **Shopify Tools — `connection_id` Auto-Resolve (March 31, 2026)** (PR #4521): All 5 Shopify tools (`shopify_products`, `shopify_orders`, `shopify_customers`, `shopify_inventory`, `shopify_catalog`) now auto-resolve `connection_id` from assistant context. Manual `connection_id` parameter is optional.
+- **Quick Tool Selection Presets — 8 Missing Tools Added (March 30, 2026)** (PR #4505): Added 8 missing tools to preset coverage.
+- **Quick Tool Selection Presets – Full 760-Tool Coverage (March 16, 2026)**: Expanded the Quick Tool Selection Presets on the assistant CPT edit page from ~527 covered tools to all 760 available tools, ensuring every registered tool can be applied via a preset without requiring manual search.
+  - **New preset**: `📋 Registration & Compliance` (44 tools) — end-to-end regulated product/permit workflow: registration lifecycle (create/approve/renew/submit), document expiry tracking, regulatory submissions, compliance certificates, authority submission, NMRA/MOHAP sync, import duty/HS code
+  - **🛒 E-commerce**: Added Shopify (products/orders/customers/inventory), regulated product lifecycle (create/validate/duplicate/import-export Excel), inventory forecast/tracking, bulk order management, abandoned cart recovery, customer lifetime value
+  - **💬 Communication & Messaging**: Full cross-platform coverage — Discord (reactions/channels/voice members), Slack (create/read channels), Teams (channels/messages), Apple Messages (send/group/interactive/read), Telegram (reactions/commands/webhooks), WhatsApp interactive/media/template, Messenger broadcasts, Google Chat spaces/members, Twitter DMs/webhook, Outlook email/messages, unified broadcast, email notification management
+  - **🔐 Authentication & Security**: Added `vault_access`, `vault_manage`, `analyze_tool_security`, `check_tool_compliance`, `generate_password`
+  - **💻 Development**: Added tool scaffolding suite (`generate_tool_scaffold`, `generate_tool_logic`, `generate_tool_parameters`, `generate_tool_documentation`, `generate_tool_tests`, `refactor_tool_code`, `validate_tool_schema`, `benchmark_tool_performance`), `git_operations`, `execute_shell_command`, `search_codebase`, `automate_development_workflow`
+  - **📁 Files & Documents**: Added PDF tools (watermark/merge/OCR/extract), Excel import/export/validate, `generate_excel`/`generate_pdf`/`generate_word`, iCloud Drive + OneDrive CRUD, regulated document management, `track_document_version`
+  - **📈 SEO & Marketing**: Added `analyze_competitor_sites`, `social_listening_trends`, `influencer_identification`, `monitor_mentions_replies`, `post_to_multiple_platforms`, `schedule_social_post`, `create_content_calendar`, `bulk_schedule_posts`, `get_cross_platform_analytics`, pipeline reports
+  - **⚙️ Site Management**: Added page-section builder tools (hero/CTA/homepage/services/footer/navigation/testimonial/landing page/gallery/sidebar), site template import/export/save, `scaffold_theme_structure`
+  - **✍️ Content Writing**: Added `generate_post_ideas`, `generate_cover_letter`, `get_post`, `delete_post`, `create_content_calendar`, `moderate_comments`
+  - **⏰ Scheduling & Automation**: Added full appointment lifecycle (create/update/cancel/reschedule), availability rules, booking links, appointment reminders/confirmations, Google/Outlook calendar sync, `bulk_schedule_posts`
+  - **⚕️ Healthcare**: Added `log_health_metrics`, `import_vitals`, `sync_with_mohap`, `sync_with_nmra`
+  - **⚖️ Legal**: Added `add_regulatory_requirement`, regulatory requirements/updates retrieval, `check_document_expiry`, `check_product_compliance`, `generate_compliance_certificate`, `generate_compliance_report`
+  - **💼 Sales & CRM**: Added `create_company`/`get_companies`/`research_company`, CRM email search (leads/correspondence/accounting), `client_communication_log`, `generate_invoice_pdf`, `send_client_invoice`, `sales_performance_dashboard`
+  - **💼 Finance & Business**: Added `generate_invoice_pdf`, `generate_submission_pack`, `generate_compliance_report`, `generate_pdf_dossier`
+  - **🎓 Education**: Added full registration lifecycle (create/approve/renew/submit, import/export Excel, expiry alerts/forecast)
+  - **📊 Workflow Monitoring**: Added workflow rule CRUD (`create_workflow_rule`, `update_workflow_rule`, `delete_workflow_rule`, `list_workflow_rules`, `test_workflow_rule`, `get_workflow_execution_log`)
+  - **📋 Project Management**: Added `add_task_dependency`, `remove_task_dependency`, `get_task_dependencies`, `manage_template_versions`
+  - **🏗️ Architect**: Added `generate_site_plan`, `integrate_with_architect`, `generate_architectural_drawing`
+  - **🎬 Media Templates**: Added `create_social_video`, `create_remotion_video`, `manage_template_versions`
+  - **🧠 AI/ML**: Added `prepare_file_for_vector_store`
+  - **⚖️ Legal & Policy**: Added regulatory CRUD, `check_authority_status`, `submit_to_authority`, `validate_document_checklist`
+  - **📊 Business Analytics**: Added `segment_customers`, `export_customer_data`
+  - **Result**: 61 presets covering all 760 tools (2,030 total tool references across presets) — up from 60 presets covering ~527 tools
+
+### Fixed
+- **Telegram Webhook 403 on Multi-Bot Setups (March 30–31, 2026)** (PRs #4512, #4513, #4516, #4518): Fixed webhook URL to include `connection_id` in test/status endpoints; added REST auth bypass and admin-ajax fallback; direct array-key lookup for connection resolution.
+- **Chat Channels Inbox — Bot Name Display (March 31, 2026)** (PRs #4522, #4524): Telegram bot `@bot_username` now shown as primary display in conversations list, thread header, and contacts table.
+- **Chat Channels Inbox — Message Pagination (March 31, 2026)** (PR #4525): Newest messages now appear on page 1 (was oldest-first).
+- **Chat Channels Inbox — connection_id Scoping (March 29–30, 2026)** (PRs #4500, #4506): Message queries scoped by `connection_id` for Telegram to isolate multi-bot conversations; column migration and `SELECT *` fallback for backward compatibility.
+- **Chat Channels Inbox — 404 on Messages Endpoint (March 29, 2026)** (PR #4489): Fixed CCT and CPT store merge for conversations and messages.
+- **Chat Channels Inbox — CCT/CPT Store Merge (March 29, 2026)** (PR #4488): Merged CCT and CPT stores so conversations and messages from both backends display correctly.
+- **Workflow Preset Data Mapping (March 30, 2026)** (PRs #4504, #4508): Fixed preset data so tools, arguments, and conditions populate correctly in the Pro Workflow Builder canvas.
+- **Preset Browser AJAX Callbacks (March 29, 2026)** (PR #4501): Fixed wrong callback signatures in schedule manager preset browser.
+- **Telegram Mini App – Member Loading (March 2026)**: Health & Wellness and Medical Vitals mini app templates no longer get stuck on "Loading…" when a subscriber opens the app for the first time.
+  - Server-side member pre-selection: the current WordPress user's linked `mcp_ai_member` post is resolved at page-render time and injected as `SERVER_MEMBER_ID`/`SERVER_MEMBER_NAME` JS variables; the member picker is skipped when a match is found.
+  - Auto-select single member: `hwFetchMembers()` / `mvFetchMembers()` now auto-select and close the picker when only one member is returned, eliminating the manual-tap requirement after first member creation.
+  - Retry button: when the member list request fails (auth not yet established or network error) a **Retry** button is shown instead of leaving the user on an infinite "Loading…" state.
+
+### Changed
+- **`list_members` tool – role-scoped visibility**: Subscribers (`read` capability only) now receive only the `mcp_ai_member` posts they authored. Users with `edit_posts` or higher (Authors, Editors, Administrators) receive all members site-wide, enabling care-team management workflows.
+- **`wp_mcp_ai_get_member_id_by_user_id()`**: Returns `0` for users with `edit_posts` or higher so the full member picker is shown for admin/editor roles rather than silently pre-selecting one of their own posts.
+
+### Security
+- **brace-expansion & serialize-javascript Vulnerabilities (March 29, 2026)** (PR #4487): Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750) and serialize-javascript CPU exhaustion via crafted array-like objects (CVE-2026-34043). Upgraded brace-expansion v1.x to 1.1.13, v2.x to 2.0.3, serialize-javascript to 7.0.5.
+
+### Added
+- **NPM Packages – Zero-Config Publish for All 9 Packages (March 2026)** (PR #4364): All nine standalone NPM packages extracted from the oOS chat UI are now automatically published to the NPM registry via GitHub Actions.
+  - **9 packages** under the `@nvdigitalsolutions` scope, all at `v0.1.0-alpha.1`:
+    - `nvoos-storage` — Async JSON via Web Worker (zero dependencies)
+    - `nvoos-markdown` — XSS-safe markdown renderer (peer deps: `marked`, `dompurify`)
+    - `nvoos-events` — SSE client + job event bus (peer dep: `@microsoft/fetch-event-source`)
+    - `nvoos-http-client` — HTTP client with automatic retry/backoff (peer dep: `ky`)
+    - `nvoos-clipboard` — Clipboard copy with Clipboard API / `execCommand` fallback (zero dependencies)
+    - `nvoos-offline-sync` — IndexedDB offline-first sync with auto server sync on reconnect (zero dependencies)
+    - `nvoos-slash-commands` — Slash command system with fuzzy-search autocomplete (zero dependencies)
+    - `nvoos-audio` — Browser audio I/O: TTS, STT, translation, voice chat with VAD (zero dependencies)
+    - `nvoos-dom-batcher` — RAF DOM batcher, scroll batcher, and UI utilities for high-frequency streaming UIs (zero dependencies)
+  - **Two GitHub Actions workflows**:
+    - `.github/workflows/npm-publish.yml` — Publishes stable releases on `v*.*.*` tags or `workflow_dispatch`
+    - `.github/workflows/npm-publish-alpha.yml` — Publishes alpha pre-releases on `v*.*.*-alpha.*` tags
+  - **Single source of truth**: Both workflows share a single `PACKAGES` environment variable; adding a new package requires updating only that one line.
+  - **CI steps per package**: version bump → `node adapt-for-npm.js` build → `node --check` syntax validation → publish (or dry-run)
+  - **Setup**: requires only an `NPM_TOKEN` secret in repository settings; no per-package configuration needed.
+  - See [`packages/README.md`](packages/README.md) and [`packages/QUICK_START.md`](packages/QUICK_START.md) for installation and usage.
+
+
+## [1.1.5] - 2026-03-25
+
+### Added
+- **NV oOS Canvas Addon — Platform-Specific ZIP for Tesseract PDF OCR (March 25, 2026)** (PR #4441, #4442): The `canvas` npm package (Linux-only native binary, ~50 MB compressed) is now distributed as a separate, optional `nvoos-canvas` WordPress plugin rather than being bundled in the Pro ZIP.
+  - New standalone plugin in `addons/canvas/` — installs the platform-specific binary alongside the Pro addon.
+  - CI builds `nvoos-canvas-linux-x64.zip` and `nvoos-canvas-linux-arm64.zip` via `build-canvas-addon.yml` and commits them to `build/`.
+  - OCR service auto-detects the Canvas Addon path via `NVOOS_CANVAS_PATH` environment variable; falls back to `node_modules` if the addon is absent.
+  - Base + Pro ZIP remains unchanged at ~33 MB; canvas is a post-install optional step only needed for Tesseract PDF OCR on Linux servers.
+
+- **Five New Pro WP-CLI Command Groups (March 23, 2026)** (PR #4418):
+  - `wp mcp-ai pro status` — display Pro addon version, license, and active toolkit summary.
+  - `wp mcp-ai toolkit list/enable/disable` — manage Pro toolkits from the command line.
+  - `wp mcp-ai connection list/get/test/delete` — manage Chat Channel connection entries.
+  - `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries.
+  - `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries.
+  - Shared base class `WP_MCP_AI_Pro_CLI_Base_Command` with assertion helpers.
+  - Tests added in `addons/pro/tests/test-wp-cli-pro-commands.php`.
+
+- **Mailgun Email Integration (March 22, 2026)** (PR #4408):
+  - New Pro tool `send_mailgun_email` — sends transactional emails via the Mailgun API.
+  - Supports US and EU region endpoints (`api.mailgun.net` / `api.eu.mailgun.net`).
+  - Tags passed as separate `o:tag` form fields (array, not comma-separated string) per Mailgun requirements.
+  - Admin settings: `mailgun_api_key`, `mailgun_domain`, `mailgun_region`, `mailgun_from_email`, `mailgun_from_name`.
+
+- **Brevo Email & CRM Integration (March 22, 2026)** (PR #4408):
+  - Three new Pro tools under the `enable_email_toolkit` guard:
+    - `send_brevo_email` — send transactional emails via Brevo `api-key` header auth.
+    - `manage_brevo_contacts` — create, update, and list contacts in Brevo lists.
+    - `get_brevo_statistics` — retrieve campaign and contact statistics.
+  - Admin settings: `brevo_api_key`, `brevo_from_email`, `brevo_from_name`, `brevo_webhook_secret`.
+
+### Changed
+- **Embedded LLM Server-Side Client — Moved to Pro Addon (March 25, 2026)** (PR #4433, #4434): `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` relocated from `includes/` to `addons/pro/includes/`. The base plugin's language model router uses a `class_exists()` guard and falls back gracefully when Pro is absent.
+  - `enable_embedded` field in the Pro Providers section now shows `disabled = true` with the label "Auto-enabled with Pro" rather than a manual toggle.
+
+- **Embedded LLM — Added Gemma 2B Instruct Model (March 24, 2026)** (PR #4428): Added `gemma-2-2b-it-q4_k_m` as the fourth server-side GGUF model and set `gemma-2-2b-it-q4f16_1-MLC` as the new client-side WebLLM default model. Fixed server-side chat routing that was silently dropping assistant global `embedded_server_model` settings.
+
+- **WP.org Compliance — Pro Addon is a Genuine Extension (March 25, 2026)** (PR #4435): Resolved nine surface-level items that could give the impression that the Pro addon "unlocks" base plugin features. Confirmed architecture: all tools in `includes/tools/` register unconditionally and are never gated behind a license check.
+
+- **Telemetry Opt-In (March 24, 2026)**: Activation tracking is now disabled by default (opt-in model). Users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking. Setting renamed from `disable_activation_tracking` → `enable_activation_tracking`. Complies with WordPress.org Guideline 7 & 9.
+- **Tool Registry (March 24, 2026)**: Removed Pro add-on license gating from base tool registry. All tools included in the plugin ZIP are now always registered; runtime availability is controlled by each tool's `is_available()` method (dependency check, not license gate). Complies with WordPress.org Guideline 5.
+- **Settings Sanitization (March 24, 2026)**: `sanitize_settings_callback` now recursively sanitizes nested array settings using `sanitize_textarea_field()` for strings and `esc_url_raw()` for URL values. Complies with WordPress.org Guideline 6.
+- **`WP_MCP_AI_BASE_VERSION` default (March 24, 2026)**: Changed from `true` to `false` so full base tool set loads by default without requiring any `wp-config.php` define.
+
+### Fixed
+- **Embedded LLM — Shared Library Loading Failures (March 22–23, 2026)** (PR #4414, #4416):
+  - `extract_binary_from_archive()` now uses `sanitise_binary_filename()` (allowlist `[A-Za-z0-9._-]`) instead of `sanitize_file_name()`, preserving `.so.0.9.8`-style shared-library filenames.
+  - `build_inference_command()` prepends `LD_LIBRARY_PATH` so co-located `.so` files are found at runtime.
+  - `create_soname_symlinks()` creates `lib*.so.X → lib*.so.X.Y.Z` and `lib*.so → lib*.so.X` symlinks after extraction; falls back to `copy()` when `symlink()` is blocked (e.g., Cloudways).
+  - `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check, auto-repairing missing SONAMEs on existing installs.
+
+- **Embedded LLM — Provider Diagnostic Page Enhancements (March 23, 2026)** (PR #4415, #4417):
+  - Diagnostic page now shows the resolved llama-cli binary path and the names of all co-located shared libraries.
+  - `get_shared_libs_status()` added: scans binary directory for `lib*.so*` files, returns `found`, `libs`, and `bin_dir`.
+  - Fixed fatal `E_ERROR` when `symlink()` is listed in `disable_functions` — replaced `symlink()` call with `is_callable()` guard.
+
+- **Embedded LLM — `test_connection()` False "No Output" Error (March 23, 2026)** (PR #4419): llama.cpp builds b8479+ write `--version` output to stderr instead of stdout. `run_binary()` now accepts `$use_stderr_fallback = true`; `test_connection()` uses it so the binary is correctly detected on modern builds.
+
+- **Embedded LLM — SSE Streaming Fixes (March 22–24, 2026)** (PR #4420, #4421, #4422, #4423, #4425):
+  - Client-side: `chat.js` no longer uses Ky for SSE requests; switches to native `fetch + ReadableStream` to avoid Ky's 30 s AbortController timeout killing slow llama-cli inference.
+  - Server-side: `send_sse_headers()` now sets `zlib.output_compression Off`, calls `ob_end_clean()`, and uses `wp_die()` instead of bare `exit()` to avoid PHP-FPM/nginx HTTP/2 `RST_STREAM`.
+  - Elementor widget: `enable_streaming` attribute is now always emitted (as `"true"` or `"false"`) so the shortcode correctly respects the toggle in both states.
+  - `max_tokens` is now injected from `WP_MCP_AI_Resource_Manager` into the PHP-side shortcode config so the WebLLM path no longer falls back to a hardcoded `2048`.
+
+- **Embedded LLM — WebLLM Function-Calling Client (March 24, 2026)** (PR #4427): Deferred `WebLLMFunctionCallingClient` class definition inside `waitForDependencies().then()` so `extends window.WP_MCP_AI_EmbeddedLLM` evaluates after the dependency is confirmed available.
+
+- **Chat UI — Message Bubble Interactions During Streaming (March 24, 2026)** (PR #4426): `disableForm()` now scopes its disable/enable sweep to only the input area and send button, not all buttons in the widget — copy, speech, save, and delete buttons on already-rendered messages remain clickable during streaming.
+
+- **Agentic Loop — Orphaned `tool_calls` Error (March 24, 2026)** (PR #4430): When `max_iterations` is reached while the LLM still has pending tool calls, the stored assistant message with `tool_calls` is now filtered out of the history before the next turn. This fixes the OpenAI error "An assistant message with 'tool_calls' must be followed by tool messages…" that appeared for `vision_object_localization` and any tool hitting the iteration limit.
+
+- **Embedded LLM — Logger Integration for Ollama Client (March 24, 2026)** (PR #4429): Added `WP_MCP_AI_Logger` calls to all 5 previously-unlogged methods in `WP_MCP_AI_Ollama_Client` (`chat`, `create_embedding`, `list_models`, `generate`, `show_model_info`). All concrete chat clients now have full logging coverage.
+
+- **DICOM Imaging — UID Filesystem Path Sanitization (March 22, 2026)** (PR #4406): DICOM UIDs are now sanitized with `sanitize_uid_for_path()` (`preg_replace('/[^0-9.]/', '_', $uid)`) instead of `sanitize_file_name()`. `sanitize_file_name()` applies a filterable hook that can strip dots, collapsing distinct UIDs to the same directory.
+
+- **Pro Workflow Builder — Pre-packed Assets and CI Gaps (March 25, 2026)** (PR #4443):
+  - `webpack.config.workflow.js` now writes output to `addons/pro/build/workflow-builder/` with the entry named `workflow-builder` (matching the PHP loader expectation).
+  - `package.json` `build:workflow`/`start:workflow` scripts updated to use the config file instead of inline `--output-path`, preventing `@wordpress/scripts` from deriving filenames from the entry filename.
+  - CI build workflow now commits freshly-built `workflow-builder` and `tma-woo-shop` artifacts on every run.
+
+- **Re-install llama.cpp Binary Button (March 23, 2026)** (PR #4412): Added a **Re-install llama.cpp Binary** button to the embedded provider settings page for easy re-download after a failed or partial extraction.
+
+- **15 Dead URLs in readme.txt (March 24, 2026)**: Fixed 15 broken external service documentation links (ReliefWeb, remove.bg, Plaid, Mubert, GDACS, NV Digital Terms, GitHub releases, Tavily, Exa.ai, GoQR privacy). All verified working after fix.
+
+### Dependencies
+- **symfony/cache** updated from v6.4.34 to v6.4.35
+- **symfony/validator** updated from v6.4.34 to v6.4.35
+- **addons/pro/vendor**: Removed stale gitlinks; populated all 6 previously-empty vendor directories with real package files
+- Production classmap autoloader regenerated (686 entries)
+
+### Documentation
+- Added `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_03_24.md` — Pass 17 compliance verification report
+- Added `docs/03-wp-org-compliance.md` — compliance change log for this PR
+
+## [1.1.4] - 2026-03-15
+
+### Security
+- **AES Encryption Upgrade (March 11, 2026)**: Upgraded stored credential encryption to AES-256-GCM for stronger security (was AES-256-CBC)
+- **finfo Fail-Closed (March 11, 2026)**: MIME type detection now fails closed — uploads are denied when finfo cannot determine the type rather than falling through
+- **OCR Error Info Disclosure (March 11, 2026)**: Fixed OCR error responses that could expose internal file paths or stack traces
+- **Discord Replay Attack (March 11, 2026)**: Added webhook replay attack protection for Discord channel connections
+- **HTTPS Enforcement (March 11, 2026)**: All external webhook registrations and remote site connections now require HTTPS
+- **Backup Path Leak (March 11, 2026)**: Fixed file export handler leaking internal backup file paths in error responses
+- **ZIP Bomb Protection (March 11, 2026)**: Added size-limit checks during ZIP file processing to prevent decompression bombs
+
+### Added
+- **Gemini Embedding Model Improvements (March 12, 2026)** (PR #4184): Added `gemini-embedding-001` model, `output_dimensionality` parameter, 9 new task types (RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING, FACT_VERIFICATION, CODE_RETRIEVAL_QUERY, IMAGE_SIMILARITY), and per-request model override in batch embedding calls
+- **AI-Powered Product Actualization (March 12, 2026)** (PR #4186): Product actualization tool now defaults to AI-powered integration mode using Gemini (gemini-2.5-flash-image) or OpenAI (gpt-image-1); composite mode retained as legacy fallback; provider auto-detection based on configured API keys
+- **Teams Declarative Agent Manifest (March 12, 2026)** (PR #4181): Added Teams declarative agent manifest generation to Chat Channels admin for easier Teams App Package deployment
+- **Teams OAuth One-Click Connect (March 12, 2026)** (PR #4182): Microsoft OAuth 2.0 one-click connect for Teams — configure Azure AD client ID/secret, auto-refreshes access tokens, downloadable App Package ZIP
+- **Telegram Slash Commands Integration (March 12, 2026)** (PR #4185): Dynamically integrates the mcp-ai-slash-commands plugin into the Telegram bot at runtime; added /vectorstore to /start message and admin slash command reference table
+- **TMA Markdown Rendering (March 13, 2026)** (PR #4200): AI replies in Telegram Mini App doctor and coach chat tabs now rendered as formatted HTML via lazy-loaded Markdown renderer
+- **Chat Channel Connection Docs (March 12, 2026)**: Improved in-admin setup documentation for Teams, Discord, and Google Chat connection types
+
+### Fixed
+- **Slack @Mentions (March 12, 2026)** (PR #4171): Fixed Slack bot not responding to channel @mentions
+- **Slack Channel Settings (March 12, 2026)** (PR #4175): Slack auto-reply now uses mrkdwn formatting; channel-specific settings surfaced on the connection page; enhanced channel type handling per 2025 industry standards
+- **Chat Channel Console Errors (March 12, 2026)** (PR #4170): Fixed settings page JavaScript console errors — removed duplicate event listener, added ajaxurl fallback
+- **Google Chat Events (March 12, 2026)** (PR #4172): Fixed Google Chat channel events not being received even when connection tests passed (route conflict, OIDC bypass)
+- **Google Chat Auto-Reply (March 12, 2026)** (PR #4179): Fixed auto-reply for DMs and @mentions; fixed connection test when OIDC verification is disabled
+- **Google Chat Diagnostic Log (March 12, 2026)** (PR #4183): Added webhook diagnostic log to the Settings page for easier Google Chat connection troubleshooting
+- **Teams Multi-Connection (March 12, 2026)** (PR #4182): Extended Teams to support multiple simultaneous connections with per-connection setup guide in admin UI
+- **Teams Webhook (March 12, 2026)** (PR #4180): Enhanced Teams webhook handler; filled cross-channel consistency gaps (Slack/Telegram parity for rate limiting and retry logic)
+- **Telegram Typing Indicator (March 12, 2026)** (PR #4173): Added typing indicator and rate-limiting enforcement for Telegram chat channel auto-replies
+- **TMA Doctor Tab Assistant (March 13, 2026)** (PR #4198): Telegram Mini App doctor tab now uses the assistant assigned to the connection instead of a hardcoded fallback
+- **Vitals Log Import (March 13, 2026)** (PR #4197, #4202): Fixed vitals_log import fallback for partial-row edge cases; fixed JetEngine list_types returning null slugs/names
+- **wp_tempnam Guard (March 13, 2026)** (PR #4203): Fixed `wp_tempnam()` undefined function error in Pro tools by requiring `wp-admin/includes/file.php` before use
+- **Consolidate & Add Page (March 13, 2026)** (PR #4199): Fixed consolidate & add page setup — singleton pattern, init hook registration, sanitize delegation
+- **HTML-to-PDF Media Sideload (March 13, 2026)** (PR #4208): Fixed HTML-to-PDF tool by loading required wp-admin includes before calling `media_handle_sideload()`
+- **PDF Bundle (March 13, 2026)** (PR #4206): Fixed PDF generation by bundling pdfkit, cheerio, docx, and exceljs into generate-*.bundle.js — no runtime node_modules needed on the server
+- **WordPress Plugin Check (March 15, 2026)**: Fixed three plugin check errors — excluded `.gitattributes` hidden file from distribution ZIPs; included `composer.json` alongside `vendor/` directory; created `languages/` directory so `Domain Path: /languages` header resolves correctly
+
 
 ### Added - March 2026
 - **Web Search: Tavily provider, geo/freshness params, snippet grounding (March 7, 2026)** (PR #4060): Enhanced the `web_search` tool with a new provider and richer result grounding

@@ -7,6 +7,9 @@
  * automatically initializes when getter methods are called.
  *
  * @package WP_MCP_AI_Core
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Load Core interfaces early so mock class can implement them.

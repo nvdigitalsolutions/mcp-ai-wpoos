@@ -6,6 +6,9 @@
  * of Extra-Curricular Activities (ECAs) and Students.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,6 +32,7 @@ if ( is_admin() ) {
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-research-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-dashboard-page.php';
 	}
 }
 

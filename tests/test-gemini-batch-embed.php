@@ -3,6 +3,9 @@
  * Test Gemini batch embedding functionality.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -258,7 +261,7 @@ class Test_Gemini_Batch_Embed extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test batch embedding uses correct API endpoint.
+	 * Test batch embedding uses correct API endpoint with default model.
 	 */
 	public function test_batch_embed_uses_correct_endpoint() {
 		update_option(
@@ -289,6 +292,297 @@ class Test_Gemini_Batch_Embed extends WP_UnitTestCase {
 
 		$this->assertNotNull( $url_captured );
 		$this->assertStringContainsString( 'batchEmbedContent', $url_captured );
-		$this->assertStringContainsString( 'text-embedding-004', $url_captured );
+		// Default model is now gemini-embedding-001.
+		$this->assertStringContainsString( 'gemini-embedding-001', $url_captured );
+	}
+
+	/**
+	 * Test batch embedding includes model field in each request for newer Gemini API.
+	 */
+	public function test_batch_embed_includes_model_per_request() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'First text', 'Second text' );
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'batchEmbedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'embeddings' => array(
+									array( 'values' => array( 0.1, 0.2 ) ),
+									array( 'values' => array( 0.3, 0.4 ) ),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->batch_embed_content( $texts );
+
+		$this->assertNotNull( $payload_sent );
+		// Each request in batchEmbedContents must include the model resource name.
+		foreach ( $payload_sent['requests'] as $req ) {
+			$this->assertArrayHasKey( 'model', $req );
+			$this->assertStringContainsString( 'gemini-embedding-001', $req['model'] );
+		}
+	}
+
+	/**
+	 * Test batch embedding with output_dimensionality option.
+	 */
+	public function test_batch_embed_with_output_dimensionality() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'Text for dimension reduction' );
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'batchEmbedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'embeddings' => array( array( 'values' => array() ) ) ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->batch_embed_content(
+			$texts,
+			array( 'output_dimensionality' => 768 )
+		);
+
+		$this->assertNotNull( $payload_sent );
+		$this->assertArrayHasKey( 'outputDimensionality', $payload_sent['requests'][0] );
+		$this->assertEquals( 768, $payload_sent['requests'][0]['outputDimensionality'] );
+	}
+
+	/**
+	 * Test create_embedding with output_dimensionality option.
+	 */
+	public function test_create_embedding_with_output_dimensionality() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'embedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'embedding' => array( 'values' => array( 0.1, 0.2, 0.3 ) ),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->create_embedding(
+			'Test text',
+			array( 'output_dimensionality' => 1536 )
+		);
+
+		$this->assertNotNull( $payload_sent );
+		$this->assertArrayHasKey( 'outputDimensionality', $payload_sent );
+		$this->assertEquals( 1536, $payload_sent['outputDimensionality'] );
+	}
+
+	/**
+	 * Test batch embedding with QUESTION_ANSWERING task type.
+	 */
+	public function test_batch_embed_with_question_answering_task_type() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'What is the capital of France?' );
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'batchEmbedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'embeddings' => array( array( 'values' => array() ) ) ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->batch_embed_content(
+			$texts,
+			array( 'task_type' => 'QUESTION_ANSWERING' )
+		);
+
+		$this->assertNotNull( $payload_sent );
+		$this->assertArrayHasKey( 'taskType', $payload_sent['requests'][0] );
+		$this->assertEquals( 'QUESTION_ANSWERING', $payload_sent['requests'][0]['taskType'] );
+	}
+
+	/**
+	 * Test batch embedding with FACT_VERIFICATION task type.
+	 */
+	public function test_batch_embed_with_fact_verification_task_type() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'The Earth orbits the Sun.' );
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'batchEmbedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'embeddings' => array( array( 'values' => array() ) ) ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->batch_embed_content(
+			$texts,
+			array( 'task_type' => 'FACT_VERIFICATION' )
+		);
+
+		$this->assertNotNull( $payload_sent );
+		$this->assertArrayHasKey( 'taskType', $payload_sent['requests'][0] );
+		$this->assertEquals( 'FACT_VERIFICATION', $payload_sent['requests'][0]['taskType'] );
+	}
+
+	/**
+	 * Test batch embedding with CODE_RETRIEVAL_QUERY task type.
+	 */
+	public function test_batch_embed_with_code_retrieval_query_task_type() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'function to sort an array' );
+		$payload_sent = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$payload_sent ) {
+				if ( strpos( $url, 'batchEmbedContent' ) !== false ) {
+					$payload_sent = json_decode( $args['body'], true );
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'embeddings' => array( array( 'values' => array() ) ) ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$client->batch_embed_content(
+			$texts,
+			array( 'task_type' => 'CODE_RETRIEVAL_QUERY' )
+		);
+
+		$this->assertNotNull( $payload_sent );
+		$this->assertArrayHasKey( 'taskType', $payload_sent['requests'][0] );
+		$this->assertEquals( 'CODE_RETRIEVAL_QUERY', $payload_sent['requests'][0]['taskType'] );
+	}
+
+	/**
+	 * Test default model is gemini-embedding-001.
+	 */
+	public function test_default_model_is_gemini_embedding_001() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test_key',
+			)
+		);
+
+		$client       = new WP_MCP_AI_Gemini_Client();
+		$texts        = array( 'Test' );
+		$url_captured = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$url_captured ) {
+				$url_captured = $url;
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'embeddings' => array() ) ),
+				);
+			},
+			10,
+			3
+		);
+
+		// No model specified — should use gemini-embedding-001.
+		$client->batch_embed_content( $texts );
+
+		$this->assertStringContainsString( 'gemini-embedding-001', $url_captured );
 	}
 }

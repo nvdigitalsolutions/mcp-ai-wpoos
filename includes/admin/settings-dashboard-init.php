@@ -5,6 +5,9 @@
  * Loads the modular settings dashboard system.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,6 +27,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
+
+// Load onboarding wizard.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-onboarding-wizard.php';
 
 // Load simple settings saver (for optimized flat settings page).
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-saver.php';
@@ -51,6 +57,7 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Plugins_Integration' => 'includes/admin/sections/class-wp-mcp-ai-section-plugins-integration.php',
 			'WP_MCP_AI_Section_Token_Manager'       => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
 			'WP_MCP_AI_Section_Security'            => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
+			'WP_MCP_AI_Section_A2A'                 => 'includes/admin/sections/class-wp-mcp-ai-section-a2a.php',
 			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
 			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
@@ -59,9 +66,10 @@ spl_autoload_register(
 		// Add Pro sections if Pro addon is loaded.
 		// Pro sections are only available when WP_MCP_AI_PRO_VERSION is defined.
 		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$section_files['WP_MCP_AI_Section_Performance']      = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-			$section_files['WP_MCP_AI_Section_Pro_Providers']    = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
-			$section_files['WP_MCP_AI_Section_Pro_Integrations'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+			$section_files['WP_MCP_AI_Section_Performance']       = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			$section_files['WP_MCP_AI_Section_Pro_Providers']     = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+			$section_files['WP_MCP_AI_Section_Pro_Integrations']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+			$section_files['WP_MCP_AI_Section_Schedule_Manager']  = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-schedule-manager.php';
 		}
 
 		// Check if this is a section class we should autoload.
@@ -142,6 +150,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.a2a' ) );
 
 		// Performance section is only available with Pro addon.
 		$performance_section = $container->get( 'section.performance' );
@@ -163,6 +172,12 @@ function wp_mcp_ai_init_settings_dashboard() {
 			WP_MCP_AI_Settings_Registry::register_section( $pro_integrations_section );
 		}
 
+		// Pro Schedule Manager section is only available with Pro addon.
+		// Instantiate via container so that its AJAX handlers remain registered,
+		// but do NOT register it with the Settings Registry — it has its own
+		// dedicated page at nvoos-pro-schedule-manager.
+		$container->get( 'section.schedule_manager' );
+
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
@@ -183,6 +198,11 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize simple settings page (Settings menu).
 		// This provides a flat diagnostic view of all saved settings.
 		$GLOBALS['wp_mcp_ai_simple_settings_page'] = new WP_MCP_AI_Simple_Settings_Page();
+
+		// Initialize onboarding wizard.
+		// Registers the "Getting Started" sub-menu, handles activation redirect,
+		// and renders the welcome notice for new installs.
+		$GLOBALS['wp_mcp_ai_onboarding_wizard'] = new WP_MCP_AI_Onboarding_Wizard();
 
 		// Initialize integration admin pages.
 		// Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.

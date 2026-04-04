@@ -213,6 +213,284 @@ const builds = [
 	// 	outfile: 'assets/js/dist/transformers.min.js',
 	// 	...modernOptions,
 	// },
+
+	// Admin page scripts (new)
+	{
+		entryPoints: ['assets/js/admin-add-assistant.js'],
+		outfile: 'assets/js/admin-add-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-add-team.js'],
+		outfile: 'assets/js/admin-add-team.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-build-assistant.js'],
+		outfile: 'assets/js/admin-build-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-content-assistant.js'],
+		outfile: 'assets/js/admin-content-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-crawl4ai-monitor.js'],
+		outfile: 'assets/js/admin-crawl4ai-monitor.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-create-assistant-modal.js'],
+		outfile: 'assets/js/admin-create-assistant-modal.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-create-team-modal.js'],
+		outfile: 'assets/js/admin-create-team-modal.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-cron-manager.js'],
+		outfile: 'assets/js/admin-cron-manager.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-model-selector.js'],
+		outfile: 'assets/js/admin-model-selector.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-multi-agent-dashboard.js'],
+		outfile: 'assets/js/admin-multi-agent-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-orchestration-dashboard.js'],
+		outfile: 'assets/js/admin-orchestration-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-slash-commands-dashboard.js'],
+		outfile: 'assets/js/admin-slash-commands-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-test-assistant.js'],
+		outfile: 'assets/js/admin-test-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-test-profession.js'],
+		outfile: 'assets/js/admin-test-profession.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin-test-team.js'],
+		outfile: 'assets/js/admin-test-team.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin/admin-create-assistant-button.js'],
+		outfile: 'assets/js/admin/admin-create-assistant-button.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/admin/admin-create-team-button.js'],
+		outfile: 'assets/js/admin/admin-create-team-button.min.js',
+		...commonOptions,
+	},
+
+	// Dashboard and page scripts (new)
+	{
+		entryPoints: ['assets/js/accessibility-enhancements.js'],
+		outfile: 'assets/js/accessibility-enhancements.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/analytics-dashboard.js'],
+		outfile: 'assets/js/analytics-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/asset-inventory.js'],
+		outfile: 'assets/js/asset-inventory.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/datasets-admin.js'],
+		outfile: 'assets/js/datasets-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/enhanced-research-page.js'],
+		outfile: 'assets/js/enhanced-research-page.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/orchestration-dashboard.js'],
+		outfile: 'assets/js/orchestration-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/pro-dashboard.js'],
+		outfile: 'assets/js/pro-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/security-audit-admin.js'],
+		outfile: 'assets/js/security-audit-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/security-training.js'],
+		outfile: 'assets/js/security-training.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/supplier-security.js'],
+		outfile: 'assets/js/supplier-security.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/token-manager-charts.js'],
+		outfile: 'assets/js/token-manager-charts.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/workflow-editor.js'],
+		outfile: 'assets/js/workflow-editor.min.js',
+		...commonOptions,
+	},
+
+	// Feature and utility scripts (new)
+	{
+		entryPoints: ['assets/js/blocks/assistant-builder-blocks.js'],
+		outfile: 'assets/js/blocks/assistant-builder-blocks.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/blocks/assistant-builder-blocks-frontend.js'],
+		outfile: 'assets/js/blocks/assistant-builder-blocks-frontend.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/command-autocomplete.js'],
+		outfile: 'assets/js/command-autocomplete.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/elementor-quick-actions-widget.js'],
+		outfile: 'assets/js/elementor-quick-actions-widget.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/embedded-llm-client.js'],
+		outfile: 'assets/js/embedded-llm-client.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/mesh-peer-test.js'],
+		outfile: 'assets/js/mesh-peer-test.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/professional-selector.js'],
+		outfile: 'assets/js/professional-selector.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/slash-commands.js'],
+		outfile: 'assets/js/slash-commands.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/storage-util.js'],
+		outfile: 'assets/js/storage-util.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/storage-worker.js'],
+		outfile: 'assets/js/storage-worker.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/webllm-loader.js'],
+		outfile: 'assets/js/webllm-loader.min.js',
+		...commonOptions,
+	},
+
+	// Pro addon browser scripts (new)
+	{
+		entryPoints: ['addons/pro/assets/js/admin-pm-ai-actions.js'],
+		outfile: 'addons/pro/assets/js/admin-pm-ai-actions.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/admin-pm-ai-assistant.js'],
+		outfile: 'addons/pro/assets/js/admin-pm-ai-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/admin-pm-ai-assistant-unified.js'],
+		outfile: 'addons/pro/assets/js/admin-pm-ai-assistant-unified.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/chat-channels-inbox.js'],
+		outfile: 'addons/pro/assets/js/chat-channels-inbox.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/skill-manager-admin.js'],
+		outfile: 'addons/pro/assets/js/skill-manager-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/cpt-assistant.js'],
+		outfile: 'addons/pro/assets/js/cpt-assistant.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/health-consolidate.js'],
+		outfile: 'addons/pro/assets/js/health-consolidate.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/media-collection-admin.js'],
+		outfile: 'addons/pro/assets/js/media-collection-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/media-template-admin.js'],
+		outfile: 'addons/pro/assets/js/media-template-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/orchestration-dashboard.js'],
+		outfile: 'addons/pro/assets/js/orchestration-dashboard.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/password-vault-admin.js'],
+		outfile: 'addons/pro/assets/js/password-vault-admin.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/product-research-page.js'],
+		outfile: 'addons/pro/assets/js/product-research-page.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/quiz-questions.js'],
+		outfile: 'addons/pro/assets/js/quiz-questions.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['addons/pro/assets/js/research-page.js'],
+		outfile: 'addons/pro/assets/js/research-page.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files

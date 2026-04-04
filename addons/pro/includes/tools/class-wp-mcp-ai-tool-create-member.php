@@ -5,6 +5,9 @@
  * Allows AI assistants to create new members in the health wellness system.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -109,6 +112,16 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'description' => __( 'Breed (for pets only) (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
+				'mrn'               => array(
+					'type'        => 'string',
+					'description' => __( 'Medical Record Number (MRN) — internal or provider-assigned identifier (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'preferred_pharmacy' => array(
+					'type'        => 'string',
+					'description' => __( 'Preferred pharmacy name and/or address (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 300,
+				),
 			),
 			'required'             => array( 'name' ),
 			'additionalProperties' => false,
@@ -118,6 +131,24 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_member',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'caregiver', 'patient' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -146,7 +177,7 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
+		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create members.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -190,6 +221,8 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$emergency_contact = isset( $arguments['emergency_contact'] ) ? sanitize_textarea_field( $arguments['emergency_contact'] ) : '';
 		$species           = isset( $arguments['species'] ) ? sanitize_text_field( $arguments['species'] ) : '';
 		$breed             = isset( $arguments['breed'] ) ? sanitize_text_field( $arguments['breed'] ) : '';
+		$mrn               = isset( $arguments['mrn'] ) ? sanitize_text_field( $arguments['mrn'] ) : '';
+		$preferred_pharmacy = isset( $arguments['preferred_pharmacy'] ) ? sanitize_text_field( $arguments['preferred_pharmacy'] ) : '';
 
 		if ( '' === $name ) {
 			return new WP_Error( 'wp_mcp_ai_missing_name', __( 'Member name is required.', 'mcp-ai-wpoos-pro' ) );
@@ -267,6 +300,14 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				}
 			}
 
+			if ( $mrn ) {
+				update_post_meta( $member_id, '_member_mrn', $mrn );
+			}
+
+			if ( $preferred_pharmacy ) {
+				update_post_meta( $member_id, '_member_preferred_pharmacy', $preferred_pharmacy );
+			}
+
 			$member = get_post( $member_id );
 
 			return array(
@@ -274,20 +315,22 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'message'   => __( 'Member updated successfully.', 'mcp-ai-wpoos-pro' ),
 				'member_id' => $member_id,
 				'member'    => array(
-					'id'                => $member_id,
-					'name'              => $name,
-					'type'              => $type,
-					'description'       => $description,
-					'date_of_birth'     => $date_of_birth,
-					'gender'            => $gender,
-					'blood_type'        => $blood_type,
-					'email'             => $email,
-					'phone'             => $phone,
-					'address'           => $address,
-					'emergency_contact' => $emergency_contact,
-					'species'           => $species,
-					'breed'             => $breed,
-					'updated_at'        => $member->post_modified,
+					'id'                 => $member_id,
+					'name'               => $name,
+					'type'               => $type,
+					'description'        => $description,
+					'date_of_birth'      => $date_of_birth,
+					'gender'             => $gender,
+					'blood_type'         => $blood_type,
+					'email'              => $email,
+					'phone'              => $phone,
+					'address'            => $address,
+					'emergency_contact'  => $emergency_contact,
+					'species'            => $species,
+					'breed'              => $breed,
+					'mrn'                => $mrn,
+					'preferred_pharmacy' => $preferred_pharmacy,
+					'updated_at'         => $member->post_modified,
 				),
 				'updated'   => true,
 			);
@@ -350,6 +393,14 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				}
 			}
 
+			if ( $mrn ) {
+				update_post_meta( $member_id, '_member_mrn', $mrn );
+			}
+
+			if ( $preferred_pharmacy ) {
+				update_post_meta( $member_id, '_member_preferred_pharmacy', $preferred_pharmacy );
+			}
+
 			$member = get_post( $member_id );
 
 			return array(
@@ -357,20 +408,22 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'message'   => __( 'Member created successfully.', 'mcp-ai-wpoos-pro' ),
 				'member_id' => $member_id,
 				'member'    => array(
-					'id'                => $member_id,
-					'name'              => $name,
-					'type'              => $type,
-					'description'       => $description,
-					'date_of_birth'     => $date_of_birth,
-					'gender'            => $gender,
-					'blood_type'        => $blood_type,
-					'email'             => $email,
-					'phone'             => $phone,
-					'address'           => $address,
-					'emergency_contact' => $emergency_contact,
-					'species'           => $species,
-					'breed'             => $breed,
-					'created_at'        => $member->post_date,
+					'id'                 => $member_id,
+					'name'               => $name,
+					'type'               => $type,
+					'description'        => $description,
+					'date_of_birth'      => $date_of_birth,
+					'gender'             => $gender,
+					'blood_type'         => $blood_type,
+					'email'              => $email,
+					'phone'              => $phone,
+					'address'            => $address,
+					'emergency_contact'  => $emergency_contact,
+					'species'            => $species,
+					'breed'              => $breed,
+					'mrn'                => $mrn,
+					'preferred_pharmacy' => $preferred_pharmacy,
+					'created_at'         => $member->post_date,
 				),
 				'updated'   => false,
 			);

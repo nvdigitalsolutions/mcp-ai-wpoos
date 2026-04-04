@@ -3,6 +3,9 @@
  * Simple logging utility for NV oOS.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -207,6 +210,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			// Chat interaction events.
 			if ( 'chat_interaction' === $type ) {
 				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
+			}
+
+			// Schedule run events (start, completion, failure).
+			if ( 'schedule_run' === $type ) {
+				return true;
 			}
 
 			// Default: allow other event types when base logging is enabled.
@@ -470,6 +478,48 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			$context['result_preview'] = self::limit_result_payload( $result );
 			self::log_event( 'tool_execution', 'Tool executed successfully.', $context );
+		}
+
+		/**
+		 * Log a Pro Schedule Manager run event.
+		 *
+		 * Centralises schedule run telemetry into a single structured entry so
+		 * the activity feed and log file both capture meaningful schedule context.
+		 * Recognised events:
+		 * - schedule_run_start    : dispatch() was entered for this schedule.
+		 * - schedule_run_complete : the schedule ran to completion (success).
+		 * - schedule_run_failed   : the schedule reported a failure.
+		 *
+		 * @param string $event       Event key: schedule_run_start, schedule_run_complete, or schedule_run_failed.
+		 * @param string $schedule_id Unique schedule identifier.
+		 * @param string $name        Human-readable schedule name.
+		 * @param string $type        Schedule type (task, workflow, assistant_run, channel_broadcast, workflow_builder).
+		 * @param array  $extra       Optional extra context (duration, error, action_log, etc.).
+		 */
+		public static function log_schedule_run( $event, $schedule_id, $name, $type, array $extra = array() ) {
+			$label   = ucwords( str_replace( '_', ' ', (string) $event ) );
+			$message = sprintf(
+				/* translators: 1: human-readable event label, 2: schedule type, 3: schedule name, 4: schedule ID */
+				'%1$s [%2$s]: "%3$s" (ID: %4$s)',
+				$label,
+				$type,
+				$name,
+				$schedule_id
+			);
+
+			self::log_event(
+				'schedule_run',
+				$message,
+				array_merge(
+					$extra,
+					array(
+						'event'       => sanitize_key( $event ),
+						'schedule_id' => sanitize_text_field( $schedule_id ),
+						'name'        => sanitize_text_field( $name ),
+						'type'        => sanitize_key( $type ),
+					)
+				)
+			);
 		}
 
 		/**
@@ -745,6 +795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'lm_studio_completion_response',
 					'openai_external_action_request',
 					'openai_external_action_response',
+					'schedule_run',
 				)
 			);
 

@@ -11,6 +11,9 @@
  * industry best practices for multi-platform messaging.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -45,6 +48,20 @@ if ( $is_enabled && ! $is_base ) {
 		WP_MCP_AI_Channel_Contacts_CCT::bootstrap();
 	}
 	unset( $_cc_messages_cct, $_cc_contacts_cct );
+
+	// --- CPTs: Channel Messages and Channel Contacts (JetEngine-free fallback) ---
+	$_cc_messages_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cpt.php';
+	$_cc_contacts_cpt = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cpt.php';
+
+	if ( file_exists( $_cc_messages_cpt ) ) {
+		require_once $_cc_messages_cpt;
+		WP_MCP_AI_Channel_Messages_CPT::bootstrap();
+	}
+	if ( file_exists( $_cc_contacts_cpt ) ) {
+		require_once $_cc_contacts_cpt;
+		WP_MCP_AI_Channel_Contacts_CPT::bootstrap();
+	}
+	unset( $_cc_messages_cpt, $_cc_contacts_cpt );
 
 	// --- REST API: Chat Channels inbox controller ---
 	$_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php';
@@ -289,6 +306,95 @@ function wp_mcp_ai_load_chat_channels_tools() {
 				}
 			}
 		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) ) {
+	/**
+	 * Enforce per-contact rate limiting for chat channel auto-replies.
+	 *
+	 * Industry standard: protect the bot and downstream AI services from
+	 * being overwhelmed by high-frequency senders. Uses a transient-based
+	 * sliding window counter. The window duration and maximum request count
+	 * can be customised via the wp_mcp_ai_rate_limit_max and
+	 * wp_mcp_ai_rate_limit_window filters.
+	 *
+	 * Only active when the "Enable Rate Limiting" option is checked in
+	 * Chat Channels → Settings (option key: enable_rate_limiting).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel    Channel slug (e.g. 'telegram', 'whatsapp', 'slack').
+	 * @param string $contact_id Platform-specific user/contact identifier.
+	 * @return bool True when the contact has exceeded the allowed rate; false otherwise.
+	 */
+	function wp_mcp_ai_chat_channel_is_rate_limited( $channel, $contact_id ) {
+		// Only enforce when the admin toggle is on.
+		$cc_settings      = get_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array() );
+		$rate_limiting_on = isset( $cc_settings['enable_rate_limiting'] ) ? (bool) $cc_settings['enable_rate_limiting'] : true;
+
+		if ( ! $rate_limiting_on ) {
+			return false;
+		}
+
+		/**
+		 * Maximum number of messages a single contact may send within the rate-limit
+		 * window before auto-replies are suppressed for the remainder of that window.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int    $max_messages Allowed message count per window. Default 10.
+		 * @param string $channel      Channel slug.
+		 * @param string $contact_id   Platform contact identifier.
+		 */
+		$max_messages = (int) apply_filters( 'wp_mcp_ai_rate_limit_max', 10, $channel, $contact_id );
+		$max_messages = max( 1, $max_messages );
+
+		/**
+		 * Duration of the sliding rate-limit window in seconds.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int    $window_seconds Window length. Default 60 (one minute).
+		 * @param string $channel        Channel slug.
+		 * @param string $contact_id     Platform contact identifier.
+		 */
+		$window_seconds = (int) apply_filters( 'wp_mcp_ai_rate_limit_window', 60, $channel, $contact_id );
+		$window_seconds = max( 1, $window_seconds );
+
+		// Transient key: stable SHA-256 hash of channel + contact so the key length
+		// is always within WordPress's 172-character limit regardless of contact_id.
+		// SHA-256 is preferred over MD5 for better collision resistance.
+		$transient_key = 'wp_mcp_ai_rl_' . substr( hash( 'sha256', $channel . '_' . $contact_id ), 0, 32 );
+
+		$count = (int) get_transient( $transient_key );
+
+		if ( $count >= $max_messages ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_channel_rate_limited',
+					'Auto-reply suppressed: contact exceeded rate limit.',
+					array(
+						'channel'    => $channel,
+						'contact_id' => substr( $contact_id, 0, 6 ) . '***',
+						'count'      => $count,
+						'max'        => $max_messages,
+						'window'     => $window_seconds,
+					)
+				);
+			}
+			return true;
+		}
+
+		// Increment the counter. On first contact within the window the transient
+		// is created with the full window TTL; subsequent increments reset neither
+		// the count nor the expiry — set_transient replaces the value at the same
+		// remaining TTL unless we explicitly manage the expiry ourselves.
+		// Using separate get/set is sufficient for WordPress cron frequency and the
+		// brief race window does not pose a meaningful security risk here.
+		set_transient( $transient_key, $count + 1, $window_seconds );
+
+		return false;
 	}
 }
 

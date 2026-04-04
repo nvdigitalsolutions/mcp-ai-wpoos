@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -172,7 +175,7 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$destination = ! empty( $arguments['destination'] ) ? sanitize_text_field( $arguments['destination'] ) : '';
 		$data_type   = ! empty( $arguments['data_type'] ) ? sanitize_text_field( $arguments['data_type'] ) : '';
 		$sync_mode   = ! empty( $arguments['sync_mode'] ) ? sanitize_text_field( $arguments['sync_mode'] ) : 'incremental';

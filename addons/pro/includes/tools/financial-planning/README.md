@@ -1,6 +1,6 @@
 # Financial Planning Toolkit
 
-This directory contains 24 financial planning tools for the NV oOS WordPress plugin.
+This directory contains 32 financial planning tools for the NV oOS WordPress plugin.
 
 ## Tools Created:
 
@@ -40,7 +40,18 @@ This directory contains 24 financial planning tools for the NV oOS WordPress plu
 23. ✓ college_savings_calculator - 529 plan calculator
 24. ✓ insurance_needs_analyzer - Calculate insurance coverage needs
 
+### Market Analysis & Research (8 tools)
+Inspired by [Awesome-finance-skills](https://github.com/RKiding/Awesome-finance-skills) and industry standards (Gartner, Deloitte, McKinsey).
+25. ✓ financial_news_aggregator - Aggregate financial news from multiple RSS/API sources
+26. ✓ stock_data_fetcher - Search tickers and fetch OHLCV data via YFinance service
+27. ✓ market_sentiment_analyzer - Rule-based financial text sentiment analysis (-1.0 to +1.0)
+28. ✓ market_forecast_analyzer - Time-series forecasting (linear regression, moving avg, exp smoothing)
+29. ✓ investment_signal_tracker - Track investment signal evolution (strengthen/weaken/falsify)
+30. ✓ financial_logic_visualizer - Generate Mermaid diagrams for financial logic chains
+31. ✓ financial_report_generator - Generate structured professional financial reports
+32. ✓ financial_search - Specialized multi-source financial web search
+
 ## Implementation Status:
-- 24/24 tools fully implemented (100% complete)
+- 32/32 tools fully implemented (100% complete)
 
 All tools follow WordPress Coding Standards and implement required interfaces.

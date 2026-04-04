@@ -5,6 +5,9 @@
  * Registers custom post types for projects, tasks, and events.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -36,6 +39,10 @@ if ( is_admin() ) {
 		// Load Event Research & Add and Settings pages (under Events menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-research-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-settings-page.php';
+
+		// Load Event Consolidate & Add page (under Events menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-consolidate-page.php';
+		WP_MCP_AI_Event_Consolidate_Page::init();
 
 		// Load Task Research & Add page (under Tasks menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-task-research-page.php';

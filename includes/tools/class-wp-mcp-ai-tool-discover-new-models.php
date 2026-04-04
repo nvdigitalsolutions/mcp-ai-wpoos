@@ -7,6 +7,9 @@
  * models that could be added.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -57,7 +60,7 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'List of providers to check. If empty, checks all configured providers.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
-						'enum' => array( 'openai', 'anthropic', 'gemini', 'huggingface' ),
+						'enum' => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia' ),
 					),
 					'default'     => array(),
 				),

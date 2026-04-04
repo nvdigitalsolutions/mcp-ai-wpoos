@@ -3,6 +3,9 @@
  * Shortcode renderer for the front-end chat interface.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -31,9 +34,21 @@ class WP_MCP_AI_Shortcode {
 	const STYLE_HANDLE = 'wp-mcp-ai-chat';
 
 	/**
-	 * Lifetime for guest access tokens (in seconds).
+	 * Default lifetime for guest access tokens (in seconds).
+	 * Used when no admin setting is configured.
 	 */
-	const GUEST_TOKEN_TTL = HOUR_IN_SECONDS;
+	const GUEST_TOKEN_TTL = DAY_IN_SECONDS;
+
+	/**
+	 * Maximum allowed lifetime for guest tokens (7 days).
+	 * Provides a hard cap regardless of configuration.
+	 */
+	const GUEST_TOKEN_MAX_TTL = 604800;
+
+	/**
+	 * Minimum allowed lifetime for guest tokens (60 seconds).
+	 */
+	const GUEST_TOKEN_MIN_TTL = 60;
 
 	/**
 	 * Prefix used for guest access transients.
@@ -194,6 +209,29 @@ class WP_MCP_AI_Shortcode {
 			$script_version,
 			true
 		);
+
+		// Register chat bubble assets (floating chat widget).
+		$bubble_script_relative = 'assets/js/chat-bubble.js';
+		$bubble_style_relative  = 'assets/css/chat-bubble.css';
+
+		if ( ! wp_script_is( 'wp-mcp-ai-chat-bubble', 'registered' ) ) {
+			wp_register_script(
+				'wp-mcp-ai-chat-bubble',
+				WP_MCP_AI_URL . $bubble_script_relative,
+				array( self::SCRIPT_HANDLE ),
+				$this->get_asset_version( $bubble_script_relative ),
+				true
+			);
+		}
+
+		if ( ! wp_style_is( 'wp-mcp-ai-chat-bubble-style', 'registered' ) ) {
+			wp_register_style(
+				'wp-mcp-ai-chat-bubble-style',
+				WP_MCP_AI_URL . $bubble_style_relative,
+				array( self::STYLE_HANDLE ),
+				$this->get_asset_version( $bubble_style_relative )
+			);
+		}
 
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
@@ -823,10 +861,15 @@ class WP_MCP_AI_Shortcode {
 				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
 			}
 
-			// Enqueue embedded LLM client scripts if this assistant uses embedded provider.
-			// Scripts are already registered in register_assets(), just enqueue them here.
+			// Enqueue embedded LLM client scripts if this assistant uses the client-side WebLLM provider.
+			// Server-side GGUF models share the 'embedded' provider key but are served by llama.cpp on
+			// the server — they do not need the WebLLM browser scripts.
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
-			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
+			$is_embedded_server_model = 'embedded' === $assistant_provider
+				&& ! empty( $assistant_model )
+				&& class_exists( 'WP_MCP_AI_Embedded_Client' )
+				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( $assistant_model );
+			$needs_embedded_provider  = $this->is_embedded_provider_available( $assistant_provider ) && ! $is_embedded_server_model;
 
 			// Parse additional_tools from the shortcode attribute early so it can be used for:
 			// 1. Embedded provider tool definition resolution (added to $tool_slugs_to_include below).
@@ -948,31 +991,31 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			$config = array(
-				'id'                     => $instance_id,
-				'assistantId'            => $assistant_id, // This preserves "profession_XXX" format for profession tests.
-				'embeddedAssistantId'    => absint( $permissions_assistant_id ),
-				'userId'                 => get_current_user_id(),
-				'restUrl'                => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
-				'uploadEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
-				'prepareEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
-				'messagesEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
-				'toolsEndpoint'          => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
-				'filesEndpoint'          => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
-				'transcriptsEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-				'embeddedConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
+				'id'                         => $instance_id,
+				'assistantId'                => $assistant_id, // This preserves "profession_XXX" format for profession tests.
+				'embeddedAssistantId'        => absint( $permissions_assistant_id ),
+				'userId'                     => get_current_user_id(),
+				'restUrl'                    => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'             => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'prepareEndpoint'            => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
+				'messagesEndpoint'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
+				'toolsEndpoint'              => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'filesEndpoint'              => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'transcriptsEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'embeddedConfigEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
 				'vectorStorePreloadEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/vector-store-preload' ) ) ),
-				'crawl4aiTaskEndpoint'   => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
-				'crawl4aiDefaultPollMs'  => 5000,
-				'requiredCapability'     => $capability ? $capability : '',
-				'allowGuests'            => (bool) $allow_guests,
-				'canUploadAttachments'   => (bool) $can_upload_attachments,
-				'saveTranscript'         => (bool) $save_transcript,
-				'enableStreaming'        => (bool) $enable_streaming,
-				'allowSensitiveTools'    => (bool) $allow_sensitive_tools,
-				'sessionKey'             => $session_key,
-				'historyPerPage'         => 20,
-				'maxHistoryMessages'     => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
-				'restNonce'              => wp_create_nonce( 'wp_rest' ),
+				'crawl4aiTaskEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
+				'crawl4aiDefaultPollMs'      => 5000,
+				'requiredCapability'         => $capability ? $capability : '',
+				'allowGuests'                => (bool) $allow_guests,
+				'canUploadAttachments'       => (bool) $can_upload_attachments,
+				'saveTranscript'             => (bool) $save_transcript,
+				'enableStreaming'            => (bool) $enable_streaming,
+				'allowSensitiveTools'        => (bool) $allow_sensitive_tools,
+				'sessionKey'                 => $session_key,
+				'historyPerPage'             => 20,
+				'maxHistoryMessages'         => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
+				'restNonce'                  => wp_create_nonce( 'wp_rest' ),
 			);
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
@@ -987,6 +1030,13 @@ class WP_MCP_AI_Shortcode {
 				$config['model'] = $assistant_model;
 			}
 
+			// Flag server-side GGUF models so chat.js routes them to the REST API
+			// instead of the client-side WebLLM path. Both share provider='embedded',
+			// but GGUF models are run by llama.cpp on the server.
+			if ( $is_embedded_server_model ) {
+				$config['isEmbeddedServer'] = true;
+			}
+
 			// Add assistant defaults (system_prompt, temperature) for client-side execution.
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
@@ -994,6 +1044,13 @@ class WP_MCP_AI_Shortcode {
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+			}
+
+			// Pass max_tokens from the orchestration layer so the embedded client-side
+			// model respects the same token budget as server-side providers instead of
+			// falling back to a hardcoded default.
+			if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				$config['max_tokens'] = WP_MCP_AI_Resource_Manager::instance()->get_max_tokens();
 			}
 
 			// Add base knowledge (memory files and vector store) for embedded provider.
@@ -1255,7 +1312,7 @@ class WP_MCP_AI_Shortcode {
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $assistant_content is processed by apply_filters('the_content', ...) which applies standard WordPress content filters and escaping. ?>
+						<?php echo wp_kses_post( $assistant_content ); ?>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -1273,6 +1330,33 @@ class WP_MCP_AI_Shortcode {
 				</button>
 			</div>
 			<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
+			<div class="wp-mcp-ai-chat__agent-panel" role="complementary" aria-label="<?php echo esc_attr__( 'Agent team activity', 'mcp-ai-wpoos' ); ?>" hidden>
+				<div class="wp-mcp-ai-chat__agent-panel-header">
+					<button type="button" class="wp-mcp-ai-chat__agent-panel-toggle" aria-expanded="false">
+						<svg class="wp-mcp-ai-chat__agent-panel-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+							<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+						</svg>
+						<span class="wp-mcp-ai-chat__agent-panel-title"><?php esc_html_e( 'Agent Team', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-chat__agent-panel-count" aria-label="<?php echo esc_attr__( 'Active agents', 'mcp-ai-wpoos' ); ?>">0</span>
+						<svg class="wp-mcp-ai-chat__agent-panel-chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
+						</svg>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-chat__agent-panel-body" hidden>
+					<div class="wp-mcp-ai-chat__agent-cards" role="list" aria-label="<?php echo esc_attr__( 'Sub-agents', 'mcp-ai-wpoos' ); ?>"></div>
+					<div class="wp-mcp-ai-chat__workflow-tracker" role="status" aria-label="<?php echo esc_attr__( 'Workflow progress', 'mcp-ai-wpoos' ); ?>" hidden>
+						<div class="wp-mcp-ai-chat__workflow-tracker-header">
+							<span class="wp-mcp-ai-chat__workflow-tracker-title"><?php esc_html_e( 'Workflow Progress', 'mcp-ai-wpoos' ); ?></span>
+							<span class="wp-mcp-ai-chat__workflow-tracker-progress">0%</span>
+						</div>
+						<div class="wp-mcp-ai-chat__workflow-tracker-bar">
+							<div class="wp-mcp-ai-chat__workflow-tracker-fill"></div>
+						</div>
+						<ol class="wp-mcp-ai-chat__workflow-tracker-steps" aria-label="<?php echo esc_attr__( 'Workflow steps', 'mcp-ai-wpoos' ); ?>"></ol>
+					</div>
+				</div>
+			</div>
 			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
@@ -1544,12 +1628,14 @@ class WP_MCP_AI_Shortcode {
 			return '';
 		}
 
+		$ttl = self::get_guest_token_ttl();
+
 		$record = array(
 			'assistant_id' => $assistant_id,
 			'created'      => time(),
 		);
 
-		$saved = set_transient( self::build_guest_token_key( $token ), $record, self::GUEST_TOKEN_TTL );
+		$saved = set_transient( self::build_guest_token_key( $token ), $record, $ttl );
 
 		if ( ! $saved ) {
 			return '';
@@ -1560,6 +1646,9 @@ class WP_MCP_AI_Shortcode {
 
 	/**
 	 * Validate a guest token and ensure it is scoped to the requested assistant.
+	 *
+	 * Enforces both the transient-based sliding TTL and an absolute maximum
+	 * lifetime from the token's creation timestamp to prevent indefinite renewal.
 	 *
 	 * @param string $token        Guest access token supplied by the client.
 	 * @param int    $assistant_id Assistant post ID provided in the request.
@@ -1578,13 +1667,21 @@ class WP_MCP_AI_Shortcode {
 			return false;
 		}
 
+		// Enforce absolute maximum lifetime.
+		$created = isset( $data['created'] ) ? absint( $data['created'] ) : 0;
+		if ( $created > 0 && ( time() - $created ) > self::GUEST_TOKEN_MAX_TTL ) {
+			delete_transient( self::build_guest_token_key( $token ) );
+			return false;
+		}
+
 		$stored_assistant = isset( $data['assistant_id'] ) ? absint( $data['assistant_id'] ) : 0;
 
 		if ( $assistant_id && $stored_assistant && $assistant_id !== $stored_assistant ) {
 			return false;
 		}
 
-		set_transient( self::build_guest_token_key( $token ), $data, self::GUEST_TOKEN_TTL );
+		// Refresh the sliding TTL for active sessions.
+		set_transient( self::build_guest_token_key( $token ), $data, self::get_guest_token_ttl() );
 
 		return $stored_assistant;
 	}
@@ -1597,6 +1694,28 @@ class WP_MCP_AI_Shortcode {
 	 */
 	protected static function build_guest_token_key( $token ) {
 		return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
+	}
+
+	/**
+	 * Get the configured guest token TTL from admin settings.
+	 *
+	 * Falls back to the default constant if the setting is not configured
+	 * and enforces the maximum allowed lifetime cap.
+	 *
+	 * @return int TTL in seconds.
+	 */
+	protected static function get_guest_token_ttl() {
+		$ttl = self::GUEST_TOKEN_TTL;
+
+		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			$configured = WP_MCP_AI_Settings_Registry::get_setting( 'guest_token_lifetime', self::GUEST_TOKEN_TTL );
+			$ttl        = absint( $configured );
+		}
+
+		// Enforce minimum and maximum caps.
+		$ttl = max( self::GUEST_TOKEN_MIN_TTL, min( $ttl, self::GUEST_TOKEN_MAX_TTL ) );
+
+		return $ttl;
 	}
 
 	/**

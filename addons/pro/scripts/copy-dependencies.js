@@ -510,6 +510,15 @@ const dependencies = [
 		],
 	},
 	{
+		name: '@puppeteer/browsers',
+		dirs: [
+			{ src: 'lib', dest: '@puppeteer/browsers/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@puppeteer/browsers/package.json' },
+		],
+	},
+	{
 		name: 'qrcode',
 		// Copy the Node.js lib/ so node-services/qrcode-service.js can load it
 		// via an explicit path without requiring npm install on the server.
@@ -590,6 +599,43 @@ const dependencies = [
 		files: [
 			{ src: 'browser.js', dest: 'canvas/browser.js' },
 			{ src: 'package.json', dest: 'canvas/package.json' },
+		],
+	},
+	// ========================================================================
+	// REMOTION VIDEO PRODUCTION PACKAGES
+	// All @remotion/* packages are marked external in bin/remotion-render.bundle.js
+	// and resolved at runtime from assets/vendor/ (production) or node_modules/ (dev).
+	// remotion, react, and react-dom are needed at render time by @remotion/bundler's
+	// webpack pass when it bundles user compositions.
+	// ========================================================================
+	{
+		name: 'remotion',
+		dirs: [
+			{ src: 'dist', dest: 'remotion/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'remotion/package.json' },
+		],
+	},
+	{
+		name: '@remotion/bundler',
+		dirs: [
+			{ src: 'dist', dest: '@remotion/bundler/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@remotion/bundler/package.json' },
+		],
+		// @remotion/bundler shells out to webpack — also copy webpack so it is
+		// resolvable from assets/vendor/ when node_modules is absent.
+		dependencies: [ 'webpack' ],
+	},
+	{
+		name: '@remotion/renderer',
+		dirs: [
+			{ src: 'dist', dest: '@remotion/renderer/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@remotion/renderer/package.json' },
 		],
 	},
 ];
@@ -724,14 +770,15 @@ let cleanupSaved = 0;
 // 1. Remove canvas native binaries (~181MB uncompressed, ~50MB compressed)
 //    Canvas requires system-level installation, bundling binaries doesn't work
 //    We keep the lib files so the cloned repo has the JavaScript code, but users
-//    need to run `npm install canvas` to compile native binaries for their platform
+//    need to run `npm install canvas@2` to compile native binaries for their platform
+//    (canvas@3+ requires Node >=20.9.0; canvas@2 supports Node 18.x and Node 20.x)
 const canvasBuildPath = path.join(vendorPath, 'canvas', 'build');
 if (fs.existsSync(canvasBuildPath)) {
 	const canvasSize = getSize(canvasBuildPath);
 	fs.rmSync(canvasBuildPath, { recursive: true, force: true });
 	cleanupSaved += canvasSize;
 	console.log(`${colors.green}✓ Removed canvas native binaries${colors.reset} → ${formatSize(canvasSize)} saved`);
-	console.log(`  ${colors.yellow}Note: Canvas lib files preserved; run 'npm install canvas' for PDF OCR${colors.reset}`);
+	console.log(`  ${colors.yellow}Note: Canvas lib files preserved; run 'npm install canvas@2' for PDF OCR (canvas@3+ requires Node >=20.9.0)${colors.reset}`);
 }
 
 // 2. Remove old pdf.js versions from pdf-parse (keep only v2.0.550)

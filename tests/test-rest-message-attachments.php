@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for REST chat message attachment handling.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 	use WP_MCP_AI_Docx_Test_Helper;

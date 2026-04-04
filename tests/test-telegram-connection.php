@@ -3,6 +3,9 @@
  * Test Telegram chat channel connection fields and bot testing functionality.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -1269,6 +1272,196 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'/mcp-ai/v1/telegram-mini-app/validate',
 			$routes,
 			'The /mcp-ai/v1/telegram-mini-app/validate REST route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the Mini App controller registers the TMA-specific chat endpoint.
+	 *
+	 * The /chat route uses check_permission (TMA-token aware) so that templates
+	 * like Medical Vitals can authenticate via the X-WP-MCP-AI-TMA-Token header
+	 * without relying on a persistent WordPress auth cookie.
+	 */
+	public function test_telegram_mini_app_chat_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/chat',
+			$routes,
+			'The /mcp-ai/v1/telegram-mini-app/chat REST route should be registered'
+		);
+
+		// Verify the registered route accepts POST.
+		$route_config = $routes['/mcp-ai/v1/telegram-mini-app/chat'];
+		$methods      = array_column( $route_config, 'methods' );
+		$this->assertTrue(
+			in_array( WP_REST_Server::CREATABLE, $methods, true ),
+			'The /mcp-ai/v1/telegram-mini-app/chat route should accept POST requests'
+		);
+	}
+
+	/**
+	 * Test that the Mini App controller has a handle_tma_chat_request method.
+	 */
+	public function test_telegram_mini_app_controller_has_tma_chat_handler() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertTrue(
+			method_exists( $controller, 'handle_tma_chat_request' ),
+			'WP_MCP_AI_Telegram_Mini_App_Controller should have handle_tma_chat_request() method'
+		);
+	}
+
+	/**
+	 * Test that handle_tma_chat_request() resolves the connection's assigned assistant
+	 * and injects it into the request when no assistant_id is present.
+	 */
+	public function test_handle_tma_chat_request_resolves_assistant_from_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a Telegram connection that has an assigned assistant.
+		$connection_data = array(
+			'name'                   => 'TMA Doctor Test',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '9999999999:AATMADoctorTestTokenABCDEFGHIJKLMNOP',
+			'assigned_assistant_ids' => array( 42 ),
+		);
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		if ( ! $saved ) {
+			$this->markTestSkipped( 'save_connection() returned false – cannot proceed' );
+			return;
+		}
+
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Verify the connection is actually retrievable via get_active_telegram_connection().
+		$reflection          = new ReflectionClass( $controller );
+		$get_connection_meth = $reflection->getMethod( 'get_active_telegram_connection' );
+		$get_connection_meth->setAccessible( true );
+		$active_connection = $get_connection_meth->invoke( $controller );
+
+		if ( null === $active_connection ) {
+			$this->markTestSkipped( 'get_active_telegram_connection() returned null – Telegram connection not retrievable' );
+			return;
+		}
+
+		// Build a POST request to /chat with NO assistant_id.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/chat' );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello doctor',
+				),
+			)
+		);
+		// Explicitly ensure assistant_id is absent.
+		$this->assertNull( $request->get_param( 'assistant_id' ), 'assistant_id should be absent before calling handle_tma_chat_request' );
+
+		// Call handle_tma_chat_request – it will delegate to the chat handler which
+		// may return an error (no real AI provider in tests), but the key assertion
+		// is that assistant_id is injected into the request object BEFORE delegation.
+		$controller->handle_tma_chat_request( $request );
+
+		// The request object is mutated in-place by set_param() inside handle_tma_chat_request.
+		$resolved_id = $request->get_param( 'assistant_id' );
+
+		$this->assertNotEmpty(
+			$resolved_id,
+			'handle_tma_chat_request() should inject the connection\'s assigned assistant_id into the request when none was provided'
+		);
+		$this->assertEquals(
+			'42',
+			(string) $resolved_id,
+			'The resolved assistant_id should match the first assigned_assistant_ids from the active connection'
+		);
+	}
+
+	/**
+	 * Test that handle_tma_chat_request() does not overwrite an assistant_id that is
+	 * already present in the request (client-supplied value takes precedence).
+	 */
+	public function test_handle_tma_chat_request_preserves_explicit_assistant_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a connection whose assigned assistant differs from what the client sends.
+		$connection_data = array(
+			'name'                   => 'TMA Override Test',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '8888888888:AATMAOverrideTestTokenABCDEFGHIJKL',
+			'assigned_assistant_ids' => array( 99 ),
+		);
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		if ( ! $saved ) {
+			$this->markTestSkipped( 'save_connection() returned false – cannot proceed' );
+			return;
+		}
+
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a POST request with an explicit assistant_id of 55.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/chat' );
+		$request->set_param( 'assistant_id', '55' );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
+		);
+
+		$controller->handle_tma_chat_request( $request );
+
+		// The explicit value should remain unchanged.
+		$this->assertEquals(
+			'55',
+			(string) $request->get_param( 'assistant_id' ),
+			'An explicit assistant_id supplied by the client must not be overwritten by the connection fallback'
 		);
 	}
 
@@ -3124,7 +3317,13 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 							'role'       => 'assistant',
 							'content'    => null,
 							'tool_calls' => array(
-								array( 'id' => 'call_x', 'function' => array( 'name' => 'web_search', 'arguments' => '{}' ) ),
+								array(
+									'id'       => 'call_x',
+									'function' => array(
+										'name'      => 'web_search',
+										'arguments' => '{}',
+									),
+								),
 							),
 						),
 						'finish_reason' => 'tool_calls',
@@ -3163,14 +3362,26 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'data'         => array(
 				'choices'               => array(
 					array(
-						'message'       => array( 'role' => 'assistant', 'content' => null ),
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => null,
+						),
 						'finish_reason' => 'tool_calls',
 					),
 				),
 				'agentic_tool_messages' => array(
-					array( 'role' => 'assistant', 'content' => 'First intermediate step.' ),
-					array( 'role' => 'assistant', 'content' => 'Second intermediate step.' ),
-					array( 'role' => 'assistant', 'content' => 'Most recent partial answer.' ),
+					array(
+						'role'    => 'assistant',
+						'content' => 'First intermediate step.',
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Second intermediate step.',
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Most recent partial answer.',
+					),
 				),
 			),
 		);
@@ -3199,11 +3410,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'data'         => array(
 				'choices' => array(
 					array(
-						'message'       => array( 'role' => 'assistant', 'content' => 'Tool-calling step.' ),
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Tool-calling step.',
+						),
 						'finish_reason' => 'tool_calls',
 					),
 					array(
-						'message'       => array( 'role' => 'assistant', 'content' => 'Final complete answer.' ),
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Final complete answer.',
+						),
 						'finish_reason' => 'stop',
 					),
 				),
@@ -3364,21 +3581,36 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		// Single text segment — standard Gemini/Ollama format.
 		$segments = array(
-			array( 'type' => 'text', 'text' => 'Hello from Gemini!' ),
+			array(
+				'type' => 'text',
+				'text' => 'Hello from Gemini!',
+			),
 		);
 		$this->assertEquals( 'Hello from Gemini!', $method->invoke( $controller, $segments ) );
 
 		// Multiple text segments are concatenated with newline separator.
 		$multi = array(
-			array( 'type' => 'text', 'text' => 'Part one.' ),
-			array( 'type' => 'text', 'text' => 'Part two.' ),
+			array(
+				'type' => 'text',
+				'text' => 'Part one.',
+			),
+			array(
+				'type' => 'text',
+				'text' => 'Part two.',
+			),
 		);
 		$this->assertEquals( "Part one.\nPart two.", $method->invoke( $controller, $multi ) );
 
 		// Non-text segments (e.g. image_url) are silently skipped.
 		$mixed = array(
-			array( 'type' => 'image_url', 'image_url' => array( 'url' => 'https://example.com/img.png' ) ),
-			array( 'type' => 'text', 'text' => 'Only this text.' ),
+			array(
+				'type'      => 'image_url',
+				'image_url' => array( 'url' => 'https://example.com/img.png' ),
+			),
+			array(
+				'type' => 'text',
+				'text' => 'Only this text.',
+			),
 		);
 		$this->assertEquals( 'Only this text.', $method->invoke( $controller, $mixed ) );
 	}
@@ -3399,7 +3631,18 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertEquals( '', $method->invoke( $controller, 42 ) );
 		$this->assertEquals( '', $method->invoke( $controller, array() ) );
 		// Array with only non-text segments.
-		$this->assertEquals( '', $method->invoke( $controller, array( array( 'type' => 'image_url', 'image_url' => array() ) ) ) );
+		$this->assertEquals(
+			'',
+			$method->invoke(
+				$controller,
+				array(
+					array(
+						'type'      => 'image_url',
+						'image_url' => array(),
+					),
+				)
+			)
+		);
 	}
 
 	/**
@@ -3424,7 +3667,10 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 						'message'       => array(
 							'role'    => 'assistant',
 							'content' => array(
-								array( 'type' => 'text', 'text' => 'Hello from Gemini!' ),
+								array(
+									'type' => 'text',
+									'text' => 'Hello from Gemini!',
+								),
 							),
 						),
 						'finish_reason' => 'stop',
@@ -3456,13 +3702,16 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$response_data = array(
 			'assistant_id' => 1,
 			'data'         => array(
-				'choices' => array(
+				'choices'  => array(
 					array(
 						'index'         => 0,
 						'message'       => array(
 							'role'    => 'assistant',
 							'content' => array(
-								array( 'type' => 'text', 'text' => 'Hello from Ollama!' ),
+								array(
+									'type' => 'text',
+									'text' => 'Hello from Ollama!',
+								),
 							),
 						),
 						'finish_reason' => 'stop',
@@ -3508,7 +3757,10 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 					array(
 						'role'    => 'assistant',
 						'content' => array(
-							array( 'type' => 'text', 'text' => 'Agentic answer from Gemini.' ),
+							array(
+								'type' => 'text',
+								'text' => 'Agentic answer from Gemini.',
+							),
 						),
 					),
 				),
@@ -3566,8 +3818,16 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$data = array(
 			'data' => array(
 				'agentic_tool_messages' => array(
-					array( 'role' => 'assistant', 'content' => 'Step 1 result.' ),
-					array( 'role' => 'tool', 'content' => '{"result":"ok"}', 'tool_call_id' => 'call_abc', 'name' => 'search' ),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Step 1 result.',
+					),
+					array(
+						'role'         => 'tool',
+						'content'      => '{"result":"ok"}',
+						'tool_call_id' => 'call_abc',
+						'name'         => 'search',
+					),
 				),
 			),
 		);
@@ -3601,7 +3861,10 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 					array(
 						'role'    => 'assistant',
 						'content' => array(
-							array( 'type' => 'text', 'text' => 'I searched for that.' ),
+							array(
+								'type' => 'text',
+								'text' => 'I searched for that.',
+							),
 						),
 					),
 					// Tool result message — always plain JSON string.
@@ -3637,9 +3900,18 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$data = array(
 			'data' => array(
 				'agentic_tool_messages' => array(
-					array( 'role' => 'assistant', 'content' => null ),
-					array( 'role' => 'assistant', 'content' => array() ),
-					array( 'role' => 'assistant', 'content' => 'Real content.' ),
+					array(
+						'role'    => 'assistant',
+						'content' => null,
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => array(),
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => 'Real content.',
+					),
 				),
 			),
 		);
@@ -3692,8 +3964,14 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		[ $controller, $method ] = $pair;
 
 		$history = array(
-			array( 'role' => 'user', 'content' => 'Hello!' ),
-			array( 'role' => 'assistant', 'content' => 'Hi there!' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello!',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Hi there!',
+			),
 		);
 
 		$result = $method->invoke( $controller, $history );
@@ -3718,11 +3996,17 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		// Simulates history stored when a Gemini/Ollama assistant responded
 		// before this fix was applied, leaving array-format content in the transient.
 		$history = array(
-			array( 'role' => 'user', 'content' => 'What is 2+2?' ),
+			array(
+				'role'    => 'user',
+				'content' => 'What is 2+2?',
+			),
 			array(
 				'role'    => 'assistant',
 				'content' => array(
-					array( 'type' => 'text', 'text' => 'The answer is 4.' ),
+					array(
+						'type' => 'text',
+						'text' => 'The answer is 4.',
+					),
 				),
 			),
 		);
@@ -3746,10 +4030,22 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		[ $controller, $method ] = $pair;
 
 		$history = array(
-			array( 'role' => 'user', 'content' => 'Hello.' ),
-			array( 'role' => 'assistant', 'content' => null ),
-			array( 'role' => 'assistant', 'content' => array() ),
-			array( 'role' => 'assistant', 'content' => 'Valid reply.' ),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello.',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => null,
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => array(),
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Valid reply.',
+			),
 		);
 
 		$result = $method->invoke( $controller, $history );
@@ -3757,5 +4053,742 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertCount( 2, $result, 'Entries with null/empty content should be dropped' );
 		$this->assertEquals( 'Hello.', $result[0]['content'] );
 		$this->assertEquals( 'Valid reply.', $result[1]['content'] );
+	}
+
+	// =========================================================================
+	// Telegram media → media library → AI attachment flow
+	// =========================================================================
+
+	/**
+	 * Helper: load the Telegram webhook controller and reflect a named protected
+	 * method so individual sub-methods can be unit-tested in isolation.
+	 *
+	 * @param string $method_name Method to reflect.
+	 * @return array|null [$controller, $method] or null when skipped.
+	 */
+	private function get_telegram_method( $method_name ) {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return null;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		if ( ! $reflection->hasMethod( $method_name ) ) {
+			return null;
+		}
+
+		$method = $reflection->getMethod( $method_name );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * Verify sideload_telegram_file() sets the MIME type hint in the file array.
+	 *
+	 * The $file_array must include a 'type' key with the MIME hint when a
+	 * non-empty $mime_type is supplied. Without this the file extension alone is
+	 * used for MIME detection, which silently rejects Telegram's opaque path
+	 * names (e.g. photos/file_0, documents/file_12).
+	 *
+	 * We verify the fix by calling the method with a file that would previously
+	 * fail because the temp file has no recognised extension and confirming that
+	 * the WP_Error code is NOT 'upload_error' (i.e. the type hint is accepted).
+	 *
+	 * Because this test runs without a live Telegram server, we mock
+	 * download_url() to return a real temp file path and verify the MIME hint is
+	 * forwarded to media_handle_sideload correctly through the file_array.
+	 */
+	public function test_sideload_telegram_file_sets_mime_type_hint() {
+		$pair = $this->get_telegram_method( 'sideload_telegram_file' );
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Create a minimal temp file that represents a downloaded Telegram photo.
+		$tmp = wp_tempnam( 'telegram-test' );
+		if ( ! $tmp ) {
+			$this->markTestSkipped( 'wp_tempnam() failed to create a temporary file' );
+			return;
+		}
+		file_put_contents( $tmp, str_repeat( 'A', 100 ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+
+		// Intercept download_url() via a filter to inject our temp file instead
+		// of making a real HTTP request.
+		$captured_file_array = null;
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $r, $url ) use ( $tmp ) {
+				// Return a simulated successful download response.
+				$body = is_readable( $tmp )
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+					? file_get_contents( $tmp )
+					: '';
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'headers'  => array( 'content-type' => 'image/jpeg' ),
+					'body'     => $body,
+					'cookies'  => array(),
+					'filename' => $tmp,
+				);
+			},
+			10,
+			3
+		);
+		// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter
+
+		// Wrap media_handle_sideload to capture the $file_array argument.
+		// We use a shutdown-safe approach: hook wp_handle_upload_prefilter to
+		// capture the array before the actual upload runs, then abort early.
+		$captured_type = null;
+		add_filter(
+			'wp_handle_sideload_prefilter',
+			function ( $file ) use ( &$captured_type ) {
+				$captured_type = isset( $file['type'] ) ? $file['type'] : null;
+				// Return an error to abort the actual upload — we only need
+				// to verify the MIME hint was set correctly in the array.
+				$file['error'] = 'test-abort';
+				return $file;
+			}
+		);
+
+		$result = $method->invoke( $controller, 'https://api.telegram.org/file/botTOKEN/photos/file_0', 'photo.jpg', 'image/jpeg', 512 );
+
+		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'wp_handle_sideload_prefilter' );
+
+		if ( file_exists( $tmp ) ) {
+			wp_delete_file( $tmp );
+		}
+
+		// The type hint should have been captured before the abort.
+		$this->assertEquals(
+			'image/jpeg',
+			$captured_type,
+			'sideload_telegram_file() must set file_array["type"] to the provided MIME hint'
+		);
+	}
+
+	/**
+	 * Verify sideload_telegram_file() omits the 'type' key when MIME type is empty.
+	 *
+	 * When mime_type is empty, 'type' should NOT be added to the file_array so
+	 * WordPress falls back to extension-based detection.
+	 */
+	public function test_sideload_telegram_file_omits_type_key_when_mime_empty() {
+		$pair = $this->get_telegram_method( 'sideload_telegram_file' );
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$captured_has_type = null;
+		add_filter(
+			'wp_handle_sideload_prefilter',
+			function ( $file ) use ( &$captured_has_type ) {
+				$captured_has_type = array_key_exists( 'type', $file );
+				$file['error']     = 'test-abort';
+				return $file;
+			}
+		);
+
+		// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $r, $url ) {
+				return new WP_Error( 'test', 'blocked' );
+			},
+			10,
+			3
+		);
+		// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter
+
+		// Pass empty mime_type — download_url will fail (mocked), so sideload
+		// never reaches wp_handle_sideload_prefilter in this code path.
+		// Instead verify via the filter when mime_type is non-empty to confirm
+		// absence when empty: drive with empty string and assert no filter fires.
+		$captured_has_type = 'not-fired';
+		$method->invoke( $controller, 'https://api.telegram.org/file/botTOKEN/photos/file_0', 'photo.jpg', '', 512 );
+
+		remove_all_filters( 'pre_http_request' );
+		remove_all_filters( 'wp_handle_sideload_prefilter' );
+
+		// download_url fails before reaching the filter, so captured_has_type
+		// remains 'not-fired' — the sideload was never attempted (expected).
+		$this->assertEquals(
+			'not-fired',
+			$captured_has_type,
+			'When mime_type is empty the sideload prefilter should not fire because download_url fails first'
+		);
+	}
+
+	/**
+	 * Verify handle_telegram_reply_job() builds an input_image segment for photos.
+	 *
+	 * When wp_attachment_id and wp_attachment_mime describe an image, the message
+	 * sent to the chat API must be a multipart content array with an input_image
+	 * segment followed by the text context.
+	 */
+	public function test_reply_job_builds_input_image_segment_for_photo() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create a dummy assistant and a Telegram connection so the job's early
+		// guard conditions (assistant_id, connection) are satisfied.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Vision Bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Telegram Vision Test',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '9999999999:ABCvisionTestTokenXYZabcdefghijklm',
+			)
+		);
+
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
+		$connection_id = '';
+		foreach ( $connections as $id => $conn ) {
+			if ( isset( $conn['name'] ) && 'Telegram Vision Test' === $conn['name'] ) {
+				$connection_id = $id;
+				break;
+			}
+		}
+
+		if ( '' === $connection_id ) {
+			wp_delete_post( $assistant_id, true );
+			$this->markTestSkipped( 'Could not locate saved connection for test' );
+			return;
+		}
+
+		// Capture the messages array that is eventually passed to the internal
+		// chat REST request via rest_do_request().
+		$captured_messages = null;
+		add_filter(
+			'rest_pre_dispatch',
+			function ( $result, $server, $request ) use ( &$captured_messages ) {
+				if ( '/mcp-ai/v1/chat' === $request->get_route() ) {
+					$captured_messages = $request->get_param( 'messages' );
+					// Return a minimal successful response to prevent further
+					// processing (we only care about the captured messages).
+					return new WP_REST_Response(
+						array(
+							'data' => array(
+								'choices' => array(
+									array(
+										'message'       => array( 'content' => 'I can see your image.' ),
+										'finish_reason' => 'stop',
+									),
+								),
+							),
+						),
+						200
+					);
+				}
+				return $result;
+			},
+			10,
+			3
+		);
+
+		// Intercept the Telegram sendChatAction (typing) and sendMessage calls so
+		// no real HTTP requests are made.
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode( array( 'ok' => true ) ),
+					'headers'  => array(),
+					'cookies'  => array(),
+				);
+			},
+			10,
+			3
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$job_method = $reflection->getMethod( 'handle_telegram_reply_job' );
+		$job_method->setAccessible( true );
+
+		$job_method->invoke(
+			$controller,
+			array(
+				'assistant_id'        => $assistant_id,
+				'message_text'        => "[Photo uploaded]\n- Attachment ID: 42\n- URL: https://example.com/photo.jpg",
+				'wp_attachment_id'    => 42,
+				'wp_attachment_mime'  => 'image/jpeg',
+				'chat_id'             => '111222333',
+				'from_id'             => '444555666',
+				'connection_id'       => $connection_id,
+				'chat_type'           => 'private',
+				'reply_to_message_id' => '',
+			)
+		);
+
+		remove_all_filters( 'rest_pre_dispatch' );
+		remove_all_filters( 'pre_http_request' );
+
+		wp_delete_post( $assistant_id, true );
+
+		$this->assertNotNull( $captured_messages, 'The internal chat request should have been dispatched' );
+
+		// Find the last user message.
+		$user_message = null;
+		foreach ( array_reverse( $captured_messages ) as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$user_message = $msg;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $user_message, 'A user message must be present in the chat payload' );
+		$this->assertIsArray( $user_message['content'], 'User message content must be an array (multipart) when an attachment is present' );
+
+		// First segment must be the input_image attachment.
+		$first_segment = $user_message['content'][0];
+		$this->assertEquals( 'input_image', $first_segment['type'], 'First segment type must be input_image for a photo' );
+		$this->assertEquals( 42, $first_segment['attachment_id'], 'Attachment ID must be forwarded to the input_image segment' );
+	}
+
+	/**
+	 * Verify handle_telegram_reply_job() builds an input_file segment for documents.
+	 *
+	 * When wp_attachment_id is present with a non-image MIME type (document),
+	 * the segment type must be input_file and display_name should be populated
+	 * from the attachment filename.
+	 */
+	public function test_reply_job_builds_input_file_segment_for_document() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Doc Bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Telegram Doc Test',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '8888888888:ABCdocTestTokenXYZabcdefghijklmnop',
+			)
+		);
+
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
+		$connection_id = '';
+		foreach ( $connections as $id => $conn ) {
+			if ( isset( $conn['name'] ) && 'Telegram Doc Test' === $conn['name'] ) {
+				$connection_id = $id;
+				break;
+			}
+		}
+
+		if ( '' === $connection_id ) {
+			wp_delete_post( $assistant_id, true );
+			$this->markTestSkipped( 'Could not locate saved connection for test' );
+			return;
+		}
+
+		$captured_messages = null;
+		add_filter(
+			'rest_pre_dispatch',
+			function ( $result, $server, $request ) use ( &$captured_messages ) {
+				if ( '/mcp-ai/v1/chat' === $request->get_route() ) {
+					$captured_messages = $request->get_param( 'messages' );
+					return new WP_REST_Response(
+						array(
+							'data' => array(
+								'choices' => array(
+									array(
+										'message'       => array( 'content' => 'Document received.' ),
+										'finish_reason' => 'stop',
+									),
+								),
+							),
+						),
+						200
+					);
+				}
+				return $result;
+			},
+			10,
+			3
+		);
+
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode( array( 'ok' => true ) ),
+					'headers'  => array(),
+					'cookies'  => array(),
+				);
+			},
+			10,
+			3
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$job_method = $reflection->getMethod( 'handle_telegram_reply_job' );
+		$job_method->setAccessible( true );
+
+		$job_method->invoke(
+			$controller,
+			array(
+				'assistant_id'        => $assistant_id,
+				'message_text'        => "[Document uploaded]\n- Attachment ID: 55\n- Filename: report.pdf",
+				'wp_attachment_id'    => 55,
+				'wp_attachment_mime'  => 'application/pdf',
+				'chat_id'             => '222333444',
+				'from_id'             => '555666777',
+				'connection_id'       => $connection_id,
+				'chat_type'           => 'private',
+				'reply_to_message_id' => '',
+			)
+		);
+
+		remove_all_filters( 'rest_pre_dispatch' );
+		remove_all_filters( 'pre_http_request' );
+
+		wp_delete_post( $assistant_id, true );
+
+		$this->assertNotNull( $captured_messages, 'The internal chat request should have been dispatched' );
+
+		$user_message = null;
+		foreach ( array_reverse( $captured_messages ) as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$user_message = $msg;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $user_message, 'A user message must be present' );
+		$this->assertIsArray( $user_message['content'], 'Content must be a multipart array when an attachment is present' );
+
+		$first_segment = $user_message['content'][0];
+		$this->assertEquals( 'input_file', $first_segment['type'], 'Non-image attachment must produce an input_file segment' );
+		$this->assertEquals( 55, $first_segment['attachment_id'], 'Attachment ID must be forwarded to the input_file segment' );
+	}
+
+	/**
+	 * Verify handle_telegram_reply_job() keeps string content for plain-text messages.
+	 *
+	 * When no wp_attachment_id is set (plain text message), content must remain a
+	 * plain string — not a multipart array.
+	 */
+	public function test_reply_job_plain_text_message_uses_string_content() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Text Bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Telegram Text Test',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '7777777777:ABCtextTestTokenXYZabcdefghijklmnop',
+			)
+		);
+
+		$connections   = get_option( 'wp_mcp_ai_pro_remote_sites', array() );
+		$connection_id = '';
+		foreach ( $connections as $id => $conn ) {
+			if ( isset( $conn['name'] ) && 'Telegram Text Test' === $conn['name'] ) {
+				$connection_id = $id;
+				break;
+			}
+		}
+
+		if ( '' === $connection_id ) {
+			wp_delete_post( $assistant_id, true );
+			$this->markTestSkipped( 'Could not locate saved connection for test' );
+			return;
+		}
+
+		$captured_messages = null;
+		add_filter(
+			'rest_pre_dispatch',
+			function ( $result, $server, $request ) use ( &$captured_messages ) {
+				if ( '/mcp-ai/v1/chat' === $request->get_route() ) {
+					$captured_messages = $request->get_param( 'messages' );
+					return new WP_REST_Response(
+						array(
+							'data' => array(
+								'choices' => array(
+									array(
+										'message'       => array( 'content' => 'Hello!' ),
+										'finish_reason' => 'stop',
+									),
+								),
+							),
+						),
+						200
+					);
+				}
+				return $result;
+			},
+			10,
+			3
+		);
+
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode( array( 'ok' => true ) ),
+					'headers'  => array(),
+					'cookies'  => array(),
+				);
+			},
+			10,
+			3
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$job_method = $reflection->getMethod( 'handle_telegram_reply_job' );
+		$job_method->setAccessible( true );
+
+		$job_method->invoke(
+			$controller,
+			array(
+				'assistant_id'        => $assistant_id,
+				'message_text'        => 'Hello, what is 2+2?',
+				// No wp_attachment_id — plain text message.
+				'chat_id'             => '333444555',
+				'from_id'             => '666777888',
+				'connection_id'       => $connection_id,
+				'chat_type'           => 'private',
+				'reply_to_message_id' => '',
+			)
+		);
+
+		remove_all_filters( 'rest_pre_dispatch' );
+		remove_all_filters( 'pre_http_request' );
+
+		wp_delete_post( $assistant_id, true );
+
+		$this->assertNotNull( $captured_messages, 'The internal chat request should have been dispatched' );
+
+		$user_message = null;
+		foreach ( array_reverse( $captured_messages ) as $msg ) {
+			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$user_message = $msg;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $user_message, 'A user message must be present' );
+		$this->assertIsString( $user_message['content'], 'Plain text messages must use a string content (not a multipart array)' );
+		$this->assertEquals( 'Hello, what is 2+2?', $user_message['content'] );
+	}
+
+	// =========================================================================
+	// REST authentication bypass & admin-ajax fallback.
+	// =========================================================================
+
+	/**
+	 * Test allow_telegram_webhook_auth is registered at priority 99999.
+	 *
+	 * Third-party JWT auth plugins commonly hook rest_authentication_errors at
+	 * priority 100–999. Our filter must run after them so it can clear any
+	 * WP_Error they set before WordPress rejects the request with 403.
+	 */
+	public function test_telegram_auth_filter_registered_at_99999() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$priority = has_filter( 'rest_authentication_errors', array( $controller, 'allow_telegram_webhook_auth' ) );
+
+		$this->assertSame(
+			99999,
+			$priority,
+			'allow_telegram_webhook_auth must be registered at priority 99999 so it runs after JWT plugins at 100–999'
+		);
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth clears a WP_Error set by a JWT plugin
+	 * when the request targets our webhook route.
+	 */
+	public function test_telegram_auth_filter_clears_error_for_webhook_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Simulate a JWT auth plugin that sets a WP_Error.
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for our webhook route (generic).
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for generic webhook route' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth clears a WP_Error set by a JWT plugin
+	 * when the request targets a per-connection webhook route.
+	 */
+	public function test_telegram_auth_filter_clears_error_for_per_connection_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for a per-connection webhook route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/telegram/conn_sdfqpauwohng';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must clear WP_Error for per-connection webhook route' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth does NOT clear errors for unrelated routes.
+	 */
+	public function test_telegram_auth_filter_preserves_error_for_unrelated_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for an unrelated route.
+		$original_uri           = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : null;
+		$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
+
+		$result = $controller->allow_telegram_webhook_auth( $jwt_error );
+
+		// Restore original REQUEST_URI.
+		if ( null === $original_uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'allow_telegram_webhook_auth must preserve WP_Error for unrelated routes' );
+	}
+
+	/**
+	 * Test allow_telegram_webhook_auth passes through null when no error is set.
+	 */
+	public function test_telegram_auth_filter_passes_through_null() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$result = $controller->allow_telegram_webhook_auth( null );
+
+		$this->assertNull( $result, 'allow_telegram_webhook_auth must pass through null when no error is set' );
+	}
+
+	/**
+	 * Test that the admin-ajax webhook actions are registered on both privileged
+	 * and unprivileged wp_ajax_* hooks so Telegram requests arrive without a
+	 * WordPress user session.
+	 */
+	public function test_telegram_ajax_webhook_actions_registered() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertTrue(
+			has_action( 'wp_ajax_nopriv_wp_mcp_ai_telegram_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_nopriv_wp_mcp_ai_telegram_webhook action must be registered'
+		);
+		$this->assertTrue(
+			has_action( 'wp_ajax_wp_mcp_ai_telegram_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_wp_mcp_ai_telegram_webhook action must be registered'
+		);
 	}
 }

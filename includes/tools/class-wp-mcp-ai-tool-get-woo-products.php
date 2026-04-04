@@ -3,6 +3,9 @@
  * Tool returning WooCommerce products.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,6 +22,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  */
 class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Product_Card;
 
 	/**
 	 * Determine whether WooCommerce is available.
@@ -243,6 +247,12 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				__( 'Found %d product(s)', 'mcp-ai-wpoos' ),
 				count( $results )
 			);
+		}
+
+		// Generate rich product cards for chat display.
+		$cards_message = $this->format_product_cards( $results, 'woocommerce' );
+		if ( ! empty( $cards_message ) ) {
+			$summary .= "\n\n" . $cards_message;
 		}
 
 		return array(

@@ -27,6 +27,8 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-pro/
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
+# Ignore all generated files in build/ (ZIPs, docs, etc.)
+/build/WORDPRESS_ORG_SUBMISSION_README.md
 
 # Ignore base build directory (workflow builder moved to pro addon)
 /build/workflow-builder/
@@ -36,9 +38,14 @@ composer.phar
 
 # Allow tma-template-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/tma-template-builder/
+# Allow tma-woo-shop compiled assets in Pro addon (needed for plugin to work)
+!/addons/pro/build/tma-woo-shop/
 
-# Ignore ZIP files everywhere (build artifacts should not be committed)
+# Ignore ZIP files everywhere except the final build output in build/
 *.zip
+!/build/*.zip
+!/build/toolkit-addons/
+!/build/toolkit-addons/*.zip
 
 # Ignore all vendor by default
 /vendor/*
@@ -170,6 +177,17 @@ composer.phar
 !addons/pro/assets/js/research-bundle.min.js
 !addons/pro/assets/js/research-bundle.min.js.map
 
+# Keep the TMA standalone markdown renderer which is served directly to Telegram WebView.
+!addons/pro/assets/js/tma-markdown.min.js
+
+# Keep Pro addon compiled JS assets (generated from source JS by esbuild).
+!addons/pro/assets/js/*.min.js
+!addons/pro/assets/js/*.min.js.map
+
+# Keep Pro addon compiled CSS assets (generated from source CSS by cleancss build).
+!addons/pro/assets/css/*.min.css
+!addons/pro/assets/css/*.min.css.map
+
 # Keep vendor production files (pre-built from npm packages)
 !addons/pro/assets/vendor/**/*.min.js
 !addons/pro/assets/vendor/**/*.min.css
@@ -213,3 +231,4 @@ test-transcript-routes.php
 /assets/js/vendor/neplex-vectorizer/*/node_modules/
 /assets/js/vendor/neplex-vectorizer/**/*.node
 test-modal-fix.html
+tests/wp-tests-config-local.php

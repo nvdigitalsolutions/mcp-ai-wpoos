@@ -5,6 +5,9 @@
  * Manages vaccination records, schedules, and compliance tracking for both humans and pets.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -46,11 +49,16 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 				'action'           => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform (required)', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'add', 'get', 'list', 'schedule', 'check_compliance' ),
+					'enum'        => array( 'add', 'get', 'list', 'schedule', 'check_compliance', 'update', 'delete' ),
 				),
 				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 1,
+				),
+				'record_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Medical record post ID of the vaccination — required for update and delete actions', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'vaccine_name'     => array(
@@ -132,6 +140,24 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_med_record',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'caregiver' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'database-write', 'pii-data', 'hipaa-relevant' );
 	}
@@ -203,6 +229,12 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 			case 'check_compliance':
 				$compliance_program = isset( $arguments['compliance_program'] ) ? sanitize_text_field( $arguments['compliance_program'] ) : 'cdc_routine';
 				return $this->check_compliance( $member_id, $member_type, $compliance_program );
+
+			case 'update':
+				return $this->update_vaccination( $arguments, $member_id, $current_user_id );
+
+			case 'delete':
+				return $this->delete_vaccination( $arguments, $member_id, $current_user_id );
 
 			default:
 				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
@@ -548,6 +580,178 @@ class WP_MCP_AI_Tool_Track_Vaccinations implements WP_MCP_AI_Tool_Interface, WP_
 			'required_vaccines'  => $requirements,
 			'missing_vaccines'   => $missing,
 			'recorded_vaccines'  => count( $vaccinations ),
+		);
+	}
+
+	/**
+	 * Update an existing vaccination record.
+	 *
+	 * The record must be a published mcp_ai_med_record post that has the
+	 * `_is_vaccination` meta flag set and belongs to the given member.
+	 *
+	 * @param array  $arguments       Tool arguments (includes record_id).
+	 * @param int    $member_id       Verified member post ID.
+	 * @param int    $current_user_id Current WP user ID.
+	 * @return array|WP_Error         Result or error.
+	 */
+	private function update_vaccination( $arguments, $member_id, $current_user_id ) {
+		if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update vaccination records.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$record_id = isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0;
+		if ( ! $record_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_record_id', __( 'record_id is required for the update action.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$post = get_post( $record_id );
+		if ( ! $post || 'mcp_ai_med_record' !== $post->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Vaccination record not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Verify it is a vaccination record belonging to the given member.
+		if ( (int) get_post_meta( $record_id, '_record_member_id', true ) !== $member_id ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'This vaccination record does not belong to the specified member.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! get_post_meta( $record_id, '_is_vaccination', true ) ) {
+			return new WP_Error( 'wp_mcp_ai_not_vaccination', __( 'The specified record is not a vaccination record.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$updated_fields = array();
+
+		// Optional: update vaccine_name and/or administration_date (affects post title).
+		$vaccine_name        = isset( $arguments['vaccine_name'] ) ? sanitize_text_field( $arguments['vaccine_name'] ) : get_post_meta( $record_id, '_vaccination_name', true );
+		$administration_date = isset( $arguments['administration_date'] ) ? sanitize_text_field( $arguments['administration_date'] ) : get_post_meta( $record_id, '_record_date', true );
+
+		if ( isset( $arguments['vaccine_name'] ) || isset( $arguments['administration_date'] ) ) {
+			$new_title = sprintf(
+				/* translators: 1: vaccine name, 2: date */
+				__( 'Vaccination: %1$s (%2$s)', 'mcp-ai-wpoos-pro' ),
+				$vaccine_name,
+				$administration_date
+			);
+			wp_update_post(
+				array(
+					'ID'         => $record_id,
+					'post_title' => $new_title,
+				)
+			);
+		}
+
+		if ( isset( $arguments['vaccine_name'] ) ) {
+			update_post_meta( $record_id, '_vaccination_name', $vaccine_name );
+			$updated_fields[] = 'vaccine_name';
+		}
+		if ( isset( $arguments['administration_date'] ) ) {
+			update_post_meta( $record_id, '_record_date', $administration_date );
+			$updated_fields[] = 'administration_date';
+		}
+		if ( isset( $arguments['vaccine_type'] ) ) {
+			update_post_meta( $record_id, '_vaccination_type', sanitize_text_field( $arguments['vaccine_type'] ) );
+			$updated_fields[] = 'vaccine_type';
+		}
+		if ( isset( $arguments['lot_number'] ) ) {
+			update_post_meta( $record_id, '_vaccination_lot_number', sanitize_text_field( $arguments['lot_number'] ) );
+			$updated_fields[] = 'lot_number';
+		}
+		if ( isset( $arguments['manufacturer'] ) ) {
+			update_post_meta( $record_id, '_vaccination_manufacturer', sanitize_text_field( $arguments['manufacturer'] ) );
+			$updated_fields[] = 'manufacturer';
+		}
+		if ( isset( $arguments['administering_provider'] ) ) {
+			update_post_meta( $record_id, '_record_provider', sanitize_text_field( $arguments['administering_provider'] ) );
+			$updated_fields[] = 'administering_provider';
+		}
+		if ( isset( $arguments['facility'] ) ) {
+			update_post_meta( $record_id, '_vaccination_facility', sanitize_text_field( $arguments['facility'] ) );
+			$updated_fields[] = 'facility';
+		}
+		if ( isset( $arguments['site_of_administration'] ) ) {
+			update_post_meta( $record_id, '_vaccination_site', sanitize_text_field( $arguments['site_of_administration'] ) );
+			$updated_fields[] = 'site_of_administration';
+		}
+		if ( isset( $arguments['dose_number'] ) ) {
+			update_post_meta( $record_id, '_vaccination_dose_number', absint( $arguments['dose_number'] ) );
+			$updated_fields[] = 'dose_number';
+		}
+		if ( isset( $arguments['series_complete'] ) ) {
+			update_post_meta( $record_id, '_vaccination_series_complete', (bool) $arguments['series_complete'] );
+			$updated_fields[] = 'series_complete';
+		}
+		if ( isset( $arguments['booster_required'] ) ) {
+			update_post_meta( $record_id, '_vaccination_booster_required', (bool) $arguments['booster_required'] );
+			$updated_fields[] = 'booster_required';
+		}
+		if ( isset( $arguments['next_booster_date'] ) ) {
+			update_post_meta( $record_id, '_vaccination_next_booster_date', sanitize_text_field( $arguments['next_booster_date'] ) );
+			$updated_fields[] = 'next_booster_date';
+		}
+		if ( isset( $arguments['reaction_notes'] ) ) {
+			update_post_meta( $record_id, '_vaccination_reaction_notes', sanitize_textarea_field( $arguments['reaction_notes'] ) );
+			$updated_fields[] = 'reaction_notes';
+		}
+
+		if ( empty( $updated_fields ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_fields', __( 'No updatable fields were provided.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return array(
+			'success'        => true,
+			'message'        => __( 'Vaccination record updated successfully.', 'mcp-ai-wpoos-pro' ),
+			'record_id'      => $record_id,
+			'member_id'      => $member_id,
+			'updated_fields' => $updated_fields,
+		);
+	}
+
+	/**
+	 * Permanently delete a vaccination record.
+	 *
+	 * @param array  $arguments       Tool arguments (includes record_id).
+	 * @param int    $member_id       Verified member post ID.
+	 * @param int    $current_user_id Current WP user ID.
+	 * @return array|WP_Error         Result or error.
+	 */
+	private function delete_vaccination( $arguments, $member_id, $current_user_id ) {
+		if ( ! user_can( $current_user_id, 'delete_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete vaccination records.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$record_id = isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0;
+		if ( ! $record_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_record_id', __( 'record_id is required for the delete action.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$post = get_post( $record_id );
+		if ( ! $post || 'mcp_ai_med_record' !== $post->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Vaccination record not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Verify it is a vaccination record belonging to the given member.
+		if ( (int) get_post_meta( $record_id, '_record_member_id', true ) !== $member_id ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'This vaccination record does not belong to the specified member.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! get_post_meta( $record_id, '_is_vaccination', true ) ) {
+			return new WP_Error( 'wp_mcp_ai_not_vaccination', __( 'The specified record is not a vaccination record.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$vaccine_name        = get_post_meta( $record_id, '_vaccination_name', true );
+		$administration_date = get_post_meta( $record_id, '_record_date', true );
+
+		$result = wp_delete_post( $record_id, true );
+		if ( ! $result ) {
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete vaccination record.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		return array(
+			'success'            => true,
+			'message'            => __( 'Vaccination record deleted successfully.', 'mcp-ai-wpoos-pro' ),
+			'record_id'          => $record_id,
+			'member_id'          => $member_id,
+			'vaccine_name'       => $vaccine_name,
+			'administration_date' => $administration_date,
 		);
 	}
 }

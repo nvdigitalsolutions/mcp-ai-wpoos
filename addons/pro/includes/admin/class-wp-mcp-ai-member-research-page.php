@@ -5,6 +5,9 @@
  * Provides AI-assisted member creation interface for Health & Wellness.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -107,7 +110,7 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 * Render additional page content.
 	 */
 	protected function render_additional_content() {
-		$has_cct     = class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists();
+		$has_cct     = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists();
 		$consolidate = admin_url( 'edit.php?post_type=mcp_ai_member&page=health-records-consolidate' );
 		?>
 		<div class="member-research-tips" style="background: #f0f6fc; border-left: 4px solid #0073aa; padding: 12px 16px; margin: 20px 0;">

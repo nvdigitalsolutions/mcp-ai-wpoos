@@ -13,6 +13,9 @@
  * @package WP_MCP_AI_Pro
  * @since   1.8.0
  * @see     https://agentskills.io/specification
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,6 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-skill-manager-admin-page.php';
 	WP_MCP_AI_Skill_Manager_Admin_Page::init();
+
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-skill-research-admin-page.php';
+	WP_MCP_AI_Skill_Research_Admin_Page::init();
+
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-skill-settings-admin-page.php';
+	WP_MCP_AI_Skill_Settings_Admin_Page::init();
 }
 
 // ── REST API controller ───────────────────────────────────────────────────────

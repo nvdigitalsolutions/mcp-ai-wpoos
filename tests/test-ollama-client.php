@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Ollama client wrapper.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
@@ -964,5 +968,129 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'usage', $response );
 		$this->assertSame( 2000, $response['usage']['prompt_tokens'] );
 		$this->assertSame( 0, $response['usage']['completion_tokens'] );
+	}
+
+	/**
+	 * Test that build_payload extracts text from input_image segments into the message
+	 * text when no base64 data is available (no attachment_id, no URL).
+	 */
+	public function test_build_payload_handles_input_image_without_data() {
+		$reflection = new ReflectionMethod( WP_MCP_AI_Ollama_Client::class, 'build_payload' );
+		$reflection->setAccessible( true );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'What do you see?',
+					),
+					array(
+						'type' => 'input_image',
+						// No attachment_id, no URL – no base64 can be produced.
+					),
+				),
+			),
+		);
+
+		$result = $reflection->invoke( $client, $messages, array(), 'llava' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'messages', $result );
+		// The message should be included (non-empty text from the text segment).
+		$this->assertNotEmpty( $result['messages'] );
+		// No images key should be set when no image data is available.
+		$this->assertArrayNotHasKey( 'images', $result['messages'][0] );
+	}
+
+	/**
+	 * Test that build_payload adds Ollama images array when image URL is present.
+	 */
+	public function test_build_payload_adds_images_for_input_image_with_url() {
+		$reflection = new ReflectionMethod( WP_MCP_AI_Ollama_Client::class, 'build_payload' );
+		$reflection->setAccessible( true );
+
+		// Stub wp_remote_get to return fake image binary.
+		$filter_callback = function ( $preempt, $args, $url ) {
+			if ( false !== strpos( $url, 'test-image.jpg' ) ) {
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => 'FAKEIMAGEBYTES',
+					'headers'  => array(),
+				);
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Describe the image.',
+					),
+					array(
+						'type'      => 'input_image',
+						'image_url' => array( 'url' => 'https://example.com/test-image.jpg' ),
+						'mime_type' => 'image/jpeg',
+					),
+				),
+			),
+		);
+
+		$result = $reflection->invoke( $client, $messages, array(), 'llava' );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'messages', $result );
+		$this->assertNotEmpty( $result['messages'] );
+
+		// The images array must be set with the base64-encoded image data.
+		$this->assertArrayHasKey( 'images', $result['messages'][0], 'images key should be present for vision models' );
+		$this->assertCount( 1, $result['messages'][0]['images'] );
+		// Base64 of "FAKEIMAGEBYTES".
+		$this->assertEquals( base64_encode( 'FAKEIMAGEBYTES' ), $result['messages'][0]['images'][0] );
+	}
+
+	/**
+	 * Test that build_payload includes file references in text for input_file segments.
+	 */
+	public function test_build_payload_includes_file_reference_in_text() {
+		$reflection = new ReflectionMethod( WP_MCP_AI_Ollama_Client::class, 'build_payload' );
+		$reflection->setAccessible( true );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Summarise the document.',
+					),
+					array(
+						'type'         => 'input_file',
+						'display_name' => 'report.pdf',
+						'url'          => 'https://example.com/report.pdf',
+					),
+				),
+			),
+		);
+
+		$result = $reflection->invoke( $client, $messages, array(), 'llama3' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'messages', $result );
+		$this->assertNotEmpty( $result['messages'] );
+
+		$message_content = $result['messages'][0]['content'];
+		$this->assertStringContainsString( 'report.pdf', $message_content );
+		$this->assertStringContainsString( 'https://example.com/report.pdf', $message_content );
 	}
 }

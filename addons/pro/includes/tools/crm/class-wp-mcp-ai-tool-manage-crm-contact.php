@@ -4,6 +4,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -215,6 +218,17 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		// Validate phone number via libphonenumber-js when provided.
+		if ( ! empty( $contact_data['phone'] ) ) {
+			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
+			if ( is_wp_error( $phone_valid ) ) {
+				return array(
+					'success' => false,
+					'error'   => $phone_valid->get_error_message(),
+				);
+			}
+		}
+
 		// Create contact using data store.
 		$contact_id = $this->data_store->create_item( $contact_data );
 
@@ -297,6 +311,19 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 				return array(
 					'success' => false,
 					'error'   => $email_valid->get_error_message(),
+				);
+			}
+		}
+
+		// Validate phone via libphonenumber-js when provided.
+		if ( ! empty( $contact_data['phone'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-validator-service.php';
+			$validator   = new WP_MCP_AI_Validator_Service();
+			$phone_valid = $validator->is_phone_number( $contact_data['phone'] );
+			if ( is_wp_error( $phone_valid ) ) {
+				return array(
+					'success' => false,
+					'error'   => $phone_valid->get_error_message(),
 				);
 			}
 		}

@@ -5,6 +5,9 @@
  * Verifies that saving one subtab doesn't affect fields from other subtabs.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -191,5 +194,65 @@ class WP_MCP_AI_Subtab_Cross_Contamination_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $sanitized );
 		$this->assertArrayHasKey( 'default_provider', $sanitized );
 		$this->assertEquals( 'openai', $sanitized['default_provider'] );
+	}
+
+	/**
+	 * Test that saving Advanced → performance subtab correctly saves memory_max_file_bytes.
+	 *
+	 * This is the regression test for the bug where memory_max_file_bytes was reverting
+	 * to 5 MB (5242880) on every save due to overly-restrictive max validation.
+	 */
+	public function test_advanced_performance_saves_memory_max_file_bytes() {
+		$section = new WP_MCP_AI_Section_Advanced();
+
+		// Simulate saving performance subtab using the section-specific hidden field.
+		// Use 52428799 (one byte under 50 MB) – a representative value from the problem report.
+		$_POST['subtab_advanced'] = 'performance';
+		$submitted                = array(
+			'memory_max_file_bytes' => '52428799',
+		);
+
+		$sanitized = $section->sanitize( $submitted );
+
+		// The performance subtab should include memory_max_file_bytes.
+		$this->assertIsArray( $sanitized );
+		$this->assertArrayHasKey( 'memory_max_file_bytes', $sanitized );
+		$this->assertEquals( 52428799, $sanitized['memory_max_file_bytes'] );
+
+		// Validate should pass for this value (no upper-bound restriction).
+		$validated = $section->validate( $sanitized );
+		$this->assertNotInstanceOf( 'WP_Error', $validated );
+		$this->assertEquals( 52428799, $validated['memory_max_file_bytes'] );
+
+		// Clean up.
+		unset( $_POST['subtab_advanced'] );
+	}
+
+	/**
+	 * Test that memory_max_file_bytes accepts any positive integer value.
+	 */
+	public function test_memory_max_file_bytes_accepts_any_positive_integer() {
+		$section = new WP_MCP_AI_Section_Advanced();
+
+		$test_values = array(
+			1,           // Minimum.
+			5242880,     // 5 MB (default).
+			10485760,    // 10 MB.
+			52428800,    // 50 MB.
+			104857600,   // 100 MB.
+			209715200,   // 200 MB (previously rejected by old max=104857600 check).
+			1073741824,  // 1 GB.
+		);
+
+		foreach ( $test_values as $bytes ) {
+			$sanitized = array( 'memory_max_file_bytes' => $bytes );
+			$validated = $section->validate( $sanitized );
+
+			$this->assertNotInstanceOf(
+				'WP_Error',
+				$validated,
+				sprintf( 'Validation should pass for %d bytes', $bytes )
+			);
+		}
 	}
 }

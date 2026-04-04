@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -265,7 +268,9 @@ trait WP_MCP_AI_Tool_Math_Response {
 	 */
 	protected function is_katex_available() {
 		// Check if KaTeX assets exist in pro package.
-		$katex_path = WP_MCP_AI_PATH . 'addons/pro/assets/vendor/katex/katex.min.js';
+		$katex_path = defined( 'WP_MCP_AI_PRO_PATH' )
+			? WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/katex.min.js'
+			: WP_MCP_AI_PATH . 'addons/pro/assets/vendor/katex/katex.min.js';
 		return file_exists( $katex_path );
 	}
 
@@ -286,8 +291,9 @@ trait WP_MCP_AI_Tool_Math_Response {
 	 * @return string HTML with KaTeX asset links.
 	 */
 	protected function get_katex_assets_html() {
-		$plugin_url = plugins_url( '', WP_MCP_AI_FILE );
-		$katex_url  = $plugin_url . '/addons/pro/assets/vendor/katex';
+		$katex_url = defined( 'WP_MCP_AI_PRO_URL' )
+			? WP_MCP_AI_PRO_URL . 'assets/vendor/katex'
+			: plugins_url( '', WP_MCP_AI_FILE ) . '/addons/pro/assets/vendor/katex';
 
 		$html  = '<!-- KaTeX CSS -->';
 		$html .= '<link rel="stylesheet" href="' . esc_url( $katex_url . '/katex.min.css' ) . '">'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline HTML for API response, not a WordPress theme context.

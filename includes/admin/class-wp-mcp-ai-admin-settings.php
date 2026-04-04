@@ -3,6 +3,9 @@
  * Admin settings for NV oOS.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -39,7 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
 		// Embedded LLM provider defaults (Pro addon).
-		const DEFAULT_EMBEDDED_MODEL = 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+		const DEFAULT_EMBEDDED_MODEL = 'gemma-2-2b-it-q4f16_1-MLC';
 
 		/**
 		 * Cached settings for the current request.
@@ -386,6 +389,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 					'description'      => __( 'Allows assistants to send transactional or group email through Mailjet.', 'mcp-ai-wpoos' ),
 					'usage'            => __( 'Populate these fields before assigning assistants to send Mailjet emails.', 'mcp-ai-wpoos' ),
+				),
+				'brevo'            => array(
+					'label'            => __( 'Brevo', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'brevo_api_key' ),
+					'fields'           => array(
+						'brevo_api_key'    => __( 'API Key', 'mcp-ai-wpoos' ),
+						'brevo_from_email' => __( 'From Email', 'mcp-ai-wpoos' ),
+						'brevo_from_name'  => __( 'From Name', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Allows assistants to send transactional email and manage contacts through Brevo (formerly Sendinblue).', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Brevo API key before assigning assistants to send Brevo emails.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://developers.brevo.com/docs/getting-started',
+				),
+				'mailgun'          => array(
+					'label'            => __( 'Mailgun', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'mailgun_api_key', 'mailgun_domain' ),
+					'fields'           => array(
+						'mailgun_api_key'    => __( 'API Key', 'mcp-ai-wpoos' ),
+						'mailgun_domain'     => __( 'Sending Domain', 'mcp-ai-wpoos' ),
+						'mailgun_region'     => __( 'Region', 'mcp-ai-wpoos' ),
+						'mailgun_from_email' => __( 'From Email', 'mcp-ai-wpoos' ),
+						'mailgun_from_name'  => __( 'From Name', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Allows assistants to send email via Mailgun transactional email service.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add your Mailgun API key and verified sending domain before assigning assistants to send Mailgun emails.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://documentation.mailgun.com/docs/mailgun/api-reference/send/mailgun',
 				),
 				'quickbooks'       => array(
 					'label'            => __( 'QuickBooks Online', 'mcp-ai-wpoos' ),
@@ -1099,6 +1128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
@@ -1126,8 +1156,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Check if Pro addon is active and properly initialized.
 			$pro_active = defined( 'WP_MCP_AI_PRO_VERSION' ) && ! empty( WP_MCP_AI_PRO_VERSION );
 
-			// Auto-enable when Pro is active and not explicitly disabled.
-			$enabled = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : $pro_active;
+			// Always enabled when Pro is active — the settings checkbox is disabled
+			// (always on) so a stale false in the database must not override this.
+			$enabled = $pro_active ? true : ( isset( $settings['enable_embedded'] ) ? (bool) $settings['enable_embedded'] : false );
 
 			// Use default model when not explicitly set (distinguish between unset and empty string).
 			$model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : self::DEFAULT_EMBEDDED_MODEL;
@@ -2090,6 +2121,70 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'brevo_api_key',
+				__( 'Brevo API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'brevo_from_email',
+				__( 'Brevo From Email', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_from_email_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'brevo_from_name',
+				__( 'Brevo From Name', 'mcp-ai-wpoos' ),
+				array( $this, 'render_brevo_from_name_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'mailgun_api_key',
+				__( 'Mailgun API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_mailgun_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'mailgun_domain',
+				__( 'Mailgun Domain', 'mcp-ai-wpoos' ),
+				array( $this, 'render_mailgun_domain_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'mailgun_region',
+				__( 'Mailgun Region', 'mcp-ai-wpoos' ),
+				array( $this, 'render_mailgun_region_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'mailgun_from_email',
+				__( 'Mailgun From Email', 'mcp-ai-wpoos' ),
+				array( $this, 'render_mailgun_from_email_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'mailgun_from_name',
+				__( 'Mailgun From Name', 'mcp-ai-wpoos' ),
+				array( $this, 'render_mailgun_from_name_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
 				'group_email_capability',
 				__( 'Group Email Capability', 'mcp-ai-wpoos' ),
 				array( $this, 'render_group_email_capability_field' ),
@@ -2364,10 +2459,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
@@ -2401,7 +2496,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['gemini_thinking_budget_tokens'] ) ) {
-				$budget = absint( $settings['gemini_thinking_budget_tokens'] );
+				$budget                                 = absint( $settings['gemini_thinking_budget_tokens'] );
 				$clean['gemini_thinking_budget_tokens'] = min( 24576, $budget );
 			}
 
@@ -2495,6 +2590,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
 			}
 
+			// NVIDIA NIM settings.
+			$clean['enable_nvidia'] = ! empty( $settings['enable_nvidia'] );
+
+			if ( isset( $settings['nvidia_api_key'] ) ) {
+				$clean['nvidia_api_key'] = trim( sanitize_text_field( $settings['nvidia_api_key'] ) );
+			}
+
+			if ( isset( $settings['nvidia_endpoint_url'] ) ) {
+				$clean['nvidia_endpoint_url'] = esc_url_raw( trim( $settings['nvidia_endpoint_url'] ) );
+			}
+
+			if ( isset( $settings['nvidia_model'] ) ) {
+				$clean['nvidia_model'] = sanitize_text_field( $settings['nvidia_model'] );
+			}
+
 			$clean['enable_varnish_purge'] = ! empty( $settings['enable_varnish_purge'] );
 
 			if ( isset( $settings['cloudways_email'] ) ) {
@@ -2527,6 +2637,44 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['mailjet_from_name'] ) ) {
 				$clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+			}
+
+			if ( isset( $settings['brevo_api_key'] ) ) {
+				$clean['brevo_api_key'] = trim( sanitize_text_field( $settings['brevo_api_key'] ) );
+			}
+
+			if ( isset( $settings['brevo_from_email'] ) ) {
+				$clean['brevo_from_email'] = sanitize_email( $settings['brevo_from_email'] );
+			}
+
+			if ( isset( $settings['brevo_from_name'] ) ) {
+				$clean['brevo_from_name'] = sanitize_text_field( $settings['brevo_from_name'] );
+			}
+
+			if ( isset( $settings['brevo_webhook_secret'] ) ) {
+				$clean['brevo_webhook_secret'] = trim( sanitize_text_field( $settings['brevo_webhook_secret'] ) );
+			}
+
+			if ( isset( $settings['mailgun_api_key'] ) ) {
+				$clean['mailgun_api_key'] = trim( sanitize_text_field( $settings['mailgun_api_key'] ) );
+			}
+
+			if ( isset( $settings['mailgun_domain'] ) ) {
+				$clean['mailgun_domain'] = trim( sanitize_text_field( $settings['mailgun_domain'] ) );
+			}
+
+			if ( isset( $settings['mailgun_region'] ) ) {
+				$clean['mailgun_region'] = in_array( $settings['mailgun_region'], array( 'us', 'eu' ), true )
+					? $settings['mailgun_region']
+					: 'us';
+			}
+
+			if ( isset( $settings['mailgun_from_email'] ) ) {
+				$clean['mailgun_from_email'] = sanitize_email( $settings['mailgun_from_email'] );
+			}
+
+			if ( isset( $settings['mailgun_from_name'] ) ) {
+				$clean['mailgun_from_name'] = sanitize_text_field( $settings['mailgun_from_name'] );
 			}
 
 			if ( isset( $settings['google_analytics_property_id'] ) ) {
@@ -3891,11 +4039,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings  = self::get_settings();
 			$current   = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 			$providers = array(
-				'duckduckgo'  => __( 'DuckDuckGo Instant Answer API (free, no key)', 'mcp-ai-wpoos' ),
-				'brave'       => __( 'Brave Search API (requires API key)', 'mcp-ai-wpoos' ),
-				'tavily'      => __( 'Tavily (AI-optimised, requires API key)', 'mcp-ai-wpoos' ),
-				'exa'         => __( 'Exa AI (neural search, requires API key)', 'mcp-ai-wpoos' ),
-				'perplexity'  => __( 'Perplexity Sonar (AI answers + citations, requires API key)', 'mcp-ai-wpoos' ),
+				'duckduckgo' => __( 'DuckDuckGo Instant Answer API (free, no key)', 'mcp-ai-wpoos' ),
+				'brave'      => __( 'Brave Search API (requires API key)', 'mcp-ai-wpoos' ),
+				'tavily'     => __( 'Tavily (AI-optimised, requires API key)', 'mcp-ai-wpoos' ),
+				'exa'        => __( 'Exa AI (neural search, requires API key)', 'mcp-ai-wpoos' ),
+				'perplexity' => __( 'Perplexity Sonar (AI answers + citations, requires API key)', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
@@ -3934,9 +4082,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						__( 'Required when Exa AI is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">exa.ai</a>.', 'mcp-ai-wpoos' ),
 						array(
 							'a' => array(
-								'href' => array(),
+								'href'   => array(),
 								'target' => array(),
-								'rel' => array(),
+								'rel'    => array(),
 							),
 						)
 					),
@@ -3963,9 +4111,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						__( 'Required when Perplexity Sonar is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">perplexity.ai</a>.', 'mcp-ai-wpoos' ),
 						array(
 							'a' => array(
-								'href' => array(),
+								'href'   => array(),
 								'target' => array(),
-								'rel' => array(),
+								'rel'    => array(),
 							),
 						)
 					),
@@ -4315,6 +4463,98 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render the Brevo API key field.
+		 */
+		public function render_brevo_api_key_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_api_key]" value="<?php echo esc_attr( $settings['brevo_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Brevo API key used to authenticate requests. Get it from your Brevo account under SMTP & API.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Brevo from email field.
+		 */
+		public function render_brevo_from_email_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_from_email]" value="<?php echo esc_attr( $settings['brevo_from_email'] ); ?>" class="regular-text" placeholder="sender@example.com" />
+		<p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address. Must be a verified sender in Brevo.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Brevo from name field.
+		 */
+		public function render_brevo_from_name_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brevo_from_name]" value="<?php echo esc_attr( $settings['brevo_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
+		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Mailgun API key field.
+		 */
+		public function render_mailgun_api_key_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_api_key]" value="<?php echo esc_attr( $settings['mailgun_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Mailgun API key used to authenticate requests. Get it from your Mailgun account under API Security.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Mailgun sending domain field.
+		 */
+		public function render_mailgun_domain_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_domain]" value="<?php echo esc_attr( $settings['mailgun_domain'] ); ?>" class="regular-text" placeholder="mg.example.com" />
+		<p class="description"><?php esc_html_e( 'Verified Mailgun sending domain (e.g. mg.example.com). Found under Sending → Domains in your Mailgun dashboard.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Mailgun region selector field.
+		 */
+		public function render_mailgun_region_field() {
+			$settings = self::get_settings();
+			$region   = isset( $settings['mailgun_region'] ) ? $settings['mailgun_region'] : 'us';
+			?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_region]" class="regular-text">
+			<option value="us" <?php selected( $region, 'us' ); ?>><?php esc_html_e( 'US (api.mailgun.net)', 'mcp-ai-wpoos' ); ?></option>
+			<option value="eu" <?php selected( $region, 'eu' ); ?>><?php esc_html_e( 'EU (api.eu.mailgun.net)', 'mcp-ai-wpoos' ); ?></option>
+		</select>
+		<p class="description"><?php esc_html_e( 'Choose the Mailgun region that matches where your domain is registered.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Mailgun from email field.
+		 */
+		public function render_mailgun_from_email_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_from_email]" value="<?php echo esc_attr( $settings['mailgun_from_email'] ); ?>" class="regular-text" placeholder="sender@mg.example.com" />
+		<p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address. Must use your verified Mailgun domain.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Mailgun from name field.
+		 */
+		public function render_mailgun_from_name_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailgun_from_name]" value="<?php echo esc_attr( $settings['mailgun_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
+		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
 		 * Render the group email capability field.
 		 */
 		public function render_group_email_capability_field() {
@@ -4514,7 +4754,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$saved_list   = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
 				: array();
-			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
@@ -4532,6 +4772,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 			);

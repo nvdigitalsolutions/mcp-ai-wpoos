@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 2.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -746,15 +749,17 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		public static function get_queue_stats() {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . self::TABLE_NAME;
+			$table_name = esc_sql( $wpdb->prefix . self::TABLE_NAME );
 
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct queries on custom plugin table with esc_sql()-escaped table name; no WP API for custom tables.
 			return array(
-				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is a safe, plugin-controlled value.
-				'queued'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'queued'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-				'running'   => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'running'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-				'completed' => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-				'failed'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'failed'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" ),
+				'queued'    => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE status = %s", 'queued' ) ),
+				'running'   => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE status = %s", 'running' ) ),
+				'completed' => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE status = %s", 'completed' ) ),
+				'failed'    => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table_name} WHERE status = %s", 'failed' ) ),
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
 		/**

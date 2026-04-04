@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
 
 == Description ==
 
@@ -19,11 +19,11 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Version (default — 165 core tools):** Active out of the box. Covers content management, media generation, research, site operations, analytics, MCP server, and more.
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
-**Full Version (519 tools):** Unlocks all Pro add-ons. Install the separate **NV oOS Pro add-on** plugin alongside this plugin to enable the Full Version automatically.
+**Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
-Pro add-ons include WooCommerce e-commerce tools, JetEngine CPT/Taxonomy AI integration, social media publishing and analytics, GitHub integration, Google services, FFmpeg media processing, WP-CLI automation, and multi-agent orchestration.
+**How they relate:** The base plugin is complete and fully functional on its own. The Pro addon sits alongside it to add more tools — the same way a second plugin would. No tool in `includes/tools/` is hidden, locked, or limited without the Pro addon.
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
@@ -31,6 +31,7 @@ Pro add-ons include WooCommerce e-commerce tools, JetEngine CPT/Taxonomy AI inte
 * [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
 * [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
 * [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
+* [NVIDIA Terms](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/) | [NIM Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/)
 * Ollama (self-hosted, no external data transmission)
 * LM Studio (self-hosted, no external data transmission)
 
@@ -41,7 +42,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 * **Comprehensive Tool Library** - Content management, media generation, research, site operations
 * **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed
-* **Multi-Provider Support** - OpenAI, Google Gemini, Ollama (local AI), and LM Studio
+* **Multi-Provider Support** - OpenAI, Google Gemini, NVIDIA NIM, Ollama (local AI), and LM Studio
 * **MCP Server** - Standards-compliant Model Context Protocol server for Claude Desktop, LM Studio, and other AI clients
 * **Enterprise Security** - Rate limiting, usage tracking, capability-based access control
 * **Zero Lock-in** - Works with vanilla WordPress; optional integrations enhance functionality
@@ -61,6 +62,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
 * **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
 * **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
+* **NVIDIA NIM** - Llama, Mistral, Nemotron via NVIDIA cloud inference ([Terms](https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/) | [Privacy](https://www.nvidia.com/en-us/about-nvidia/privacy-policy/))
 * **Ollama** - Privacy-focused local AI (self-hosted, no external data)
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * Automatic provider fallback for maximum uptime
@@ -71,10 +73,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
-* **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
-* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
 
 **Chat Interface**
 * Modern, responsive chat UI
@@ -219,7 +218,7 @@ See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-
 = Is this plugin GDPR compliant? =
 
 NV oOS includes features to help with GDPR compliance:
-* Activation tracking is opt-out and collects no PII (see External Services section)
+* Activation tracking is opt-in and collects no PII (see External Services section)
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -264,11 +263,165 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 165+ base tools for content, media, research, and operations
+4. **Tool Registry** - 200+ tools for content, media, research, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.6 - April 2026 =
+
+**WordPress.org Compliance — Final Pass Before Resubmission**
+
+* Optional component downloads now require explicit opt-in consent (admin notice with Download button)
+* All "Powered by" / credit attribution gated behind explicit administrator opt-in setting
+* Fixed 3 invalid URLs in External Services section (ReliefWeb, NV Digital Services)
+* Updated Symfony packages to 6.4.36 (cache, validator, http-client)
+* Added ITA Tariff Rates API to External Services documentation
+* CLI export command restricted to WordPress uploads directory (security hardening)
+* Field-specific sanitization for `register_setting()` — API keys/secrets preserved correctly
+* REST API `/no-sse` endpoint uses correct `permissions_check_assistant_list` callback
+* JSON input from `$_POST` now sanitized with `wp_mcp_ai_sanitize_recursive()` after decode
+* Cookie names and values sanitized before forwarding in JetEngine tool handlers
+* Full 13-guideline compliance audit completed and verified
+* NVIDIA NIM added as 8th AI provider in Getting Started wizard
+
+**Security**
+
+* Fixed brace-expansion zero-step sequence DoS (CVE-2026-33750)
+* Fixed serialize-javascript CPU exhaustion (CVE-2026-34043)
+
+= 1.1.5 - March 2026 =
+
+**New: NV oOS Canvas Addon**
+
+* New standalone `nvoos-canvas` WordPress plugin distributes the platform-specific canvas npm binary (Linux-only, ~50 MB compressed) as a separate, optional install
+* CI builds and commits `nvoos-canvas-linux-x64.zip` and `nvoos-canvas-linux-arm64.zip` to `build/`
+* OCR service detects canvas via `NVOOS_CANVAS_PATH` env var; falls back to node_modules if addon absent
+* Canvas admin install hint updated to `npm install canvas@2` with EACCES workaround for shared hosts
+* New `canvas-service.js` Node.js service supports `generate` (canvas spec) and `chart` (Chart.js) actions
+
+**Embedded LLM (Pro Addon)**
+
+* Moved `WP_MCP_AI_Embedded_Client` and `WP_MCP_AI_Embedded_Model_Ajax` from `includes/` to `addons/pro/includes/`
+* Base plugin language model router uses `class_exists()` guard and falls back when Pro is absent
+* Added Gemma 2 2B Instruct (`gemma-2-2b-it-q4_k_m`) as 4th server-side GGUF model; set `gemma-2-2b-it-q4f16_1-MLC` as client-side WebLLM default
+* `create_soname_symlinks()` creates SONAME symlinks after extraction; falls back to `copy()` when `symlink()` is blocked (e.g., Cloudways)
+* `get_shared_libs_status()` calls `create_soname_symlinks()` on every status check to auto-repair missing SONAMEs
+* `sanitise_binary_filename()` uses `[A-Za-z0-9._-]` allowlist to preserve `.so.X.Y.Z`-style filenames
+* `build_inference_command()` prepends `LD_LIBRARY_PATH` for reliable shared library resolution
+* `test_connection()` uses stderr fallback for llama.cpp builds b8479+ that write `--version` to stderr
+* Provider diagnostic page now shows resolved binary path and all co-located shared library filenames
+* Fixed fatal `E_ERROR` when `symlink()` is in `disable_functions` on provider diagnostic page
+* Added Re-install llama.cpp Binary button in embedded provider settings
+* Added `WP_MCP_AI_Logger` integration to all key embedded client operations
+
+**Embedded Chat Client — Streaming Fixes**
+
+* `chat.js` now uses native `fetch + ReadableStream` for SSE (bypasses Ky's 30 s AbortController timeout)
+* `send_sse_headers()` disables `zlib.output_compression`, calls `ob_end_clean()`, uses `wp_die()` — fixes ERR_HTTP2_PROTOCOL_ERROR on HTTP/2 connections
+* `max_tokens` injected from `WP_MCP_AI_Resource_Manager` into shortcode config (no more hardcoded 2048 fallback)
+* Elementor widget now always emits `enable_streaming` attribute so disabling streaming takes effect
+* `disableForm()` scoped to input area and send button only — message bubble buttons remain clickable during streaming
+* `WebLLMFunctionCallingClient` class definition deferred inside `waitForDependencies().then()` for reliable dependency resolution
+
+**New Email Integrations (Pro)**
+
+* New tool `send_mailgun_email` — transactional email via Mailgun API (US/EU regions; tags as array o:tag fields)
+* New tools `send_brevo_email`, `manage_brevo_contacts`, `get_brevo_statistics` — Brevo email marketing and CRM via api-key header auth
+
+**New WP-CLI Command Groups (Pro)**
+
+* `wp mcp-ai pro status` — Pro addon version, license, and active toolkit summary
+* `wp mcp-ai toolkit list/enable/disable` — manage Pro toolkits from CLI
+* `wp mcp-ai connection list/get/test/delete` — manage Chat Channel connections
+* `wp mcp-ai project list/get/create/delete` — manage AI project CPT entries
+* `wp mcp-ai task list/get/create/complete/delete` — manage AI task CPT entries
+
+**WordPress.org Compliance**
+
+* Telemetry opt-in: activation tracking is now disabled by default; users must explicitly enable it via Settings → NV oOS → General → Enable Activation Tracking (Guideline 7)
+* Removed Pro add-on gating from base tool registry; all base plugin tools load without license checks (Guideline 5)
+* Improved `sanitize_settings_callback` to recursively sanitize nested array settings using `sanitize_textarea_field()` and `esc_url_raw()` (Guideline 6)
+* Fixed 15 broken external service URLs in readme.txt (Guideline 2)
+* Confirmed Pro addon is a genuine extension: no base plugin tools are gated behind a license check
+
+**Bug Fixes**
+
+* Fixed "tool_call_id did not have response messages" error: orphaned assistant `tool_calls` messages filtered out before next turn when `max_iterations` is reached
+* Fixed DICOM UID filesystem paths: `sanitize_uid_for_path()` used instead of `sanitize_file_name()` to preserve dots in UIDs
+* Added `WP_MCP_AI_Logger` to all 5 Ollama client methods — all concrete AI chat clients now fully logged
+* Fixed Pro Workflow Builder webpack config (correct output path/entry name) and CI auto-commit of built assets
+* Regenerated production classmap autoloader; removed stale gitlinks in `addons/pro/vendor/`
+
+**Dependencies**
+
+* Updated `symfony/cache` from 6.4.34 to 6.4.35
+* Updated `symfony/validator` from 6.4.34 to 6.4.35
+* Regenerated production classmap autoloader
+
+= 1.1.4 - March 2026 =
+
+**Security Hardening**
+
+* Upgraded AES encryption to AES-256-GCM for stronger encryption of stored credentials
+* Fixed finfo MIME detection to fail-closed (deny on detection failure rather than allow)
+* Fixed OCR error responses that could expose internal path/stack information
+* Fixed Discord webhook replay attack protection
+* Enforced HTTPS for all external webhook and remote connections
+* Fixed backup file path leak in file export handlers
+* Added ZIP bomb protection to file upload handlers
+
+**Chat Channels — Slack**
+
+* Fixed Slack bot not responding to channel @mentions
+* Slack auto-reply now uses mrkdwn formatting; channel settings surfaced on connection page
+* Enhanced Slack channel type handling per 2025 industry standards
+
+**Chat Channels — Google Chat**
+
+* Fixed Google Chat bot not responding: route conflict, OIDC bypass, DM initial message handling
+* Fixed Google Chat channel events not received when connection tests pass
+* Fixed Google Chat auto-reply for DMs/mentions and connection test when OIDC is disabled
+* Added Google Chat webhook diagnostic log to Settings page for easier connection troubleshooting
+
+**Chat Channels — Microsoft Teams**
+
+* Enhanced Teams webhook with cross-channel consistency improvements (Slack/Telegram parity)
+* Extended Teams to support multiple simultaneous connections with per-connection setup guide
+* Added Teams declarative agent manifest generation to Chat Channels admin page
+* Microsoft OAuth 2.0 one-click connect: Azure AD client ID/secret, auto-refresh token
+
+**Chat Channels — Telegram**
+
+* Added typing indicator and rate-limiting enforcement for Telegram chat channel
+* Dynamically integrate mcp-ai-slash-commands plugin into Telegram bot at runtime
+* Added /vectorstore to Telegram /start message and admin slash command reference table
+
+**Telegram Mini App**
+
+* TMA doctor tab now uses the assistant assigned to the connection (not a hardcoded default)
+* AI replies in TMA doctor and coach chat tabs rendered as formatted HTML via Markdown renderer
+* Vitals log import fallback improved for partial-row edge cases
+
+**AI Providers — Gemini**
+
+* Gemini embedding: added gemini-embedding-001 model, output_dimensionality parameter, 9 new task types, per-request model override in batch calls
+
+**Pro Toolkit**
+
+* Product actualization tool: AI-powered provider-agnostic product integration using Gemini (gemini-2.5-flash-image) or OpenAI (gpt-image-1) as default mode; composite mode retained as legacy fallback
+* Fixed JetEngine list_types returning null slugs/names when JetEngine returns incomplete type data
+* Fixed wp_tempnam() undefined function error in pro tools by requiring wp-admin/includes/file.php
+* Fixed consolidate & add page: singleton pattern, init registration, sanitize delegation
+* Fixed HTML-to-PDF tool: load wp-admin includes before calling media_handle_sideload
+* Fixed PDF generation: pdfkit, cheerio, docx, and exceljs now bundled into generate-*.bundle.js (no runtime node_modules needed)
+
+**WordPress.org Compliance**
+
+* Excluded .gitattributes hidden file from plugin distribution ZIPs
+* Included composer.json alongside vendor/ directory in distribution ZIPs (plugin check requirement)
+* Created languages/ directory so the Domain Path: /languages plugin header resolves correctly
 
 = 1.1.3 - March 2026 =
 
@@ -375,7 +528,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 **Initial Release**
 
 * 74+ built-in tools for content, media, research, and site operations
-* Multi-provider support: OpenAI, Gemini, Ollama, LM Studio
+* Multi-provider support: OpenAI, Gemini, NVIDIA NIM, Ollama, LM Studio
 * Full MCP (Model Context Protocol) server implementation
 * Modern chat interface with streaming responses
 * 182 profession templates across 12 industry categories
@@ -444,15 +597,17 @@ Initial release. Welcome to Open Operator System!
 * **Purpose:** Privacy-focused local AI processing
 * **Data Sent:** None (runs entirely on your server)
 * **When:** When configured as AI provider
-* **Service URL:** Your local server only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local server only (default: http://localhost:11434)
+* **Terms of Service:** https://github.com/ollama/ollama/blob/main/LICENSE (MIT License)
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your server
 
 **5. LM Studio (Self-Hosted)**
 * **Purpose:** Local AI with function calling support
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
-* **Service URL:** Your local computer only
-* **Privacy:** No external data transmission
+* **Service URL:** Your local computer only (default: http://localhost:1234)
+* **Terms of Service:** https://lmstudio.ai/terms
+* **Privacy Policy:** N/A — self-hosted software; no data leaves your computer
 
 **6. Cloudflare Workers AI**
 * **Purpose:** AI image generation and inference
@@ -461,6 +616,14 @@ Initial release. Welcome to Open Operator System!
 * **Service URL:** https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}
 * **Terms of Service:** https://www.cloudflare.com/terms/
 * **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
+
+**6a. NVIDIA NIM API**
+* **Purpose:** Cloud AI inference via NVIDIA's optimized model platform (Llama, Mistral, Nemotron, and more)
+* **Data Sent:** Chat messages, system prompts, tool results
+* **When:** Every time an AI assistant is used with NVIDIA NIM as the provider
+* **Service URL:** https://integrate.api.nvidia.com/v1 (default cloud endpoint; supports custom/self-hosted NIM endpoints)
+* **Terms of Service:** https://www.nvidia.com/en-us/data-center/products/nvidia-ai-enterprise/eula/
+* **Privacy Policy:** https://www.nvidia.com/en-us/about-nvidia/privacy-policy/
 
 = Optional Third-Party Service Integrations =
 
@@ -496,7 +659,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When ReliefWeb tools are used
 * **Service URL:** https://api.reliefweb.int/v1/reports
 * **Terms of Service:** https://reliefweb.int/terms-conditions
-* **Privacy Policy:** https://reliefweb.int/privacy-policy
+* **Privacy Policy:** https://reliefweb.int/terms-conditions
 
 **11. WordPress.org API**
 * **Purpose:** PHP version compatibility check for site health
@@ -551,7 +714,7 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** API key for account verification; images for background removal
 * **When:** When the remove background tool is used
 * **Service URL:** https://api.remove.bg/v1.0/
-* **Terms of Service:** https://www.remove.bg/terms-of-service
+* **Terms of Service:** https://www.remove.bg/tos
 * **Privacy Policy:** https://www.remove.bg/privacy
 
 **18. Flowhub API**
@@ -568,7 +731,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When Plaid connection testing or financial tools are used
 * **Service URL:** https://sandbox.plaid.com / https://production.plaid.com
 * **Terms of Service:** https://plaid.com/legal/
-* **Privacy Policy:** https://plaid.com/legal/privacy-policy
+* **Privacy Policy:** https://plaid.com/legal/
 
 **20. PayHere API**
 * **Purpose:** Payment processing for Sri Lankan merchants
@@ -582,7 +745,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Enterprise authentication and user management via Auth0
 * **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
+* **Service URL:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
@@ -591,8 +754,8 @@ These services are only contacted when specific tools/features are used:
 * **Data Sent:** Music generation parameters (tempo, genre, duration), API key
 * **When:** When music generation tools are used
 * **Service URL:** https://music-api.mubert.com/api/v3/public/tracks
-* **Terms of Service:** https://mubert.com/corporate/terms
-* **Privacy Policy:** https://mubert.com/corporate/privacy
+* **Terms of Service:** https://mubert.com/documents/mubert_website_tou.pdf
+* **Privacy Policy:** https://mubert.com/render/docs/privacy-policy
 
 **23. GDACS (Global Disaster Alert and Coordination System)**
 * **Purpose:** Global disaster and emergency event data retrieval
@@ -600,7 +763,15 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the GDACS disaster events tool is used
 * **Service URL:** https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP
 * **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
-* **Privacy Policy:** https://www.gdacs.org/About/privacy.aspx
+* **Privacy Policy:** https://www.gdacs.org/About/overview.aspx
+
+**23a. ITA Tariff Rates API (Trade.gov)**
+* **Purpose:** Automated tariff rate lookups for international trade compliance (Pro addon feature)
+* **Data Sent:** Country codes, product classification codes (HS codes), API key
+* **When:** When the import duty lookup tool is used (requires ITA API key configuration)
+* **Service URL:** https://api.trade.gov/v1/tariff_rates/search
+* **Terms of Service:** https://developer.trade.gov/
+* **Privacy Policy:** https://www.trade.gov/privacy
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -623,18 +794,18 @@ These services are only contacted when specific tools/features are used:
 **26. NV Digital Solutions Activation Tracking**
 * **Purpose:** Anonymous plugin activation/deactivation analytics to understand usage patterns
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
-* **When:** On plugin activation and deactivation (opt-out available via settings or filter)
+* **When:** Only when a site owner explicitly opts in via Settings → NV oOS → "Enable activation tracking". Tracking is **disabled by default** and requires explicit consent. Tracking is never sent from local/development environments.
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
-* **Terms of Service:** https://nvdigitalsolutions.com/terms
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3)
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
-* **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
+* **Opt-In:** Enable via Settings → NV oOS → "Enable activation tracking" or return `true` from the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is OFF by default.
 
 **27. NV Digital Solutions License Server & Optional Component Downloads**
-* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
+* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size — downloads only occur after explicit administrator consent via an admin notice
 * **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
-* **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
-* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download (optional component ZIP downloads from the plugin's own GitHub releases)
-* **Terms of Service:** https://nvdigitalsolutions.com/terms; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **When:** (a) Only when a user manually enters and activates a license key; (b) Only when the site administrator explicitly clicks "Download Optional Components" in the admin notice (opt-in required, never automatic)
+* **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation (license/tracking server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE (GPLv3); https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
@@ -645,7 +816,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Repository management, code search, issue tracking, and OAuth authorisation flow to connect the GitHub integration
 * **Data Sent:** OAuth tokens, repository queries, commit data; during OAuth setup: client ID, client secret (as Basic Auth header), authorisation code, and redirect URI
 * **When:** When GitHub tools are used after OAuth setup; the OAuth token exchange endpoint is called once per authorisation when a user connects their GitHub account
-* **Service URL:** https://api.github.com (GitHub REST API); https://github.com/login/oauth/access_token (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
+* **Service URL:** https://api.github.com (GitHub REST API); https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
@@ -678,16 +849,16 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Data Sent:** Search query string; sent only when Tavily is selected as the web search provider
 * **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Tavily"
 * **Service URL:** https://api.tavily.com/search
-* **Terms of Service:** https://tavily.com/terms-of-use
-* **Privacy Policy:** https://tavily.com/privacy-policy
+* **Terms of Service:** https://www.tavily.com/terms
+* **Privacy Policy:** https://docs.tavily.com/documentation/privacy
 
 **33. Exa AI Search API**
 * **Purpose:** Neural/semantic web search purpose-built for AI agents; returns full-text page content and metadata
 * **Data Sent:** Search query string and search parameters (number of results, content type)
 * **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Exa"
 * **Service URL:** https://api.exa.ai/search
-* **Terms of Service:** https://exa.ai/terms
-* **Privacy Policy:** https://exa.ai/privacy
+* **Terms of Service:** https://trust.exa.ai/
+* **Privacy Policy:** https://exa.ai/privacy-policy
 
 **34. Perplexity AI API**
 * **Purpose:** AI-powered web search that returns synthesised answers with inline citations
@@ -771,7 +942,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **When:** Only when the `setup_2fa` tool is used and the TOTP (authenticator app) method is selected
 * **Service URL:** https://api.qrserver.com/v1/create-qr-code/
 * **Terms of Service:** https://goqr.me/api/
-* **Privacy Policy:** https://goqr.me/privacy/
+* **Privacy Policy:** https://goqr.me/privacy-safety-security/
 
 
 
@@ -780,7 +951,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * File uploads (AI providers only)
 * Search queries (when using search/weather tools)
 * OAuth credentials (when using optional integrations)
-* Anonymous activation data (opt-out available; see service #26 above)
+* Anonymous activation data (opt-in only; see service #26 above)
 
 **What is NOT sent:**
 * WordPress admin credentials
@@ -791,7 +962,7 @@ The following libraries are loaded as external CDN connections directly in the v
 **When data is sent:**
 * Only when you or your users actively use AI features
 * Only to services you have explicitly configured
-* Anonymous activation/deactivation tracking on plugin lifecycle events (opt-out available)
+* Anonymous activation tracking only when explicitly opted in (see service #26 above)
 
 **Your control:**
 * You choose which AI provider to use
@@ -821,12 +992,12 @@ The following libraries are loaded as external CDN connections directly in the v
 * Optional: Chat transcripts (if JetEngine integration is enabled)
 * Optional: Usage logs (disabled by default, controlled in settings)
 
-**Activation Tracking (Opt-Out Available):**
-* On plugin activation and deactivation, anonymous usage data is sent to NV Digital Solutions
+**Activation Tracking (Opt-In Only):**
+* Anonymous usage data is sent to NV Digital Solutions only when explicitly enabled by the site administrator
 * Data collected: hashed site URL (SHA-256 HMAC, non-reversible), plugin version, WordPress version, PHP version, locale, multisite status
 * No personally identifiable information (PII) is collected or stored
 * No tracking scripts, cookies, or beacons are used
-* Opt-out: Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
+* Tracking is **OFF by default** — enable via Settings → NV oOS → "Enable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
 * Tracking is automatically skipped in local/development environments (localhost, .local, .test, .dev)
 
 = What Data is Sent to AI Providers? =
@@ -889,8 +1060,8 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **Web Search Providers (when configured):**
 * Brave Search: data sent to https://api.search.brave.com — [Privacy](https://brave.com/privacy/browser/) | [Terms](https://brave.com/terms-of-use/)
-* Tavily: data sent to https://api.tavily.com — [Privacy](https://tavily.com/privacy-policy) | [Terms](https://tavily.com/terms-of-use)
-* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy) | [Terms](https://exa.ai/terms)
+* Tavily: data sent to https://api.tavily.com — [Privacy](https://docs.tavily.com/documentation/privacy) | [Terms](https://www.tavily.com/terms)
+* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy-policy) | [Terms](https://trust.exa.ai/)
 * Perplexity: data sent to https://api.perplexity.ai — [Privacy](https://www.perplexity.ai/hub/legal/privacy-policy) | [Terms](https://www.perplexity.ai/hub/legal/terms-of-service)
 * DuckDuckGo: data sent to https://api.duckduckgo.com — [Privacy](https://duckduckgo.com/privacy) | [Terms](https://duckduckgo.com/terms)
 
@@ -926,7 +1097,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 
 **QR Server API (when TOTP two-factor authentication setup is used):**
 * Data sent to: https://api.qrserver.com — server-side request made by WordPress (not by the user's browser); the request payload is the TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret)
-* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy/)
+* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy-safety-security/)
 * Terms of Service: https://goqr.me/api/
 * Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
 
@@ -984,7 +1155,7 @@ This plugin may connect to the following external services based on your configu
 * Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
 * WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
 * Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
-* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy/) | [Terms](https://goqr.me/api/)
+* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy-safety-security/) | [Terms](https://goqr.me/api/)
 
 **Optional browser-native AI CDN libraries (no user data transmitted):**
 * Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
@@ -999,3 +1170,24 @@ Review your chosen provider's privacy policy before use.
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
 Special thanks to the open source community and all contributors.
+
+== Licensing ==
+
+= Base Plugin =
+
+This plugin is licensed under the [GNU General Public License v3 or later](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/LICENSE). All source code in the base plugin is open source. You have full freedom to use, study, modify, and redistribute the base plugin under the terms of the GPLv3.
+
+= Pro Addon =
+
+The Pro addon (`addons/pro/`) is a completely separate, optional plugin distributed under a **proprietary license**. It is copyrighted by NV Digital Solutions and all rights are reserved. The Pro addon is not included in the WordPress.org distribution — it is installed separately and is not required for the base plugin to function.
+
+= How They Differ =
+
+* **Base plugin (this plugin):** GPLv3 — open source, freely redistributable, modifiable
+* **Pro addon (separate plugin):** Proprietary — requires a license from NV Digital Solutions, not redistributable
+
+The base plugin and the Pro addon are independent codebases. The base plugin does not contain any Pro addon code, and no base plugin features are gated behind the Pro addon's license. The Pro addon adds entirely new tools and capabilities built on PHP 8.1+ features.
+
+= Patent Notice =
+
+NV oOS is the subject of a pending patent application (Application #19/410,504). The patent does not restrict your GPL rights to the base plugin. See the "Is this plugin patented?" FAQ entry above for details.

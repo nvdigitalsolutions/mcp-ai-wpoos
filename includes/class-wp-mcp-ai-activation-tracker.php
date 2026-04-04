@@ -8,6 +8,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,14 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class WP_MCP_AI_Activation_Tracker
  *
- * Handles plugin activation tracking in a privacy-first manner.
+ * Handles plugin activation tracking in a privacy-first, opt-in manner.
  *
  * Privacy Features:
- * - Opt-out available via filter hook and settings
+ * - Tracking is DISABLED by default (explicit opt-in required)
  * - No personally identifiable information collected
  * - Site URL is hashed using non-reversible algorithm
  * - IP addresses are not stored
- * - Tracking can be disabled entirely
  * - All data collection is documented transparently
  */
 class WP_MCP_AI_Activation_Tracker {
@@ -40,7 +42,8 @@ class WP_MCP_AI_Activation_Tracker {
 	 * Track plugin activation.
 	 *
 	 * Sends anonymous activation data to help understand plugin usage.
-	 * This is opt-out by default but can be disabled via settings or filter.
+	 * Tracking is OPT-IN and disabled by default. Users must explicitly
+	 * enable it via Settings → NV oOS → "Enable activation tracking".
 	 *
 	 * @param string $plugin_variant The plugin variant being activated (complete|base|pro|core).
 	 * @return void
@@ -52,14 +55,20 @@ class WP_MCP_AI_Activation_Tracker {
 			$plugin_variant = 'complete'; // Fallback to default.
 		}
 
-		// Check if tracking is disabled via filter.
-		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', true ) ) {
-			return;
-		}
-
-		// Check if tracking is disabled in settings.
+		// Tracking is opt-in: disabled by default. Only send when explicitly enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( isset( $settings['disable_activation_tracking'] ) && $settings['disable_activation_tracking'] ) {
+		$opted_in = ! empty( $settings['enable_activation_tracking'] );
+
+		/**
+		 * Filter whether to enable usage tracking.
+		 *
+		 * Receives the value of the 'enable_activation_tracking' setting, which
+		 * is false for new installations (opt-in model). Return true from this
+		 * filter to enable tracking regardless of the settings value.
+		 *
+		 * @param bool $opted_in Current opt-in state from settings (false by default for new installs).
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', $opted_in ) ) {
 			return;
 		}
 
@@ -188,7 +197,7 @@ class WP_MCP_AI_Activation_Tracker {
 	 * Track plugin deactivation.
 	 *
 	 * Similar to activation tracking, but for deactivations.
-	 * This is optional and can be disabled the same way as activation tracking.
+	 * Tracking is opt-in and only fires when explicitly enabled in settings.
 	 *
 	 * @param string $plugin_variant The plugin variant being deactivated.
 	 * @return void
@@ -200,14 +209,12 @@ class WP_MCP_AI_Activation_Tracker {
 			$plugin_variant = 'complete'; // Fallback to default.
 		}
 
-		// Check if tracking is disabled.
-		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', true ) ) {
-			return;
-		}
-
-		// Check if tracking is disabled in settings.
+		// Tracking is opt-in: disabled by default.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( isset( $settings['disable_activation_tracking'] ) && $settings['disable_activation_tracking'] ) {
+		$opted_in = ! empty( $settings['enable_activation_tracking'] );
+
+		/** This filter is documented in track_activation(). */
+		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', $opted_in ) ) {
 			return;
 		}
 

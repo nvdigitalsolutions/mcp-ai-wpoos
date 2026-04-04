@@ -14,6 +14,7 @@
 const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
+const { builtinModules } = require('module');
 
 // Configuration for Node.js script bundling
 const nodeScriptOptions = {
@@ -21,10 +22,14 @@ const nodeScriptOptions = {
 	platform: 'node',
 	target: 'node14', // WordPress typically runs on Node 14+
 	format: 'cjs', // CommonJS format for Node.js
-	external: ['fs', 'path', 'pdfkit', 'cheerio', 'docx', 'exceljs'], // Don't bundle Node.js built-ins and vendor packages
+	// Only exclude Node.js built-ins — vendor packages (pdfkit, cheerio, docx, exceljs) are bundled.
+	// Use builtinModules to get the complete, version-accurate list (includes both 'fs' and 'node:fs' forms).
+	external: [...builtinModules, ...builtinModules.map((m) => `node:${m}`)],
 	minify: false, // Keep readable for debugging
 	sourcemap: true,
 	logLevel: 'info',
+	// Resolve packages from Pro addon's node_modules (pdfkit, cheerio, docx, exceljs)
+	nodePaths: [path.join(__dirname, 'addons', 'pro', 'node_modules')],
 };
 
 // Browser bundle options for orchestration (IIFE for WordPress)
@@ -56,6 +61,35 @@ const builds = [
 		entryPoints: ['addons/pro/scripts/generate-excel.js'],
 		outfile: 'addons/pro/bin/generate-excel.bundle.js',
 		...nodeScriptOptions,
+	},
+	// Remotion video render — all Remotion and React packages are marked external so they
+	// resolve at runtime from addons/pro/node_modules (or assets/vendor/ for ZIP distribution).
+	// This avoids bundling platform-specific compositor binaries and webpack's dynamic loaders.
+	// The pre-built bundle ships with the plugin so users never need to run npm install.
+	{
+		entryPoints: ['addons/pro/scripts/remotion-render.js'],
+		outfile: 'addons/pro/bin/remotion-render.bundle.js',
+		...nodeScriptOptions,
+		// All @remotion/* packages use platform-specific binaries or webpack internals —
+		// mark them ALL external so esbuild doesn't try to statically bundle them.
+		external: [
+			...builtinModules,
+			...builtinModules.map((m) => `node:${m}`),
+			'remotion',
+			'@remotion/bundler',
+			'@remotion/renderer',
+			'@remotion/cli',
+			'@remotion/compositor-linux-x64-gnu',
+			'@remotion/compositor-linux-x64-musl',
+			'@remotion/compositor-linux-arm64-gnu',
+			'@remotion/compositor-linux-arm64-musl',
+			'@remotion/compositor-darwin-x64',
+			'@remotion/compositor-darwin-arm64',
+			'@remotion/compositor-win32-x64-msvc',
+			'webpack',
+			'react',
+			'react-dom',
+		],
 	},
 	// Orchestration and research bundles are pre-built and committed
 	// Uncomment to rebuild (requires node_modules with p-queue, cheerio, turndown)

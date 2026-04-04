@@ -6,6 +6,9 @@
  * (LangChain packages) and Composer packages.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -200,6 +203,13 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 			"check_package_installed('puppeteer-core') should return boolean"
 		);
 
+		// Test @puppeteer/browsers.
+		$puppeteer_browsers_result = $method->invoke( null, '@puppeteer/browsers' );
+		$this->assertIsBool(
+			$puppeteer_browsers_result,
+			"check_package_installed('@puppeteer/browsers') should return boolean"
+		);
+
 		// Test ffmpeg-static.
 		$ffmpeg_result = $method->invoke( null, 'ffmpeg-static' );
 		$this->assertIsBool(
@@ -222,6 +232,14 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 				$this->assertTrue(
 					$puppeteer_result,
 					'puppeteer-core should be detected when vendor file exists'
+				);
+			}
+
+			$puppeteer_browsers_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/@puppeteer/browsers/lib/cjs/index.js';
+			if ( file_exists( $puppeteer_browsers_path ) ) {
+				$this->assertTrue(
+					$puppeteer_browsers_result,
+					'@puppeteer/browsers should be detected when vendor file exists'
 				);
 			}
 

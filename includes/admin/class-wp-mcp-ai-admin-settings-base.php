@@ -5,6 +5,9 @@
  * Handles core settings registration and management.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -188,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get available providers dynamically from Model Config.
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -268,7 +271,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		public static function get_default_settings() {
 			// Get dynamic provider list from Model Config.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -278,7 +281,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			return array(
 				'openai_api_key'                       => '',
+				'openai_api_key_type'                  => 'standard',
+				'openai_project_id'                    => '',
+				'openai_base_url'                      => '',
 				'gemini_api_key'                       => '',
+				'gemini_api_key_type'                  => 'standard',
+				'gemini_base_url'                      => '',
+				'anthropic_api_key_type'               => 'standard',
+				'anthropic_base_url'                   => '',
 				'ollama_endpoint_url'                  => '',
 				'ollama_model'                         => '',
 				'lm_studio_endpoint_url'               => '',
@@ -313,8 +323,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'crawl4ai_api_key'                     => '',
 				'cloudflare_api_token'                 => '',
 				'cloudflare_account_id'                => '',
-				'cloudflare_model'                     => '@cf/meta/llama-3.2-3b-instruct',
-				'cloudflare_image_model'               => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+				'cloudflare_model'                     => '@cf/meta/llama-4-scout-17b-16e-instruct',
+				'cloudflare_image_model'               => '@cf/black-forest-labs/flux-2-dev',
 				'cloudflare_image_width'               => 1024,
 				'cloudflare_image_height'              => 1024,
 				'cloudflare_image_num_steps'           => 20,
@@ -335,6 +345,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'huggingface_datasets_api_token'       => '',
 				'huggingface_datasets_cache_ttl'       => 3600,
 				'huggingface_datasets_default_limit'   => 10,
+				// NVIDIA NIM Provider settings.
+				'enable_nvidia'                        => false,
+				'nvidia_api_key'                       => '',
+				'nvidia_endpoint_url'                  => 'https://integrate.api.nvidia.com/v1',
+				'nvidia_model'                         => 'meta/llama-3.1-8b-instruct',
 				// RabbitMQ settings (Cloudways integration).
 				'rabbitmq_enabled'                     => false,
 				'rabbitmq_host'                        => 'localhost',
@@ -355,6 +370,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'mailjet_from_email'                   => '',
 				'mailjet_from_name'                    => '',
 				'mailjet_webhook_secret'               => '',
+				'brevo_api_key'                        => '',
+				'brevo_from_email'                     => '',
+				'brevo_from_name'                      => '',
+				'brevo_webhook_secret'                 => '',
+				'mailgun_api_key'                      => '',
+				'mailgun_domain'                       => '',
+				'mailgun_region'                       => 'us',
+				'mailgun_from_email'                   => '',
+				'mailgun_from_name'                    => '',
 				'removebg_api_key'                     => '',
 				'quickbooks_company_id'                => '',
 				'quickbooks_api_key'                   => '',
@@ -384,10 +408,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'openai_image_size'                    => '1024x1024',
 				'openai_image_quality'                 => 'medium',
 				'openai_image_response_format'         => 'b64_json',
-				'openai_speech_model'                  => 'tts-1',
+				'openai_speech_model'                  => 'gpt-4o-mini-tts',
 				'openai_speech_voice'                  => 'alloy',
 				'openai_speech_format'                 => 'mp3',
-				'openai_transcribe_model'              => 'whisper-1',
+				'openai_transcribe_model'              => 'gpt-4o-mini-transcribe',
 				'openai_transcribe_response_format'    => 'verbose_json',
 				'openai_transcribe_language'           => '',
 				'openai_transcribe_temperature'        => '',
@@ -460,6 +484,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_burst'                     => 10,
 				'federation_jwks_keys'                 => array(),
 				'federation_price_hints'               => array(),
+				// A2A Protocol settings.
+				'enable_a2a_server'                    => false,
+				'a2a_exposed_assistants'               => array(),
+				'a2a_enable_push_notifications'        => false,
+				'enable_a2a_client'                    => false,
+				'a2a_default_auth_type'                => 'none',
+				'a2a_default_auth_token'               => '',
 				// Orchestration Layer settings - defaults match "Balanced" preset.
 				'orchestration_preset'                 => 'custom',
 				'enable_budget_management'             => true,

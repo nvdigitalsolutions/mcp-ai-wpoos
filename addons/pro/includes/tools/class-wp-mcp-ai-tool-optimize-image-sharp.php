@@ -4,11 +4,16 @@
  *
  * @package WP_MCP_AI
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 
 /**
  * Optimize images using Sharp for high-performance processing.
@@ -27,6 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_NodeJS_Subprocess;
 
 	/**
 	 * {@inheritdoc}
@@ -308,33 +314,95 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * Process image with Sharp via Node.js.
+	 * Process image with Sharp via Node.js subprocess.
+	 *
+	 * The bundled script addons/pro/bin/sharp-process.js is invoked with the
+	 * processing parameters serialised to a temporary JSON file.  An optional
+	 * WordPress filter `wp_mcp_ai_sharp_process_image` lets site owners
+	 * short-circuit the built-in implementation with a custom one.
 	 *
 	 * @param array $params Processing parameters.
-	 * @return array|false Processing result or false on failure.
+	 * @return array|false Processing result array or false/error array on failure.
 	 */
 	private function process_with_sharp( $params ) {
-		// In a production implementation, this would:
-		// 1. Call a Node.js script that uses Sharp.
-		// 2. Pass parameters as JSON.
-		// 3. Return the processed image path and metadata.
-		//
-		// For this implementation, we'll create a placeholder that demonstrates
-		// the pattern. In production, you would set up a Node.js service or
-		// use exec() to call a Node.js script.
-
 		/**
-		 * Filter to allow custom Sharp processing implementation.
+		 * Filter to allow a custom Sharp processing implementation.
 		 *
-		 * @param array|false $result Processing result or false.
+		 * Return a non-false value to bypass the built-in Node.js subprocess call.
+		 *
+		 * @param array|false $result Processing result or false to use built-in.
 		 * @param array       $params Processing parameters.
 		 */
-		$result = apply_filters( 'wp_mcp_ai_sharp_process_image', false, $params );
+		$custom_result = apply_filters( 'wp_mcp_ai_sharp_process_image', false, $params );
+		if ( false !== $custom_result ) {
+			return $custom_result;
+		}
 
-		if ( false === $result ) {
-			// Default implementation note.
+		// Determine the path to the processing script.
+		$script_path = WP_MCP_AI_PRO_PATH . 'bin/sharp-process.js';
+		if ( ! file_exists( $script_path ) ) {
 			return array(
-				'error' => __( 'Sharp processing requires a Node.js service. Please implement the wp_mcp_ai_sharp_process_image filter or set up a Node.js microservice. See docs/INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Sharp processing script not found. Please reinstall the plugin.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Write params to a temporary JSON file.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$params_file = wp_tempnam( 'sharp-params-' );
+		if ( ! $params_file ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: system temp directory path */
+					__( 'Failed to create temporary file for Sharp processing. Check write permissions on %s.', 'mcp-ai-wpoos-pro' ),
+					get_temp_dir()
+				),
+			);
+		}
+
+		// Determine the output file extension. Sanitize to alphanumeric only.
+		$source_ext = isset( $params['format'] ) ? $params['format'] : pathinfo( $params['source'], PATHINFO_EXTENSION );
+		$source_ext = preg_replace( '/[^a-zA-Z0-9]/', '', $source_ext );
+		if ( '' === $source_ext ) {
+			$source_ext = 'jpg';
+		}
+
+		// Create a uniquely-named output path with the correct extension.
+		// wp_tempnam() creates a placeholder file to reserve the path; we delete it
+		// immediately so Sharp can write to the extension-appended path without conflict.
+		$output_base = wp_tempnam( 'sharp-output-' );
+		$output_file = $output_base . '.' . $source_ext;
+		wp_delete_file( $output_base ); // Remove placeholder; Sharp creates the ext-versioned file.
+
+		if ( false === file_put_contents( $params_file, wp_json_encode( $params ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation; WP_Filesystem unavailable here.
+			wp_delete_file( $params_file );
+			return array( 'error' => __( 'Failed to write Sharp processing parameters.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Execute the Node.js script.
+		$result = $this->execute_nodejs_script(
+			$script_path,
+			array( $params_file, $output_file ),
+			array(
+				'timeout'    => 120,
+				'parse_json' => true,
+			)
+		);
+
+		// Clean up the params temp file.
+		wp_delete_file( $params_file );
+
+		if ( is_wp_error( $result ) ) {
+			wp_delete_file( $output_file );
+			return array( 'error' => $result->get_error_message() );
+		}
+
+		if ( empty( $result['success'] ) ) {
+			wp_delete_file( $output_file );
+			return array(
+				'error' => isset( $result['error'] ) ? $result['error'] : __( 'Sharp processing failed with an unknown error.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

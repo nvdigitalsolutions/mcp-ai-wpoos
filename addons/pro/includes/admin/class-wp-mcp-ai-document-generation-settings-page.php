@@ -4,6 +4,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -107,37 +110,37 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 					<tr>
 						<td><strong>Node.js</strong></td>
 						<td>Runtime</td>
-						<td><?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available</span>' : '<span style="color: orange;">⚠ Not Detected</span>'; ?></td>
+						<td><?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available</span>' : '<span style="color: orange;">⚠ Not Detected</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Optional - PHP fallbacks available', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>pdf-parse</strong></td>
 						<td>NPM (Bundled)</td>
-						<td><?php echo $this->check_pdf_parse_bundled() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: red;">✗ Missing</span>'; ?></td>
+						<td><?php echo $this->check_pdf_parse_bundled() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: red;">✗ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>smalot/pdfparser</strong></td>
 						<td>Composer (Bundled)</td>
-						<td><?php echo $this->check_smalot_pdfparser() ? '<span style="color: green;">✓ Installed</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo $this->check_smalot_pdfparser() ? '<span style="color: green;">✓ Installed</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'PHP fallback for PDF extraction', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>pdfkit</strong></td>
 						<td>NPM (Bundled)</td>
-						<td><?php echo wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>docx</strong></td>
 						<td>NPM (Bundled)</td>
-						<td><?php echo wp_mcp_ai_is_npm_package_available( 'docx' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'docx' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 					<tr>
 						<td><strong>exceljs</strong></td>
 						<td>NPM (Bundled)</td>
-						<td><?php echo wp_mcp_ai_is_npm_package_available( 'exceljs' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'exceljs' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded HTML status indicators. ?></td>
 						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
 					</tr>
 				</tbody>

@@ -7,6 +7,9 @@
  * @package    WP_MCP_AI
  * @subpackage WP_MCP_AI/includes/admin
  * @since      1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // Prevent direct file access.
@@ -187,8 +190,9 @@ class WP_MCP_AI_Security_Audit_Admin {
 									<?php endif; ?>
 								</td>
 								<td>
-									<a href="<?php echo esc_url( get_edit_post_link( $audit->ID ) ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+									<a href="<?php echo esc_url( get_edit_post_link( $audit->ID ) ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+										<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+										<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 									</a>
 								</td>
 							</tr>

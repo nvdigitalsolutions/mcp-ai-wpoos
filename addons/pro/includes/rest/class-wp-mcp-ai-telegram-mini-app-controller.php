@@ -31,6 +31,9 @@
 *
 * @package WP_MCP_AI_Pro
 * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -261,6 +264,31 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// TMA-specific chat endpoint – mirrors /chat-client but uses check_permission
+		// so that requests authenticated via the X-WP-MCP-AI-TMA-Token header (issued
+		// by the /validate endpoint) are accepted without a WordPress auth cookie.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/chat',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_tma_chat_request' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'messages'     => array(
+						'required'          => true,
+						'type'              => 'array',
+						'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
+					),
+					'assistant_id' => array(
+						'required'          => false,
+						'type'              => array( 'integer', 'string' ),
+						'description'       => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+			)
+		);
+
 		// Media library data endpoint (GET).
 		register_rest_route(
 			$this->namespace,
@@ -389,6 +417,57 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Template customization: get, save, or reset per-template overrides.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/template/(?P<slug>[a-z0-9_-]+)/customize',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_get_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_save_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'handle_reset_template_customizations' ),
+					'permission_callback' => function() {
+						return current_user_can( 'manage_options' );
+					},
+					'args'                => array(
+						'slug' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			)
+		);
+
 	}
 
 	// =========================================================================
@@ -418,10 +497,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			return $user_id;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			: '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) ? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) : '';
 
 		if ( '' === $raw_token ) {
 			return $user_id;
@@ -471,10 +548,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			return $result;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
-			: '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) ? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] ) : '';
 
 		if ( '' === $raw_token ) {
 			return $result;
@@ -593,33 +668,49 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				 *
 				 * @param string $title Default page title.
 				 */
-				$page_title    = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
-				$tools_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
-				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
-				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$page_title       = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url        = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+				$analytics_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
 				// Resolve the assistant configured for this Mini App connection so that
-				// templates can pass it as assistant_id to the chat-client endpoint.
+				// templates can pass it as assistant_id to the chat endpoint.
 				$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
-				$chat_url     = rest_url( 'mcp-ai/v1/chat-client' );
+
+				// Use the TMA-specific chat endpoint so that templates can authenticate
+				// via the TMA session token (X-WP-MCP-AI-TMA-Token) returned by /validate,
+				// without requiring a WordPress auth cookie that may not persist inside
+				// Telegram's built-in WebView.
+				$chat_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/chat' );
+				$validate_url = rest_url( $this->namespace . '/' . $this->rest_base . '/validate' );
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'       => $request,
-					'connection'    => $connection,
-					'namespace'     => $this->namespace,
-					'rest_base'     => $this->rest_base,
-					'assistant'     => $request->get_param( 'assistant' ),
-					'assistant_id'  => $assistant_id,
-					'chat_url'      => $chat_url,
-					'site_name'     => $page_title,
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'tools_url'     => $tools_url,
-					'analytics_url' => $analytics_url,
-					'chart_js_url'  => $chart_js_url,
-					'member_id'     => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+					'request'              => $request,
+					'connection'           => $connection,
+					'namespace'            => $this->namespace,
+					'rest_base'            => $this->rest_base,
+					'assistant'            => $request->get_param( 'assistant' ),
+					'assistant_id'         => $assistant_id,
+					'chat_url'             => $chat_url,
+					'validate_url'         => $validate_url,
+					'site_name'            => $page_title,
+					'nonce'                => wp_create_nonce( 'wp_rest' ),
+					'tools_url'            => $tools_url,
+					'analytics_url'        => $analytics_url,
+					'chart_js_url'         => $chart_js_url,
+					'markdown_js_url'      => $markdown_js_url,
+					'member_id'            => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
+					// WooCommerce data-source fields (used by the woo_shop template).
+					'woo_source'           => ( $connection && ! empty( $connection['mini_app_woo_source'] ) )
+						? sanitize_key( $connection['mini_app_woo_source'] )
+						: 'local',
+					'woo_connection_id'    => ( $connection && ! empty( $connection['mini_app_woo_connection_id'] ) )
+						? sanitize_key( $connection['mini_app_woo_connection_id'] )
+						: '',
 				);
 
 				// render_html() returns a <body>…</body> fragment.  All
@@ -643,6 +734,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				echo '<meta name="robots" content="noindex, nofollow">';
 				echo '<title>' . esc_html( $page_title ) . '</title>';
 				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>';
+
+				// Inject any admin-saved custom CSS overrides for this template.
+				$custom_css = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_custom_css( $active_template_slug );
+				if ( '' !== $custom_css ) {
+					echo '<style id="tma-custom-css">' . $custom_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitized via wp_strip_all_tags on save
+				}
+
 				echo '</head>';
 				echo $body_html;
 				echo '</html>';
@@ -3283,6 +3381,61 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Handle a chat request from a Telegram Mini App template.
+	 *
+	 * This is a thin proxy to the standard /chat-client handler, but registered
+	 * under the Mini App namespace so that `check_permission` (which accepts both
+	 * WordPress nonces and the TMA session token issued by /validate) is used
+	 * instead of the global chat-client permission check.  This lets Mini App
+	 * templates such as Medical Vitals authenticate via the TMA token even when
+	 * Telegram's built-in WebView does not persist auth cookies across requests.
+	 *
+	 * When `assistant_id` is absent from the request this handler resolves the
+	 * assistant from the active Telegram connection (following the same priority
+	 * chain used when rendering the Mini App page), ensuring that the doctor/coach
+	 * tab chat always uses the assistant assigned to the bot connection rather
+	 * than falling back to the site-wide global default.
+	 *
+	 * @since 1.1.6
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_tma_chat_request( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Controller' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_chat_unavailable',
+				__( 'Chat service is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		// If no assistant_id was supplied by the client, resolve it from the
+		// active Telegram connection so that the doctor/coach tab chat uses the
+		// same assistant that is assigned to this bot – identical to the
+		// resolution used when rendering the Mini App HTML page.
+		$request_assistant_id = $request->get_param( 'assistant_id' );
+		if ( null === $request_assistant_id || '' === (string) $request_assistant_id || 0 === (int) $request_assistant_id ) {
+			$connection   = $this->get_active_telegram_connection();
+			$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
+			if ( ! empty( $assistant_id ) ) {
+				$request->set_param( 'assistant_id', $assistant_id );
+			}
+		}
+
+		// Pass the shared main controller so that the chat handler has full access
+		// to assistants, providers, and tool registries – and avoids registering a
+		// duplicate SSE hook that the no-arg constructor would add.
+		$main_controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] )
+			? $GLOBALS['wp_mcp_ai_rest_controller']
+			: null;
+
+		$chat_controller = new WP_MCP_AI_REST_Chat_Controller( $main_controller );
+
+		return $chat_controller->handle_chat_client_request( $request );
+	}
+
+	/**
 	* Return a paginated list of media library items.
 	*
 	* @since 1.0.0
@@ -4439,7 +4592,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		 * post_types  – CPTs the toolkit registers (show_ui=true types only).
 		 * tool_slugs  – Tool slugs the toolkit adds to the registry.
 		 *
-		 * Only the Password Vault uses always=true (always loaded by the Pro plugin).
+		 * Only the Password Vault and Vehicle Estimation use always=true (always loaded by the Pro plugin).
 		 * All other toolkits are controlled via the wp_mcp_ai_settings option.
 		 */
 		$toolkit_registry = array(
@@ -4450,6 +4603,15 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 				'always'     => true,
 				'post_types' => array(),
 				'tool_slugs' => array( 'get_vault_entry', 'create_vault_entry', 'update_vault_entry', 'delete_vault_entry', 'list_vault_entries' ),
+			),
+
+			// ── Always-on (Vehicle Estimation is loaded unconditionally by Pro) ──
+			'_always_vehicle_estimation' => array(
+				'label'      => __( 'Vehicle Estimation', 'mcp-ai-wpoos-pro' ),
+				'setting'    => '',
+				'always'     => true,
+				'post_types' => array(),
+				'tool_slugs' => array( 'vin_decode', 'vehicle_repair_estimate', 'vehicle_cleaning_estimate' ),
 			),
 
 			// ── Media Toolkit (file always loaded, activated via setting) ──────
@@ -4798,6 +4960,133 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			array(
 				'success'  => true,
 				'template' => $slug,
+			)
+		);
+	}
+
+	/**
+	 * REST handler: GET /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Returns the full metadata for a single template including any saved
+	 * customizations.  Used by the React editor to pre-populate form fields.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_get_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response( $meta );
+	}
+
+	/**
+	 * REST handler: POST /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Saves per-template customizations (name, description, icon, accent_color,
+	 * custom_css).  Only whitelisted keys are accepted; values are sanitized by
+	 * the registry.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_save_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		$body = $request->get_json_params();
+		if ( ! is_array( $body ) ) {
+			$body = (array) $request->get_params();
+		}
+
+		// Remove slug from body to avoid confusion with URL param.
+		unset( $body['slug'] );
+
+		$saved = WP_MCP_AI_Telegram_Mini_App_Template_Registry::save_customizations( $slug, $body );
+
+		if ( ! $saved ) {
+			return new WP_Error(
+				'save_failed',
+				__( 'Could not save template customizations.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response(
+			array_merge(
+				$meta,
+				array( 'success' => true )
+			)
+		);
+	}
+
+	/**
+	 * REST handler: DELETE /telegram-mini-app/template/{slug}/customize
+	 *
+	 * Resets all customizations for the given template to the built-in defaults
+	 * by removing the stored option.
+	 *
+	 * @since 1.1.4
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_reset_template_customizations( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 404 )
+			);
+		}
+
+		WP_MCP_AI_Telegram_Mini_App_Template_Registry::reset_customizations( $slug );
+
+		$meta = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_meta( $slug );
+		return rest_ensure_response(
+			array_merge(
+				$meta,
+				array( 'success' => true )
 			)
 		);
 	}

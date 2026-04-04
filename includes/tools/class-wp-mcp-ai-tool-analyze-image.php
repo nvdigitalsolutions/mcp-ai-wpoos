@@ -3,6 +3,9 @@
  * Tool for analyzing images using multiple AI vision providers.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -10,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
@@ -208,12 +212,10 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Response or error.
 	 */
 	private function call_openai_vision( $image_url, $image_content, $prompt, $max_tokens, $settings ) {
-		$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
-
-		if ( empty( $api_key ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_missing_api_key',
-				__( 'OpenAI API key is not configured.', 'mcp-ai-wpoos' ),
+				'wp_mcp_ai_missing_class',
+				__( 'OpenAI client class not found.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -242,27 +244,20 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$model        = isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
-		$request_body = array(
-			'model'      => $model,
-			'messages'   => array(
-				array(
-					'role'    => 'user',
-					'content' => $content,
-				),
+		$model    = isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $content,
 			),
-			'max_tokens' => $max_tokens,
 		);
 
-		$response = wp_remote_post(
-			'https://api.openai.com/v1/chat/completions',
+		$client   = new WP_MCP_AI_OpenAI_Client();
+		$response = $client->create_chat_completion(
+			$messages,
 			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
-				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 30,
+				'model'                 => $model,
+				'max_completion_tokens' => $max_tokens,
 			)
 		);
 
@@ -270,22 +265,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return $response;
 		}
 
-		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
-			return new WP_Error(
-				'wp_mcp_ai_api_error',
-				sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'OpenAI API returned error code %d.', 'mcp-ai-wpoos' ),
-					$response_code
-				),
-				array( 'status' => $response_code )
-			);
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
+		if ( ! isset( $response['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
 				__( 'Invalid response from OpenAI API.', 'mcp-ai-wpoos' ),
@@ -294,15 +274,15 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'analysis'   => trim( $body['choices'][0]['message']['content'] ),
-			'model_used' => isset( $body['model'] ) ? $body['model'] : $model,
+			'analysis'   => trim( $response['choices'][0]['message']['content'] ),
+			'model_used' => isset( $response['model'] ) ? $response['model'] : $model,
 			'image_url'  => $image_url,
 			'prompt'     => $prompt,
 			'metadata'   => array(
 				'provider'   => 'openai',
-				'model'      => isset( $body['model'] ) ? $body['model'] : $model,
+				'model'      => isset( $response['model'] ) ? $response['model'] : $model,
 				'max_tokens' => $max_tokens,
-				'usage'      => isset( $body['usage'] ) ? $body['usage'] : null,
+				'usage'      => isset( $response['usage'] ) ? $response['usage'] : null,
 				'timestamp'  => current_time( 'mysql' ),
 			),
 		);

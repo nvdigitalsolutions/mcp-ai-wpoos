@@ -6,6 +6,9 @@
  * Supports 10 drawing types, 6 presentation styles, and professional architectural output.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -795,6 +798,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		}
 
 		// Prepare SVG output file.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$temp_output = wp_tempnam( 'arch-drawing-svg-' );
 		if ( ! $temp_output ) {
 			return new WP_Error(

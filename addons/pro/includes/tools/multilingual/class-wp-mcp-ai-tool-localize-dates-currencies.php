@@ -6,6 +6,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -47,21 +50,31 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'locale'   => array(
+				'locale'       => array(
 					'type'        => 'string',
 					'description' => 'Locale code (e.g., en_US, fr_FR)',
 				),
-				'date'     => array(
+				'date'         => array(
 					'type'        => 'string',
-					'description' => 'Date to format',
+					'description' => 'Date to format (any strtotime-compatible string)',
 				),
-				'amount'   => array(
+				'amount'       => array(
 					'type'        => 'number',
 					'description' => 'Currency amount to format',
 				),
-				'currency' => array(
+				'currency'     => array(
 					'type'        => 'string',
-					'description' => 'Currency code (USD, EUR, etc.)',
+					'description' => 'ISO 4217 currency code (USD, EUR, etc.)',
+					'default'     => 'USD',
+				),
+				'phone'        => array(
+					'type'        => 'string',
+					'description' => 'Phone number to format using libphonenumber-js',
+				),
+				'country_code' => array(
+					'type'        => 'string',
+					'description' => 'ISO 3166-1 alpha-2 country code for phone formatting (e.g., US, GB)',
+					'default'     => 'US',
 				),
 			),
 			'required'   => array(),
@@ -80,11 +93,60 @@ class WP_MCP_AI_Tool_Localize_Dates_Currencies implements WP_MCP_AI_Tool_Interfa
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// TODO: Implement localize_dates_currencies logic
+		$locale   = ! empty( $arguments['locale'] ) ? sanitize_text_field( $arguments['locale'] ) : get_locale();
+		$date     = ! empty( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
+		$amount   = isset( $arguments['amount'] ) ? floatval( $arguments['amount'] ) : null;
+		$currency = ! empty( $arguments['currency'] ) ? strtoupper( sanitize_text_field( $arguments['currency'] ) ) : 'USD';
+		$phone    = ! empty( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '';
+		$country  = ! empty( $arguments['country_code'] ) ? strtoupper( sanitize_text_field( $arguments['country_code'] ) ) : 'US';
 
-		return array(
+		$output = array(
 			'success' => true,
-			'message' => __( 'Localize Dates and Currencies executed successfully.', 'mcp-ai-wpoos-pro' ),
+			'locale'  => $locale,
 		);
+
+		// Format currency amount using PHP Intl NumberFormatter when available.
+		if ( null !== $amount ) {
+			if ( class_exists( 'NumberFormatter' ) ) {
+				$fmt                       = new NumberFormatter( $locale, NumberFormatter::CURRENCY );
+				$output['formatted_amount'] = $fmt->formatCurrency( $amount, $currency );
+			} else {
+				// Basic fallback.
+				$output['formatted_amount'] = $currency . ' ' . number_format( $amount, 2 );
+			}
+			$output['currency'] = $currency;
+		}
+
+		// Format date using PHP Intl IntlDateFormatter when available.
+		if ( '' !== $date ) {
+			$timestamp = strtotime( $date );
+			if ( false !== $timestamp ) {
+				if ( class_exists( 'IntlDateFormatter' ) ) {
+					$fmt                    = new IntlDateFormatter(
+						$locale,
+						IntlDateFormatter::LONG,
+						IntlDateFormatter::NONE,
+						wp_timezone()
+					);
+					$output['formatted_date'] = $fmt->format( $timestamp );
+				} else {
+					$output['formatted_date'] = wp_date( get_option( 'date_format' ), $timestamp );
+				}
+			} else {
+				$output['formatted_date'] = $date;
+			}
+		}
+
+		// Format phone via libphonenumber-js service.
+		if ( '' !== $phone ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-language-detection-service.php';
+			$svc                      = new WP_MCP_AI_Language_Detection_Service();
+			$phone_result             = $svc->format_phone( $phone, $country );
+			$output['formatted_phone'] = $phone_result['formatted'];
+			$output['phone_valid']     = $phone_result['valid'];
+		}
+
+		$output['message'] = __( 'Localization applied successfully.', 'mcp-ai-wpoos-pro' );
+		return $output;
 	}
 }

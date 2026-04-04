@@ -9,10 +9,22 @@
 
 ## What Gets Published
 
-Three NPM packages under `@nvdigitalsolutions` organization:
+Nine NPM packages under `@nvdigitalsolutions` organization:
+
+**Tier 1 — Core Utilities:**
 - `@nvdigitalsolutions/nvoos-storage`
 - `@nvdigitalsolutions/nvoos-markdown`
 - `@nvdigitalsolutions/nvoos-events`
+
+**Tier 2 — Extended Utilities:**
+- `@nvdigitalsolutions/nvoos-http-client`
+- `@nvdigitalsolutions/nvoos-clipboard`
+- `@nvdigitalsolutions/nvoos-offline-sync`
+
+**Tier 3 — Chat UI Utilities:**
+- `@nvdigitalsolutions/nvoos-slash-commands`
+- `@nvdigitalsolutions/nvoos-audio`
+- `@nvdigitalsolutions/nvoos-dom-batcher`
 
 ## Prerequisites
 

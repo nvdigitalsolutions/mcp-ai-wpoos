@@ -6,6 +6,9 @@
  * Follows Separation of Concerns - only handles presentation logic.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -171,6 +174,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 				}
 				.wp-mcp-ai-model-provider-badge.webllm {
 					background-color: #9b59b6;
+				}
+				.wp-mcp-ai-model-provider-badge.nvidia {
+					background-color: #76b900;
 				}
 				.wp-mcp-ai-model-provider-badge.google {
 					background-color: #4285f4;

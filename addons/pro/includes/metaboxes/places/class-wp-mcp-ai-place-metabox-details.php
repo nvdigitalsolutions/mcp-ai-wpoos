@@ -3,6 +3,9 @@
  * Place Details Metabox.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -131,7 +134,7 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_place_details_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_place_details_nonce'], 'wp_mcp_ai_place_details_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_place_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_place_details_nonce'] ) ), 'wp_mcp_ai_place_details_nonce' ) ) {
 			return;
 		}
 
@@ -153,19 +156,19 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 		}
 
 		if ( isset( $_POST['place_google_place_id'] ) ) {
-			update_post_meta( $post_id, '_place_google_place_id', sanitize_text_field( $_POST['place_google_place_id'] ) );
+			update_post_meta( $post_id, '_place_google_place_id', sanitize_text_field( wp_unslash( $_POST['place_google_place_id'] ) ) );
 		}
 
 		if ( isset( $_POST['business_hours'] ) && is_array( $_POST['business_hours'] ) ) {
 			$sanitized_hours = array();
-			foreach ( $_POST['business_hours'] as $day => $hours ) {
+			foreach ( wp_unslash( $_POST['business_hours'] ) as $day => $hours ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array elements sanitized individually below.
 				$sanitized_hours[ sanitize_key( $day ) ] = sanitize_text_field( $hours );
 			}
 			update_post_meta( $post_id, '_place_business_hours', $sanitized_hours );
 		}
 
 		if ( isset( $_POST['place_amenities'] ) ) {
-			$amenities_text = sanitize_textarea_field( $_POST['place_amenities'] );
+			$amenities_text = sanitize_textarea_field( wp_unslash( $_POST['place_amenities'] ) );
 			$amenities      = array_filter( array_map( 'trim', explode( "\n", $amenities_text ) ) );
 			update_post_meta( $post_id, '_place_amenities', $amenities );
 		}

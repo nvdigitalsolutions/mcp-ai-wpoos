@@ -266,4 +266,215 @@ class Test_Pro_Workflow_Builder_Ajax extends WP_Ajax_UnitTestCase {
 		$response = json_decode( $this->_last_response, true );
 		$this->assertFalse( $response['success'], 'Unsupported node type should return error' );
 	}
+
+	/**
+	 * Test duplicate workflow.
+	 */
+	public function test_duplicate_workflow() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		// Pre-populate a workflow.
+		$workflows = array(
+			'my-workflow' => array(
+				'id'          => 'my-workflow',
+				'name'        => 'My Workflow',
+				'description' => 'Duplication test',
+				'nodes'       => array(
+					array( 'id' => 'trigger-1', 'type' => 'trigger', 'position' => array( 'x' => 100, 'y' => 100 ), 'data' => array( 'label' => 'Start' ) ),
+				),
+				'edges'       => array(),
+				'created_at'  => time() - 3600,
+				'updated_at'  => time() - 3600,
+			),
+		);
+		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'my-workflow';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertTrue( $response['success'], 'Duplicate should succeed' );
+		$this->assertStringContainsString( 'Copy', $response['data']['workflow']['name'], 'Duplicated workflow should have Copy in its name' );
+
+		// Verify both workflows exist.
+		$all = get_option( 'wp_mcp_ai_pro_workflows', array() );
+		$this->assertCount( 2, $all, 'Should have original and duplicated workflow' );
+		$this->assertArrayHasKey( 'my-workflow', $all, 'Original workflow should still exist' );
+	}
+
+	/**
+	 * Test duplicate workflow with non-existent ID returns error.
+	 */
+	public function test_duplicate_workflow_not_found() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'nonexistent-workflow';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Duplicate of non-existent workflow should fail' );
+	}
+
+	/**
+	 * Test rename workflow.
+	 */
+	public function test_rename_workflow() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		// Pre-populate a workflow.
+		$workflows = array(
+			'old-name' => array(
+				'id'          => 'old-name',
+				'name'        => 'Old Name',
+				'description' => 'Rename test',
+				'nodes'       => array(),
+				'edges'       => array(),
+				'created_at'  => time(),
+				'updated_at'  => time(),
+			),
+		);
+		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'old-name';
+		$_POST['new_name']    = 'New Name';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertTrue( $response['success'], 'Rename should succeed' );
+		$this->assertEquals( 'New Name', $response['data']['workflow']['name'], 'Workflow name should be updated' );
+
+		// Verify old key is gone and new key exists.
+		$all = get_option( 'wp_mcp_ai_pro_workflows', array() );
+		$this->assertArrayNotHasKey( 'old-name', $all, 'Old workflow key should be removed' );
+		$this->assertCount( 1, $all, 'Should still have exactly one workflow' );
+	}
+
+	/**
+	 * Test rename workflow to name that already exists returns error.
+	 */
+	public function test_rename_workflow_conflict() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		// Pre-populate two workflows.
+		$workflows = array(
+			'workflow-a' => array(
+				'id'          => 'workflow-a',
+				'name'        => 'Workflow A',
+				'description' => '',
+				'nodes'       => array(),
+				'edges'       => array(),
+				'created_at'  => time(),
+				'updated_at'  => time(),
+			),
+			'workflow-b' => array(
+				'id'          => 'workflow-b',
+				'name'        => 'Workflow B',
+				'description' => '',
+				'nodes'       => array(),
+				'edges'       => array(),
+				'created_at'  => time(),
+				'updated_at'  => time(),
+			),
+		);
+		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'workflow-a';
+		$_POST['new_name']    = 'Workflow B';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Rename to existing name should fail' );
+	}
+
+	/**
+	 * Test rename workflow with empty name returns error.
+	 */
+	public function test_rename_workflow_empty_name() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		$workflows = array(
+			'my-wf' => array(
+				'id'          => 'my-wf',
+				'name'        => 'My WF',
+				'description' => '',
+				'nodes'       => array(),
+				'edges'       => array(),
+				'created_at'  => time(),
+				'updated_at'  => time(),
+			),
+		);
+		update_option( 'wp_mcp_ai_pro_workflows', $workflows );
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'my-wf';
+		$_POST['new_name']    = '';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_rename_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Rename with empty name should fail' );
+	}
+
+	/**
+	 * Test duplicate requires authentication.
+	 */
+	public function test_duplicate_requires_admin() {
+		if ( ! $this->builder ) {
+			$this->markTestSkipped( 'Builder class not available' );
+		}
+
+		// Switch to a non-admin user.
+		$subscriber = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber );
+
+		$_POST['nonce']       = wp_create_nonce( 'mcp_ai_pro_workflow_builder' );
+		$_POST['workflow_id'] = 'some-workflow';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_duplicate_pro_workflow' );
+		} catch ( WPAjaxDieContinuedException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertFalse( $response['success'], 'Non-admin should be rejected for duplicate' );
+	}
 }

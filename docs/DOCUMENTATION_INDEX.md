@@ -1,21 +1,65 @@
 # NV oOS Documentation Index
 
-**Last Updated:** March 5, 2026  
-**Plugin Version:** 1.1.3  
+**Last Updated:** April 1, 2026  
+**Plugin Version:** 1.1.6  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
 
-> **📌 MARCH 5, 2026 UPDATE:** 🌐 **OFFICE 365 & ICLOUD DRIVE + TELEGRAM AUTH FIX** ⭐⭐
-> - **Office 365 Integration** – 5 new tools: `send_outlook_mail`, `get_outlook_messages` (Outlook), `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` (OneDrive) via Microsoft Graph API
-> - **iCloud Drive Integration** – 3 new tools: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via configurable HTTPS gateway
-> - **New Webhook Controllers** – `WP_MCP_AI_Outlook_Webhook_Controller` and `WP_MCP_AI_iCloud_Webhook_Controller`
-> - **Chat Channels Toolkit** – Grows to **47 tools across 11 platforms** (was 39)
-> - **Telegram Mini App Auth Fix** – TMA session token fallback when cookies don't persist in Telegram WebView; `check_permission()` reduced to `read` for GET endpoints
-> - **WordPress.org Compliance 100%** – All output escaping, ABSPATH guards, and menu positions corrected; ready for submission
-> - **Version:** 1.1.3 (released March 2026)
+> **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
+> - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
+> - **Shopify Connection Auto-Resolve** – All 5 Shopify tools auto-resolve `connection_id` from assistant context. New `remote_shopify_connection` tool. `WP_MCP_AI_Shopify_Connection_Resolver` trait.
+> - **Webhook Status Admin Page** – Centralized webhook monitoring for 9 connection types under NV oOS Pro Dashboard. Live Telegram checks, set/remove webhook actions.
+> - **QuickBooks Desktop Sync** – New `quickbooks_desktop_sync` Pro tool via QODBC relay API. New `quickbooks_desktop` remote connection type.
+> - **Listing Image Download Tools** – 3 new Pro tools: `download_google_maps_images`, `download_facebook_page_images`, `download_instagram_page_images`.
+> - **Transformers.js v3.8.1** – CDN upgraded from `@xenova/transformers@2.17.2` to `@huggingface/transformers@3.8.1`. WebGPU acceleration, 4 Qwen3 models.
+> - **15 Schedule Presets** – CRM Email Correspondence (5), Document Management (5), Upwork Freelancer (5). Total: 100 → 115.
+> - **Medical Vitals Dashboard** – Recent reading card, configurable trend range (7D/14D/30D/90D).
+> - **Registration Product Research Page** – Quick Import, Guided Entry tabs, product selector sidebar, 3 AJAX handlers.
+> - **Copyright Attribution** – `@author`/`@copyright`/`@license` tags across 2,535 PHP + 159 JS/CSS files.
+> - **Bug Fixes** – Telegram webhook 403, chat inbox bot names, message pagination, connection_id scoping, workflow presets.
+> - **Security** – brace-expansion (CVE-2026-33750) and serialize-javascript (CVE-2026-34043) patched.
+> - **Tool Count** – 165 base + 368 pro = **533 total tools** (was 519).
+> - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
+
+> **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
+> - **8 Use-Case Presets** – Content Creator (12 tools), Customer Support (8 tools), E-commerce (11 tools), SEO & Research (12 tools), Developer Copilot (12 tools), Media & Creative Studio (11 tools), Site Administrator (13 tools), General Purpose (12 tools)
+> - **Assistant Seeding** – Selecting a preset creates a fully-configured `mcp_ai_assistant` CPT post with tools, system prompt, provider, model, and temperature. First assistant auto-set as default.
+> - **WCAG 2.1 Accessibility** – WAI-ARIA tablist/tab/tabpanel for provider tabs, keyboard navigation, `aria-current="step"` progress, `aria-live="polite"` feedback, `focus-visible` outlines
+> - **External JavaScript** – Inline scripts extracted to `assets/js/onboarding-wizard.js` with `wp_localize_script()` for i18n (CSP-compliant)
+> - **Explicit Completion** – Step 4 no longer auto-completes; uses "Mark Setup Complete" button via AJAX
+> - **New Hooks** – `wp_mcp_ai_onboarding_presets` filter, `wp_mcp_ai_onboarding_presets_seeded` action
+> - **22 PHPUnit Tests** – Preset validation, assistant seeding, duplicate prevention, model resolution
+> - **See**: [README.md Getting Started Wizard](../README.md#-installation), [CHANGELOG.md](../CHANGELOG.md)
+
+> **📌 MARCH 19, 2026 UPDATE:** 🏥 **HEALTHCARE DICOM IMAGING VIEWER — FULL MANAGER REBUILD**
+> - **Black Images Fixed** — `csDicomImageLoader.external.cornerstone` link now correctly wired; auto-VOI from pixel min/max for studies without `WindowCenter`/`WindowWidth` tags
+> - **Multi-Study Upload Fixed** — All uploaded studies now appear in the browser (was: only last study shown after a multi-file batch)
+> - **4-Tab Manager** — Studies (search/filter bar) · AI Tools · Audit Log · Documentation
+> - **W/L Clinical Presets** — 11 presets for CT (Soft Tissue / Lung / Brain / Bone / Abdomen / Liver / Mediastinum), MR (Brain / Spine / Soft Tissue), PET (SUV Max)
+> - **Extra Viewer Tools** — Flip H/V, Rotate CW/CCW, PNG screenshot export; keyboard shortcuts (Arrow keys, R reset, I invert)
+> - **AI Interpretation** — `POST /imaging/interpret` REST endpoint; Tools tab form auto-fills UID from open study
+> - **Accessible Delete** — Inline confirmation row replaces non-accessible `window.confirm`
+> - **Stats Bar** — Total studies, modality breakdown, storage used — populated from `GET /imaging/stats`
+> - **In-app Documentation Tab** — Keyboard shortcut reference, W/L presets table, DICOM modality codes, full REST API reference, Privacy & HIPAA notes
+> - **New Doc**: [features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)
+
+> **📌 MARCH 16, 2026 UPDATE:** 🗂️ **QUICK TOOL SELECTION PRESETS – FULL 760-TOOL COVERAGE**
+> - **Quick Tool Presets Expanded** – All 760 available tools are now reachable via one-click presets on the assistant CPT edit page (was ~527 tools)
+> - **New Preset** – `📋 Registration & Compliance` (44 tools): registration lifecycle, regulated products, compliance certificates, authority submission, NMRA/MOHAP sync
+> - **20+ Updated Presets** – E-commerce (Shopify), Communication (Discord/Slack/Teams/Apple/Telegram/WhatsApp/Messenger/Google Chat), Development (tool scaffolding), Files (cloud storage/PDF/Excel), SEO (social listening/competitor analysis), Site Management (page builder sections), Healthcare (health metrics/vitals import), Sales/CRM, Finance, and more
+> - **Total**: 61 presets covering all 760 tools (2,030 tool references) — up from 60 presets covering ~527 tools
+
+> **📌 MARCH 15, 2026 UPDATE:** 🔒 **SECURITY HARDENING + CHANNEL FIXES + v1.1.4**
+> - **Security** – AES-256-GCM encryption, finfo fail-closed, Discord replay protection, HTTPS enforcement, ZIP bomb guard, OCR info-disclosure fix
+> - **Chat Channels** – Fixed Slack @mentions, Google Chat routing/OIDC, Teams multi-connection + OAuth 1-click, Telegram typing indicator + slash commands
+> - **Telegram Mini App** – Connection-assigned assistant for doctor tab, Markdown HTML rendering for AI replies, vitals log import improved
+> - **AI Providers** – Gemini embedding-001 + 9 task types + output_dimensionality; AI-powered product actualization (Gemini/OpenAI)
+> - **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled; no server-side node_modules needed
+> - **WordPress.org** – .gitattributes excluded from ZIPs, composer.json included with vendor/, languages/ directory created
+> - **Version:** 1.1.4 (released March 2026)
 
 > **📌 MARCH 2, 2026 UPDATE:** 📱 **TELEGRAM MINI APP ENHANCEMENT PROPOSAL** ⭐⭐
 > - **Comprehensive Telegram Mini App Enhancement Proposal** - Full integration with Telegram Bot Platform features
@@ -39,7 +83,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
 
 > **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
-> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 519+ tools for multi-step orchestration
+> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 533+ tools for multi-step orchestration
 > - **Pattern: Web Search → Source Collection → AI Synthesis → Report Generation**
 > - **Key Findings:**
 >   - 14 tools already using pattern (research_product, research_post, etc.)
@@ -771,6 +815,24 @@ Complete integration of Hugging Face Inference API as a provider for open-source
 - Privacy-friendly (can self-host)
 - Integrated with provider priority and fallback system
 
+### NVIDIA NIM Integration (April 2026)
+Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
+
+- **[NVIDIA_NIM_SETUP.md](features/ai-providers/nvidia/NVIDIA_NIM_SETUP.md)** ⭐ **NEW**
+  - Step-by-step setup guide for NVIDIA NIM provider
+  - API key generation via build.nvidia.com
+  - Getting Started wizard and Settings page configuration
+  - Self-hosted NIM container support
+  - Available models catalog (Llama, Mistral, Nemotron, Gemma, Qwen, DeepSeek)
+  - Troubleshooting common issues
+
+**Key Features:**
+- OpenAI-compatible API interface
+- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma, Qwen, DeepSeek R1)
+- Cloud inference via `integrate.api.nvidia.com` or self-hosted NIM containers
+- Integrated with provider priority and fallback system
+- Getting Started wizard support for first-time setup
+
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 
@@ -874,10 +936,11 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
-2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
-4. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-5. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+2. **Getting Started Wizard** ⭐ — Activate the plugin and follow the 4-step wizard (`NV oOS → Getting Started`) to connect a provider and create your first assistant in under 2 minutes
+3. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
+4. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+5. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+6. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
@@ -963,6 +1026,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
+| **Onboarding Wizard** (built-in) | ⭐ **NEW:** 4-step Getting Started wizard at `/wp-admin/admin.php?page=wp-mcp-ai-getting-started`. 8 use-case presets seed fully-configured assistants with tools, system prompts, and temperatures. WCAG 2.1 accessible. See [README.md](../README.md#-installation). | Everyone |
 
 ### Architecture & Design
 
@@ -1083,12 +1147,19 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[features/pro-schedule-manager.md](features/pro-schedule-manager.md)** ⭐ **NEW (Mar 2026)** | **Pro Schedule Manager** — 5 schedule types (task / workflow / assistant_run / channel_broadcast / workflow_builder), Symfony Cache & Validator, MJML email, ical + CSV export, chart.js sparkline, retry logic, JetEngine CCT history, 6 AI tools, full admin UI | Developers/Admins |
+| **[features/healthcare-imaging-viewer.md](features/healthcare-imaging-viewer.md)** ⭐ **NEW (Mar 2026)** | **Healthcare DICOM Imaging Viewer** — Full manager: upload, study browser with search/filter, Cornerstone3D viewer, W/L presets, flip/rotate, AI interpretation, audit log, REST API reference, HIPAA notes | Admins/Clinical Staff |
 | [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
+| [telegram-mini-app-templates.md](telegram-mini-app-templates.md) | **NEW:** Health & Wellness and Medical Vitals Telegram Mini App templates — member selection, auth flow, role-based access, offline-first sync, custom template API | Developers/Users |
 
 **Pro Custom Post Types:**
 - **Events** (5 tools) - Calendar management, Google Calendar integration
 - **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
 - **Places** (7 tools) - Location management, Google Places API integration
+
+**Telegram Mini App Health Templates:**
+- **Health & Wellness** (`health_wellness`) – Daily metrics (steps, sleep, hydration, sodium, mood), streak gamification, Chart.js charts, AI coach
+- **Medical Vitals** (`medical_vitals`) – Vitals + kidney lab tracking (BP, HR, SpO₂, eGFR, creatinine, BUN, K⁺, Na⁺), 7-day trends, medication dosage, AI doctor assistant
 
 ### Performance & Optimization
 
@@ -1190,6 +1261,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| **[ADR_001_module_boundaries.md](ADR_001_module_boundaries.md)** | **⭐ NEW (Mar 2026):** Architecture Decision Record — four-layer module boundaries, interface catalogue, enforcement rules | Developers |
+| **[BUILD_MATRIX.md](BUILD_MATRIX.md)** | **⭐ NEW (Mar 2026):** Complete build script reference — every `npm run build:*` script, its config file, output, and when to run it | Developers |
 | [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |

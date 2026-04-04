@@ -3,6 +3,9 @@
  * Event Metabox for managing event-specific fields.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -258,7 +261,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save event type.
 		if ( isset( $_POST['event_type'] ) ) {
-			$type        = sanitize_key( $_POST['event_type'] );
+			$type        = sanitize_key( wp_unslash( $_POST['event_type'] ) );
 			$valid_types = array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' );
 			if ( in_array( $type, $valid_types, true ) ) {
 				update_post_meta( $post_id, '_event_type', $type );
@@ -271,7 +274,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save start date.
 		if ( isset( $_POST['event_start_date'] ) ) {
-			$start_date = sanitize_text_field( $_POST['event_start_date'] );
+			$start_date = sanitize_text_field( wp_unslash( $_POST['event_start_date'] ) );
 			if ( self::validate_date( $start_date ) ) {
 				update_post_meta( $post_id, '_event_start_date', $start_date );
 			}
@@ -279,7 +282,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save start time (only if not all-day).
 		if ( isset( $_POST['event_start_time'] ) && '0' === $all_day ) {
-			$start_time = sanitize_text_field( $_POST['event_start_time'] );
+			$start_time = sanitize_text_field( wp_unslash( $_POST['event_start_time'] ) );
 			if ( empty( $start_time ) || self::validate_time( $start_time ) ) {
 				update_post_meta( $post_id, '_event_start_time', $start_time );
 			}
@@ -289,7 +292,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save end date.
 		if ( isset( $_POST['event_end_date'] ) ) {
-			$end_date = sanitize_text_field( $_POST['event_end_date'] );
+			$end_date = sanitize_text_field( wp_unslash( $_POST['event_end_date'] ) );
 			if ( empty( $end_date ) || self::validate_date( $end_date ) ) {
 				update_post_meta( $post_id, '_event_end_date', $end_date );
 			}
@@ -297,7 +300,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save end time (only if not all-day).
 		if ( isset( $_POST['event_end_time'] ) && '0' === $all_day ) {
-			$end_time = sanitize_text_field( $_POST['event_end_time'] );
+			$end_time = sanitize_text_field( wp_unslash( $_POST['event_end_time'] ) );
 			if ( empty( $end_time ) || self::validate_time( $end_time ) ) {
 				update_post_meta( $post_id, '_event_end_time', $end_time );
 			}
@@ -307,7 +310,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save location.
 		if ( isset( $_POST['event_location'] ) ) {
-			$location = sanitize_text_field( $_POST['event_location'] );
+			$location = sanitize_text_field( wp_unslash( $_POST['event_location'] ) );
 			update_post_meta( $post_id, '_event_location', $location );
 		}
 

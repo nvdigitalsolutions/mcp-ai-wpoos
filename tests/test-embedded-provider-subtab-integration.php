@@ -6,6 +6,9 @@
  * integrated into the base Providers section's subtab navigation.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -64,8 +67,14 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 		// Verify the embedded subtab ID.
 		$this->assertEquals( 'embedded', $subtab_groups['embedded']['id'] );
 
-		// Verify the embedded subtab has expected fields.
-		$expected_fields = array( 'enable_embedded', 'embedded_model', 'embedded_model_management' );
+		// Verify the embedded subtab has expected fields (client-side + server-side after Pro move).
+		$expected_fields = array(
+			'enable_embedded',
+			'embedded_model',
+			'embedded_model_management',
+			'embedded_server_model',
+			'server_model_management',
+		);
 		$this->assertEquals( $expected_fields, $subtab_groups['embedded']['fields'] );
 	}
 
@@ -110,10 +119,13 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 		$method->setAccessible( true );
 		$pro_fields = $method->invoke( $pro_providers_section );
 
-		// Verify that the Pro section has embedded provider fields.
+		// Verify that the Pro section has embedded provider fields (both client-side and server-side).
 		$this->assertArrayHasKey( 'enable_embedded', $pro_fields );
 		$this->assertArrayHasKey( 'embedded_model', $pro_fields );
 		$this->assertArrayHasKey( 'embedded_model_management', $pro_fields );
+		// Server-side GGUF model management fields (moved to Pro addon).
+		$this->assertArrayHasKey( 'embedded_server_model', $pro_fields );
+		$this->assertArrayHasKey( 'server_model_management', $pro_fields );
 	}
 
 	/**

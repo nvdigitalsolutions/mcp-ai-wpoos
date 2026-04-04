@@ -1,0 +1,51 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-slash-commands",
+  "version": "0.1.0-alpha.1",
+  "description": "Slash command system with fuzzy-search autocomplete and execution engine - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-slash-commands.js",
+  "module": "dist/nvoos-slash-commands.js",
+  "types": "dist/nvoos-slash-commands.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-slash-commands.js",
+      "default": "./dist/nvoos-slash-commands.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-slash-commands",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-slash-commands"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "slash-commands",
+    "autocomplete",
+    "fuzzy-search",
+    "chat",
+    "command-palette",
+    "browser",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

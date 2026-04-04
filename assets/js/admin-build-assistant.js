@@ -4,9 +4,12 @@
  * Handles the Build Assistant admin page functionality.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
-/* global jQuery, wpMcpAiCreateAssistant, wpMcpAiChat */
+/* global jQuery, wpMcpAiCreateAssistant */
 
 ( function( $ ) {
 	'use strict';
@@ -489,7 +492,9 @@
 		 * @return {string} Session key.
 		 */
 		generateSessionKey: function() {
-			return 'build-' + Math.random().toString( 36 ).substring( 2, 15 ) + Math.random().toString( 36 ).substring( 2, 15 );
+			const array = new Uint8Array( 16 );
+			crypto.getRandomValues( array );
+			return 'build-' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 		},
 
 		/**

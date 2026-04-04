@@ -8,6 +8,9 @@
  * 3. Verify data integrity (user isolation, assistant filtering, message preservation)
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 

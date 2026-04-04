@@ -3,6 +3,9 @@
  * Submit Document Prompt Tool
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 
@@ -149,6 +152,106 @@ class WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_missing_document', $result->get_error_code() );
+	}
+
+	/**
+	 * Ensure the tool accepts a bare OpenAI file_id that has no WordPress attachment.
+	 */
+	public function test_execute_with_bare_openai_file_id() {
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']  = 'sk-test';
+		$settings['request_timeout'] = 45;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$captured_request = array();
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			// Handle file retrieval verification request.
+			if ( false !== strpos( $url, '/files/file-remote-abc123' ) && 'GET' === $args['method'] ) {
+				return array(
+					'body'     => wp_json_encode(
+						array(
+							'id'         => 'file-remote-abc123',
+							'object'     => 'file',
+							'bytes'      => 2048,
+							'created_at' => time(),
+							'filename'   => 'report.pdf',
+							'purpose'    => 'assistants',
+							'status'     => 'processed',
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'headers'  => array(),
+				);
+			}
+
+			// Handle Responses API call.
+			if ( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT === $url ) {
+				$captured_request = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+
+				return array(
+					'body'     => wp_json_encode(
+						array(
+							'choices' => array(
+								array(
+									'index'   => 0,
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'Analysis of OpenAI file complete.',
+									),
+								),
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'headers'  => array(),
+				);
+			}
+
+			return false;
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$tool   = new WP_MCP_AI_Tool_Submit_Document_Prompt();
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'Analyse the attached report.',
+				'file_id' => 'file-remote-abc123',
+				'model'   => 'gpt-test',
+			),
+			array(
+				'user_id'          => $user_id,
+				'assistant_config' => array(),
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotWPError( $result );
+		$this->assertSame( 'Analysis of OpenAI file complete.', $result );
+		$this->assertNotEmpty( $captured_request );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'input', $payload );
+
+		$user_message = $payload['input'][0];
+		$this->assertCount( 2, $user_message['content'] );
+		$this->assertSame( 'input_file', $user_message['content'][1]['type'] );
+		$this->assertSame( 'file-remote-abc123', $user_message['content'][1]['file_id'] );
 	}
 
 	/**

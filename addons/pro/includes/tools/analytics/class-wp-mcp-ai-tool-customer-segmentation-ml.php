@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -170,7 +173,7 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Segmentation results or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$num_segments  = isset( $arguments['num_segments'] ) ? absint( $arguments['num_segments'] ) : 5;
 		$method        = ! empty( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'rfm';
 		$min_orders    = isset( $arguments['min_orders'] ) ? absint( $arguments['min_orders'] ) : 2;

@@ -13,7 +13,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 1. 📝 Media Toolkit
 
 **Setting**: `enable_media_toolkit`  
-**Tools**: 15+ tools  
+**Tools**: 7 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -22,6 +22,16 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Media collection organization
 - Automated media workflows
 - Template presets library
+- Sharp image optimization (NPM-powered)
+
+**Tools Provided**:
+- `list_media_templates` - List available media templates
+- `apply_media_template` - Apply a template to media items
+- `create_media_template` - Create new media templates
+- `create_media_collection` - Group media items into collections
+- `process_collection` - Process a collection of media items
+- `apply_collection_template` - Apply a template to a collection
+- `optimize_image_sharp` - Optimize images using Sharp library
 
 **Use Cases**:
 - Content marketing teams
@@ -36,7 +46,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 2. 📄 Document Generation Toolkit
 
 **Setting**: `enable_document_generation_toolkit`  
-**Tools**: 10+ tools  
+**Tools**: 15 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -45,7 +55,28 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Excel spreadsheet generation
 - HTML to PDF conversion
 - Template-based documents
+- PDF text extraction and OCR
+- PDF merging and watermarking
+- Invoice PDF generation
+- Excel data import/export
 - Custom styling and branding
+
+**Tools Provided**:
+- `pro_pdf_document` - Advanced PDF generation with full styling
+- `pro_word_document` - Advanced Word document generation
+- `pro_excel_document` - Advanced Excel spreadsheet generation
+- `generate_pdf` - Simplified PDF generation
+- `generate_word` - Simplified Word document generation
+- `generate_excel` - Simplified Excel generation
+- `extract_pdf_text` - Extract text content from PDFs
+- `ocr_pdf_text` - OCR text extraction from scanned PDFs
+- `pro_document_ocr` - Advanced OCR document processing
+- `html_to_pdf` - Convert HTML content to PDF
+- `merge_pdfs` - Merge multiple PDF files into one
+- `add_watermark_to_pdf` - Add watermarks to PDF files
+- `generate_invoice_pdf` - Generate professional invoice PDFs
+- `excel_data_import` - Import data from Excel files
+- `excel_data_export` - Export data to Excel format
 
 **Use Cases**:
 - Report generation
@@ -73,7 +104,18 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Event scheduling
 - Timeline management
 - Team collaboration
-- JetEngine CCT synchronization
+- JetEngine CCT synchronization (when JetEngine is active, four CCTs are auto-provisioned — see below)
+
+**JetEngine CCTs** (registered only when `enable_project_management` is on):
+
+| CCT slug | Table | Purpose |
+|---|---|---|
+| `mcp_task_plans` | `wp_jet_cct_mcp_task_plans` | Markdown task plans for autonomous orchestration |
+| `mcp_task_templates` | `wp_jet_cct_mcp_task_templates` | Reusable workflow templates |
+| `mcp_autonomous_sessions` | `wp_jet_cct_mcp_autonomous_sessions` | Active agent session state |
+| `mcp_execution_history` | `wp_jet_cct_mcp_execution_history` | Per-step tool-execution log |
+
+> **Note**: All four CCTs are visible in JetEngine's admin UI (`wp-admin/admin.php?page=jet-cct-<slug>`) only after enabling Project Management and running the site at least once with JetEngine active.
 
 **Tools Provided**:
 - `create_project` - Create new projects
@@ -88,7 +130,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - `update_event` - Modify event details
 - `list_events` - View calendar events
 - `delete_event` - Cancel events
-- `get_project_status` - Project health reports
+- `get_calendar_view` - Get calendar view of events
 
 **Use Cases**:
 - Software development teams
@@ -103,7 +145,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 4. 📍 Places Management
 
 **Setting**: `enable_places_management`  
-**Tools**: 6+ tools  
+**Tools**: 8 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -119,8 +161,10 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - `update_place` - Modify place details
 - `list_places` - Browse locations
 - `delete_place` - Remove places
-- `search_places_radius` - Geographic search
-- `geocode_address` - Convert addresses to coordinates
+- `get_place` - Get place details
+- `search_and_save_places` - Search and save places from external sources
+- `research_place` - AI-powered research on a place
+- `analyze_geospatial` - Turf.js geospatial analysis (distance, buffers, intersections)
 
 **Use Cases**:
 - Travel and tourism sites
@@ -141,7 +185,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 5. 🏫 ECA Pro Toolkit
 
 **Setting**: `enable_eca_management`  
-**Tools**: 5+ tools  
+**Tools**: 14 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -155,9 +199,18 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 **Tools Provided**:
 - `create_eca` - Create activities/clubs
 - `update_eca` - Modify ECA details
+- `get_eca` - Get ECA details
 - `list_ecas` - View all activities
-- `enroll_student` - Register students
-- `sync_isams_ecas` - Sync with iSAMS
+- `delete_eca` - Remove ECA records
+- `create_student` - Add student records
+- `update_student` - Modify student details
+- `get_student` - Get student details
+- `list_students` - Browse students
+- `delete_student` - Remove student records
+- `enroll_student_eca` - Enroll a student in an ECA
+- `sync_students_from_isams` - Sync students from iSAMS
+- `sync_ecas_from_isams` - Sync ECAs from iSAMS
+- `research_eca` - AI-powered research on an ECA
 
 **Use Cases**:
 - Schools and universities
@@ -172,7 +225,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 6. 🏥 Health & Wellness Pro Toolkit
 
 **Setting**: `enable_health_wellness_management`  
-**Tools**: 30+ tools  
+**Tools**: 48 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -184,6 +237,15 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Allergy and condition tracking
 - Pet health management
 - Secure health data storage
+- JetEngine CCT for vitals log (when JetEngine is active — see below)
+
+**JetEngine CCT** (registered only when `enable_health_wellness_management` is on):
+
+| CCT slug | Table | Purpose |
+|---|---|---|
+| `vitals_log` | `wp_jet_cct_vitals_log` | Time-series vital signs log (blood pressure, glucose, weight, CBC panel, LFT, electrolytes) |
+
+> **Note**: The `vitals_log` CCT is used by the `log_vital_signs` and `import_vitals` tools. It will not appear in JetEngine's admin UI unless Health & Wellness is enabled.
 
 **Tool Categories**:
 - **Members**: Create, update, list family/pet members
@@ -255,7 +317,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 8. 🖥️ AI CPT Management
 
 **Setting**: `enable_ai_cpt_management`  
-**Tools**: Integration metabox  
+**Tools**: 2 tools  
 **Status**: Pro addon required
 
 **Features**:
@@ -263,8 +325,11 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Integration with WordPress admin
 - Direct content creation/editing
 - Custom post type support
-- Product management (WooCommerce)
-- Term and taxonomy management
+- AI-powered research and analysis
+
+**Tools Provided**:
+- `research_post` - AI-powered research on a post, fetches and analyzes content
+- `research_page` - AI-powered research on a page, fetches and analyzes content
 
 **Supported Post Types**:
 - Posts
@@ -476,8 +541,8 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 ### 14. 💰 Financial Planning Toolkit
 
-**Setting**: `enable_financial_planning_toolkit`  
-**Tools**: 24 professional tools  
+**Setting**: `enable_financial_planner_toolkit`  
+**Tools**: 32 professional tools  
 **Status**: Pro addon required (✅ Fully Implemented)
 
 **Features**:
@@ -504,6 +569,14 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - Tax estimation
 - College savings (529 plan) calculator
 - Insurance needs analysis
+- Real-time financial news aggregation from multiple sources
+- Stock ticker search and OHLCV data retrieval via YFinance
+- Market sentiment analysis with keyword scoring (-1.0 to +1.0)
+- Time-series market forecasting (linear regression, moving average, exponential smoothing)
+- Investment signal tracking and evolution evaluation
+- Financial logic chain visualization (Mermaid diagrams)
+- Professional financial report generation (6 report types)
+- Specialized multi-source financial web search
 
 **Tool Categories**:
 - **Retirement Planning**: Calculators, IRA/Roth, withdrawal strategies, social security, pensions (5 tools)
@@ -512,6 +585,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 - **Debt Management**: Debt payoff, mortgage calculator, credit score tracking (3 tools)
 - **Goal Planning**: Savings goals, emergency fund (2 tools)
 - **Financial Literacy**: Health score, tax estimator, college savings, insurance (4 tools)
+- **Market Analysis & Research**: News aggregation, stock data, sentiment analysis, forecasting, signal tracking, logic visualization, report generation, financial search (8 tools)
 
 **Use Cases**:
 - Financial advisors (educational purposes)
@@ -714,7 +788,7 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 ### 19. 📊 Analytics Toolkit
 
-**Setting**: `enable_analytics_toolkit`  
+**Setting**: `enable_advanced_analytics_toolkit`  
 **Tools**: 12 professional tools  
 **Status**: Pro addon required (✅ Fully Implemented)
 
@@ -758,30 +832,62 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 ### 20. 🤝 CRM Toolkit
 
 **Setting**: `enable_crm_toolkit`  
-**Tools**: 1 tool (Basic implementation)  
+**Tools**: 7 tools  
 **Status**: Pro addon required
 
 **Features**:
-- Contact management with CRUD operations
-- Basic CRM functionality
-- Contact data storage
+- Contact management with full CRUD operations (create, read, update, delete, list, search)
+- Company records with industry, size, location, and target status
+- AI-powered company research using web search
+- Email-based lead search with scoring, MQL staging, and WP Cron scheduling
+- Email-based correspondence search with response-time analytics and routing suggestions
+- Email-based accounting search with invoice/payment tracking and QuickBooks/Xero integration hints
+- Cached results (WP_MCP_AI_Cache_Helper) with scheduled auto-refresh via WP Cron
 
-**Tool Provided**:
-- `manage_crm_contact` - Create, read, update, delete CRM contacts
+**Tools Provided**:
+- `manage_crm_contact` - Create, read, update, delete, list, and search CRM contacts (supports CCT/CPT storage)
+- `create_company` - Create company records with industry, size, location, and target status
+- `get_companies` - List and search companies by industry, size, target status, or location
+- `research_company` - AI-powered company research using web search for industry insights and target fit
+- `crm_email_search_leads` - Search new leads by email criteria with lead scoring, MQL staging, and scheduling
+- `crm_email_search_correspondence` - Search customer correspondence with response-time analytics and routing
+- `crm_email_search_accounting` - Search accounting emails (invoices, payments, quotes) with billing status and fiscal filtering
 
 **Use Cases**:
-- Basic contact management
-- Lead tracking
-- Customer database
-- Foundation for CRM integration
-
-**Status**: This is a minimal toolkit that may be expanded in future releases.
+- Lead tracking and qualification pipeline
+- Customer database management
+- Automated lead discovery and scoring
+- Accounts receivable and invoice follow-up
+- Customer support correspondence management
+- Company prospecting and target analysis
 
 **Documentation**: See `addons/pro/includes/tools/crm/`
 
 ---
 
-## How to Enable Pro Toolkits
+### 21. 💬 Chat Channels Inbox
+
+**Setting**: `enable_chat_channels_toolkit`  
+**Status**: Pro addon required
+
+**Features**:
+- Unified inbox for Slack, Teams, Discord, Telegram, WhatsApp, and Google Chat
+- AI-powered auto-reply to incoming messages
+- Conversation threading and history
+- JetEngine CCT storage for contacts and messages (when JetEngine is active — see below)
+
+**JetEngine CCTs** (registered only when `enable_chat_channels_toolkit` is on):
+
+| Class | CCT slug | Table | Purpose |
+|---|---|---|---|
+| `WP_MCP_AI_Channel_Contacts_CCT` | `channel_contacts` | `wp_jet_cct_channel_contacts` | Contact/conversation index per platform |
+| `WP_MCP_AI_Channel_Messages_CCT` | `channel_messages` | `wp_jet_cct_channel_messages` | Individual messages per conversation |
+
+> **Note**: When JetEngine is inactive, the toolkit falls back to CPT storage (`mcp_chan_contact` / `mcp_chan_message`). The CCT admin pages will not appear unless the toolkit is enabled.
+
+**Documentation**: See `addons/pro/includes/chat-channels-toolkit-init.php`
+
+---
 
 ### Step 1: Install Pro Addon
 
@@ -1053,26 +1159,26 @@ Toolkits that create custom post types:
 
 | Toolkit | Tools | Memory | Dependencies | Use Case |
 |---------|-------|--------|--------------|----------|
-| Media | 15+ | 5-10MB | None | Marketing |
-| Documents | 10+ | 50MB | Node.js | Reports |
+| Media | 7 | 5-10MB | None | Marketing |
+| Documents | 15 | 50MB | Node.js | Reports |
 | Projects | 13 | 3-5MB | Optional: JetEngine | Teams |
-| Places | 6+ | 2-3MB | Google Maps API | Location |
-| ECA | 5+ | 2-3MB | Optional: iSAMS | Schools |
-| Health | 30+ | 5-8MB | None | Healthcare |
+| Places | 8 | 2-3MB | Optional: Google Maps | Location |
+| ECA | 14 | 2-3MB | Optional: iSAMS | Schools |
+| Health | 48 | 5-8MB | None | Healthcare |
 | Cloudways | 58+ | 10-15MB | Cloudways account | Hosting |
-| AI CPT | Metabox | 2-3MB | None | Content |
+| AI CPT | 2 | 2-3MB | None | Content |
 | AI Tool Builder | 10 | 5-8MB | None | Development |
 | Architectural Design | 16 | 8-12MB | Vision AI, OpenAI | Architecture |
 | Calendar Booking | 15 | 4-6MB | Optional: Google/Outlook | Appointments |
 | DJ Management | 18 | 6-9MB | None | DJ Business |
 | E-commerce | 20 | 8-12MB | WooCommerce | Online Stores |
-| Financial Planning | 24 | 7-10MB | None | Finance |
+| Financial Planner | 24 | 7-10MB | None | Finance |
 | Image Production | 15 | 10-15MB | OpenAI, Stability AI | Images |
 | Social Media | 15 | 6-9MB | Platform APIs | Social |
 | Multilingual | 10 | 4-6MB | Translation APIs | Translation |
 | Video Production | 12 | 15-20MB | FFmpeg | Video |
 | Analytics | 12 | 5-8MB | Optional: GA4 | Analytics |
-| CRM | 1 | 1-2MB | None | Contacts |
+| CRM | 7 | 1-2MB | None | Contacts, Companies |
 
 ---
 
@@ -1086,7 +1192,7 @@ Toolkits that create custom post types:
 - ✅ Architectural Design Toolkit (16 tools)
 - ✅ Calendar Booking Toolkit (15 tools)
 - ✅ DJ Management Toolkit (18 tools)
-- ✅ Financial Planning Toolkit (24 tools - fully implemented)
+- ✅ Financial Planning Toolkit (32 tools - fully implemented)
 - ✅ Video Production Toolkit (12 tools)
 - ✅ Multilingual Content Toolkit (10 tools)
 - ✅ Advanced Analytics Toolkit (12 tools - fully implemented)

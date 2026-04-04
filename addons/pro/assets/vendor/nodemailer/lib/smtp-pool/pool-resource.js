@@ -3,6 +3,7 @@
 const SMTPConnection = require('../smtp-connection');
 const assign = require('../shared').assign;
 const XOAuth2 = require('../xoauth2');
+const errors = require('../errors');
 const EventEmitter = require('events');
 
 /**
@@ -22,7 +23,7 @@ class PoolResource extends EventEmitter {
         if (this.options.auth) {
             switch ((this.options.auth.type || '').toString().toUpperCase()) {
                 case 'OAUTH2': {
-                    let oauth2 = new XOAuth2(this.options.auth, this.logger);
+                    const oauth2 = new XOAuth2(this.options.auth, this.logger);
                     oauth2.provisionCallback =
                         (this.pool.mailer && this.pool.mailer.get('oauth2_provision_cb')) || oauth2.provisionCallback;
                     this.auth = {
@@ -89,10 +90,7 @@ class PoolResource extends EventEmitter {
                     options.port || ''
                 );
 
-                options = assign(false, options);
-                Object.keys(socketOptions).forEach(key => {
-                    options[key] = socketOptions[key];
-                });
+                options = Object.assign(assign(false, options), socketOptions);
             }
 
             this.connection = new SMTPConnection(options);
@@ -113,15 +111,15 @@ class PoolResource extends EventEmitter {
                 }
                 returned = true;
 
-                let timer = setTimeout(() => {
+                const timer = setTimeout(() => {
                     if (returned) {
                         return;
                     }
                     // still have not returned, this means we have an unexpected connection close
-                    let err = new Error('Unexpected socket close');
+                    const err = new Error('Unexpected socket close');
                     if (this.connection && this.connection._socket && this.connection._socket.upgrading) {
                         // starttls connection errors
-                        err.code = 'ETLS';
+                        err.code = errors.ETLS;
                     }
                     callback(err);
                 }, 1000);
@@ -179,10 +177,10 @@ class PoolResource extends EventEmitter {
             });
         }
 
-        let envelope = mail.message.getEnvelope();
-        let messageId = mail.message.messageId();
+        const envelope = mail.message.getEnvelope();
+        const messageId = mail.message.messageId();
 
-        let recipients = [].concat(envelope.to || []);
+        const recipients = [].concat(envelope.to || []);
         if (recipients.length > 3) {
             recipients.push('...and ' + recipients.splice(2).length + ' more');
         }
@@ -223,10 +221,9 @@ class PoolResource extends EventEmitter {
             info.messageId = messageId;
 
             setImmediate(() => {
-                let err;
                 if (this.messages >= this.options.maxMessages) {
-                    err = new Error('Resource exhausted');
-                    err.code = 'EMAXLIMIT';
+                    const err = new Error('Resource exhausted');
+                    err.code = errors.EMAXLIMIT;
                     this.connection.close();
                     this.emit('error', err);
                 } else {

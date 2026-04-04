@@ -1,0 +1,700 @@
+/**
+ * Pro Schedule Manager — Admin Styles
+ *
+ * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+/* ============================================================
+   Container & layout
+   ============================================================ */
+
+.wp-mcp-ai-schedule-manager {
+	margin-top: 20px;
+}
+
+/* ============================================================
+   List section
+   ============================================================ */
+
+.wp-mcp-ai-sm-list-section {
+	margin-bottom: 30px;
+}
+
+.wp-mcp-ai-sm-list-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 12px;
+}
+
+.wp-mcp-ai-sm-list-header h3 {
+	margin: 0;
+	font-size: 1.1em;
+}
+
+.wp-mcp-ai-sm-list-filters {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-left: auto;
+}
+
+.wp-mcp-ai-sm-filter {
+	min-width: 130px;
+}
+
+/* Table */
+
+.wp-mcp-ai-sm-table {
+	table-layout: fixed;
+}
+
+.wp-mcp-ai-sm-table .column-name     { width: 10%; }
+.wp-mcp-ai-sm-table .column-type     { width: 10%; }
+.wp-mcp-ai-sm-table .column-schedule { width: 10%; }
+.wp-mcp-ai-sm-table .column-next-run { width: 13%; }
+.wp-mcp-ai-sm-table .column-last-status { width: 13%; }
+.wp-mcp-ai-sm-table .column-runs     { width: 5%; text-align: center; }
+.wp-mcp-ai-sm-table .column-enabled  { width: 7%; text-align: center; }
+.wp-mcp-ai-sm-table .column-actions  { width: 12%; }
+
+.wp-mcp-ai-sm-table .column-name .description {
+	color: #646970;
+	font-style: italic;
+	margin: 2px 0 0;
+	font-size: 0.9em;
+}
+
+.wp-mcp-ai-sm-table .column-actions {
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-sm-table .column-actions .button {
+	margin-right: 3px;
+	margin-bottom: 2px;
+}
+
+/* Loading / empty rows */
+
+.wp-mcp-ai-sm-loading-row td,
+.wp-mcp-ai-sm-empty {
+	text-align: center;
+	padding: 20px;
+	color: #646970;
+}
+
+.wp-mcp-ai-sm-loading-row .spinner {
+	display: inline-block;
+	margin: 0 6px -4px 0;
+}
+
+/* Running / deleting row animations */
+
+.wp-mcp-ai-sm-running {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.wp-mcp-ai-sm-deleting {
+	opacity: 0.4;
+	pointer-events: none;
+	transition: opacity 0.3s;
+}
+
+/* ============================================================
+   Badges
+   ============================================================ */
+
+.wp-mcp-ai-sm-badge {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 3px;
+	font-size: 0.8em;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-sm-badge-task          { background: #e0f0ff; color: #135e96; }
+.wp-mcp-ai-sm-badge-workflow       { background: #edf5ea; color: #1d6b1d; }
+.wp-mcp-ai-sm-badge-assistant_run  { background: #fef0f0; color: #8a1f1f; }
+
+/* ============================================================
+   Status indicators
+   ============================================================ */
+
+.wp-mcp-ai-sm-status {
+	font-weight: 600;
+}
+
+.wp-mcp-ai-sm-status-success { color: #0a7a0a; }
+.wp-mcp-ai-sm-status-failure { color: #cc1818; }
+.wp-mcp-ai-sm-status-pending { color: #856404; }
+.wp-mcp-ai-sm-status-never   { color: #646970; }
+
+.wp-mcp-ai-sm-error-text {
+	color: #cc1818;
+	word-break: break-all;
+}
+
+/* ============================================================
+   Toggle switch
+   ============================================================ */
+
+.wp-mcp-ai-sm-toggle-switch {
+	position: relative;
+	display: inline-block;
+	width: 34px;
+	height: 20px;
+	cursor: pointer;
+}
+
+.wp-mcp-ai-sm-toggle-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+	position: absolute;
+}
+
+.wp-mcp-ai-sm-slider {
+	position: absolute;
+	inset: 0;
+	background-color: #ccc;
+	border-radius: 20px;
+	transition: 0.25s;
+}
+
+.wp-mcp-ai-sm-slider::before {
+	content: '';
+	position: absolute;
+	width: 14px;
+	height: 14px;
+	left: 3px;
+	bottom: 3px;
+	background: #fff;
+	border-radius: 50%;
+	transition: 0.25s;
+}
+
+.wp-mcp-ai-sm-toggle-switch input:checked + .wp-mcp-ai-sm-slider {
+	background-color: #2271b1;
+}
+
+.wp-mcp-ai-sm-toggle-switch input:checked + .wp-mcp-ai-sm-slider::before {
+	transform: translateX( 14px );
+}
+
+/* ============================================================
+   Create form
+   ============================================================ */
+
+.wp-mcp-ai-sm-create-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 0;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-sm-create-toggle {
+	cursor: pointer;
+	user-select: none;
+	padding: 14px 16px;
+	margin: 0;
+	font-size: 1em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.15s;
+}
+
+.wp-mcp-ai-sm-create-toggle:hover,
+.wp-mcp-ai-sm-create-toggle[aria-expanded="true"] {
+	border-bottom-color: #c3c4c7;
+}
+
+.wp-mcp-ai-sm-create-form {
+	padding: 16px;
+}
+
+.wp-mcp-ai-sm-form-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.wp-mcp-ai-sm-form-row {
+	display: flex;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-sm-form-group {
+	flex: 1;
+	min-width: 200px;
+}
+
+.wp-mcp-ai-sm-form-group.full-width {
+	flex-basis: 100%;
+}
+
+.wp-mcp-ai-sm-form-group label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.wp-mcp-ai-sm-form-group label .required {
+	color: #cc1818;
+}
+
+.wp-mcp-ai-sm-form-group .description {
+	color: #646970;
+	font-size: 0.85em;
+	margin: 3px 0 0;
+}
+
+.wp-mcp-ai-sm-form-actions {
+	align-items: center;
+	justify-content: flex-start;
+	gap: 12px;
+}
+
+.wp-mcp-ai-sm-create-msg {
+	font-size: 0.9em;
+}
+
+.wp-mcp-ai-sm-create-msg.success { color: #0a7a0a; }
+.wp-mcp-ai-sm-create-msg.error   { color: #cc1818; }
+
+/* Toggle label */
+
+.wp-mcp-ai-sm-toggle-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+/* ============================================================
+   Type panels
+   ============================================================ */
+
+.wp-mcp-ai-sm-type-panel {
+	background: #f9f9f9;
+	border: 1px solid #e2e4e7;
+	border-radius: 4px;
+	padding: 14px;
+}
+
+/* ============================================================
+   Workflow steps
+   ============================================================ */
+
+.wp-mcp-ai-sm-steps-list {
+	margin-bottom: 8px;
+}
+
+.wp-mcp-ai-sm-step-row {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	flex-wrap: wrap;
+	padding: 6px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.wp-mcp-ai-sm-step-row:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-sm-step-num {
+	width: 22px;
+	height: 22px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75em;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-sm-step-row .sm-step-slug {
+	width: 160px;
+}
+
+.wp-mcp-ai-sm-step-row .sm-step-args {
+	width: 200px;
+	font-family: monospace;
+	font-size: 0.85em;
+}
+
+.wp-mcp-ai-sm-step-row .sm-step-label {
+	width: 130px;
+}
+
+.wp-mcp-ai-sm-step-handle {
+	color: #aaa;
+	cursor: grab;
+}
+
+/* ============================================================
+   Modals
+   ============================================================ */
+
+.wp-mcp-ai-sm-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100050;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding-top: 80px;
+}
+
+.wp-mcp-ai-sm-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba( 0, 0, 0, 0.5 );
+	z-index: -1;
+}
+
+.wp-mcp-ai-sm-modal-content {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 8px 40px rgba( 0, 0, 0, 0.25 );
+	width: 540px;
+	max-width: calc( 100vw - 40px );
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.wp-mcp-ai-sm-modal-wide {
+	width: 720px;
+}
+
+.wp-mcp-ai-sm-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.wp-mcp-ai-sm-modal-header h4 {
+	margin: 0;
+	font-size: 1.1em;
+}
+
+.wp-mcp-ai-sm-modal-close {
+	background: none;
+	border: none;
+	font-size: 1.4em;
+	line-height: 1;
+	cursor: pointer;
+	color: #646970;
+	padding: 0 4px;
+}
+
+.wp-mcp-ai-sm-modal-close:hover {
+	color: #cc1818;
+}
+
+.wp-mcp-ai-sm-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+}
+
+.wp-mcp-ai-sm-modal-body .spinner {
+	display: block;
+	margin: 20px auto;
+}
+
+.wp-mcp-ai-sm-modal-body table {
+	margin: 0;
+}
+
+.wp-mcp-ai-sm-modal-footer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	border-top: 1px solid #e2e4e7;
+	justify-content: flex-end;
+}
+
+/* Edit modal form table */
+
+.wp-mcp-ai-sm-edit-table th {
+	width: 160px;
+	padding: 8px 10px;
+	vertical-align: top;
+}
+
+.wp-mcp-ai-sm-edit-table td {
+	padding: 8px 10px;
+}
+
+/* ============================================================
+   Error text
+   ============================================================ */
+
+.wp-mcp-ai-sm-error {
+	color: #cc1818;
+}
+
+/* Inline field validation error */
+
+.wp-mcp-ai-sm-field-error {
+	border-color: #cc1818 !important;
+	box-shadow: 0 0 0 1px #cc1818 !important;
+}
+
+/* ============================================================
+   Channel Broadcast type
+   ============================================================ */
+
+.wp-mcp-ai-sm-channels-checkboxes {
+display: flex;
+flex-wrap: wrap;
+gap: 8px 16px; /* Chrome 84+, Firefox 63+, Safari 14.1+ */
+margin-top: 4px;
+}
+
+/* Fallback spacing for browsers that do not support flex gap */
+.wp-mcp-ai-sm-channels-checkboxes .wp-mcp-ai-sm-channel-label {
+margin-right: 16px;
+margin-bottom: 8px;
+}
+
+.wp-mcp-ai-sm-channel-label {
+display: flex;
+align-items: center;
+gap: 4px; /* Chrome 84+, Firefox 63+, Safari 14.1+ */
+margin-right: 4px;
+font-weight: 500;
+cursor: pointer;
+}
+
+.wp-mcp-ai-sm-channel-label input[type="checkbox"] {
+margin: 0;
+}
+
+/* type badge for channel_broadcast */
+.wp-mcp-ai-sm-type-badge.type-channel_broadcast {
+background: #f0f6fc;
+color: #1565c0;
+border: 1px solid #90caf9;
+}
+
+/* Action log pre-formatted display in history modal */
+.wp-mcp-ai-sm-action-log {
+background: #f6f7f7;
+border: 1px solid #ddd;
+border-radius: 3px;
+font-size: 12px;
+line-height: 1.5;
+margin: 6px 0 0;
+max-height: 320px;
+overflow: auto;
+padding: 8px 10px;
+}
+
+.wp-mcp-ai-sm-action-log p {
+margin: 2px 0 4px;
+}
+
+.wp-mcp-ai-sm-action-log .wp-mcp-ai-sm-log-pre {
+background: #f0f0f0;
+border: 1px solid #e0e0e0;
+border-radius: 3px;
+font-size: 11px;
+margin: 4px 0;
+max-height: 160px;
+overflow: auto;
+padding: 6px;
+white-space: pre-wrap;
+word-break: break-all;
+}
+
+/* Workflow steps table inside action log */
+.wp-mcp-ai-sm-log-steps {
+border-collapse: collapse;
+font-size: 11px;
+width: 100%;
+}
+
+.wp-mcp-ai-sm-log-steps th,
+.wp-mcp-ai-sm-log-steps td {
+border: 1px solid #ddd;
+padding: 3px 6px;
+text-align: left;
+vertical-align: top;
+}
+
+.wp-mcp-ai-sm-log-steps th {
+background: #e8e8e8;
+font-weight: 600;
+}
+
+/* Wrapper div for the action log panel */
+.wp-mcp-ai-sm-action-log-wrap {
+margin-top: 6px;
+}
+
+/* ============================================================
+   Preset Browser
+   ============================================================ */
+
+.wp-mcp-ai-sm-presets-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 0;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-sm-presets-toggle {
+	cursor: pointer;
+	user-select: none;
+	padding: 14px 16px;
+	margin: 0;
+	font-size: 1em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.15s;
+}
+
+.wp-mcp-ai-sm-presets-toggle:hover,
+.wp-mcp-ai-sm-presets-toggle[aria-expanded="true"] {
+	border-bottom-color: #c3c4c7;
+}
+
+.wp-mcp-ai-sm-presets-panel {
+	padding: 16px;
+}
+
+.wp-mcp-ai-sm-presets-filters {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+.wp-mcp-ai-sm-presets-filters .wp-mcp-ai-sm-filter {
+	min-width: 150px;
+}
+
+.wp-mcp-ai-sm-presets-filters input[type="search"] {
+	min-width: 200px;
+}
+
+.wp-mcp-ai-sm-presets-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( 280px, 1fr ) );
+	gap: 16px;
+}
+
+.wp-mcp-ai-sm-preset-card {
+	background: #f9f9f9;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.wp-mcp-ai-sm-preset-card:hover {
+	border-color: #2271b1;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.wp-mcp-ai-sm-preset-card-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wp-mcp-ai-sm-preset-card-header .dashicons {
+	color: #2271b1;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.wp-mcp-ai-sm-preset-card-header strong {
+	font-size: 0.95em;
+}
+
+.wp-mcp-ai-sm-preset-desc {
+	color: #50575e;
+	font-size: 0.85em;
+	line-height: 1.5;
+	margin: 0;
+	flex: 1;
+}
+
+.wp-mcp-ai-sm-preset-meta {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-sm-preset-type,
+.wp-mcp-ai-sm-preset-interval {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 3px;
+	font-size: 0.75em;
+	font-weight: 600;
+	white-space: nowrap;
+	background: #e0f0ff;
+	color: #135e96;
+}
+
+.wp-mcp-ai-sm-preset-interval {
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.wp-mcp-ai-sm-preset-tags {
+	display: flex;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-sm-preset-tag {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 2px;
+	font-size: 0.7em;
+	background: #e8e8e8;
+	color: #646970;
+}
+
+.wp-mcp-ai-sm-preset-card .button {
+	align-self: flex-start;
+	margin-top: 4px;
+}
+
+.wp-mcp-ai-sm-presets-empty {
+	color: #646970;
+	font-style: italic;
+	text-align: center;
+	padding: 20px;
+}

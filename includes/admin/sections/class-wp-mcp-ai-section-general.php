@@ -3,6 +3,9 @@
  * General Settings Section
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -158,13 +161,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'description'    => __( 'When enabled, all settings and data will be deleted when the plugin is uninstalled.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'disable_activation_tracking'           => array(
+				'enable_activation_tracking'            => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Disable Activation Tracking', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Opt out of anonymous activation tracking', 'mcp-ai-wpoos' ),
+					'label'          => __( 'Enable Activation Tracking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Allow anonymous activation tracking (opt-in)', 'mcp-ai-wpoos' ),
 					'description'    => sprintf(
 						/* translators: %s: Link to external services documentation */
-						__( 'When enabled, the plugin will not send anonymous activation/deactivation events to NV Digital. This tracking uses minimal, non-identifying data (plugin version, WordPress version, PHP version, hashed site ID). No personal information or IP addresses are collected. %s', 'mcp-ai-wpoos' ),
+						__( 'When enabled, the plugin sends anonymous activation/deactivation events to NV Digital to help improve the product. Tracking is disabled by default — this requires your explicit consent. Only minimal, non-identifying data is collected: plugin version, WordPress version, PHP version, and a hashed site ID. No personal information or IP addresses are collected. %s', 'mcp-ai-wpoos' ),
 						'<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md#plugin-analytics-service" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Learn more about what data is collected', 'mcp-ai-wpoos' ) . '</a>'
 					),
 					'default'        => false,
@@ -301,7 +304,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'enable_tool_execution_logging',
 						'enable_chat_interaction_logging',
 						'delete_on_uninstall',
-						'disable_activation_tracking',
+						'enable_activation_tracking',
 					),
 				),
 				'custom_filters' => array(
@@ -677,7 +680,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 			// Validate default_provider.
 			if ( isset( $input['default_provider'] ) ) {
-				$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+				$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 				if ( ! in_array( $input['default_provider'], $valid_providers, true ) ) {
 					$errors[] = __( 'Invalid AI provider selected.', 'mcp-ai-wpoos' );
 				}

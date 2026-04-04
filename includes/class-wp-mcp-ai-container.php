@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -291,6 +294,13 @@ class WP_MCP_AI_Container {
 			'client.cloudflare',
 			function () {
 				return new WP_MCP_AI_Cloudflare_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.nvidia',
+			function () {
+				return new WP_MCP_AI_Nvidia_Client();
 			}
 		);
 
@@ -669,6 +679,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'section.a2a',
+			function () {
+				return new WP_MCP_AI_Section_A2A();
+			}
+		);
+
 		// Performance section is only available with Pro addon.
 		$this->singleton(
 			'section.performance',
@@ -702,6 +719,17 @@ class WP_MCP_AI_Container {
 					return null;
 				}
 				return new WP_MCP_AI_Section_Pro_Integrations();
+			}
+		);
+
+		// Pro Schedule Manager section is only available with Pro addon.
+		$this->singleton(
+			'section.schedule_manager',
+			function () {
+				if ( ! class_exists( 'WP_MCP_AI_Section_Schedule_Manager' ) ) {
+					return null;
+				}
+				return new WP_MCP_AI_Section_Schedule_Manager();
 			}
 		);
 
@@ -768,6 +796,78 @@ class WP_MCP_AI_Container {
 			'service.cron_status',
 			function () {
 				return new WP_MCP_AI_Cron_Status_Service();
+			}
+		);
+
+		// Infrastructure adapters (Phase 2 — domain/WordPress boundary).
+		$this->singleton(
+			'infrastructure.options_store',
+			function () {
+				return new WP_MCP_AI_WP_Options_Store();
+			}
+		);
+
+		$this->singleton(
+			'infrastructure.capability_checker',
+			function () {
+				return new WP_MCP_AI_WP_Capability_Checker();
+			}
+		);
+
+		$this->singleton(
+			'infrastructure.http_client',
+			function () {
+				return new WP_MCP_AI_WP_HTTP_Client();
+			}
+		);
+
+		// Provider adapters — implement Interface_WP_MCP_AI_Provider_Client.
+		$this->singleton(
+			'provider.openai',
+			function () {
+				return new WP_MCP_AI_OpenAI_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.gemini',
+			function () {
+				return new WP_MCP_AI_Gemini_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.anthropic',
+			function () {
+				return new WP_MCP_AI_Anthropic_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.ollama',
+			function () {
+				return new WP_MCP_AI_Ollama_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.cloudflare',
+			function () {
+				return new WP_MCP_AI_Cloudflare_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.nvidia',
+			function () {
+				return new WP_MCP_AI_Nvidia_Provider_Client();
+			}
+		);
+
+		$this->singleton(
+			'provider.lm_studio',
+			function () {
+				return new WP_MCP_AI_LM_Studio_Provider_Client();
 			}
 		);
 	}

@@ -5,6 +5,9 @@
  * Provides bulk AI-enhanced operations on projects, tasks, and events.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -327,13 +330,16 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 	 * Display bulk action admin notices.
 	 */
 	public static function bulk_action_notices() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display-only admin notice after redirect.
 		if ( empty( $_REQUEST['bulk_ai_action'] ) ) {
 			return;
 		}
 
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only admin notice after redirect.
 		$action    = sanitize_key( $_REQUEST['bulk_ai_action'] );
 		$processed = isset( $_REQUEST['processed'] ) ? absint( $_REQUEST['processed'] ) : 0;
 		$total     = isset( $_REQUEST['total'] ) ? absint( $_REQUEST['total'] ) : 0;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$action_labels = array(
 			'ai_generate_descriptions' => __( 'descriptions generated', 'mcp-ai-wpoos-pro' ),

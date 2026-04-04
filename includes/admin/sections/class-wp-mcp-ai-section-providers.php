@@ -3,6 +3,9 @@
  * AI Providers Settings Section
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -83,10 +86,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
-					'gpt-4.1'     => 'GPT-4.1 (Recommended)',
-					'gpt-4.5'     => 'GPT-4.5 (Creative)',
-					'gpt-4o'      => 'GPT-4o',
-					'gpt-4o-mini' => 'GPT-4o Mini',
+					'gpt-5.4'      => 'GPT-5.4 (Recommended)',
+					'gpt-5.4-mini' => 'GPT-5.4 Mini (Budget)',
+					'gpt-4.1'      => 'GPT-4.1 (Stable)',
+					'gpt-4.1-mini' => 'GPT-4.1 Mini',
+					'gpt-4o'       => 'GPT-4o',
+					'gpt-4o-mini'  => 'GPT-4o Mini',
 				);
 			}
 
@@ -136,8 +141,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get NVIDIA NIM models from Model Config.
+			$nvidia_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$nvidia_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'nvidia' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $nvidia_models ) ) {
+				$nvidia_models = array(
+					'meta/llama-3.1-8b-instruct'   => 'Llama 3.1 8B Instruct (Fast)',
+					'meta/llama-3.3-70b-instruct'  => 'Llama 3.3 70B Instruct',
+					'meta/llama-3.1-405b-instruct' => 'Llama 3.1 405B Instruct',
+				);
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -162,12 +182,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, OpenAI will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'openai_api_key_type'                => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your OpenAI subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for pay-as-you-go API keys. Business/Team and Enterprise keys may have different rate limits and project scoping.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (Pay-as-you-go)', 'mcp-ai-wpoos' ),
+						'business'   => __( 'ChatGPT Business / Team', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'ChatGPT Enterprise', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'openai_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'OpenAI API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: OpenAI API keys URL */
-						__( 'Your OpenAI API key. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your OpenAI API key. Supports standard, project-scoped, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'mcp-ai-wpoos' ),
 						'https://platform.openai.com/api-keys'
 					),
 					'placeholder'  => 'sk-...',
@@ -176,7 +207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_model'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for OpenAI requests. GPT-5.4 is the current recommended default. GPT-4.1 remains available as a proven stable option. GPT-5.4 Mini offers a budget-friendly alternative.', 'mcp-ai-wpoos' ),
 					'options'     => $openai_models,
 					'default'     => 'gpt-4.1',
 				),
@@ -194,20 +225,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_organization_id'             => array(
 					'type'         => 'text',
 					'label'        => __( 'OpenAI Organization ID (Optional)', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. Sent as the OpenAI-Organization header with every request. Find it in your OpenAI account settings.', 'mcp-ai-wpoos' ),
 					'placeholder'  => 'org-...',
 					'autocomplete' => 'off',
+				),
+				'openai_project_id'                  => array(
+					'type'         => 'text',
+					'label'        => __( 'OpenAI Project ID (Optional)', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your OpenAI project ID for project-scoped API access. Sent as the OpenAI-Project header to scope usage, billing, and access. Recommended for Business and Enterprise accounts. Find it in your OpenAI project settings.', 'mcp-ai-wpoos' ),
+					'placeholder'  => 'proj_...',
+					'autocomplete' => 'off',
+				),
+				'openai_base_url'                    => array(
+					'type'        => 'url',
+					'label'       => __( 'OpenAI API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for OpenAI API requests. Leave empty to use the default (https://api.openai.com/v1). Useful for enterprise proxy endpoints, Azure OpenAI, or OpenAI-compatible services. Must include the version path (e.g. /v1).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.openai.com/v1',
 				),
 				'openai_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1 is the latest model with quality options. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1.5 is the current state-of-the-art model. gpt-image-1 is the previous generation. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-image-1' => 'gpt-image-1 (Latest)',
-						'dall-e-3'    => 'DALL-E 3',
-						'dall-e-2'    => 'DALL-E 2',
+						'gpt-image-1.5' => 'gpt-image-1.5 (Latest)',
+						'gpt-image-1'   => 'gpt-image-1',
+						'dall-e-3'      => 'DALL-E 3',
+						'dall-e-2'      => 'DALL-E 2',
 					),
-					'default'     => 'gpt-image-1',
+					'default'     => 'gpt-image-1.5',
 				),
 				'openai_image_size'                  => array(
 					'type'        => 'select',
@@ -248,11 +293,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for audio transcription and translation. whisper-1 is the OpenAI Whisper model for speech-to-text.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for audio transcription. gpt-4o-mini-transcribe is the current recommended default offering superior accuracy. gpt-4o-transcribe provides highest quality. whisper-1 is the legacy Whisper model.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'whisper-1' => 'Whisper-1 (OpenAI Official)',
+						'gpt-4o-mini-transcribe' => 'GPT-4o Mini Transcribe (Recommended)',
+						'gpt-4o-transcribe'      => 'GPT-4o Transcribe (Highest Quality)',
+						'whisper-1'              => 'Whisper-1 (Legacy)',
 					),
-					'default'     => 'whisper-1',
+					'default'     => 'gpt-4o-mini-transcribe',
 				),
 				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
@@ -279,12 +326,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for text-to-speech (TTS) generation. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is the current recommended model with natural speech and voice presets. tts-1 and tts-1-hd are legacy models.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'tts-1'    => 'TTS-1 (Standard Quality)',
-						'tts-1-hd' => 'TTS-1-HD (High Quality)',
+						'gpt-4o-mini-tts' => 'GPT-4o Mini TTS (Recommended)',
+						'tts-1'           => 'TTS-1 (Legacy Standard)',
+						'tts-1-hd'        => 'TTS-1-HD (Legacy High Quality)',
 					),
-					'default'     => 'tts-1',
+					'default'     => 'gpt-4o-mini-tts',
 				),
 				'openai_speech_voice'                => array(
 					'type'        => 'select',
@@ -397,12 +445,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, Anthropic will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'anthropic_api_key_type'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Anthropic API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your Anthropic subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for pay-as-you-go API keys. Team and Enterprise keys have workspace-level billing and access controls.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (Pay-as-you-go)', 'mcp-ai-wpoos' ),
+						'team'       => __( 'Claude Team', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'Claude Enterprise', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'anthropic_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Anthropic API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: Anthropic Console URL */
-						__( 'Your Anthropic API key. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your Anthropic API key. Supports standard, Team, and Enterprise workspace keys. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'mcp-ai-wpoos' ),
 						'https://console.anthropic.com/'
 					),
 					'placeholder'  => 'sk-ant-...',
@@ -447,6 +506,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'max'         => '86400',
 					'step'        => '300',
 				),
+				'anthropic_base_url'                 => array(
+					'type'        => 'url',
+					'label'       => __( 'Anthropic API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Anthropic API requests. Leave empty to use the default (https://api.anthropic.com/v1). Useful for enterprise proxy endpoints or Anthropic-compatible services. Must include the version path (e.g. /v1).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://api.anthropic.com/v1',
+				),
 
 				// Google Gemini Settings.
 				'enable_gemini'                      => array(
@@ -456,12 +521,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description'    => __( 'When disabled, Gemini will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'gemini_api_key_type'                => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini API Key Type', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select your Google Gemini subscription tier. This helps the plugin optimize request handling and rate limits. Standard is for AI Studio pay-as-you-go keys. Enterprise keys may use Vertex AI endpoints with higher limits and compliance features.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'standard'   => __( 'Standard (AI Studio)', 'mcp-ai-wpoos' ),
+						'business'   => __( 'Gemini Business', 'mcp-ai-wpoos' ),
+						'enterprise' => __( 'Gemini Enterprise / Vertex AI', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'standard',
+				),
 				'gemini_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'Gemini API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: Google AI Studio URL */
-						__( 'Your Google Gemini API key. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'mcp-ai-wpoos' ),
+						__( 'Your Google Gemini API key. Supports AI Studio, Business, and Enterprise keys. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'mcp-ai-wpoos' ),
 						'https://aistudio.google.com/app/apikey'
 					),
 					'placeholder'  => 'AIza...',
@@ -622,6 +698,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'en-US-Neural2-J' => 'en-US-Neural2-J (Male)',
 					),
 					'default'     => 'en-US-Neural2-C',
+				),
+				'gemini_base_url'                    => array(
+					'type'        => 'url',
+					'label'       => __( 'Gemini API Base URL (Optional)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Custom base URL for Gemini API requests. Leave empty to use the default Google AI Studio endpoint. Useful for Vertex AI Enterprise deployments with custom regional endpoints or proxy services. Must include the version path (e.g. /v1beta).', 'mcp-ai-wpoos' ),
+					'placeholder' => 'https://generativelanguage.googleapis.com/v1beta',
 				),
 
 				// Ollama Settings.
@@ -841,24 +923,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'cloudflare_model'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes function calling and text generation models. Llama 3.2-3B-Instruct is recommended for general use.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Llama 4 Scout 17B is the current recommended default with function calling support.', 'mcp-ai-wpoos' ),
 					'options'     => $cloudflare_models,
-					'default'     => '@cf/meta/llama-3.2-3b-instruct',
+					'default'     => '@cf/meta/llama-4-scout-17b-16e-instruct',
 				),
 				'cloudflare_image_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Flux-2 Dev offers the best balanced quality. Flux-1 Schnell is fastest. SDXL models are legacy options.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
-						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Fast)',
-						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell',
-						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev',
-						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
+						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev (Recommended)',
+						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell (Fast)',
+						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Legacy)',
+						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Legacy Fast)',
+						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
 					),
-					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+					'default'     => '@cf/black-forest-labs/flux-2-dev',
 				),
 				'cloudflare_image_width'             => array(
 					'type'        => 'number',
@@ -927,6 +1009,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '@cf/openai/whisper',
 				),
 
+				// NVIDIA NIM Provider Settings.
+				'enable_nvidia'                      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable NVIDIA NIM Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable NVIDIA NIM as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, NVIDIA NIM will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'nvidia_api_key'                     => array(
+					'type'         => 'password',
+					'label'        => __( 'NVIDIA API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: NVIDIA Build Portal URL */
+						__( 'Your NVIDIA NIM API key. Get one from <a href="%s" target="_blank">NVIDIA Build Portal</a>. Sign up for an NVIDIA account and generate an API key for NIM access.', 'mcp-ai-wpoos' ),
+						'https://build.nvidia.com/'
+					),
+					'placeholder'  => 'nvapi-...',
+					'autocomplete' => 'new-password',
+				),
+				'nvidia_endpoint_url'                => array(
+					'type'        => 'text',
+					'label'       => __( 'NVIDIA NIM Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'The base URL for the NVIDIA NIM API. Use the default cloud endpoint or point to a self-hosted NIM container (e.g., http://localhost:8000/v1).', 'mcp-ai-wpoos' ),
+					'default'     => 'https://integrate.api.nvidia.com/v1',
+					'placeholder' => 'https://integrate.api.nvidia.com/v1',
+				),
+				'nvidia_model'                       => array(
+					'type'        => 'select',
+					'label'       => __( 'Default NVIDIA Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for NVIDIA NIM requests. Llama 3.1 8B is fast and cost-effective. Llama 3.3 70B offers better quality. Browse all models at build.nvidia.com.', 'mcp-ai-wpoos' ),
+					'options'     => $nvidia_models,
+					'default'     => 'meta/llama-3.1-8b-instruct',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -959,19 +1075,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
+					'fields' => array( 'enable_openai', 'openai_api_key_type', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_project_id', 'openai_base_url', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key_type', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl', 'anthropic_base_url' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
@@ -1002,6 +1118,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'enable_cloudflare_api_caching', 'cloudflare_model_list_cache_ttl', 'cloudflare_audio_model' ),
+				),
+				'nvidia'               => array(
+					'id'     => 'nvidia',
+					'label'  => __( 'NVIDIA', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-superhero',
+					'fields' => array( 'enable_nvidia', 'nvidia_api_key', 'nvidia_endpoint_url', 'nvidia_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -1214,6 +1336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
@@ -1298,6 +1421,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized input.
 		 */
 		public function sanitize( $input ) {
+			// For the 'embedded' subtab, delegate to the Pro Providers section.
+			// The Pro Providers section is intentionally NOT registered in the Settings Registry
+			// (to prevent duplicate rendering), so its sanitize() is never called automatically.
+			// When the base Providers section renders the embedded subtab it delegates to the Pro
+			// section for rendering; we mirror that here for sanitization so that
+			// embedded_server_model, embedded_model, and enable_embedded are correctly saved.
+			// If Pro is not active the block below is skipped and we fall through to the standard
+			// base-section sanitization, which returns an empty array for an 'embedded' subtab
+			// submission — the same safe no-op as before this fix.
+			$active_subtab = $this->get_active_subtab();
+			if ( 'embedded' === $active_subtab
+				&& class_exists( 'WP_MCP_AI_Section_Pro_Providers' )
+				&& function_exists( 'wp_mcp_ai_container' )
+			) {
+				$container   = wp_mcp_ai_container();
+				$pro_section = $container->get( 'section.pro_providers' );
+				if ( $pro_section && method_exists( $pro_section, 'sanitize' ) ) {
+					return $pro_section->sanitize( $input );
+				}
+			}
+
 			$sanitized = array();
 
 			// Handle provider_priority_list separately.
@@ -1320,7 +1464,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'nvidia', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

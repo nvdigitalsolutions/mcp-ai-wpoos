@@ -3,6 +3,9 @@
  * OpenAI API client wrapper.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -82,6 +85,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Default OpenAI API base URL.
+		 */
+		const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -90,6 +98,95 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		}
+
+		/**
+		 * Retrieve the configured base URL for the OpenAI API.
+		 *
+		 * When a custom base URL is configured (e.g. for ChatGPT Business/Enterprise
+		 * or an OpenAI-compatible proxy), all requests are routed through it.
+		 *
+		 * @return string Base URL without trailing slash.
+		 */
+		public function get_base_url() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$base_url = isset( $settings['openai_base_url'] ) ? trim( $settings['openai_base_url'] ) : '';
+
+			if ( '' === $base_url ) {
+				$base_url = self::DEFAULT_BASE_URL;
+			}
+
+			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Resolve a full endpoint URL respecting any custom base URL.
+		 *
+		 * Replaces the default https://api.openai.com/v1 prefix with the configured
+		 * base URL so that all requests honour custom proxy / enterprise endpoints.
+		 *
+		 * @param string $default_url The default OpenAI endpoint URL.
+		 * @return string Resolved endpoint URL.
+		 */
+		public function resolve_endpoint( $default_url ) {
+			$base_url = $this->get_base_url();
+
+			if ( self::DEFAULT_BASE_URL === $base_url ) {
+				return $default_url;
+			}
+
+			// Replace the default base with the custom base.
+			$path = str_replace( self::DEFAULT_BASE_URL, '', $default_url );
+
+			return $base_url . $path;
+		}
+
+		/**
+		 * Build the standard HTTP request headers for OpenAI API calls.
+		 *
+		 * Includes Authorization, Content-Type, and optional OpenAI-Organization
+		 * and OpenAI-Project headers based on plugin settings. This follows
+		 * OpenAI's current API authentication standards including project-scoped
+		 * API keys and organization routing.
+		 *
+		 * @param string $api_key      API key for the Authorization header.
+		 * @param string $content_type Content-Type header value. Default 'application/json'.
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Authorization' => 'Bearer ' . $api_key,
+				'Content-Type'  => $content_type,
+			);
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Add OpenAI-Organization header when an organization ID is configured.
+			if ( ! empty( $settings['openai_organization_id'] ) ) {
+				$headers['OpenAI-Organization'] = sanitize_text_field( $settings['openai_organization_id'] );
+			}
+
+			// Add OpenAI-Project header when a project ID is configured.
+			// This scopes API usage, billing, and access to a specific project.
+			if ( ! empty( $settings['openai_project_id'] ) ) {
+				$headers['OpenAI-Project'] = sanitize_text_field( $settings['openai_project_id'] );
+			}
+
+			/**
+			 * Filter the OpenAI request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * OpenAI API requests (e.g. adding custom tracking or proxy headers).
+			 *
+			 * @since 2.6.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 * @param array  $settings Current plugin settings.
+			 */
+			$headers = apply_filters( 'wp_mcp_ai_openai_request_headers', $headers, $api_key, $settings );
+
+			return $headers;
 		}
 
 		/**
@@ -163,10 +260,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$boundary = 'wp-mcp-ai-' . wp_generate_password( 24, false, false );
 
-			$request_headers = array(
-				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
-			);
+			$request_headers = $this->build_request_headers( $api_key, 'multipart/form-data; boundary=' . $boundary );
 
 			$request_body = $this->build_multipart_body(
 				array( 'purpose' => $purpose ),
@@ -195,7 +289,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'timeout' => $timeout,
 			);
 
-			$response = $this->dispatch_http_request( self::FILES_ENDPOINT, $request_args );
+			$response = $this->dispatch_http_request( $this->resolve_endpoint( self::FILES_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI file upload failed.', array( 'error' => $response->get_error_message() ) );
@@ -312,7 +406,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 0;
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
+			$endpoint = $this->resolve_endpoint( trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) );
 
 			WP_MCP_AI_Logger::log_event(
 				'openai_file_delete',
@@ -322,9 +416,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'DELETE',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -427,13 +519,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content';
+			$endpoint = $this->resolve_endpoint( trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content' );
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -578,16 +668,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$query_params['after'] = sanitize_text_field( $args['after'] );
 			}
 
-			$endpoint = self::FILES_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( self::FILES_ENDPOINT );
 			if ( ! empty( $query_params ) ) {
 				$endpoint = add_query_arg( $query_params, $endpoint );
 			}
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -686,13 +774,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
+			$endpoint = $this->resolve_endpoint( trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) );
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -845,13 +931,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = 'https://api.openai.com/v1/models';
+			$endpoint = $this->resolve_endpoint( 'https://api.openai.com/v1/models' );
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -946,13 +1030,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
+			$endpoint = $this->resolve_endpoint( 'https://api.openai.com/v1/models/' . rawurlencode( $model_id ) );
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -1146,14 +1228,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$payload['user'] = sanitize_text_field( $options['user'] );
 			}
 
-			$endpoint = 'https://api.openai.com/v1/embeddings';
+			$endpoint = $this->resolve_endpoint( 'https://api.openai.com/v1/embeddings' );
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
@@ -1375,9 +1454,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_batch_embeddings_created',
 				'OpenAI batch embeddings job created.',
 				array(
-					'batch_id'      => isset( $batch_result['id'] ) ? $batch_result['id'] : '',
-					'status'        => isset( $batch_result['status'] ) ? $batch_result['status'] : '',
-					'text_count'    => count( $clean_texts ),
+					'batch_id'   => isset( $batch_result['id'] ) ? $batch_result['id'] : '',
+					'status'     => isset( $batch_result['status'] ) ? $batch_result['status'] : '',
+					'text_count' => count( $clean_texts ),
 				)
 			);
 
@@ -1455,10 +1534,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
@@ -1473,7 +1549,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				)
 			);
 
-			$response = $this->dispatch_http_request( self::MODERATIONS_ENDPOINT, $request_args );
+			$response = $this->dispatch_http_request( $this->resolve_endpoint( self::MODERATIONS_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error(
@@ -1824,10 +1900,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
 			);
@@ -1844,7 +1917,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				)
 			);
 
-			$response = wp_remote_post( self::IMAGES_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::IMAGES_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI image request failed.', array( 'error' => $response->get_error_message() ) );
@@ -2351,6 +2424,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$response_format = 'b64_json';
 			}
 
+			// gpt-image-1 and gpt-image-1.5 do not accept the response_format parameter.
+			$model_supports_response_format = self::image_model_supports_response_format( $model );
+
 			// Prepare multipart form data.
 			$boundary = wp_generate_password( 24, false );
 			$body     = '';
@@ -2394,17 +2470,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "Content-Disposition: form-data; name=\"size\"\r\n\r\n";
 			$body .= $size . "\r\n";
 
-			$body .= "--{$boundary}\r\n";
-			$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
-			$body .= $response_format . "\r\n";
+			if ( $model_supports_response_format ) {
+				$body .= "--{$boundary}\r\n";
+				$body .= "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
+				$body .= $response_format . "\r\n";
+			}
 
 			$body .= "--{$boundary}--\r\n";
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
-				),
+				'headers' => $this->build_request_headers( $api_key, 'multipart/form-data; boundary=' . $boundary ),
 				'timeout' => $timeout,
 				'body'    => $body,
 			);
@@ -2413,13 +2488,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_image_edit_request',
 				'Sending image edit request to OpenAI.',
 				array(
-					'model' => $model,
-					'size'  => $size,
-					'n'     => $n,
+					'model'           => $model,
+					'size'            => $size,
+					'n'               => $n,
+					'response_format' => $model_supports_response_format ? $response_format : 'b64_json (default)',
 				)
 			);
 
-			$response = wp_remote_post( self::IMAGES_EDITS_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::IMAGES_EDITS_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_event( 'openai_image_edit_error', 'Image edit request failed.', array( 'error' => $response->get_error_message() ) );
@@ -2538,10 +2614,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "--{$boundary}--\r\n";
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
-				),
+				'headers' => $this->build_request_headers( $api_key, 'multipart/form-data; boundary=' . $boundary ),
 				'timeout' => $timeout,
 				'body'    => $body,
 			);
@@ -2556,7 +2629,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				)
 			);
 
-			$response = wp_remote_post( self::IMAGES_VARIATIONS_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::IMAGES_VARIATIONS_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_event( 'openai_image_variation_error', 'Image variation request failed.', array( 'error' => $response->get_error_message() ) );
@@ -2681,10 +2754,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
 			);
@@ -2700,7 +2770,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				)
 			);
 
-			$response = wp_remote_post( self::AUDIO_SPEECH_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::AUDIO_SPEECH_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI text-to-speech request failed.', array( 'error' => $response->get_error_message() ) );
@@ -2903,15 +2973,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
-				),
+				'headers' => $this->build_request_headers( $api_key, 'multipart/form-data; boundary=' . $boundary ),
 				'timeout' => $timeout,
 				'body'    => $request_body,
 			);
 
-			$endpoint = $translate ? self::AUDIO_TRANSLATIONS_ENDPOINT : self::AUDIO_TRANSCRIPTIONS_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( $translate ? self::AUDIO_TRANSLATIONS_ENDPOINT : self::AUDIO_TRANSCRIPTIONS_ENDPOINT );
 
 			WP_MCP_AI_Logger::log_event(
 				'openai_audio_transcription_request',
@@ -3066,14 +3133,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
-				// When using Chat Completions API, convert input_image segments to image_url format.
+				// When using Chat Completions API, convert input_image segments to image_url format
+				// and input_file segments to the 'file' content type (supported by GPT-4.1 and newer models).
+				// This is necessary because Chat Completions API doesn't support input_image/input_file types natively.
+				// Always build the attachment lookup so that input_file segments can also be resolved.
 
-				// This is necessary because Chat Completions API doesn't support input_image type.
-
-				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
+				if ( ! empty( $attachments ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				}
-				// Always run conversion to handle input_image segments from conversation history.
+				// Always run conversion to handle segments from conversation history.
 
 				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
@@ -3226,10 +3294,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
-			$request_headers = array(
-				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type'  => 'application/json',
-			);
+			$request_headers = $this->build_request_headers( $api_key );
 
 			if ( $should_use_responses_api ) {
 				$request_headers['OpenAI-Beta'] = 'responses=v1';
@@ -3243,7 +3308,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'openai_request', 'Sending request to OpenAI.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
 
-			$endpoint = $should_use_responses_api ? self::RESPONSES_ENDPOINT : self::CHAT_COMPLETIONS_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( $should_use_responses_api ? self::RESPONSES_ENDPOINT : self::CHAT_COMPLETIONS_ENDPOINT );
 			$response = wp_remote_post( $endpoint, $request_args );
 
 			if ( is_wp_error( $response ) ) {
@@ -3395,6 +3460,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$pending_calls           = array();
 			$awaiting_tool_responses = false;
 
+			// Index in $filtered where the current incomplete tool-call group starts.
+			// When we later encounter a user/system message while pending_calls is still
+			// non-empty, we know the assistant message (and any partial tool responses)
+			// at this index were never properly answered and must be removed to keep the
+			// conversation valid for the OpenAI API.
+			$incomplete_group_start = null;
+
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
 					continue;
@@ -3407,15 +3479,44 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+					// If the previous assistant message had tool_calls that were never fully
+					// answered (awaiting_tool_responses is still true), drop the entire incomplete
+					// group from $filtered to prevent sending an invalid conversation to OpenAI.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before user/system message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
 					$pending_calls           = array();
 					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
 					$filtered[]              = $message;
 					continue;
 				}
 
 				if ( 'assistant' === $role ) {
+					// If the PREVIOUS assistant had unresolved tool_calls, drop that group
+					// before starting a new one.
+					if ( $awaiting_tool_responses && null !== $incomplete_group_start ) {
+						$filtered = array_slice( $filtered, 0, $incomplete_group_start );
+						WP_MCP_AI_Logger::log_event(
+							'dropped_incomplete_tool_group',
+							'Dropped assistant message with unresolved tool_calls before next assistant message.',
+							array(
+								'pending_call_ids' => array_keys( $pending_calls ),
+							)
+						);
+					}
+
 					$pending_calls           = array();
 					$awaiting_tool_responses = false;
+					$incomplete_group_start  = null;
 
 					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 						foreach ( $message['tool_calls'] as $tool_call ) {
@@ -3435,6 +3536,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					if ( ! empty( $pending_calls ) ) {
 						$awaiting_tool_responses = true;
+						// Remember the position in $filtered where this group begins so we
+						// can truncate back to it if the group turns out to be incomplete.
+						$incomplete_group_start = count( $filtered );
 					}
 
 					$filtered[] = $message;
@@ -3461,6 +3565,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					if ( empty( $pending_calls ) ) {
 						$awaiting_tool_responses = false;
+						// All tool_calls for this assistant message are now answered;
+						// the group is complete so we no longer need to guard its start.
+						$incomplete_group_start = null;
 					}
 
 					$filtered[] = $message;
@@ -3469,6 +3576,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$pending_calls           = array();
 				$awaiting_tool_responses = false;
+				$incomplete_group_start  = null;
 				$filtered[]              = $message;
 			}
 
@@ -4823,6 +4931,67 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						continue;
 					}
 
+					// Convert input_file segments to the Chat Completions 'file' content type.
+					// The Chat Completions API does not support the 'input_file' type natively, so we convert
+					// it to {"type":"file","file":{"file_id":"file-xxx"}} when an OpenAI file_id is available.
+					// This ensures file context is passed to the model even when Responses API cannot be used
+					// (e.g., because the conversation history contains tool_calls/tool messages).
+
+					if ( 'input_file' === $type ) {
+						$file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
+
+						// Resolve the OpenAI file_id from the attachment lookup when available.
+
+						if ( '' !== $file_id && isset( $attachment_lookup[ $file_id ] ) ) {
+							$lookup_entry = $attachment_lookup[ $file_id ];
+
+							if ( isset( $lookup_entry['file_id'] ) && '' !== (string) $lookup_entry['file_id'] ) {
+								$file_id = (string) $lookup_entry['file_id'];
+							}
+						}
+
+						// If we have a genuine OpenAI file ID, emit the 'file' content type.
+						// OpenAI file IDs always start with 'file-'.
+
+						if ( '' !== $file_id && 0 === strpos( $file_id, 'file-' ) ) {
+							$converted_segments[] = array(
+								'type' => 'file',
+								'file' => array( 'file_id' => $file_id ),
+							);
+							continue;
+						}
+
+						// No usable file_id — include a plain-text reference so the model at least knows
+						// a file was part of the prompt (graceful fallback for local-only or non-OpenAI IDs).
+
+						$fallback_name = '';
+						if ( isset( $segment['file_name'] ) && '' !== (string) $segment['file_name'] ) {
+							$fallback_name = sanitize_text_field( (string) $segment['file_name'] );
+						} elseif ( isset( $segment['display_name'] ) && '' !== (string) $segment['display_name'] ) {
+							$fallback_name = sanitize_text_field( (string) $segment['display_name'] );
+						}
+
+						if ( '' !== $fallback_name ) {
+							$converted_segments[] = array(
+								'type' => 'text',
+								'text' => sprintf(
+									/* translators: %s: filename of the attached document */
+									__( '[Attached file: %s]', 'mcp-ai-wpoos' ),
+									$fallback_name
+								),
+							);
+						} else {
+							WP_MCP_AI_Logger::log_error(
+								'Skipping input_file segment without a usable OpenAI file_id for Chat Completions API.',
+								array(
+									'file_id' => isset( $segment['file_id'] ) ? $segment['file_id'] : '',
+								)
+							);
+						}
+
+						continue;
+					}
+
 					// Keep all other segments as-is.
 
 					$converted_segments[] = $segment;
@@ -4989,12 +5158,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
 			);
@@ -5005,7 +5173,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				array( 'name' => $name )
 			);
 
-			$response = wp_remote_post( self::VECTOR_STORES_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_event( 'openai_vector_store_create_error', 'Vector store creation failed.', array( 'error' => $response->get_error_message() ) );
@@ -5080,17 +5248,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$query_params['before'] = sanitize_text_field( $options['before'] );
 			}
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT );
 			if ( ! empty( $query_params ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 			);
 
@@ -5151,14 +5318,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
+
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 			);
 
@@ -5219,14 +5385,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id );
+
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
 			);
@@ -5297,7 +5462,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files' );
 
 			$payload = array(
 				'file_id' => sanitize_text_field( $file_ids[0] ), // OpenAI API accepts one file at a time.
@@ -5308,12 +5473,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
 			);
@@ -5394,17 +5558,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$query_params['before'] = sanitize_text_field( $options['before'] );
 			}
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files' );
 			if ( ! empty( $query_params ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
+
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 			);
 
@@ -5468,14 +5631,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id;
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id );
+
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
 			);
@@ -5571,14 +5733,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$body['filters'] = $options['filters'];
 			}
 
-			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/search';
+			$endpoint = $this->resolve_endpoint( self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/search' );
+
+			$request_headers = $this->build_request_headers( $api_key );
+			$request_headers['OpenAI-Beta'] = 'assistants=v2';
 
 			$request_args = array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
-				),
+				'headers' => $request_headers,
 				'body'    => wp_json_encode( $body ),
 				'timeout' => $timeout,
 				'method'  => 'POST',
@@ -5702,10 +5863,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
@@ -5719,7 +5877,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				)
 			);
 
-			$response = $this->dispatch_http_request( self::BATCHES_ENDPOINT, $request_args );
+			$response = $this->dispatch_http_request( $this->resolve_endpoint( self::BATCHES_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error(
@@ -5821,13 +5979,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id );
+			$endpoint = $this->resolve_endpoint( self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) );
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -5930,13 +6086,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel';
+			$endpoint = $this->resolve_endpoint( self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel' );
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 
@@ -6057,16 +6211,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$query_params['limit'] = $limit;
 			}
 
-			$endpoint = self::BATCHES_ENDPOINT;
+			$endpoint = $this->resolve_endpoint( self::BATCHES_ENDPOINT );
 			if ( ! empty( $query_params ) ) {
 				$endpoint .= '?' . http_build_query( $query_params );
 			}
 
 			$request_args = array(
 				'method'  => 'GET',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'timeout' => $timeout,
 			);
 

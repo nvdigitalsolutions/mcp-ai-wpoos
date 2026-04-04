@@ -6,6 +6,9 @@
  * the file_name field so the chat client can display the correct filename.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class Test_Veo_File_Name extends WP_UnitTestCase {
 

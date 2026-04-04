@@ -6,6 +6,9 @@
  * reusable graphic editor templates and media collections.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,6 +38,10 @@ if ( is_admin() ) {
 		// Load Research & Add for CCT/CPT integration.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-media-research-add.php';
 		new WP_MCP_AI_Media_Research_Add();
+
+		// Load Consolidate & Add page (under Media menu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-consolidate-page.php';
+		WP_MCP_AI_Media_Consolidate_Page::init();
 	}
 }
 

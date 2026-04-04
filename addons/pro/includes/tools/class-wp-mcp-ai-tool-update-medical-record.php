@@ -3,6 +3,9 @@
  * Tool for updating medical records.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -71,6 +74,30 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
+				'icd_code'  => array(
+					'type'        => 'string',
+					'description' => __( 'ICD-10 / ICD-11 diagnosis code (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 20,
+				),
+				'lab_value' => array(
+					'type'        => 'string',
+					'description' => __( 'Lab result value (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'lab_unit'  => array(
+					'type'        => 'string',
+					'description' => __( 'Lab result unit (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 50,
+				),
+				'lab_reference_range' => array(
+					'type'        => 'string',
+					'description' => __( 'Normal reference range (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 100,
+				),
+				'lab_abnormal' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether the result is abnormal (optional)', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'record_id' ),
 			'additionalProperties' => false,
@@ -80,6 +107,24 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_med_record',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'medical_coder' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
@@ -131,6 +176,11 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		$provider = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
 		$details  = isset( $arguments['details'] ) ? wp_kses_post( $arguments['details'] ) : '';
 		$notes    = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$icd_code = isset( $arguments['icd_code'] ) ? sanitize_text_field( $arguments['icd_code'] ) : '';
+		$lab_value = isset( $arguments['lab_value'] ) ? sanitize_text_field( $arguments['lab_value'] ) : '';
+		$lab_unit  = isset( $arguments['lab_unit'] ) ? sanitize_text_field( $arguments['lab_unit'] ) : '';
+		$lab_ref   = isset( $arguments['lab_reference_range'] ) ? sanitize_text_field( $arguments['lab_reference_range'] ) : '';
+		$lab_abnormal = isset( $arguments['lab_abnormal'] ) ? ( $arguments['lab_abnormal'] ? 1 : 0 ) : null;
 
 		// Validate date if provided.
 		if ( $date && ! $this->validate_date( $date ) ) {
@@ -171,15 +221,40 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			update_post_meta( $record_id, '_medical_record_provider', $provider );
 		}
 
+		if ( $icd_code ) {
+			update_post_meta( $record_id, '_medical_record_icd_code', $icd_code );
+		}
+
+		if ( $lab_value ) {
+			update_post_meta( $record_id, '_medical_record_lab_value', $lab_value );
+		}
+
+		if ( $lab_unit ) {
+			update_post_meta( $record_id, '_medical_record_lab_unit', $lab_unit );
+		}
+
+		if ( $lab_ref ) {
+			update_post_meta( $record_id, '_medical_record_lab_reference_range', $lab_ref );
+		}
+
+		if ( null !== $lab_abnormal ) {
+			update_post_meta( $record_id, '_medical_record_lab_abnormal', $lab_abnormal );
+		}
+
 		return array(
 			'success' => true,
 			'message' => __( 'Medical record updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'record'  => array(
-				'id'         => $record_id,
-				'title'      => $title ?: get_post_field( 'post_title', $record_id ),
-				'date'       => $date ?: get_post_meta( $record_id, '_medical_record_date', true ),
-				'provider'   => $provider ?: get_post_meta( $record_id, '_medical_record_provider', true ),
-				'updated_at' => current_time( 'mysql' ),
+				'id'                  => $record_id,
+				'title'               => $title ?: get_post_field( 'post_title', $record_id ),
+				'date'                => $date ?: get_post_meta( $record_id, '_medical_record_date', true ),
+				'provider'            => $provider ?: get_post_meta( $record_id, '_medical_record_provider', true ),
+				'icd_code'            => $icd_code ?: get_post_meta( $record_id, '_medical_record_icd_code', true ),
+				'lab_value'           => $lab_value ?: get_post_meta( $record_id, '_medical_record_lab_value', true ),
+				'lab_unit'            => $lab_unit ?: get_post_meta( $record_id, '_medical_record_lab_unit', true ),
+				'lab_reference_range' => $lab_ref ?: get_post_meta( $record_id, '_medical_record_lab_reference_range', true ),
+				'lab_abnormal'        => (bool) get_post_meta( $record_id, '_medical_record_lab_abnormal', true ),
+				'updated_at'          => current_time( 'mysql' ),
 			),
 		);
 	}

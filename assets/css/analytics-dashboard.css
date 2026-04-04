@@ -4,6 +4,9 @@
  * Styles for NV oOS Analytics Dashboard widgets and charts.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /* Widget Container Styles */
@@ -16,7 +19,7 @@
 /* Stats Grid */
 .wp-mcp-ai-stats-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
 	gap: 15px;
 	margin-bottom: 20px;
 }
@@ -37,7 +40,7 @@
 }
 
 .wp-mcp-ai-stat-value {
-	font-size: 26px;
+	font-size: 18px;
 	font-weight: 600;
 	color: #1d2327;
 	line-height: 1.3;

@@ -6,6 +6,9 @@
  * for Health & Wellness Member (Family & Pets) Research & Add functionality.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -138,37 +141,87 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	/**
 	 * Get tools list for this CPT.
 	 *
+	 * Returns all Health & Wellness toolkit tools grouped by category,
+	 * covering all USCDI data classes and document generation tools.
+	 *
 	 * @return array
 	 */
 	protected function get_tools_list() {
 		return array(
-			// Member management tools.
-			'create_member'         => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
-			'update_member'         => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
-			'get_members'           => __( 'Get Members', 'mcp-ai-wpoos-pro' ),
-			'delete_member'         => __( 'Delete Member', 'mcp-ai-wpoos-pro' ),
-			'create_medical_record' => __( 'Create Medical Record', 'mcp-ai-wpoos-pro' ),
-			'create_prescription'   => __( 'Create Prescription', 'mcp-ai-wpoos-pro' ),
-			'create_allergy'        => __( 'Create Allergy', 'mcp-ai-wpoos-pro' ),
-			'update_allergy'        => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
-			'create_checkup'        => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
-			'update_checkup'        => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
-			// Vital signs CCT tools.
-			'log_vital_signs'       => __( 'Log Vital Signs (CCT)', 'mcp-ai-wpoos-pro' ),
+			// Member management (USCDI: Patient Demographics — FHIR Patient).
+			'create_member'                => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
+			'list_members'                 => __( 'List Members', 'mcp-ai-wpoos-pro' ),
+			'get_member'                   => __( 'Get Member', 'mcp-ai-wpoos-pro' ),
+			'update_member'                => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
+			'delete_member'                => __( 'Delete Member', 'mcp-ai-wpoos-pro' ),
+			// Policy/insurance management (USCDI: Insurance Coverage — FHIR Coverage).
+			'create_policy'                => __( 'Create Policy', 'mcp-ai-wpoos-pro' ),
+			'list_policies'                => __( 'List Policies', 'mcp-ai-wpoos-pro' ),
+			'get_policy'                   => __( 'Get Policy', 'mcp-ai-wpoos-pro' ),
+			'update_policy'                => __( 'Update Policy', 'mcp-ai-wpoos-pro' ),
+			'delete_policy'                => __( 'Delete Policy', 'mcp-ai-wpoos-pro' ),
+			'search_policies'              => __( 'Search Policies', 'mcp-ai-wpoos-pro' ),
+			'research_policy'              => __( 'Research Policy', 'mcp-ai-wpoos-pro' ),
+			// Prescription management (USCDI: Medications — FHIR MedicationStatement/NDC/RxNorm).
+			'create_prescription'          => __( 'Create Prescription', 'mcp-ai-wpoos-pro' ),
+			'list_prescriptions'           => __( 'List Prescriptions', 'mcp-ai-wpoos-pro' ),
+			'get_prescription'             => __( 'Get Prescription', 'mcp-ai-wpoos-pro' ),
+			'update_prescription'          => __( 'Update Prescription', 'mcp-ai-wpoos-pro' ),
+			'delete_prescription'          => __( 'Delete Prescription', 'mcp-ai-wpoos-pro' ),
+			'search_prescriptions'         => __( 'Search Prescriptions', 'mcp-ai-wpoos-pro' ),
+			// Medical record management (USCDI: Problems/Conditions — FHIR Condition/ICD-10).
+			'create_medical_record'        => __( 'Create Medical Record', 'mcp-ai-wpoos-pro' ),
+			'list_medical_records'         => __( 'List Medical Records', 'mcp-ai-wpoos-pro' ),
+			'get_medical_record'           => __( 'Get Medical Record', 'mcp-ai-wpoos-pro' ),
+			'update_medical_record'        => __( 'Update Medical Record', 'mcp-ai-wpoos-pro' ),
+			'delete_medical_record'        => __( 'Delete Medical Record', 'mcp-ai-wpoos-pro' ),
+			'search_medical_records'       => __( 'Search Medical Records', 'mcp-ai-wpoos-pro' ),
+			// Checkup/appointment management (USCDI: Encounters — FHIR Encounter).
+			'create_checkup'               => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
+			'list_checkups'                => __( 'List Checkups', 'mcp-ai-wpoos-pro' ),
+			'get_checkup'                  => __( 'Get Checkup', 'mcp-ai-wpoos-pro' ),
+			'update_checkup'               => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
+			'delete_checkup'               => __( 'Delete Checkup', 'mcp-ai-wpoos-pro' ),
+			'get_upcoming_checkups'        => __( 'Get Upcoming Checkups', 'mcp-ai-wpoos-pro' ),
+			// Allergy management (USCDI: Allergies & Intolerances — FHIR AllergyIntolerance).
+			'create_allergy'               => __( 'Create Allergy', 'mcp-ai-wpoos-pro' ),
+			'list_allergies'               => __( 'List Allergies', 'mcp-ai-wpoos-pro' ),
+			'get_allergy'                  => __( 'Get Allergy', 'mcp-ai-wpoos-pro' ),
+			'update_allergy'               => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
+			'delete_allergy'               => __( 'Delete Allergy', 'mcp-ai-wpoos-pro' ),
+			// Specialized health & wellness tools.
+			'get_member_health_summary'    => __( 'Get Member Health Summary', 'mcp-ai-wpoos-pro' ),
+			'get_medication_schedule'      => __( 'Get Medication Schedule', 'mcp-ai-wpoos-pro' ),
+			'generate_health_chart'        => __( 'Generate Health Chart', 'mcp-ai-wpoos-pro' ),
+			'create_health_reminder'       => __( 'Create Health Reminder', 'mcp-ai-wpoos-pro' ),
+			// Immunizations (USCDI: Immunizations — FHIR Immunization).
+			'track_vaccinations'           => __( 'Track Vaccinations', 'mcp-ai-wpoos-pro' ),
+			// Daily health metrics logging.
+			'log_health_metrics'           => __( 'Log Health Metrics', 'mcp-ai-wpoos-pro' ),
+			// Vital signs CCT (USCDI: Vital Signs — FHIR Observation/LOINC).
+			'log_vital_signs'              => __( 'Log Vital Signs (CCT)', 'mcp-ai-wpoos-pro' ),
+			// Data operations & interoperability.
+			'import_vitals'                => __( 'Import Vitals', 'mcp-ai-wpoos-pro' ),
+			'export_fhir_data'             => __( 'Export FHIR Data', 'mcp-ai-wpoos-pro' ),
+			'manage_care_plan'             => __( 'Manage Care Plan', 'mcp-ai-wpoos-pro' ),
+			'compile_health_research_data' => __( 'Compile Health Research Data', 'mcp-ai-wpoos-pro' ),
+			// AI-assisted data entry (agentic flow — USCDI-aligned completeness guidance).
+			'guide_health_record_creation' => __( 'Guide Health Record Creation', 'mcp-ai-wpoos-pro' ),
+			'parse_health_information'     => __( 'Parse Health Information', 'mcp-ai-wpoos-pro' ),
 			// Document processing tools.
-			'extract_pdf_text'      => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
-			'pro_pdf_document'      => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
-			'pro_word_document'     => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
-			'pro_excel_document'    => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
-			'generate_pdf'          => __( 'Generate PDF', 'mcp-ai-wpoos-pro' ),
-			'generate_word'         => __( 'Generate Word', 'mcp-ai-wpoos-pro' ),
-			'generate_excel'        => __( 'Generate Excel', 'mcp-ai-wpoos-pro' ),
-			'html_to_pdf'           => __( 'HTML to PDF', 'mcp-ai-wpoos-pro' ),
-			'merge_pdfs'            => __( 'Merge PDFs', 'mcp-ai-wpoos-pro' ),
-			'add_watermark_to_pdf'  => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
-			'excel_data_import'     => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
-			'excel_data_export'     => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
-			'generate_invoice_pdf'  => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
+			'extract_pdf_text'             => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
+			'pro_pdf_document'             => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
+			'pro_word_document'            => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
+			'pro_excel_document'           => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
+			'generate_pdf'                 => __( 'Generate PDF', 'mcp-ai-wpoos-pro' ),
+			'generate_word'                => __( 'Generate Word', 'mcp-ai-wpoos-pro' ),
+			'generate_excel'               => __( 'Generate Excel', 'mcp-ai-wpoos-pro' ),
+			'html_to_pdf'                  => __( 'HTML to PDF', 'mcp-ai-wpoos-pro' ),
+			'merge_pdfs'                   => __( 'Merge PDFs', 'mcp-ai-wpoos-pro' ),
+			'add_watermark_to_pdf'         => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
+			'excel_data_import'            => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
+			'excel_data_export'            => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
+			'generate_invoice_pdf'         => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

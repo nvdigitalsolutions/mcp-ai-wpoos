@@ -9,6 +9,9 @@
  * @package    WP_MCP_AI
  * @subpackage Site_Creator_Toolkit
  * @since      1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 // Exit if accessed directly.
@@ -117,7 +120,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param array $context   Execution context.
 	 * @return array Tool result.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return array(

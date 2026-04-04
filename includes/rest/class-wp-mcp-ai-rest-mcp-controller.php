@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -149,7 +152,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_no_sse_request' ),
 					'args'                => array(
 						'assistant_id' => array(
@@ -174,13 +177,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistants_index' ),
 					'args'                => array(
-						'search'  => array(
+						'search'   => array(
 							'description'       => __( 'Search term to filter assistants by title or content.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
-						'include' => array(
+						'include'  => array(
 							'description' => __( 'Limit results to specific assistant IDs.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'required'    => false,
@@ -188,17 +191,37 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 								'type' => 'integer',
 							),
 						),
+						'per_page' => array(
+							'description'       => __( 'Maximum number of assistants to return. Use -1 (default) to return all.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'minimum'           => -1,
+							'maximum'           => 100,
+						),
+						'page'     => array(
+							'description'       => __( 'Page of results to return when per_page is a positive integer. Defaults to 1.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'minimum'           => 1,
+							'sanitize_callback' => 'absint',
+						),
+						'_fields'  => array(
+							'description'       => __( 'Comma-separated list of assistant fields to include in each item. Always includes id.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
 					),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'permission_callback' => array( $this, 'permissions_check_assistant_create' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistant_create' ),
 					'args'                => array(
 						'title'         => array(
-							'description'       => __( 'The title for the assistant.', 'mcp-ai-wpoos' ),
+							'description'       => __( 'The title for the assistant. When omitted the request acts as a connectivity check and returns the directory listing.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
-							'required'          => true,
+							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'description'   => array(
@@ -271,6 +294,21 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'absint',
 						),
 					),
+				),
+			),
+			true
+		);
+
+		// /sse - Dedicated Server-Sent Events endpoint for MCP clients that expect
+		// a separate /sse handshake URL (e.g. Claude Desktop, LM Studio).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/sse',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
 				),
 			),
 			true

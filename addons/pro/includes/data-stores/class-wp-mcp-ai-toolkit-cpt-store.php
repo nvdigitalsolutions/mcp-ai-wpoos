@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 2.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -283,15 +286,31 @@ class WP_MCP_AI_Toolkit_CPT_Store implements WP_MCP_AI_Toolkit_Data_Store {
 	/**
 	 * Query items.
 	 *
-	 * @param array $args Query arguments.
+	 * Accepts the same `per_page` key used by the CCT store so callers can
+	 * treat both stores interchangeably through the data-store interface.
+	 * `per_page` is mapped to WP_Query's `posts_per_page` before the query runs.
+	 *
+	 * @param array $args Query arguments. Supports `per_page` (alias for
+	 *                    `posts_per_page`) plus any standard WP_Query arg.
 	 * @return array Array of items.
 	 */
 	public function query_items( $args = array() ) {
+		// Map the interface-level `per_page` key to WP_Query's `posts_per_page`
+		// so callers that use the store interface can pass a consistent key.
+		if ( isset( $args['per_page'] ) && ! isset( $args['posts_per_page'] ) ) {
+			$args['posts_per_page'] = $args['per_page'];
+			unset( $args['per_page'] );
+		}
+
 		$defaults = array(
-			'post_type'      => $this->post_type,
-			'posts_per_page' => 20,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
+			'post_type'        => $this->post_type,
+			'posts_per_page'   => 20,
+			'orderby'          => 'date',
+			'order'            => 'DESC',
+			// Suppress external post-query filters so that third-party plugins
+			// cannot inadvertently limit the result set.
+			'suppress_filters' => true,
+			'no_found_rows'    => false,
 		);
 
 		$query_args = wp_parse_args( $args, $defaults );

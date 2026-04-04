@@ -7,6 +7,9 @@
  * a centralized interface for managing multiple remote site connections.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -33,6 +36,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @var array<string>
 	 */
 	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
+
+	/**
+	 * Prefix that marks values encrypted with the modern AES-256-CBC scheme.
+	 *
+	 * Legacy values (XOR cipher) lack this prefix and are still readable by
+	 * decrypt_value() for backward compatibility.
+	 */
+	const ENCRYPT_V2_PREFIX = 'v2.';
 
 	/**
 	 * Get all configured remote site connections.
@@ -173,6 +184,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['folder_id'] = $existing_connection['folder_id'];
 			}
 
+			// Preserve existing upwork_username (Upwork) if not provided.
+			if ( empty( $connection_data['upwork_username'] ) && ! empty( $existing_connection['upwork_username'] ) ) {
+				$connection_data['upwork_username'] = $existing_connection['upwork_username'];
+			}
+
 			// Preserve existing bot_username (Telegram) if not provided.
 			if ( empty( $connection_data['bot_username'] ) && ! empty( $existing_connection['bot_username'] ) ) {
 				$connection_data['bot_username'] = $existing_connection['bot_username'];
@@ -206,6 +222,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing mini_app_template (Telegram Mini App) if not provided.
 			if ( ! isset( $connection_data['mini_app_template'] ) && isset( $existing_connection['mini_app_template'] ) ) {
 				$connection_data['mini_app_template'] = $existing_connection['mini_app_template'];
+			}
+
+			// Preserve existing mini_app_woo_source (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_source'] ) && isset( $existing_connection['mini_app_woo_source'] ) ) {
+				$connection_data['mini_app_woo_source'] = $existing_connection['mini_app_woo_source'];
+			}
+
+			// Preserve existing mini_app_woo_connection_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_woo_connection_id'] ) && isset( $existing_connection['mini_app_woo_connection_id'] ) ) {
+				$connection_data['mini_app_woo_connection_id'] = $existing_connection['mini_app_woo_connection_id'];
 			}
 
 			// Preserve existing auto_create_wp_user (Telegram) if not provided.
@@ -271,6 +297,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
 			}
 
+			// Preserve existing slack_bot_user_id (Slack) if not provided.
+			if ( empty( $connection_data['slack_bot_user_id'] ) && ! empty( $existing_connection['slack_bot_user_id'] ) ) {
+				$connection_data['slack_bot_user_id'] = $existing_connection['slack_bot_user_id'];
+			}
+
 			// Preserve existing Discord-specific fields if not provided.
 			if ( empty( $connection_data['application_id'] ) && ! empty( $existing_connection['application_id'] ) ) {
 				$connection_data['application_id'] = $existing_connection['application_id'];
@@ -287,6 +318,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Preserve existing tenant_id (Microsoft Teams) if not provided.
 			if ( empty( $connection_data['tenant_id'] ) && ! empty( $existing_connection['tenant_id'] ) ) {
 				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
+			}
+
+			// Preserve existing token_expiry (Microsoft Teams OAuth) if not provided.
+			if ( empty( $connection_data['token_expiry'] ) && ! empty( $existing_connection['token_expiry'] ) ) {
+				$connection_data['token_expiry'] = $existing_connection['token_expiry'];
 			}
 
 			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
@@ -316,8 +352,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
 			}
 
-			// Preserve existing reply_webhook_url (Google Chat incoming webhook) if not provided.
-			if ( empty( $connection_data['reply_webhook_url'] ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) only when the
+			// key is entirely absent from the submitted data. When the admin form explicitly
+			// submits the field as an empty string (user cleared the optional field), the key
+			// will be present and we must honour that intent — using array_key_exists() rather
+			// than empty() is what makes the field clearable.
+			if ( ! array_key_exists( 'reply_webhook_url', $connection_data ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
 				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
 			}
 
@@ -428,9 +468,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
 			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
 			// Telegram Mini App settings.
-			'enable_mini_app'        => ! empty( $connection_data['enable_mini_app'] ),
-			'mini_app_assistant_id'  => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
-			'mini_app_template'      => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'enable_mini_app'            => ! empty( $connection_data['enable_mini_app'] ),
+			'mini_app_assistant_id'      => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
+			'mini_app_template'          => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
+			'mini_app_woo_source'        => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
+			'mini_app_woo_connection_id' => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
@@ -441,7 +483,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'channel_url'         => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
 			'group_id'            => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
 			// Slack-specific fields.
-			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			'workspace_id'      => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			// Bot's Slack user ID (U-prefixed), populated by the admin connection test.
+			// Used to detect native Slack @mentions (<@USER_ID>) in incoming messages.
+			'slack_bot_user_id' => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
 			// Discord-specific fields.
 			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
 			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
@@ -449,6 +494,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'public_key'      => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
 			// Microsoft Teams-specific fields.
 			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// Unix timestamp when the OAuth access token expires (Teams / Office 365 OAuth connections).
+			'token_expiry'    => isset( $connection_data['token_expiry'] ) ? absint( $connection_data['token_expiry'] ) : 0,
 			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
 			'signing_secret'  => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
 			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
@@ -489,6 +536,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
 			'cache_ttl'       => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
+			// Shopify-specific fields.
+			'shopify_api_version' => isset( $connection_data['shopify_api_version'] ) && preg_match( '/^\d{4}-\d{2}$/', $connection_data['shopify_api_version'] )
+				? sanitize_text_field( $connection_data['shopify_api_version'] )
+				: '2025-01',
+			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+				? $connection_data['shopify_api_mode']
+				: 'admin_api',
+			// ShipEngine-specific fields.
+			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
+				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )
+				: '',
+			// ShipStation-specific fields.
+			'shipstation_carrier_code' => isset( $connection_data['shipstation_carrier_code'] )
+				? sanitize_text_field( $connection_data['shipstation_carrier_code'] )
+				: 'stamps_com',
 			// WordPress/WooCommerce granular access controls.
 			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
 			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
@@ -842,9 +904,19 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_flowhub_connection( $connection );
 		}
 
+		// Handle Shopify connections separately.
+		if ( 'shopify' === $connection_type ) {
+			return self::test_shopify_connection( $connection );
+		}
+
 		// Handle EZuite ERP connections separately.
 		if ( 'ezuite_erp' === $connection_type ) {
 			return self::test_ezuite_connection( $connection );
+		}
+
+		// Handle Slack connections separately.
+		if ( 'slack' === $connection_type ) {
+			return self::test_slack_connection( $connection );
 		}
 
 		// Handle Google Chat connections separately.
@@ -868,6 +940,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'google_drive' => true,
 				'message'      => __( 'Google Drive OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
 			);
+		}
+
+		// Handle Upwork connections separately.
+		if ( 'upwork' === $connection_type ) {
+			return array(
+				'success' => true,
+				'upwork'  => true,
+				'message' => __( 'Upwork OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Handle ShipEngine (ShipStation API) connections separately.
+		if ( 'shipengine' === $connection_type ) {
+			return self::test_shipengine_connection( $connection );
+		}
+
+		// Handle ShipStation V1 (Legacy) connections separately.
+		if ( 'shipstation' === $connection_type ) {
+			return self::test_shipstation_connection( $connection );
 		}
 
 		// Test basic WordPress REST API access.
@@ -917,9 +1008,30 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Connection test results or error.
 	 */
 	protected static function test_google_chat_connection( $connection ) {
-		$has_api_key     = ! empty( $connection['api_key'] );
-		$has_refresh     = ! empty( $connection['refresh_token'] );
-		$has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$has_api_key       = ! empty( $connection['api_key'] );
+		$has_refresh       = ! empty( $connection['refresh_token'] );
+		$has_credentials   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$connection_method = isset( $connection['connection_method'] ) ? $connection['connection_method'] : 'service_account';
+
+		// When the connection method is Incoming Webhook (outbound-only), and no
+		// Service Account key or OAuth credentials are configured, verify the webhook
+		// URL is present and return an informative result. This method can post
+		// outbound messages but cannot receive inbound events from Google Chat.
+		if ( 'webhook' === $connection_method && ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			if ( ! empty( $connection['reply_webhook_url'] ) ) {
+				return array(
+					'success'     => true,
+					'google_chat' => true,
+					'partial'     => true,
+					'message'     => __( 'Incoming Webhook URL is configured. The bot can post outbound messages to the configured space.', 'mcp-ai-wpoos-pro' ),
+					'notice'      => __( 'Note: The Incoming Webhook method is outbound-only. To receive and respond to messages from Google Chat, switch to the Service Account or OAuth 2.0 method and configure the webhook URL in the Google Cloud Console.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_webhook_url',
+				__( 'No Incoming Webhook URL configured. Paste the webhook URL from your Google Chat space settings (Apps & integrations → Manage webhooks) to enable outbound messaging.', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		if ( ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
 			return new WP_Error(
@@ -1031,12 +1143,259 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$spaces      = isset( $body['spaces'] ) && is_array( $body['spaces'] ) ? $body['spaces'] : array();
 		$space_count = count( $spaces );
 
-		return array(
+		$result = array(
 			'success'     => true,
 			'google_chat' => true,
 			/* translators: %d: number of accessible Google Chat spaces */
 			'message'     => sprintf( _n( 'Google Chat connection successful. %d space accessible.', 'Google Chat connection successful. %d spaces accessible.', $space_count, 'mcp-ai-wpoos-pro' ), $space_count ),
 			'space_count' => $space_count,
+		);
+
+		// Warn when the Audience URL (verify_token) is not set and OIDC verification is
+		// not explicitly disabled. Without an audience URL, incoming webhook events will
+		// still be accepted (the OIDC token issuer is verified) but the audience claim
+		// will not be checked — which is less secure. Surfacing this in the test result
+		// helps admins configure the setting before going live.
+		if ( empty( $connection['verify_token'] ) && empty( $connection['disable_oidc_verification'] ) ) {
+			$result['notice'] = __( 'Tip: No Audience URL is configured. Incoming events will be accepted from any valid Google-signed token without audience checking. For stricter security, set the Audience URL to your webhook URL.', 'mcp-ai-wpoos-pro' );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Test ShipEngine (ShipStation API) connection.
+	 *
+	 * Verifies the API key by calling GET /v1/carriers on the ShipEngine API.
+	 * ShipEngine uses the same base URL for both production and sandbox;
+	 * the environment is determined by the API key prefix (TEST_ = sandbox).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipengine_connection( $connection ) {
+		$api_key = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipengine_key',
+				__( 'ShipEngine API key is not configured.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = self::make_request_with_retry(
+			'https://api.shipengine.com/v1/carriers',
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'API-Key'      => $api_key,
+					'Content-Type' => 'application/json',
+					'User-Agent'   => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipEngine connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_auth_failed',
+				__( 'Invalid ShipEngine API key. Please check your credentials.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = __( 'ShipEngine API error.', 'mcp-ai-wpoos-pro' );
+			if ( is_array( $body ) && ! empty( $body['errors'] ) && is_array( $body['errors'] ) ) {
+				$messages = array();
+				foreach ( $body['errors'] as $err ) {
+					if ( isset( $err['message'] ) ) {
+						$messages[] = $err['message'];
+					}
+				}
+				if ( ! empty( $messages ) ) {
+					$error_message = implode( '; ', $messages );
+				}
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipengine_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipEngine returned HTTP %1$d: %2$s', 'mcp-ai-wpoos-pro' ),
+					$code,
+					$error_message
+				)
+			);
+		}
+
+		$carriers   = isset( $body['carriers'] ) ? $body['carriers'] : array();
+		$is_sandbox = ! empty( $connection['sandbox_mode'] ) || 0 === strpos( $api_key, 'TEST_' );
+
+		// Verify carrier_id if provided.
+		$carrier_id = isset( $connection['shipengine_carrier_id'] ) ? $connection['shipengine_carrier_id'] : '';
+		$carrier_info = '';
+		if ( '' !== $carrier_id ) {
+			$found = false;
+			foreach ( $carriers as $c ) {
+				if ( isset( $c['carrier_id'] ) && $c['carrier_id'] === $carrier_id ) {
+					$found        = true;
+					$carrier_info = isset( $c['friendly_name'] ) ? $c['friendly_name'] : '';
+					break;
+				}
+			}
+
+			if ( ! $found ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_shipengine_carrier_not_found',
+					sprintf(
+						/* translators: %s: carrier ID */
+						__( 'Carrier ID "%s" was not found in your ShipEngine account. Please verify the carrier ID.', 'mcp-ai-wpoos-pro' ),
+						$carrier_id
+					)
+				);
+			}
+		}
+
+		$message = $is_sandbox
+			? __( 'ShipStation API (sandbox) connection successful!', 'mcp-ai-wpoos-pro' )
+			: __( 'ShipStation API connection successful!', 'mcp-ai-wpoos-pro' );
+
+		if ( ! empty( $carrier_info ) ) {
+			/* translators: 1: status message, 2: carrier name */
+			$message = sprintf( __( '%1$s Carrier: %2$s.', 'mcp-ai-wpoos-pro' ), $message, $carrier_info );
+		}
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'mcp-ai-wpoos-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipengine'    => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
+		);
+	}
+
+	/**
+	 * Test ShipStation V1 (Legacy) API connection.
+	 *
+	 * Verifies the API key and secret by calling GET /carriers on the
+	 * ShipStation V1 API using Basic Authentication.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shipstation_connection( $connection ) {
+		$api_key    = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$api_secret = isset( $connection['api_secret'] ) ? self::decrypt_value( $connection['api_secret'] ) : '';
+
+		if ( empty( $api_key ) || false === $api_key || empty( $api_secret ) || false === $api_secret ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_shipstation_credentials',
+				__( 'ShipStation API key and secret are required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$auth = base64_encode( $api_key . ':' . $api_secret ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard Basic-Auth encoding.
+
+		/**
+		 * Filter the ShipStation API base URL.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $url Default ShipStation API base URL.
+		 */
+		$api_url  = (string) apply_filters( 'wp_mcp_ai_shipstation_api_url', 'https://ssapi.shipstation.com' );
+		$endpoint = trailingslashit( $api_url ) . 'carriers';
+
+		$response = self::make_request_with_retry(
+			$endpoint,
+			array(
+				'method'  => 'GET',
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . $auth,
+					'Content-Type'  => 'application/json',
+					'User-Agent'    => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'ShipStation V1 connection failed: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+		if ( 401 === $code || 403 === $code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_auth_failed',
+				__( 'Invalid ShipStation V1 credentials. Please check your API key and secret.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = '';
+			if ( is_array( $body ) && ! empty( $body['Message'] ) ) {
+				$error_message = (string) $body['Message'];
+			} elseif ( is_array( $body ) && ! empty( $body['message'] ) ) {
+				$error_message = (string) $body['message'];
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_shipstation_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'ShipStation V1 returned HTTP %1$d%2$s', 'mcp-ai-wpoos-pro' ),
+					$code,
+					'' !== $error_message ? ': ' . $error_message : '.'
+				)
+			);
+		}
+
+		$is_sandbox = ! empty( $connection['sandbox_mode'] );
+		$carriers   = is_array( $body ) ? $body : array();
+
+		$message = $is_sandbox
+			? __( 'ShipStation V1 (sandbox) connection successful!', 'mcp-ai-wpoos-pro' )
+			: __( 'ShipStation V1 connection successful!', 'mcp-ai-wpoos-pro' );
+
+		/* translators: 1: status message, 2: number of carriers */
+		$message = sprintf( __( '%1$s Found %2$d carrier(s).', 'mcp-ai-wpoos-pro' ), $message, count( $carriers ) );
+
+		return array(
+			'success'       => true,
+			'shipstation'   => true,
+			'sandbox_mode'  => $is_sandbox,
+			'environment'   => $is_sandbox ? 'sandbox' : 'production',
+			'carrier_count' => count( $carriers ),
+			'message'       => $message,
 		);
 	}
 
@@ -1077,6 +1436,98 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test Shopify Admin GraphQL API connection.
+	 *
+	 * Queries the shop's basic information using the Admin GraphQL API to
+	 * verify that the access token and store URL are correct.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+
+		if ( 'catalog_api' === $shopify_api_mode ) {
+			return self::test_shopify_catalog_connection( $connection );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		$query    = 'query { shop { name myshopifyDomain plan { displayName } } }';
+		$response = $client->graphql( $query );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		if ( isset( $response['errors'] ) && ! empty( $response['errors'] ) ) {
+			$error_msg = isset( $response['errors'][0]['message'] ) ? $response['errors'][0]['message'] : __( 'Unknown GraphQL error.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error( 'wp_mcp_ai_pro_shopify_error', $error_msg );
+		}
+
+		$shop_name = isset( $response['data']['shop']['name'] ) ? $response['data']['shop']['name'] : '';
+		$shop_plan = isset( $response['data']['shop']['plan']['displayName'] ) ? $response['data']['shop']['plan']['displayName'] : '';
+
+		/* translators: 1: store name, 2: plan name */
+		$message = ! empty( $shop_name )
+			? sprintf( __( 'Shopify connection successful. Connected to "%1$s" (%2$s).', 'mcp-ai-wpoos-pro' ), $shop_name, $shop_plan )
+			: __( 'Shopify connection successful.', 'mcp-ai-wpoos-pro' );
+
+		return array(
+			'success'    => true,
+			'shopify'    => true,
+			'shop_name'  => $shop_name,
+			'shop_plan'  => $shop_plan,
+			'message'    => $message,
+		);
+	}
+
+	/**
+	 * Test Shopify Catalog API connection.
+	 *
+	 * Exchanges client_id + client_secret for a JWT bearer token and verifies
+	 * the search endpoint is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_shopify_catalog_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Shopify_Client( $connection_id );
+
+		// Attempt to obtain a Catalog API JWT bearer token first.
+		$token = $client->get_catalog_token();
+		if ( is_wp_error( $token ) ) {
+			return $token;
+		}
+
+		// Verify the search endpoint with a minimal query.
+		$response = $client->catalog_search( 'test', 1 );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return array(
+			'success' => true,
+			'shopify' => true,
+			'message' => __( 'Shopify Catalog API connection successful. JWT token acquired and search endpoint verified.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -1238,6 +1689,106 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Test Slack Bot API connection.
+	 *
+	 * Verifies the Slack Bot Token by calling the auth.test endpoint and
+	 * checks that the Event Subscriptions Request URL is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_slack_connection( $connection ) {
+		$bot_token = ! empty( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $bot_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_missing_token',
+				__( 'Slack Bot Token is required. Enter the Bot User OAuth Token (starts with xoxb-) and save before testing.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = wp_remote_post(
+			'https://slack.com/api/auth.test',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $bot_token,
+					'Content-Type'  => 'application/json; charset=utf-8',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Slack API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $body['ok'] ) ) {
+			$error_code = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_api_error',
+				sprintf(
+					/* translators: %s: Slack API error code */
+					__( 'Slack API error: %s — Check that the Bot Token is valid and that your Slack app has the required scopes (chat:write, channels:history, app_mentions:read).', 'mcp-ai-wpoos-pro' ),
+					$error_code
+				)
+			);
+		}
+
+		$connection_id     = isset( $connection['id'] ) ? $connection['id'] : '';
+		$webhook_path      = $connection_id
+			? '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection_id
+			: '/wp-json/mcp-ai/v1/webhooks/slack';
+		$webhook_url       = home_url( $webhook_path );
+		$team              = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
+		$bot_user          = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
+		$team_id           = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
+		$bot_user_id       = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
+
+		$message = sprintf(
+			/* translators: 1: Slack team name, 2: bot username, 3: Slack team ID, 4: bot user ID, 5: webhook URL */
+			__( 'Team: %1$s (%2$s), Bot: %3$s (%4$s). Event Subscriptions URL: %5$s', 'mcp-ai-wpoos-pro' ),
+			$team,
+			$team_id,
+			$bot_user,
+			$bot_user_id,
+			$webhook_url
+		);
+
+		// Warn when the Signing Secret is not configured. Without it, HMAC
+		// signature validation rejects every incoming Slack event with a 403,
+		// so the bot will never respond even when the token is valid and the
+		// Event Subscriptions URL is correctly set up in Slack.
+		$has_signing_secret = ! empty( $connection['signing_secret'] ) || ! empty( $connection['api_secret'] );
+		$warning            = $has_signing_secret ? '' : __(
+			'Signing Secret is not configured. Without it, all Slack event webhooks are rejected with a 403 error and the bot cannot respond to messages. Add the Signing Secret from your Slack app\'s Basic Information page, enter it in the Signing Secret field, and save the connection.',
+			'mcp-ai-wpoos-pro'
+		);
+
+		return array(
+			'success'     => true,
+			'slack'       => true,
+			'team'        => $team,
+			'bot_user'    => $bot_user,
+			'team_id'     => $team_id,
+			'bot_user_id' => $bot_user_id,
+			'webhook_url' => $webhook_url,
+			'message'     => $message,
+			'warning'     => $warning,
+		);
+	}
+
+	/**
 	 * Test Telegram Bot API connection.
 	 *
 	 * Tests Telegram connection by calling getMe and getWebhookInfo on the Bot API.
@@ -1330,7 +1881,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				if ( ! empty( $wh['last_error_message'] ) ) {
 					$results['webhook_last_error'] = $wh['last_error_message'];
 				}
-				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+				$expected_url  = ! empty( $connection_id )
+					? home_url( '/wp-json/mcp-ai/v1/webhooks/telegram/' . $connection_id )
+					: home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
 				if ( empty( $results['webhook_url'] ) ) {
 					$results['warning'] = sprintf(
 						/* translators: %s: expected webhook URL */
@@ -1900,6 +2454,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $api_url;
 		}
 
+		// For Shopify connections, build the Admin GraphQL API URL or Catalog API URL.
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
+			}
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				$path = '' === $endpoint ? 'global/v2/search' : ltrim( $endpoint, '/' );
+				return WP_MCP_AI_Shopify_Client::CATALOG_BASE_URL . '/' . $path;
+			}
+			$api_version = WP_MCP_AI_Shopify_Client::sanitize_api_version(
+				isset( $connection['shopify_api_version'] ) ? $connection['shopify_api_version'] : ''
+			);
+			if ( '' === $endpoint || 'graphql' === $endpoint || 'graphql.json' === $endpoint ) {
+				return $base_url . '/admin/api/' . $api_version . '/graphql.json';
+			}
+			// REST fallback: endpoint is used as-is under the versioned admin path.
+			return $base_url . '/admin/api/' . $api_version . '/' . ltrim( $endpoint, '/' );
+		}
+
 		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
 		// Determine if this is a WooCommerce endpoint.
 		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
@@ -1923,6 +2497,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$headers = array(
 			'User-Agent' => 'WP-MCP-AI-Pro/' . WP_MCP_AI_PRO_VERSION,
 		);
+
+		// For Shopify connections, use mode-appropriate authentication.
+		if ( ! empty( $connection['connection_type'] ) && 'shopify' === $connection['connection_type'] ) {
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( 'catalog_api' === $shopify_api_mode ) {
+				// Catalog API uses a short-lived JWT bearer token obtained from get_catalog_token().
+				// The token is fetched dynamically by WP_MCP_AI_Shopify_Client; here we set Content-Type only.
+				$headers['Content-Type'] = 'application/json';
+				$headers['Accept']       = 'application/json';
+			} else {
+				// Admin API uses the X-Shopify-Access-Token header (shpat_/shpca_/shpua_/shpss_).
+				$access_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+				if ( ! empty( $access_token ) ) {
+					$headers['X-Shopify-Access-Token'] = $access_token;
+				}
+				$headers['Content-Type'] = 'application/json';
+			}
+			return $headers;
+		}
 
 		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
 
@@ -2043,6 +2636,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		if ( 'shopify' === $connection_type ) {
+			$shopify_api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+			if ( empty( $connection['api_key'] ) ) {
+				$error_msg = 'catalog_api' === $shopify_api_mode
+					? __( 'Client ID is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
+					: __( 'Admin API access token is required for Shopify connections.', 'mcp-ai-wpoos-pro' );
+				return new WP_Error( 'wp_mcp_ai_pro_missing_shopify_credentials', $error_msg );
+			}
+			if ( 'catalog_api' === $shopify_api_mode && empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shopify_credentials',
+					__( 'Client secret (shpss_…) is required for Shopify Catalog API connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		if ( 'payhere' === $connection_type ) {
 			if ( empty( $connection['app_id'] ) || empty( $connection['app_secret'] ) ) {
 				return new WP_Error(
@@ -2052,11 +2661,38 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		if ( 'shipengine' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipengine_credentials',
+					__( 'API key is required for ShipEngine connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'shipstation' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_shipstation_credentials',
+					__( 'API key and API secret are required for ShipStation connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		if ( 'quickbooks' === $connection_type ) {
 			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_quickbooks_credentials',
 					__( 'Client ID and client secret are required for QuickBooks connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks_desktop' === $connection_type ) {
+			if ( empty( $connection['url'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_qbd_relay_url',
+					__( 'The QODBC relay API URL is required for QuickBooks Desktop connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -2080,6 +2716,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 			// Note: folder_id is optional - if not provided, full drive access within granted scopes
+		}
+
+		if ( 'upwork' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_upwork_credentials',
+					__( 'OAuth Client ID and client secret are required for Upwork connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 		}
 
 		return true;
@@ -2136,20 +2782,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Encrypt a sensitive value for storage.
 	 *
+	 * Uses AES-256-CBC via WP_MCP_AI_Encryption when available (PHP 7.4+,
+	 * OpenSSL required). Encrypted values are prefixed with ENCRYPT_V2_PREFIX
+	 * so decrypt_value() can distinguish them from legacy XOR-encrypted values.
+	 *
 	 * @since 1.0.0
+	 * @since 1.5.0 Upgraded from XOR to AES-256-CBC.
 	 *
 	 * @param string $value Value to encrypt.
-	 * @return string Encrypted value.
+	 * @return string Encrypted value (prefixed) or empty string on failure.
 	 */
 	public static function encrypt_value( $value ) {
 		if ( empty( $value ) ) {
 			return '';
 		}
 
-		// Use WordPress auth salt for encryption key.
-		$key = wp_salt( 'auth' );
+		// Prefer proper AES-256-CBC encryption when the base plugin class is loaded.
+		if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+			$encrypted = WP_MCP_AI_Encryption::encrypt( $value );
+			if ( false !== $encrypted ) {
+				return self::ENCRYPT_V2_PREFIX . $encrypted;
+			}
+		}
 
-		// Simple XOR encryption (WordPress doesn't have built-in encryption).
+		// Fallback: XOR cipher (used only if WP_MCP_AI_Encryption is unavailable).
+		$key          = wp_salt( 'auth' );
 		$encrypted    = '';
 		$key_length   = strlen( $key );
 		$value_length = strlen( $value );
@@ -2164,25 +2821,42 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Decrypt a sensitive value.
 	 *
-	 * @since 1.0.0
+	 * Handles both the modern AES-256-CBC format (prefixed with ENCRYPT_V2_PREFIX)
+	 * and the legacy XOR format (no prefix) for backward compatibility.
 	 *
-	 * @param string $encrypted Encrypted value.
-	 * @return string Decrypted value.
+	 * @since 1.0.0
+	 * @since 1.5.0 Added AES-256-CBC format support with legacy XOR fallback.
+	 *
+	 * @param string $encrypted Encrypted value (with or without version prefix).
+	 * @return string Decrypted value or empty string on failure.
 	 */
 	public static function decrypt_value( $encrypted ) {
 		if ( empty( $encrypted ) ) {
 			return '';
 		}
 
-		$key       = wp_salt( 'auth' );
-		$encrypted = base64_decode( $encrypted );
+		// Modern AES-256-CBC format: prefixed with ENCRYPT_V2_PREFIX.
+		if ( str_starts_with( $encrypted, self::ENCRYPT_V2_PREFIX ) ) {
+			if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
+				return ( false !== $decrypted ) ? $decrypted : '';
+			}
+			return '';
+		}
 
-		$decrypted        = '';
-		$key_length       = strlen( $key );
-		$encrypted_length = strlen( $encrypted );
+		// Legacy XOR format (no prefix).
+		$key  = wp_salt( 'auth' );
+		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
+		if ( false === $data ) {
+			return '';
+		}
 
-		for ( $i = 0; $i < $encrypted_length; $i++ ) {
-			$decrypted .= chr( ord( $encrypted[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+		$decrypted    = '';
+		$key_length   = strlen( $key );
+		$data_length  = strlen( $data );
+
+		for ( $i = 0; $i < $data_length; $i++ ) {
+			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
 		}
 
 		return $decrypted;

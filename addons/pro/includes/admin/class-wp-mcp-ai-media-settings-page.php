@@ -6,6 +6,9 @@
  * for Media Design & Add functionality.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load base class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-node-package-hints.php';
 
 /**
  * Media Settings Page
@@ -527,9 +531,9 @@ class WP_MCP_AI_Media_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		$nodejs_version   = $this->get_nodejs_version();
 
 		?>
-		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; ?>; margin: 20px 0;">
+		<div class="nodejs-status" style="background: #f9f9f9; padding: 15px; border-left: 4px solid <?php echo $nodejs_available ? '#46b450' : '#dc3232'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded color hex values. ?>; margin: 20px 0;">
 			<h4 style="margin-top: 0;">
-				<?php echo $nodejs_available ? '✅' : '❌'; ?>
+				<?php echo $nodejs_available ? '✅' : '❌'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hardcoded emoji indicators. ?>
 				<?php esc_html_e( 'Node.js Runtime', 'mcp-ai-wpoos-pro' ); ?>
 			</h4>
 			
@@ -682,7 +686,7 @@ class WP_MCP_AI_Media_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 				'label'        => 'Canvas',
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
-				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+				'install_hint' => WP_MCP_AI_Node_Package_Hints::get_canvas_install_hint(),
 			),
 
 			// OCR & Computer Vision.

@@ -1,0 +1,55 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-http-client",
+  "version": "0.1.0-alpha.1",
+  "description": "Resilient HTTP client with automatic retry, exponential backoff, and request hooks - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-http-client.js",
+  "module": "dist/nvoos-http-client.js",
+  "types": "dist/nvoos-http-client.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-http-client.js",
+      "default": "./dist/nvoos-http-client.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-http-client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-http-client"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "http-client",
+    "retry",
+    "exponential-backoff",
+    "fetch",
+    "ky",
+    "resilient",
+    "timeout",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "ky": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

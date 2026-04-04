@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.3.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -353,7 +356,12 @@ class WP_MCP_AI_OCR_Service {
 
 		if ( 0 !== $return_code ) {
 			@unlink( $temp_output );
-			return new WP_Error( 'preprocessing_failed', 'Sharp preprocessing failed: ' . implode( "\n", $output ) );
+			return $this->log_and_return_error(
+				'preprocessing_failed',
+				'ocr_sharp_failed',
+				'Sharp preprocessing command failed',
+				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+			);
 		}
 
 		return $temp_output;
@@ -399,7 +407,12 @@ class WP_MCP_AI_OCR_Service {
 
 			return $temp_output;
 		} catch ( Exception $e ) {
-			return new WP_Error( 'imagick_failed', sprintf( 'Imagick preprocessing failed: %s', $e->getMessage() ) );
+			return $this->log_and_return_error(
+				'imagick_failed',
+				'ocr_imagick_failed',
+				'Imagick preprocessing failed',
+				array( 'error' => $e->getMessage() )
+			);
 		}
 	}
 
@@ -478,7 +491,12 @@ class WP_MCP_AI_OCR_Service {
 				$pdf->destroy();
 			}
 
-			return new WP_Error( 'imagick_conversion_failed', sprintf( 'PDF to image conversion failed: %s', $e->getMessage() ) );
+			return $this->log_and_return_error(
+				'imagick_conversion_failed',
+				'ocr_imagick_pdf_failed',
+				'Imagick PDF-to-image conversion failed',
+				array( 'error' => $e->getMessage() )
+			);
 		}
 	}
 
@@ -503,7 +521,12 @@ class WP_MCP_AI_OCR_Service {
 		exec( $cmd, $output, $return_code );
 
 		if ( 0 !== $return_code ) {
-			return new WP_Error( 'pdftoppm_failed', 'pdftoppm conversion failed: ' . implode( "\n", $output ) );
+			return $this->log_and_return_error(
+				'pdftoppm_failed',
+				'ocr_pdftoppm_failed',
+				'pdftoppm conversion failed',
+				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+			);
 		}
 
 		// Find generated images.
@@ -837,8 +860,13 @@ class WP_MCP_AI_OCR_Service {
 
 		@unlink( $text_file );
 		@unlink( $output_file );
-		
-		return new WP_Error( 'tesseract_failed', 'Tesseract OCR failed: ' . implode( "\n", $output ) );
+
+		return $this->log_and_return_error(
+			'tesseract_failed',
+			'ocr_tesseract_failed',
+			'Tesseract OCR failed',
+			array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+		);
 	}
 
 	/**
@@ -854,7 +882,12 @@ class WP_MCP_AI_OCR_Service {
 				$pdf    = $parser->parseFile( $pdf_path );
 				return $pdf->getText();
 			} catch ( \Exception $e ) {
-				return new WP_Error( 'parse_failed', $e->getMessage() );
+				return $this->log_and_return_error(
+					'parse_failed',
+					'ocr_pdf_parse_failed',
+					'PDF text extraction failed',
+					array( 'error' => $e->getMessage() )
+				);
 			}
 		}
 
@@ -1011,8 +1044,24 @@ class WP_MCP_AI_OCR_Service {
 		);
 
 		// Execute Node.js service with timeout protection.
+		// Pass NVOOS_CANVAS_PATH if the Canvas Addon is active so the Node.js
+		// process can load the platform-specific canvas native binary for PDF OCR.
+		// Security note: $canvas_dir is sourced from nvoos_canvas_get_dir() which
+		// returns plugin_dir_path() — a server-controlled constant, not user input.
+		// escapeshellarg() is applied as an additional defence-in-depth measure.
+		$canvas_env = '';
+		if ( function_exists( 'nvoos_canvas_get_dir' ) ) {
+			$canvas_dir = nvoos_canvas_get_dir();
+			// Verify the path is within the WordPress plugins directory before use.
+			if ( '' !== $canvas_dir && false !== realpath( $canvas_dir ) &&
+				0 === strpos( realpath( $canvas_dir ), realpath( WP_PLUGIN_DIR ) ) ) {
+				$canvas_env = 'NVOOS_CANVAS_PATH=' . escapeshellarg( $canvas_dir ) . ' ';
+			}
+		}
+
 		$cmd = sprintf(
-			'node %s image %s 2>&1',
+			'%snode %s image %s 2>&1',
+			$canvas_env,
 			escapeshellarg( $service_path ),
 			escapeshellarg( $args )
 		);
@@ -1491,5 +1540,27 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Log an OCR error event privately and return a generic WP_Error.
+	 *
+	 * Ensures raw command output, exception messages, and other potentially
+	 * sensitive system details are logged internally rather than exposed to
+	 * callers. All error paths that involve external command output or
+	 * exception messages should go through this helper.
+	 *
+	 * @param string $error_code WP_Error code for the returned error.
+	 * @param string $event_type Logger event type slug.
+	 * @param string $message    Human-readable description for the log entry.
+	 * @param array  $context    Additional context to include in the log entry.
+	 * @return WP_Error Generic WP_Error without sensitive details.
+	 */
+	protected function log_and_return_error( $error_code, $event_type, $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event( $event_type, $message, $context );
+		}
+		/* translators: %s: plugin log location hint */
+		return new WP_Error( $error_code, __( 'An OCR processing error occurred. See plugin logs for details.', 'mcp-ai-wpoos-pro' ) );
 	}
 }

@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -237,6 +240,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
 				'enable_fantasy_football'                => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
+				'enable_healthcare_imaging'              => __( 'Healthcare Imaging Viewer', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -441,6 +445,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'healthcare_imaging'              => array(
+					'name'          => __( 'Healthcare Imaging Viewer', 'mcp-ai-wpoos' ),
+					'description'   => __( 'DICOM medical imaging viewer with Cornerstone3D. Secure PET/CT/MR study upload, metadata extraction, REST API, and HIPAA-aligned audit logging.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_healthcare_imaging'] ),
+					'category'      => 'specialized',
+					'php_functions' => array( 'fopen', 'fread', 'fclose', 'move_uploaded_file' ),
+					'npm_packages'  => array( '@cornerstonejs/core', '@cornerstonejs/tools', '@cornerstonejs/dicom-image-loader' ),
+					'tools_count'   => 1,
+					'tools'         => array(
+						__( 'manage_imaging_studies tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'vehicle_estimation'              => array(
+					'name'          => __( 'Vehicle Estimation', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Automotive estimation tools: VIN decode (NHTSA vPIC), image-to-repair-estimate pipeline, and car wash package pricing engine. Always available with Pro.', 'mcp-ai-wpoos' ),
+					'enabled'       => true,
+					'category'      => 'specialized',
+					'php_functions' => array(),
+					'npm_packages'  => array(),
+					'tools_count'   => 3,
+					'tools'         => array(
+						__( 'vin_decode tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_repair_estimate tool', 'mcp-ai-wpoos' ),
+						__( 'vehicle_cleaning_estimate tool', 'mcp-ai-wpoos' ),
+					),
+				),
 				'quiz_system'                     => array(
 					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
@@ -456,16 +486,48 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				),
 				'eca_management'                  => array(
 					'name'          => __( 'ECA Management', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Comprehensive extracurricular activities management with attendance tracking, waitlist automation, scheduling, notifications, analytics, iSAMS/SOCS integration, term management, and CSV import.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_eca_management'] ),
 					'category'      => 'core',
 					'php_functions' => array(),
 					'npm_packages'  => array(),
-					'tools_count'   => 3,
+					'tools_count'   => 35,
 					'tools'         => array(
-						__( 'manage_eca tool', 'mcp-ai-wpoos' ),
-						__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
-						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
+						__( 'create_eca tool', 'mcp-ai-wpoos' ),
+						__( 'list_ecas tool', 'mcp-ai-wpoos' ),
+						__( 'get_eca tool', 'mcp-ai-wpoos' ),
+						__( 'update_eca tool', 'mcp-ai-wpoos' ),
+						__( 'delete_eca tool', 'mcp-ai-wpoos' ),
+						__( 'create_student tool', 'mcp-ai-wpoos' ),
+						__( 'list_students tool', 'mcp-ai-wpoos' ),
+						__( 'get_student tool', 'mcp-ai-wpoos' ),
+						__( 'update_student tool', 'mcp-ai-wpoos' ),
+						__( 'delete_student tool', 'mcp-ai-wpoos' ),
+						__( 'enroll_student_eca tool', 'mcp-ai-wpoos' ),
+						__( 'research_eca tool', 'mcp-ai-wpoos' ),
+						__( 'mark_eca_attendance tool', 'mcp-ai-wpoos' ),
+						__( 'get_eca_attendance_report tool', 'mcp-ai-wpoos' ),
+						__( 'get_student_participation_summary tool', 'mcp-ai-wpoos' ),
+						__( 'manage_eca_waitlist tool', 'mcp-ai-wpoos' ),
+						__( 'withdraw_student_eca tool', 'mcp-ai-wpoos' ),
+						__( 'bulk_enroll_students tool', 'mcp-ai-wpoos' ),
+						__( 'check_eca_conflicts tool', 'mcp-ai-wpoos' ),
+						__( 'set_eca_schedule tool', 'mcp-ai-wpoos' ),
+						__( 'get_eca_timetable tool', 'mcp-ai-wpoos' ),
+						__( 'send_eca_notification tool', 'mcp-ai-wpoos' ),
+						__( 'configure_eca_notifications tool', 'mcp-ai-wpoos' ),
+						__( 'send_eca_parent_report tool', 'mcp-ai-wpoos' ),
+						__( 'generate_eca_analytics tool', 'mcp-ai-wpoos' ),
+						__( 'generate_eca_participation_report tool', 'mcp-ai-wpoos' ),
+						__( 'export_eca_data tool', 'mcp-ai-wpoos' ),
+						__( 'sync_ecas_from_isams tool', 'mcp-ai-wpoos' ),
+						__( 'sync_eca_enrollments_from_isams tool', 'mcp-ai-wpoos' ),
+						__( 'sync_ecas_to_isams tool', 'mcp-ai-wpoos' ),
+						__( 'sync_ecas_from_socs tool', 'mcp-ai-wpoos' ),
+						__( 'sync_students_from_isams tool', 'mcp-ai-wpoos' ),
+						__( 'manage_eca_term tool', 'mcp-ai-wpoos' ),
+						__( 'create_eca_workflow_rule tool', 'mcp-ai-wpoos' ),
+						__( 'import_ecas_csv tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'crm_toolkit'                     => array(
@@ -506,12 +568,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				),
 				'ecommerce_toolkit'               => array(
 					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, customer management, and shipping optimization with box-packing and carrier rate-shopping.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
 					'category'      => 'specialized',
 					'php_functions' => array(),
 					'npm_packages'  => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
-					'tools_count'   => 8,
+					'tools_count'   => 10,
 					'tools'         => array(
 						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
 						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
@@ -521,6 +583,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_customers tool', 'mcp-ai-wpoos' ),
 						__( 'track_shipments tool', 'mcp-ai-wpoos' ),
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_box_packer tool', 'mcp-ai-wpoos' ),
+						__( 'shipping_rate_estimator tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'social_media_toolkit'            => array(
@@ -1332,6 +1396,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'gif-encoder'                       => 'gif-encoder/lib/GIFEncoder.js',
 				'video-stitch'                      => 'video-stitch/index.js',
 				'subtitle'                          => 'subtitle/dist/index.js',
+				// Remotion video generation packages.
+				'remotion'                          => 'remotion/dist/cjs/index.js',
+				'@remotion/bundler'                 => '@remotion/bundler/dist/index.js',
+				'@remotion/renderer'                => '@remotion/renderer/dist/index.js',
 				// CRM & Email Marketing Toolkit packages (Phase 2).
 				'nodemailer'                        => 'nodemailer/lib/nodemailer.js',
 				'validator'                         => 'validator/index.js',
@@ -1344,8 +1412,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				// Document generation packages.
 				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
 				'pdf-parse'                         => 'pdf-parse/index.js',
+				'pdfkit'                            => 'pdfkit/js/pdfkit.standalone.js',
+				'exceljs'                           => 'exceljs/dist/exceljs.min.js',
+				// docx ships only package.json in vendor (no standalone runtime file).
+				// Detecting via package.json presence is sufficient; the library is bundled
+				// into bin/generate-word.bundle.js which is checked as a secondary fallback below.
+				'docx'                              => 'docx/package.json',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
+				'@puppeteer/browsers'               => '@puppeteer/browsers/lib/cjs/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
@@ -1388,15 +1463,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			);
 			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
 				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
+				// wp-scripts builds src/workflow-builder/index.jsx → build/workflow-builder/index.jsx.js.
 				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.jsx.js';
 					if ( file_exists( $workflow_build_path ) ) {
 						return true;
 					}
 				}
 				// Priority 2: Check base build directory (legacy/development location).
 				// NOTE: This should be moved to pro addon directory as per project standards.
-				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.jsx.js';
 				if ( file_exists( $legacy_workflow_build_path ) ) {
 					return true;
 				}
@@ -1410,11 +1486,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
-			// Check for document generation packages bundled into local scripts.
+			// Check for document generation and video packages bundled into bin/ scripts.
+			// pdfkit and exceljs are detected via pro_vendor_packages above.
+			// docx vendor directory holds only package.json; the bin bundle is a secondary fallback.
 			$script_bundled_packages = array(
-				'pdfkit'  => 'generate-pdf.bundle.js',
-				'docx'    => 'generate-word.bundle.js',
-				'exceljs' => 'generate-excel.bundle.js',
+				'docx'          => 'generate-word.bundle.js',
+				'@remotion/cli' => 'remotion-render.bundle.js',
 			);
 			if ( isset( $script_bundled_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$script_path = WP_MCP_AI_PRO_PATH . 'bin/' . $script_bundled_packages[ $package ];
@@ -1465,12 +1542,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for OCR packages used by Node.js services.
-			// These packages (tesseract.js, pdfjs-dist, canvas) are dependencies for node-services.
+			// These packages (tesseract.js, pdfjs-dist) are dependencies for node-services.
 			// They're bundled with the plugin in node-services directory for serverless OCR operations.
 			$ocr_node_packages = array(
 				'tesseract.js',
 				'pdfjs-dist',
-				'canvas',
 			);
 			if ( in_array( $package, $ocr_node_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if Node.js OCR service exists (production).
@@ -1490,6 +1566,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// If none exist, return false (not installed).
+				return false;
+			}
+
+			// Check for canvas: prefer the NV oOS Canvas Addon plugin, then fall
+			// back to canvas-service.js + node_modules.
+			if ( 'canvas' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: NV oOS Canvas Addon plugin.
+				if ( function_exists( 'nvoos_canvas_is_available' ) && nvoos_canvas_is_available() ) {
+					return true;
+				}
+				// Priority 2: canvas-service.js present AND canvas in node_modules.
+				$canvas_service_path = WP_MCP_AI_PRO_PATH . 'node-services/canvas-service.js';
+				$canvas_npm_path     = WP_MCP_AI_PRO_PATH . 'node_modules/canvas';
+				if ( file_exists( $canvas_service_path ) && is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
+				// Priority 3: canvas in node_modules without service file.
+				if ( is_dir( $canvas_npm_path ) ) {
+					return true;
+				}
 				return false;
 			}
 
@@ -1534,8 +1630,33 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( $embedded_client_path );
 			}
 
+			// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+			// These packages are pre-packed/CDN-loaded; availability is indicated by
+			// the presence of the imaging-viewer.js entry-point script.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && function_exists( 'wp_mcp_ai_cornerstone_package_names' ) ) {
+				$cornerstone_packages = wp_mcp_ai_cornerstone_package_names();
+			} else {
+				$cornerstone_packages = array(
+					'@cornerstonejs/core',
+					'@cornerstonejs/tools',
+					'@cornerstonejs/dicom-image-loader',
+				);
+			}
+			if ( in_array( $package, $cornerstone_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if imaging-viewer.js exists (CDN-loads Cornerstone3D at runtime).
+				$imaging_viewer_path = WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js';
+				if ( file_exists( $imaging_viewer_path ) ) {
+					return true;
+				}
+				// Priority 2: Check pro node_modules (development).
+				$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				return false;
+			}
+
 			// Check for pdf-parse package (Pro addon).
-			// This package is used for PDF text extraction via Node.js service.
 			if ( 'pdf-parse' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// Priority 1: Check if it's in Pro addon's vendor directory (production).
 				$pdf_parse_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-parse/lib/pdf-parse.js';
@@ -2275,10 +2396,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Apache 2.0',
 					'recommended' => true,
 				),
+				'Qwen3-8B-q4f16_1-MLC'                => array(
+					'name'        => 'Qwen3 8B',
+					'size'        => '~5GB',
+					'description' => 'Latest Qwen3 with hybrid reasoning (think/non-think modes), 119 language support, and function calling',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
 				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => array(
 					'name'        => 'Qwen2.5 7B Instruct',
 					'size'        => '~4.5GB',
 					'description' => 'Advanced multilingual model with function calling',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Qwen3-4B-q4f16_1-MLC'                => array(
+					'name'        => 'Qwen3 4B',
+					'size'        => '~2.5GB',
+					'description' => 'Compact Qwen3 with hybrid reasoning and strong multilingual capabilities',
 					'context'     => '32K tokens',
 					'license'     => 'Apache 2.0',
 					'recommended' => false,
@@ -2299,6 +2436,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Llama 3.2 Community License',
 					'recommended' => false,
 				),
+				'Qwen3-1.7B-q4f16_1-MLC'              => array(
+					'name'        => 'Qwen3 1.7B',
+					'size'        => '~1.1GB',
+					'description' => 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
 				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => array(
 					'name'        => 'Qwen2.5 1.5B Instruct',
 					'size'        => '~1GB',
@@ -2313,6 +2458,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'description' => 'Fast, lightweight model for basic chat (does not support function calling)',
 					'context'     => '128K tokens',
 					'license'     => 'Llama 3.2 Community License',
+					'recommended' => false,
+				),
+				'Qwen3-0.6B-q4f16_1-MLC'              => array(
+					'name'        => 'Qwen3 0.6B',
+					'size'        => '~400MB',
+					'description' => 'Smallest Qwen3 with hybrid reasoning capabilities',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
 					'recommended' => false,
 				),
 				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => array(
@@ -2852,8 +3005,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return void
 		 */
 		private static function render_tma_template_builder_card() {
-			$active_template  = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
-			$mini_app_url     = rest_url( 'mcp-ai/v1/telegram-mini-app' );
+			$active_template = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+			$mini_app_url    = rest_url( 'mcp-ai/v1/telegram-mini-app' );
 
 			$chat_channels_url    = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=mini_app_builder' );
 			$chat_channels_config = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=configuration' );
@@ -3127,9 +3280,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<strong><?php esc_html_e( 'Quiz System', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Interactive quizzes, assessments, learning management', 'mcp-ai-wpoos' ); ?></small>
 				</li>
-				<li style="padding: 8px 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
 					<strong><?php esc_html_e( 'AI Tool Builder', 'mcp-ai-wpoos' ); ?></strong>
 					<br><small><?php esc_html_e( 'Create custom AI tools and integrations', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Vehicle Estimation', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'VIN decode, repair estimates, car wash pricing', 'mcp-ai-wpoos' ); ?></small>
 				</li>
 			</ul>
 		</div>

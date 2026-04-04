@@ -1,3 +1,8 @@
+/**
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
 .wp-mcp-ai-chat {
     border: 1px solid var(--wp-mcp-ai-color-container-border, #d5d5d5);
     border-radius: 12px;
@@ -194,6 +199,338 @@
 
 .wp-mcp-ai-chat--expanded .wp-mcp-ai-chat__messages {
     max-height: none;
+}
+
+/* ============================================================
+   Agent Team Panel
+   ============================================================ */
+
+.wp-mcp-ai-chat__agent-panel {
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	margin-bottom: 0.75rem;
+	background: #f9f9f9;
+	overflow: hidden;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-chat__agent-panel-header {
+	padding: 0;
+}
+
+.wp-mcp-ai-chat__agent-panel-toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border: none;
+	background: none;
+	cursor: pointer;
+	font-size: 13px;
+	color: #1d2327;
+	text-align: left;
+}
+
+.wp-mcp-ai-chat__agent-panel-toggle:hover {
+	background: #f0f0f1;
+}
+
+.wp-mcp-ai-chat__agent-panel-toggle:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+}
+
+.wp-mcp-ai-chat__agent-panel-icon {
+	flex-shrink: 0;
+	fill: #50575e;
+}
+
+.wp-mcp-ai-chat__agent-panel-title {
+	font-weight: 600;
+	flex-grow: 1;
+}
+
+.wp-mcp-ai-chat__agent-panel-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 5px;
+	border-radius: 10px;
+	background: #2271b1;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-chat__agent-panel-count:empty,
+.wp-mcp-ai-chat__agent-panel-count[data-count="0"] {
+	background: #8c8f94;
+}
+
+.wp-mcp-ai-chat__agent-panel-chevron {
+	flex-shrink: 0;
+	fill: #8c8f94;
+	transition: transform 0.2s ease;
+}
+
+.wp-mcp-ai-chat__agent-panel-toggle[aria-expanded="true"] .wp-mcp-ai-chat__agent-panel-chevron {
+	transform: rotate(180deg);
+}
+
+.wp-mcp-ai-chat__agent-panel-body {
+	border-top: 1px solid #dcdcde;
+	padding: 0.75rem;
+}
+
+/* Agent Cards */
+
+.wp-mcp-ai-chat__agent-cards {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat__agent-card {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0.65rem;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	font-size: 12px;
+	min-width: 0;
+	flex: 0 1 auto;
+	max-width: 100%;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wp-mcp-ai-chat__agent-card--active {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.wp-mcp-ai-chat__agent-card--idle {
+	opacity: 0.7;
+}
+
+.wp-mcp-ai-chat__agent-card--error {
+	border-color: #d63638;
+}
+
+.wp-mcp-ai-chat__agent-card-status {
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #8c8f94;
+}
+
+.wp-mcp-ai-chat__agent-card--active .wp-mcp-ai-chat__agent-card-status {
+	background: #00a32a;
+	animation: wp-mcp-ai-agent-pulse 1.5s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__agent-card--idle .wp-mcp-ai-chat__agent-card-status {
+	background: #dba617;
+}
+
+.wp-mcp-ai-chat__agent-card--error .wp-mcp-ai-chat__agent-card-status {
+	background: #d63638;
+}
+
+.wp-mcp-ai-chat__agent-card--completed .wp-mcp-ai-chat__agent-card-status {
+	background: #2271b1;
+}
+
+@keyframes wp-mcp-ai-agent-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.4; }
+}
+
+.wp-mcp-ai-chat__agent-card-name {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__agent-card-role {
+	color: #50575e;
+	font-size: 11px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__agent-card-task {
+	color: #8c8f94;
+	font-size: 11px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 120px;
+}
+
+/* Workflow Progress Tracker */
+
+.wp-mcp-ai-chat__workflow-tracker {
+	margin-top: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid #e0e0e0;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.4rem;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-title {
+	font-weight: 600;
+	font-size: 12px;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-progress {
+	font-size: 12px;
+	font-weight: 600;
+	color: #2271b1;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-bar {
+	height: 4px;
+	background: #dcdcde;
+	border-radius: 2px;
+	overflow: hidden;
+	margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-fill {
+	height: 100%;
+	width: 0;
+	background: #2271b1;
+	border-radius: 2px;
+	transition: width 0.4s ease;
+}
+
+.wp-mcp-ai-chat__workflow-tracker-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.wp-mcp-ai-chat__workflow-step {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 12px;
+	color: #50575e;
+	padding: 0.2rem 0;
+}
+
+.wp-mcp-ai-chat__workflow-step-icon {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	border: 1.5px solid #dcdcde;
+	background: #fff;
+	color: #8c8f94;
+}
+
+.wp-mcp-ai-chat__workflow-step--completed .wp-mcp-ai-chat__workflow-step-icon {
+	background: #00a32a;
+	border-color: #00a32a;
+	color: #fff;
+}
+
+.wp-mcp-ai-chat__workflow-step--active .wp-mcp-ai-chat__workflow-step-icon {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+	animation: wp-mcp-ai-agent-pulse 1.5s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__workflow-step--error .wp-mcp-ai-chat__workflow-step-icon {
+	background: #d63638;
+	border-color: #d63638;
+	color: #fff;
+}
+
+.wp-mcp-ai-chat__workflow-step-label {
+	flex-grow: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__workflow-step--completed .wp-mcp-ai-chat__workflow-step-label {
+	color: #1d2327;
+	text-decoration: line-through;
+	text-decoration-color: #8c8f94;
+}
+
+.wp-mcp-ai-chat__workflow-step--active .wp-mcp-ai-chat__workflow-step-label {
+	color: #2271b1;
+	font-weight: 500;
+}
+
+/* Delegation notification in messages */
+
+.wp-mcp-ai-chat__delegation-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	margin: 0.25rem 0;
+	border-radius: 4px;
+	background: #f0f6fc;
+	border-left: 3px solid #2271b1;
+	font-size: 12px;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-chat__delegation-notice--complete {
+	background: #edfaef;
+	border-left-color: #00a32a;
+}
+
+.wp-mcp-ai-chat__delegation-notice--error {
+	background: #fcf0f1;
+	border-left-color: #d63638;
+}
+
+.wp-mcp-ai-chat__delegation-notice-icon {
+	flex-shrink: 0;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.wp-mcp-ai-chat__delegation-notice-content {
+	flex-grow: 1;
+	min-width: 0;
+}
+
+.wp-mcp-ai-chat__delegation-notice-title {
+	font-weight: 600;
+	margin-bottom: 0.15rem;
+}
+
+.wp-mcp-ai-chat__delegation-notice-details {
+	color: #50575e;
+	font-size: 11px;
 }
 
 .wp-mcp-ai-chat__assistant {

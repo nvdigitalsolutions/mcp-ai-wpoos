@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the Search Content tool REST endpoint.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_REST_Search_Content_Tool_Test extends WP_Test_REST_TestCase {
 	/**

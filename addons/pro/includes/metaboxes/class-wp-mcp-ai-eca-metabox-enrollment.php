@@ -3,6 +3,9 @@
  * ECA Enrollment Metabox.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -180,7 +183,7 @@ class WP_MCP_AI_ECA_Metabox_Enrollment extends WP_MCP_AI_ECA_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Check nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_eca_enrollment_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_eca_enrollment_nonce'], 'wp_mcp_ai_eca_enrollment_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_eca_enrollment_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_eca_enrollment_nonce'] ) ), 'wp_mcp_ai_eca_enrollment_nonce' ) ) {
 			return;
 		}
 
@@ -202,7 +205,7 @@ class WP_MCP_AI_ECA_Metabox_Enrollment extends WP_MCP_AI_ECA_Metabox_Base {
 
 		// Save booking type.
 		if ( isset( $_POST['wp_mcp_ai_eca_booking_type'] ) ) {
-			$booking_type = sanitize_key( $_POST['wp_mcp_ai_eca_booking_type'] );
+			$booking_type = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_eca_booking_type'] ) );
 			$valid_types  = array( 'first_come_first_served', 'preference_based', 'preselected', 'signup' );
 			if ( in_array( $booking_type, $valid_types, true ) ) {
 				update_post_meta( $post_id, '_eca_booking_type', $booking_type );

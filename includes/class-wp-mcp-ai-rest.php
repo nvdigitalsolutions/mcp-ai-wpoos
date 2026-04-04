@@ -3,6 +3,9 @@
  * REST API controller for NV oOS.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controlle
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -423,6 +427,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate A2A protocol routes to A2A Controller.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( ! empty( $settings['enable_a2a_server'] ) ) {
+				$a2a_controller = new WP_MCP_AI_REST_A2A_Controller( $this, $this->authenticator, $this->validator );
+				$a2a_controller->register_routes();
+			}
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 
@@ -1021,9 +1032,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Check if job is already in a terminal state.
 			$status = isset( $initial_details['status'] ) ? $initial_details['status'] : 'unknown';
 			if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
-				// Job is already done, send completion marker and exit.
+				// Job is already done, send completion marker and finish.
 				$this->sse_handler->send_sse_done();
-				exit;
+				$this->sse_handler->finish();
+				return;
 			}
 
 			// Poll for updates until job completes or times out.
@@ -1082,7 +1094,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 					$this->sse_handler->send_sse_done();
-					exit;
+					$this->sse_handler->finish();
+					return;
 				}
 
 				// Normalize updated details to ensure JSON serializability.
@@ -1101,7 +1114,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( in_array( $current_status, array( 'completed', 'failed' ), true ) ) {
 					// Job finished - send final update and close.
 					$this->sse_handler->send_sse_done();
-					exit;
+					$this->sse_handler->finish();
+					return;
 				}
 			}
 
@@ -1115,7 +1129,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 			$this->sse_handler->send_sse_done();
-			exit;
+			$this->sse_handler->finish();
 		}
 
 		/**
@@ -1138,102 +1152,176 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $scoped_assistant;
 			}
 
-			$posts = array();
+			// Parse pagination parameters; -1 (or null) means return all (default).
+			$per_page = $request->get_param( 'per_page' );
+			$per_page = ( null !== $per_page ) ? intval( $per_page ) : -1;
+			$page_raw = $request->get_param( 'page' );
+			$page     = max( 1, absint( null !== $page_raw ? (int) $page_raw : 1 ) );
+
+			$total_assistants = 0;
+			$total_pages      = 1;
+			$assistants       = array();
 
 			if ( $scoped_assistant ) {
+				// Token-scoped: single assistant, skip caching.
 				$assistant_post = $this->validate_assistant_access( $scoped_assistant );
 
 				if ( is_wp_error( $assistant_post ) ) {
 					return $assistant_post;
 				}
 
-				$posts = array( $assistant_post );
+				$summary          = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+				$assistants       = array( $summary );
+				$total_assistants = 1;
+				$total_pages      = 1;
 			} else {
-				$query_args = array(
-					'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-					'post_status'    => array( 'publish' ),
-					'posts_per_page' => -1,
-					'orderby'        => 'title',
-					'order'          => 'ASC',
+				// Build cache key from query parameters (not _fields — filtered after cache retrieval).
+				$cache_params = array_filter(
+					array(
+						'search'   => $request->get_param( 'search' ),
+						'include'  => $request->get_param( 'include' ),
+						'per_page' => ( $per_page > 0 ) ? $per_page : null,
+						'page'     => ( $per_page > 0 && $page > 1 ) ? $page : null,
+					),
+					static function ( $v ) {
+						return null !== $v;
+					}
 				);
 
-				$search = $request->get_param( 'search' );
-				if ( is_string( $search ) && '' !== $search ) {
-					$query_args['s'] = sanitize_text_field( $search );
-				}
+				$cached_data = WP_MCP_AI_REST_Cache::get_response( 'assistants', $cache_params );
 
-				$include = $request->get_param( 'include' );
-				if ( ! empty( $include ) ) {
-					$include_ids = array();
+				if ( false !== $cached_data && is_array( $cached_data ) ) {
+					// Serve from cache.
+					$assistants       = $cached_data['assistants'];
+					$total_assistants = $cached_data['total'];
+					$total_pages      = $cached_data['total_pages'];
+				} else {
+					// Build the WP_Query arguments.
+					$query_args = array(
+						'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+						'post_status' => array( 'publish' ),
+						'orderby'     => 'title',
+						'order'       => 'ASC',
+					);
 
-					if ( is_string( $include ) ) {
-						$include = explode( ',', $include );
+					if ( $per_page > 0 ) {
+						$query_args['posts_per_page'] = $per_page;
+						$query_args['paged']          = $page;
+					} else {
+						$query_args['posts_per_page'] = -1;
+						$query_args['no_found_rows']  = true; // Skip COUNT query for unlimited requests.
 					}
 
-					foreach ( (array) $include as $candidate ) {
-						$candidate = absint( $candidate );
+					$search = $request->get_param( 'search' );
+					if ( is_string( $search ) && '' !== $search ) {
+						$query_args['s'] = sanitize_text_field( $search );
+					}
 
-						if ( $candidate ) {
-							$include_ids[] = $candidate;
+					$include = $request->get_param( 'include' );
+					if ( ! empty( $include ) ) {
+						$include_ids = array();
+
+						if ( is_string( $include ) ) {
+							$include = explode( ',', $include );
+						}
+
+						foreach ( (array) $include as $candidate ) {
+							$candidate = absint( $candidate );
+
+							if ( $candidate ) {
+								$include_ids[] = $candidate;
+							}
+						}
+
+						if ( ! empty( $include_ids ) ) {
+							$query_args['post__in'] = $include_ids;
+							$query_args['orderby']  = 'post__in';
 						}
 					}
 
-					if ( ! empty( $include_ids ) ) {
-						$query_args['post__in'] = $include_ids;
-						$query_args['orderby']  = 'post__in';
+					/**
+					 * Allow developers to adjust the assistant directory query.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param array           $query_args   WP_Query arguments.
+					 * @param WP_REST_Request $request      Current REST request.
+					 * @param array           $auth_context Authentication context for the caller.
+					 */
+					$query_args = apply_filters( 'wp_mcp_ai_rest_assistant_query_args', $query_args, $request, $auth_context );
+
+					$query = new WP_Query( $query_args );
+					$posts = $query->posts;
+
+					if ( ! is_array( $posts ) ) {
+						$posts = array();
 					}
+
+					$filtered = array();
+					foreach ( $posts as $post ) {
+						if ( ! $post instanceof WP_Post ) {
+							$post = get_post( $post );
+						}
+
+						if ( ! $post instanceof WP_Post ) {
+							continue;
+						}
+
+						$accessible = $this->validate_assistant_access( $post->ID );
+
+						if ( $accessible instanceof WP_Post ) {
+							$filtered[] = $accessible;
+						}
+					}
+
+					foreach ( $filtered as $assistant_post ) {
+						$summary      = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+						$assistants[] = $summary;
+					}
+
+					$assistants = array_values( $assistants );
+
+					// Compute totals.
+					if ( $per_page > 0 ) {
+						$total_assistants = absint( $query->found_posts );
+						$total_pages      = (int) ceil( $total_assistants / $per_page );
+					} else {
+						$total_assistants = count( $assistants );
+						$total_pages      = 1;
+					}
+
+					// Cache the unscoped list for future requests.
+					WP_MCP_AI_REST_Cache::set_response(
+						'assistants',
+						$cache_params,
+						array(
+							'assistants'  => $assistants,
+							'total'       => $total_assistants,
+							'total_pages' => $total_pages,
+						),
+						WP_MCP_AI_REST_Cache::ASSISTANT_LIST_EXPIRATION
+					);
 				}
-
-				/**
-				 * Allow developers to adjust the assistant directory query.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param array           $query_args   WP_Query arguments.
-				 * @param WP_REST_Request $request      Current REST request.
-				 * @param array           $auth_context Authentication context for the caller.
-				 */
-				$query_args = apply_filters( 'wp_mcp_ai_rest_assistant_query_args', $query_args, $request, $auth_context );
-
-				$query = new WP_Query( $query_args );
-				$posts = $query->posts;
-
-				if ( ! is_array( $posts ) ) {
-					$posts = array();
-				}
-
-				$filtered = array();
-				foreach ( $posts as $post ) {
-					if ( ! $post instanceof WP_Post ) {
-						$post = get_post( $post );
-					}
-
-					if ( ! $post instanceof WP_Post ) {
-						continue;
-					}
-
-					$accessible = $this->validate_assistant_access( $post->ID );
-
-					if ( $accessible instanceof WP_Post ) {
-						$filtered[] = $accessible;
-					}
-				}
-
-				$posts = $filtered;
 			}
 
-			$assistants = array();
-
-			foreach ( $posts as $assistant_post ) {
-				if ( ! $assistant_post instanceof WP_Post ) {
-					continue;
+			// Apply _fields filtering to each assistant summary.
+			$fields_param = $request->get_param( '_fields' );
+			if ( $fields_param && is_string( $fields_param ) ) {
+				$allowed_fields = wp_parse_list( $fields_param );
+				if ( ! empty( $allowed_fields ) ) {
+					// Always include 'id' per REST API convention.
+					if ( ! in_array( 'id', $allowed_fields, true ) ) {
+						$allowed_fields[] = 'id';
+					}
+					$allowed_map = array_flip( $allowed_fields );
+					$assistants  = array_map(
+						static function ( $assistant ) use ( $allowed_map ) {
+							return array_intersect_key( $assistant, $allowed_map );
+						},
+						$assistants
+					);
 				}
-
-				$summary      = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
-				$assistants[] = $summary;
 			}
-
-			$assistants = array_values( $assistants );
 
 			$directory_default = $scoped_assistant ? $scoped_assistant : $default_assistant;
 			if ( ! $directory_default && ! empty( $assistants ) ) {
@@ -1290,11 +1378,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 */
 			$response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
 
-			if ( $this->request_wants_event_stream( $request ) ) {
+			if ( $this->request_wants_event_stream( $request ) || $this->request_accept_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $response_data, 'directory' );
 			}
 
-			return new WP_REST_Response( $response_data, 200 );
+			$response = new WP_REST_Response( $response_data, 200 );
+			$response->header( 'X-WP-Total', $total_assistants );
+			$response->header( 'X-WP-TotalPages', $total_pages );
+
+			return $response;
 		}
 
 		/**
@@ -1797,12 +1889,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tools         = $request->get_param( 'tools' );
 			$status        = $request->get_param( 'status' );
 
-			// Title is required.
+			// Title is required for actual creation; when absent treat as a
+			// connectivity check and return the directory listing instead.
 			if ( empty( $title ) ) {
+				return $this->handle_assistants_index( $request );
+			}
+
+			// When actually creating, verify that REST assistant creation is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
 				return new WP_Error(
-					'rest_missing_title',
-					__( 'Title is required to create an assistant.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
+					'rest_assistant_create_disabled',
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
 				);
 			}
 
@@ -2312,29 +2411,43 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
-			// Check if this is an embedded provider - these run 100% client-side in the browser.
-			// Server-side API requests for embedded providers should not proceed to the language model router.
+			// Check if this is an embedded provider with a client-side (WebLLM) model.
+			// Server-side GGUF models (llama.cpp) share the 'embedded' provider key but are
+			// processed here on the server — only pure WebLLM requests should be rejected.
 			if ( isset( $assistant_config['provider'] ) && 'embedded' === $assistant_config['provider'] ) {
-				WP_MCP_AI_Logger::log_event(
-					'embedded_provider_server_request_blocked',
-					'Embedded provider detected in server-side chat request',
-					array(
-						'assistant_id' => $assistant_id,
-						'model'        => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
-						'endpoint'     => $request->get_route(),
-					)
-				);
+				$model_slug = isset( $assistant_config['model'] ) ? $assistant_config['model'] : '';
 
-				return new WP_Error(
-					'wp_mcp_ai_embedded_client_side_only',
-					__( 'This assistant is configured with an embedded LLM provider which runs entirely client-side in the browser. Please ensure your chat interface is properly configured to use client-side execution for embedded providers.', 'mcp-ai-wpoos' ),
-					array(
-						'status'        => 400,
-						'provider'      => 'embedded',
-						'model'         => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
-						'documentation' => 'Embedded providers bypass server-side REST APIs and execute using WebLLM in the browser. Check that your chat configuration includes provider and model information.',
-					)
-				);
+				// When no model is explicitly set on the assistant, fall back to the global
+				// embedded_server_model setting so server-side GGUF inference can proceed.
+				if ( empty( $model_slug ) && class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+					$global_settings = WP_MCP_AI_Admin_Settings::get_settings();
+					$model_slug      = isset( $global_settings['embedded_server_model'] ) ? $global_settings['embedded_server_model'] : '';
+				}
+
+				$is_server_model = class_exists( 'WP_MCP_AI_Embedded_Client' ) && WP_MCP_AI_Embedded_Client::is_server_model_slug( $model_slug );
+
+				if ( ! $is_server_model ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_provider_server_request_blocked',
+						'Embedded WebLLM provider detected in server-side chat request',
+						array(
+							'assistant_id' => $assistant_id,
+							'model'        => $model_slug,
+							'endpoint'     => $request->get_route(),
+						)
+					);
+
+					return new WP_Error(
+						'wp_mcp_ai_embedded_client_side_only',
+						__( 'This assistant is configured with an embedded LLM provider which runs entirely client-side in the browser. Please ensure your chat interface is properly configured to use client-side execution for embedded providers.', 'mcp-ai-wpoos' ),
+						array(
+							'status'        => 400,
+							'provider'      => 'embedded',
+							'model'         => $model_slug,
+							'documentation' => 'Embedded providers bypass server-side REST APIs and execute using WebLLM in the browser. Check that your chat configuration includes provider and model information.',
+						)
+					);
+				}
 			}
 
 			// Debug logging for assistant configuration loading.
@@ -2799,6 +2912,57 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'iterations'   => $iteration,
 					)
 				);
+
+				// When the loop exits because it hit max_iterations, the final LLM response may
+				// still contain tool_calls that were never executed (the PHP side did not make
+				// another iteration to process them). If those tool_calls are forwarded to the
+				// browser client as-is, the JS will persist an assistant message that has
+				// tool_call_ids with no matching tool-response messages. On the very next user
+				// turn the full conversation — including that orphaned assistant message — is
+				// sent back to OpenAI, which rejects the request with:
+				//   "An assistant message with 'tool_calls' must be followed by tool messages
+				//    responding to each 'tool_call_id'."
+				// Stripping the unexecuted tool_calls from the final response prevents the
+				// client from ever storing that invalid state. The defensive filter inside
+				// filter_tool_messages_for_payload() provides a second layer of protection for
+				// any orphaned messages that may have been stored in a previous session.
+				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'Non-SSE' );
+			}
+
+			// FALLBACK: If the LLM returned no text content but we have tool results, inject the
+			// tool result text into the response so the frontend has something to display.
+			// This mirrors the same fallback applied in handle_chat_request_with_streaming for SSE,
+			// and ensures providers like Anthropic that sometimes omit a follow-up text response
+			// after tool execution do not leave the chat interface blank.
+			if ( ! empty( $tool_result_messages ) && ! is_wp_error( $response ) ) {
+				$llm_text = '';
+				if ( ! empty( $response['choices'][0]['message']['content'] ) ) {
+					$llm_text = $this->normalise_message_content( $response['choices'][0]['message']['content'] );
+				} elseif ( isset( $response['content'] ) ) {
+					$llm_text = $this->normalise_message_content( $response['content'] );
+				}
+
+				if ( '' === $llm_text || ! is_string( $llm_text ) ) {
+					$fallback_text = $this->extract_text_from_tool_results( $tool_result_messages );
+					if ( '' !== $fallback_text ) {
+						if ( ! isset( $response['choices'][0] ) ) {
+							$response['choices'][0] = array( 'message' => array() );
+						} elseif ( ! isset( $response['choices'][0]['message'] ) ) {
+							$response['choices'][0]['message'] = array();
+						}
+						$response['choices'][0]['message']['content'] = $fallback_text;
+
+						WP_MCP_AI_Logger::log_event(
+							'debug',
+							'Non-SSE chat: Extracted text from tool results (LLM returned no content)',
+							array(
+								'extracted_length' => strlen( $fallback_text ),
+								'tool_count'       => count( $tool_result_messages ),
+								'assistant_id'     => $assistant_id,
+							)
+						);
+					}
+				}
 			}
 
 			// Update response completion timestamp after agentic loop.
@@ -2994,6 +3158,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
 
+			// Extend PHP execution time for the duration of the SSE stream.
+			// The default max_execution_time (often 30 s) is too short for embedded LLM
+			// inference (which can take 60–120 s) and long agentic loops.
+			// set_time_limit(0) removes the limit; ignore_user_abort(true) keeps PHP alive
+			// even if nginx closes the upstream connection (fastcgi_read_timeout).
+			if ( function_exists( 'set_time_limit' ) ) {
+				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+			}
+			if ( function_exists( 'ignore_user_abort' ) ) {
+				ignore_user_abort( true );
+			}
+
 			// Track request start time for timing indicators.
 			$request_start_timestamp = time();
 
@@ -3008,8 +3184,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			$iteration            = 0;
-			$tool_result_messages = array();
+			$iteration             = 0;
+			$tool_result_messages  = array();
+			$agentic_tool_messages = array();
 
 			// Send status for attachment processing if attachments are present.
 			// This provides user feedback when images or documents are being analyzed.
@@ -3092,7 +3269,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			} catch ( Error $e ) {
 				// Log detailed error information for debugging.
 				$error_class = get_class( $e );
@@ -3134,7 +3312,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			}
 
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -3152,7 +3331,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				$this->send_sse_done();
-				exit;
+				$this->finish_sse();
+				return;
 			}
 
 			// Agentic loop with streaming updates.
@@ -3183,7 +3363,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// Add assistant message with tool_calls to conversation.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
-					$messages[] = $assistant_message;
+					$messages[]              = $assistant_message;
+					$agentic_tool_messages[] = $assistant_message;
 				}
 
 				// Execute each tool and stream results.
@@ -3465,7 +3646,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								)
 							);
 							$this->send_sse_done();
-							exit;
+							$this->finish_sse();
+							return;
 						}
 
 						$this->send_sse_event(
@@ -3514,7 +3696,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 					$this->send_sse_done();
-					exit;
+					$this->finish_sse();
+					return;
 				}
 
 				++$iteration;
@@ -3528,6 +3711,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'message' => __( 'Reached maximum tool execution iterations.', 'mcp-ai-wpoos' ),
 					)
 				);
+
+				// Same as the non-SSE path: when the loop exits because max_iterations was
+				// reached the final LLM response may still have unexecuted tool_calls.
+				// Strip them so the SSE "message" event does not include orphaned tool_call_ids
+				// that would later cause "An assistant message with 'tool_calls' must be
+				// followed by tool messages responding to each 'tool_call_id'" errors.
+				$this->strip_orphaned_tool_calls_from_response( $response, $assistant_id, $iteration, 'SSE' );
 			}
 
 			// Update response completion timestamp after agentic loop.
@@ -3745,6 +3935,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
+			// Include intermediate assistant messages with tool_calls so the client can
+			// reconstruct the correct conversation order (assistant+tool_use → tool_result →
+			// final assistant) required by Anthropic and other providers.
+			if ( ! empty( $agentic_tool_messages ) ) {
+				$payload['agentic_tool_messages'] = $agentic_tool_messages;
+			}
+
 			// Normalize payload to ensure all data is JSON-serializable.
 			// This prevents SSE stream failures due to non-serializable objects (WP_Error, WP_Post, etc.)
 			// that might be nested in tool results or response data.
@@ -3781,7 +3978,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$this->send_sse_done();
 
-			exit;
+			$this->finish_sse();
 		}
 
 		/**
@@ -3817,6 +4014,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Finish an SSE streaming response cleanly.
+		 *
+		 * Uses fastcgi_finish_request() when available so that the HTTP/2
+		 * DATA+END_STREAM frame is sent properly, preventing ERR_HTTP2_PROTOCOL_ERROR.
+		 * Falls back to exit() on non-FPM environments.
+		 *
+		 * Delegates to SSE handler.
+		 *
+		 * @since 1.2.0
+		 */
+		protected function finish_sse() {
+			$this->sse_handler->finish();
+		}
+
+		/**
 		 * Determine whether the current request prefers an event stream response.
 		 *
 		 * Delegates to SSE handler.
@@ -3826,6 +4038,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function request_wants_event_stream( WP_REST_Request $request ) {
 			return $this->sse_handler->request_wants_event_stream( $request );
+		}
+
+		/**
+		 * Check whether the request's Accept header prefers an event-stream response.
+		 *
+		 * Unlike request_wants_event_stream(), this only inspects the HTTP Accept
+		 * header and is used exclusively for the assistant directory endpoint so
+		 * that browser-based MCP clients using "Accept: text/event-stream" get a
+		 * proper SSE response. The generic /mcp endpoint deliberately ignores the
+		 * Accept header (see WP_MCP_AI_SSE_Handler::request_wants_event_stream).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return bool
+		 */
+		protected function request_accept_wants_event_stream( WP_REST_Request $request ) {
+			$accept = $request->get_header( 'Accept' );
+
+			if ( ! $accept ) {
+				return false;
+			}
+
+			foreach ( preg_split( '/\s*,\s*/', $accept ) as $token ) {
+				$parts      = explode( ';', $token );
+				$media_type = trim( $parts[0] );
+
+				if ( 'text/event-stream' === $media_type ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		/**
@@ -4238,77 +4481,115 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			if ( ! $assistant_id ) {
-				// Return all tools if no assistant specified.
-				$tools = $this->registry->get_tools();
-			} else {
-				// Get tools allowed for this assistant.
-				$assistant_post = $this->validate_assistant_access( $assistant_id );
-
-				if ( is_wp_error( $assistant_post ) ) {
-					return $assistant_post;
+			// Try to serve from cache (keyed on assistant_id).
+			$cache_params = array_filter(
+				array( 'assistant_id' => $assistant_id ? $assistant_id : null ),
+				static function ( $v ) {
+					return null !== $v;
 				}
+			);
 
-				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-				$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			$cached_tools = WP_MCP_AI_REST_Cache::get_response( 'tools', $cache_params );
 
-				$tools = array();
-				foreach ( $allowed_tools as $tool_slug ) {
-					$tool = $this->registry->get_tool( $tool_slug );
-					if ( $tool ) {
-						$tools[] = $tool;
+			if ( false !== $cached_tools && is_array( $cached_tools ) ) {
+				$tools_list = $cached_tools;
+			} else {
+				if ( ! $assistant_id ) {
+					// Return all tools if no assistant specified.
+					$tools = $this->registry->get_tools();
+				} else {
+					// Get tools allowed for this assistant.
+					$assistant_post = $this->validate_assistant_access( $assistant_id );
+
+					if ( is_wp_error( $assistant_post ) ) {
+						return $assistant_post;
+					}
+
+					$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+					$tools = array();
+					foreach ( $allowed_tools as $tool_slug ) {
+						$tool = $this->registry->get_tool( $tool_slug );
+						if ( $tool ) {
+							$tools[] = $tool;
+						}
 					}
 				}
-			}
 
-			// Convert tools to a simple array format.
-			$tools_list = array();
-			foreach ( $tools as $tool ) {
-				try {
-					$schema = $tool->get_parameters_schema();
+				// Convert tools to a simple array format.
+				$tools_list = array();
+				foreach ( $tools as $tool ) {
+					try {
+						$schema = $tool->get_parameters_schema();
 
-					// Validate that the schema is a valid array.
-					if ( ! is_array( $schema ) ) {
+						// Validate that the schema is a valid array.
+						if ( ! is_array( $schema ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'error',
+								'Tool returned invalid schema',
+								array(
+									'tool_slug'   => $tool->get_slug(),
+									'schema_type' => gettype( $schema ),
+								)
+							);
+							continue;
+						}
+
+						$tools_list[] = array(
+							'name'        => $tool->get_slug(),
+							'description' => $tool->get_description(),
+							'inputSchema' => $schema,
+						);
+					} catch ( Exception $e ) {
+						// Log the error and skip this tool.
 						WP_MCP_AI_Logger::log_event(
 							'error',
-							'Tool returned invalid schema',
+							'Tool schema generation failed',
 							array(
-								'tool_slug'   => $tool->get_slug(),
-								'schema_type' => gettype( $schema ),
+								'tool_slug' => $tool->get_slug(),
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						continue;
+					} catch ( Error $e ) {
+						// Catch PHP 7+ errors as well.
+						WP_MCP_AI_Logger::log_event(
+							'error',
+							'Tool schema generation failed with PHP Error',
+							array(
+								'tool_slug' => $tool->get_slug(),
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
 							)
 						);
 						continue;
 					}
+				}
 
-					$tools_list[] = array(
-						'name'        => $tool->get_slug(),
-						'description' => $tool->get_description(),
-						'inputSchema' => $schema,
+				// Cache the full tools list; _fields filtering is applied after retrieval.
+				WP_MCP_AI_REST_Cache::set_response( 'tools', $cache_params, $tools_list );
+			}
+
+			// Apply _fields filtering to reduce response payload when requested.
+			$fields_param = $request->get_param( '_fields' );
+			if ( $fields_param && is_string( $fields_param ) ) {
+				$allowed_fields = wp_parse_list( $fields_param );
+				// Valid tool fields: name, description, inputSchema. 'name' is always included.
+				$valid_fields = array( 'name', 'description', 'inputSchema' );
+				$allowed_fields = array_intersect( $allowed_fields, $valid_fields );
+				if ( ! empty( $allowed_fields ) ) {
+					if ( ! in_array( 'name', $allowed_fields, true ) ) {
+						$allowed_fields[] = 'name';
+					}
+					$allowed_map = array_flip( $allowed_fields );
+					$tools_list  = array_map(
+						static function ( $tool ) use ( $allowed_map ) {
+							return array_intersect_key( $tool, $allowed_map );
+						},
+						$tools_list
 					);
-				} catch ( Exception $e ) {
-					// Log the error and skip this tool.
-					WP_MCP_AI_Logger::log_event(
-						'error',
-						'Tool schema generation failed',
-						array(
-							'tool_slug' => $tool->get_slug(),
-							'error'     => $e->getMessage(),
-							'trace'     => $e->getTraceAsString(),
-						)
-					);
-					continue;
-				} catch ( Error $e ) {
-					// Catch PHP 7+ errors as well.
-					WP_MCP_AI_Logger::log_event(
-						'error',
-						'Tool schema generation failed with PHP Error',
-						array(
-							'tool_slug' => $tool->get_slug(),
-							'error'     => $e->getMessage(),
-							'trace'     => $e->getTraceAsString(),
-						)
-					);
-					continue;
 				}
 			}
 
@@ -8940,6 +9221,59 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					usleep( self::STREAMING_CHUNK_DELAY_US );
 				}
 			}
+		}
+
+		/**
+		 * Strip unexecuted tool_calls from an LLM response in-place.
+		 *
+		 * When the agentic loop exits because it has reached max_iterations, the
+		 * final LLM response may still contain tool_calls that were never executed.
+		 * Forwarding those to the browser would cause the JS client to persist an
+		 * assistant message with orphaned tool_call_ids in localStorage. On the very
+		 * next user turn those orphaned ids would be sent back to OpenAI, triggering:
+		 *   "An assistant message with 'tool_calls' must be followed by tool messages
+		 *    responding to each 'tool_call_id'."
+		 *
+		 * This method mutates $response directly and returns the number of stripped
+		 * tool calls so the caller can log appropriately.
+		 *
+		 * @param array  $response     LLM response array (mutated in place).
+		 * @param string $assistant_id Assistant identifier (for logging).
+		 * @param int    $iteration    Iteration count at time of stripping (for logging).
+		 * @param string $context_label Short label for the log message, e.g. 'Non-SSE' or 'SSE'.
+		 * @return int Number of tool_calls stripped (0 if none).
+		 */
+		protected function strip_orphaned_tool_calls_from_response( array &$response, $assistant_id, $iteration, $context_label = '' ) {
+			if ( is_wp_error( $response ) ) {
+				return 0;
+			}
+
+			$orphaned = $this->extract_tool_calls_from_response( $response );
+
+			if ( empty( $orphaned ) ) {
+				return 0;
+			}
+
+			if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+				unset( $response['choices'][0]['message']['tool_calls'] );
+			}
+
+			if ( isset( $response['choices'][0]['finish_reason'] ) && 'tool_calls' === $response['choices'][0]['finish_reason'] ) {
+				$response['choices'][0]['finish_reason'] = 'stop';
+			}
+
+			$label = '' !== $context_label ? trim( $context_label ) . ': ' : '';
+			WP_MCP_AI_Logger::log_event(
+				'stripped_orphaned_tool_calls',
+				$label . 'Stripped unexecuted tool_calls from final response after reaching max_iterations.',
+				array(
+					'assistant_id'   => $assistant_id,
+					'iterations'     => $iteration,
+					'stripped_count' => count( $orphaned ),
+				)
+			);
+
+			return count( $orphaned );
 		}
 
 		/**

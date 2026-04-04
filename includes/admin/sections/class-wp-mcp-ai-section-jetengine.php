@@ -3,6 +3,9 @@
  * JetEngine Integration Settings Section
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 
@@ -105,13 +108,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 					'default'        => true,
 				);
 
-				// Add JetEngine CPT AI Integration field (Pro feature).
+				// Add JetEngine CPT AI Integration field (requires Pro addon).
 				if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() ) {
 					$fields['enable_jetengine_cpt_ai'] = array(
 						'type'           => 'checkbox',
 						'label'          => __( 'Enable AI Assistant for JetEngine CPTs', 'mcp-ai-wpoos' ),
 						'checkbox_label' => __( 'Enable AI assistant metabox for JetEngine custom post types', 'mcp-ai-wpoos' ),
-						'description'    => __( 'Adds an AI assistant metabox to all JetEngine custom post type edit screens. Users can get AI help with content creation, editing, and optimization. (Pro Feature)', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Adds an AI assistant metabox to all JetEngine custom post type edit screens. Users can get AI help with content creation, editing, and optimization. Requires NV oOS Pro addon.', 'mcp-ai-wpoos' ),
 						'default'        => true,
 					);
 
@@ -119,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 						'type'           => 'checkbox',
 						'label'          => __( 'Enable Research & Add Pages for JetEngine CPTs', 'mcp-ai-wpoos' ),
 						'checkbox_label' => __( 'Enable Research & Add admin pages for JetEngine custom post types', 'mcp-ai-wpoos' ),
-						'description'    => __( 'Creates dedicated "Research & Add" pages for each JetEngine CPT. These pages provide AI-powered research and data entry interfaces, similar to toolkit Research & Add pages. The pages appear as submenu items under each CPT. (Pro Feature)', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Creates dedicated "Research & Add" pages for each JetEngine CPT. These pages provide AI-powered research and data entry interfaces, similar to toolkit Research & Add pages. The pages appear as submenu items under each CPT. Requires NV oOS Pro addon.', 'mcp-ai-wpoos' ),
 						'default'        => true,
 					);
 
@@ -286,7 +289,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		private function get_jetengine_cpts() {
 			// Use compatibility layer for version-safe access.
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
-				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				$compat_file = defined( 'WP_MCP_AI_PRO_PATH' )
+					? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php'
+					: WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
 				if ( file_exists( $compat_file ) ) {
 					require_once $compat_file;
 				} else {
@@ -306,7 +311,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		private function get_jetengine_taxonomies() {
 			// Use compatibility layer for version-safe access.
 			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
-				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				$compat_file = defined( 'WP_MCP_AI_PRO_PATH' )
+					? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php'
+					: WP_MCP_AI_PATH . 'addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
 				if ( file_exists( $compat_file ) ) {
 					require_once $compat_file;
 				} else {

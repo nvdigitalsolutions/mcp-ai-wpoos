@@ -2,6 +2,9 @@
  * Health Records Consolidate & Add Page Styles
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 .wp-mcp-ai-health-consolidate-page {
@@ -40,7 +43,7 @@
 
 .workflow-options {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(5, 1fr);
 	gap: 15px;
 }
 

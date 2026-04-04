@@ -5,6 +5,9 @@
  * Follows SoC by separating UI interaction from chat logic.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 (function($) {
@@ -520,7 +523,9 @@
 		 * @return {string} Session key
 		 */
 		generateSessionKey() {
-			return 'test-team-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+			const array = new Uint8Array( 16 );
+			crypto.getRandomValues( array );
+			return 'test-team-' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 		},
 
 		/**

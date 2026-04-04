@@ -3,6 +3,9 @@
  * Elementor widget for rendering the NV oOS chat shortcode.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1154,10 +1157,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$attributes['save_transcript'] = 'false';
 		}
 
-		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
-		if ( $enable_streaming ) {
-			$attributes['enable_streaming'] = 'true';
-		}
+		$enable_streaming                = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
+		$attributes['enable_streaming'] = $enable_streaming ? 'true' : 'false';
 
 		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'yes' === $settings['allow_sensitive_tools'];
 		if ( $allow_sensitive_tools ) {

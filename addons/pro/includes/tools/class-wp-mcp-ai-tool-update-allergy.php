@@ -3,6 +3,9 @@
  * Tool for updating allergies.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,32 +32,52 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'allergy_id'     => array(
+				'allergy_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Allergy ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'       => array(
+				'allergen'           => array(
 					'type'        => 'string',
 					'description' => __( 'Allergen name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'severity'       => array(
+				'severity'           => array(
 					'type'        => 'string',
 					'description' => __( 'Severity level (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe' ),
 				),
-				'reactions'      => array(
+				'allergy_type'       => array(
+					'type'        => 'string',
+					'description' => __( 'Allergy category (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'food', 'drug', 'environmental', 'contact', 'latex', 'insect', 'other' ),
+				),
+				'reactions'          => array(
 					'type'        => 'string',
 					'description' => __( 'Typical reactions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'diagnosed_date' => array(
+				'onset_type'         => array(
+					'type'        => 'string',
+					'description' => __( 'Onset type (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'immediate', 'delayed', 'unknown' ),
+				),
+				'diagnosed_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Date diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'          => array(
+				'last_reaction_date' => array(
+					'type'        => 'string',
+					'description' => __( 'Date of most recent reaction (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
+					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
+				),
+				'treatment'          => array(
+					'type'        => 'string',
+					'description' => __( 'Treatment or management protocol (optional)', 'mcp-ai-wpoos-pro' ),
+					'maxLength'   => 1000,
+				),
+				'notes'              => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -62,6 +85,24 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			),
 			'required'             => array( 'allergy_id' ),
 			'additionalProperties' => false,
+		);
+	}
+
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_allergy',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'caregiver' ),
+			'risk_level'            => 'standard',
 		);
 	}
 
@@ -96,11 +137,15 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Allergy not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$allergen       = isset( $arguments['allergen'] ) ? sanitize_text_field( $arguments['allergen'] ) : '';
-		$severity       = isset( $arguments['severity'] ) ? sanitize_key( $arguments['severity'] ) : '';
-		$reactions      = isset( $arguments['reactions'] ) ? sanitize_textarea_field( $arguments['reactions'] ) : '';
-		$diagnosed_date = isset( $arguments['diagnosed_date'] ) ? sanitize_text_field( $arguments['diagnosed_date'] ) : '';
-		$notes          = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
+		$allergen           = isset( $arguments['allergen'] ) ? sanitize_text_field( $arguments['allergen'] ) : '';
+		$severity           = isset( $arguments['severity'] ) ? sanitize_key( $arguments['severity'] ) : '';
+		$allergy_type       = isset( $arguments['allergy_type'] ) ? sanitize_key( $arguments['allergy_type'] ) : '';
+		$reactions          = isset( $arguments['reactions'] ) ? sanitize_textarea_field( $arguments['reactions'] ) : '';
+		$onset_type         = isset( $arguments['onset_type'] ) ? sanitize_key( $arguments['onset_type'] ) : '';
+		$diagnosed_date     = isset( $arguments['diagnosed_date'] ) ? sanitize_text_field( $arguments['diagnosed_date'] ) : '';
+		$last_reaction_date = isset( $arguments['last_reaction_date'] ) ? sanitize_text_field( $arguments['last_reaction_date'] ) : '';
+		$treatment          = isset( $arguments['treatment'] ) ? sanitize_textarea_field( $arguments['treatment'] ) : '';
+		$notes              = isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '';
 
 		if ( $allergen || $notes ) {
 			$post_data = array( 'ID' => $allergy_id );
@@ -122,12 +167,28 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
 		}
 
+		if ( $allergy_type ) {
+			update_post_meta( $allergy_id, '_allergy_type', $allergy_type );
+		}
+
 		if ( $reactions ) {
 			update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
 		}
 
+		if ( $onset_type ) {
+			update_post_meta( $allergy_id, '_allergy_onset_type', $onset_type );
+		}
+
 		if ( $diagnosed_date ) {
 			update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
+		}
+
+		if ( $last_reaction_date ) {
+			update_post_meta( $allergy_id, '_allergy_last_reaction_date', $last_reaction_date );
+		}
+
+		if ( $treatment ) {
+			update_post_meta( $allergy_id, '_allergy_treatment', $treatment );
 		}
 
 		return array(

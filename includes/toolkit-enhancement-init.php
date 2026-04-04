@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.2.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,10 +27,10 @@ function wp_mcp_ai_init_toolkit_enhancement() {
 	// Define base path.
 	$base_path = plugin_dir_path( __FILE__ );
 
-	// Load constants first (no dependencies).
-	require_once $base_path . 'includes/class-wp-mcp-ai-toolkit-constants.php';
-	require_once $base_path . 'includes/class-wp-mcp-ai-pattern-constants.php';
-	require_once $base_path . 'includes/class-wp-mcp-ai-risk-level-constants.php';
+	// Load constants first (no dependencies) — canonical location is domain/.
+	require_once $base_path . 'includes/domain/class-wp-mcp-ai-toolkit-constants.php';
+	require_once $base_path . 'includes/domain/class-wp-mcp-ai-pattern-constants.php';
+	require_once $base_path . 'includes/domain/class-wp-mcp-ai-risk-level-constants.php';
 
 	// Load registries (depend on constants).
 	require_once $base_path . 'includes/class-wp-mcp-ai-toolkit-registry.php';

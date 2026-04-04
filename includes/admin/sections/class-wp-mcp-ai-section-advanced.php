@@ -3,6 +3,9 @@
  * Advanced Settings Section
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -78,9 +81,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				'memory_max_file_bytes'         => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum file size for memory operations, in bytes. Examples: 5242880 = 5 MB, 10485760 = 10 MB, 52428800 = 50 MB.', 'mcp-ai-wpoos' ),
 					'default'     => 5242880,
 					'placeholder' => '5242880',
+					'min'         => 1,
+					'step'        => 1,
 				),
 				'enable_opcache_reset'          => array(
 					'type'           => 'checkbox',
@@ -500,15 +505,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		public function validate( $input ) {
 			$errors = array();
 
-			// Validate memory max file bytes.
+			// Validate memory max file bytes: must be a positive integer when set (no upper limit).
 			if ( isset( $input['memory_max_file_bytes'] ) ) {
 				$result = WP_MCP_AI_Settings_Validator::validate_number(
 					$input['memory_max_file_bytes'],
-					1024,
-					104857600
+					1,    // Minimum: 1 byte.
+					null  // No upper limit.
 				);
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Memory File Size must be between 1 MB (1048576 bytes) and 50 MB (52428800 bytes).', 'mcp-ai-wpoos' );
+					$errors[] = __( 'Max Memory File Size must be a positive integer (bytes).', 'mcp-ai-wpoos' );
 				}
 			}
 
@@ -1690,10 +1695,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$installed_skills = $skill_registry->get_all_skills();
 			$installed_count  = count( $installed_skills );
 
-			// Count bundled skills available.
-			$bundled_dir   = $skill_registry->get_bundled_skills_dir();
-			$bundled_count = 0;
-			if ( is_dir( $bundled_dir ) ) {
+			// Count bundled skills available (base + pro).
+			$bundled_count        = 0;
+			$bundled_dirs_to_scan = array( $skill_registry->get_bundled_skills_dir() );
+
+			// Include pro addon bundled skills when the pro plugin is active.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_bundled_dir = trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills';
+				if ( is_dir( $pro_bundled_dir ) ) {
+					$bundled_dirs_to_scan[] = $pro_bundled_dir;
+				}
+			}
+
+			foreach ( $bundled_dirs_to_scan as $bundled_dir ) {
+				if ( ! is_dir( $bundled_dir ) ) {
+					continue;
+				}
 				$bundled_dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 				if ( is_array( $bundled_dirs ) ) {
 					foreach ( $bundled_dirs as $b_dir ) {
@@ -2213,8 +2230,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 													</td>
 													<td><?php echo esc_html( $last_verify_display ); ?></td>
 													<td>
-														<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-															<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+														<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+															<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+															<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 														</a>
 													</td>
 												</tr>

@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for chat transcript filtering by assistant_id.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Chat_Transcript_Filtering_Test extends WP_UnitTestCase {
 	/**

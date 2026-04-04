@@ -3,6 +3,9 @@
  * Model Pricing Checker - Monthly cron job to check for pricing updates.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -123,6 +126,12 @@ class WP_MCP_AI_Model_Pricing_Checker {
 	 * Show admin notice if there are price changes.
 	 */
 	public static function show_price_change_notice() {
+		// Only show on NV oOS admin pages to avoid noise on unrelated admin pages.
+		$screen = get_current_screen();
+		if ( ! $screen || false === strpos( $screen->id, 'mcp-ai' ) ) {
+			return;
+		}
+
 		$price_changes = get_option( self::OPTION_PRICE_CHANGES, array() );
 
 		if ( empty( $price_changes ) ) {
@@ -278,6 +287,14 @@ class WP_MCP_AI_Model_Pricing_Checker {
 			return;
 		}
 
+		// Pre-load default model data for fallback lookups (keyed by model_name).
+		$default_models_by_name = array();
+		foreach ( WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data() as $default_model ) {
+			if ( isset( $default_model['model_name'] ) ) {
+				$default_models_by_name[ $default_model['model_name'] ] = $default_model;
+			}
+		}
+
 		// Apply updates.
 		$updated_count = 0;
 		$errors        = array();
@@ -319,11 +336,61 @@ class WP_MCP_AI_Model_Pricing_Checker {
 			);
 
 			if ( empty( $items ) || ! is_array( $items ) ) {
-				$errors[] = sprintf(
-					/* translators: %s: model name */
-					__( 'Model not found: %s', 'mcp-ai-wpoos' ),
-					$model_name
-				);
+				// Model not in CCT database yet — look it up in default data and insert it.
+				if ( ! isset( $default_models_by_name[ $model_name ] ) ) {
+					$errors[] = sprintf(
+						/* translators: %s: model name */
+						__( 'Model not found: %s', 'mcp-ai-wpoos' ),
+						$model_name
+					);
+					continue;
+				}
+
+				$default_match = $default_models_by_name[ $model_name ];
+
+				// Apply the new pricing to the default data and insert into the CCT.
+				$default_match['cost_per_1k_input_tokens']  = $new_input_cost;
+				$default_match['cost_per_1k_output_tokens'] = $new_output_cost;
+
+				// Remove database-specific fields that should be auto-generated.
+				unset( $default_match['_ID'], $default_match['cct_created'], $default_match['cct_modified'], $default_match['cct_author_id'] );
+
+				try {
+					$new_id = $handler->update_item( $default_match );
+
+					if ( $new_id ) {
+						++$updated_count;
+
+						// Log the insert + update.
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'model_pricing_inserted_and_updated',
+								sprintf( 'Inserted and updated pricing for model: %s', $model_name ),
+								array(
+									'model'       => $model_name,
+									'new_input'   => $change['new_input'],
+									'new_output'  => $change['new_output'],
+									'updated_by'  => get_current_user_id(),
+									'updated_via' => 'auto_update_button',
+								)
+							);
+						}
+					} else {
+						$errors[] = sprintf(
+							/* translators: %s: model name */
+							__( 'Failed to insert model from defaults: %s', 'mcp-ai-wpoos' ),
+							$model_name
+						);
+					}
+				} catch ( Exception $e ) {
+					$errors[] = sprintf(
+						/* translators: 1: model name, 2: error message */
+						__( 'Failed to insert %1$s: %2$s', 'mcp-ai-wpoos' ),
+						$model_name,
+						$e->getMessage()
+					);
+				}
+
 				continue;
 			}
 

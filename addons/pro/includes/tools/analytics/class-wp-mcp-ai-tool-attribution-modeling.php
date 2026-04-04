@@ -7,6 +7,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -196,7 +199,7 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments.
 		$attribution_model = ! empty( $arguments['attribution_model'] ) ? sanitize_text_field( $arguments['attribution_model'] ) : 'linear';
 		$lookback_window   = isset( $arguments['lookback_window'] ) ? absint( $arguments['lookback_window'] ) : 30;

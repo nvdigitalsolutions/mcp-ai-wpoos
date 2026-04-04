@@ -3,6 +3,9 @@
  * Anthropic API client wrapper.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,10 +17,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	 * Provides a wrapper around Anthropic's Messages API endpoint.
 	 */
 	class WP_MCP_AI_Anthropic_Client {
-		const API_ENDPOINT     = 'https://api.anthropic.com/v1/messages';
-		const API_COUNT_TOKENS = 'https://api.anthropic.com/v1/messages/count_tokens';
-		const API_VERSION      = '2023-06-01';
-		const USER_AGENT       = 'WP-MCP-AI-Anthropic-Client/1.0';
+		const API_ENDPOINT      = 'https://api.anthropic.com/v1/messages';
+		const API_COUNT_TOKENS  = 'https://api.anthropic.com/v1/messages/count_tokens';
+		const API_VERSION       = '2023-06-01';
+		const USER_AGENT        = 'WP-MCP-AI-Anthropic-Client/1.0';
+		const DEFAULT_BASE_URL  = 'https://api.anthropic.com/v1';
 
 		/**
 		 * Maximum image size in bytes (10MB).
@@ -62,6 +66,81 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : '';
+		}
+
+		/**
+		 * Retrieve the configured base URL for the Anthropic API.
+		 *
+		 * When a custom base URL is configured (e.g. for Claude Team/Enterprise
+		 * or an Anthropic-compatible proxy), all requests are routed through it.
+		 *
+		 * @return string Base URL without trailing slash.
+		 */
+		public function get_base_url() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$base_url = isset( $settings['anthropic_base_url'] ) ? trim( $settings['anthropic_base_url'] ) : '';
+
+			if ( '' === $base_url ) {
+				$base_url = self::DEFAULT_BASE_URL;
+			}
+
+			return untrailingslashit( $base_url );
+		}
+
+		/**
+		 * Resolve a full endpoint URL respecting any custom base URL.
+		 *
+		 * Replaces the default https://api.anthropic.com/v1 prefix with the configured
+		 * base URL so that all requests honour custom proxy / enterprise endpoints.
+		 *
+		 * @param string $default_url The default Anthropic endpoint URL.
+		 * @return string Resolved endpoint URL.
+		 */
+		public function resolve_endpoint( $default_url ) {
+			$base_url = $this->get_base_url();
+
+			if ( self::DEFAULT_BASE_URL === $base_url ) {
+				return $default_url;
+			}
+
+			// Replace the default base with the custom base.
+			$path = str_replace( self::DEFAULT_BASE_URL, '', $default_url );
+
+			return $base_url . $path;
+		}
+
+		/**
+		 * Build the standard HTTP request headers for Anthropic API calls.
+		 *
+		 * Includes x-api-key, anthropic-version, Content-Type headers.
+		 * Follows Anthropic's API authentication standards including support
+		 * for Team and Enterprise workspace API keys.
+		 *
+		 * @param string $api_key      API key for the x-api-key header.
+		 * @param string $content_type Content-Type header value. Default 'application/json'.
+		 * @return array Associative array of HTTP headers.
+		 */
+		public function build_request_headers( $api_key, $content_type = 'application/json' ) {
+			$headers = array(
+				'Content-Type'      => $content_type,
+				'x-api-key'         => $api_key,
+				'anthropic-version' => self::API_VERSION,
+			);
+
+			/**
+			 * Filter the Anthropic request headers before sending.
+			 *
+			 * Allows third-party plugins to inject or modify headers for all
+			 * Anthropic API requests (e.g. adding custom tracking or proxy headers).
+			 *
+			 * @since 2.6.0
+			 *
+			 * @param array  $headers  Associative array of HTTP headers.
+			 * @param string $api_key  The API key being used.
+			 */
+			$headers = apply_filters( 'wp_mcp_ai_anthropic_request_headers', $headers, $api_key );
+
+			return $headers;
 		}
 
 		/**
@@ -110,11 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			$payload['model'] = $model;
 
-			$headers = array(
-				'Content-Type'      => 'application/json',
-				'x-api-key'         => $api_key,
-				'anthropic-version' => self::API_VERSION,
-			);
+			$headers = $this->build_request_headers( $api_key );
 
 			// Add anthropic-beta header when needed.
 			$betas = $this->resolve_beta_features( $payload, $options );
@@ -130,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'anthropic_request', 'Sending request to Anthropic.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
 
-			$response = wp_remote_post( self::API_ENDPOINT, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::API_ENDPOINT ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'Anthropic request failed.', array( 'error' => $response->get_error_message() ) );
@@ -258,12 +333,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-sonnet-4-5',
-					'name'           => __( 'Claude 4 Sonnet', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 4.5', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-sonnet-4-6',
+					'name'           => __( 'Claude Sonnet 4.6 (latest)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
 					'id'             => 'claude-opus-4-5',
-					'name'           => __( 'Claude 4 Opus', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Opus 4.5', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 			);
@@ -355,11 +435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'POST',
-				'headers' => array(
-					'x-api-key'         => $api_key,
-					'anthropic-version' => self::API_VERSION,
-					'content-type'      => 'application/json',
-				),
+				'headers' => $this->build_request_headers( $api_key ),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
@@ -373,7 +449,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				)
 			);
 
-			$response = wp_remote_post( self::API_COUNT_TOKENS, $request_args );
+			$response = wp_remote_post( $this->resolve_endpoint( self::API_COUNT_TOKENS ), $request_args );
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error(
@@ -488,6 +564,20 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 						'content'     => $result_content,
 					);
 
+					// Detect failed tool executions and mark with is_error so Claude can
+					// respond appropriately (e.g. retry, fallback, or explain the failure).
+					// Check explicit flag first, then fall back to JSON-content inspection.
+					$is_tool_error = ! empty( $message['is_error'] );
+					if ( ! $is_tool_error && is_string( $result_content ) ) {
+						$decoded_result = json_decode( $result_content, true );
+						if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_result ) ) {
+							$is_tool_error = ! empty( $decoded_result['error'] ) || ! empty( $decoded_result['error_code'] );
+						}
+					}
+					if ( $is_tool_error ) {
+						$tool_result_block['is_error'] = true;
+					}
+
 					// Append to the previous user message if it is already a tool-result
 					// user message (i.e. consecutive tool results from the same turn).
 					$last_idx = count( $anthropic_messages ) - 1;
@@ -553,7 +643,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 								'type'  => 'tool_use',
 								'id'    => isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : 'toolu_' . wp_generate_password( 16, false ),
 								'name'  => sanitize_text_field( $tool_call['function']['name'] ),
-								'input' => $args,
+								'input' => (object) $args,
 							);
 						}
 					}
@@ -562,10 +652,26 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 						continue;
 					}
 
-					$anthropic_messages[] = array(
-						'role'    => 'assistant',
-						'content' => $assistant_content,
-					);
+					// Anthropic forbids consecutive messages with the same role.
+					// Merge consecutive assistant messages to avoid API validation errors.
+					// This can occur when conversation history stores an intermediate assistant
+					// message (from the agentic loop) followed by the final assistant message.
+					$last_idx = count( $anthropic_messages ) - 1;
+					if (
+						$last_idx >= 0
+						&& 'assistant' === $anthropic_messages[ $last_idx ]['role']
+						&& is_array( $anthropic_messages[ $last_idx ]['content'] )
+					) {
+						$anthropic_messages[ $last_idx ]['content'] = array_merge(
+							$anthropic_messages[ $last_idx ]['content'],
+							$assistant_content
+						);
+					} else {
+						$anthropic_messages[] = array(
+							'role'    => 'assistant',
+							'content' => $assistant_content,
+						);
+					}
 					continue;
 				}
 
@@ -690,6 +796,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				$tools = $this->translate_tools_for_anthropic( $options['tools'] );
 				if ( ! empty( $tools ) ) {
+					// When prompt caching is enabled, mark the last tool definition with
+					// cache_control so Anthropic can cache the entire tool block (saves
+					// tokens on subsequent turns that use the same tool set).
+					if ( ! empty( $options['cache_system_prompt'] ) ) {
+						$last_tool_idx = count( $tools ) - 1;
+						$tools[ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
+					}
 					$payload['tools'] = $tools;
 				}
 			}
@@ -1200,6 +1313,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			// on older (claude-3-haiku, claude-3-sonnet) models.
 			if ( ! empty( $options['cache_system_prompt'] ) ) {
 				$betas[] = 'prompt-caching-2024-07-31';
+			}
+
+			// Token-efficient tools reduces the overhead tokens used by tool definitions,
+			// which can cut input costs by up to 40% when many tools are attached.
+			// Supported on Claude 3.5 Sonnet and later models.
+			if ( ! empty( $payload['tools'] ) ) {
+				$betas[] = 'token-efficient-tools-2025-02-19';
 			}
 
 			// Extended thinking requires the interleaved-thinking beta for models that

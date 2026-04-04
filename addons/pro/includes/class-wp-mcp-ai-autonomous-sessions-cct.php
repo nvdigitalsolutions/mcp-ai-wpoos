@@ -3,6 +3,9 @@
  * JetEngine Custom Content Type registration for autonomous sessions.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -136,6 +139,11 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 	 * Register the autonomous sessions CCT if it is missing.
 	 */
 	public static function maybe_register_cct() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_project_management'] ) ) {
+			return;
+		}
+
 		$module = self::get_cct_module();
 
 		if ( ! $module ) {

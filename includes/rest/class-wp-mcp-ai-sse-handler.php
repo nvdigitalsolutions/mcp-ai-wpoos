@@ -8,6 +8,9 @@
  * @package WP_MCP_AI
  * @subpackage REST
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -50,12 +53,36 @@ class WP_MCP_AI_SSE_Handler {
 	 * @since 1.0.0
 	 */
 	public function send_sse_headers() {
+		// Disable PHP-level output compression before anything is sent.
+		// zlib.output_compression (and ob_gzhandler) buffer all output until the
+		// script ends, which prevents SSE events from reaching the browser in
+		// real-time and causes ERR_HTTP2_PROTOCOL_ERROR on HTTP/2 connections.
+		// phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: ini_set() may be disabled on restricted hosts; failure is non-critical since X-Accel-Buffering: no is the primary mitigation.
+		@ini_set( 'zlib.output_compression', 'Off' );
+		@ini_set( 'output_buffering', 'Off' );
+		// phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
+
+		// Discard any existing output buffers (including the one started by
+		// clean_output_buffer() at init) so their contents do not corrupt the
+		// SSE stream before the headers are sent.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: text/event-stream; charset=UTF-8' );
 			header( 'Cache-Control: no-cache, no-store, must-revalidate, no-transform' );
 			header( 'Pragma: no-cache' );
-			header( 'Connection: keep-alive' );
 			header( 'X-Accel-Buffering: no' );
+
+			// Do NOT send the Connection header. It is a hop-by-hop header that:
+			// - Is forbidden by RFC 7540 §8.1.2.2 in HTTP/2, causing ERR_HTTP2_PROTOCOL_ERROR
+			//   in browsers. PHP runs behind a reverse proxy (Nginx, Apache, Cloudways, etc.)
+			//   so SERVER_PROTOCOL always reflects the backend HTTP/1.1 connection, not the
+			//   actual client protocol. We cannot reliably detect HTTP/2 from PHP.
+			// - Is redundant in HTTP/1.1 (persistent connections are the default since RFC 2616).
+			header_remove( 'Connection' );
+			header_remove( 'Transfer-Encoding' );
 
 			/**
 			 * Filter the Access-Control-Allow-Origin value for SSE streaming responses.
@@ -77,16 +104,6 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Access-Control-Allow-Origin: ' . $allow_origin );
 			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
-
-			// Remove Connection header for HTTP/2.
-			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-				header_remove( 'Connection' );
-			}
-		}
-
-		// Disable output buffering completely.
-		while ( ob_get_level() > 0 ) {
-			ob_end_flush();
 		}
 
 		// Send retry directive to help clients reconnect if connection drops.
@@ -96,6 +113,31 @@ class WP_MCP_AI_SSE_Handler {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+	}
+
+	/**
+	 * Finish an SSE streaming response cleanly.
+	 *
+	 * Replaces bare `exit` at the end of SSE handlers. When running under
+	 * PHP-FPM, `fastcgi_finish_request()` properly closes the FastCGI
+	 * transaction and sends a well-formed HTTP/2 DATA+END_STREAM frame,
+	 * preventing the `ERR_HTTP2_PROTOCOL_ERROR` that a raw `exit()` causes
+	 * (PHP-FPM terminates the connection abruptly, nginx emits RST_STREAM).
+	 *
+	 * After `fastcgi_finish_request()` the PHP process continues briefly for
+	 * any registered shutdown functions; no further output will reach the
+	 * client, so this is safe to use as the final statement in an SSE handler.
+	 *
+	 * Falls back to `exit()` on non-FPM environments (CLI, mod_php, etc.).
+	 *
+	 * @since 1.2.0
+	 */
+	public function finish() {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+			return;
+		}
+		exit;
 	}
 
 	/**
@@ -278,7 +320,6 @@ class WP_MCP_AI_SSE_Handler {
 			'Content-Type'                 => 'text/event-stream; charset=UTF-8',
 			'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
 			'Pragma'                       => 'no-cache',
-			'Connection'                   => 'keep-alive',
 			'Vary'                         => 'Accept, Authorization',
 			'Access-Control-Allow-Origin'  => $allow_origin,
 			'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
@@ -287,9 +328,12 @@ class WP_MCP_AI_SSE_Handler {
 			'X-Content-Type-Options'       => 'nosniff',
 		);
 
-		if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-			unset( $headers['Connection'] );
-		}
+		// Do NOT include the Connection header. It is forbidden in HTTP/2
+		// (RFC 7540 §8.1.2.2) and causes ERR_HTTP2_PROTOCOL_ERROR. Since PHP
+		// runs behind a reverse proxy, SERVER_PROTOCOL always reflects the
+		// backend HTTP/1.1 connection — we cannot reliably detect the client
+		// protocol from PHP. Connection is also redundant in HTTP/1.1 where
+		// persistent connections are the default.
 
 		$callback = null;
 		$callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {

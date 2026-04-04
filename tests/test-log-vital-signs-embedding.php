@@ -9,6 +9,9 @@
  * - store_vitals_embedding() writes to the index option and evicts old entries.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -291,5 +294,176 @@ class Test_Log_Vital_Signs_Embedding extends WP_UnitTestCase {
 			$method_body,
 			'store_vitals_embedding should use task_type RETRIEVAL_DOCUMENT for Gemini'
 		);
+	}
+
+	// ── supplement_cct_with_options_decimals ───────────────────────────────────
+
+	/**
+	 * Helper: invoke supplement_cct_with_options_decimals via reflection.
+	 *
+	 * @param array $history   Flat CCT history rows.
+	 * @param int   $member_id Member post ID.
+	 * @return array Enriched history rows.
+	 */
+	private function call_supplement( array $history, int $member_id ): array {
+		$method = $this->reflection->getMethod( 'supplement_cct_with_options_decimals' );
+		$method->setAccessible( true );
+		return $method->invoke( $this->tool, $history, $member_id );
+	}
+
+	/**
+	 * When a CCT row has NULL hemoglobin but options storage holds a valid
+	 * reading, the enriched row should carry the options value.
+	 *
+	 * This mirrors the production scenario where hemoglobin was added to the
+	 * CCT schema after historical entries were logged, leaving those rows with
+	 * NULL in the hemoglobin column while options storage retained the original.
+	 */
+	public function test_supplement_fills_null_hemoglobin_from_options() {
+		$member_id = 999001;
+		$entry_id  = 'vs_test_hgb_001';
+
+		// Populate options storage with the correct hemoglobin reading.
+		update_option(
+			'wp_mcp_ai_vital_signs_' . $member_id,
+			array(
+				$entry_id => array(
+					'date'         => '2024-06-01',
+					'measurements' => array(
+						'hemoglobin' => array(
+							'value'  => 13.5,
+							'unit'   => 'g/dL',
+							'status' => 'normal',
+						),
+					),
+				),
+			)
+		);
+
+		// Simulate a CCT row where hemoglobin is absent (column not yet created).
+		$history = array(
+			array(
+				'entry_id'         => $entry_id,
+				'measurement_date' => '2024-06-01',
+				'bp_systolic'      => 120,
+				'bp_diastolic'     => 80,
+				// hemoglobin key intentionally absent.
+			),
+		);
+
+		$enriched = $this->call_supplement( $history, $member_id );
+
+		$this->assertSame( 13.5, $enriched[0]['hemoglobin'], 'Hemoglobin should be populated from options storage when CCT column is absent.' );
+
+		delete_option( 'wp_mcp_ai_vital_signs_' . $member_id );
+	}
+
+	/**
+	 * When a CCT row has creatinine stored as integer 1 (bigint truncation
+	 * prior to the DECIMAL migration), the enriched row should show the original
+	 * decimal value from options storage.
+	 */
+	public function test_supplement_corrects_integer_truncated_creatinine() {
+		$member_id = 999002;
+		$entry_id  = 'vs_test_creat_001';
+
+		update_option(
+			'wp_mcp_ai_vital_signs_' . $member_id,
+			array(
+				$entry_id => array(
+					'date'         => '2024-06-15',
+					'measurements' => array(
+						'creatinine' => array(
+							'value' => 0.9,
+							'unit'  => 'mg/dL',
+						),
+					),
+				),
+			)
+		);
+
+		// Simulate a CCT row where creatinine was rounded to 1 by bigint storage.
+		$history = array(
+			array(
+				'entry_id'         => $entry_id,
+				'measurement_date' => '2024-06-15',
+				'creatinine'       => 1,  // integer-rounded value
+			),
+		);
+
+		$enriched = $this->call_supplement( $history, $member_id );
+
+		$this->assertSame( 0.9, $enriched[0]['creatinine'], 'Creatinine should be corrected to the decimal value from options storage.' );
+
+		delete_option( 'wp_mcp_ai_vital_signs_' . $member_id );
+	}
+
+	/**
+	 * Rows without a matching entry_id in options storage must be returned
+	 * unchanged (no PHP notice, no data loss).
+	 */
+	public function test_supplement_leaves_unmatched_rows_unchanged() {
+		$member_id = 999003;
+
+		// Options storage is empty for this member.
+		delete_option( 'wp_mcp_ai_vital_signs_' . $member_id );
+
+		$history = array(
+			array(
+				'entry_id'   => 'vs_unknown_001',
+				'creatinine' => 1,
+				'hemoglobin' => null,
+			),
+		);
+
+		$enriched = $this->call_supplement( $history, $member_id );
+
+		$this->assertSame( 1, $enriched[0]['creatinine'], 'Creatinine should be unchanged when no options match exists.' );
+		$this->assertNull( $enriched[0]['hemoglobin'], 'Hemoglobin should be unchanged when no options match exists.' );
+	}
+
+	/**
+	 * A zero or negative value in options storage should NOT overwrite a valid
+	 * CCT value — the guard prevents spurious zeroes from corrupting data.
+	 */
+	public function test_supplement_ignores_zero_options_value() {
+		$member_id = 999004;
+		$entry_id  = 'vs_test_zero_001';
+
+		update_option(
+			'wp_mcp_ai_vital_signs_' . $member_id,
+			array(
+				$entry_id => array(
+					'date'         => '2024-07-01',
+					'measurements' => array(
+						'creatinine' => array(
+							'value' => 0,
+							'unit'  => 'mg/dL',
+						),
+					),
+				),
+			)
+		);
+
+		$history = array(
+			array(
+				'entry_id'   => $entry_id,
+				'creatinine' => 1.2,  // Valid CCT value.
+			),
+		);
+
+		$enriched = $this->call_supplement( $history, $member_id );
+
+		$this->assertSame( 1.2, $enriched[0]['creatinine'], 'A zero options value must not overwrite a valid CCT value.' );
+
+		delete_option( 'wp_mcp_ai_vital_signs_' . $member_id );
+	}
+
+	/**
+	 * An empty history array must be returned as-is without touching options.
+	 */
+	public function test_supplement_returns_empty_history_unchanged() {
+		$enriched = $this->call_supplement( array(), 999005 );
+		$this->assertSame( array(), $enriched );
 	}
 }

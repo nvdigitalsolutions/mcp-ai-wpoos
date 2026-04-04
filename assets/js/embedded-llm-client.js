@@ -8,6 +8,9 @@
  * 
  * @package WP_MCP_AI
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 (function() {
@@ -19,6 +22,46 @@
 
 	// Logging configuration
 	const CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk to avoid console spam
+
+	/**
+	 * Strip <think>...</think> tags from content.
+	 *
+	 * Qwen3 and DeepSeek R1 models may embed their chain-of-thought reasoning
+	 * inside <think>...</think> tags within the content field. When the reasoning
+	 * is already captured separately via delta.reasoning_content, these inline
+	 * tags should be removed so the final user-facing content is clean.
+	 *
+	 * Also handles partial tags: a dangling </think> at the start (common when
+	 * the opening <think> was in a previous streaming chunk) is stripped too.
+	 *
+	 * @param {string} text - Raw content that may contain think tags
+	 * @return {string} Content with think tags removed
+	 */
+	function stripThinkTags(text) {
+		if (!text || typeof text !== 'string') {
+			return '';
+		}
+		// Remove complete <think>...</think> blocks (greedy, handles newlines)
+		let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+		// Remove any remaining dangling </think> or <think> tags
+		cleaned = cleaned.replace(/<\/?think>/gi, '');
+		return cleaned.trim();
+	}
+
+	/**
+	 * Check if a model ID corresponds to a thinking/reasoning model.
+	 *
+	 * Thinking models (Qwen3, DeepSeek R1) may emit reasoning content in a
+	 * separate delta.reasoning_content field during streaming. This helper
+	 * checks the AVAILABLE_MODELS registry for the isThinkingModel flag.
+	 *
+	 * @param {string} modelId - The model identifier
+	 * @return {boolean} True if the model supports thinking/reasoning output
+	 */
+	function isThinkingModel(modelId) {
+		const model = AVAILABLE_MODELS[modelId];
+		return !!(model && model.isThinkingModel);
+	}
 
 	/**
 	 * Decode HTML entities in a string
@@ -114,7 +157,8 @@
 			description: 'Best for function calling and tool use',
 			contextWindow: 8192,
 			recommended: true,
-			functionCalling: true
+			functionCalling: true,
+			isThinkingModel: false
 		},
 		'Hermes-3-Llama-3.1-8B-q4f16_1-MLC': {
 			name: 'Hermes 3 Llama 3.1 8B',
@@ -122,7 +166,8 @@
 			description: 'Updated Hermes 3 with improved function calling on Llama 3.1',
 			contextWindow: 4096,
 			recommended: false,
-			functionCalling: true
+			functionCalling: true,
+			isThinkingModel: false
 		},
 		'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC': {
 			name: 'DeepSeek R1 Distill Llama 8B',
@@ -130,7 +175,8 @@
 			description: 'DeepSeek R1 reasoning model distilled to Llama 8B for advanced reasoning tasks',
 			contextWindow: 4096,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: true
 		},
 		'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC': {
 			name: 'DeepSeek R1 Distill Qwen 7B',
@@ -138,7 +184,17 @@
 			description: 'DeepSeek R1 reasoning model distilled to Qwen 7B for advanced reasoning tasks',
 			contextWindow: 4096,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: true
+		},
+		'Qwen3-8B-q4f16_1-MLC': {
+			name: 'Qwen3 8B',
+			size: '~5GB',
+			description: 'Latest Qwen3 with hybrid reasoning (think/non-think modes), 119 language support, and function calling',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true,
+			isThinkingModel: true
 		},
 		'Qwen2.5-7B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 7B Instruct',
@@ -146,7 +202,17 @@
 			description: 'Advanced multilingual model with function calling',
 			contextWindow: 32768,
 			recommended: false,
-			functionCalling: true
+			functionCalling: true,
+			isThinkingModel: false
+		},
+		'Qwen3-4B-q4f16_1-MLC': {
+			name: 'Qwen3 4B',
+			size: '~2.5GB',
+			description: 'Compact Qwen3 with hybrid reasoning and strong multilingual capabilities',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true,
+			isThinkingModel: true
 		},
 		'Phi-3.5-mini-instruct-q4f16_1-MLC': {
 			name: 'Phi-3.5 Mini Instruct',
@@ -154,7 +220,8 @@
 			description: 'Smaller Microsoft model, supports function calling',
 			contextWindow: 128000,
 			recommended: false,
-			functionCalling: true
+			functionCalling: true,
+			isThinkingModel: false
 		},
 		'gemma-2-2b-it-q4f16_1-MLC': {
 			name: 'Gemma 2 2B Instruct',
@@ -162,7 +229,8 @@
 			description: "Google's Gemma 2 2B instruction-tuned model, efficient and capable",
 			contextWindow: 4096,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: false
 		},
 		'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
 			name: 'Llama 3.2 3B Instruct',
@@ -170,7 +238,8 @@
 			description: 'Balanced model for general chat (does not support function calling)',
 			contextWindow: 131072,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: false
 		},
 		'SmolLM2-1.7B-Instruct-q4f16_1-MLC': {
 			name: 'SmolLM2 1.7B Instruct',
@@ -178,7 +247,17 @@
 			description: "HuggingFace's efficient SmolLM2 model, ideal for resource-constrained devices",
 			contextWindow: 4096,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: false
+		},
+		'Qwen3-1.7B-q4f16_1-MLC': {
+			name: 'Qwen3 1.7B',
+			size: '~1.1GB',
+			description: 'Ultra-efficient Qwen3 with hybrid reasoning for resource-constrained devices',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true,
+			isThinkingModel: true
 		},
 		'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 1.5B Instruct',
@@ -186,7 +265,8 @@
 			description: 'Compact multilingual model with function calling support',
 			contextWindow: 32768,
 			recommended: false,
-			functionCalling: true
+			functionCalling: true,
+			isThinkingModel: false
 		},
 		'Llama-3.2-1B-Instruct-q4f16_1-MLC': {
 			name: 'Llama 3.2 1B Instruct',
@@ -194,7 +274,17 @@
 			description: 'Fast, lightweight model for basic chat (does not support function calling)',
 			contextWindow: 131072,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: false
+		},
+		'Qwen3-0.6B-q4f16_1-MLC': {
+			name: 'Qwen3 0.6B',
+			size: '~400MB',
+			description: 'Smallest Qwen3 with hybrid reasoning capabilities',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: false,
+			isThinkingModel: true
 		},
 		'Qwen2.5-0.5B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 0.5B Instruct',
@@ -202,7 +292,8 @@
 			description: 'Ultra-compact model for simple responses (does not support function calling)',
 			contextWindow: 32768,
 			recommended: false,
-			functionCalling: false
+			functionCalling: false,
+			isThinkingModel: false
 		}
 	};
 
@@ -533,10 +624,18 @@
 				});
 
 				const choice = response.choices[0];
+				// Extract reasoning content from thinking models (Qwen3, DeepSeek R1)
+				const reasoningContent = choice.message.reasoning_content || choice.message.reasoning || undefined;
+				// Strip inline <think> tags from content for thinking models
+				let content = choice.message.content;
+				if (isThinkingModel(this.currentModelId)) {
+					content = stripThinkTags(content);
+				}
 				return {
 					success: true,
 					role: choice.message.role || 'assistant', // OpenAI-compatible
-					content: choice.message.content,
+					content: content,
+					reasoning_content: reasoningContent,
 					tool_calls: choice.message.tool_calls, // OpenAI-compatible: tool calls if present
 					finish_reason: choice.finish_reason || 'stop', // OpenAI-compatible: why generation stopped
 					usage: response.usage || {}
@@ -656,13 +755,34 @@
 				const asyncChunkGenerator = await this.currentEngine.chat.completions.create(requestPayload);
 
 				let fullContent = '';
-				const toolCalls = []; // NEW: Collect tool calls from streaming response
+				let fullReasoningContent = ''; // Capture thinking/reasoning from models like Qwen3, DeepSeek R1
+				const toolCalls = []; // Collect tool calls from streaming response
 				let lastChunk = null;
 				let chunkCount = 0;
+				const modelIsThinking = isThinkingModel(this.currentModelId);
 
 				for await (const chunk of asyncChunkGenerator) {
 					lastChunk = chunk; // Keep track of last chunk for usage data
-					const delta = chunk.choices[0]?.delta?.content || '';
+					const choiceDelta = chunk.choices[0]?.delta;
+					const delta = choiceDelta?.content || '';
+
+					// Handle reasoning_content from thinking models (Qwen3, DeepSeek R1)
+					// These models stream their chain-of-thought in a separate reasoning_content field.
+					// Also check the 'reasoning' field used by newer vLLM versions.
+					const reasoningDelta = choiceDelta?.reasoning_content || choiceDelta?.reasoning || '';
+					if (reasoningDelta) {
+						fullReasoningContent += reasoningDelta;
+
+						if (onChunk) {
+							onChunk({
+								content: '',
+								fullContent: fullContent,
+								reasoning: reasoningDelta,
+								fullReasoning: fullReasoningContent,
+								done: false
+							});
+						}
+					}
 
 					// Handle tool calls (Phase 2: Tool Support Implementation)
 					// WebLLM may stream tool calls incrementally
@@ -699,7 +819,7 @@
 						});
 					}
 
-					// Handle text content as before
+					// Handle text content
 					if (delta) {
 						chunkCount++;
 						fullContent += delta;
@@ -724,13 +844,30 @@
 					}
 				}
 
+				// For thinking models, strip any inline <think>...</think> tags from content.
+				// Some models embed their reasoning within the content field itself when
+				// reasoning_content is not supported or when in "hybrid" mode.
+				if (modelIsThinking) {
+					const rawContent = fullContent;
+					fullContent = stripThinkTags(fullContent);
+					if (rawContent !== fullContent) {
+						console.log('[NV oOS Embedded Client] Stripped inline think tags from content:', {
+							instanceId: this.instanceId,
+							rawLength: rawContent.length,
+							cleanedLength: fullContent.length
+						});
+					}
+				}
+
 				// Log completion
 				console.log('[NV oOS Embedded Client] Streaming completed for instance:', {
 					instanceId: this.instanceId,
 					totalChunks: chunkCount,
 					contentLength: fullContent.length,
+					reasoningLength: fullReasoningContent.length,
 					toolCallsCount: toolCalls.length,
-					hasUsage: !!(lastChunk && lastChunk.usage)
+					hasUsage: !!(lastChunk && lastChunk.usage),
+					isThinkingModel: modelIsThinking
 				});
 
 				if (onChunk) {
@@ -755,7 +892,8 @@
 					success: true,
 					role: 'assistant', // OpenAI-compatible: always 'assistant' for completions
 					content: fullContent,
-					tool_calls: toolCalls.length > 0 ? toolCalls : undefined, // NEW: Include tool calls if present
+					reasoning_content: fullReasoningContent || undefined, // Include reasoning if present
+					tool_calls: toolCalls.length > 0 ? toolCalls : undefined, // Include tool calls if present
 					finish_reason: finishReason, // OpenAI-compatible: why generation stopped
 					usage: usage,
 					done: true
@@ -766,6 +904,8 @@
 					success: result.success,
 					role: result.role,
 					contentLength: result.content.length,
+					hasReasoningContent: !!result.reasoning_content,
+					reasoningContentLength: result.reasoning_content ? result.reasoning_content.length : 0,
 					hasToolCalls: !!result.tool_calls,
 					toolCallsCount: result.tool_calls ? result.tool_calls.length : 0,
 					finishReason: result.finish_reason,
@@ -966,6 +1106,8 @@
 	window.WP_MCP_AI_EmbeddedLLM.checkWebGPUSupport = checkWebGPUSupport;
 	window.WP_MCP_AI_EmbeddedLLM.categorizeError = categorizeError;
 	window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability = checkModelSuitability;
+	window.WP_MCP_AI_EmbeddedLLM.isThinkingModel = isThinkingModel;
+	window.WP_MCP_AI_EmbeddedLLM.stripThinkTags = stripThinkTags;
 	window.WP_MCP_AI_EmbeddedLLM.waitForWebLLM = waitForWebLLM;
 	window.WP_MCP_AI_EmbeddedLLM.isWebLLMReady = function() {
 		return webLLMReady && webLLM !== null;

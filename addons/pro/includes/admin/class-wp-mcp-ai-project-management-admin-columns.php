@@ -3,6 +3,9 @@
  * Custom admin columns for project management post types.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -102,7 +105,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 							$users[] = esc_html( $user->display_name );
 						}
 					}
-					echo implode( ', ', $users );
+					echo implode( ', ', $users ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each element is pre-escaped with esc_html() above.
 				} else {
 					echo '—';
 				}

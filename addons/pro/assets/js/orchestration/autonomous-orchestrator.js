@@ -6,6 +6,9 @@
  * 
  * @package WP_MCP_AI_Pro
  * @since 1.1.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 import BrowserCircuitBreaker from './browser-circuit-breaker.js';
@@ -315,7 +318,9 @@ class AutonomousOrchestrator {
 	 * @return {string} Session ID
 	 */
 	generateSessionId() {
-		return `session_${Date.now()}_${Math.random().toString( 36 ).substr( 2, 9 )}`;
+		const array = new Uint8Array( 12 );
+		crypto.getRandomValues( array );
+		return 'session_' + Date.now() + '_' + Array.from( array, function( b ) { return b.toString( 16 ).padStart( 2, '0' ); } ).join( '' );
 	}
 
 	/**

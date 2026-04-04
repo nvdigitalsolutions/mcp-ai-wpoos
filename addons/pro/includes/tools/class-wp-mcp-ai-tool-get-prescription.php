@@ -3,6 +3,9 @@
  * Tool for getting a single prescription.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -55,6 +58,24 @@ class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_prescription',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'pharmacist' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read' );
 	}
@@ -123,6 +144,14 @@ class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MC
 				'status'             => get_post_meta( $prescription_id, '_prescription_status', true ),
 				'notes'              => $prescription->post_content,
 				'refills_remaining'  => get_post_meta( $prescription_id, '_prescription_refills_remaining', true ),
+				'rx_number'          => get_post_meta( $prescription_id, '_prescription_rx_number', true ),
+				'ndc_code'           => get_post_meta( $prescription_id, '_prescription_ndc_code', true ),
+				'route'              => get_post_meta( $prescription_id, '_prescription_route', true ),
+				'quantity'           => get_post_meta( $prescription_id, '_prescription_quantity', true ),
+				'quantity_unit'      => get_post_meta( $prescription_id, '_prescription_quantity_unit', true ),
+				'indication'         => get_post_meta( $prescription_id, '_prescription_indication', true ),
+				'pharmacy_name'      => get_post_meta( $prescription_id, '_prescription_pharmacy_name', true ),
+				'pharmacy_phone'     => get_post_meta( $prescription_id, '_prescription_pharmacy_phone', true ),
 				'created_at'         => $prescription->post_date,
 				'modified_at'        => $prescription->post_modified,
 			),

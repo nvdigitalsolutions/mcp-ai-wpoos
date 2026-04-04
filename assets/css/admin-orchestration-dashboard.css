@@ -3,6 +3,9 @@
  *
  * @package WP_MCP_AI
  * @since 1.9.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /* Dashboard Container */
@@ -548,7 +551,7 @@
 
 .system-status-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 	gap: 20px;
 }
 

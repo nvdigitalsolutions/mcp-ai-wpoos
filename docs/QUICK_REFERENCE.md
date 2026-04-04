@@ -1,18 +1,22 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.3  
-**Last Updated:** March 5, 2026
+**Version:** 1.1.6  
+**Last Updated:** March 28, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## 🆕 Recent Updates (March 2026)
 
-- **Office 365 & iCloud Drive Connection Types** ⭐ NEW – 8 new Chat Channels Toolkit tools: Outlook mail (send/retrieve), OneDrive files (list/download/upload), iCloud Drive files (list/download/upload via HTTPS gateway). Chat Channels Toolkit now has **47 tools across 11 platforms**.
-- **Telegram Mini App Authentication Fix** – Fixed Mini App stuck on "Authenticating" in Telegram WebView; added TMA session token mechanism as auth fallback; reduced `check_permission()` to `read` for GET endpoints so subscriber-level users can access the app.
-- **WordPress.org Compliance — Final Audit** – `esc_attr()` escaping added to 5 admin page attribute echoes; `ABSPATH` guards added to 4 missing files; last hardcoded menu position removed. Status: **100% — Ready for Submission**.
-- **Telegram Mini App Media Badges** – File-type extension badges (`.TXT`, `.PDF`, `.DOCX`) overlaid on file icons in the media tab.
+- **Getting Started Wizard** ⭐ NEW – 4-step onboarding wizard with 8 use-case presets (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose). Selecting a preset creates a fully-configured assistant with tools, system prompt, and tuned temperature — working out of the box. WCAG 2.1 accessible with keyboard navigation. Access via **NV oOS → Getting Started**.
+- **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
+- **Security Hardening** ⭐ NEW – AES-256-GCM encryption upgrade, finfo fail-closed MIME detection, Discord replay attack protection, HTTPS enforcement, ZIP bomb protection, OCR error info-disclosure fix.
+- **Chat Channels** – Fixed Slack @mentions, Google Chat OIDC/route issues, Teams multi-connection with OAuth one-click, Telegram typing indicator and slash-command integration.
+- **Telegram Mini App** – Doctor tab now uses connection-assigned assistant; AI replies rendered as Markdown HTML; vitals log import improved.
+- **AI Providers** – Gemini embedding-001 model, output_dimensionality, 9 new task types. Product actualization tool defaults to AI-powered mode (Gemini/OpenAI).
+- **PDF Generation** – pdfkit/cheerio/docx/exceljs bundled into generate-*.bundle.js; no runtime node_modules needed.
+- **WordPress.org Compliance** – .gitattributes excluded from ZIPs; composer.json now ships with vendor/; languages/ directory created.
 
-### Previous Updates (February 2026)
+### Previous Updates (February – early March 2026)
 
 - **WordPress.org Compliance** - Removed hardcoded admin menu positions (v1.1.2)
 - **JetEngine CPT/Taxonomy AI Integration** - AI metaboxes and Research & Add pages for all JetEngine CPTs
@@ -52,43 +56,46 @@ This quick reference provides fast access to the most common tasks and commands 
 ```bash
 # 1. Upload plugin
 # 2. Activate from WordPress admin
-# 3. Go to Settings → NV oOS
-# 4. Add OpenAI API key
-# 5. Create your first assistant
+# 3. Complete the Getting Started wizard (auto-redirects on first activation)
+#    → Step 1: Welcome
+#    → Step 2: Connect your AI provider (OpenAI, Gemini, NVIDIA NIM, Ollama, etc.)
+#    → Step 3: Choose a use-case preset (creates a ready-to-use assistant)
+#    → Step 4: You're all set — copy the [mcp_ai_chat] shortcode
 ```
 
 ### Developer Installation (GitHub Clone)
+
+> **Note:** The plugin is production-ready after cloning or installing from ZIP — no `npm install` or `composer install` is required for normal use. Built assets are already included. Only run the commands below if you need to **rebuild JavaScript/CSS assets** (development workflow).
 
 **For Cloudways (Recommended):**
 ```bash
 # SSH into your server and clone directly into plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Activate the plugin in WordPress admin — it is ready to use.
 ```
 
-**For Local/VPS:**
+**For Local/VPS (Development asset rebuild only):**
 ```bash
 # Option 1: Clone directly into WordPress (recommended)
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
-cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Activate the plugin — pre-built assets included, no npm needed.
 
-# Option 2: Clone, install, then copy
+# Option 2 (development): Clone, rebuild assets, then copy
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev
+# Only on a machine with proper write access and Node.js installed:
+npm install && npm run build
+composer install --no-dev
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 
 **⚠️ Important:** 
-- Always run `npm install` and `composer install` BEFORE moving/copying files
 - On Cloudways: Clone directly into the plugins directory to avoid errors
+- **Do NOT run `npm install` in a WordPress plugins directory on managed hosting** — npm will fail with `EACCES: permission denied` when trying to create `package-lock.json`. This is expected; the plugin does not need npm on the server.
+- If you must run npm in a restricted directory: use `npm install --no-package-lock`
 - **Note:** Autoloader optimization is configured by default in composer.json
-- If you get `ENOENT: uv_cwd` or `getcwd() failed` errors: EXIT your shell and start a NEW terminal session, then navigate to the plugin directory and run the install commands
-- Running npm/composer after moving files OR from an orphaned directory will fail
 
 ### First Chat (2 minutes)
 ```php
@@ -113,6 +120,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ### Optional Integration Keys
 - **Gemini API Key** - For Gemini provider support
+- **NVIDIA API Key** - For NVIDIA NIM provider support (get from [build.nvidia.com](https://build.nvidia.com/))
 - **Crawl4AI URL** - For web crawling capabilities
 - **Mailjet API** - For email automation
 - **QuickBooks API** - For financial reporting
@@ -583,7 +591,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 519 tools detailed (165 base + 348 pro + 6 core/memory)
+- [Tool Reference](reference/tools/tool-reference.md) - All 533 tools detailed (165 base + 368 pro)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
@@ -630,6 +638,7 @@ Settings → NV oOS → Chat Theme
 ## 🆘 Getting Help
 
 ### Quick Start Resources
+- **Getting Started Wizard** ⭐ NEW — Activate and follow the 4-step setup at **NV oOS → Getting Started** to create your first assistant in under 2 minutes
 - **[Use Cases & Quickstart Guides](getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - 7 major use cases with step-by-step guides
 - **[5-Minute Quick Start](getting-started/QUICK_START_5_MINUTES.md)** - Get started immediately
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete documentation map

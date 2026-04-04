@@ -6,6 +6,9 @@
  * format for interoperability with other healthcare systems.
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -88,6 +91,24 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_member',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'health_informatics' ),
+			'risk_level'            => 'info',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-read', 'pii-data', 'hipaa-relevant', 'data-export' );
 	}
@@ -274,20 +295,40 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Build Observation FHIR resources (vital signs).
 	 *
+	 * Prefers the vitals_log CCT (primary store) when JetEngine is active;
+	 * falls back to the options-based store when the CCT table is unavailable.
+	 *
 	 * @param int         $member_id Member ID.
-	 * @param string|null $date_from Date from.
-	 * @param string|null $date_to   Date to.
+	 * @param string|null $date_from Date from (YYYY-MM-DD).
+	 * @param string|null $date_to   Date to   (YYYY-MM-DD).
 	 * @return array FHIR Observation resources.
 	 */
 	private function build_observation_resources( $member_id, $date_from, $date_to ) {
 		$observations = array();
 
-		// Get vital signs.
+		// ── vitals_log CCT (primary source) ───────────────────────────────
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			$after_date = $date_from ? $date_from : '';
+			$rows       = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, $after_date );
+
+			foreach ( $rows as $row ) {
+				if ( $date_to && isset( $row->measurement_date ) && strcmp( $row->measurement_date, $date_to ) > 0 ) {
+					continue;
+				}
+				$obs = $this->build_observations_from_vitals_log_row( $member_id, $row );
+				foreach ( $obs as $o ) {
+					$observations[] = $o;
+				}
+			}
+
+			return $observations;
+		}
+
+		// ── Options-based fallback ────────────────────────────────────────
 		$vital_signs_key = 'wp_mcp_ai_vital_signs_' . $member_id;
-		$vital_signs = get_option( $vital_signs_key, array() );
+		$vital_signs     = get_option( $vital_signs_key, array() );
 
 		foreach ( $vital_signs as $entry_id => $entry ) {
-			// Filter by date if specified.
 			if ( $date_from && strcmp( $entry['date'], $date_from ) < 0 ) {
 				continue;
 			}
@@ -295,13 +336,12 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 				continue;
 			}
 
-			// Create observation for each measurement.
 			foreach ( $entry['measurements'] as $type => $data ) {
 				$observation = array(
-					'resourceType' => 'Observation',
-					'id'           => 'obs-' . $entry_id . '-' . $type,
-					'status'       => 'final',
-					'category'     => array(
+					'resourceType'      => 'Observation',
+					'id'                => 'obs-' . $entry_id . '-' . $type,
+					'status'            => 'final',
+					'category'          => array(
 						array(
 							'coding' => array(
 								array(
@@ -312,16 +352,15 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 							),
 						),
 					),
-					'subject'      => array(
+					'subject'           => array(
 						'reference' => 'Patient/member-' . $member_id,
 					),
 					'effectiveDateTime' => $entry['date'] . 'T' . $entry['time'] . ':00Z',
 				);
 
-				// Add measurement-specific code and value.
 				switch ( $type ) {
 					case 'blood_pressure':
-						$observation['code'] = array(
+						$observation['code']      = array(
 							'coding' => array(
 								array(
 									'system'  => 'http://loinc.org',
@@ -332,7 +371,7 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 						);
 						$observation['component'] = array(
 							array(
-								'code'  => array(
+								'code'          => array(
 									'coding' => array(
 										array(
 											'system'  => 'http://loinc.org',
@@ -349,7 +388,7 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 								),
 							),
 							array(
-								'code'  => array(
+								'code'          => array(
 									'coding' => array(
 										array(
 											'system'  => 'http://loinc.org',
@@ -369,7 +408,7 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 						break;
 
 					case 'heart_rate':
-						$observation['code'] = array(
+						$observation['code']          = array(
 							'coding' => array(
 								array(
 									'system'  => 'http://loinc.org',
@@ -385,12 +424,133 @@ class WP_MCP_AI_Tool_Export_FHIR_Data implements WP_MCP_AI_Tool_Interface, WP_MC
 							'code'   => '/min',
 						);
 						break;
-
-					// Add other vital sign mappings...
 				}
 
 				$observations[] = $observation;
 			}
+		}
+
+		return $observations;
+	}
+
+	/**
+	 * Convert a single vitals_log CCT row into one or more FHIR Observation resources.
+	 *
+	 * The vitals_log CCT stores all measurements as flat columns on a single row
+	 * (e.g. bp_systolic, bp_diastolic, heart_rate …).  This helper emits one
+	 * Observation per logical measurement group so that the resulting FHIR Bundle
+	 * is fully compliant with the R4 Observation profile.
+	 *
+	 * @param int    $member_id Member post ID.
+	 * @param object $row       CCT row from WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member().
+	 * @return array            Array of FHIR Observation resource arrays.
+	 */
+	private function build_observations_from_vitals_log_row( $member_id, $row ) {
+		$observations = array();
+		$row          = (object) $row;
+
+		$date        = ! empty( $row->measurement_date ) ? $row->measurement_date : '';
+		$time        = ! empty( $row->measurement_time ) ? $row->measurement_time : '00:00';
+		$effective   = $date . 'T' . $time . ':00Z';
+		$row_id      = ! empty( $row->_ID ) ? (int) $row->_ID : 0;
+		$subject_ref = array( 'reference' => 'Patient/member-' . $member_id );
+
+		$category = array(
+			array(
+				'coding' => array(
+					array(
+						'system'  => 'http://terminology.hl7.org/CodeSystem/observation-category',
+						'code'    => 'vital-signs',
+						'display' => 'Vital Signs',
+					),
+				),
+			),
+		);
+
+		// Blood pressure panel (only when both systolic and diastolic present).
+		if ( ! empty( $row->bp_systolic ) && ! empty( $row->bp_diastolic ) ) {
+			$observations[] = array(
+				'resourceType'      => 'Observation',
+				'id'                => 'obs-vl-' . $row_id . '-bp',
+				'status'            => 'final',
+				'category'          => $category,
+				'code'              => array(
+					'coding' => array(
+						array(
+							'system'  => 'http://loinc.org',
+							'code'    => '85354-9',
+							'display' => 'Blood pressure panel',
+						),
+					),
+				),
+				'subject'           => $subject_ref,
+				'effectiveDateTime' => $effective,
+				'component'         => array(
+					array(
+						'code'          => array(
+							'coding' => array(
+								array( 'system' => 'http://loinc.org', 'code' => '8480-6', 'display' => 'Systolic blood pressure' ),
+							),
+						),
+						'valueQuantity' => array( 'value' => (float) $row->bp_systolic, 'unit' => 'mmHg', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]' ),
+					),
+					array(
+						'code'          => array(
+							'coding' => array(
+								array( 'system' => 'http://loinc.org', 'code' => '8462-4', 'display' => 'Diastolic blood pressure' ),
+							),
+						),
+						'valueQuantity' => array( 'value' => (float) $row->bp_diastolic, 'unit' => 'mmHg', 'system' => 'http://unitsofmeasure.org', 'code' => 'mm[Hg]' ),
+					),
+				),
+			);
+		}
+
+		// Simple scalar vital-sign observations.
+		$scalar_map = array(
+			'heart_rate'        => array( 'loinc' => '8867-4', 'display' => 'Heart rate',             'unit' => 'beats/minute', 'ucum' => '/min' ),
+			'temperature'       => array( 'loinc' => '8310-5', 'display' => 'Body temperature',        'unit' => 'degF',         'ucum' => '[degF]' ),
+			'weight'            => array( 'loinc' => '29463-7', 'display' => 'Body weight',            'unit' => 'lbs',          'ucum' => '[lb_av]' ),
+			'bmi'               => array( 'loinc' => '39156-5', 'display' => 'Body mass index',        'unit' => 'kg/m2',        'ucum' => 'kg/m2' ),
+			'blood_glucose'     => array( 'loinc' => '2339-0',  'display' => 'Glucose [Mass/volume] in Blood', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
+			'oxygen_saturation' => array( 'loinc' => '59408-5', 'display' => 'Oxygen saturation',      'unit' => '%',            'ucum' => '%' ),
+			'respiratory_rate'  => array( 'loinc' => '9279-1',  'display' => 'Respiratory rate',       'unit' => 'breaths/min',  'ucum' => '/min' ),
+			'egfr'              => array( 'loinc' => '33914-3', 'display' => 'eGFR',                   'unit' => 'mL/min/1.73m2', 'ucum' => 'mL/min/{1.73_m2}' ),
+			'creatinine'        => array( 'loinc' => '38483-4', 'display' => 'Creatinine [Mass/volume] in Blood', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
+			'bun'               => array( 'loinc' => '3094-0',  'display' => 'Urea nitrogen [Mass/volume] in Serum or Plasma', 'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
+			'potassium'         => array( 'loinc' => '2823-3',  'display' => 'Potassium [Moles/volume] in Serum or Plasma',    'unit' => 'mEq/L', 'ucum' => 'meq/L' ),
+			'sodium'            => array( 'loinc' => '2951-2',  'display' => 'Sodium [Moles/volume] in Serum or Plasma',       'unit' => 'mEq/L', 'ucum' => 'meq/L' ),
+			'phosphorus'        => array( 'loinc' => '2777-1',  'display' => 'Phosphate [Mass/volume] in Serum or Plasma',     'unit' => 'mg/dL', 'ucum' => 'mg/dL' ),
+			'albumin'           => array( 'loinc' => '1751-7',  'display' => 'Albumin [Mass/volume] in Serum or Plasma',       'unit' => 'g/dL',  'ucum' => 'g/dL' ),
+		);
+
+		foreach ( $scalar_map as $field => $meta ) {
+			if ( ! isset( $row->$field ) || '' === (string) $row->$field ) {
+				continue;
+			}
+			$observations[] = array(
+				'resourceType'      => 'Observation',
+				'id'                => 'obs-vl-' . $row_id . '-' . $field,
+				'status'            => 'final',
+				'category'          => $category,
+				'code'              => array(
+					'coding' => array(
+						array(
+							'system'  => 'http://loinc.org',
+							'code'    => $meta['loinc'],
+							'display' => $meta['display'],
+						),
+					),
+				),
+				'subject'           => $subject_ref,
+				'effectiveDateTime' => $effective,
+				'valueQuantity'     => array(
+					'value'  => (float) $row->$field,
+					'unit'   => $meta['unit'],
+					'system' => 'http://unitsofmeasure.org',
+					'code'   => $meta['ucum'],
+				),
+			);
 		}
 
 		return $observations;

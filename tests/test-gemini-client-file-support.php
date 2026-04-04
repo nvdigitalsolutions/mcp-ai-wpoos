@@ -3,6 +3,9 @@
  * Tests for Gemini Client file support enhancements.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 /**
@@ -218,7 +221,7 @@ class Test_Gemini_Client_File_Support extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test extract_file_parts ignores non-file segments.
+	 * Test extract_file_parts ignores text segments and image segments without usable data.
 	 */
 	public function test_extract_file_parts_ignores_non_file_segments() {
 		$reflection = new ReflectionMethod( $this->client, 'extract_file_parts' );
@@ -230,6 +233,8 @@ class Test_Gemini_Client_File_Support extends WP_UnitTestCase {
 				'text' => 'Some text',
 			),
 			array(
+				// input_image with image_url as a bare string (no mime_type, no
+				// attachment_id) -- format_image_part cannot build a valid part.
 				'type'      => 'input_image',
 				'image_url' => 'https://example.com/image.jpg',
 			),
@@ -238,7 +243,7 @@ class Test_Gemini_Client_File_Support extends WP_UnitTestCase {
 		$result = $reflection->invoke( $this->client, $content );
 
 		$this->assertIsArray( $result, 'Should return array' );
-		$this->assertEmpty( $result, 'Should not extract non-file segments' );
+		$this->assertEmpty( $result, 'Should not extract segments that lack usable image data' );
 	}
 
 	/**
@@ -296,5 +301,116 @@ class Test_Gemini_Client_File_Support extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result, 'Should return array' );
 		$this->assertCount( 1, $result, 'Should extract only valid file part' );
+	}
+
+	/**
+	 * Test format_image_part method exists.
+	 */
+	public function test_format_image_part_method_exists() {
+		$this->assertTrue( method_exists( $this->client, 'format_image_part' ), 'format_image_part method should exist' );
+	}
+
+	/**
+	 * Test format_image_part builds fileData for a Gemini File API name.
+	 */
+	public function test_format_image_part_builds_file_data_for_gemini_file_name() {
+		$reflection = new ReflectionMethod( $this->client, 'format_image_part' );
+		$reflection->setAccessible( true );
+
+		$segment = array(
+			'type'      => 'input_image',
+			'file_id'   => 'files/abc123',
+			'mime_type' => 'image/jpeg',
+		);
+
+		$result = $reflection->invoke( $this->client, $segment );
+
+		$this->assertIsArray( $result, 'Should return array' );
+		$this->assertArrayHasKey( 'fileData', $result, 'Should build fileData part' );
+		$this->assertStringContainsString( 'files/abc123', $result['fileData']['fileUri'], 'URI should include the Gemini file name' );
+		$this->assertEquals( 'image/jpeg', $result['fileData']['mimeType'], 'mimeType should match' );
+	}
+
+	/**
+	 * Test format_image_part returns null for Gemini file name without MIME type.
+	 */
+	public function test_format_image_part_returns_null_for_gemini_file_name_without_mime() {
+		$reflection = new ReflectionMethod( $this->client, 'format_image_part' );
+		$reflection->setAccessible( true );
+
+		$segment = array(
+			'type'    => 'input_image',
+			'file_id' => 'files/abc123',
+			// No mime_type.
+		);
+
+		$result = $reflection->invoke( $this->client, $segment );
+
+		$this->assertNull( $result, 'Should return null when MIME type is missing for Gemini File API name' );
+	}
+
+	/**
+	 * Test format_image_part builds fileData for an explicit Gemini file URI.
+	 */
+	public function test_format_image_part_builds_file_data_for_explicit_uri() {
+		$reflection = new ReflectionMethod( $this->client, 'format_image_part' );
+		$reflection->setAccessible( true );
+
+		$segment = array(
+			'type'      => 'input_image',
+			'file_uri'  => 'https://generativelanguage.googleapis.com/v1beta/files/xyz789',
+			'mime_type' => 'image/png',
+		);
+
+		$result = $reflection->invoke( $this->client, $segment );
+
+		$this->assertIsArray( $result, 'Should return array' );
+		$this->assertArrayHasKey( 'fileData', $result, 'Should build fileData part' );
+		$this->assertEquals( 'https://generativelanguage.googleapis.com/v1beta/files/xyz789', $result['fileData']['fileUri'] );
+		$this->assertEquals( 'image/png', $result['fileData']['mimeType'] );
+	}
+
+	/**
+	 * Test extract_file_parts extracts input_image segments with Gemini File API names.
+	 */
+	public function test_extract_file_parts_handles_input_image_with_gemini_file_id() {
+		$reflection = new ReflectionMethod( $this->client, 'extract_file_parts' );
+		$reflection->setAccessible( true );
+
+		$content = array(
+			array(
+				'type' => 'text',
+				'text' => 'What is in this image?',
+			),
+			array(
+				'type'      => 'input_image',
+				'file_id'   => 'files/abc123',
+				'mime_type' => 'image/jpeg',
+			),
+		);
+
+		$result = $reflection->invoke( $this->client, $content );
+
+		$this->assertIsArray( $result, 'Should return array' );
+		$this->assertCount( 1, $result, 'Should extract one image part' );
+		$this->assertArrayHasKey( 'fileData', $result[0], 'Image part should use fileData' );
+	}
+
+	/**
+	 * Test format_image_part returns null when no usable image data is present.
+	 */
+	public function test_format_image_part_returns_null_for_no_data() {
+		$reflection = new ReflectionMethod( $this->client, 'format_image_part' );
+		$reflection->setAccessible( true );
+
+		$segment = array(
+			'type'      => 'input_image',
+			// No file_id, no file_uri, no url, no attachment_id.
+			'mime_type' => 'image/jpeg',
+		);
+
+		$result = $reflection->invoke( $this->client, $segment );
+
+		$this->assertNull( $result, 'Should return null when no image source is available' );
 	}
 }

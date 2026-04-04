@@ -2,6 +2,10 @@
  * Orchestration Dashboard JavaScript
  *
  * Real-time dashboard for monitoring autonomous sessions.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 (function($) {
 	'use strict';

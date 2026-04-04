@@ -6,6 +6,9 @@
  * appropriate health records (medical records, checkups, prescriptions, policies, allergies).
  *
  * @package WP_MCP_AI_Pro
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -34,7 +37,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Accepts raw, unstructured health information (notes, medical records, prescriptions, policy details, etc.) and intelligently parses it to automatically create appropriate structured health records. The AI analyzes the content, identifies record types (medical records, checkups, prescriptions, policies, allergies), extracts relevant data, and creates properly organized records in the system. Perfect for bulk data entry where users want to dump everything and let AI handle organization.', 'mcp-ai-wpoos-pro' );
+		return __( 'Accepts raw, unstructured health information (notes, medical records, prescriptions, policy details, lab results, etc.) and intelligently parses it into structured health records aligned with industry standards (HL7 FHIR, USCDI, ICD-10, NDC/RxNorm, LOINC). Detects diagnoses with ICD-10 code hints, medications with NDC codes and route of administration, allergy type (food/drug/environmental) and onset, lab values with reference ranges, insurance group numbers and plan types, immunizations/vaccinations, and vital sign readings. Automatically creates properly organized CPT records with all structured metadata fields populated. Perfect for bulk data entry where users want to paste everything and let AI handle the organization.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,7 +54,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				),
 				'raw_information'       => array(
 					'type'        => 'string',
-					'description' => __( 'Raw, unstructured health information text to parse and organize. Can include medical records, prescriptions, allergies, checkup notes, policy details, etc.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Raw, unstructured health information text to parse and organize. Can include medical records, prescriptions, allergies, checkup notes, policy details, lab results, vaccination history, vital signs, etc.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auto_create_records'   => array(
 					'type'        => 'boolean',
@@ -79,6 +82,24 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
+
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'health_wellness',
+			'post_type'             => 'mcp_ai_med_record',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'healthcare_provider', 'medical_coder' ),
+			'risk_level'            => 'standard',
+		);
+	}
+
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'ai-powered' );
 	}
@@ -89,6 +110,22 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * @var array
 	 */
 	const RECORD_TYPES = array( 'medical_records', 'checkups', 'prescriptions', 'policies', 'allergies' );
+
+	/**
+	 * FHIR resource type mapping for parsed record types.
+	 * Used to communicate interoperability context to the AI assistant.
+	 *
+	 * @var array
+	 */
+	const FHIR_RESOURCE_MAP = array(
+		'medical_records' => 'Condition',           // ICD-10/SNOMED CT coded diagnosis.
+		'checkups'        => 'Encounter',            // Clinical encounter/visit.
+		'prescriptions'   => 'MedicationStatement',  // RxNorm/NDC coded medication.
+		'policies'        => 'Coverage',             // Insurance coverage.
+		'allergies'       => 'AllergyIntolerance',   // Substance + reaction + severity.
+		'vaccinations'    => 'Immunization',          // Vaccine administered.
+		'vital_signs'     => 'Observation',          // LOINC coded vital measurement.
+	);
 
 	/**
 	 * Check if the tool is available.
@@ -169,6 +206,10 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Parse raw health information into structured data.
 	 *
+	 * Applies USCDI-aligned extraction: detects all data classes including
+	 * immunizations and vital signs as advisory hints, and annotates each
+	 * parsed record with its FHIR resource type.
+	 *
 	 * @param string $raw_text  Raw information text.
 	 * @param int    $member_id Member ID.
 	 * @return array|WP_Error Parsed data or error.
@@ -181,10 +222,14 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			'policies'        => array(),
 			'allergies'       => array(),
 			'demographics'    => array(),
+			// Advisory hints — suggest dedicated tools rather than creating CPT posts.
+			'vaccinations_detected' => array(),
+			'vital_signs_detected'  => array(),
 			'metadata'        => array(
 				'parsed_at'    => current_time( 'mysql' ),
 				'data_quality' => array(),
 				'completeness' => 0,
+				'standards'    => array( 'USCDI', 'HL7-FHIR-R4', 'ICD-10', 'NDC', 'RxNorm', 'LOINC' ),
 			),
 		);
 
@@ -199,8 +244,8 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			$line = trim( $line );
 			if ( empty( $line ) ) {
 				// Empty line might indicate end of a section.
-				if ( ! empty( $current_record ) && null !== $current_section ) {
-					// Validate and assess data quality before adding.
+				if ( ! empty( $current_record ) && null !== $current_section
+					&& in_array( $current_section, self::RECORD_TYPES, true ) ) {
 					$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 					$parsed[ $current_section ][] = $current_record;
 					$current_record               = array();
@@ -211,14 +256,28 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			// Detect record type from keywords.
 			$detected_type = $this->detect_record_type( $line );
 			if ( $detected_type ) {
-				// Save previous record if any.
-				if ( ! empty( $current_record ) && null !== $current_section ) {
+				// Advisory-only detections (vaccinations/vital_signs) — store hint, don't start CPT section.
+				if ( 'vaccinations' === $detected_type ) {
+					$parsed['vaccinations_detected'][] = sanitize_text_field( $line );
+					continue;
+				}
+				if ( 'vital_signs' === $detected_type ) {
+					$parsed['vital_signs_detected'][] = sanitize_text_field( $line );
+					continue;
+				}
+
+				// Save previous CPT record if any.
+				if ( ! empty( $current_record ) && null !== $current_section
+					&& in_array( $current_section, self::RECORD_TYPES, true ) ) {
 					$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 					$parsed[ $current_section ][] = $current_record;
 				}
 				$current_section = $detected_type;
-				$current_record  = array( 'raw_line' => $line );
-			} elseif ( null !== $current_section ) {
+				$current_record  = array(
+					'raw_line'          => $line,
+					'fhir_resource_type' => self::FHIR_RESOURCE_MAP[ $detected_type ] ?? '',
+				);
+			} elseif ( null !== $current_section && in_array( $current_section, self::RECORD_TYPES, true ) ) {
 				// Add to current record.
 				if ( ! isset( $current_record['content'] ) ) {
 					$current_record['content'] = '';
@@ -227,11 +286,14 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			}
 
 			// Extract specific data patterns.
-			$this->extract_data_patterns( $line, $current_record, $current_section );
+			if ( null !== $current_section && in_array( $current_section, self::RECORD_TYPES, true ) ) {
+				$this->extract_data_patterns( $line, $current_record, $current_section );
+			}
 		}
 
 		// Save last record.
-		if ( ! empty( $current_record ) && null !== $current_section ) {
+		if ( ! empty( $current_record ) && null !== $current_section
+			&& in_array( $current_section, self::RECORD_TYPES, true ) ) {
 			$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 			$parsed[ $current_section ][] = $current_record;
 		}
@@ -251,11 +313,12 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 		if ( ! $has_data ) {
 			$parsed['medical_records'][] = array(
-				'title'        => __( 'Imported Health Information', 'mcp-ai-wpoos-pro' ),
-				'content'      => $raw_text,
-				'record_type'  => 'general',
-				'date'         => current_time( 'Y-m-d' ),
-				'data_quality' => array(
+				'title'              => __( 'Imported Health Information', 'mcp-ai-wpoos-pro' ),
+				'content'            => $raw_text,
+				'record_type'        => 'general',
+				'date'               => current_time( 'Y-m-d' ),
+				'fhir_resource_type' => 'Condition',
+				'data_quality'       => array(
 					'completeness' => 30, // Low completeness for unstructured data.
 					'accuracy'     => 'unknown',
 				),
@@ -268,32 +331,47 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Detect record type from line content.
 	 *
+	 * Returns one of the RECORD_TYPES keys, or 'vaccinations'/'vital_signs' as
+	 * advisory hints (not CPT-creating types), or null if unrecognized.
+	 *
 	 * @param string $line Line of text.
 	 * @return string|null Record type or null.
 	 */
 	private function detect_record_type( $line ) {
-		// Allergy detection (high priority).
-		if ( preg_match( '/\b(allerg(y|ies|ic)|allergic to|allergen)\b/i', $line ) ) {
+		// Immunization/vaccination detection (USCDI: Immunizations → FHIR Immunization).
+		// Checked before prescriptions to prevent "flu shot" being parsed as medication.
+		if ( preg_match( '/\b(vaccin(ation|ated|e|es)|immuniz(ation|ed)|flu\s+shot|booster|MMR|tdap|covid[\s-]?19\s+(vaccine|shot|booster)|varicella|hepatitis\s+[abc]|pneumococcal|shingles\s+vaccine|rabies|distemper|bordetella)\b/i', $line ) ) {
+			return 'vaccinations';
+		}
+
+		// Vital signs detection (USCDI: Vital Signs → FHIR Observation/LOINC).
+		// Checked early to avoid mis-classifying BP/HR lines as medical records.
+		if ( preg_match( '/\b(blood\s+pressure|bp\s*:|systolic|diastolic|heart\s+rate|pulse\s*:|spo2|oxygen\s+saturation|temperature\s*:|body\s+temp|weight\s*:|height\s*:|bmi\s*:|respiratory\s+rate|rr\s*:)\b/i', $line ) ) {
+			return 'vital_signs';
+		}
+
+		// Allergy detection — FHIR AllergyIntolerance (high priority; checked before prescriptions).
+		if ( preg_match( '/\b(allerg(y|ies|ic)|allergic\s+to|allergen|anaphylaxis|hypersensitivity)\b/i', $line ) ) {
 			return 'allergies';
 		}
 
-		// Prescription detection.
-		if ( preg_match( '/\b(prescription|medication|medicine|drug|dosage|mg|ml|tablet|pill|capsule|rx)\b/i', $line ) ) {
+		// Prescription/medication detection — FHIR MedicationStatement (RxNorm/NDC).
+		if ( preg_match( '/\b(prescription|medication|medicine|drug|dosage|mg|ml|tablet|pill|capsule|rx\b|prescribed|dispens|pharmacist|refill|sig\s*:)\b/i', $line ) ) {
 			return 'prescriptions';
 		}
 
-		// Checkup/appointment detection.
-		if ( preg_match( '/\b(checkup|appointment|visit|scheduled|consultation|examination|exam)\b/i', $line ) ) {
+		// Checkup/appointment detection — FHIR Encounter.
+		if ( preg_match( '/\b(checkup|check-up|appointment|visit|scheduled|consultation|examination|office\s+exam|wellness\s+visit|follow[\s-]?up\s+visit)\b/i', $line ) ) {
 			return 'checkups';
 		}
 
-		// Policy detection.
-		if ( preg_match( '/\b(insurance|policy|coverage|provider|plan|premium|deductible)\b/i', $line ) ) {
+		// Policy/insurance detection — FHIR Coverage.
+		if ( preg_match( '/\b(insurance|policy|coverage|subscriber|plan\s+(name|type|id)|premium|deductible|copay|co-pay|in[\s-]?network|group\s+(number|id|#)|member\s+id|bin\s*:|pcn\s*:)\b/i', $line ) ) {
 			return 'policies';
 		}
 
-		// Medical record detection.
-		if ( preg_match( '/\b(diagnosis|diagnosed|condition|treatment|procedure|surgery|lab|test|result|imaging|x-ray|mri|ct scan)\b/i', $line ) ) {
+		// Medical record/condition detection — FHIR Condition (ICD-10/SNOMED CT).
+		if ( preg_match( '/\b(diagnosis|diagnosed|condition|treatment|procedure|surgery|lab\s+result|test\s+result|imaging|x[\s-]?ray|mri|ct\s+scan|icd[\s-]?10|icd[\s-]?code|snomed|loinc|pathology|biopsy|assessment)\b/i', $line ) ) {
 			return 'medical_records';
 		}
 
@@ -303,41 +381,199 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Extract specific data patterns from a line.
 	 *
+	 * Applies standards-aligned extraction: ICD-10 codes, NDC codes, LOINC lab patterns,
+	 * allergy type/onset/treatment, prescription route/indication/pharmacy,
+	 * checkup chief complaint/diagnosis/follow-up, and policy billing fields.
+	 *
 	 * @param string      $line            Line of text.
 	 * @param array       &$current_record Current record being built.
 	 * @param string|null $section         Current section type.
 	 */
 	private function extract_data_patterns( $line, &$current_record, $section ) {
-		// Extract dates.
-		if ( preg_match( '/\b(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})\b/', $line, $matches ) ) {
-			$current_record['date'] = $matches[1];
-		}
-
-		// Extract dosage information for prescriptions.
-		if ( 'prescriptions' === $section ) {
-			if ( preg_match( '/\b(\d+\s*(mg|ml|g|mcg))\b/i', $line, $matches ) ) {
-				$current_record['dosage'] = $matches[0];
-			}
-			if ( preg_match( '/\b(once|twice|three times|daily|weekly|monthly|every \d+ hours?)\b/i', $line, $matches ) ) {
-				$current_record['frequency'] = $matches[0];
-			}
-		}
-
-		// Extract severity for allergies.
-		if ( 'allergies' === $section ) {
-			if ( preg_match( '/\b(mild|moderate|severe)\b/i', $line, $matches ) ) {
-				$current_record['severity'] = strtolower( $matches[1] );
+		// Extract dates (covers MM/DD/YYYY, MM-DD-YYYY, YYYY-MM-DD formats).
+		if ( preg_match( '/\b(\d{4}-\d{2}-\d{2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})\b/', $line, $matches ) ) {
+			if ( empty( $current_record['date'] ) ) {
+				$current_record['date'] = $matches[1];
 			}
 		}
 
 		// Extract provider/doctor names.
 		if ( preg_match( '/\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/', $line, $matches ) ) {
-			$current_record['provider'] = $matches[0];
+			$current_record['provider'] = sanitize_text_field( $matches[0] );
+		}
+
+		// ICD-10-CM code detection (USCDI/FHIR Condition.code — e.g. E11.9, I10, M54.5).
+		// Pattern enforces: letter (valid ICD-10 range) + 2 digits + optional alphanumeric suffix.
+		if ( preg_match( '/\b([A-TV-Z][0-9]{2}\.?[0-9A-Z]{0,4})\b/', $line, $matches ) ) {
+			$current_record['icd_code'] = strtoupper( $matches[1] );
+		}
+
+		// --- Prescription-specific patterns (FHIR MedicationStatement) ---
+		if ( 'prescriptions' === $section ) {
+			// Dosage amount.
+			if ( preg_match( '/\b(\d+(?:\.\d+)?\s*(?:mg|ml|g|mcg|iu|units?))\b/i', $line, $matches ) ) {
+				$current_record['dosage'] = $matches[0];
+			}
+			// Frequency/sig.
+			if ( preg_match( '/\b(once|twice|three\s+times|q\.?d\.?|b\.?i\.?d\.?|t\.?i\.?d\.?|q\.?i\.?d\.?|every\s+\d+\s+hours?|daily|weekly|monthly|as\s+needed|prn)\b/i', $line, $matches ) ) {
+				$current_record['frequency'] = $matches[0];
+			}
+			// Route of administration.
+			if ( preg_match( '/\b(oral(ly)?|topical(ly)?|intravenous(ly)?|i\.?v\.?|injection|subcutaneous|inhaled?|sublingual|nasal|ophthalmic|otic|rectal|transdermal|patch)\b/i', $line, $matches ) ) {
+				$current_record['route'] = strtolower( $matches[1] );
+			}
+			// NDC code (National Drug Code — e.g. 0069-0010-01).
+			if ( preg_match( '/\b(\d{4,5}-\d{3,4}-\d{1,2})\b/', $line, $matches ) ) {
+				$current_record['ndc_code'] = $matches[1];
+			}
+			// Rx/Prescription number.
+			if ( preg_match( '/\bRx\s*#?\s*(\w+)\b/i', $line, $matches ) ) {
+				$current_record['rx_number'] = sanitize_text_field( $matches[1] );
+			}
+			// Indication / reason (e.g. "for hypertension", "treats type 2 diabetes").
+			if ( preg_match( '/\b(?:for|treats?|prescribed\s+for|indication\s*:)\s+([^,.\n]{3,60})/i', $line, $matches ) ) {
+				$current_record['indication'] = sanitize_text_field( trim( $matches[1] ) );
+			}
+			// Pharmacy name (e.g. "CVS Pharmacy", "Walgreens").
+			if ( preg_match( '/\b(CVS|Walgreens|Rite\s+Aid|Walmart\s+Pharmacy|Costco\s+Pharmacy|Kroger\s+Pharmacy|Publix\s+Pharmacy|[A-Z][a-z]+\s+Pharmacy)\b/', $line, $matches ) ) {
+				$current_record['pharmacy_name'] = sanitize_text_field( $matches[1] );
+			}
+		}
+
+		// --- Allergy-specific patterns (FHIR AllergyIntolerance) ---
+		if ( 'allergies' === $section ) {
+			// Allergy severity.
+			if ( preg_match( '/\b(mild|moderate|severe|life[\s-]?threatening)\b/i', $line, $matches ) ) {
+				$sev_raw = strtolower( str_replace( array( ' ', '-' ), '', $matches[1] ) );
+				// 'lifethreatening' maps to 'severe' for consistent taxonomy.
+				$current_record['severity'] = ( 'lifethreatening' === $sev_raw ) ? 'severe' : $sev_raw;
+			}
+			// Allergy type — normalised to FHIR AllergyIntolerance.category value set.
+			if ( preg_match( '/\b(food|drug|medication|environmental|environment|insect|latex|contrast\s*dye|biologic|other)\b/i', $line, $matches ) ) {
+				$raw_type = strtolower( trim( $matches[1] ) );
+				// Map to FHIR AllergyIntolerance.category: food | medication | environment | biologic | other.
+				$fhir_category_map = array(
+					'drug'         => 'medication',
+					'medication'   => 'medication',
+					'food'         => 'food',
+					'environment'  => 'environment',
+					'environmental' => 'environment',
+					'biologic'     => 'biologic',
+					'insect'       => 'environment',
+					'latex'        => 'environment',
+					'contrastdye'  => 'medication',
+				);
+				$normalized = str_replace( array( ' ', '-' ), '', $raw_type );
+				$current_record['allergy_type'] = isset( $fhir_category_map[ $normalized ] ) ? $fhir_category_map[ $normalized ] : 'other';
+			}
+			// Onset type — mapped to FHIR AllergyIntolerance.reaction.onset categories.
+			if ( preg_match( '/\b(immediate|anaphylactic|anaphylaxis|delayed|contact|late[\s-]?phase)\b/i', $line, $matches ) ) {
+				$onset_raw = strtolower( str_replace( array( ' ', '-' ), '', $matches[1] ) );
+				// Map variants: anaphylactic/anaphylaxis → immediate; contact/latephase → delayed.
+				$onset_map = array(
+					'immediate'    => 'immediate',
+					'anaphylactic' => 'immediate',
+					'anaphylaxis'  => 'immediate',
+					'delayed'      => 'delayed',
+					'contact'      => 'delayed',
+					'latephase'    => 'delayed',
+				);
+				$current_record['onset_type'] = isset( $onset_map[ $onset_raw ] ) ? $onset_map[ $onset_raw ] : 'immediate';
+			}
+			// Treatment/management protocol.
+			if ( preg_match( '/\b(EpiPen|epinephrine|antihistamine|Benadryl|diphenhydramine|corticosteroid|prednisone|avoid\s+exposure|carry\s+EpiPen)\b/i', $line, $matches ) ) {
+				if ( empty( $current_record['treatment'] ) ) {
+					$current_record['treatment'] = sanitize_text_field( $matches[0] );
+				}
+			}
+			// Reaction description.
+			if ( preg_match( '/\b(hives?|rash|swelling|anaphylaxis|itching|vomiting|diarrhea|difficulty\s+breathing|wheezing|urticaria)\b/i', $line, $matches ) ) {
+				if ( empty( $current_record['reaction'] ) ) {
+					$current_record['reaction'] = sanitize_text_field( $matches[0] );
+				}
+			}
+		}
+
+		// --- Checkup-specific patterns (FHIR Encounter) ---
+		if ( 'checkups' === $section ) {
+			// Chief complaint / reason for visit.
+			if ( preg_match( '/\b(?:chief\s+complaint|reason\s+for\s+visit|presenting\s+(?:with|complaint)|cc\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
+				$current_record['chief_complaint'] = sanitize_text_field( trim( $matches[1] ) );
+			}
+			// Diagnosis/assessment.
+			if ( preg_match( '/\b(?:diagnosis|assessment|impression|dx\s*:|a\/p\s*:)\s*(.{3,120})/i', $line, $matches ) ) {
+				$current_record['diagnosis'] = sanitize_text_field( trim( $matches[1] ) );
+			}
+			// Follow-up date / return visit.
+			if ( preg_match( '/\b(?:follow[\s-]?up\s+(?:in\s+)?|return\s+in\s+|next\s+visit\s+(?:in\s+)?)(\d+\s*(?:days?|weeks?|months?))/i', $line, $matches ) ) {
+				$current_record['follow_up_note'] = sanitize_text_field( $matches[0] );
+			}
+			// Copay amount paid.
+			if ( preg_match( '/\$\s*(\d+(?:\.\d{2})?)\s*copay/i', $line, $matches ) ) {
+				$current_record['copay_amount'] = sanitize_text_field( '$' . $matches[1] );
+			}
+			// Duration in minutes.
+			if ( preg_match( '/\b(\d+)\s*(?:min(?:utes?)?|mins?)\b/i', $line, $matches ) ) {
+				$current_record['duration_minutes'] = absint( $matches[1] );
+			}
+		}
+
+		// --- Policy-specific patterns (FHIR Coverage) ---
+		if ( 'policies' === $section ) {
+			// Group number.
+			if ( preg_match( '/\b(?:group\s*(?:number|#|id|no\.?)\s*:?\s*)([A-Z0-9-]{3,20})\b/i', $line, $matches ) ) {
+				$current_record['group_number'] = sanitize_text_field( $matches[1] );
+			}
+			// Plan type (HMO/PPO/EPO/HDHP/POS).
+			if ( preg_match( '/\b(HMO|PPO|EPO|HDHP|HSA|POS|catastrophic|indemnity)\b/i', $line, $matches ) ) {
+				$current_record['plan_type'] = strtoupper( $matches[1] );
+			}
+			// Copay amount.
+			if ( preg_match( '/\$\s*(\d+(?:\.\d{2})?)\s*(?:copay|co[\s-]?pay)/i', $line, $matches ) ) {
+				$current_record['copay_primary'] = sanitize_text_field( '$' . $matches[1] );
+			}
+			// Deductible.
+			if ( preg_match( '/\b(?:deductible\s*:?\s*)\$?\s*([\d,]+(?:\.\d{2})?)/i', $line, $matches ) ) {
+				$current_record['deductible'] = sanitize_text_field( '$' . str_replace( ',', '', $matches[1] ) );
+			}
+			// Out-of-pocket maximum.
+			if ( preg_match( '/\b(?:out[\s-]?of[\s-]?pocket\s+(?:max(?:imum)?|limit)\s*:?\s*)\$?\s*([\d,]+(?:\.\d{2})?)/i', $line, $matches ) ) {
+				$current_record['out_of_pocket_max'] = sanitize_text_field( '$' . str_replace( ',', '', $matches[1] ) );
+			}
+			// Pharmacy BIN number.
+			if ( preg_match( '/\b(?:bin|rx\s+bin)\s*#?\s*:?\s*(\d{6})\b/i', $line, $matches ) ) {
+				$current_record['rx_bin'] = $matches[1];
+			}
+			// Pharmacy PCN.
+			if ( preg_match( '/\b(?:pcn|rx\s+pcn)\s*#?\s*:?\s*([A-Z0-9]{1,10})\b/i', $line, $matches ) ) {
+				$current_record['rx_pcn'] = strtoupper( $matches[1] );
+			}
+		}
+
+		// --- Medical record-specific patterns (FHIR Condition) ---
+		if ( 'medical_records' === $section ) {
+			// Lab value with unit (LOINC-based: e.g. "glucose: 5.4 mmol/L").
+			if ( preg_match( '/\b(\d+(?:\.\d+)?)\s*(mg\/dL|mmol\/L|g\/dL|mEq\/L|U\/L|IU\/L|%|cells\/µL|K\/µL|M\/µL|pg|fL)\b/i', $line, $matches ) ) {
+				$current_record['lab_value'] = $matches[1];
+				$current_record['lab_unit']  = $matches[2];
+			}
+			// Lab reference range (e.g. "reference range: 3.5-5.0 mmol/L", "normal: 70-100").
+			if ( preg_match( '/\b(?:ref(?:erence)?\s*(?:range)?\s*:?|normal\s*:?)\s*([\d.]+-[\d.]+\s*\S*)/i', $line, $matches ) ) {
+				$current_record['lab_reference_range'] = sanitize_text_field( $matches[1] );
+			}
+			// Abnormal flag (H/L flags or "abnormal"/"high"/"low" keyword).
+			if ( preg_match( '/\b(abnormal|high\s+(?:value|result)|low\s+(?:value|result)|\bH\b|\bL\b|critical\s+value|panic\s+value)\b/i', $line ) ) {
+				$current_record['lab_abnormal'] = true;
+			}
 		}
 	}
 
 	/**
 	 * Create actual WordPress posts from parsed data.
+	 *
+	 * Saves all structured metadata fields extracted during parsing, including
+	 * the new PR 4249 fields: ICD-10 codes, NDC codes, allergy type/onset/treatment,
+	 * checkup chief complaint/diagnosis/follow-up, and policy group/plan/copay fields.
 	 *
 	 * @param array $parsed_data     Parsed health data.
 	 * @param int   $member_id       Member ID.
@@ -354,7 +590,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			'allergies'       => array(),
 		);
 
-		// Create medical records.
+		// Create medical records (FHIR Condition — ICD-10/SNOMED CT).
 		foreach ( $parsed_data['medical_records'] as $record_data ) {
 			$post_id = wp_insert_post(
 				array(
@@ -368,31 +604,45 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 			if ( $post_id && ! is_wp_error( $post_id ) ) {
 				update_post_meta( $post_id, '_record_member_id', $member_id );
-				if ( isset( $record_data['date'] ) ) {
+				if ( ! empty( $record_data['date'] ) ) {
 					update_post_meta( $post_id, '_record_date', sanitize_text_field( $record_data['date'] ) );
 				}
-				if ( isset( $record_data['provider'] ) ) {
+				if ( ! empty( $record_data['provider'] ) ) {
 					update_post_meta( $post_id, '_record_provider', sanitize_text_field( $record_data['provider'] ) );
 				}
-				if ( isset( $record_data['record_type'] ) ) {
+				if ( ! empty( $record_data['record_type'] ) ) {
 					wp_set_object_terms( $post_id, $record_data['record_type'], 'mcp_ai_record_type' );
 				}
+				// ICD-10 code (USCDI/FHIR Condition.code).
+				if ( ! empty( $record_data['icd_code'] ) ) {
+					update_post_meta( $post_id, '_medical_record_icd_code', sanitize_text_field( $record_data['icd_code'] ) );
+				}
+				// Lab result fields (FHIR Observation/LOINC).
+				if ( ! empty( $record_data['lab_value'] ) ) {
+					update_post_meta( $post_id, '_medical_record_lab_value', sanitize_text_field( $record_data['lab_value'] ) );
+				}
+				if ( ! empty( $record_data['lab_unit'] ) ) {
+					update_post_meta( $post_id, '_medical_record_lab_unit', sanitize_text_field( $record_data['lab_unit'] ) );
+				}
+				if ( ! empty( $record_data['lab_reference_range'] ) ) {
+					update_post_meta( $post_id, '_medical_record_lab_reference_range', sanitize_text_field( $record_data['lab_reference_range'] ) );
+				}
+				if ( ! empty( $record_data['lab_abnormal'] ) ) {
+					update_post_meta( $post_id, '_medical_record_lab_abnormal', 1 );
+				}
 
-				// Attach source documents for audit trail and compliance.
+				// Attach source documents for audit trail and HIPAA compliance.
 				if ( ! empty( $attachment_ids ) ) {
 					foreach ( $attachment_ids as $attachment_id ) {
-						// Link attachment to this record.
 						wp_update_post(
 							array(
 								'ID'          => $attachment_id,
 								'post_parent' => $post_id,
 							)
 						);
-						// Add relationship metadata.
 						update_post_meta( $attachment_id, '_wp_mcp_ai_linked_record_id', $post_id );
 						update_post_meta( $attachment_id, '_wp_mcp_ai_linked_record_type', 'mcp_ai_med_record' );
 					}
-					// Store attachment count for quick reference.
 					update_post_meta( $post_id, '_wp_mcp_ai_source_documents_count', count( $attachment_ids ) );
 				}
 
@@ -400,7 +650,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		// Create checkups.
+		// Create checkups (FHIR Encounter).
 		foreach ( $parsed_data['checkups'] as $checkup_data ) {
 			$post_id = wp_insert_post(
 				array(
@@ -414,17 +664,37 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 			if ( $post_id && ! is_wp_error( $post_id ) ) {
 				update_post_meta( $post_id, '_checkup_member_id', $member_id );
-				if ( isset( $checkup_data['date'] ) ) {
+				if ( ! empty( $checkup_data['date'] ) ) {
 					update_post_meta( $post_id, '_checkup_date', sanitize_text_field( $checkup_data['date'] ) );
 				}
-				if ( isset( $checkup_data['provider'] ) ) {
+				if ( ! empty( $checkup_data['provider'] ) ) {
 					update_post_meta( $post_id, '_checkup_provider', sanitize_text_field( $checkup_data['provider'] ) );
+				}
+				// Clinical documentation fields (FHIR Encounter).
+				if ( ! empty( $checkup_data['chief_complaint'] ) ) {
+					update_post_meta( $post_id, '_checkup_chief_complaint', sanitize_textarea_field( $checkup_data['chief_complaint'] ) );
+				}
+				if ( ! empty( $checkup_data['diagnosis'] ) ) {
+					update_post_meta( $post_id, '_checkup_diagnosis', sanitize_textarea_field( $checkup_data['diagnosis'] ) );
+				}
+				if ( ! empty( $checkup_data['follow_up_note'] ) ) {
+					update_post_meta( $post_id, '_checkup_follow_up_note', sanitize_text_field( $checkup_data['follow_up_note'] ) );
+				}
+				if ( ! empty( $checkup_data['copay_amount'] ) ) {
+					update_post_meta( $post_id, '_checkup_copay_amount', sanitize_text_field( $checkup_data['copay_amount'] ) );
+				}
+				if ( ! empty( $checkup_data['duration_minutes'] ) ) {
+					update_post_meta( $post_id, '_checkup_duration_minutes', absint( $checkup_data['duration_minutes'] ) );
+				}
+				// ICD-10 on the checkup if extracted.
+				if ( ! empty( $checkup_data['icd_code'] ) ) {
+					update_post_meta( $post_id, '_checkup_diagnosis_icd_code', sanitize_text_field( $checkup_data['icd_code'] ) );
 				}
 				$created['checkups'][] = $post_id;
 			}
 		}
 
-		// Create prescriptions.
+		// Create prescriptions (FHIR MedicationStatement — RxNorm/NDC).
 		foreach ( $parsed_data['prescriptions'] as $prescription_data ) {
 			$post_id = wp_insert_post(
 				array(
@@ -438,20 +708,36 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 			if ( $post_id && ! is_wp_error( $post_id ) ) {
 				update_post_meta( $post_id, '_prescription_member_id', $member_id );
-				if ( isset( $prescription_data['dosage'] ) ) {
+				if ( ! empty( $prescription_data['dosage'] ) ) {
 					update_post_meta( $post_id, '_prescription_dosage', sanitize_text_field( $prescription_data['dosage'] ) );
 				}
-				if ( isset( $prescription_data['frequency'] ) ) {
+				if ( ! empty( $prescription_data['frequency'] ) ) {
 					update_post_meta( $post_id, '_prescription_frequency', sanitize_text_field( $prescription_data['frequency'] ) );
 				}
-				if ( isset( $prescription_data['date'] ) ) {
+				if ( ! empty( $prescription_data['date'] ) ) {
 					update_post_meta( $post_id, '_prescription_start_date', sanitize_text_field( $prescription_data['date'] ) );
+				}
+				// New structured fields (NDC/RxNorm, route, indication, pharmacy).
+				if ( ! empty( $prescription_data['ndc_code'] ) ) {
+					update_post_meta( $post_id, '_prescription_ndc_code', sanitize_text_field( $prescription_data['ndc_code'] ) );
+				}
+				if ( ! empty( $prescription_data['rx_number'] ) ) {
+					update_post_meta( $post_id, '_prescription_rx_number', sanitize_text_field( $prescription_data['rx_number'] ) );
+				}
+				if ( ! empty( $prescription_data['route'] ) ) {
+					update_post_meta( $post_id, '_prescription_route', sanitize_text_field( $prescription_data['route'] ) );
+				}
+				if ( ! empty( $prescription_data['indication'] ) ) {
+					update_post_meta( $post_id, '_prescription_indication', sanitize_text_field( $prescription_data['indication'] ) );
+				}
+				if ( ! empty( $prescription_data['pharmacy_name'] ) ) {
+					update_post_meta( $post_id, '_prescription_pharmacy_name', sanitize_text_field( $prescription_data['pharmacy_name'] ) );
 				}
 				$created['prescriptions'][] = $post_id;
 			}
 		}
 
-		// Create policies.
+		// Create policies (FHIR Coverage).
 		foreach ( $parsed_data['policies'] as $policy_data ) {
 			$post_id = wp_insert_post(
 				array(
@@ -465,14 +751,36 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 			if ( $post_id && ! is_wp_error( $post_id ) ) {
 				update_post_meta( $post_id, '_policy_member_id', $member_id );
-				if ( isset( $policy_data['provider'] ) ) {
+				if ( ! empty( $policy_data['provider'] ) ) {
 					update_post_meta( $post_id, '_policy_provider', sanitize_text_field( $policy_data['provider'] ) );
+				}
+				// Insurance billing/benefit fields.
+				if ( ! empty( $policy_data['group_number'] ) ) {
+					update_post_meta( $post_id, '_policy_group_number', sanitize_text_field( $policy_data['group_number'] ) );
+				}
+				if ( ! empty( $policy_data['plan_type'] ) ) {
+					update_post_meta( $post_id, '_policy_plan_type', sanitize_text_field( $policy_data['plan_type'] ) );
+				}
+				if ( ! empty( $policy_data['copay_primary'] ) ) {
+					update_post_meta( $post_id, '_policy_copay_primary', sanitize_text_field( $policy_data['copay_primary'] ) );
+				}
+				if ( ! empty( $policy_data['deductible'] ) ) {
+					update_post_meta( $post_id, '_policy_deductible', sanitize_text_field( $policy_data['deductible'] ) );
+				}
+				if ( ! empty( $policy_data['out_of_pocket_max'] ) ) {
+					update_post_meta( $post_id, '_policy_out_of_pocket_max', sanitize_text_field( $policy_data['out_of_pocket_max'] ) );
+				}
+				if ( ! empty( $policy_data['rx_bin'] ) ) {
+					update_post_meta( $post_id, '_policy_rx_bin', sanitize_text_field( $policy_data['rx_bin'] ) );
+				}
+				if ( ! empty( $policy_data['rx_pcn'] ) ) {
+					update_post_meta( $post_id, '_policy_rx_pcn', sanitize_text_field( $policy_data['rx_pcn'] ) );
 				}
 				$created['policies'][] = $post_id;
 			}
 		}
 
-		// Create allergies.
+		// Create allergies (FHIR AllergyIntolerance).
 		foreach ( $parsed_data['allergies'] as $allergy_data ) {
 			$post_id = wp_insert_post(
 				array(
@@ -486,11 +794,25 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 			if ( $post_id && ! is_wp_error( $post_id ) ) {
 				update_post_meta( $post_id, '_allergy_member_id', $member_id );
-				if ( isset( $allergy_data['severity'] ) ) {
+				if ( ! empty( $allergy_data['severity'] ) ) {
 					wp_set_object_terms( $post_id, $allergy_data['severity'], 'mcp_ai_allergy_severity' );
+					update_post_meta( $post_id, '_allergy_severity', sanitize_text_field( $allergy_data['severity'] ) );
 				}
-				if ( isset( $allergy_data['reaction'] ) ) {
+				if ( ! empty( $allergy_data['reaction'] ) ) {
 					update_post_meta( $post_id, '_allergy_reaction', sanitize_text_field( $allergy_data['reaction'] ) );
+				}
+				// New structured allergy fields (FHIR AllergyIntolerance.category + reaction).
+				if ( ! empty( $allergy_data['allergy_type'] ) ) {
+					update_post_meta( $post_id, '_allergy_type', sanitize_text_field( $allergy_data['allergy_type'] ) );
+				}
+				if ( ! empty( $allergy_data['onset_type'] ) ) {
+					update_post_meta( $post_id, '_allergy_onset_type', sanitize_text_field( $allergy_data['onset_type'] ) );
+				}
+				if ( ! empty( $allergy_data['treatment'] ) ) {
+					update_post_meta( $post_id, '_allergy_treatment', sanitize_textarea_field( $allergy_data['treatment'] ) );
+				}
+				if ( ! empty( $allergy_data['date'] ) ) {
+					update_post_meta( $post_id, '_allergy_last_reaction_date', sanitize_text_field( $allergy_data['date'] ) );
 				}
 				$created['allergies'][] = $post_id;
 			}
@@ -500,7 +822,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * Generate summary of parsing results.
+	 * Generate summary of parsing results including FHIR resource types and advisory hints.
 	 *
 	 * @param array $parsed_data     Parsed data.
 	 * @param array $created_records Created record IDs.
@@ -508,14 +830,35 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * @return string Summary message.
 	 */
 	private function generate_parsing_summary( $parsed_data, $created_records, $attachment_ids = array() ) {
-		$summary = __( 'Health Information Parsing Results:', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		$summary = __( 'Health Information Parsing Results (HL7 FHIR-aligned):', 'mcp-ai-wpoos-pro' ) . "\n\n";
 
 		$summary .= __( 'Identified and processed:', 'mcp-ai-wpoos-pro' ) . "\n";
-		$summary .= sprintf( '• %d %s', count( $parsed_data['medical_records'] ), __( 'medical record(s)', 'mcp-ai-wpoos-pro' ) ) . "\n";
-		$summary .= sprintf( '• %d %s', count( $parsed_data['checkups'] ), __( 'checkup(s)', 'mcp-ai-wpoos-pro' ) ) . "\n";
-		$summary .= sprintf( '• %d %s', count( $parsed_data['prescriptions'] ), __( 'prescription(s)', 'mcp-ai-wpoos-pro' ) ) . "\n";
-		$summary .= sprintf( '• %d %s', count( $parsed_data['policies'] ), __( 'insurance policy/policies', 'mcp-ai-wpoos-pro' ) ) . "\n";
-		$summary .= sprintf( '• %d %s', count( $parsed_data['allergies'] ), __( 'allergy/allergies', 'mcp-ai-wpoos-pro' ) ) . "\n";
+		$summary .= sprintf( '• %d %s', count( $parsed_data['medical_records'] ), __( 'medical record(s) → FHIR Condition (ICD-10/SNOMED CT)', 'mcp-ai-wpoos-pro' ) ) . "\n";
+		$summary .= sprintf( '• %d %s', count( $parsed_data['checkups'] ), __( 'checkup(s) → FHIR Encounter', 'mcp-ai-wpoos-pro' ) ) . "\n";
+		$summary .= sprintf( '• %d %s', count( $parsed_data['prescriptions'] ), __( 'prescription(s) → FHIR MedicationStatement (NDC/RxNorm)', 'mcp-ai-wpoos-pro' ) ) . "\n";
+		$summary .= sprintf( '• %d %s', count( $parsed_data['policies'] ), __( 'insurance policy/policies → FHIR Coverage', 'mcp-ai-wpoos-pro' ) ) . "\n";
+		$summary .= sprintf( '• %d %s', count( $parsed_data['allergies'] ), __( 'allergy/allergies → FHIR AllergyIntolerance', 'mcp-ai-wpoos-pro' ) ) . "\n";
+
+		// Advisory hints for vaccinations and vital signs.
+		if ( ! empty( $parsed_data['vaccinations_detected'] ) ) {
+			$summary .= "\n";
+			$summary .= sprintf(
+				/* translators: %d: count of vaccination lines */
+				__( '💉 %d vaccination/immunization line(s) detected (USCDI: Immunizations — FHIR Immunization)', 'mcp-ai-wpoos-pro' ),
+				count( $parsed_data['vaccinations_detected'] )
+			) . "\n";
+			$summary .= __( '  → Use the Track Vaccinations tool to record these properly.', 'mcp-ai-wpoos-pro' ) . "\n";
+		}
+
+		if ( ! empty( $parsed_data['vital_signs_detected'] ) ) {
+			$summary .= "\n";
+			$summary .= sprintf(
+				/* translators: %d: count of vital signs lines */
+				__( '📊 %d vital sign reading(s) detected (USCDI: Vital Signs — FHIR Observation/LOINC)', 'mcp-ai-wpoos-pro' ),
+				count( $parsed_data['vital_signs_detected'] )
+			) . "\n";
+			$summary .= __( '  → Use the Log Vital Signs tool to record these in the CCT.', 'mcp-ai-wpoos-pro' ) . "\n";
+		}
 
 		if ( ! empty( $created_records ) ) {
 			$total_created = array_sum( array_map( 'count', $created_records ) );
@@ -533,7 +876,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 					__( '✓ %d original source document(s) preserved in media library', 'mcp-ai-wpoos-pro' ),
 					count( $attachment_ids )
 				) . "\n";
-				$summary .= __( '✓ Documents attached to records for compliance and future validation', 'mcp-ai-wpoos-pro' ) . "\n";
+				$summary .= __( '✓ Documents attached to records for HIPAA compliance and future validation', 'mcp-ai-wpoos-pro' ) . "\n";
 			}
 
 			$summary .= "\n" . __( 'You can now view and edit these records in the WordPress admin.', 'mcp-ai-wpoos-pro' );
@@ -545,9 +888,9 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Validate and enhance record with data quality metadata.
 	 *
-	 * Implements industry best practices for healthcare data quality:
-	 * - Accuracy: Verify data is correct and valid
-	 * - Completeness: Ensure all required fields are present
+	 * Implements USCDI/FHIR-aligned healthcare data quality dimensions:
+	 * - Accuracy: Verify data is correct and valid (ICD-10 format, NDC format)
+	 * - Completeness: Ensure all required fields are present (type, severity, NDC)
 	 * - Consistency: Check data follows expected formats
 	 * - Timeliness: Validate dates are reasonable
 	 * - Relevancy: Ensure data is appropriate for the record type
@@ -562,7 +905,6 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 		// Extract title if not set.
 		if ( empty( $record['title'] ) ) {
-			// Try to extract from raw_line or content.
 			if ( ! empty( $record['raw_line'] ) ) {
 				$record['title'] = sanitize_text_field( substr( $record['raw_line'], 0, 100 ) );
 			} elseif ( ! empty( $record['content'] ) ) {
@@ -580,7 +922,6 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				$issues[]       = 'invalid_date_format';
 				unset( $record['date'] );
 			} else {
-				// Check if date is in reasonable range (not in future, not too old).
 				$now         = current_time( 'timestamp' );
 				$century_ago = strtotime( '-100 years' );
 				if ( $date_timestamp > $now ) {
@@ -592,16 +933,15 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				}
 			}
 		} else {
-			// No date provided - moderate impact.
 			$quality_score -= 15;
 			$issues[]       = 'missing_date';
-			$record['date'] = current_time( 'Y-m-d' ); // Default to today.
+			$record['date'] = current_time( 'Y-m-d' );
 		}
 
-		// Type-specific validation.
+		// Type-specific validation with USCDI/FHIR field checks.
 		switch ( $type ) {
 			case 'prescriptions':
-				// Prescriptions should have dosage and frequency.
+				// FHIR MedicationStatement: dosage and frequency are essential.
 				if ( empty( $record['dosage'] ) ) {
 					$quality_score -= 10;
 					$issues[]       = 'missing_dosage';
@@ -610,30 +950,82 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 					$quality_score -= 10;
 					$issues[]       = 'missing_frequency';
 				}
+				// NDC code enables RxNorm interoperability (USCDI Medications).
+				if ( empty( $record['ndc_code'] ) ) {
+					$quality_score -= 8;
+					$issues[]       = 'missing_ndc_code';
+				}
+				// Route of administration (FHIR MedicationStatement.dosage.route).
+				if ( empty( $record['route'] ) ) {
+					$quality_score -= 5;
+					$issues[]       = 'missing_route';
+				}
+				// Indication (what condition is being treated).
+				if ( empty( $record['indication'] ) ) {
+					$quality_score -= 5;
+					$issues[]       = 'missing_indication';
+				}
 				break;
 
 			case 'allergies':
-				// Allergies should have severity.
+				// FHIR AllergyIntolerance: severity is patient safety critical.
 				if ( empty( $record['severity'] ) ) {
 					$quality_score     -= 15;
 					$issues[]           = 'missing_severity';
 					$record['severity'] = 'moderate'; // Default to moderate for safety.
 				}
+				// Allergy type (food/drug/environmental) is a USCDI required field.
+				if ( empty( $record['allergy_type'] ) ) {
+					$quality_score -= 10;
+					$issues[]       = 'missing_allergy_type';
+				}
+				// Onset type (immediate vs delayed) for clinical management.
+				if ( empty( $record['onset_type'] ) ) {
+					$quality_score -= 5;
+					$issues[]       = 'missing_onset_type';
+				}
 				break;
 
 			case 'checkups':
-				// Checkups should have provider information.
+				// FHIR Encounter: provider is required for encounter documentation.
 				if ( empty( $record['provider'] ) ) {
 					$quality_score -= 10;
 					$issues[]       = 'missing_provider';
 				}
+				// Chief complaint is clinically essential for encounter records.
+				if ( empty( $record['chief_complaint'] ) ) {
+					$quality_score -= 8;
+					$issues[]       = 'missing_chief_complaint';
+				}
+				// Diagnosis/assessment for FHIR Encounter.reasonCode.
+				if ( empty( $record['diagnosis'] ) ) {
+					$quality_score -= 8;
+					$issues[]       = 'missing_diagnosis';
+				}
 				break;
 
 			case 'medical_records':
-				// Medical records should have type.
+				// FHIR Condition: record type for taxonomy.
 				if ( empty( $record['record_type'] ) ) {
 					$quality_score        -= 5;
 					$record['record_type'] = 'general';
+				}
+				// ICD-10 code enables USCDI/FHIR Condition.code interoperability.
+				if ( empty( $record['icd_code'] ) ) {
+					$quality_score -= 10;
+					$issues[]       = 'missing_icd10_code';
+				}
+				break;
+
+			case 'policies':
+				// FHIR Coverage: group number and plan type are essential.
+				if ( empty( $record['group_number'] ) ) {
+					$quality_score -= 8;
+					$issues[]       = 'missing_group_number';
+				}
+				if ( empty( $record['plan_type'] ) ) {
+					$quality_score -= 5;
+					$issues[]       = 'missing_plan_type';
 				}
 				break;
 		}
@@ -741,7 +1133,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * Get quality improvement recommendations.
+	 * Get quality improvement recommendations based on USCDI/FHIR standards.
 	 *
 	 * @param int   $average_score Average quality score.
 	 * @param array $distribution  Quality distribution.
@@ -751,19 +1143,19 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		$recommendations = array();
 
 		if ( $average_score < 60 ) {
-			$recommendations[] = __( 'Consider adding more details like dates, providers, and dosages', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Consider adding more details like dates, providers, dosages, and ICD-10 codes', 'mcp-ai-wpoos-pro' );
 		}
 
 		if ( $distribution['low'] > 0 ) {
 			$recommendations[] = sprintf(
 				/* translators: %d: number of low quality records */
-				__( '%d record(s) have low data quality - review and enhance these records', 'mcp-ai-wpoos-pro' ),
+				__( '%d record(s) have low data quality — review and add ICD-10 codes, NDC codes, allergy types, or policy group numbers', 'mcp-ai-wpoos-pro' ),
 				$distribution['low']
 			);
 		}
 
 		if ( empty( $recommendations ) ) {
-			$recommendations[] = __( 'Data quality is good - maintain current standards', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Data quality is good — maintain current USCDI/FHIR standards', 'mcp-ai-wpoos-pro' );
 		}
 
 		return $recommendations;

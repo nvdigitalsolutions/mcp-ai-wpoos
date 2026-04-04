@@ -37,6 +37,7 @@ BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
+BUILD_TOOLKITS=false
 SKIP_NPM_BUILD=false
 VERSION=""
 
@@ -59,6 +60,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_CORE_ONLY=true
             shift
             ;;
+        --toolkits)
+            BUILD_TOOLKITS=true
+            shift
+            ;;
         --skip-npm-build)
             SKIP_NPM_BUILD=true
             shift
@@ -71,6 +76,7 @@ while [[ $# -gt 0 ]]; do
             BUILD_BASE=true
             BUILD_PRO=true
             BUILD_COMBINED=true
+            BUILD_TOOLKITS=true
             shift
             ;;
         -h|--help)
@@ -81,7 +87,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --pro             Build pro add-on (requires base plugin)"
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
-            echo "  --all             Build all main versions (base, pro, combined)"
+            echo "  --toolkits        Build individual toolkit add-on ZIPs"
+            echo "  --all             Build all versions (base, pro, combined, toolkits)"
             echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
@@ -105,7 +112,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # If no build type specified, build all versions (base, pro, combined, and core-only)
-if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ]; then
+if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ] && [ "$BUILD_TOOLKITS" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
@@ -129,6 +136,7 @@ echo "Build targets:"
 [ "$BUILD_PRO" = true ] && echo "  ✓ Pro add-on (mcp-ai-wpoos-pro)"
 [ "$BUILD_COMBINED" = true ] && echo "  ✓ Base + Pro combined (mcp-ai-wpoos)"
 [ "$BUILD_CORE_ONLY" = true ] && echo "  ✓ Core plugin (mcp-ai-wpoos-core) - lightweight"
+[ "$BUILD_TOOLKITS" = true ] && echo "  ✓ Individual toolkit add-ons (build/toolkit-addons/)"
 echo ""
 
 # Check requirements
@@ -159,7 +167,7 @@ if [ "$SKIP_NPM_BUILD" = true ]; then
 else
     echo "Step 1: Building frontend assets..."
     npm ci --silent 2>/dev/null || npm install --silent
-    npm run build
+    npm run build:full
     echo "✅ Frontend assets built"
 fi
 echo ""
@@ -196,17 +204,21 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.codex' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.bmad' \
+        --exclude '.context' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.gitattributes' \
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
+        --exclude 'MAINTAINER_MAP.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -233,12 +245,18 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
-        --exclude 'composer.json' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
         --exclude '.codecov.yml' \
         --exclude 'esbuild.config.pro.js' \
+        --exclude 'cleancss.config.js' \
+        --exclude 'cosmos.config.json' \
+        --exclude 'cosmos.webpack.config.js' \
+        --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma.js' \
+        --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -456,16 +474,21 @@ if [ "$BUILD_PRO" = true ]; then
         rsync -av --quiet addons/pro/ "build/${PRO_SLUG}/" \
             --exclude '.git' \
             --exclude '.gitignore' \
+            --exclude '.gitattributes' \
+            --exclude '.distignore' \
+            --exclude '.npmrc' \
             --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
             --exclude 'test' \
             --exclude 'Test' \
             --exclude 'Tests' \
+            --exclude 'docs' \
             --exclude '*.zip' \
             --exclude 'assets/examples' \
             --exclude 'composer.lock' \
             --exclude 'package-lock.json' \
+            --exclude 'package.json' \
             --exclude '*.js.map' \
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
@@ -513,6 +536,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/psalm.xml*' \
             --exclude 'vendor/*/.php-cs-fixer*' \
             --exclude 'vendor/*/*/phpunit.xml*' \
+            --exclude 'vendor/*/*/*/phpunit.xml*' \
             --exclude 'vendor/*/*/phpstan.neon*' \
             --exclude 'vendor/*/*/psalm.xml*' \
             --exclude 'vendor/*/*/.php-cs-fixer*' \
@@ -650,17 +674,21 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.codex' \
         --exclude '.devcontainer' \
         --exclude '.vscode' \
+        --exclude '.bmad' \
+        --exclude '.context' \
         --exclude 'node_modules' \
         --exclude 'tests' \
         --exclude 'coverage' \
-        --exclude 'build' \
+        --exclude '/build' \
         --exclude 'svn-*' \
         --exclude '.eslintrc.json' \
         --exclude '.eslintignore' \
         --exclude '.gitignore' \
+        --exclude '.gitattributes' \
         --exclude '.editorconfig' \
         --exclude '.nvmrc' \
         --exclude 'CODEOWNERS' \
+        --exclude 'MAINTAINER_MAP.md' \
         --exclude 'phpunit.xml.dist' \
         --exclude 'composer.lock' \
         --exclude 'package-lock.json' \
@@ -687,12 +715,18 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
-        --exclude 'composer.json' \
         --exclude 'package.json' \
         --exclude 'tsconfig.json' \
         --exclude '.npmrc' \
         --exclude '.codecov.yml' \
         --exclude 'esbuild.config.pro.js' \
+        --exclude 'cleancss.config.js' \
+        --exclude 'cosmos.config.json' \
+        --exclude 'cosmos.webpack.config.js' \
+        --exclude 'webpack.config.tma-builder.js' \
+        --exclude 'webpack.config.tma-woo-shop.js' \
+        --exclude 'webpack.config.tma.js' \
+        --exclude 'webpack.config.workflow.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -788,6 +822,15 @@ if [ "$BUILD_COMBINED" = true ]; then
 fi
 
 # ============================================================================
+# Build Individual Toolkit Add-ons
+# ============================================================================
+if [ "$BUILD_TOOLKITS" = true ]; then
+    echo "Step 3e: Building individual toolkit add-ons..."
+    "$SCRIPT_DIR/build-toolkit-addons.sh" --version "$VERSION"
+    echo ""
+fi
+
+# ============================================================================
 # Summary
 # ============================================================================
 echo "=========================================="
@@ -796,6 +839,11 @@ echo "=========================================="
 echo ""
 echo "📦 Output files in build/:"
 ls -lh build/*.zip 2>/dev/null | awk '{print "   " $NF " (" $5 ")"}'
+if [ "$BUILD_TOOLKITS" = true ] && [ -d "build/toolkit-addons" ]; then
+    echo ""
+    echo "📦 Toolkit add-ons in build/toolkit-addons/:"
+    ls -lh build/toolkit-addons/*.zip 2>/dev/null | awk '{print "   " $NF " (" $5 ")"}'
+fi
 echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
@@ -807,6 +855,7 @@ if [ "$BUILD_CORE_ONLY" = true ]; then
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
     echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
 fi
+[ "$BUILD_TOOLKITS" = true ] && echo "     - build/toolkit-addons/oos-toolkit-*-${VERSION}.zip (Individual toolkit add-ons)"
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
 

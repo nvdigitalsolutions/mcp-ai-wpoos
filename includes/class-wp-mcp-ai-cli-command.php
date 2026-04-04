@@ -3,6 +3,9 @@
  * WP-CLI commands for the NV oOS plugin.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Files.OneClassPerFile.MultipleFound, PSR1.Files.SideEffects.FoundWithSymbols -- CLI command file with multiple command classes and helper functions.
@@ -1298,6 +1301,31 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	// Load Slash Command CLI commands.
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-slash-command.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-slash-command.php';
+	}
+
+	// Load Assistant CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Assistant_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-assistant-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-assistant-command.php';
+	}
+
+	// Load Tool CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Tool_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-tool-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-tool-command.php';
+	}
+
+	// Load Settings CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Settings_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-settings-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-settings-command.php';
+	}
+
+	// Load Credential CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Credential_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-credential-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-credential-command.php';
+	}
+
+	// Load Log CLI commands.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Log_Command' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-log-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-log-command.php';
 	}
 
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );

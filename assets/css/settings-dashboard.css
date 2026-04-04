@@ -2,6 +2,10 @@
  * NV oOS Settings Dashboard Styles
  *
  * Modern, tabbed settings interface styling.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 .wp-mcp-ai-settings-dashboard {
@@ -752,7 +756,7 @@
 /* Token Manager Table Action Buttons */
 .wp-mcp-ai-token-manager table td:last-child {
 	white-space: nowrap;
-	min-width: 140px;
+	min-width: 80px;
 }
 
 .wp-mcp-ai-reset-user-usage,

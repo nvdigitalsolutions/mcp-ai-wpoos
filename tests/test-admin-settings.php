@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests for the admin settings class.
+ *
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
@@ -27,11 +31,11 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'default_provider', $defaults );
 		$this->assertSame( 'openai', $defaults['default_provider'] );
 		$this->assertArrayHasKey( 'openai_image_model', $defaults );
-		$this->assertSame( 'gpt-image-1', $defaults['openai_image_model'] );
+		$this->assertSame( 'gpt-image-1.5', $defaults['openai_image_model'] );
 		$this->assertArrayHasKey( 'openai_image_size', $defaults );
 		$this->assertSame( '1024x1024', $defaults['openai_image_size'] );
 		$this->assertArrayHasKey( 'openai_image_quality', $defaults );
-		$this->assertSame( 'standard', $defaults['openai_image_quality'] );
+		$this->assertSame( 'medium', $defaults['openai_image_quality'] );
 		$this->assertArrayHasKey( 'openai_image_response_format', $defaults );
 		$this->assertSame( 'b64_json', $defaults['openai_image_response_format'] );
 	}
@@ -1034,6 +1038,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that the admin settings script enqueues jquery-ui-sortable dependency.
+	 *
+	 * Note: The legacy admin_enqueue_scripts hook is intentionally disabled in
+	 * the constructor (replaced by WP_MCP_AI_Settings_Dashboard), so we invoke
+	 * enqueue_admin_assets() directly instead of relying on do_action().
 	 */
 	public function test_admin_settings_script_enqueues_sortable_dependency() {
 		// Create an admin user and set as current user.
@@ -1046,8 +1054,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Set the current screen to the settings page.
 		set_current_screen( 'settings_page_wp-mcp-ai-settings' );
 
-		// Trigger the enqueue_admin_assets method.
-		do_action( 'admin_enqueue_scripts', 'settings_page_wp-mcp-ai-settings' );
+		// Call enqueue_admin_assets directly — the admin_enqueue_scripts hook
+		// is disabled in the constructor because the legacy settings page has
+		// been replaced by WP_MCP_AI_Settings_Dashboard.
+		$admin_settings->enqueue_admin_assets( 'settings_page_wp-mcp-ai-settings' );
 
 		// Check if the admin settings script is enqueued.
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-admin-settings', 'enqueued' ) );

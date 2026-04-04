@@ -12,6 +12,9 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -729,7 +732,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$phone_number_id_meta = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
-		$connection_id_meta   = isset( $message_data['connection_id'] ) ? $message_data['connection_id'] : '';
+		$resolved_connection  = ! empty( $phone_number_id_meta ) ? $this->get_connection_by_phone_number_id( $phone_number_id_meta ) : null;
+		$connection_id_meta   = $resolved_connection && isset( $resolved_connection['id'] ) ? sanitize_key( $resolved_connection['id'] ) : '';
+		// Augment message_data with the resolved connection_id so downstream hooks see it.
+		$message_data['connection_id'] = $connection_id_meta;
 
 		// Persist to Channel Contacts CCT (find or create contact record).
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
@@ -737,8 +743,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'whatsapp',
 				$from,
 				array(
-					'display_name' => $contact_name,
-					'phone_number' => $from,
+					'display_name'      => $contact_name,
+					'phone_number'      => $from,
+					'connection_id'     => $connection_id_meta,
+					'conversation_type' => 'dm',
 				)
 			);
 
@@ -770,6 +778,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => $timestamp,
 					'reply_sent'         => 0,
 					'assigned_agent'     => '',
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
@@ -924,7 +933,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// --- Human takeover gate ---
 		if ( ! empty( $from ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', $from ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', $from, isset( $message_data['connection_id'] ) ? $message_data['connection_id'] : '' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'whatsapp_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -967,6 +976,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$should_reply = apply_filters( 'wp_mcp_ai_whatsapp_should_auto_reply', ! empty( $assigned_assistant_ids ), $message_data, $context );
 
 		if ( ! $should_reply ) {
+			return;
+		}
+
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'whatsapp', $from ) ) {
 			return;
 		}
 
@@ -1325,12 +1341,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 									'timestamp'          => time(),
 									'reply_sent'         => 1,
 									'assigned_agent'     => (string) $assistant_id,
+									'conversation_type'  => 'dm',
 								)
 							);
 						}
 						// Touch the contact record to update last_message_at.
 						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
 							if ( $wa_contact_row_id ) {
 								WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 							}
@@ -1377,13 +1394,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 					'timestamp'          => time(),
 					'reply_sent'         => 1,
 					'assigned_agent'     => (string) $assistant_id,
+					'conversation_type'  => 'dm',
 				)
 			);
 		}
 
 		// Touch the contact record to update last_message_at.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to, array( 'connection_id' => $connection_id, 'conversation_type' => 'dm' ) );
 			if ( $wa_contact_row_id ) {
 				WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
 			}
@@ -1608,7 +1626,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$id = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from trusted CCT helper.
 				sanitize_key( $channel ),
 				sanitize_text_field( $channel_contact_id )
 			)

@@ -3,6 +3,9 @@
  * Tool that searches WordPress content with taxonomy and meta filters.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -164,8 +167,8 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
 		$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
-		$settings  = get_option( 'wp_mcp_ai_settings', array() );
-		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
+		$settings    = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit   = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
 		$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
 

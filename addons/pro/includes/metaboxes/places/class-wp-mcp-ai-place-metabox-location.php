@@ -3,6 +3,9 @@
  * Place Location Metabox.
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -114,7 +117,7 @@ class WP_MCP_AI_Place_Metabox_Location extends WP_MCP_AI_Place_Metabox_Base {
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_place_location_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_place_location_nonce'], 'wp_mcp_ai_place_location_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_place_location_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_place_location_nonce'] ) ), 'wp_mcp_ai_place_location_nonce' ) ) {
 			return;
 		}
 
@@ -123,7 +126,7 @@ class WP_MCP_AI_Place_Metabox_Location extends WP_MCP_AI_Place_Metabox_Base {
 		}
 
 		if ( isset( $_POST['place_address'] ) ) {
-			update_post_meta( $post_id, '_place_address', sanitize_text_field( $_POST['place_address'] ) );
+			update_post_meta( $post_id, '_place_address', sanitize_text_field( wp_unslash( $_POST['place_address'] ) ) );
 		}
 
 		if ( isset( $_POST['place_latitude'] ) ) {
@@ -136,19 +139,19 @@ class WP_MCP_AI_Place_Metabox_Location extends WP_MCP_AI_Place_Metabox_Base {
 
 		$components = array();
 		if ( isset( $_POST['place_street'] ) ) {
-			$components['street'] = sanitize_text_field( $_POST['place_street'] );
+			$components['street'] = sanitize_text_field( wp_unslash( $_POST['place_street'] ) );
 		}
 		if ( isset( $_POST['place_city'] ) ) {
-			$components['city'] = sanitize_text_field( $_POST['place_city'] );
+			$components['city'] = sanitize_text_field( wp_unslash( $_POST['place_city'] ) );
 		}
 		if ( isset( $_POST['place_state'] ) ) {
-			$components['state'] = sanitize_text_field( $_POST['place_state'] );
+			$components['state'] = sanitize_text_field( wp_unslash( $_POST['place_state'] ) );
 		}
 		if ( isset( $_POST['place_country'] ) ) {
-			$components['country'] = sanitize_text_field( $_POST['place_country'] );
+			$components['country'] = sanitize_text_field( wp_unslash( $_POST['place_country'] ) );
 		}
 		if ( isset( $_POST['place_postal_code'] ) ) {
-			$components['postal_code'] = sanitize_text_field( $_POST['place_postal_code'] );
+			$components['postal_code'] = sanitize_text_field( wp_unslash( $_POST['place_postal_code'] ) );
 		}
 
 		if ( ! empty( $components ) ) {

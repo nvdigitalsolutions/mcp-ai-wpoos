@@ -3,6 +3,9 @@
  * Orchestration Settings Section
  *
  * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -429,6 +432,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 			);
 		}
+
 
 		/**
 		 * Get intro content HTML.
@@ -1721,7 +1725,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.executive-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 					gap: 20px;
 					margin: 30px 0;
 				}
@@ -1897,7 +1901,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.action-cards-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 					gap: 20px;
 				}
 				
@@ -2226,8 +2230,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
-			echo wp_kses_post( WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML including inline admin script; wp_kses_post() must not be used here as it strips <script> tags.
+			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
 
 		/**
@@ -2464,7 +2468,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<style>
 				.wp-mcp-ai-agents-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+					grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
@@ -2632,7 +2636,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
@@ -3156,8 +3160,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										</div>
 									</div>
 								</div>
-								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small">
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 								</a>
 							</div>
 							
@@ -3320,7 +3325,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
@@ -3956,8 +3961,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										<?php endif; ?>
 									</div>
 								</div>
-								<a href="<?php echo esc_url( $team['edit_url'] ); ?>" class="button button-small">
-									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								<a href="<?php echo esc_url( $team['edit_url'] ); ?>" class="button button-small" title="<?php esc_attr_e( 'Edit', 'mcp-ai-wpoos' ); ?>">
+									<span class="dashicons dashicons-edit" aria-hidden="true"></span>
+									<span class="screen-reader-text"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></span>
 								</a>
 							</div>
 							
@@ -4118,7 +4124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
-					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
