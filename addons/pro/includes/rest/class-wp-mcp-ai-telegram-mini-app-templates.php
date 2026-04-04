@@ -91,12 +91,15 @@ abstract class WP_MCP_AI_Telegram_Mini_App_Template_Base {
 	 *                    media_url, settings_url, analytics_url, shop_url,
 	 *                    login_url, chart_js_url, site_name, nonce, page_title,
 	 *                    assistant_id (resolved Mini App assistant ID string),
+	 *                    connection_id (Telegram connection ID for multi-bot
+	 *                    setups; empty string when using the global endpoint),
 	 *                    chat_url (absolute URL to /mcp-ai/v1/telegram-mini-app/chat –
 	 *                    a TMA-aware endpoint that accepts both WordPress nonces and the
 	 *                    TMA session token returned by validate_url),
 	 *                    validate_url (absolute URL to /mcp-ai/v1/telegram-mini-app/validate –
 	 *                    call this on page load to authenticate the Telegram user and
 	 *                    receive a fresh wp_nonce and tma_token for subsequent requests).
+	 *                    All URLs include the connection_id path segment when present.
 	 * @return string
 	 */
 	abstract public function render_html( array $ctx );
