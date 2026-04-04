@@ -122,9 +122,9 @@ class WP_MCP_AI_A2A_Task_Manager {
 	/**
 	 * Transition a task to a new state.
 	 *
-	 * @param string      $task_id   The task ID.
-	 * @param string      $new_state The target state.
-	 * @param array|null  $message   Optional status message.
+	 * @param string     $task_id   The task ID.
+	 * @param string     $new_state The target state.
+	 * @param array|null $message   Optional status message.
 	 * @return array|WP_Error Updated task or error.
 	 */
 	public static function transition_state( $task_id, $new_state, $message = null ) {
@@ -316,7 +316,7 @@ class WP_MCP_AI_A2A_Task_Manager {
 			}
 		}
 
-		$page_tasks     = array_slice( $tasks_indexed, $start_index, $args['per_page'] );
+		$page_tasks      = array_slice( $tasks_indexed, $start_index, $args['per_page'] );
 		$next_page_token = '';
 
 		if ( $start_index + $args['per_page'] < count( $tasks_indexed ) ) {
@@ -372,9 +372,9 @@ class WP_MCP_AI_A2A_Task_Manager {
 	 * Delete expired tasks to prevent unbounded growth.
 	 */
 	public static function cleanup_expired_tasks() {
-		$tasks       = self::get_all_tasks();
-		$now         = time();
-		$changed     = false;
+		$tasks   = self::get_all_tasks();
+		$now     = time();
+		$changed = false;
 
 		foreach ( $tasks as $task_id => $task ) {
 			$timestamp = isset( $task['status']['timestamp'] ) ? strtotime( $task['status']['timestamp'] ) : 0;
@@ -413,7 +413,7 @@ class WP_MCP_AI_A2A_Task_Manager {
 		// Enforce max task limit by removing oldest expired tasks first.
 		if ( count( $tasks ) > self::MAX_TASKS ) {
 			self::cleanup_expired_tasks();
-			$tasks = self::get_all_tasks();
+			$tasks                = self::get_all_tasks();
 			$tasks[ $task['id'] ] = $task;
 
 			// If still over limit, remove oldest.

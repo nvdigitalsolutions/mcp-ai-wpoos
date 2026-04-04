@@ -85,18 +85,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 				// ========================================
 				// A2A SERVER SETTINGS
 				// ========================================
-				'_heading_a2a_server'                => array(
+				'_heading_a2a_server'           => array(
 					'type'  => 'heading',
 					'label' => __( 'A2A Server', 'mcp-ai-wpoos' ),
 				),
-				'enable_a2a_server'                  => array(
+				'enable_a2a_server'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable A2A Server', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable A2A protocol endpoints and agent discovery', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, your site will serve an Agent Card at <code>/.well-known/agent.json</code> and accept A2A JSON-RPC requests at <code>/wp-json/mcp-ai/v1/a2a</code>. External agents can discover and communicate with your assistants.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'a2a_exposed_assistants'             => array(
+				'a2a_exposed_assistants'        => array(
 					'type'        => 'text',
 					'label'       => __( 'Exposed Assistants', 'mcp-ai-wpoos' ),
 					'description' => __( 'Comma-separated list of assistant post IDs to expose via A2A. Leave empty to expose the default assistant only. Each exposed assistant will have its own Agent Card.', 'mcp-ai-wpoos' ),
@@ -106,11 +106,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 				// ========================================
 				// PUSH NOTIFICATIONS
 				// ========================================
-				'_heading_a2a_push'                  => array(
+				'_heading_a2a_push'             => array(
 					'type'  => 'heading',
 					'label' => __( 'Push Notifications', 'mcp-ai-wpoos' ),
 				),
-				'a2a_enable_push_notifications'      => array(
+				'a2a_enable_push_notifications' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Push Notifications', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Allow clients to register webhooks for task updates', 'mcp-ai-wpoos' ),
@@ -121,18 +121,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 				// ========================================
 				// A2A CLIENT SETTINGS
 				// ========================================
-				'_heading_a2a_client'                => array(
+				'_heading_a2a_client'           => array(
 					'type'  => 'heading',
 					'label' => __( 'A2A Client (Outbound)', 'mcp-ai-wpoos' ),
 				),
-				'enable_a2a_client'                  => array(
+				'enable_a2a_client'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable A2A Client', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Allow assistants to delegate tasks to remote A2A agents', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the "Delegate to A2A Agent" tool becomes available, allowing your assistants to discover and communicate with external A2A-compliant agents. This enables cross-organizational agent collaboration.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'a2a_default_auth_type'              => array(
+				'a2a_default_auth_type'         => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Authentication Type', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default authentication method when connecting to remote A2A agents.', 'mcp-ai-wpoos' ),
@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_A2A' ) ) {
 					),
 					'default'     => 'none',
 				),
-				'a2a_default_auth_token'             => array(
+				'a2a_default_auth_token'        => array(
 					'type'        => 'password',
 					'label'       => __( 'Default Auth Token / API Key', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default authentication credential for outbound A2A requests. Can be overridden per-request by the tool.', 'mcp-ai-wpoos' ),

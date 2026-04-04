@@ -56,9 +56,9 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_REST                     $rest          Main REST controller instance.
-	 * @param WP_MCP_AI_REST_Authenticator|null   $authenticator Authentication handler.
-	 * @param WP_MCP_AI_REST_Validator|null        $validator     Request validator.
+	 * @param WP_MCP_AI_REST                    $rest          Main REST controller instance.
+	 * @param WP_MCP_AI_REST_Authenticator|null $authenticator Authentication handler.
+	 * @param WP_MCP_AI_REST_Validator|null     $validator     Request validator.
 	 */
 	public function __construct( $rest, $authenticator = null, $validator = null ) {
 		parent::__construct( $authenticator, $validator );
@@ -310,7 +310,7 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 			WP_MCP_AI_A2A_Task_Manager::transition_state( $task_id, WP_MCP_AI_A2A_Task_Manager::STATE_WORKING );
 		} else {
 			// Create new task.
-			$task = WP_MCP_AI_A2A_Task_Manager::create_task( $a2a_message, $context_id );
+			$task    = WP_MCP_AI_A2A_Task_Manager::create_task( $a2a_message, $context_id );
 			$task_id = $task['id'];
 			WP_MCP_AI_A2A_Task_Manager::transition_state( $task_id, WP_MCP_AI_A2A_Task_Manager::STATE_WORKING );
 		}
@@ -725,8 +725,8 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Build a JSON-RPC 2.0 response.
 	 *
-	 * @param mixed            $id     The request ID.
-	 * @param array|WP_Error   $result The result or error.
+	 * @param mixed          $id     The request ID.
+	 * @param array|WP_Error $result The result or error.
 	 * @return WP_REST_Response The JSON-RPC response.
 	 */
 	protected function build_jsonrpc_response( $id, $result ) {
@@ -762,17 +762,17 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 */
 	protected function map_error_code( $error_code ) {
 		$map = array(
-			'a2a_invalid_params'         => -32602,
-			'a2a_method_not_found'       => -32601,
-			'a2a_task_not_found'         => -32001,
-			'a2a_task_not_cancelable'    => -32002,
-			'a2a_push_not_supported'     => -32003,
-			'a2a_unsupported_operation'  => -32004,
+			'a2a_invalid_params'             => -32602,
+			'a2a_method_not_found'           => -32601,
+			'a2a_task_not_found'             => -32001,
+			'a2a_task_not_cancelable'        => -32002,
+			'a2a_push_not_supported'         => -32003,
+			'a2a_unsupported_operation'      => -32004,
 			'a2a_content_type_not_supported' => -32005,
-			'a2a_version_not_supported'  => -32006,
-			'a2a_disabled'               => -32007,
-			'a2a_invalid_assistant'      => -32008,
-			'a2a_invalid_transition'     => -32009,
+			'a2a_version_not_supported'      => -32006,
+			'a2a_disabled'                   => -32007,
+			'a2a_invalid_assistant'          => -32008,
+			'a2a_invalid_transition'         => -32009,
 		);
 
 		return isset( $map[ $error_code ] ) ? $map[ $error_code ] : -32603;

@@ -99,7 +99,7 @@ class WP_MCP_AI_A2A_Message_Translator {
 	 * @param string $mime_type   The content MIME type.
 	 * @return array A2A Artifact object.
 	 */
-	public static function chat_to_a2a_artifact( $content, $name = '', $description = '', $mime_type = 'text/plain' ) {
+	public static function chat_to_a2a_artifact( $content, $name = '', $description = '', $mime_type = 'text/plain' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Reserved for future use.
 		$artifact = array(
 			'artifactId' => wp_generate_uuid4(),
 			'parts'      => array(
@@ -124,7 +124,7 @@ class WP_MCP_AI_A2A_Message_Translator {
 	/**
 	 * Convert a tool call result to an A2A Artifact.
 	 *
-	 * @param array $tool_result The tool execution result.
+	 * @param array  $tool_result The tool execution result.
 	 * @param string $tool_slug  The tool slug.
 	 * @return array A2A Artifact object.
 	 */
@@ -152,10 +152,10 @@ class WP_MCP_AI_A2A_Message_Translator {
 	 * @param string     $context_id The context ID.
 	 * @param string     $state      The new state.
 	 * @param array|null $message    Optional status message.
-	 * @param bool       $final      Whether this is the final event.
+	 * @param bool       $is_final  Whether this is the final event.
 	 * @return array TaskStatusUpdateEvent object.
 	 */
-	public static function build_status_update( $task_id, $context_id, $state, $message = null, $final = false ) {
+	public static function build_status_update( $task_id, $context_id, $state, $message = null, $is_final = false ) {
 		$event = array(
 			'kind'      => 'status-update',
 			'taskId'    => $task_id,
@@ -164,7 +164,7 @@ class WP_MCP_AI_A2A_Message_Translator {
 				'state'     => $state,
 				'timestamp' => gmdate( 'Y-m-d\TH:i:s\Z' ),
 			),
-			'final'     => $final,
+			'final'     => $is_final,
 		);
 
 		if ( $message ) {
@@ -241,9 +241,9 @@ class WP_MCP_AI_A2A_Message_Translator {
 	 */
 	protected static function map_a2a_role_to_chat( $a2a_role ) {
 		$map = array(
-			'user'      => 'user',
-			'role_user' => 'user',
-			'agent'     => 'assistant',
+			'user'       => 'user',
+			'role_user'  => 'user',
+			'agent'      => 'assistant',
 			'role_agent' => 'assistant',
 		);
 

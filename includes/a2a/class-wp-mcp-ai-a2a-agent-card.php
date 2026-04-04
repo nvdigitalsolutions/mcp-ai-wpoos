@@ -97,7 +97,7 @@ class WP_MCP_AI_A2A_Agent_Card {
 
 		$card = array(
 			'name'                => $name,
-			'description'         => $description ?: __( 'An AI assistant powered by NV oOS.', 'mcp-ai-wpoos' ),
+			'description'         => ! empty( $description ) ? $description : __( 'An AI assistant powered by NV oOS.', 'mcp-ai-wpoos' ),
 			'url'                 => $a2a_url,
 			'protocolVersion'     => self::PROTOCOL_VERSION,
 			'version'             => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
@@ -286,7 +286,7 @@ class WP_MCP_AI_A2A_Agent_Card {
 
 		// OAuth2 / Auth0 (if configured).
 		if ( ! empty( $settings['auth0_domain'] ) ) {
-			$auth0_domain = rtrim( $settings['auth0_domain'], '/' );
+			$auth0_domain      = rtrim( $settings['auth0_domain'], '/' );
 			$schemes['oauth2'] = array(
 				'type'             => 'openIdConnect',
 				'openIdConnectUrl' => 'https://' . $auth0_domain . '/.well-known/openid-configuration',
