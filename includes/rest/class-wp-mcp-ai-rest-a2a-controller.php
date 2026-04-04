@@ -294,9 +294,12 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Create A2A task to track this request.
+		// Validate and sanitize messageId — enforce max length to prevent abuse.
+		$raw_msg_id  = isset( $message['messageId'] ) ? sanitize_text_field( $message['messageId'] ) : '';
+		$message_id  = ( ! empty( $raw_msg_id ) && strlen( $raw_msg_id ) <= 128 ) ? $raw_msg_id : wp_generate_uuid4();
 		$a2a_message = array(
 			'kind'      => 'message',
-			'messageId' => isset( $message['messageId'] ) ? sanitize_text_field( $message['messageId'] ) : wp_generate_uuid4(),
+			'messageId' => $message_id,
 			'role'      => 'user',
 			'parts'     => $message['parts'],
 		);
@@ -687,12 +690,15 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$card         = WP_MCP_AI_A2A_Agent_Card::build_card_for_assistant( $assistant_id );
 
 		if ( is_wp_error( $card ) ) {
+			$error_data = $card->get_error_data();
+			$status     = is_array( $error_data ) && isset( $error_data['status'] ) ? $error_data['status'] : 404;
+
 			return new WP_REST_Response(
 				array(
 					'error'   => $card->get_error_code(),
 					'message' => $card->get_error_message(),
 				),
-				$card->get_error_data()['status'] ?? 404
+				$status
 			);
 		}
 

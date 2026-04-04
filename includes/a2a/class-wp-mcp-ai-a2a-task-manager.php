@@ -428,8 +428,8 @@ class WP_MCP_AI_A2A_Task_Manager {
 					}
 				);
 
-				// Remove oldest entries.
-				$tasks = array_slice( $tasks, count( $tasks ) - self::MAX_TASKS, null, true );
+				// Remove oldest entries, keeping the most recent MAX_TASKS items.
+				$tasks = array_slice( $tasks, -self::MAX_TASKS, null, true );
 			}
 		}
 

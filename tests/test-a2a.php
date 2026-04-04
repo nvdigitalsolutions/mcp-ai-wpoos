@@ -399,7 +399,9 @@ class WP_MCP_AI_A2A_Test extends WP_UnitTestCase {
 	 */
 	public function test_cancel_completed_task_fails() {
 		$task = $this->create_test_task();
-		WP_MCP_AI_A2A_Task_Manager::transition_state( $task['id'], WP_MCP_AI_A2A_Task_Manager::STATE_COMPLETED );
+
+		$transition = WP_MCP_AI_A2A_Task_Manager::transition_state( $task['id'], WP_MCP_AI_A2A_Task_Manager::STATE_COMPLETED );
+		$this->assertIsArray( $transition );
 
 		$result = WP_MCP_AI_A2A_Task_Manager::cancel_task( $task['id'] );
 		$this->assertInstanceOf( 'WP_Error', $result );

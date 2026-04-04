@@ -172,6 +172,11 @@ class WP_MCP_AI_A2A_Push_Notifications {
 	/**
 	 * Deliver a webhook notification.
 	 *
+	 * Note: Uses blocking sleep() for retry delays. This is acceptable because
+	 * push notifications are fired after task completion (non-critical path).
+	 * For high-volume deployments, consider offloading to WP-Cron via the
+	 * wp_mcp_ai_a2a_task_state_change action hook.
+	 *
 	 * @param array $config  The push notification configuration.
 	 * @param array $payload The webhook payload.
 	 */
