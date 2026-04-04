@@ -767,9 +767,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		public function get_compliance_checks() {
 			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 				global $wpdb;
-				$checks_table = $wpdb->prefix . 'mcp_ai_compliance_checks';
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-				$checks = $wpdb->get_results( "SELECT * FROM $checks_table ORDER BY last_run DESC LIMIT 20", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
+				$checks_table = esc_sql( $wpdb->prefix . 'mcp_ai_compliance_checks' );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table with esc_sql()-escaped table name; WP_Query does not support custom table queries.
+				$checks = $wpdb->get_results( "SELECT * FROM {$checks_table} ORDER BY last_run DESC LIMIT 20", ARRAY_A );
 
 				if ( ! empty( $checks ) ) {
 					return rest_ensure_response( $checks );
