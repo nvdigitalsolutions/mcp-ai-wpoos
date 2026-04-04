@@ -1330,6 +1330,33 @@ class WP_MCP_AI_Shortcode {
 				</button>
 			</div>
 			<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
+			<div class="wp-mcp-ai-chat__agent-panel" role="complementary" aria-label="<?php echo esc_attr__( 'Agent team activity', 'mcp-ai-wpoos' ); ?>" hidden>
+				<div class="wp-mcp-ai-chat__agent-panel-header">
+					<button type="button" class="wp-mcp-ai-chat__agent-panel-toggle" aria-expanded="false">
+						<svg class="wp-mcp-ai-chat__agent-panel-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+							<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+						</svg>
+						<span class="wp-mcp-ai-chat__agent-panel-title"><?php esc_html_e( 'Agent Team', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-chat__agent-panel-count" aria-label="<?php echo esc_attr__( 'Active agents', 'mcp-ai-wpoos' ); ?>">0</span>
+						<svg class="wp-mcp-ai-chat__agent-panel-chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
+						</svg>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-chat__agent-panel-body" hidden>
+					<div class="wp-mcp-ai-chat__agent-cards" role="list" aria-label="<?php echo esc_attr__( 'Sub-agents', 'mcp-ai-wpoos' ); ?>"></div>
+					<div class="wp-mcp-ai-chat__workflow-tracker" role="status" aria-label="<?php echo esc_attr__( 'Workflow progress', 'mcp-ai-wpoos' ); ?>" hidden>
+						<div class="wp-mcp-ai-chat__workflow-tracker-header">
+							<span class="wp-mcp-ai-chat__workflow-tracker-title"><?php esc_html_e( 'Workflow Progress', 'mcp-ai-wpoos' ); ?></span>
+							<span class="wp-mcp-ai-chat__workflow-tracker-progress">0%</span>
+						</div>
+						<div class="wp-mcp-ai-chat__workflow-tracker-bar">
+							<div class="wp-mcp-ai-chat__workflow-tracker-fill"></div>
+						</div>
+						<ol class="wp-mcp-ai-chat__workflow-tracker-steps" aria-label="<?php echo esc_attr__( 'Workflow steps', 'mcp-ai-wpoos' ); ?>"></ol>
+					</div>
+				</div>
+			</div>
 			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>

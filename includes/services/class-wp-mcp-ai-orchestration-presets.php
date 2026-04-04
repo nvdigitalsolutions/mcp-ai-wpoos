@@ -114,6 +114,68 @@ class WP_MCP_AI_Orchestration_Presets {
 					'require_confidence'  => 0.8,
 				),
 			),
+			'autonomous_workflow' => array(
+				'name'        => __( 'Autonomous Workflow', 'mcp-ai-wpoos' ),
+				'description' => __( 'Self-managing workflow with task planning, health monitoring, exit detection, and session management for continuous AI operations.', 'mcp-ai-wpoos' ),
+				'category'    => 'orchestration',
+				'settings'    => array(
+					'enable_agent_teams'        => true,
+					'delegation_enabled'        => true,
+					'reasoning_mode'            => 'enabled',
+					'enable_task_planning'      => true,
+					'enable_health_monitoring'  => true,
+					'enable_exit_detection'     => true,
+					'enable_session_management' => true,
+					'tool_preferences'          => array( 'create_task_plan', 'manage_autonomous_session', 'check_exit_conditions', 'analyze_loop_health', 'detect_completion_indicators' ),
+					'max_delegation_depth'      => 5,
+					'max_loop_iterations'       => 50,
+				),
+			),
+			'supervisor_pattern' => array(
+				'name'        => __( 'Supervisor Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Central supervisor agent assigns, tracks, and aggregates sub-agent work. Best for quality control with single coordination point.', 'mcp-ai-wpoos' ),
+				'category'    => 'orchestration',
+				'settings'    => array(
+					'enable_agent_teams'   => true,
+					'primary_agent_role'   => 'supervisor',
+					'delegation_enabled'   => true,
+					'result_aggregation'   => 'supervisor-reviewed',
+					'enable_critic_role'   => true,
+					'enable_verification'  => true,
+					'tool_preferences'     => array( 'create_agent_team', 'delegate_to_agent', 'aggregate_agent_results', 'validate_workflow', 'verify_information' ),
+					'max_team_size'        => 5,
+					'max_delegation_depth' => 3,
+				),
+			),
+			'pipeline_pattern'   => array(
+				'name'        => __( 'Pipeline Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Sequential agent assembly line where each step refines output. Best for structured multi-step processing with clear stage boundaries.', 'mcp-ai-wpoos' ),
+				'category'    => 'orchestration',
+				'settings'    => array(
+					'enable_agent_teams'    => true,
+					'pipeline_mode'         => true,
+					'sequential_execution'  => true,
+					'stage_validation'      => true,
+					'enable_caching'        => true,
+					'tool_preferences'      => array( 'execute_workflow', 'create_task_plan', 'detect_completion_indicators', 'extract_structured_data' ),
+					'max_pipeline_stages'   => 10,
+				),
+			),
+			'swarm_pattern'      => array(
+				'name'        => __( 'Swarm Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Autonomous parallel agents work independently for search, analysis, and data collection. Results are aggregated at completion.', 'mcp-ai-wpoos' ),
+				'category'    => 'orchestration',
+				'settings'    => array(
+					'enable_agent_teams'   => true,
+					'parallel_execution'   => 'aggressive',
+					'delegation_enabled'   => true,
+					'result_aggregation'   => 'parallel-merge',
+					'enable_caching'       => true,
+					'tool_preferences'     => array( 'create_agent_team', 'delegate_to_agent', 'aggregate_agent_results', 'web_search', 'deep_research', 'aggregate_research_data' ),
+					'max_team_size'        => 10,
+					'max_delegation_depth' => 2,
+				),
+			),
 		);
 
 		// Merge with custom presets.
@@ -350,6 +412,34 @@ class WP_MCP_AI_Orchestration_Presets {
 			$recommendations['quality_optimized'] = array(
 				'confidence' => 0.8,
 				'reason'     => __( 'Task prioritizes quality.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( preg_match( '/\b(autonomous|continuous|loop|self.?managing|unattended)\b/', $task_lower ) ) {
+			$recommendations['autonomous_workflow'] = array(
+				'confidence' => 0.85,
+				'reason'     => __( 'Task requires autonomous continuous operation.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( preg_match( '/\b(supervis|oversee|manage|coordinat|assign|delegate)\b/', $task_lower ) ) {
+			$recommendations['supervisor_pattern'] = array(
+				'confidence' => 0.8,
+				'reason'     => __( 'Task benefits from centralized supervision and delegation.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( preg_match( '/\b(pipeline|sequential|stage|step.?by.?step|refine|transform)\b/', $task_lower ) ) {
+			$recommendations['pipeline_pattern'] = array(
+				'confidence' => 0.8,
+				'reason'     => __( 'Task involves sequential multi-step processing.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( preg_match( '/\b(parallel|swarm|simultaneous|bulk|mass|gather|scrape)\b/', $task_lower ) ) {
+			$recommendations['swarm_pattern'] = array(
+				'confidence' => 0.75,
+				'reason'     => __( 'Task benefits from parallel autonomous agents.', 'mcp-ai-wpoos' ),
 			);
 		}
 

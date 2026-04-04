@@ -23,6 +23,10 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
+ * @updated 2026-04-04 - Enhanced agent workflow presets with industry-standard patterns:
+ *   supervisor, pipeline, swarm, hierarchical, and review/QA patterns. Added delegate_to_a2a_agent,
+ *   deep_research, context lifecycle, task dependency tools to existing presets.
+ *   Updated autonomous_orchestration with workflow rules and task dependencies.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,16 +64,28 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'agentic_workflow'          => array(
 				'name'        => __( '🤖 Agentic Workflow', 'mcp-ai-wpoos' ),
-				'description' => __( 'DeepSeek V4 multi-agent orchestration tools for team composition, delegation, memory management, and result aggregation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-agent orchestration tools for team composition, delegation, A2A communication, memory management, and result aggregation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent coordination tools (DeepSeek V4).
+					// Agent coordination & delegation.
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
-					// Agent memory tools (Phase 4/5).
+					// Agent memory & context management.
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
+					'memory_audit_trail',
+					// Workflow execution & validation.
 					'execute_workflow',
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+					// Task planning & tracking.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
 					// Supporting tools for agentic operations.
 					'list_professions',
 					'get_profession',
@@ -78,10 +94,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_assistant',
 					'probe_chat',
 					'query_mesh_intelligent',
-					// Workflow validation & monitoring (NEW).
-					'check_workflow_health',
-					'validate_workflow',
-					'visualize_workflow_metrics',
+					'deep_research',
+					'web_search',
 				),
 			),
 
@@ -952,7 +966,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'assistant_management'      => array(
 				'name'        => __( '🤖 Assistant Management', 'mcp-ai-wpoos' ),
-				'description' => __( 'AI assistant creation, configuration, and management', 'mcp-ai-wpoos' ),
+				'description' => __( 'AI assistant creation, configuration, agent team management, and A2A delegation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_assistant',
 					'create_assistant_validated',
@@ -964,10 +978,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'save_profession',
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
 					'execute_workflow',
+					'validate_workflow',
+					'check_workflow_health',
 				),
 			),
 
@@ -2387,14 +2405,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'autonomous_orchestration'  => array(
 				'name'        => __( '🎯 Autonomous Orchestration', 'mcp-ai-wpoos' ),
-				'description' => __( 'Task planning, autonomous sessions, health monitoring, and capacity management for continuous AI workflow loops', 'mcp-ai-wpoos' ),
+				'description' => __( 'Task planning, autonomous sessions, health monitoring, capacity management, and workflow rules for continuous AI workflow loops', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
 					// Core orchestration tools (Base plugin).
 					'create_task_plan',
 					'update_task_plan',
@@ -2405,6 +2426,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'analyze_loop_health',
 					'get_session_status',
 					'calculate_orchestration_capacity',
+					// Workflow execution & validation.
+					'execute_workflow',
+					'validate_workflow',
+					'check_workflow_health',
+					'visualize_workflow_metrics',
+					// Workflow rules (Pro).
+					'create_workflow_rule',
+					'update_workflow_rule',
+					'delete_workflow_rule',
+					'list_workflow_rules',
+					// Task dependencies (Pro).
+					'add_task_dependency',
+					'get_task_dependencies',
+					'remove_task_dependency',
 					// Template management (Pro addon).
 					'create_template',
 					'instantiate_template',
@@ -2428,11 +2463,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'task_planning'             => array(
 				'name'        => __( '📋 Task Planning', 'mcp-ai-wpoos' ),
-				'description' => __( 'Create and manage task plans with progress tracking', 'mcp-ai-wpoos' ),
+				'description' => __( 'Create and manage task plans with progress tracking and dependency management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_task_plan',
 					'update_task_plan',
 					'get_task_plan',
+					// Task dependency management.
+					'add_task_dependency',
+					'get_task_dependencies',
+					'remove_task_dependency',
+					'create_task',
+					'list_tasks',
+					'update_task',
+					'delete_task',
+					// Template management.
 					'create_template',
 					'instantiate_template',
 					'list_templates',
@@ -2441,9 +2485,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'research_automation'       => array(
 				'name'        => __( '🔍 Research Automation', 'mcp-ai-wpoos' ),
-				'description' => __( 'Multi-source research with aggregation, verification, and professional report generation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-source research with aggregation, verification, professional report generation, and crawling', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
+					'create_agent_team',
+					'delegate_to_agent',
 					'store_agent_context',
 					'retrieve_agent_memory',
 					// Research enhancement.
@@ -2458,6 +2504,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'deep_research',
 					'search_content',
 					'semantic_content_search',
+					'run_crawl4ai_job',
+					'scrape_product',
 					// Data collection.
 					'search_drive',
 					'search_gmail',
@@ -2467,7 +2515,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'workflow_monitoring'       => array(
 				'name'        => __( '📊 Workflow Monitoring', 'mcp-ai-wpoos' ),
-				'description' => __( 'Monitor autonomous sessions, health status, workflow rules, and system capacity', 'mcp-ai-wpoos' ),
+				'description' => __( 'Monitor autonomous sessions, health status, workflow rules, capacity, and execution logs', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'manage_autonomous_session',
 					'get_session_status',
@@ -2475,6 +2523,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'calculate_orchestration_capacity',
 					'detect_completion_indicators',
 					'check_exit_conditions',
+					// Workflow validation.
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
 					// Workflow rules (Pro).
 					'create_workflow_rule',
 					'update_workflow_rule',
@@ -2482,6 +2534,168 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_workflow_rules',
 					'test_workflow_rule',
 					'get_workflow_execution_log',
+				),
+			),
+
+			// =================================================================.
+			// AGENT WORKFLOW PATTERNS (Industry Standard - 2026).
+			// Based on supervisor, pipeline, swarm, and hierarchical patterns.
+			// =================================================================.
+
+			'agent_supervisor'          => array(
+				'name'        => __( '👔 Supervisor Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Central supervisor agent assigns, tracks, and aggregates sub-agent work with quality control and escalation paths', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Supervisor coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Task management & tracking.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					// Session & health oversight.
+					'manage_autonomous_session',
+					'get_session_status',
+					'analyze_loop_health',
+					'check_exit_conditions',
+					'detect_completion_indicators',
+					// Quality control.
+					'validate_workflow',
+					'verify_information',
+					'validate_reasoning_chain',
+					// Agent memory for coordination state.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'prioritize_context',
+				),
+			),
+
+			'agent_pipeline'            => array(
+				'name'        => __( '🔗 Pipeline Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Sequential agent assembly line where each agent refines output from the previous step with stage validation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Pipeline orchestration.
+					'create_agent_team',
+					'delegate_to_agent',
+					'execute_workflow',
+					'aggregate_agent_results',
+					// Stage tracking & validation.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					'detect_completion_indicators',
+					'check_exit_conditions',
+					// Data transformation between stages.
+					'extract_structured_data',
+					'convert_html_to_markdown',
+					'store_agent_context',
+					'retrieve_agent_memory',
+					// Workflow health.
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+				),
+			),
+
+			'agent_swarm'               => array(
+				'name'        => __( '🐝 Swarm Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Autonomous parallel agents work independently and aggregate results for search, analysis, and simulation tasks', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Swarm coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Parallel data collection.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'run_crawl4ai_job',
+					'scrape_product',
+					// Result aggregation & analysis.
+					'aggregate_research_data',
+					'analyze_data_patterns',
+					'extract_structured_data',
+					'verify_information',
+					'generate_research_report',
+					// Shared context for swarm coordination.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					// Health & capacity.
+					'calculate_orchestration_capacity',
+					'analyze_loop_health',
+				),
+			),
+
+			'agent_hierarchical'        => array(
+				'name'        => __( '🏛️ Hierarchical Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-level manager-specialist agent relationships with escalation, delegation depth, and structured reporting', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Hierarchical team management.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Multi-level task planning.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					// Workflow management at each level.
+					'execute_workflow',
+					'create_workflow_rule',
+					'update_workflow_rule',
+					'list_workflow_rules',
+					// Context passing between levels.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
+					// Session monitoring across hierarchy.
+					'manage_autonomous_session',
+					'get_session_status',
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+					'calculate_orchestration_capacity',
+					// Reporting up the chain.
+					'generate_research_report',
+				),
+			),
+
+			'agent_review_qa'           => array(
+				'name'        => __( '✅ Review & QA Agent', 'mcp-ai-wpoos' ),
+				'description' => __( 'Quality assurance and review agent pattern for output validation, compliance checking, and error correction', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Quality validation.
+					'validate_workflow',
+					'validate_reasoning_chain',
+					'verify_information',
+					'check_workflow_health',
+					// Review agent coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'aggregate_agent_results',
+					// Completion & exit criteria.
+					'detect_completion_indicators',
+					'check_exit_conditions',
+					'analyze_loop_health',
+					// Data analysis for QA.
+					'analyze_data_patterns',
+					'extract_structured_data',
+					'generate_research_report',
+					// Context for review state.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'memory_audit_trail',
 				),
 			),
 
