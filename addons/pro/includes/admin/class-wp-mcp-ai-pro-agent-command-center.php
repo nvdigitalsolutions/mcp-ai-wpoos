@@ -110,8 +110,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Agent Command Center', 'mcp-ai-wpoos-pro' ),
-			__( 'Agent Command Center', 'mcp-ai-wpoos-pro' ),
+			__( 'Command Center', 'mcp-ai-wpoos-pro' ),
+			__( 'Command Center', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -230,7 +230,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 				<div class="acc-header-left">
 					<h1>
 						<span class="dashicons dashicons-superhero-alt"></span>
-						<?php esc_html_e( 'Agent Command Center', 'mcp-ai-wpoos-pro' ); ?>
+						<?php esc_html_e( 'Command Center', 'mcp-ai-wpoos-pro' ); ?>
 						<span class="acc-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos-pro' ); ?></span>
 					</h1>
 					<p class="acc-subtitle"><?php esc_html_e( 'Unified dashboard for managing, monitoring, and optimizing your AI assistants.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -1776,7 +1776,10 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 				/* translators: %s: user display name */
 				: sprintf( __( 'Chat interaction by %s', 'mcp-ai-wpoos-pro' ), $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) );
 
-			$timestamp = isset( $entry['time'] ) ? strtotime( $entry['time'] ) : ( isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0 );
+			$timestamp = isset( $entry['time'] ) ? strtotime( $entry['time'] ) : false;
+			if ( false === $timestamp ) {
+				$timestamp = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
+			}
 
 			$events[] = array(
 				'type'       => 'chat_interaction',
