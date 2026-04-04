@@ -1147,7 +1147,9 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		   Init
 		   ══════════════════════════════════════════════════════════ */
 		/* Restore chat history from localStorage */
-		'try{var s=localStorage.getItem(SK);if(s)hist=JSON.parse(s)||[];}catch(e){}' .
+		'try{var s=localStorage.getItem(SK);if(s){hist=JSON.parse(s)||[];' .
+			'hist=hist.filter(function(h){return h&&(h.role==="user"||h.role==="assistant")&&typeof h.content==="string";});' .
+		'}}catch(e){hist=[];}' .
 		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";' .
 			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
 			'hist.forEach(function(h){chatAppendMsg(h.role,h.content,true);});' .
