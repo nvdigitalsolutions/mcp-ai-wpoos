@@ -484,6 +484,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_burst'                     => 10,
 				'federation_jwks_keys'                 => array(),
 				'federation_price_hints'               => array(),
+				// A2A Protocol settings.
+				'enable_a2a_server'                    => false,
+				'a2a_exposed_assistants'               => array(),
+				'a2a_enable_push_notifications'        => false,
+				'enable_a2a_client'                    => false,
+				'a2a_default_auth_type'                => 'none',
+				'a2a_default_auth_token'               => '',
 				// Orchestration Layer settings - defaults match "Balanced" preset.
 				'orchestration_preset'                 => 'custom',
 				'enable_budget_management'             => true,

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
-        'version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
-        'reference' => 'ecd508a47d6389c46a633f297cf6a2097ac09814',
+        'pretty_version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
+        'version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
+        'reference' => 'b33720f665d86d9481f8d8aaee4671f3aabaa3b9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
-            'version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
-            'reference' => 'ecd508a47d6389c46a633f297cf6a2097ac09814',
+            'pretty_version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
+            'version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
+            'reference' => 'b33720f665d86d9481f8d8aaee4671f3aabaa3b9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
