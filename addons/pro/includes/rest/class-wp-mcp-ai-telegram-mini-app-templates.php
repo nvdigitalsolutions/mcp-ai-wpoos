@@ -1086,14 +1086,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'function ecRenderMd(t){' .
 			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
 			'lines.forEach(function(ln){' .
-				'var esc=escH(ln);' .
-				'esc=esc.replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>")' .
-					'.replace(/\\*(.+?)\\*/g,"<em>$1</em>")' .
-					'.replace(/`([^`]+)`/g,"<code>$1</code>");' .
-				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+esc.substring(2)+"</li>";}' .
-				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+esc.replace(/^\\d+\\.\\s*/,"")+"</li>";}' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
 				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
-					'if(esc===""){out+="<br>";}else{out+="<p>"+esc+"</p>";}}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
 			'});' .
 			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
 			'return out;' .
@@ -1354,7 +1351,7 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 					'var d=o.date_created||o.date||"";if(!d)return;' .
 					/* Parse ISO or common date formats to YYYY-MM */
 					'var dt=new Date(d);var m;' .
-					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}' .
+					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+("0"+(dt.getMonth()+1)).slice(-2);}' .
 					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
 					'else{return;}' .
 					'var t=parseFloat(o.total||o.order_total||0);' .
