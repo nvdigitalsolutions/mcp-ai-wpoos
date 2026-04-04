@@ -506,8 +506,12 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					<select id="acc-filter-type" class="acc-filter">
 						<option value=""><?php esc_html_e( 'All Events', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="tool_execution"><?php esc_html_e( 'Tool Executions', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="tool_error"><?php esc_html_e( 'Tool Errors', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="chat_response"><?php esc_html_e( 'Chat Responses', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="chat_interaction"><?php esc_html_e( 'Chat Interactions', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="api_request"><?php esc_html_e( 'API Requests', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="api_response"><?php esc_html_e( 'API Responses', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="schedule_run"><?php esc_html_e( 'Schedule Runs', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="session_start"><?php esc_html_e( 'Session Start', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="session_end"><?php esc_html_e( 'Session End', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="approval_requested"><?php esc_html_e( 'Approval Requested', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -564,6 +568,14 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					<span class="acc-summary-label"><?php esc_html_e( 'Chat Interactions', 'mcp-ai-wpoos-pro' ); ?></span>
 				</div>
 				<div class="acc-summary-stat">
+					<span class="acc-summary-value" id="activity-api-requests">0</span>
+					<span class="acc-summary-label"><?php esc_html_e( 'API Requests', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="acc-summary-stat">
+					<span class="acc-summary-value" id="activity-schedule-runs">0</span>
+					<span class="acc-summary-label"><?php esc_html_e( 'Schedule Runs', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="acc-summary-stat">
 					<span class="acc-summary-value" id="activity-errors">0</span>
 					<span class="acc-summary-label"><?php esc_html_e( 'Errors', 'mcp-ai-wpoos-pro' ); ?></span>
 				</div>
@@ -587,7 +599,12 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	private function render_activity_item( $event ) {
 		$type_icons = array(
 			'tool_execution'     => 'admin-tools',
+			'tool_error'         => 'warning',
 			'chat_response'      => 'format-chat',
+			'chat_interaction'   => 'admin-comments',
+			'api_request'        => 'cloud',
+			'api_response'       => 'cloud',
+			'schedule_run'       => 'calendar-alt',
 			'session_start'      => 'migrate',
 			'session_end'        => 'dismiss',
 			'approval_requested' => 'clock',
@@ -1318,8 +1335,14 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			'chat_interactions'  => count( array_filter( $events, function ( $e ) {
 				return 'chat_interaction' === $e['type'];
 			} ) ),
+			'api_requests'       => count( array_filter( $events, function ( $e ) {
+				return 'api_request' === $e['type'] || 'api_response' === $e['type'];
+			} ) ),
+			'schedule_runs'      => count( array_filter( $events, function ( $e ) {
+				return 'schedule_run' === $e['type'];
+			} ) ),
 			'errors'             => count( array_filter( $events, function ( $e ) {
-				return 'error' === $e['type'];
+				return 'error' === $e['type'] || 'tool_error' === $e['type'];
 			} ) ),
 		);
 
@@ -1668,8 +1691,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	private function get_recent_activity_events( $limit = 20 ) {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
 
-		// Merge assistant chat interaction events from the core Logger.
-		$events = $this->merge_logger_chat_interactions( $events );
+		// Merge assistant activity entries from the core Logger.
+		$events = $this->merge_logger_activity_entries( $events );
 
 		// Sort by timestamp descending.
 		usort( $events, function ( $a, $b ) {
@@ -1693,8 +1716,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	private function get_filtered_activity( $type, $agent_id, $timeframe, $search ) {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
 
-		// Merge assistant chat interaction events from the core Logger.
-		$events = $this->merge_logger_chat_interactions( $events );
+		// Merge assistant activity entries from the core Logger.
+		$events = $this->merge_logger_activity_entries( $events );
 
 		// Timeframe filter.
 		$cutoff = $this->get_timeframe_cutoff( $timeframe );
@@ -1735,54 +1758,123 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	}
 
 	/**
-	 * Merge chat interaction events from the core Logger into the activity stream.
+	 * Merge activity entries from the core Logger into the activity stream.
 	 *
-	 * Pulls assistant chat interactions from WP_MCP_AI_Logger and normalises them
-	 * into the same format used by the command center activity log so they can be
-	 * displayed alongside agent-level events.
+	 * Pulls assistant activity entries from WP_MCP_AI_Logger — including chat
+	 * interactions, API requests/responses, tool errors, and schedule runs —
+	 * and normalises them into the same format used by the command center
+	 * activity log so they can be displayed alongside agent-level events.
 	 *
 	 * @since 2.1.0
+	 * @since 2.2.0 Expanded to include API requests, tool errors, and schedule runs.
 	 *
 	 * @param array $events Existing activity events.
 	 * @return array Merged events array.
 	 */
-	private function merge_logger_chat_interactions( $events ) {
+	private function merge_logger_activity_entries( $events ) {
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) || ! method_exists( 'WP_MCP_AI_Logger', 'get_recent_activity_entries' ) ) {
 			return $events;
 		}
 
-		$chat_entries = WP_MCP_AI_Logger::get_recent_activity_entries( 200, array( 'chat_interaction' ) );
+		// Types to pull from the Logger that are NOT already tracked by the
+		// command center's own hook-based recording (record_tool_execution, etc.).
+		$logger_types = array(
+			'chat_interaction',
+			'tool_error',
+			'openai_request',
+			'openai_response',
+			'anthropic_request',
+			'anthropic_response',
+			'gemini_request',
+			'gemini_response',
+			'gemini_image_request',
+			'gemini_image_response',
+			'gemini_stream_request',
+			'gemini_stream_response',
+			'lm_studio_request',
+			'lm_studio_response',
+			'lm_studio_completion_request',
+			'lm_studio_completion_response',
+			'openai_external_action_request',
+			'openai_external_action_response',
+			'schedule_run',
+		);
 
-		if ( empty( $chat_entries ) ) {
+		$logger_entries = WP_MCP_AI_Logger::get_recent_activity_entries( 200, $logger_types );
+
+		if ( empty( $logger_entries ) ) {
 			return $events;
 		}
 
-		foreach ( $chat_entries as $entry ) {
+		// API request/response type suffixes used for normalisation.
+		$api_request_types = array(
+			'openai_request',
+			'anthropic_request',
+			'gemini_request',
+			'gemini_image_request',
+			'gemini_stream_request',
+			'lm_studio_request',
+			'lm_studio_completion_request',
+			'openai_external_action_request',
+		);
+		$api_response_types = array(
+			'openai_response',
+			'anthropic_response',
+			'gemini_response',
+			'gemini_image_response',
+			'gemini_stream_response',
+			'lm_studio_response',
+			'lm_studio_completion_response',
+			'openai_external_action_response',
+		);
+
+		foreach ( $logger_entries as $entry ) {
+			$entry_type     = isset( $entry['type'] ) ? $entry['type'] : '';
 			$assistant_id   = isset( $entry['context']['assistant_id'] ) ? absint( $entry['context']['assistant_id'] ) : 0;
 			$assistant_name = $assistant_id ? get_the_title( $assistant_id ) : '';
-			$user_id        = isset( $entry['context']['user_id'] ) ? absint( $entry['context']['user_id'] ) : 0;
-			$user_display   = '';
-
-			if ( $user_id ) {
-				$user = get_userdata( $user_id );
-				if ( $user ) {
-					$user_display = $user->display_name;
-				}
-			}
-
-			$message = $assistant_name
-				/* translators: 1: assistant name, 2: user display name */
-				? sprintf( __( 'Chat with "%1$s" by %2$s', 'mcp-ai-wpoos-pro' ), $assistant_name, $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) )
-				/* translators: %s: user display name */
-				: sprintf( __( 'Chat interaction by %s', 'mcp-ai-wpoos-pro' ), $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) );
 
 			$timestamp = isset( $entry['time'] ) ? strtotime( $entry['time'] ) : false;
 			if ( false === $timestamp ) {
 				$timestamp = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
 			}
 
+			// Determine the normalised type and human-readable message.
+			if ( 'chat_interaction' === $entry_type ) {
+				$normalised_type = 'chat_interaction';
+				$message         = $this->build_chat_interaction_message( $entry, $assistant_name );
+			} elseif ( in_array( $entry_type, $api_request_types, true ) ) {
+				$normalised_type = 'api_request';
+				$provider        = $this->extract_provider_from_type( $entry_type );
+				$message         = isset( $entry['message'] ) && '' !== $entry['message']
+					? $entry['message']
+					/* translators: %s: AI provider name */
+					: sprintf( __( 'API request to %s', 'mcp-ai-wpoos-pro' ), ucfirst( $provider ) );
+			} elseif ( in_array( $entry_type, $api_response_types, true ) ) {
+				$normalised_type = 'api_response';
+				$provider        = $this->extract_provider_from_type( $entry_type );
+				$message         = isset( $entry['message'] ) && '' !== $entry['message']
+					? $entry['message']
+					/* translators: %s: AI provider name */
+					: sprintf( __( 'API response from %s', 'mcp-ai-wpoos-pro' ), ucfirst( $provider ) );
+			} elseif ( 'tool_error' === $entry_type ) {
+				$normalised_type = 'tool_error';
+				$tool_slug       = isset( $entry['context']['tool_slug'] ) ? $entry['context']['tool_slug'] : '';
+				$error_msg       = isset( $entry['context']['error_message'] ) ? $entry['context']['error_message'] : '';
+				$message         = $tool_slug
+					/* translators: 1: tool slug, 2: error description */
+					? sprintf( __( 'Tool "%1$s" error: %2$s', 'mcp-ai-wpoos-pro' ), $tool_slug, $error_msg )
+					: ( isset( $entry['message'] ) ? $entry['message'] : __( 'Tool execution failed', 'mcp-ai-wpoos-pro' ) );
+			} elseif ( 'schedule_run' === $entry_type ) {
+				$normalised_type = 'schedule_run';
+				$message         = isset( $entry['message'] ) && '' !== $entry['message']
+					? $entry['message']
+					: __( 'Scheduled task executed', 'mcp-ai-wpoos-pro' );
+			} else {
+				continue;
+			}
+
 			$events[] = array(
-				'type'       => 'chat_interaction',
+				'type'       => $normalised_type,
 				'agent_id'   => $assistant_id,
 				'agent_name' => $assistant_name,
 				'message'    => $message,
@@ -1791,6 +1883,54 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		}
 
 		return $events;
+	}
+
+	/**
+	 * Build a human-readable message for a chat interaction Logger entry.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array  $entry          Logger entry.
+	 * @param string $assistant_name Resolved assistant title.
+	 * @return string Formatted message.
+	 */
+	private function build_chat_interaction_message( $entry, $assistant_name ) {
+		$user_id      = isset( $entry['context']['user_id'] ) ? absint( $entry['context']['user_id'] ) : 0;
+		$user_display = '';
+
+		if ( $user_id ) {
+			$user = get_userdata( $user_id );
+			if ( $user ) {
+				$user_display = $user->display_name;
+			}
+		}
+
+		if ( $assistant_name ) {
+			/* translators: 1: assistant name, 2: user display name */
+			return sprintf( __( 'Chat with "%1$s" by %2$s', 'mcp-ai-wpoos-pro' ), $assistant_name, $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		/* translators: %s: user display name */
+		return sprintf( __( 'Chat interaction by %s', 'mcp-ai-wpoos-pro' ), $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Extract the AI provider name from a Logger event type string.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param string $type Logger event type (e.g. 'openai_request', 'gemini_stream_response').
+	 * @return string Provider name (e.g. 'openai', 'gemini', 'anthropic', 'lm_studio').
+	 */
+	private function extract_provider_from_type( $type ) {
+		$providers = array( 'openai_external_action', 'openai', 'anthropic', 'gemini', 'lm_studio' );
+		foreach ( $providers as $provider ) {
+			if ( 0 === strpos( $type, $provider . '_' ) ) {
+				// Normalise 'openai_external_action' to 'openai'.
+				return 'openai_external_action' === $provider ? 'openai' : $provider;
+			}
+		}
+		return 'unknown';
 	}
 
 	/**

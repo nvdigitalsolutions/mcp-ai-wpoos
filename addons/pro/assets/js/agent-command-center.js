@@ -218,8 +218,12 @@
 			var html = '';
 			var typeIcons = {
 				tool_execution: 'admin-tools',
+				tool_error: 'warning',
 				chat_response: 'format-chat',
 				chat_interaction: 'admin-comments',
+				api_request: 'cloud',
+				api_response: 'cloud',
+				schedule_run: 'calendar-alt',
 				session_start: 'migrate',
 				session_end: 'dismiss',
 				approval_requested: 'clock',
@@ -299,8 +303,12 @@
 
 			var typeIcons = {
 				tool_execution: 'admin-tools',
+				tool_error: 'warning',
 				chat_response: 'format-chat',
 				chat_interaction: 'admin-comments',
+				api_request: 'cloud',
+				api_response: 'cloud',
+				schedule_run: 'calendar-alt',
 				session_start: 'migrate',
 				session_end: 'dismiss',
 				approval_requested: 'clock',
@@ -341,6 +349,8 @@
 			$( '#activity-tool-calls' ).text( summary.tool_calls || 0 );
 			$( '#activity-chat-responses' ).text( summary.chat_responses || 0 );
 			$( '#activity-chat-interactions' ).text( summary.chat_interactions || 0 );
+			$( '#activity-api-requests' ).text( summary.api_requests || 0 );
+			$( '#activity-schedule-runs' ).text( summary.schedule_runs || 0 );
 			$( '#activity-errors' ).text( summary.errors || 0 );
 		},
 
