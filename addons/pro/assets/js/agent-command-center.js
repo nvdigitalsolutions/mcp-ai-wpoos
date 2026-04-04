@@ -209,6 +209,7 @@
 		 * @param {Array} events Activity events.
 		 */
 		updateActivityFeed: function( events ) {
+			var self = this;
 			var $feed = $( '#acc-live-activity' );
 			if ( ! $feed.length || ! events || ! events.length ) {
 				return;
@@ -826,9 +827,6 @@
 			};
 		},
 	};
-
-	// Use a local variable for the reference inside updateActivityFeed.
-	var self = AgentCommandCenter;
 
 	// Initialize on DOM ready.
 	$( document ).ready( function() {
