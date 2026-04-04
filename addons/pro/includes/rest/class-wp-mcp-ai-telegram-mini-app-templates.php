@@ -1536,137 +1536,661 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name     = esc_html( $ctx['site_name'] );
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-crm-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#e65100;--tma-accent:#e65100;--tma-secondary-bg:#fff3ee;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#e65100;--tma-accent:#e65100;--tma-secondary-bg:#fff3ee;' .
+			'--crm-base:14px;--crm-label:12px;--crm-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.crm-font-small{--crm-base:12px;--crm-label:10px;--crm-heading:14px}' .
+		'.crm-font-large{--crm-base:16px;--crm-label:14px;--crm-heading:18px}' .
+		'.crm-compact .tma-contact-row{padding:8px 12px}' .
+		'.crm-compact .tma-pipeline-card{padding:6px 8px;margin-bottom:4px}' .
+		'.crm-compact .crm-deal-card{padding:8px 10px;margin:0 8px 6px}' .
+
+		/* ── Search bar ── */
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
-		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:14px;padding:10px 0;background:transparent;color:var(--tma-text)}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--crm-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Contacts ── */
 		'.tma-contact-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--tma-border);cursor:pointer}' .
 		'.tma-contact-row:active{background:var(--tma-secondary-bg)}' .
 		'.tma-contact-avatar{width:40px;height:40px;border-radius:50%;background:var(--tma-btn);color:var(--tma-btn-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}' .
 		'.tma-contact-info{flex:1;min-width:0}' .
-		'.tma-contact-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
-		'.tma-contact-sub{font-size:12px;color:var(--tma-hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-contact-name{font-weight:600;font-size:var(--crm-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}' .
+		'.tma-contact-sub{font-size:var(--crm-label);color:var(--tma-hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-contact-meta{font-size:var(--crm-label);color:var(--tma-subtitle);margin-top:2px}' .
+		'.crm-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}' .
+		'.crm-status-active{background:#4caf50}' .
+		'.crm-status-inactive{background:#9e9e9e}' .
+		'.crm-status-new{background:#2196f3}' .
+		'.crm-pull-hint{text-align:center;font-size:var(--crm-label);color:var(--tma-hint);padding:8px 0}' .
+
+		/* ── Pipeline ── */
 		'.tma-pipeline{display:flex;gap:10px;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
-		'.tma-pipeline-col{min-width:160px;background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:10px;flex-shrink:0}' .
-		'.tma-pipeline-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint);margin-bottom:8px}' .
-		'.tma-pipeline-card{background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px}' .
+		'.tma-pipeline-col{min-width:170px;background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:10px;flex-shrink:0}' .
+		'.tma-pipeline-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}' .
+		'.tma-pipeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}' .
+		'.tma-pipeline-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
+		'.tma-pipeline-stats{font-size:10px;color:var(--tma-subtitle);margin-left:auto;white-space:nowrap}' .
+		'.tma-pipeline-card{background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:var(--crm-label);cursor:pointer}' .
+		'.tma-pipeline-card:active{opacity:.85}' .
+		'.tma-pipeline-card-name{font-weight:600;font-size:var(--crm-base);margin-bottom:2px}' .
+		'.tma-pipeline-card-value{color:var(--tma-btn);font-weight:700;font-size:var(--crm-base)}' .
+		'.tma-pipeline-card-detail{display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--tma-border);font-size:var(--crm-label);color:var(--tma-hint)}' .
+		'.tma-pipeline-card.expanded .tma-pipeline-card-detail{display:block}' .
+
+		/* ── Deals ── */
+		'.crm-kpi-row{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
+		'.crm-kpi-card{flex:1;min-width:90px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.crm-kpi-value{font-size:var(--crm-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.crm-kpi-label{font-size:var(--crm-label);color:var(--tma-hint);margin-top:2px}' .
+		'.crm-donut-wrap{margin:8px 12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px}' .
+		'.crm-donut-title{font-size:var(--crm-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+		'.crm-deal-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.crm-deal-info{flex:1;min-width:0}' .
+		'.crm-deal-name{font-size:var(--crm-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.crm-deal-value{font-size:var(--crm-base);font-weight:700;color:var(--tma-btn);flex-shrink:0}' .
+		'.crm-deal-meta{font-size:var(--crm-label);color:var(--tma-hint);margin-top:2px}' .
+		'.crm-stage-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap}' .
+		'.crm-stage-lead{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.crm-stage-qualified{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.crm-stage-proposal{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}' .
+		'.crm-stage-won{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.crm-stage-lost{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.crm-deal-status-won{border-left:3px solid #4caf50}' .
+		'.crm-deal-status-lost{border-left:3px solid #e53935}' .
+		'.crm-deal-status-stale{border-left:3px solid #ff9800}' .
+		'.crm-deal-status-active{border-left:3px solid #2196f3}' .
+
+		/* ── AI Coach chat ── */
+		'.crm-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.crm-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.crm-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--crm-base);line-height:1.5;word-wrap:break-word}' .
+		'.crm-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.crm-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.crm-msg.bot p{margin:0 0 6px}.crm-msg.bot p:last-child{margin-bottom:0}' .
+		'.crm-msg.bot ul,.crm-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.crm-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.crm-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.crm-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--crm-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.crm-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.crm-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.crm-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.crm-settings-title{font-size:var(--crm-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.crm-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.crm-settings-row:last-child{border-bottom:none}' .
+		'.crm-settings-label{font-size:var(--crm-base);color:var(--tma-text)}' .
+		'.crm-settings-value{font-size:var(--crm-base);color:var(--tma-hint)}' .
+		'.crm-font-btns{display:flex;gap:4px}' .
+		'.crm-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--crm-label);cursor:pointer}' .
+		'.crm-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.crm-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.crm-toggle.on{background:var(--tma-btn)}' .
+		'.crm-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.crm-toggle.on::after{transform:translateX(20px)}' .
+		'.crm-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--crm-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.crm-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.crm-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">👥</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'CRM', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="crm-header-status">' . esc_html__( 'CRM', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-search-bar">' .
+
+			/* ── Search bar (visible on Contacts tab) ── */
+			'<div class="tma-search-bar" id="crm-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
-					'<input type="search" placeholder="' . esc_attr__( 'Search contacts…', 'mcp-ai-wpoos-pro' ) . '" oninput="tmaSearchContacts(this.value)" />' .
+					'<input type="search" id="crm-search-input" placeholder="' . esc_attr__( 'Search contacts…', 'mcp-ai-wpoos-pro' ) . '" />' .
 				'</div>' .
 			'</div>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
+
+				/* Tab 1: Contacts */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-contacts">' .
-					'<div id="tma-contact-list"><div class="tma-empty">' . esc_html__( 'Loading contacts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div id="crm-contact-list"><div class="tma-empty">' . esc_html__( 'Loading contacts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="crm-pull-hint" id="crm-pull-hint" style="display:none">' . esc_html__( '↑ Pull to refresh', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
+
+				/* Tab 2: Pipeline */
 				'<div class="tma-tab-pane" id="tma-tab-pipeline">' .
-					'<div class="tma-pipeline" id="tma-pipeline"><div class="tma-empty">' . esc_html__( 'Loading pipeline…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="tma-pipeline" id="crm-pipeline"><div class="tma-empty">' . esc_html__( 'Loading pipeline…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-tab-compose">' .
-					'<div style="padding:16px">' .
-						'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'AI Follow-up Draft', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<textarea id="tma-compose-ctx" class="tma-input" rows="3" style="margin-bottom:8px;resize:none" placeholder="' . esc_attr__( 'Describe the customer or situation…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%;margin-bottom:12px" onclick="tmaGenerateDraft()">' . esc_html__( '✨ Generate Draft', 'mcp-ai-wpoos-pro' ) . '</button>' .
-						'<textarea id="tma-compose-draft" class="tma-input" rows="6" style="resize:none" placeholder="' . esc_attr__( 'Your AI-generated message will appear here…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
+
+				/* Tab 3: Deals */
+				'<div class="tma-tab-pane" id="tma-tab-deals">' .
+					'<div class="crm-kpi-row" id="crm-kpi-row"></div>' .
+					'<div class="crm-donut-wrap" id="crm-donut-wrap" style="display:none">' .
+						'<div class="crm-donut-title">' . esc_html__( 'Deal Value by Stage', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="crm-donut-chart" height="200"></canvas>' .
+					'</div>' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'All Deals', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="crm-deals-list"><div class="tma-empty">' . esc_html__( 'Loading deals…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Coach */
+				'<div class="tma-tab-pane" id="tma-tab-coach">' .
+					'<div class="crm-chat-container">' .
+						'<div class="crm-chat-messages" id="crm-chat-messages"></div>' .
+						'<div class="crm-chat-input-row">' .
+							'<input type="text" class="crm-chat-input" id="crm-chat-input" placeholder="' . esc_attr__( 'Ask your CRM coach…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="crm-send-btn" onclick="crmChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-			'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="crm-settings-section">' .
+						'<div class="crm-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="crm-font-btns" id="crm-font-btns">' .
+								'<button data-size="small" onclick="crmSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="crmSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="crmSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="crm-toggle" id="crm-compact-toggle" onclick="crmToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Default Pipeline View', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="crm-settings-value" id="crm-default-view-label">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="crm-settings-section">' .
+						'<div class="crm-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label" id="crm-data-summary"></span>' .
+						'</div>' .
+						'<button class="crm-settings-btn" onclick="crmSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="crm-settings-btn danger" onclick="crmClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
 			'<nav class="tma-nav">' .
-				'<button class="tma-nav-btn tma-active" id="tma-nav-contacts" onclick="tmaSwitch(\'contacts\')">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-contacts" onclick="crmSwitch(\'contacts\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' .
 					'<span>' . esc_html__( 'Contacts', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-pipeline" onclick="tmaSwitch(\'pipeline\')">' .
-					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' .
+				'<button class="tma-nav-btn" id="tma-nav-pipeline" onclick="crmSwitch(\'pipeline\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>' .
 					'<span>' . esc_html__( 'Pipeline', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-compose" onclick="tmaSwitch(\'compose\')">' .
-					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' .
-					'<span>' . esc_html__( 'Compose', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'<button class="tma-nav-btn" id="tma-nav-deals" onclick="crmSwitch(\'deals\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' .
+					'<span>' . esc_html__( 'Deals', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-coach" onclick="crmSwitch(\'coach\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="crmSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
 		'var activeTab="contacts";' .
+		'var contactsCache=[];' .
+		'var pipelineCache=[];' .
+		'var dealsCache=[];' .
+		'var chatHist=[];' .
+		'var donutChartInst=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.tmaSwitch=function(tab){' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function crmRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecommerce / medical_vitals pattern) ── */
+		'function crmInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}loadContacts();loadPipeline();})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function crmApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("crm_font_size","medium");' .
+				'shell.classList.remove("crm-font-small","crm-font-large");' .
+				'if(size==="small")shell.classList.add("crm-font-small");' .
+				'else if(size==="large")shell.classList.add("crm-font-large");' .
+				'var compact=lsGet("crm_compact",false);' .
+				'if(compact)shell.classList.add("crm-compact");' .
+				'else shell.classList.remove("crm-compact");' .
+				'var btns=document.querySelectorAll("#crm-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("crm-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.crmSetFontSize=function(s){lsSet("crm_font_size",s);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
+		'window.crmToggleCompact=function(){var c=!lsGet("crm_compact",false);lsSet("crm_compact",c);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.crmSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
 			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
 			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
-			'activeTab=tab;if(tab==="contacts")loadContacts();if(tab==="pipeline")loadPipeline();' .
+			'var sb=document.getElementById("crm-search-bar");if(sb)sb.style.display=tab==="contacts"?"":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="contacts")loadContacts();' .
+			'if(tab==="pipeline")loadPipeline();' .
+			'if(tab==="deals")crmRenderDeals();' .
+			'if(tab==="coach"&&!chatHist.length)crmChatInit();' .
+			'if(tab==="settings")crmRenderSettings();' .
 		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Contacts
+		   ══════════════════════════════════════════════════════════ */
+		'function crmStatusDot(s){' .
+			'var cls="crm-status-inactive";' .
+			'if(s==="active")cls="crm-status-active";' .
+			'else if(s==="new")cls="crm-status-new";' .
+			'return \'<span class="crm-status-dot \'+cls+\'"></span>\';' .
+		'}' .
+
 		'function loadContacts(q){' .
-			'var l=document.getElementById("tma-contact-list");if(!l)return;' .
-			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"list_crm_contacts",arguments:{search:q||"",per_page:20}})})' .
+			'var l=document.getElementById("crm-contact-list");if(!l)return;' .
+			/* Show cached contacts while fetching */
+			'if(!q&&contactsCache.length){crmRenderContacts(contactsCache);}' .
+			'if(!q&&!contactsCache.length)l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"manage_crm_contact",arguments:{action:"list",search:q||"",per_page:20}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var cs=(d&&d.data&&d.data.contacts)?d.data.contacts:[];' .
-				'if(!cs.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No contacts found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'l.innerHTML=cs.map(function(c){var init=(c.name||"?").charAt(0).toUpperCase();' .
-					'return \'<div class="tma-contact-row"><div class="tma-contact-avatar">\'+escH(init)+\'</div><div class="tma-contact-info"><div class="tma-contact-name">\'+escH(c.name||"Unknown")+\'</div><div class="tma-contact-sub">\'+escH(c.email||c.phone||"")+\'</div></div></div>\';' .
-				'}).join("");' .
+				'if(!q){contactsCache=cs;lsSet("crm_contacts_cache",cs);}' .
+				'crmRenderContacts(cs);' .
 			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load contacts.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
 		'}' .
-		'var st=null;window.tmaSearchContacts=function(q){clearTimeout(st);st=setTimeout(function(){loadContacts(q);},400);};' .
+
+		'function crmRenderContacts(cs){' .
+			'var l=document.getElementById("crm-contact-list");if(!l)return;' .
+			'var hint=document.getElementById("crm-pull-hint");' .
+			'if(!cs.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No contacts found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';if(hint)hint.style.display="none";return;}' .
+			'l.innerHTML=cs.map(function(c){' .
+				'var init=(c.name||"?").charAt(0).toUpperCase();' .
+				'var status=c.status||"active";' .
+				'var company=c.company?"  ·  "+escH(c.company):"";' .
+				'var lastAct=c.last_activity||c.modified||"";' .
+				'if(lastAct&&lastAct.length>10)lastAct=lastAct.substring(0,10);' .
+				'var sub=escH(c.email||c.phone||"");' .
+				'return \'<div class="tma-contact-row">' .
+					'<div class="tma-contact-avatar">\'+escH(init)+\'</div>' .
+					'<div class="tma-contact-info">' .
+						'<div class="tma-contact-name">\'+crmStatusDot(status)+escH(c.name||"' . esc_js( __( 'Unknown', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div>' .
+						'<div class="tma-contact-sub">\'+sub+company+\'</div>' .
+						'\'+(lastAct?\'<div class="tma-contact-meta">\'+escH(lastAct)+\'</div>\':\'\')+\'' .
+					'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+			'if(hint)hint.style.display="block";' .
+		'}' .
+
+		/* Pull-to-refresh for contacts */
+		'(function(){' .
+			'var startY=0;var el=document.getElementById("tma-tab-contacts");if(!el)return;' .
+			'el.addEventListener("touchstart",function(e){startY=e.touches[0].clientY;},{passive:true});' .
+			'el.addEventListener("touchend",function(e){' .
+				'if(el.scrollTop===0&&e.changedTouches[0].clientY-startY>80){tmaHaptic("light");loadContacts();}' .
+			'},{passive:true});' .
+		'})();' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("crm-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value;' .
+			'searchTimer=setTimeout(function(){loadContacts(q);},400);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Pipeline
+		   ══════════════════════════════════════════════════════════ */
+		'var STAGE_COLORS={lead:"#2196f3",qualified:"#ff9800",proposal:"#9c27b0",won:"#4caf50",lost:"#e53935"};' .
+
+		'function crmStageKey(label){' .
+			'var lc=String(label).toLowerCase();' .
+			'if(lc.indexOf("lead")>-1)return "lead";' .
+			'if(lc.indexOf("qualif")>-1)return "qualified";' .
+			'if(lc.indexOf("propos")>-1)return "proposal";' .
+			'if(lc.indexOf("won")>-1||lc.indexOf("closed won")>-1)return "won";' .
+			'if(lc.indexOf("lost")>-1||lc.indexOf("closed lost")>-1)return "lost";' .
+			'return "lead";' .
+		'}' .
+
 		'function loadPipeline(){' .
-			'var w=document.getElementById("tma-pipeline");if(!w)return;' .
-			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_crm_pipeline",arguments:{}})})' .
+			'var w=document.getElementById("crm-pipeline");if(!w)return;' .
+			'if(pipelineCache.length){crmRenderPipeline(pipelineCache);}' .
+			'if(!pipelineCache.length)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_crm_pipeline",arguments:{}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var stages=(d&&d.data&&d.data.stages)?d.data.stages:[{label:"' . esc_js( __( 'Lead', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Qualified', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]}];' .
-				'w.innerHTML=stages.map(function(s){' .
-					'var cards=(s.contacts||[]).map(function(c){return \'<div class="tma-pipeline-card"><div style="font-weight:600">\'+escH(c.name||"Contact")+\'</div><div style="font-size:11px;color:var(--tma-hint)">\'+escH(c.value||"")+\'</div></div>\';}).join("");' .
-					'return \'<div class="tma-pipeline-col"><div class="tma-pipeline-label">\'+escH(s.label)+\'</div>\'+cards+\'</div>\';' .
-				'}).join("");' .
+				'var stages=(d&&d.data&&d.data.stages)?d.data.stages:[];' .
+				'if(!stages.length)stages=[{label:"' . esc_js( __( 'Lead', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Qualified', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Proposal', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Lost', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]}];' .
+				'pipelineCache=stages;lsSet("crm_pipeline_cache",stages);' .
+				'crmRenderPipeline(stages);' .
+				'crmBuildDealsFromPipeline(stages);' .
 			'}).catch(function(){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Pipeline unavailable.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
 		'}' .
-		'window.tmaGenerateDraft=function(){' .
-			'var ctx=(document.getElementById("tma-compose-ctx")||{}).value||"";' .
-			'var draft=document.getElementById("tma-compose-draft");' .
-			'if(!ctx.trim()){if(draft)draft.value="' . esc_js( __( 'Please describe the customer or situation first.', 'mcp-ai-wpoos-pro' ) ) . '";return;}' .
-			'if(draft)draft.value="' . esc_js( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ) . '";' .
-			/* Draft generation is a single-shot prompt — no conversation history needed. */
-			'var body={messages:[{role:"user",content:"' . esc_js( __( 'Write a professional follow-up message for: ', 'mcp-ai-wpoos-pro' ) ) . '"+ctx}]};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+
+		'function crmRenderPipeline(stages){' .
+			'var w=document.getElementById("crm-pipeline");if(!w)return;' .
+			'if(!stages.length){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No pipeline data.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'w.innerHTML=stages.map(function(s){' .
+				'var key=crmStageKey(s.label);var color=STAGE_COLORS[key]||"#607d8b";' .
+				'var contacts=s.contacts||[];' .
+				'var total=contacts.reduce(function(sum,c){return sum+parseFloat(c.value||0);},0);' .
+				'var stats=contacts.length+" · $"+Math.round(total).toLocaleString();' .
+				'var cards=contacts.map(function(c){' .
+					'var val=parseFloat(c.value||0);' .
+					'var detail=c.email||c.phone||"";' .
+					'return \'<div class="tma-pipeline-card" onclick="this.classList.toggle(\\\'expanded\\\')">' .
+						'<div class="tma-pipeline-card-name">\'+escH(c.name||"' . esc_js( __( 'Contact', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div>' .
+						'\'+(val?\'<div class="tma-pipeline-card-value">$\'+escH(val.toLocaleString())+\'</div>\':\'\')+\'' .
+						'<div class="tma-pipeline-card-detail">\'+escH(detail)+\'</div>' .
+					'</div>\';' .
+				'}).join("");' .
+				'return \'<div class="tma-pipeline-col">' .
+					'<div class="tma-pipeline-header">' .
+						'<span class="tma-pipeline-dot" style="background:\'+color+\'"></span>' .
+						'<span class="tma-pipeline-label">\'+escH(s.label)+\'</span>' .
+						'<span class="tma-pipeline-stats">\'+escH(stats)+\'</span>' .
+					'</div>' .
+					'\'+cards+\'' .
+				'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Deals
+		   ══════════════════════════════════════════════════════════ */
+		'function crmBuildDealsFromPipeline(stages){' .
+			'var deals=[];' .
+			'stages.forEach(function(s){' .
+				'var key=crmStageKey(s.label);' .
+				'(s.contacts||[]).forEach(function(c){' .
+					'deals.push({name:c.name||"' . esc_js( __( 'Deal', 'mcp-ai-wpoos-pro' ) ) . '",value:parseFloat(c.value||0),stage:s.label,stageKey:key,' .
+						'last_activity:c.last_activity||c.modified||"",email:c.email||"",phone:c.phone||""});' .
+				'});' .
+			'});' .
+			'deals.sort(function(a,b){return b.value-a.value;});' .
+			'dealsCache=deals;lsSet("crm_deals_cache",deals);' .
+		'}' .
+
+		'function crmDealStatus(d){' .
+			'if(d.stageKey==="won")return "won";' .
+			'if(d.stageKey==="lost")return "lost";' .
+			'if(d.last_activity){' .
+				'var diff=Date.now()-new Date(d.last_activity).getTime();' .
+				'if(diff>30*86400000)return "stale";' .
+			'}' .
+			'return "active";' .
+		'}' .
+
+		'function crmStageBadgeClass(key){' .
+			'switch(key){case "lead":return "crm-stage-lead";case "qualified":return "crm-stage-qualified";' .
+				'case "proposal":return "crm-stage-proposal";case "won":return "crm-stage-won";case "lost":return "crm-stage-lost";' .
+				'default:return "crm-stage-lead";}' .
+		'}' .
+
+		'function crmRenderDeals(){' .
+			'if(!dealsCache.length&&pipelineCache.length)crmBuildDealsFromPipeline(pipelineCache);' .
+			'var kpi=document.getElementById("crm-kpi-row");' .
+			'var dl=document.getElementById("crm-deals-list");' .
+			'var totalVal=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
+			'var wonVal=dealsCache.filter(function(d){return d.stageKey==="won";}).reduce(function(s,d){return s+d.value;},0);' .
+			'var activeCount=dealsCache.filter(function(d){return d.stageKey!=="won"&&d.stageKey!=="lost";}).length;' .
+			/* KPI cards */
+			'if(kpi)kpi.innerHTML=' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(totalVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Pipeline', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(wonVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">\'+activeCount+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Active', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+			/* Deal list */
+			'if(dl){' .
+				'if(!dealsCache.length){dl.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No deals found. Load pipeline first.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';crmHideDonut();return;}' .
+				'dl.innerHTML=dealsCache.map(function(d){' .
+					'var status=crmDealStatus(d);' .
+					'var lastAct=d.last_activity;if(lastAct&&lastAct.length>10)lastAct=lastAct.substring(0,10);' .
+					'return \'<div class="crm-deal-card crm-deal-status-\'+status+\'">' .
+						'<div class="crm-deal-info">' .
+							'<div class="crm-deal-name">\'+escH(d.name)+\'</div>' .
+							'<div class="crm-deal-meta"><span class="crm-stage-badge \'+crmStageBadgeClass(d.stageKey)+\'">\'+escH(d.stage)+\'</span>' .
+								'\'+(lastAct?" · "+escH(lastAct):"")+\'</div>' .
+						'</div>' .
+						'<div class="crm-deal-value">$\'+escH(d.value.toLocaleString())+\'</div>' .
+					'</div>\';' .
+				'}).join("");' .
+			'}' .
+			/* Donut chart */
+			'crmRenderDonut();' .
+		'}' .
+
+		/* ── Chart.js donut ── */
+		'function crmLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function crmHideDonut(){var w=document.getElementById("crm-donut-wrap");if(w)w.style.display="none";}' .
+
+		'function crmRenderDonut(){' .
+			'crmLoadChartJs(function(){' .
+				'if(!window.Chart||!dealsCache.length){crmHideDonut();return;}' .
+				'var byStage={};' .
+				'dealsCache.forEach(function(d){' .
+					'var k=d.stage||"Other";' .
+					'if(!byStage[k])byStage[k]=0;byStage[k]+=d.value;' .
+				'});' .
+				'var labels=Object.keys(byStage);var data=labels.map(function(k){return Math.round(byStage[k]*100)/100;});' .
+				'var colors=labels.map(function(k){var sk=crmStageKey(k);return STAGE_COLORS[sk]||"#607d8b";});' .
+				'if(!labels.length){crmHideDonut();return;}' .
+				'var wrap=document.getElementById("crm-donut-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("crm-donut-chart");if(!cv)return;' .
+				'if(donutChartInst){donutChartInst.destroy();}' .
+				'donutChartInst=new Chart(cv.getContext("2d"),{type:"doughnut",data:{labels:labels,datasets:[{' .
+					'data:data,backgroundColor:colors,borderWidth:1' .
+				'}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:12,font:{size:11}}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Coach
+		   ══════════════════════════════════════════════════════════ */
+		'function crmChatInit(){' .
+			'chatHist=lsGet("crm_chat_hist",[]);' .
+			'var m=document.getElementById("crm-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){crmAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with CRM context */
+				'var totalContacts=contactsCache.length;' .
+				'var stageCounts=pipelineCache.map(function(s){return escH(s.label)+"("+((s.contacts||[]).length)+")";}).join(", ");' .
+				'var totalPipeline=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
+				'var ctx="[' . esc_js( __( 'CRM Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Total contacts', 'mcp-ai-wpoos-pro' ) ) . ': "+totalContacts+", ' .
+					esc_js( __( 'Pipeline stages', 'mcp-ai-wpoos-pro' ) ) . ': "+stageCounts+". ' .
+					esc_js( __( 'Total pipeline value', 'mcp-ai-wpoos-pro' ) ) . ': $"+Math.round(totalPipeline).toLocaleString();' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'crmAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your CRM coach. I can help you prioritize leads, suggest follow-ups, and analyze your pipeline. What would you like to know?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function crmAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="crm-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=crmRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("crm-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.crmChatSend=function(){' .
+			'var inp=document.getElementById("crm-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});crmAppendMsg("user",txt,false);' .
+			'lsSet("crm_chat_hist",chatHist.slice(-50));' .
+			'var el=crmAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var data=d&&d.data;' .
 				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
-					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Could not generate draft.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(draft)draft.value=rep;})' .
-			'.catch(function(){if(draft)draft.value="' . esc_js( __( 'Error generating draft.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=crmRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("crm_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
+
+		/* Enter to send */
+		'document.getElementById("crm-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")crmChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function crmRenderSettings(){' .
+			/* Default pipeline view label */
+			'var dvl=document.getElementById("crm-default-view-label");' .
+			'if(dvl){var dv=lsGet("crm_default_view","kanban");dvl.textContent=dv==="kanban"?"' . esc_js( __( 'Kanban', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'List', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+			/* Data summary */
+			'var ds=document.getElementById("crm-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Contacts', 'mcp-ai-wpoos-pro' ) ) . ': "+contactsCache.length+", ' .
+				esc_js( __( 'Deals', 'mcp-ai-wpoos-pro' ) ) . ': "+dealsCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.crmSyncFromServer=function(){' .
+			'tmaHaptic("medium");loadContacts();loadPipeline();' .
+		'};' .
+
+		'window.crmClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)crmDoClear();});' .
+			'}else if(confirm(msg)){crmDoClear();}' .
+		'};' .
+
+		'function crmDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("crm_contacts_cache");' .
+				'localStorage.removeItem("crm_pipeline_cache");' .
+				'localStorage.removeItem("crm_deals_cache");' .
+				'localStorage.removeItem("crm_chat_hist");' .
+				'localStorage.removeItem("crm_font_size");' .
+				'localStorage.removeItem("crm_compact");' .
+				'localStorage.removeItem("crm_default_view");' .
+			'}catch(e){}' .
+			'contactsCache=[];pipelineCache=[];dealsCache=[];chatHist=[];' .
+			'crmRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'contactsCache=lsGet("crm_contacts_cache",[]);' .
+		'pipelineCache=lsGet("crm_pipeline_cache",[]);' .
+		'dealsCache=lsGet("crm_deals_cache",[]);' .
+		'crmApplyDisplaySettings();' .
+
+		/* Render cached contacts immediately, then refresh */
+		'if(contactsCache.length)crmRenderContacts(contactsCache);' .
 		'loadContacts();' .
+		'loadPipeline();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'crmInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
