@@ -219,6 +219,7 @@
 			var typeIcons = {
 				tool_execution: 'admin-tools',
 				chat_response: 'format-chat',
+				chat_interaction: 'admin-comments',
 				session_start: 'migrate',
 				session_end: 'dismiss',
 				approval_requested: 'clock',
@@ -299,6 +300,7 @@
 			var typeIcons = {
 				tool_execution: 'admin-tools',
 				chat_response: 'format-chat',
+				chat_interaction: 'admin-comments',
 				session_start: 'migrate',
 				session_end: 'dismiss',
 				approval_requested: 'clock',
@@ -338,6 +340,7 @@
 			$( '#activity-total-events' ).text( summary.total || 0 );
 			$( '#activity-tool-calls' ).text( summary.tool_calls || 0 );
 			$( '#activity-chat-responses' ).text( summary.chat_responses || 0 );
+			$( '#activity-chat-interactions' ).text( summary.chat_interactions || 0 );
 			$( '#activity-errors' ).text( summary.errors || 0 );
 		},
 

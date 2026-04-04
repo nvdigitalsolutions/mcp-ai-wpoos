@@ -859,6 +859,12 @@
 	color: #1d2327;
 }
 
+/* Chart wrapper - required by Chart.js responsive mode */
+.acc-chart-wrapper {
+	position: relative;
+	width: 100%;
+}
+
 .acc-performance-table-wrapper {
 	overflow-x: auto;
 	padding: 0 20px 20px;
@@ -977,6 +983,7 @@
 /* Uptime Timeline */
 .acc-uptime-timeline {
 	padding: 20px;
+	position: relative;
 }
 
 /* Event Timeline */
@@ -1223,6 +1230,10 @@
 	margin: 0 0 12px;
 	font-size: 13px;
 	color: #1d2327;
+}
+
+.acc-scale-gauge {
+	position: relative;
 }
 
 /* =========================================================================
