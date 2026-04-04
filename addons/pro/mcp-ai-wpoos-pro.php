@@ -223,6 +223,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $webhook_status_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Agent Command Center (unified agent management dashboard).
+		$agent_command_center = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-agent-command-center.php';
+		if ( file_exists( $agent_command_center ) ) {
+			require_once $agent_command_center;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
