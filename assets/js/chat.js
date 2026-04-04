@@ -8138,10 +8138,317 @@
         return text;
     }
 
+    /* ============================================================
+       Agent Team Panel & Workflow Tracker
+       Manages the collapsible agent panel that shows active sub-agents,
+       delegation status, and workflow step progress in the chat UI.
+       ============================================================ */
+
     /**
-     * Check if a result object has the structure of a stored agent context response.
+     * Initialise the agent panel toggle behaviour.
      *
-     * store_agent_context returns {success, context_id, agent_id, stored_at, expires_at, ttl_human}.
+     * @param {HTMLElement} container - Chat container element.
+     */
+    function initAgentPanel(container) {
+        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        if (!panel) {
+            return;
+        }
+
+        var toggle = panel.querySelector('.wp-mcp-ai-chat__agent-panel-toggle');
+        var body = panel.querySelector('.wp-mcp-ai-chat__agent-panel-body');
+
+        if (toggle && body) {
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                var expanded = toggle.getAttribute('aria-expanded') === 'true';
+                toggle.setAttribute('aria-expanded', String(!expanded));
+                body.hidden = expanded;
+            });
+        }
+    }
+
+    /**
+     * Show or update the agent panel with current agent team data.
+     *
+     * @param {HTMLElement} container - Chat container element.
+     * @param {Object}      teamData  - Agent team data object.
+     * @param {string}      teamData.team_name - Name of the team.
+     * @param {Array}       teamData.agents    - Array of agent objects with id, name, role, status, task.
+     */
+    function updateAgentPanel(container, teamData) {
+        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        if (!panel || !teamData) {
+            return;
+        }
+
+        var agents = teamData.agents || teamData.members || [];
+        if (agents.length === 0) {
+            panel.hidden = true;
+            return;
+        }
+
+        panel.hidden = false;
+
+        // Update count badge.
+        var countEl = panel.querySelector('.wp-mcp-ai-chat__agent-panel-count');
+        if (countEl) {
+            var activeCount = agents.filter(function (a) { return a.status === 'active' || a.status === 'executing'; }).length;
+            countEl.textContent = String(activeCount || agents.length);
+            countEl.setAttribute('data-count', String(activeCount || agents.length));
+        }
+
+        // Render agent cards.
+        var cardsContainer = panel.querySelector('.wp-mcp-ai-chat__agent-cards');
+        if (cardsContainer) {
+            cardsContainer.innerHTML = '';
+            agents.forEach(function (agent) {
+                var statusClass = 'wp-mcp-ai-chat__agent-card';
+                var agentStatus = (agent.status || 'idle').toLowerCase();
+                if (agentStatus === 'active' || agentStatus === 'executing' || agentStatus === 'working') {
+                    statusClass += ' wp-mcp-ai-chat__agent-card--active';
+                } else if (agentStatus === 'completed' || agentStatus === 'done') {
+                    statusClass += ' wp-mcp-ai-chat__agent-card--completed';
+                } else if (agentStatus === 'error' || agentStatus === 'failed') {
+                    statusClass += ' wp-mcp-ai-chat__agent-card--error';
+                } else {
+                    statusClass += ' wp-mcp-ai-chat__agent-card--idle';
+                }
+
+                var card = document.createElement('div');
+                card.className = statusClass;
+                card.setAttribute('role', 'listitem');
+
+                var statusDot = document.createElement('span');
+                statusDot.className = 'wp-mcp-ai-chat__agent-card-status';
+                statusDot.setAttribute('aria-hidden', 'true');
+                card.appendChild(statusDot);
+
+                var nameEl = document.createElement('span');
+                nameEl.className = 'wp-mcp-ai-chat__agent-card-name';
+                nameEl.textContent = agent.name || agent.id || 'Agent';
+                card.appendChild(nameEl);
+
+                if (agent.role) {
+                    var roleEl = document.createElement('span');
+                    roleEl.className = 'wp-mcp-ai-chat__agent-card-role';
+                    roleEl.textContent = agent.role;
+                    card.appendChild(roleEl);
+                }
+
+                if (agent.task) {
+                    var taskEl = document.createElement('span');
+                    taskEl.className = 'wp-mcp-ai-chat__agent-card-task';
+                    taskEl.textContent = agent.task;
+                    taskEl.title = agent.task;
+                    card.appendChild(taskEl);
+                }
+
+                cardsContainer.appendChild(card);
+            });
+        }
+    }
+
+    /**
+     * Update the workflow progress tracker.
+     *
+     * @param {HTMLElement} container    - Chat container element.
+     * @param {Object}      workflowData - Workflow data object.
+     * @param {Array}       workflowData.steps    - Array of step objects with label, status.
+     * @param {number}      workflowData.progress - Overall progress percentage (0-100).
+     */
+    function updateWorkflowTracker(container, workflowData) {
+        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        if (!panel) {
+            return;
+        }
+
+        var tracker = panel.querySelector('.wp-mcp-ai-chat__workflow-tracker');
+        if (!tracker || !workflowData) {
+            return;
+        }
+
+        var steps = workflowData.steps || [];
+        if (steps.length === 0) {
+            tracker.hidden = true;
+            return;
+        }
+
+        tracker.hidden = false;
+
+        // Make sure the panel is visible.
+        panel.hidden = false;
+
+        // Calculate progress from steps if not provided.
+        var completedSteps = steps.filter(function (s) { return s.status === 'completed' || s.status === 'done'; }).length;
+        var progress = typeof workflowData.progress === 'number' ? workflowData.progress : Math.round((completedSteps / steps.length) * 100);
+
+        // Update progress text & bar.
+        var progressEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-progress');
+        if (progressEl) {
+            progressEl.textContent = progress + '%';
+        }
+
+        var fillEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-fill');
+        if (fillEl) {
+            fillEl.style.width = progress + '%';
+        }
+
+        // Render step list.
+        var stepsList = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-steps');
+        if (stepsList) {
+            stepsList.innerHTML = '';
+            steps.forEach(function (step, index) {
+                var stepEl = document.createElement('li');
+                var stepStatus = (step.status || 'pending').toLowerCase();
+                stepEl.className = 'wp-mcp-ai-chat__workflow-step wp-mcp-ai-chat__workflow-step--' + stepStatus;
+
+                var iconEl = document.createElement('span');
+                iconEl.className = 'wp-mcp-ai-chat__workflow-step-icon';
+                if (stepStatus === 'completed' || stepStatus === 'done') {
+                    iconEl.textContent = '✓';
+                } else if (stepStatus === 'active' || stepStatus === 'executing') {
+                    iconEl.textContent = '⟳';
+                } else if (stepStatus === 'error' || stepStatus === 'failed') {
+                    iconEl.textContent = '✗';
+                } else {
+                    iconEl.textContent = String(index + 1);
+                }
+                stepEl.appendChild(iconEl);
+
+                var labelEl = document.createElement('span');
+                labelEl.className = 'wp-mcp-ai-chat__workflow-step-label';
+                labelEl.textContent = step.label || step.name || ('Step ' + (index + 1));
+                stepEl.appendChild(labelEl);
+
+                stepsList.appendChild(stepEl);
+            });
+        }
+    }
+
+    /**
+     * Create a delegation notice element for display in the message stream.
+     *
+     * @param {Object} delegationData - Delegation information.
+     * @param {string} delegationData.agent_name - Name of the agent receiving delegation.
+     * @param {string} delegationData.task       - Description of the delegated task.
+     * @param {string} delegationData.status     - Delegation status (delegated, complete, error).
+     * @return {HTMLElement} The delegation notice element.
+     */
+    function createDelegationNotice(delegationData) {
+        var statusClass = 'wp-mcp-ai-chat__delegation-notice';
+        var icon = '🔀';
+        var title = 'Delegating to sub-agent';
+
+        if (delegationData.status === 'complete' || delegationData.status === 'completed') {
+            statusClass += ' wp-mcp-ai-chat__delegation-notice--complete';
+            icon = '✅';
+            title = 'Sub-agent completed';
+        } else if (delegationData.status === 'error' || delegationData.status === 'failed') {
+            statusClass += ' wp-mcp-ai-chat__delegation-notice--error';
+            icon = '❌';
+            title = 'Sub-agent failed';
+        }
+
+        var notice = document.createElement('div');
+        notice.className = statusClass;
+
+        var iconEl = document.createElement('span');
+        iconEl.className = 'wp-mcp-ai-chat__delegation-notice-icon';
+        iconEl.setAttribute('aria-hidden', 'true');
+        iconEl.textContent = icon;
+        notice.appendChild(iconEl);
+
+        var content = document.createElement('div');
+        content.className = 'wp-mcp-ai-chat__delegation-notice-content';
+
+        var titleEl = document.createElement('div');
+        titleEl.className = 'wp-mcp-ai-chat__delegation-notice-title';
+        titleEl.textContent = title;
+        content.appendChild(titleEl);
+
+        if (delegationData.agent_name || delegationData.task) {
+            var details = document.createElement('div');
+            details.className = 'wp-mcp-ai-chat__delegation-notice-details';
+            var detailParts = [];
+            if (delegationData.agent_name) {
+                detailParts.push('Agent: ' + delegationData.agent_name);
+            }
+            if (delegationData.task) {
+                detailParts.push(delegationData.task);
+            }
+            details.textContent = detailParts.join(' — ');
+            content.appendChild(details);
+        }
+
+        notice.appendChild(content);
+        return notice;
+    }
+
+    /**
+     * Check if a tool result is an agent team creation response and update the panel accordingly.
+     *
+     * @param {HTMLElement} container - Chat container element.
+     * @param {string}      toolName  - Name of the tool that produced the result.
+     * @param {Object}      result    - Tool result object.
+     * @return {boolean} True if the result was an agent-related update handled by the panel.
+     */
+    function handleAgentToolResult(container, toolName, result) {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+
+        // Handle create_agent_team result.
+        if (toolName === 'create_agent_team' && result.success && result.team) {
+            updateAgentPanel(container, result.team);
+            return true;
+        }
+
+        // Handle delegate_to_agent or delegate_to_a2a_agent result.
+        if ((toolName === 'delegate_to_agent' || toolName === 'delegate_to_a2a_agent') && result.delegated_to) {
+            var messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
+            if (messagesEl) {
+                var notice = createDelegationNotice({
+                    agent_name: result.delegated_to,
+                    task: result.task || result.message || '',
+                    status: result.status || 'delegated'
+                });
+                messagesEl.appendChild(notice);
+            }
+            return true;
+        }
+
+        // Handle aggregate_agent_results - show completion.
+        if (toolName === 'aggregate_agent_results' && result.success) {
+            var messagesEl2 = container.querySelector('.wp-mcp-ai-chat__messages');
+            if (messagesEl2) {
+                var completeNotice = createDelegationNotice({
+                    agent_name: '',
+                    task: result.summary || 'Agent results aggregated',
+                    status: 'complete'
+                });
+                messagesEl2.appendChild(completeNotice);
+            }
+            return true;
+        }
+
+        // Handle execute_workflow or task_plan updates.
+        if ((toolName === 'execute_workflow' || toolName === 'update_task_plan' || toolName === 'get_task_plan') && result.steps) {
+            updateWorkflowTracker(container, result);
+            return true;
+        }
+
+        // Handle manage_autonomous_session.
+        if (toolName === 'manage_autonomous_session' && result.session) {
+            // If session includes agent data, update panel.
+            if (result.session.agents) {
+                updateAgentPanel(container, { agents: result.session.agents });
+            }
+            return true;
+        }
+
+        return false;
+    }
      *
      * @param {*} result - Tool result to check
      * @return {boolean} True if result appears to be a store_agent_context response
@@ -10591,6 +10898,9 @@
             // Store tool result for CPT actions
             storeToolResultForCptActions(state, toolName, result);
 
+            // Update agent panel if this is an agent-related tool result
+            handleAgentToolResult(state.container, toolName, result);
+
             // Log for debugging
             if (window.console && console.log) {
                 console.log('[NV oOS] Added async tool result to conversation:', {
@@ -11107,6 +11417,7 @@
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
             renderCptActionButtons(state);
+            initAgentPanel(container);
 
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
@@ -13503,6 +13814,9 @@
                                     if (toolDisplay) {
                                         toolResult.display = toolDisplay;
                                     }
+
+                                    // Update agent panel if this is an agent-related tool result
+                                    handleAgentToolResult(state.container, toolResult.name || '', parsedContent);
                                     
                                     state.conversation.push(toolResult);
                                 }
@@ -14780,6 +15094,9 @@
                 
                 // Normalize the tool result for display (extracts attachments, text, etc.)
                 const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+
+                // Update agent panel if this is an agent-related tool result
+                handleAgentToolResult(state.container, toolName, parsedContent);
                 
                 if (normalized) {
                     // Add text from tool result to assistant display if available
@@ -15638,6 +15955,9 @@
                     if (toolDisplay) {
                         toolResult.display = toolDisplay;
                     }
+
+                    // Update agent panel if this is an agent-related tool result
+                    handleAgentToolResult(state.container, toolResult.name || '', parsedForDisplay);
                     
                     state.conversation.push(toolResult);
                 }
