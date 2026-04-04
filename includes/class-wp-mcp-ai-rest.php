@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controlle
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -426,6 +427,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate A2A protocol routes to A2A Controller.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( ! empty( $settings['enable_a2a_server'] ) ) {
+				$a2a_controller = new WP_MCP_AI_REST_A2A_Controller( $this, $this->authenticator, $this->validator );
+				$a2a_controller->register_routes();
+			}
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 

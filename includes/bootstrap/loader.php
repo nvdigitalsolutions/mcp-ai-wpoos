@@ -235,6 +235,18 @@ require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 
 // ---------------------------------------------------------------------------
+// A2A Protocol system
+// ---------------------------------------------------------------------------
+
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-agent-card.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-wellknown.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-task-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-message-translator.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-client.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-push-notifications.php';
+require_once WP_MCP_AI_PATH . 'includes/a2a/class-wp-mcp-ai-a2a-webhook-handler.php';
+
+// ---------------------------------------------------------------------------
 // Federation system
 // ---------------------------------------------------------------------------
 
