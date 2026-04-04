@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-9b6f18ee-ff5b-4061-aa8e-38589b1dcf93',
-        'version' => 'dev-copilot/rebuild-all-zips-9b6f18ee-ff5b-4061-aa8e-38589b1dcf93',
-        'reference' => 'e4f8bd89e904227b189aa06cc306bc07b82ccff2',
+        'pretty_version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
+        'version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
+        'reference' => 'ecd508a47d6389c46a633f297cf6a2097ac09814',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-9b6f18ee-ff5b-4061-aa8e-38589b1dcf93',
-            'version' => 'dev-copilot/rebuild-all-zips-9b6f18ee-ff5b-4061-aa8e-38589b1dcf93',
-            'reference' => 'e4f8bd89e904227b189aa06cc306bc07b82ccff2',
+            'pretty_version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
+            'version' => 'dev-copilot/enhance-pro-plugin-admin-pages',
+            'reference' => 'ecd508a47d6389c46a633f297cf6a2097ac09814',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
