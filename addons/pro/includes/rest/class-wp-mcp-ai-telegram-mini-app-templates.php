@@ -2882,15 +2882,32 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name  = esc_html( $ctx['site_name'] );
-		$tools_exec = $ctx['tools_url'] . '/execute';
+		$site_name     = esc_html( $ctx['site_name'] );
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-booking-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e8eaf6;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e8eaf6;' .
+			'--bk-base:14px;--bk-label:12px;--bk-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.bk-font-small{--bk-base:12px;--bk-label:10px;--bk-heading:14px}' .
+		'.bk-font-large{--bk-base:16px;--bk-label:14px;--bk-heading:18px}' .
+		'.bk-compact .bk-apt-card{padding:8px 10px;margin:0 8px 6px}' .
+		'.bk-compact .tma-booking-form{padding:10px}' .
+		'.bk-compact .tma-calendar{padding:8px}' .
+
+		/* ── Calendar ── */
 		'.tma-calendar{padding:12px}' .
 		'.tma-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}' .
-		'.tma-cal-month{font-size:16px;font-weight:700}' .
+		'.tma-cal-month{font-size:var(--bk-heading);font-weight:700}' .
 		'.tma-cal-nav{background:none;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tma-text);font-size:18px;-webkit-tap-highlight-color:transparent}' .
 		'.tma-cal-nav:active{background:var(--tma-secondary-bg)}' .
 		'.tma-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}' .
@@ -2901,76 +2918,340 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.tma-cal-day.selected{background:var(--tma-btn);color:#fff;font-weight:700}' .
 		'.tma-cal-day.empty,.tma-cal-day.past{color:var(--tma-hint);cursor:default;opacity:.4}' .
 		'.tma-slots{padding:0 12px}' .
-		'.tma-slots-title{font-size:13px;font-weight:600;color:var(--tma-section-header);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}' .
+		'.tma-slots-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-section-header);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}' .
 		'.tma-slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}' .
 		'.tma-slot{padding:10px;border:1px solid var(--tma-border);border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:var(--tma-bg);color:var(--tma-text);-webkit-tap-highlight-color:transparent}' .
 		'.tma-slot.selected{background:var(--tma-btn);color:#fff;border-color:var(--tma-btn)}' .
 		'.tma-slot:active{opacity:.7}' .
 		'.tma-booking-form{padding:16px}' .
-		'.tma-form-label{font-size:12px;font-weight:600;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;display:block}' .
+		'.tma-form-label{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;display:block}' .
 		'.tma-confirm-wrap{text-align:center;padding:40px 20px}' .
 		'.tma-confirm-icon{font-size:64px;margin-bottom:16px}' .
+
+		/* ── Appointment cards ── */
+		'.bk-apt-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.bk-apt-info{flex:1;min-width:0}' .
+		'.bk-apt-name{font-size:var(--bk-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.bk-apt-meta{font-size:var(--bk-label);color:var(--tma-hint);margin-top:2px}' .
+		'.bk-apt-time{font-size:var(--bk-base);font-weight:700;color:var(--tma-btn);flex-shrink:0}' .
+
+		/* ── Status badges ── */
+		'.bk-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap;display:inline-block}' .
+		'.bk-status-confirmed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.bk-status-pending{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.bk-status-cancelled{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.bk-status-completed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.bk-status-no-show{background:#f5f5f5;color:#616161;border-color:#e0e0e0}' .
+
+		/* ── History chart ── */
+		'.bk-chart-wrap{margin:0 12px 12px;padding:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.bk-chart-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+
+		/* ── AI chat ── */
+		'.bk-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.bk-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.bk-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--bk-base);line-height:1.5;word-wrap:break-word}' .
+		'.bk-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.bk-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.bk-msg.bot p{margin:0 0 6px}.bk-msg.bot p:last-child{margin-bottom:0}' .
+		'.bk-msg.bot ul,.bk-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.bk-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.bk-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.bk-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--bk-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.bk-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.bk-send-btn:active{opacity:.8}' .
+		'.bk-suggest-row{display:flex;gap:6px;padding:4px 12px;flex-wrap:wrap}' .
+		'.bk-suggest-btn{padding:6px 12px;border:1px solid var(--tma-btn);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--bk-label);cursor:pointer;white-space:nowrap}' .
+		'.bk-suggest-btn:active{opacity:.7}' .
+
+		/* ── Settings ── */
+		'.bk-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.bk-settings-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.bk-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.bk-settings-row:last-child{border-bottom:none}' .
+		'.bk-settings-label{font-size:var(--bk-base);color:var(--tma-text)}' .
+		'.bk-settings-value{font-size:var(--bk-base);color:var(--tma-hint)}' .
+		'.bk-font-btns{display:flex;gap:4px}' .
+		'.bk-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--bk-label);cursor:pointer}' .
+		'.bk-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.bk-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.bk-toggle.on{background:var(--tma-btn)}' .
+		'.bk-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.bk-toggle.on::after{transform:translateX(20px)}' .
+		'.bk-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--bk-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.bk-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.bk-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📅</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'Book Appointment', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="bk-header-status">' . esc_html__( 'Book Appointment', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-step-calendar">' .
-					'<div class="tma-calendar">' .
-						'<div class="tma-cal-header">' .
-							'<button class="tma-cal-nav" onclick="tmaCalPrev()">&#8249;</button>' .
-							'<div class="tma-cal-month" id="tma-cal-month-label"></div>' .
-							'<button class="tma-cal-nav" onclick="tmaCalNext()">&#8250;</button>' .
+
+				/* Tab 1: Book (calendar flow) */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-book">' .
+					'<div id="bk-step-calendar">' .
+						'<div class="tma-calendar">' .
+							'<div class="tma-cal-header">' .
+								'<button class="tma-cal-nav" onclick="tmaCalPrev()">&#8249;</button>' .
+								'<div class="tma-cal-month" id="tma-cal-month-label"></div>' .
+								'<button class="tma-cal-nav" onclick="tmaCalNext()">&#8250;</button>' .
+							'</div>' .
+							'<div class="tma-cal-grid" id="tma-cal-grid"></div>' .
 						'</div>' .
-						'<div class="tma-cal-grid" id="tma-cal-grid"></div>' .
+						'<div class="tma-slots" id="tma-slots" style="display:none">' .
+							'<div class="tma-slots-title" id="tma-slots-date"></div>' .
+							'<div class="tma-slot-grid" id="tma-slot-grid"></div>' .
+						'</div>' .
+						'<div style="padding:16px;display:none" id="tma-next-wrap">' .
+							'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaGoToForm()">' . esc_html__( 'Continue →', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
-					'<div class="tma-slots" id="tma-slots" style="display:none">' .
-						'<div class="tma-slots-title" id="tma-slots-date"></div>' .
-						'<div class="tma-slot-grid" id="tma-slot-grid"></div>' .
+					'<div id="bk-step-form" style="display:none">' .
+						'<div class="tma-booking-form">' .
+							'<div class="tma-section-title" style="padding:0 0 12px">' . esc_html__( 'Your Details', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="text" id="tma-book-name" class="tma-input" placeholder="' . esc_attr__( 'Full name', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="email" id="tma-book-email" class="tma-input" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<textarea id="tma-book-notes" class="tma-input" rows="3" style="resize:none" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea></div>' .
+							'<div id="tma-book-error" style="color:#e53935;font-size:13px;margin-bottom:8px;display:none"></div>' .
+							'<button class="tma-btn tma-btn-secondary" style="width:100%;margin-bottom:8px" onclick="tmaGoToCalendar()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaConfirm()">' . esc_html__( 'Confirm Booking', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
-					'<div style="padding:16px;display:none" id="tma-next-wrap">' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaGoToForm()">' . esc_html__( 'Continue →', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<div id="bk-step-confirm" style="display:none">' .
+						'<div class="tma-confirm-wrap">' .
+							'<div class="tma-confirm-icon">&#9989;</div>' .
+							'<div style="font-size:20px;font-weight:700;margin-bottom:8px">' . esc_html__( 'Booking Confirmed!', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<div id="tma-confirm-details" style="font-size:14px;color:var(--tma-hint);line-height:1.6"></div>' .
+							'<button class="tma-btn tma-btn-primary" style="margin-top:24px" onclick="tmaReset()">' . esc_html__( 'Book Another', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-step-form">' .
-					'<div class="tma-booking-form">' .
-						'<div class="tma-section-title" style="padding:0 0 12px">' . esc_html__( 'Your Details', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="text" id="tma-book-name" class="tma-input" placeholder="' . esc_attr__( 'Full name', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="email" id="tma-book-email" class="tma-input" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<textarea id="tma-book-notes" class="tma-input" rows="3" style="resize:none" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea></div>' .
-						'<div id="tma-book-error" style="color:#e53935;font-size:13px;margin-bottom:8px;display:none"></div>' .
-						'<button class="tma-btn tma-btn-secondary" style="width:100%;margin-bottom:8px" onclick="tmaGoToCalendar()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaConfirm()">' . esc_html__( 'Confirm Booking', 'mcp-ai-wpoos-pro' ) . '</button>' .
+
+				/* Tab 2: Upcoming */
+				'<div class="tma-tab-pane" id="tma-tab-upcoming">' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'Upcoming Appointments', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="bk-upcoming-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: History */
+				'<div class="tma-tab-pane" id="tma-tab-history">' .
+					'<div class="bk-chart-wrap" id="bk-chart-wrap" style="display:none">' .
+						'<div class="bk-chart-title">' . esc_html__( 'Bookings per Month', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="bk-history-chart" height="200"></canvas>' .
+					'</div>' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'Past Appointments', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="bk-history-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="bk-chat-container">' .
+						'<div class="bk-chat-messages" id="bk-chat-messages"></div>' .
+						'<div class="bk-suggest-row" id="bk-suggest-row">' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Find available times', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Book an appointment', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Check my schedule', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+						'<div class="bk-chat-input-row">' .
+							'<input type="text" class="bk-chat-input" id="bk-chat-input" placeholder="' . esc_attr__( 'Ask about scheduling…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="bk-send-btn" onclick="bkChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-step-confirm">' .
-					'<div class="tma-confirm-wrap">' .
-						'<div class="tma-confirm-icon">&#9989;</div>' .
-						'<div style="font-size:20px;font-weight:700;margin-bottom:8px">' . esc_html__( 'Booking Confirmed!', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<div id="tma-confirm-details" style="font-size:14px;color:var(--tma-hint);line-height:1.6"></div>' .
-						'<button class="tma-btn tma-btn-primary" style="margin-top:24px" onclick="tmaReset()">' . esc_html__( 'Book Another', 'mcp-ai-wpoos-pro' ) . '</button>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="bk-font-btns" id="bk-font-btns">' .
+								'<button data-size="small" onclick="bkSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="bkSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="bkSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="bk-toggle" id="bk-compact-toggle" onclick="bkToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Defaults section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Booking Defaults', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row" style="flex-direction:column;align-items:stretch;gap:4px">' .
+							'<label class="bk-settings-label" style="margin-bottom:2px">' . esc_html__( 'Default Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="text" class="tma-input" id="bk-default-name" placeholder="' . esc_attr__( 'Your name', 'mcp-ai-wpoos-pro' ) . '" onchange="lsSet(\'bk_default_name\',this.value)" />' .
+						'</div>' .
+						'<div class="bk-settings-row" style="flex-direction:column;align-items:stretch;gap:4px">' .
+							'<label class="bk-settings-label" style="margin-bottom:2px">' . esc_html__( 'Default Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="email" class="tma-input" id="bk-default-email" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" onchange="lsSet(\'bk_default_email\',this.value)" />' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label" id="bk-data-summary"></span>' .
+						'</div>' .
+						'<button class="bk-settings-btn" onclick="bkSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="bk-settings-btn danger" onclick="bkClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
 					'</div>' .
 				'</div>' .
-			'</div>' .
-		'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-book" onclick="bkSwitch(\'book\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' .
+					'<span>' . esc_html__( 'Book', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-upcoming" onclick="bkSwitch(\'upcoming\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' .
+					'<span>' . esc_html__( 'Upcoming', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-history" onclick="bkSwitch(\'history\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' .
+					'<span>' . esc_html__( 'History', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="bkSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="bkSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="book";' .
+		'var upcomingCache=[];' .
+		'var historyCache=[];' .
+		'var bookingsLocal=[];' .
+		'var chatHist=[];' .
+		'var histChartInst=null;' .
 		'var today=new Date();var vy=today.getFullYear();var vm=today.getMonth();' .
 		'var selDate=null;var selSlot=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'function showStep(id){document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});var el=document.getElementById(id);if(el)el.classList.add("tma-active");}' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function bkRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecommerce / crm pattern) ── */
+		'function bkInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function bkApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("bk_font_size","medium");' .
+				'shell.classList.remove("bk-font-small","bk-font-large");' .
+				'if(size==="small")shell.classList.add("bk-font-small");' .
+				'else if(size==="large")shell.classList.add("bk-font-large");' .
+				'var compact=lsGet("bk_compact",false);' .
+				'if(compact)shell.classList.add("bk-compact");' .
+				'else shell.classList.remove("bk-compact");' .
+				'var btns=document.querySelectorAll("#bk-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("bk-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.bkSetFontSize=function(s){lsSet("bk_font_size",s);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
+		'window.bkToggleCompact=function(){var c=!lsGet("bk_compact",false);lsSet("bk_compact",c);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.bkSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="upcoming")bkLoadUpcoming(false);' .
+			'if(tab==="history")bkLoadHistory(false);' .
+			'if(tab==="assistant"&&!chatHist.length)bkChatInit();' .
+			'if(tab==="settings")bkRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Book (Calendar flow)
+		   ══════════════════════════════════════════════════════════ */
+		'function showStep(id){' .
+			'["bk-step-calendar","bk-step-form","bk-step-confirm"].forEach(function(s){' .
+				'var el=document.getElementById(s);if(el)el.style.display=s===id?"":"none";' .
+			'});' .
+		'}' .
+
 		'var DAYS=["' . esc_js( __( 'Su', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Mo', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Tu', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'We', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Th', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Fr', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Sa', 'mcp-ai-wpoos-pro' ) ) . '"];' .
 		'var MONTHS=["' . esc_js( __( 'January', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'February', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'March', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'April', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'May', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'June', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'July', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'August', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'September', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'October', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'November', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'December', 'mcp-ai-wpoos-pro' ) ) . '"];' .
+
 		'function renderCal(){' .
 			'var lbl=document.getElementById("tma-cal-month-label");if(lbl)lbl.textContent=MONTHS[vm]+" "+vy;' .
 			'var grid=document.getElementById("tma-cal-grid");if(!grid)return;' .
@@ -2991,13 +3272,14 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'window.tmaCalPrev=function(){tmaHaptic("light");vm--;if(vm<0){vm=11;vy--;}renderCal();};' .
 		'window.tmaCalNext=function(){tmaHaptic("light");vm++;if(vm>11){vm=0;vy++;}renderCal();};' .
 		'window.tmaSelDate=function(ds){tmaHaptic("light");selDate=ds;selSlot=null;renderCal();loadSlots(ds);};' .
+
 		'function loadSlots(ds){' .
 			'var sw=document.getElementById("tma-slots");var dl=document.getElementById("tma-slots-date");' .
 			'var sg=document.getElementById("tma-slot-grid");var nw=document.getElementById("tma-next-wrap");' .
 			'if(sw)sw.style.display="block";if(nw)nw.style.display="none";if(dl)dl.textContent=ds;' .
 			'if(sg)sg.innerHTML=\'<div style="grid-column:span 3;text-align:center;color:var(--tma-hint);padding:12px">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_available_slots",arguments:{date:ds}})})' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_available_slots",arguments:{date:ds}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var slots=(d&&d.data&&d.data.slots)?d.data.slots:["09:00","10:00","11:00","14:00","15:00","16:00"];' .
@@ -3009,8 +3291,14 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'});' .
 		'}' .
 		'window.tmaSelSlot=function(s,el){tmaHaptic("light");selSlot=s;document.querySelectorAll(".tma-slot").forEach(function(b){b.classList.remove("selected");});if(el)el.classList.add("selected");var nw=document.getElementById("tma-next-wrap");if(nw)nw.style.display="block";};' .
-		'window.tmaGoToForm=function(){if(!selDate||!selSlot)return;tmaHaptic("medium");showStep("tma-step-form");};' .
-		'window.tmaGoToCalendar=function(){showStep("tma-step-calendar");};' .
+		'window.tmaGoToForm=function(){' .
+			'if(!selDate||!selSlot)return;tmaHaptic("medium");' .
+			'var ni=document.getElementById("tma-book-name");var ei=document.getElementById("tma-book-email");' .
+			'if(ni&&!ni.value){var dn=lsGet("bk_default_name","");if(dn)ni.value=dn;}' .
+			'if(ei&&!ei.value){var de=lsGet("bk_default_email","");if(de)ei.value=de;}' .
+			'showStep("bk-step-form");' .
+		'};' .
+		'window.tmaGoToCalendar=function(){showStep("bk-step-calendar");};' .
 		'window.tmaConfirm=function(){' .
 			'var name=(document.getElementById("tma-book-name")||{}).value||"";' .
 			'var email=(document.getElementById("tma-book-email")||{}).value||"";' .
@@ -3018,22 +3306,271 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'var err=document.getElementById("tma-book-error");' .
 			'if(!name.trim()||!email.trim()){if(err){err.style.display="block";err.textContent="' . esc_js( __( 'Name and email are required.', 'mcp-ai-wpoos-pro' ) ) . '";}return;}' .
 			'if(err)err.style.display="none";tmaHaptic("medium");' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"create_booking",arguments:{date:selDate,time:selSlot,name:name,email:email,notes:notes}})})' .
-			'.then(function(){}).catch(function(){}).finally(function(){' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"create_booking",arguments:{date:selDate,time:selSlot,name:name,email:email,notes:notes}})})' .
+			'.then(function(){' .
+				'var bk={date:selDate,time:selSlot,name:name,email:email,notes:notes,status:"confirmed",created:new Date().toISOString()};' .
+				'bookingsLocal.push(bk);lsSet("bk_bookings",bookingsLocal);' .
+			'}).catch(function(){}).finally(function(){' .
 				'tmaHaptic("success");' .
 				'var det=document.getElementById("tma-confirm-details");' .
 				'if(det)det.innerHTML="<strong>"+escH(selDate)+" "+escH(selSlot)+"</strong><br>"+escH(name)+"<br>"+escH(email);' .
-				'showStep("tma-step-confirm");' .
+				'showStep("bk-step-confirm");' .
 			'});' .
 		'};' .
 		'window.tmaReset=function(){' .
 			'selDate=null;selSlot=null;' .
 			'var sw=document.getElementById("tma-slots");if(sw)sw.style.display="none";' .
 			'var nw=document.getElementById("tma-next-wrap");if(nw)nw.style.display="none";' .
-			'showStep("tma-step-calendar");renderCal();' .
+			'var ni=document.getElementById("tma-book-name");if(ni)ni.value="";' .
+			'var ei=document.getElementById("tma-book-email");if(ei)ei.value="";' .
+			'var nt=document.getElementById("tma-book-notes");if(nt)nt.value="";' .
+			'showStep("bk-step-calendar");renderCal();' .
 		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Upcoming Appointments
+		   ══════════════════════════════════════════════════════════ */
+		'function bkStatusCls(s){' .
+			'var k=String(s||"").toLowerCase().replace(/[\\s_]+/g,"-");' .
+			'if(k==="confirmed")return "bk-status-confirmed";' .
+			'if(k==="pending")return "bk-status-pending";' .
+			'if(k==="cancelled"||k==="canceled")return "bk-status-cancelled";' .
+			'if(k==="completed")return "bk-status-completed";' .
+			'if(k==="no-show"||k==="noshow")return "bk-status-no-show";' .
+			'return "";' .
+		'}' .
+
+		'function bkLoadUpcoming(force){' .
+			'var list=document.getElementById("bk-upcoming-list");if(!list)return;' .
+			'if(!force&&upcomingCache.length){bkRenderUpcoming(upcomingCache);return;}' .
+			'list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_appointment_details",arguments:{status:"upcoming",per_page:20}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var apts=(d&&d.data&&d.data.appointments)?d.data.appointments:' .
+					'(d&&d.data&&Array.isArray(d.data))?d.data:[];' .
+				'if(apts.length){upcomingCache=apts;lsSet("bk_upcoming_cache",apts);bkRenderUpcoming(apts);}' .
+				'else{' .
+					'var local=bookingsLocal.filter(function(b){return b.date>=today.toISOString().slice(0,10);});' .
+					'if(local.length){bkRenderUpcoming(local);}' .
+					'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+				'}' .
+			'}).catch(function(){' .
+				'var local=bookingsLocal.filter(function(b){return b.date>=today.toISOString().slice(0,10);});' .
+				'if(local.length){bkRenderUpcoming(local);}' .
+				'else if(upcomingCache.length){bkRenderUpcoming(upcomingCache);}' .
+				'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+			'});' .
+		'}' .
+
+		'function bkRenderUpcoming(apts){' .
+			'var list=document.getElementById("bk-upcoming-list");if(!list)return;' .
+			'if(!apts.length){list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=apts.map(function(a){' .
+				'var status=a.status||"pending";' .
+				'var name=a.name||a.service||a.title||"' . esc_js( __( 'Appointment', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'return \'<div class="bk-apt-card">\'+' .
+					'\'<div class="bk-apt-info">\'+' .
+						'\'<div class="bk-apt-name">\'+escH(name)+\'</div>\'+' .
+						'\'<div class="bk-apt-meta">\'+escH(a.date||"")+\'</div>\'+' .
+					'\'</div>\'+' .
+					'\'<div class="bk-apt-time">\'+escH(a.time||"")+\'</div>\'+' .
+					'\'<span class="bk-status \'+bkStatusCls(status)+\'">\'+escH(status)+\'</span>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – History
+		   ══════════════════════════════════════════════════════════ */
+		'function bkLoadHistory(force){' .
+			'var list=document.getElementById("bk-history-list");if(!list)return;' .
+			'if(!force&&historyCache.length){bkRenderHistory(historyCache);return;}' .
+			'list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_appointment_details",arguments:{status:"past",per_page:20}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var apts=(d&&d.data&&d.data.appointments)?d.data.appointments:' .
+					'(d&&d.data&&Array.isArray(d.data))?d.data:[];' .
+				'if(apts.length){historyCache=apts;lsSet("bk_history_cache",apts);}' .
+				'else{' .
+					'var local=bookingsLocal.filter(function(b){return b.date<today.toISOString().slice(0,10);});' .
+					'if(local.length)apts=local;' .
+				'}' .
+				'bkRenderHistory(apts);bkRenderHistChart(apts);' .
+			'}).catch(function(){' .
+				'if(historyCache.length){bkRenderHistory(historyCache);bkRenderHistChart(historyCache);}' .
+				'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No past appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+			'});' .
+		'}' .
+
+		'function bkRenderHistory(apts){' .
+			'var list=document.getElementById("bk-history-list");if(!list)return;' .
+			'if(!apts.length){list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No past appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=apts.map(function(a){' .
+				'var status=a.status||"completed";' .
+				'var name=a.name||a.service||a.title||"' . esc_js( __( 'Appointment', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'return \'<div class="bk-apt-card">\'+' .
+					'\'<div class="bk-apt-info">\'+' .
+						'\'<div class="bk-apt-name">\'+escH(name)+\'</div>\'+' .
+						'\'<div class="bk-apt-meta">\'+escH(a.date||"")+\'</div>\'+' .
+					'\'</div>\'+' .
+					'\'<div class="bk-apt-time">\'+escH(a.time||"")+\'</div>\'+' .
+					'\'<span class="bk-status \'+bkStatusCls(status)+\'">\'+escH(status)+\'</span>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ── Chart.js loader ── */
+		'function bkLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function bkHideChart(){var w=document.getElementById("bk-chart-wrap");if(w)w.style.display="none";}' .
+
+		'function bkRenderHistChart(apts){' .
+			'bkLoadChartJs(function(){' .
+				'if(!window.Chart||!apts.length){bkHideChart();return;}' .
+				'var monthly={};' .
+				'apts.forEach(function(a){' .
+					'var d=a.date||a.created||"";if(!d)return;' .
+					'var dt=new Date(d);var m;' .
+					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+("0"+(dt.getMonth()+1)).slice(-2);}' .
+					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
+					'else{return;}' .
+					'if(!monthly[m])monthly[m]=0;monthly[m]++;' .
+				'});' .
+				'var keys=Object.keys(monthly).sort().slice(-6);' .
+				'if(!keys.length){bkHideChart();return;}' .
+				'var labels=keys;var data=keys.map(function(k){return monthly[k];});' .
+				'var wrap=document.getElementById("bk-chart-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("bk-history-chart");if(!cv)return;' .
+				'if(histChartInst){histChartInst.destroy();}' .
+				'histChartInst=new Chart(cv.getContext("2d"),{type:"bar",data:{labels:labels,datasets:[{' .
+					'label:"' . esc_js( __( 'Bookings', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'data:data,backgroundColor:"rgba(21,101,192,0.6)",borderColor:"#1565c0",' .
+					'borderWidth:1,borderRadius:4' .
+				'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function bkChatInit(){' .
+			'chatHist=lsGet("bk_chat_hist",[]);' .
+			'var m=document.getElementById("bk-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){bkAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				'var ctx="[' . esc_js( __( 'Booking Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+". ' .
+					esc_js( __( 'Use get_available_slots and create_booking tools to help with scheduling.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'bkAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your booking assistant. I can help you find available times, schedule appointments, and manage your bookings. What would you like to do?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function bkAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="bk-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=bkRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("bk-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.bkChatSend=function(){' .
+			'var inp=document.getElementById("bk-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});bkAppendMsg("user",txt,false);' .
+			'lsSet("bk_chat_hist",chatHist.slice(-50));' .
+			'var sr=document.getElementById("bk-suggest-row");if(sr)sr.style.display="none";' .
+			'var el=bkAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=bkRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("bk_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		'window.bkSuggest=function(btn){' .
+			'var inp=document.getElementById("bk-chat-input");' .
+			'if(inp){inp.value=btn.textContent;bkChatSend();}' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("bk-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")bkChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function bkRenderSettings(){' .
+			/* Default name/email */
+			'var dni=document.getElementById("bk-default-name");if(dni)dni.value=lsGet("bk_default_name","");' .
+			'var dei=document.getElementById("bk-default-email");if(dei)dei.value=lsGet("bk_default_email","");' .
+			/* Data summary */
+			'var ds=document.getElementById("bk-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Total bookings cached', 'mcp-ai-wpoos-pro' ) ) . ': "+bookingsLocal.length+", ' .
+				esc_js( __( 'Upcoming', 'mcp-ai-wpoos-pro' ) ) . ': "+upcomingCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.bkSyncFromServer=function(){' .
+			'tmaHaptic("medium");bkLoadUpcoming(true);bkLoadHistory(true);' .
+		'};' .
+
+		'window.bkClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)bkDoClear();});' .
+			'}else if(confirm(msg)){bkDoClear();}' .
+		'};' .
+
+		'function bkDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("bk_bookings");' .
+				'localStorage.removeItem("bk_upcoming_cache");' .
+				'localStorage.removeItem("bk_history_cache");' .
+				'localStorage.removeItem("bk_chat_hist");' .
+				'localStorage.removeItem("bk_font_size");' .
+				'localStorage.removeItem("bk_compact");' .
+				'localStorage.removeItem("bk_default_name");' .
+				'localStorage.removeItem("bk_default_email");' .
+			'}catch(e){}' .
+			'bookingsLocal=[];upcomingCache=[];historyCache=[];chatHist=[];' .
+			'bkRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'bookingsLocal=lsGet("bk_bookings",[]);' .
+		'upcomingCache=lsGet("bk_upcoming_cache",[]);' .
+		'historyCache=lsGet("bk_history_cache",[]);' .
+		'bkApplyDisplaySettings();' .
+
+		/* Render calendar immediately */
 		'renderCal();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN) */
+		'bkInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
