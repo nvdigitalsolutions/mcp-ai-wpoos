@@ -507,6 +507,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 						<option value=""><?php esc_html_e( 'All Events', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="tool_execution"><?php esc_html_e( 'Tool Executions', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="chat_response"><?php esc_html_e( 'Chat Responses', 'mcp-ai-wpoos-pro' ); ?></option>
+						<option value="chat_interaction"><?php esc_html_e( 'Chat Interactions', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="session_start"><?php esc_html_e( 'Session Start', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="session_end"><?php esc_html_e( 'Session End', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="approval_requested"><?php esc_html_e( 'Approval Requested', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -557,6 +558,10 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 				<div class="acc-summary-stat">
 					<span class="acc-summary-value" id="activity-chat-responses">0</span>
 					<span class="acc-summary-label"><?php esc_html_e( 'Chat Responses', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="acc-summary-stat">
+					<span class="acc-summary-value" id="activity-chat-interactions">0</span>
+					<span class="acc-summary-label"><?php esc_html_e( 'Chat Interactions', 'mcp-ai-wpoos-pro' ); ?></span>
 				</div>
 				<div class="acc-summary-stat">
 					<span class="acc-summary-value" id="activity-errors">0</span>
@@ -958,19 +963,27 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			<div class="acc-charts-grid">
 				<div class="acc-chart-panel">
 					<h3><?php esc_html_e( 'Usage Timeline', 'mcp-ai-wpoos-pro' ); ?></h3>
-					<canvas id="acc-chart-usage-timeline" height="300"></canvas>
+					<div class="acc-chart-wrapper" style="height: 300px;">
+						<canvas id="acc-chart-usage-timeline"></canvas>
+					</div>
 				</div>
 				<div class="acc-chart-panel">
 					<h3><?php esc_html_e( 'Token Consumption by Agent', 'mcp-ai-wpoos-pro' ); ?></h3>
-					<canvas id="acc-chart-tokens-by-agent" height="300"></canvas>
+					<div class="acc-chart-wrapper" style="height: 300px;">
+						<canvas id="acc-chart-tokens-by-agent"></canvas>
+					</div>
 				</div>
 				<div class="acc-chart-panel">
 					<h3><?php esc_html_e( 'Tool Usage Distribution', 'mcp-ai-wpoos-pro' ); ?></h3>
-					<canvas id="acc-chart-tool-distribution" height="300"></canvas>
+					<div class="acc-chart-wrapper" style="height: 300px;">
+						<canvas id="acc-chart-tool-distribution"></canvas>
+					</div>
 				</div>
 				<div class="acc-chart-panel">
 					<h3><?php esc_html_e( 'Response Time Trends', 'mcp-ai-wpoos-pro' ); ?></h3>
-					<canvas id="acc-chart-response-times" height="300"></canvas>
+					<div class="acc-chart-wrapper" style="height: 300px;">
+						<canvas id="acc-chart-response-times"></canvas>
+					</div>
 				</div>
 			</div>
 
@@ -1079,7 +1092,9 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					<h2><span class="dashicons dashicons-chart-line"></span> <?php esc_html_e( 'Uptime Timeline (30 Days)', 'mcp-ai-wpoos-pro' ); ?></h2>
 				</div>
 				<div class="acc-uptime-timeline" id="acc-uptime-timeline">
-					<canvas id="acc-chart-uptime" height="200"></canvas>
+					<div class="acc-chart-wrapper" style="height: 200px;">
+						<canvas id="acc-chart-uptime"></canvas>
+					</div>
 				</div>
 			</div>
 
@@ -1206,16 +1221,22 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 					<div class="acc-scale-item">
 						<h4><?php esc_html_e( 'Current Load', 'mcp-ai-wpoos-pro' ); ?></h4>
 						<div class="acc-scale-gauge" id="gauge-current-load">
-							<canvas id="acc-chart-load-gauge" width="200" height="120"></canvas>
+							<div class="acc-chart-wrapper" style="height: 120px;">
+								<canvas id="acc-chart-load-gauge"></canvas>
+							</div>
 						</div>
 					</div>
 					<div class="acc-scale-item">
 						<h4><?php esc_html_e( 'Peak Usage (7d)', 'mcp-ai-wpoos-pro' ); ?></h4>
-						<canvas id="acc-chart-peak-usage" height="200"></canvas>
+						<div class="acc-chart-wrapper" style="height: 200px;">
+							<canvas id="acc-chart-peak-usage"></canvas>
+						</div>
 					</div>
 					<div class="acc-scale-item">
 						<h4><?php esc_html_e( 'Growth Trend', 'mcp-ai-wpoos-pro' ); ?></h4>
-						<canvas id="acc-chart-growth-trend" height="200"></canvas>
+						<div class="acc-chart-wrapper" style="height: 200px;">
+							<canvas id="acc-chart-growth-trend"></canvas>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -1287,14 +1308,17 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		// Calculate summary stats.
 		$summary = array(
-			'total'          => count( $events ),
-			'tool_calls'     => count( array_filter( $events, function ( $e ) {
+			'total'              => count( $events ),
+			'tool_calls'         => count( array_filter( $events, function ( $e ) {
 				return 'tool_execution' === $e['type'];
 			} ) ),
-			'chat_responses' => count( array_filter( $events, function ( $e ) {
+			'chat_responses'     => count( array_filter( $events, function ( $e ) {
 				return 'chat_response' === $e['type'];
 			} ) ),
-			'errors'         => count( array_filter( $events, function ( $e ) {
+			'chat_interactions'  => count( array_filter( $events, function ( $e ) {
+				return 'chat_interaction' === $e['type'];
+			} ) ),
+			'errors'             => count( array_filter( $events, function ( $e ) {
 				return 'error' === $e['type'];
 			} ) ),
 		);
@@ -1644,6 +1668,9 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	private function get_recent_activity_events( $limit = 20 ) {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
 
+		// Merge assistant chat interaction events from the core Logger.
+		$events = $this->merge_logger_chat_interactions( $events );
+
 		// Sort by timestamp descending.
 		usort( $events, function ( $a, $b ) {
 			return ( $b['timestamp'] ?? 0 ) - ( $a['timestamp'] ?? 0 );
@@ -1665,6 +1692,9 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 */
 	private function get_filtered_activity( $type, $agent_id, $timeframe, $search ) {
 		$events = get_option( self::ACTIVITY_LOG_OPTION, array() );
+
+		// Merge assistant chat interaction events from the core Logger.
+		$events = $this->merge_logger_chat_interactions( $events );
 
 		// Timeframe filter.
 		$cutoff = $this->get_timeframe_cutoff( $timeframe );
@@ -1702,6 +1732,62 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		} );
 
 		return array_values( $events );
+	}
+
+	/**
+	 * Merge chat interaction events from the core Logger into the activity stream.
+	 *
+	 * Pulls assistant chat interactions from WP_MCP_AI_Logger and normalises them
+	 * into the same format used by the command center activity log so they can be
+	 * displayed alongside agent-level events.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $events Existing activity events.
+	 * @return array Merged events array.
+	 */
+	private function merge_logger_chat_interactions( $events ) {
+		if ( ! class_exists( 'WP_MCP_AI_Logger' ) || ! method_exists( 'WP_MCP_AI_Logger', 'get_recent_activity_entries' ) ) {
+			return $events;
+		}
+
+		$chat_entries = WP_MCP_AI_Logger::get_recent_activity_entries( 200, array( 'chat_interaction' ) );
+
+		if ( empty( $chat_entries ) ) {
+			return $events;
+		}
+
+		foreach ( $chat_entries as $entry ) {
+			$assistant_id   = isset( $entry['context']['assistant_id'] ) ? absint( $entry['context']['assistant_id'] ) : 0;
+			$assistant_name = $assistant_id ? get_the_title( $assistant_id ) : '';
+			$user_id        = isset( $entry['context']['user_id'] ) ? absint( $entry['context']['user_id'] ) : 0;
+			$user_display   = '';
+
+			if ( $user_id ) {
+				$user = get_userdata( $user_id );
+				if ( $user ) {
+					$user_display = $user->display_name;
+				}
+			}
+
+			$message = $assistant_name
+				/* translators: 1: assistant name, 2: user display name */
+				? sprintf( __( 'Chat with "%1$s" by %2$s', 'mcp-ai-wpoos-pro' ), $assistant_name, $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) )
+				/* translators: %s: user display name */
+				: sprintf( __( 'Chat interaction by %s', 'mcp-ai-wpoos-pro' ), $user_display ? $user_display : __( 'Guest', 'mcp-ai-wpoos-pro' ) );
+
+			$timestamp = isset( $entry['time'] ) ? strtotime( $entry['time'] ) : ( isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0 );
+
+			$events[] = array(
+				'type'       => 'chat_interaction',
+				'agent_id'   => $assistant_id,
+				'agent_name' => $assistant_name,
+				'message'    => $message,
+				'timestamp'  => $timestamp,
+			);
+		}
+
+		return $events;
 	}
 
 	/**
