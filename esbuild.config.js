@@ -422,6 +422,11 @@ const builds = [
 
 	// Pro addon browser scripts (new)
 	{
+		entryPoints: ['addons/pro/assets/js/agent-command-center.js'],
+		outfile: 'addons/pro/assets/js/agent-command-center.min.js',
+		...commonOptions,
+	},
+	{
 		entryPoints: ['addons/pro/assets/js/admin-pm-ai-actions.js'],
 		outfile: 'addons/pro/assets/js/admin-pm-ai-actions.min.js',
 		...commonOptions,
