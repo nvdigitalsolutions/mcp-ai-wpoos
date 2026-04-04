@@ -2788,7 +2788,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php
 							// Use the per-connection URL when editing so each bot has a unique Mini App address.
 							$_tma_url = ( $is_edit && '' !== $editing )
-								? rest_url( 'mcp-ai/v1/telegram-mini-app/' . $editing )
+								? rest_url( 'mcp-ai/v1/telegram-mini-app/' . sanitize_key( $editing ) )
 								: rest_url( 'mcp-ai/v1/telegram-mini-app' );
 							?>
 							<input type="text" readonly="readonly" value="<?php echo esc_url( $_tma_url ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">

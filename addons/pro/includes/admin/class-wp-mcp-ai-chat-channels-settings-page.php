@@ -666,7 +666,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							'id'    => sanitize_key( $conn_id ),
 							'label' => $label,
 							'url'   => class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' )
-								? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url( $conn_id )
+								? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url( sanitize_key( $conn_id ) )
 								: rest_url( 'mcp-ai/v1/telegram-mini-app/' . sanitize_key( $conn_id ) ),
 						);
 					}

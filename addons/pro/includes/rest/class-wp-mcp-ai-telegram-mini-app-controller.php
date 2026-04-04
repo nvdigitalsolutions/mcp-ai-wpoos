@@ -968,7 +968,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// lookup and for extracting the bot username shown in the Settings tab.
 		// When a connection_id is present in the URL, use it for multi-bot support.
 		$connection_id = $request->get_param( 'connection_id' );
-		$connection    = $this->get_active_telegram_connection( $connection_id ? $connection_id : null );
+		$connection    = $this->resolve_connection_from_request( $request );
 
 		// Build the connection-scoped REST base for all sub-endpoint URLs.
 		$scoped_base = $this->get_scoped_rest_base( $request );
@@ -3576,9 +3576,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// mirroring the /tools slash-command behaviour. Falls back to the full registry
 		// when no assistant is resolved or the assistant has no explicit tool restriction.
 		$allowed_slugs = array(); // Empty = no restriction.
-		$connection    = $this->get_active_telegram_connection(
-			$request->get_param( 'connection_id' ) ? $request->get_param( 'connection_id' ) : null
-		);
+		$connection    = $this->resolve_connection_from_request( $request );
 		$assistant_id  = (int) $this->resolve_mini_app_assistant( $request, $connection );
 		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
@@ -3757,9 +3755,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// resolution used when rendering the Mini App HTML page.
 		$request_assistant_id = $request->get_param( 'assistant_id' );
 		if ( null === $request_assistant_id || '' === (string) $request_assistant_id || 0 === (int) $request_assistant_id ) {
-			$connection   = $this->get_active_telegram_connection(
-				$request->get_param( 'connection_id' ) ? $request->get_param( 'connection_id' ) : null
-			);
+			$connection   = $this->resolve_connection_from_request( $request );
 			$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
 			if ( ! empty( $assistant_id ) ) {
 				$request->set_param( 'assistant_id', $assistant_id );
@@ -3885,9 +3881,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Resolve the active assistant name.
-		$connection     = $this->get_active_telegram_connection(
-			$request->get_param( 'connection_id' ) ? $request->get_param( 'connection_id' ) : null
-		);
+		$connection     = $this->resolve_connection_from_request( $request );
 		$assistant_slug = $this->resolve_mini_app_assistant( new WP_REST_Request(), $connection );
 		$assistant_name = '';
 		if ( ! empty( $assistant_slug ) ) {
@@ -4364,9 +4358,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$connection = $this->get_active_telegram_connection(
-			$request->get_param( 'connection_id' ) ? $request->get_param( 'connection_id' ) : null
-		);
+		$connection = $this->resolve_connection_from_request( $request );
 
 		if ( ! $connection || empty( $connection['api_key'] ) ) {
 			return new WP_Error(
@@ -5542,6 +5534,23 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			return $this->rest_base . '/' . sanitize_key( $connection_id );
 		}
 		return $this->rest_base;
+	}
+
+	/**
+	 * Resolve the Telegram connection for the current request.
+	 *
+	 * Extracts the optional connection_id URL parameter and delegates to
+	 * get_active_telegram_connection().  When no connection_id is present,
+	 * the first enabled Telegram connection is returned (legacy behaviour).
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_REST_Request $request Current REST request.
+	 * @return array|null Connection array or null if none found.
+	 */
+	protected function resolve_connection_from_request( $request ) {
+		$connection_id = sanitize_key( (string) $request->get_param( 'connection_id' ) );
+		return $this->get_active_telegram_connection( $connection_id ? $connection_id : null );
 	}
 
 	/**
