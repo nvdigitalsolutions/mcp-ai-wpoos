@@ -6797,7 +6797,24 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 		return '#7c3aed';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the body HTML for the WooCommerce Shop React SPA template.
+	 *
+	 * Injects a `window.wpTmaWooConfig` JS object with all URLs, IDs, and
+	 * extended context the React app needs.  The config includes:
+	 *
+	 *   - Core endpoints: validateUrl, toolsUrl, chatUrl, analyticsUrl
+	 *   - Auth:           nonce (initial), assistantId
+	 *   - Site meta:      siteName, siteUrl
+	 *   - WooCommerce:    wooSource ('local'|'remote'), wooConnectionId
+	 *   - Charts:         chartJsUrl (CDN URL for lazy Chart.js loading)
+	 *   - Member context: memberId, memberName (from session when available)
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param  array $ctx Context variables injected by the TMA controller.
+	 * @return string     HTML body fragment.
+	 */
 	public function render_html( array $ctx ) {
 		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.js' : '';
 		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.css' : '';
@@ -6809,12 +6826,16 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 				'validateUrl'     => $ctx['validate_url'] ?? '',
 				'toolsUrl'        => $ctx['tools_url'] ?? '',
 				'chatUrl'         => $ctx['chat_url'] ?? '',
+				'analyticsUrl'    => $ctx['analytics_url'] ?? '',
 				'nonce'           => $ctx['nonce'] ?? '',
 				'assistantId'     => $ctx['assistant_id'] ?? '',
 				'siteName'        => $ctx['site_name'] ?? get_bloginfo( 'name' ),
 				'siteUrl'         => home_url(),
 				'wooSource'       => $ctx['woo_source'] ?? 'local',
 				'wooConnectionId' => $ctx['woo_connection_id'] ?? '',
+				'chartJsUrl'      => $ctx['chart_js_url'] ?? '',
+				'memberId'        => $ctx['member_id'] ?? '',
+				'memberName'      => $ctx['member_name'] ?? '',
 			)
 		);
 
@@ -6894,13 +6915,17 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 	 * build directory.
 	 *
 	 * Context keys used:
-	 *   validate_url         – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
-	 *   tools_url            – Base URL for the tool-execution endpoint.
-	 *   chat_url             – TMA-aware chat endpoint.
-	 *   nonce                – Initial WordPress nonce.
-	 *   assistant_id         – Resolved Mini App assistant ID.
-	 *   site_name            – Site display name.
+	 *   validate_url          – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
+	 *   tools_url             – Base URL for the tool-execution endpoint.
+	 *   chat_url              – TMA-aware chat endpoint.
+	 *   analytics_url         – Analytics endpoint for order/revenue data.
+	 *   nonce                 – Initial WordPress nonce.
+	 *   assistant_id          – Resolved Mini App assistant ID.
+	 *   site_name             – Site display name.
 	 *   shopify_connection_id – Shopify Remote Sites connection ID (optional; falls back to global option).
+	 *   chart_js_url          – CDN URL for Chart.js lazy loading.
+	 *   member_id             – Active member ID (from TMA session, if available).
+	 *   member_name           – Active member display name (from TMA session, if available).
 	 *
 	 * @param  array $ctx Context variables injected by the TMA controller.
 	 * @return string     HTML body fragment.
@@ -6924,10 +6949,15 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 				'validateUrl'  => $ctx['validate_url']  ?? '',
 				'toolsUrl'     => $ctx['tools_url']     ?? '',
 				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'analyticsUrl' => $ctx['analytics_url'] ?? '',
 				'nonce'        => $ctx['nonce']         ?? '',
 				'assistantId'  => $ctx['assistant_id']  ?? '',
 				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'siteUrl'      => home_url(),
 				'connectionId' => $connection_id,
+				'chartJsUrl'   => $ctx['chart_js_url']  ?? '',
+				'memberId'     => $ctx['member_id']     ?? '',
+				'memberName'   => $ctx['member_name']   ?? '',
 			)
 		);
 
