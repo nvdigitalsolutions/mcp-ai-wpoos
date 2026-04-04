@@ -1084,14 +1084,19 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		/* Simple markdown-like renderer for bot messages */
 		'function ecRenderMd(t){' .
-			'return escH(t)' .
-				'.replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>")' .
-				'.replace(/\\*(.+?)\\*/g,"<em>$1</em>")' .
-				'.replace(/`([^`]+)`/g,"<code>$1</code>")' .
-				'.replace(/\\n\\n/g,"</p><p>")' .
-				'.replace(/\\n- /g,"</p><ul><li>")' .
-				'.replace(/\\n(\\d+)\\. /g,function(m,n){return"</p><ol><li>";})' .
-				'.replace(/\\n/g,"<br>");' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'var esc=escH(ln);' .
+				'esc=esc.replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>")' .
+					'.replace(/\\*(.+?)\\*/g,"<em>$1</em>")' .
+					'.replace(/`([^`]+)`/g,"<code>$1</code>");' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+esc.substring(2)+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+esc.replace(/^\\d+\\.\\s*/,"")+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(esc===""){out+="<br>";}else{out+="<p>"+esc+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
 		'}' .
 
 		/* ── localStorage helpers ── */
@@ -1214,7 +1219,8 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'var p=productsCache[idx];if(!p)return;tmaHaptic("light");' .
 			'var existing=cart.find(function(c){return c.id===p.id;});' .
 			'if(existing){existing.qty+=1;}else{' .
-				'cart.push({id:p.id,name:p.name||"Product",price:parseFloat(p.price)||0,qty:1,' .
+				'var rawPrice=String(p.price||"0").replace(/[^0-9.\\-]/g,"");' .
+				'cart.push({id:p.id,name:p.name||"Product",price:parseFloat(rawPrice)||0,qty:1,' .
 					'image:(p.images&&p.images[0]&&p.images[0].src)||""});' .
 			'}' .
 			'lsSet("ec_cart",cart);ecUpdateCartBadge();' .
@@ -1274,8 +1280,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			/* Attempt WooCommerce create order via tool, fallback to summary */
 			'ecToolCall("create_woocommerce_order",{line_items:cart.map(function(c){return{product_id:c.id,quantity:c.qty};})},function(err,d){' .
 				'if(!err&&d&&d.data&&d.data.order){' .
+					'var orderId=d.data.order.id||"";' .
 					'cart=[];lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
-					'ecLoadOrders(true);ecSwitch("orders");' .
+					'var sMsg="' . esc_js( __( 'Order placed successfully!', 'mcp-ai-wpoos-pro' ) ) . '"+(orderId?" #"+orderId:"");' .
+					'if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.showAlert(sMsg,function(){ecLoadOrders(true);ecSwitch("orders");});}' .
+					'else{alert(sMsg);ecLoadOrders(true);ecSwitch("orders");}' .
 				'}else{' .
 					'var msg="' . esc_js( __( 'Order Summary', 'mcp-ai-wpoos-pro' ) ) . ':\\n"+items+"\\n' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . ': "+total.toFixed(2);' .
 					'if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.showAlert(msg);}else{alert(msg);}' .
@@ -1343,7 +1352,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'var monthly={};' .
 				'os.forEach(function(o){' .
 					'var d=o.date_created||o.date||"";if(!d)return;' .
-					'var m=d.substring(0,7);' . /* YYYY-MM */
+					/* Parse ISO or common date formats to YYYY-MM */
+					'var dt=new Date(d);var m;' .
+					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");}' .
+					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
+					'else{return;}' .
 					'var t=parseFloat(o.total||o.order_total||0);' .
 					'if(!monthly[m])monthly[m]=0;monthly[m]+=t;' .
 				'});' .
@@ -1380,10 +1393,9 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 			'}' .
 		'}' .
 
-		'function ecAppendMsg(role,text,isHtml){' .
+		'function ecAppendMsg(role,text,isRestore){' .
 			'var el=document.createElement("div");el.className="ec-msg "+role;' .
-			'if(role==="bot"&&!isHtml){el.innerHTML=ecRenderMd(text);}' .
-			'else if(role==="bot"&&isHtml){el.innerHTML=ecRenderMd(text);}' .
+			'if(role==="bot"){el.innerHTML=ecRenderMd(text);}' .
 			'else{el.textContent=text;}' .
 			'var m=document.getElementById("ec-chat-messages");' .
 			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
