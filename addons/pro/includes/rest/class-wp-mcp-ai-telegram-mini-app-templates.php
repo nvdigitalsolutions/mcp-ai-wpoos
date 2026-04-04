@@ -778,168 +778,713 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name      = esc_html( $ctx['site_name'] );
+		$tools_exec     = $ctx['tools_url'] . '/execute';
+		$chat_url       = $ctx['chat_url'];
+		$validate_url   = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id   = $ctx['assistant_id'];
+		$chart_js_url   = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$woo_source     = isset( $ctx['woo_source'] ) ? $ctx['woo_source'] : 'local';
+		$woo_connection = isset( $ctx['woo_connection_id'] ) ? $ctx['woo_connection_id'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ecommerce-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#9c27b0;--tma-accent:#9c27b0;--tma-secondary-bg:#f8f4fb;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#9c27b0;--tma-accent:#9c27b0;--tma-secondary-bg:#f8f4fb;' .
+			'--ec-base:14px;--ec-label:12px;--ec-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.ec-font-small{--ec-base:12px;--ec-label:10px;--ec-heading:14px}' .
+		'.ec-font-large{--ec-base:16px;--ec-label:14px;--ec-heading:18px}' .
+		'.ec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
+		'.ec-compact .tma-product-body{padding:4px 6px}' .
+		'.ec-compact .ec-cart-item{padding:8px 10px}' .
+		'.ec-compact .tma-order-item{padding:8px 10px;margin:0 8px 6px}' .
+
+		/* ── Search bar ── */
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
-		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:14px;padding:10px 0;background:transparent;color:var(--tma-text)}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--ec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Product grid ── */
 		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
-		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer}' .
+		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
 		'.tma-product-card:active{opacity:.8}' .
 		'.tma-product-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:32px}' .
+		'.tma-product-img img{width:100%;height:100%;object-fit:cover}' .
 		'.tma-product-body{padding:8px 10px}' .
-		'.tma-product-name{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
-		'.tma-product-price{font-size:14px;color:var(--tma-btn);font-weight:700}' .
+		'.tma-product-name{font-size:var(--ec-label);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-product-price{font-size:var(--ec-base);color:var(--tma-btn);font-weight:700}' .
+		'.tma-product-price .ec-sale-price{text-decoration:line-through;color:var(--tma-hint);font-weight:400;font-size:var(--ec-label);margin-left:4px}' .
+		'.ec-stock-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600}' .
+		'.ec-stock-instock{background:#e8f5e9;color:#2e7d32}' .
+		'.ec-stock-outofstock{background:#ffebee;color:#c62828}' .
+		'.ec-add-cart-btn{display:block;width:100%;padding:6px 0;margin-top:6px;border:none;border-radius:6px;' .
+			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-label);font-weight:600;cursor:pointer}' .
+		'.ec-add-cart-btn:active{opacity:.8}' .
+
+		/* ── Cart ── */
+		'.ec-cart-item{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.ec-cart-item-info{flex:1;min-width:0}' .
+		'.ec-cart-item-name{font-size:var(--ec-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.ec-cart-item-price{font-size:var(--ec-label);color:var(--tma-hint)}' .
+		'.ec-cart-qty{display:flex;align-items:center;gap:6px}' .
+		'.ec-cart-qty button{width:28px;height:28px;border:1px solid var(--tma-border);border-radius:50%;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.ec-cart-qty button:active{background:var(--tma-secondary-bg)}' .
+		'.ec-cart-qty span{font-size:var(--ec-base);font-weight:600;min-width:20px;text-align:center}' .
+		'.ec-cart-remove{background:none;border:none;color:#c62828;font-size:18px;cursor:pointer;padding:0 4px}' .
+		'.ec-cart-total{margin:12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'display:flex;justify-content:space-between;align-items:center;font-size:var(--ec-heading);font-weight:700}' .
+		'.ec-checkout-btn{display:block;margin:0 12px 12px;padding:14px;border:none;border-radius:var(--tma-radius);' .
+			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-base);font-weight:700;width:calc(100% - 24px);cursor:pointer;text-align:center}' .
+		'.ec-checkout-btn:active{opacity:.8}' .
+
+		/* ── Badge on nav ── */
+		'.ec-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;' .
+			'background:#c62828;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}' .
+
+		/* ── Orders ── */
 		'.tma-order-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:14px}' .
 		'.tma-order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
-		'.tma-order-id{font-weight:700;font-size:14px}' .
-		'.tma-order-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--tma-secondary-bg);color:var(--tma-hint);font-weight:600}' .
-		'.tma-order-meta{font-size:12px;color:var(--tma-hint)}' .
-		'.tma-chat-fab{position:fixed;bottom:calc(var(--tma-nav-height)+16px);right:16px;width:48px;height:48px;' .
-			'background:var(--tma-btn);color:var(--tma-btn-text);border-radius:50%;border:none;' .
-			'display:flex;align-items:center;justify-content:center;cursor:pointer;' .
-			'box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:50;-webkit-tap-highlight-color:transparent}' .
-		'.tma-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none}' .
-		'.tma-overlay.open{display:flex;align-items:flex-end}' .
-		'.tma-drawer{background:var(--tma-bg);border-radius:20px 20px 0 0;width:100%;padding:20px;max-height:70vh;overflow-y:auto}' .
-		'.tma-drawer-handle{width:36px;height:4px;background:var(--tma-border);border-radius:2px;margin:0 auto 16px}' .
-		'.tma-drawer-messages{height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px}' .
-		'.tma-msg{max-width:85%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.4}' .
-		'.tma-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text)}' .
-		'.tma-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text)}' .
-		'.tma-drawer-input-row{display:flex;gap:8px}' .
-		'.tma-drawer-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:8px 14px;font-size:14px;background:var(--tma-bg);color:var(--tma-text);outline:none}' .
-		'.tma-send-btn-sm{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:36px;height:36px;min-width:36px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.tma-order-id{font-weight:700;font-size:var(--ec-base)}' .
+		'.tma-order-total{font-size:var(--ec-base);font-weight:700;color:var(--tma-btn);margin-top:4px}' .
+		'.tma-order-meta{font-size:var(--ec-label);color:var(--tma-hint)}' .
+		'.ec-status-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent}' .
+		'.ec-status-completed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.ec-status-processing{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.ec-status-pending,.ec-status-on-hold{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.ec-status-failed,.ec-status-cancelled,.ec-status-refunded{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.ec-pull-hint{text-align:center;font-size:var(--ec-label);color:var(--tma-hint);padding:8px 0}' .
+
+		/* ── Spending chart ── */
+		'.ec-chart-wrap{margin:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px}' .
+		'.ec-chart-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+
+		/* ── AI Chat ── */
+		'.ec-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.ec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.ec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--ec-base);line-height:1.5;word-wrap:break-word}' .
+		'.ec-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.ec-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.ec-msg.bot p{margin:0 0 6px}' .
+		'.ec-msg.bot p:last-child{margin-bottom:0}' .
+		'.ec-msg.bot ul,.ec-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.ec-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.ec-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.ec-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--ec-base);' .
+			'background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.ec-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;' .
+			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.ec-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.ec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.ec-settings-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.ec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.ec-settings-row:last-child{border-bottom:none}' .
+		'.ec-settings-label{font-size:var(--ec-base);color:var(--tma-text)}' .
+		'.ec-settings-value{font-size:var(--ec-base);color:var(--tma-hint)}' .
+		'.ec-font-btns{display:flex;gap:4px}' .
+		'.ec-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:var(--ec-label);cursor:pointer}' .
+		'.ec-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.ec-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.ec-toggle.on{background:var(--tma-btn)}' .
+		'.ec-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.ec-toggle.on::after{transform:translateX(20px)}' .
+		'.ec-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-bg);color:var(--tma-text);font-size:var(--ec-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.ec-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.ec-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.ec-connection-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}' .
+		'.ec-connection-dot.online{background:#2e7d32}' .
+		'.ec-connection-dot.local{background:#e65100}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🛒</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'Online Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="ec-header-status">' . esc_html__( 'Online Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-search-bar">' .
+
+			/* ── Search bar (visible on Products tab) ── */
+			'<div class="tma-search-bar" id="ec-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
-					'<input type="search" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" oninput="tmaSearchProducts(this.value)" />' .
+					'<input type="search" id="ec-search-input" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" />' .
 				'</div>' .
 			'</div>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-tab-shop">' .
+
+				/* Tab 1: Products */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
 					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div class="tma-product-grid" id="tma-product-grid">' .
+					'<div class="tma-product-grid" id="ec-product-grid">' .
 						'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading products…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-tab-orders">' .
-					'<div class="tma-section-title">' . esc_html__( 'My Orders', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div id="tma-orders-list"><div class="tma-empty">' . esc_html__( 'Loading orders…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+
+				/* Tab 2: Cart */
+				'<div class="tma-tab-pane" id="tma-tab-cart">' .
+					'<div class="tma-section-title">' . esc_html__( 'Shopping Cart', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="ec-cart-list"><div class="tma-empty">' . esc_html__( 'Your cart is empty.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="ec-cart-total" id="ec-cart-total" style="display:none">' .
+						'<span>' . esc_html__( 'Total', 'mcp-ai-wpoos-pro' ) . '</span><span id="ec-cart-total-val">0</span>' .
+					'</div>' .
+					'<button class="ec-checkout-btn" id="ec-checkout-btn" style="display:none" onclick="ecCheckout()">' .
+						esc_html__( 'Checkout', 'mcp-ai-wpoos-pro' ) .
+					'</button>' .
 				'</div>' .
-			'</div>' .
+
+				/* Tab 3: Orders */
+				'<div class="tma-tab-pane" id="tma-tab-orders">' .
+					'<div class="tma-section-title" style="display:flex;justify-content:space-between;align-items:center">' .
+						'<span>' . esc_html__( 'My Orders', 'mcp-ai-wpoos-pro' ) . '</span>' .
+						'<button style="background:none;border:none;color:var(--tma-btn);font-size:var(--ec-label);cursor:pointer" onclick="ecLoadOrders(true)">' .
+							esc_html__( 'Refresh', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+					'<div id="ec-orders-list"><div class="tma-empty">' . esc_html__( 'Loading orders…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="ec-chart-wrap" id="ec-chart-wrap" style="display:none">' .
+						'<div class="ec-chart-title">' . esc_html__( 'Monthly Spending', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="ec-spend-chart" height="160"></canvas>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 4: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="ec-chat-container">' .
+						'<div class="ec-chat-messages" id="ec-chat-messages"></div>' .
+						'<div class="ec-chat-input-row">' .
+							'<input type="text" id="ec-chat-input" class="ec-chat-input"' .
+								' placeholder="' . esc_attr__( 'Ask about products, orders…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="ec-send-btn" id="ec-send-btn" onclick="ecChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+					/* Display section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="ec-font-btns" id="ec-font-btns">' .
+								'<button data-size="small" onclick="ecSetFontSize(\'small\')">A-</button>' .
+								'<button data-size="medium" class="active" onclick="ecSetFontSize(\'medium\')">A</button>' .
+								'<button data-size="large" onclick="ecSetFontSize(\'large\')">A+</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="ec-toggle" id="ec-compact-toggle" onclick="ecToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Store section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Connection', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="ec-settings-value" id="ec-connection-info"></span>' .
+						'</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Currency', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="ec-settings-value" id="ec-currency-display">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label" id="ec-data-summary"></span>' .
+						'</div>' .
+						'<button class="ec-settings-btn" onclick="ecSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="ec-settings-btn danger" onclick="ecClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
 			'<nav class="tma-nav">' .
-				'<button class="tma-nav-btn tma-active" id="tma-nav-shop" onclick="tmaSwitch(\'shop\')">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="ecSwitch(\'products\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
 					'<span>' . esc_html__( 'Shop', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-orders" onclick="tmaSwitch(\'orders\')">' .
+				'<button class="tma-nav-btn" id="tma-nav-cart" onclick="ecSwitch(\'cart\')" style="position:relative">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' .
+					'<span id="ec-cart-badge" class="ec-badge" style="display:none"></span>' .
+					'<span>' . esc_html__( 'Cart', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-orders" onclick="ecSwitch(\'orders\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' .
 					'<span>' . esc_html__( 'Orders', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="ecSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="ecSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
 			'</nav>' .
-		'</div>' .
-		'<button class="tma-chat-fab" onclick="tmaOpenDrawer()">' .
-			'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
-		'</button>' .
-		'<div class="tma-overlay" id="tma-overlay" onclick="tmaCloseDrawer()">' .
-			'<div class="tma-drawer" onclick="event.stopPropagation()">' .
-				'<div class="tma-drawer-handle"></div>' .
-				'<div style="font-weight:700;font-size:16px;margin-bottom:12px">' . esc_html__( 'AI Shopping Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
-				'<div class="tma-drawer-messages" id="tma-drawer-msgs"></div>' .
-				'<div class="tma-drawer-input-row">' .
-					'<input type="text" id="tma-drawer-input" class="tma-drawer-input"' .
-						' placeholder="' . esc_attr__( 'Ask about products…', 'mcp-ai-wpoos-pro' ) . '"' .
-						' onkeydown="if(event.key===\'Enter\')tmaDrawerSend()" />' .
-					'<button class="tma-send-btn-sm" onclick="tmaDrawerSend()">' .
-						'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
-					'</button>' .
-				'</div>' .
-			'</div>' .
-		'</div>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
-		'var activeTab="shop";var chatHist=[];' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var WOO_SOURCE=' . wp_json_encode( $woo_source ) . ';' .
+		'var WOO_CONNECTION_ID=' . wp_json_encode( $woo_connection ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="products";' .
+		'var cart=[];' .
+		'var orders=[];' .
+		'var chatHist=[];' .
+		'var productsCache=[];' .
+		'var spendChartInst=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.tmaSwitch=function(tab){' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function ecRenderMd(t){' .
+			'return escH(t)' .
+				'.replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>")' .
+				'.replace(/\\*(.+?)\\*/g,"<em>$1</em>")' .
+				'.replace(/`([^`]+)`/g,"<code>$1</code>")' .
+				'.replace(/\\n\\n/g,"</p><p>")' .
+				'.replace(/\\n- /g,"</p><ul><li>")' .
+				'.replace(/\\n(\\d+)\\. /g,function(m,n){return"</p><ol><li>";})' .
+				'.replace(/\\n/g,"<br>");' .
+		'}' .
+
+		/* ── localStorage helpers ── */
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ── Tool call helper (supports local/remote WooCommerce) ── */
+		'function ecToolCall(slug,args,cb){' .
+			'var body;' .
+			'if(WOO_SOURCE==="remote"&&WOO_CONNECTION_ID){' .
+				'body={slug:"remote_wp_connection",arguments:{connection_id:WOO_CONNECTION_ID,tool:slug,arguments:args}};' .
+			'}else{' .
+				'body={slug:slug,arguments:args};' .
+			'}' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){cb(null,d);})' .
+			'.catch(function(e){cb(e,null);});' .
+		'}' .
+
+		/* ── Session init (matches medical_vitals pattern) ── */
+		'function ecInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}ecLoadProducts();ecLoadOrders(false);})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function ecApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("ec_font_size","medium");' .
+				'shell.classList.remove("ec-font-small","ec-font-large");' .
+				'if(size==="small")shell.classList.add("ec-font-small");' .
+				'else if(size==="large")shell.classList.add("ec-font-large");' .
+				'var compact=lsGet("ec_compact",false);' .
+				'if(compact)shell.classList.add("ec-compact");' .
+				'else shell.classList.remove("ec-compact");' .
+				/* Update settings UI */
+				'var btns=document.querySelectorAll("#ec-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("ec-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.ecSetFontSize=function(s){lsSet("ec_font_size",s);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
+		'window.ecToggleCompact=function(){var c=!lsGet("ec_compact",false);lsSet("ec_compact",c);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.ecSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
 			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
 			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
-			'activeTab=tab;if(tab==="orders")loadOrders();' .
+			'var sb=document.getElementById("ec-search-bar");if(sb)sb.style.display=tab==="products"?"":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="orders")ecLoadOrders(false);' .
+			'if(tab==="cart")ecRenderCart();' .
+			'if(tab==="assistant"&&!chatHist.length)ecChatInit();' .
+			'if(tab==="settings")ecRenderSettings();' .
 		'};' .
-		'function loadProducts(q){' .
-			'var g=document.getElementById("tma-product-grid");if(!g)return;' .
-			'g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"search_woocommerce_products",arguments:{search:q||"",per_page:10}})})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Products
+		   ══════════════════════════════════════════════════════════ */
+		'function ecLoadProducts(q){' .
+			'var g=document.getElementById("ec-product-grid");if(!g)return;' .
+			/* Show cached products immediately while fetching */
+			'if(!q&&productsCache.length){ecRenderProducts(productsCache);}'  .
+			'if(!q&&!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'ecToolCall("search_woocommerce_products",{search:q||"",per_page:20},function(err,d){' .
+				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var ps=(d&&d.data&&d.data.products)?d.data.products:[];' .
-				'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'g.innerHTML=ps.map(function(p){return \'<div class="tma-product-card"><div class="tma-product-img">🛍️</div><div class="tma-product-body"><div class="tma-product-name">\'+escH(p.name||"Product")+\'</div><div class="tma-product-price">\'+escH(p.price_html||p.price||"")+\'</div></div></div>\';}).join("");' .
-			'}).catch(function(){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+				'if(!q){productsCache=ps;lsSet("ec_products_cache",ps);}' .
+				'ecRenderProducts(ps);' .
+			'});' .
 		'}' .
-		'var st=null;window.tmaSearchProducts=function(q){clearTimeout(st);st=setTimeout(function(){loadProducts(q);},400);};' .
-		'function loadOrders(){' .
-			'var l=document.getElementById("tma-orders-list");if(!l)return;' .
+
+		'function ecRenderProducts(ps){' .
+			'var g=document.getElementById("ec-product-grid");if(!g)return;' .
+			'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'g.innerHTML=ps.map(function(p,i){' .
+				'var img=(p.images&&p.images[0]&&p.images[0].src)?"<img src=\\""+escH(p.images[0].src)+"\\" alt=\\"\\"/>":"🛍️";' .
+				'var stock=(p.stock_status==="instock"||p.in_stock===true);' .
+				'var stockCls=stock?"ec-stock-instock":"ec-stock-outofstock";' .
+				'var stockTxt=stock?"' . esc_js( __( 'In Stock', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'Out of Stock', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				/* Price display with sale support */
+				'var priceHtml="";' .
+				'if(p.sale_price&&p.regular_price&&p.sale_price!==p.regular_price){' .
+					'priceHtml=escH(p.price_html||p.sale_price)+"<span class=\\"ec-sale-price\\">"+escH(p.regular_price)+"</span>";' .
+				'}else{' .
+					'priceHtml=escH(p.price_html||p.price||"");' .
+				'}' .
+				'var addBtn=stock?"<button class=\\"ec-add-cart-btn\\" onclick=\\"ecAddToCart("+i+");event.stopPropagation()\\">' . esc_js( __( 'Add to Cart', 'mcp-ai-wpoos-pro' ) ) . '</button>":"";' .
+				'return \'<div class="tma-product-card">' .
+					'<span class="ec-stock-badge \'+stockCls+\'">\'+escH(stockTxt)+\'</span>' .
+					'<div class="tma-product-img">\'+img+\'</div>' .
+					'<div class="tma-product-body">' .
+						'<div class="tma-product-name">\'+escH(p.name||"Product")+\'</div>' .
+						'<div class="tma-product-price">\'+priceHtml+\'</div>' .
+						'\'+addBtn+\'' .
+					'</div></div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("ec-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value;' .
+			'searchTimer=setTimeout(function(){ecLoadProducts(q);},400);' .
+		'});' .
+
+		/* Add to cart from product grid */
+		'window.ecAddToCart=function(idx){' .
+			'var p=productsCache[idx];if(!p)return;tmaHaptic("light");' .
+			'var existing=cart.find(function(c){return c.id===p.id;});' .
+			'if(existing){existing.qty+=1;}else{' .
+				'cart.push({id:p.id,name:p.name||"Product",price:parseFloat(p.price)||0,qty:1,' .
+					'image:(p.images&&p.images[0]&&p.images[0].src)||""});' .
+			'}' .
+			'lsSet("ec_cart",cart);ecUpdateCartBadge();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Cart
+		   ══════════════════════════════════════════════════════════ */
+		'function ecRenderCart(){' .
+			'var l=document.getElementById("ec-cart-list");if(!l)return;' .
+			'var totEl=document.getElementById("ec-cart-total");' .
+			'var chkEl=document.getElementById("ec-checkout-btn");' .
+			'if(!cart.length){' .
+				'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Your cart is empty.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+				'if(totEl)totEl.style.display="none";if(chkEl)chkEl.style.display="none";return;' .
+			'}' .
+			'var total=0;' .
+			'l.innerHTML=cart.map(function(c,i){' .
+				'total+=c.price*c.qty;' .
+				'return \'<div class="ec-cart-item">' .
+					'<div class="ec-cart-item-info"><div class="ec-cart-item-name">\'+escH(c.name)+\'</div>' .
+					'<div class="ec-cart-item-price">\'+escH(c.price.toFixed(2))+\' × \'+c.qty+\'</div></div>' .
+					'<div class="ec-cart-qty">' .
+						'<button onclick="ecCartQty(\'+i+\',-1)">−</button>' .
+						'<span>\'+c.qty+\'</span>' .
+						'<button onclick="ecCartQty(\'+i+\',1)">+</button>' .
+					'</div>' .
+					'<button class="ec-cart-remove" onclick="ecCartRemove(\'+i+\')">✕</button>' .
+				'</div>\';' .
+			'}).join("");' .
+			'if(totEl){totEl.style.display="flex";document.getElementById("ec-cart-total-val").textContent=total.toFixed(2);}' .
+			'if(chkEl)chkEl.style.display="block";' .
+		'}' .
+
+		'window.ecCartQty=function(i,d){' .
+			'if(!cart[i])return;tmaHaptic("light");' .
+			'cart[i].qty+=d;' .
+			'if(cart[i].qty<1)cart.splice(i,1);' .
+			'lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+		'};' .
+
+		'window.ecCartRemove=function(i){' .
+			'tmaHaptic("light");cart.splice(i,1);lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+		'};' .
+
+		'function ecUpdateCartBadge(){' .
+			'var b=document.getElementById("ec-cart-badge");if(!b)return;' .
+			'var cnt=cart.reduce(function(s,c){return s+c.qty;},0);' .
+			'if(cnt>0){b.textContent=cnt>99?"99+":cnt;b.style.display="flex";}' .
+			'else{b.style.display="none";}' .
+		'}' .
+
+		'window.ecCheckout=function(){' .
+			'tmaHaptic("medium");' .
+			'var total=cart.reduce(function(s,c){return s+c.price*c.qty;},0);' .
+			'var items=cart.map(function(c){return c.name+" x"+c.qty;}).join(", ");' .
+			/* Attempt WooCommerce create order via tool, fallback to summary */
+			'ecToolCall("create_woocommerce_order",{line_items:cart.map(function(c){return{product_id:c.id,quantity:c.qty};})},function(err,d){' .
+				'if(!err&&d&&d.data&&d.data.order){' .
+					'cart=[];lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+					'ecLoadOrders(true);ecSwitch("orders");' .
+				'}else{' .
+					'var msg="' . esc_js( __( 'Order Summary', 'mcp-ai-wpoos-pro' ) ) . ':\\n"+items+"\\n' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . ': "+total.toFixed(2);' .
+					'if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.showAlert(msg);}else{alert(msg);}' .
+				'}' .
+			'});' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Orders
+		   ══════════════════════════════════════════════════════════ */
+		'function ecLoadOrders(force){' .
+			'var l=document.getElementById("ec-orders-list");if(!l)return;' .
+			/* Show cached orders immediately */
+			'if(!force&&!orders.length){orders=lsGet("ec_orders_cache",[]);}' .
+			'if(orders.length&&!force){ecRenderOrders(orders);return;}' .
 			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading orders…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_woocommerce_orders",arguments:{per_page:10}})})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){' .
+			'ecToolCall("get_woocommerce_orders",{per_page:20},function(err,d){' .
+				'if(err){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load orders.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var os=(d&&d.data&&d.data.orders)?d.data.orders:[];' .
-				'if(!os.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No orders found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'l.innerHTML=os.map(function(o){var s=o.status||"processing";' .
-					'return \'<div class="tma-order-item"><div class="tma-order-header"><span class="tma-order-id">#\'+escH(o.id||"")+\'</span><span class="tma-order-badge">\'+escH(s)+\'</span></div><div class="tma-order-meta">\'+escH(o.date_created||"")+\'</div></div>\';' .
-				'}).join("");' .
-			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load orders.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+				'orders=os;lsSet("ec_orders_cache",os);ecRenderOrders(os);' .
+			'});' .
 		'}' .
-		'window.tmaOpenDrawer=function(){tmaHaptic("light");document.getElementById("tma-overlay").classList.add("open");' .
-			'if(!chatHist.length){appendDrawer("bot","' . esc_js( __( 'Hi! I can help you find products or check your orders. What can I do for you?', 'mcp-ai-wpoos-pro' ) ) . '");}};' .
-		'window.tmaCloseDrawer=function(){document.getElementById("tma-overlay").classList.remove("open");};' .
-		'function appendDrawer(role,text){var el=document.createElement("div");el.className="tma-msg "+role;el.textContent=text;var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}}' .
-		'window.tmaDrawerSend=function(){' .
-			'var inp=document.getElementById("tma-drawer-input");if(!inp)return;' .
+
+		'function ecStatusClass(s){' .
+			'switch(s){' .
+				'case "completed":return "ec-status-completed";' .
+				'case "processing":return "ec-status-processing";' .
+				'case "pending":case "on-hold":return "ec-status-pending";' .
+				'default:return "ec-status-failed";' .
+			'}' .
+		'}' .
+
+		'function ecRenderOrders(os){' .
+			'var l=document.getElementById("ec-orders-list");if(!l)return;' .
+			'if(!os.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No orders found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';ecHideChart();return;}' .
+			'l.innerHTML=os.map(function(o){' .
+				'var s=o.status||"processing";' .
+				'var total=o.total||o.order_total||"";' .
+				'var date=o.date_created||o.date||"";' .
+				'if(date&&date.length>10)date=date.substring(0,10);' .
+				'return \'<div class="tma-order-item">' .
+					'<div class="tma-order-header">' .
+						'<span class="tma-order-id">#\'+escH(o.id||"")+\'</span>' .
+						'<span class="ec-status-badge \'+ecStatusClass(s)+\'">\'+escH(s)+\'</span>' .
+					'</div>' .
+					'<div class="tma-order-meta">\'+escH(date)+\'</div>' .
+					'<div class="tma-order-total">\'+escH(total)+\'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+			'ecRenderSpendChart(os);' .
+		'}' .
+
+		'function ecHideChart(){var w=document.getElementById("ec-chart-wrap");if(w)w.style.display="none";}' .
+
+		/* ── Spending Chart (Chart.js) ── */
+		'function ecLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function ecRenderSpendChart(os){' .
+			'ecLoadChartJs(function(){' .
+				'if(!window.Chart){ecHideChart();return;}' .
+				'var monthly={};' .
+				'os.forEach(function(o){' .
+					'var d=o.date_created||o.date||"";if(!d)return;' .
+					'var m=d.substring(0,7);' . /* YYYY-MM */
+					'var t=parseFloat(o.total||o.order_total||0);' .
+					'if(!monthly[m])monthly[m]=0;monthly[m]+=t;' .
+				'});' .
+				'var keys=Object.keys(monthly).sort();' .
+				'if(!keys.length){ecHideChart();return;}' .
+				'var labels=keys;var data=keys.map(function(k){return Math.round(monthly[k]*100)/100;});' .
+				'var wrap=document.getElementById("ec-chart-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("ec-spend-chart");if(!cv)return;' .
+				'if(spendChartInst){spendChartInst.destroy();}' .
+				'spendChartInst=new Chart(cv.getContext("2d"),{type:"line",data:{labels:labels,datasets:[{' .
+					'label:"' . esc_js( __( 'Spending', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'data:data,borderColor:"#9c27b0",backgroundColor:"rgba(156,39,176,0.1)",' .
+					'fill:true,tension:0.3,pointRadius:3' .
+				'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function ecChatInit(){' .
+			/* Load chat history from localStorage */
+			'chatHist=lsGet("ec_chat_hist",[]);' .
+			'var m=document.getElementById("ec-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){ecAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with store context */
+				'var ctx="[' . esc_js( __( 'Store context', 'mcp-ai-wpoos-pro' ) ) . '] ' . esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+", ' .
+					esc_js( __( 'Cart items', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
+					esc_js( __( 'Recent orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length;' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'ecAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your shopping assistant. I can help you find products, track orders, and answer questions about our store.', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function ecAppendMsg(role,text,isHtml){' .
+			'var el=document.createElement("div");el.className="ec-msg "+role;' .
+			'if(role==="bot"&&!isHtml){el.innerHTML=ecRenderMd(text);}' .
+			'else if(role==="bot"&&isHtml){el.innerHTML=ecRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("ec-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.ecChatSend=function(){' .
+			'var inp=document.getElementById("ec-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
-			/* Push before payload so the current turn is included in messages. */
-			'chatHist.push({role:"user",content:txt});appendDrawer("user",txt);' .
-			'var el=document.createElement("div");el.className="tma-msg bot";el.textContent="\u2026";' .
-			'var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
-			/* Floating drawer: 10 messages gives enough context for a shopping assistant without bloating the request. */
-			'var body={messages:chatHist.slice(-10)};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+			'chatHist.push({role:"user",content:txt});ecAppendMsg("user",txt,false);' .
+			'lsSet("ec_chat_hist",chatHist.slice(-50));' .
+			'var el=ecAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			/* Include system context */
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var data=d&&d.data;' .
 				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
 					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'el.textContent=rep;chatHist.push({role:"assistant",content:rep});})' .
+				'el.innerHTML=ecRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("ec_chat_hist",chatHist.slice(-50));' .
+			'})' .
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
-		'loadProducts();' .
+
+		/* Enter to send */
+		'document.getElementById("ec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")ecChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function ecRenderSettings(){' .
+			/* Connection indicator */
+			'var ci=document.getElementById("ec-connection-info");' .
+			'if(ci){' .
+				'if(WOO_SOURCE==="remote"){' .
+					'ci.innerHTML=\'<span class="ec-connection-dot online"></span>' . esc_js( __( 'Remote Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}else{' .
+					'ci.innerHTML=\'<span class="ec-connection-dot local"></span>' . esc_js( __( 'Local Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}' .
+			'}' .
+			/* Data summary */
+			'var ds=document.getElementById("ec-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", ' .
+				esc_js( __( 'Orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length+", ' .
+				esc_js( __( 'Cart', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+			/* Currency display */
+			'var cd=document.getElementById("ec-currency-display");' .
+			'if(cd){' .
+				'if(orders.length&&orders[0].currency){cd.textContent=orders[0].currency;}' .
+				'else if(orders.length&&orders[0].currency_symbol){cd.textContent=orders[0].currency_symbol;}' .
+				'else{cd.textContent="\u2014";}' .
+			'}' .
+		'}' .
+
+		'window.ecSyncFromServer=function(){' .
+			'tmaHaptic("medium");ecLoadProducts();ecLoadOrders(true);' .
+		'};' .
+
+		'window.ecClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)ecDoClear();});' .
+			'}else if(confirm(msg)){ecDoClear();}' .
+		'};' .
+
+		'function ecDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("ec_products_cache");' .
+				'localStorage.removeItem("ec_orders_cache");' .
+				'localStorage.removeItem("ec_cart");' .
+				'localStorage.removeItem("ec_chat_hist");' .
+				'localStorage.removeItem("ec_font_size");' .
+				'localStorage.removeItem("ec_compact");' .
+			'}catch(e){}' .
+			'productsCache=[];orders=[];cart=[];chatHist=[];' .
+			'ecUpdateCartBadge();ecRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'cart=lsGet("ec_cart",[]);' .
+		'productsCache=lsGet("ec_products_cache",[]);' .
+		'orders=lsGet("ec_orders_cache",[]);' .
+		'ecUpdateCartBadge();' .
+		'ecApplyDisplaySettings();' .
+
+		/* Render cached products immediately, then refresh */
+		'if(productsCache.length)ecRenderProducts(productsCache);' .
+		'ecLoadProducts();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'ecInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
