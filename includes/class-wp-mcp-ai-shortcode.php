@@ -1300,7 +1300,7 @@ class WP_MCP_AI_Shortcode {
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $assistant_content is processed by apply_filters('the_content', ...) which applies standard WordPress content filters and escaping. ?>
+						<?php echo wp_kses_post( $assistant_content ); ?>
 					</div>
 				<?php endif; ?>
 			</div>
