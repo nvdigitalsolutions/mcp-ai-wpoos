@@ -646,10 +646,46 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	 * @since 2.1.0
 	 */
 	private function render_tasks_tab() {
-		$sessions  = $this->get_active_sessions();
-		$workflows = $this->get_active_workflows();
+		$sessions   = $this->get_active_sessions();
+		$workflows  = $this->get_active_workflows();
+		$task_plans = $this->get_task_plans();
 		?>
 		<div class="acc-tasks-tab">
+			<!-- Task Plans Section -->
+			<div class="acc-panel">
+				<div class="acc-panel-header">
+					<h2><span class="dashicons dashicons-clipboard"></span> <?php esc_html_e( 'Task Plans', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<span class="acc-badge"><?php echo esc_html( count( $task_plans ) ); ?></span>
+				</div>
+				<?php if ( empty( $task_plans ) ) : ?>
+					<div class="acc-empty-state">
+						<span class="dashicons dashicons-clipboard"></span>
+						<p><?php esc_html_e( 'No task plans found.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+				<?php else : ?>
+					<div class="acc-tasks-table-wrapper">
+						<table class="widefat striped">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Plan', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Goal', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Progress', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Tasks', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Author', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Created', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody id="acc-task-plans-tbody">
+								<?php foreach ( $task_plans as $plan ) : ?>
+									<?php $this->render_task_plan_row( $plan ); ?>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				<?php endif; ?>
+			</div>
+
 			<!-- Active Sessions Section -->
 			<div class="acc-panel">
 				<div class="acc-panel-header">
@@ -754,6 +790,46 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			<td><?php echo esc_html( $this->format_number( $tokens ) ); ?></td>
 			<td><?php echo esc_html( $this->format_duration( $elapsed ) ); ?></td>
 			<td><span class="acc-health-badge health-<?php echo esc_attr( $health ); ?>"><?php echo esc_html( ucfirst( $health ) ); ?></span></td>
+		</tr>
+		<?php
+	}
+
+	/**
+	 * Render a task plan table row.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param WP_Post $plan The task plan post object.
+	 */
+	private function render_task_plan_row( $plan ) {
+		$goal            = get_post_meta( $plan->ID, '_goal', true );
+		$status          = get_post_meta( $plan->ID, '_status', true );
+		$task_count      = (int) get_post_meta( $plan->ID, '_task_count', true );
+		$completed_count = (int) get_post_meta( $plan->ID, '_completed_count', true );
+		$progress        = (int) get_post_meta( $plan->ID, '_progress', true );
+		$author          = get_the_author_meta( 'display_name', $plan->post_author );
+
+		if ( ! $status ) {
+			$status = 'draft';
+		}
+		?>
+		<tr>
+			<td>
+				<a href="<?php echo esc_url( get_edit_post_link( $plan->ID ) ); ?>">
+					<?php echo esc_html( $plan->post_title ); ?>
+				</a>
+			</td>
+			<td><?php echo esc_html( $goal ? wp_trim_words( $goal, 10 ) : '—' ); ?></td>
+			<td><span class="acc-status-badge status-<?php echo esc_attr( $status ); ?>"><?php echo esc_html( ucfirst( $status ) ); ?></span></td>
+			<td>
+				<div class="acc-progress-bar">
+					<div class="acc-progress-fill" style="width: <?php echo esc_attr( $progress ); ?>%"></div>
+				</div>
+				<span class="acc-progress-text"><?php echo esc_html( $progress . '%' ); ?></span>
+			</td>
+			<td><?php echo esc_html( $completed_count . '/' . $task_count ); ?></td>
+			<td><?php echo esc_html( $author ); ?></td>
+			<td><?php echo esc_html( get_the_date( '', $plan ) ); ?></td>
 		</tr>
 		<?php
 	}
@@ -1569,6 +1645,29 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		}
 
 		return $workflows;
+	}
+
+	/**
+	 * Get published task plans.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return WP_Post[] Array of task plan post objects.
+	 */
+	private function get_task_plans() {
+		if ( ! post_type_exists( 'mcp_task_plan' ) ) {
+			return array();
+		}
+
+		return get_posts(
+			array(
+				'post_type'      => 'mcp_task_plan',
+				'post_status'    => 'publish',
+				'posts_per_page' => 50,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
 	}
 
 	/**
