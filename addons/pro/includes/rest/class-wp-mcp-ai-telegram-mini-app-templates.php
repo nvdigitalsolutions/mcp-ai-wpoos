@@ -2234,74 +2234,612 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
 		$site_name     = esc_html( $ctx['site_name'] );
-		$analytics_url = $ctx['analytics_url'];
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$analytics_url = isset( $ctx['analytics_url'] ) ? $ctx['analytics_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-analytics-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#00796b;--tma-accent:#00796b;--tma-secondary-bg:#e0f2f1;}' .
-		'.tma-analytics-wrap{padding:12px;overflow-y:auto;height:100%}' .
-		'.tma-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}' .
-		'.tma-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;text-align:center}' .
-		'.tma-kpi-value{font-size:28px;font-weight:700;color:var(--tma-btn);line-height:1.1;margin-bottom:4px}' .
-		'.tma-kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
-		'.tma-chart-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;margin-bottom:14px}' .
-		'.tma-chart-title{font-size:13px;font-weight:600;margin-bottom:10px}' .
-		'.tma-period-bar{display:flex;gap:8px;margin-bottom:14px}' .
-		'.tma-period-btn{flex:1;padding:7px;border:1px solid var(--tma-border);border-radius:8px;background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:12px;font-weight:600;cursor:pointer}' .
-		'.tma-period-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#00796b;--tma-accent:#00796b;--tma-secondary-bg:#e0f2f1;' .
+			'--an-base:14px;--an-label:12px;--an-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.an-font-small{--an-base:12px;--an-label:10px;--an-heading:14px}' .
+		'.an-font-large{--an-base:16px;--an-label:14px;--an-heading:18px}' .
+		'.an-compact .an-kpi-grid{gap:6px}' .
+		'.an-compact .an-kpi-card{padding:8px}' .
+		'.an-compact .an-chart-card{padding:8px}' .
+		'.an-compact .an-content-row{padding:8px 10px}' .
+
+		/* ── Period bar ── */
+		'.an-period-bar{display:flex;gap:8px;margin-bottom:14px;padding:0 12px}' .
+		'.an-period-btn{flex:1;padding:7px;border:1px solid var(--tma-border);border-radius:8px;background:var(--tma-secondary-bg);' .
+			'color:var(--tma-hint);font-size:var(--an-label);font-weight:600;cursor:pointer}' .
+		'.an-period-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+
+		/* ── KPI grid ── */
+		'.an-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;padding:0 12px}' .
+		'.an-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;text-align:center}' .
+		'.an-kpi-value{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn);line-height:1.1;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:4px}' .
+		'.an-kpi-label{font-size:var(--an-label);text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
+		'.an-trend-up{color:#2e7d32;font-size:var(--an-label)}' .
+		'.an-trend-down{color:#c62828;font-size:var(--an-label)}' .
+		'.an-trend-flat{color:var(--tma-hint);font-size:var(--an-label)}' .
+
+		/* ── Chart card ── */
+		'.an-chart-card{margin:0 12px 14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px}' .
+		'.an-chart-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-align:center}' .
+
+		/* ── Content tab ── */
+		'.an-content-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--tma-border)}' .
+		'.an-content-info{flex:1;min-width:0}' .
+		'.an-content-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.an-content-meta{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+		'.an-status-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap}' .
+		'.an-status-publish{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.an-status-draft{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.an-status-other{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.an-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px}' .
+		'.an-summary-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.an-summary-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.an-summary-lbl{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+
+		/* ── Traffic tab ── */
+		'.an-traffic-kpis{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
+		'.an-traffic-kpi{flex:1;min-width:80px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.an-traffic-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.an-traffic-lbl{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+		'.an-page-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--tma-border)}' .
+		'.an-page-rank{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn);min-width:24px;text-align:center}' .
+		'.an-page-info{flex:1;min-width:0}' .
+		'.an-page-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.an-page-views{font-size:var(--an-label);color:var(--tma-hint)}' .
+
+		/* ── AI Chat ── */
+		'.an-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.an-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.an-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--an-base);line-height:1.5;word-wrap:break-word}' .
+		'.an-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.an-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.an-msg.bot p{margin:0 0 6px}.an-msg.bot p:last-child{margin-bottom:0}' .
+		'.an-msg.bot ul,.an-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.an-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.an-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.an-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--an-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.an-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.an-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.an-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.an-settings-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.an-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.an-settings-row:last-child{border-bottom:none}' .
+		'.an-settings-label{font-size:var(--an-base);color:var(--tma-text)}' .
+		'.an-settings-value{font-size:var(--an-base);color:var(--tma-hint)}' .
+		'.an-font-btns{display:flex;gap:4px}' .
+		'.an-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--an-label);cursor:pointer}' .
+		'.an-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.an-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.an-toggle.on{background:var(--tma-btn)}' .
+		'.an-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.an-toggle.on::after{transform:translateX(20px)}' .
+		'.an-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--an-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.an-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.an-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.an-freshness{font-size:var(--an-label);color:var(--tma-hint);text-align:center;padding:6px 0}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📊</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status" id="tma-update-time">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</div>' .
-				'</div>' .
-				'<div class="tma-header-actions">' .
-					'<button class="tma-icon-btn" title="' . esc_attr__( 'Refresh', 'mcp-ai-wpoos-pro' ) . '" onclick="loadAnalytics()">' .
-						'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' .
-					'</button>' .
+					'<div class="tma-header-status" id="an-header-status">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-tab-dashboard">' .
-					'<div class="tma-analytics-wrap" id="tma-analytics-wrap">' .
-						'<div class="tma-empty">' . esc_html__( 'Loading analytics…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+				/* Tab 1: Overview */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-overview">' .
+					'<div id="an-overview-wrap"><div class="tma-empty">' . esc_html__( 'Loading analytics…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 2: Content */
+				'<div class="tma-tab-pane" id="tma-tab-content">' .
+					'<div id="an-content-wrap"><div class="tma-empty">' . esc_html__( 'Loading content…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: Traffic */
+				'<div class="tma-tab-pane" id="tma-tab-traffic">' .
+					'<div id="an-traffic-wrap"><div class="tma-empty">' . esc_html__( 'Loading traffic…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Insights */
+				'<div class="tma-tab-pane" id="tma-tab-insights">' .
+					'<div class="an-chat-container">' .
+						'<div class="an-chat-messages" id="an-chat-messages"></div>' .
+						'<div class="an-chat-input-row">' .
+							'<input type="text" class="an-chat-input" id="an-chat-input" placeholder="' . esc_attr__( 'Ask about your analytics…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="an-send-btn" onclick="anChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-			'</div>' .
-		'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="an-settings-section">' .
+						'<div class="an-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="an-font-btns" id="an-font-btns">' .
+								'<button data-size="small" onclick="anSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="anSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="anSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="an-toggle" id="an-compact-toggle" onclick="anToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Default Period', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="an-settings-value" id="an-default-period-label">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="an-settings-section">' .
+						'<div class="an-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label" id="an-data-summary"></span>' .
+						'</div>' .
+						'<div class="an-freshness" id="an-freshness"></div>' .
+						'<button class="an-settings-btn" onclick="anSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="an-settings-btn danger" onclick="anClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-overview" onclick="anSwitch(\'overview\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' .
+					'<span>' . esc_html__( 'Overview', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-content" onclick="anSwitch(\'content\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' .
+					'<span>' . esc_html__( 'Content', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-traffic" onclick="anSwitch(\'traffic\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' .
+					'<span>' . esc_html__( 'Traffic', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-insights" onclick="anSwitch(\'insights\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="anSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var analyticsUrl=' . wp_json_encode( $analytics_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var days=7;var chartInst=null;' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var ANALYTICS_URL=' . wp_json_encode( $analytics_url ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="overview";' .
+		'var days=7;' .
+		'var overviewCache=null;' .
+		'var contentCache=null;' .
+		'var trafficCache=null;' .
+		'var chatHist=[];' .
+		'var overviewChartInst=null;' .
+		'var contentChartInst=null;' .
+		'var trafficChartInst=null;' .
+		'var lastUpdated=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.loadAnalytics=function(){' .
-			'var w=document.getElementById("tma-analytics-wrap");if(!w)return;' .
-			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(analyticsUrl+"?days="+days,{headers:{"X-WP-Nonce":nonce}})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){renderDash(d,w);var st=document.getElementById("tma-update-time");if(st)st.textContent="' . esc_js( __( 'Updated', 'mcp-ai-wpoos-pro' ) ) . ' "+(new Date()).toLocaleTimeString();})' .
-			'.catch(function(){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load analytics.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function renderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecInitSession / crmInitSession pattern) ── */
+		'function anInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}anLoadOverview();anLoadContent();})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function anApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("an_font_size","medium");' .
+				'shell.classList.remove("an-font-small","an-font-large");' .
+				'if(size==="small")shell.classList.add("an-font-small");' .
+				'else if(size==="large")shell.classList.add("an-font-large");' .
+				'var compact=lsGet("an_compact",false);' .
+				'if(compact)shell.classList.add("an-compact");' .
+				'else shell.classList.remove("an-compact");' .
+				'var btns=document.querySelectorAll("#an-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("an-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.anSetFontSize=function(s){lsSet("an_font_size",s);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
+		'window.anToggleCompact=function(){var c=!lsGet("an_compact",false);lsSet("an_compact",c);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.anSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="overview")anLoadOverview();' .
+			'if(tab==="content")anLoadContent();' .
+			'if(tab==="traffic")anLoadTraffic();' .
+			'if(tab==="insights"&&!chatHist.length)anChatInit();' .
+			'if(tab==="settings")anRenderSettings();' .
 		'};' .
-		'function renderDash(d,w){' .
-			'var kpis=[{l:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_views||0},{l:"' . esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_posts||0},{l:"' . esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_comments||0},{l:"' . esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_users||0}];' .
-			'var pb=[7,14,30].map(function(n){return \'<button class="tma-period-btn\'+(n===days?" active":"")+\'" onclick="setDays(\'+n+\')">\'+(n)+" ' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '"+"</button>";}).join("");' .
-			'var kh=kpis.map(function(k){return \'<div class="tma-kpi-card"><div class="tma-kpi-value">\'+escH(k.v)+\'</div><div class="tma-kpi-label">\'+escH(k.l)+\'</div></div>\';}).join("");' .
-			'w.innerHTML=\'<div class="tma-period-bar">\'+pb+\'</div><div class="tma-kpi-grid">\'+kh+\'</div><div class="tma-chart-card"><div class="tma-chart-title">' . esc_js( __( 'Activity Over Time', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="tma-chart" height="180"></canvas></div>\';' .
-			'if(window.Chart){' .
-				'var canvas=document.getElementById("tma-chart");' .
-				'if(canvas){if(chartInst)chartInst.destroy();' .
-					'var lbls=(d.daily||[]).map(function(r){return r.date||"";});' .
-					'var vals=(d.daily||[]).map(function(r){return r.views||0;});' .
-					'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
-					'chartInst=new Chart(canvas,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
-				'}' .
+
+		/* ── Trend indicator helper ── */
+		'function anTrend(cur,prev){' .
+			'if(typeof prev==="undefined"||prev===null)return \'<span class="an-trend-flat">—</span>\';' .
+			'if(cur>prev)return \'<span class="an-trend-up">▲</span>\';' .
+			'if(cur<prev)return \'<span class="an-trend-down">▼</span>\';' .
+			'return \'<span class="an-trend-flat">●</span>\';' .
+		'}' .
+
+		/* ── Chart.js lazy loader ── */
+		'function anLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Overview
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadOverview(){' .
+			'var w=document.getElementById("an-overview-wrap");if(!w)return;' .
+			'if(overviewCache){anRenderOverview(overviewCache,w);}' .
+			'if(!overviewCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(ANALYTICS_URL+"?days="+days,{headers:tmaToolHeaders()})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'overviewCache=d;lsSet("an_overview_cache",d);' .
+				'lastUpdated=new Date();lsSet("an_last_updated",lastUpdated.toISOString());' .
+				'anRenderOverview(d,w);' .
+				'trafficCache=d;lsSet("an_traffic_cache",d);' .
+				'var st=document.getElementById("an-header-status");' .
+				'if(st)st.textContent="' . esc_js( __( 'Updated', 'mcp-ai-wpoos-pro' ) ) . ' "+lastUpdated.toLocaleTimeString();' .
+			'}).catch(function(){' .
+				'if(!overviewCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load analytics.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderOverview(d,w){' .
+			'var prev=d.previous||{};' .
+			'var kpis=[' .
+				'{l:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_views||0,p:prev.total_views},' .
+				'{l:"' . esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_posts||0,p:prev.total_posts},' .
+				'{l:"' . esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_comments||0,p:prev.total_comments},' .
+				'{l:"' . esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_users||0,p:prev.total_users}' .
+			'];' .
+			'var pb=[7,14,30,90].map(function(n){return \'<button class="an-period-btn\'+(n===days?" active":"")+\'" onclick="anSetDays(\'+n+\')">\'+(n)+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '</button>";}).join("");' .
+			'var kh=kpis.map(function(k){return \'<div class="an-kpi-card"><div class="an-kpi-value">\'+escH(k.v)+\' \'+anTrend(k.v,k.p)+\'</div><div class="an-kpi-label">\'+escH(k.l)+\'</div></div>\';}).join("");' .
+			'var ts=lastUpdated?\'<div class="an-freshness">' . esc_js( __( 'Last updated:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(lastUpdated.toLocaleTimeString())+\'</div>\':\'<div class="an-freshness">' . esc_js( __( 'Cached data', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'w.innerHTML=\'<div class="an-period-bar">\'+pb+\'</div><div class="an-kpi-grid">\'+kh+\'</div><div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Activity Over Time', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-overview-chart" height="180"></canvas></div>\'+ts;' .
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-overview-chart");if(!cv)return;' .
+				'if(overviewChartInst)overviewChartInst.destroy();' .
+				'var lbls=(d.daily||[]).map(function(r){return r.date||"";});' .
+				'var vals=(d.daily||[]).map(function(r){return r.views||0;});' .
+				'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
+				'overviewChartInst=new Chart(cv,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		'window.anSetDays=function(n){days=n;lsSet("an_default_period",n);tmaHaptic("light");anLoadOverview();};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Content
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadContent(){' .
+			'var w=document.getElementById("an-content-wrap");if(!w)return;' .
+			'if(contentCache){anRenderContent(contentCache,w);}' .
+			'if(!contentCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_recent_posts",arguments:{per_page:20,post_type:"any"}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var posts=(d&&d.data&&d.data.posts)?d.data.posts:((d&&d.data&&Array.isArray(d.data))?d.data:[]);' .
+				'contentCache=posts;lsSet("an_content_cache",posts);' .
+				'anRenderContent(posts,w);' .
+			'}).catch(function(){' .
+				'if(!contentCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load content.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderContent(posts,w){' .
+			'if(!posts.length){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No content found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			/* Count by type */
+			'var byType={};var published=0;var drafts=0;' .
+			'posts.forEach(function(p){' .
+				'var t=p.post_type||p.type||"post";' .
+				'if(!byType[t])byType[t]=0;byType[t]++;' .
+				'var s=p.status||p.post_status||"publish";' .
+				'if(s==="publish")published++;else if(s==="draft")drafts++;' .
+			'});' .
+			/* Summary */
+			'var sumHtml=\'<div class="an-summary-grid">\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+posts.length+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+published+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Published', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+drafts+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Drafts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+			'\'</div>\';' .
+			/* Chart */
+			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Content by Type', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-content-chart" height="160"></canvas></div>\';' .
+			/* Top 5 recent posts */
+			'var top5=posts.slice(0,5);' .
+			'var listHtml=\'<div style="padding:4px 12px 0"><div class="an-chart-title" style="font-weight:600;color:var(--tma-text)">' . esc_js( __( 'Recent Posts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+			'listHtml+=top5.map(function(p){' .
+				'var s=p.status||p.post_status||"publish";' .
+				'var badgeCls="an-status-other";' .
+				'if(s==="publish")badgeCls="an-status-publish";' .
+				'else if(s==="draft")badgeCls="an-status-draft";' .
+				'var dt=p.date||p.post_date||"";if(dt&&dt.length>10)dt=dt.substring(0,10);' .
+				'return \'<div class="an-content-row"><div class="an-content-info"><div class="an-content-title">\'+escH(p.title||p.post_title||"' . esc_js( __( 'Untitled', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div><div class="an-content-meta">\'+escH(dt)+\'</div></div><span class="an-status-badge \'+badgeCls+\'">\'+escH(s)+\'</span></div>\';' .
+			'}).join("");' .
+			'w.innerHTML=sumHtml+chartHtml+listHtml;' .
+			/* Render horizontal bar chart */
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-content-chart");if(!cv)return;' .
+				'if(contentChartInst)contentChartInst.destroy();' .
+				'var labels=Object.keys(byType);var data=labels.map(function(k){return byType[k];});' .
+				'var colors=["#00796b","#0097a7","#00897b","#26a69a","#4db6ac","#80cbc4"];' .
+				'contentChartInst=new Chart(cv,{type:"bar",data:{labels:labels,datasets:[{label:"' . esc_js( __( 'Count', 'mcp-ai-wpoos-pro' ) ) . '",data:data,backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#999"},beginAtZero:true},y:{ticks:{color:"#999"}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Traffic
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadTraffic(){' .
+			'var w=document.getElementById("an-traffic-wrap");if(!w)return;' .
+			'if(trafficCache){anRenderTraffic(trafficCache,w);return;}' .
+			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(ANALYTICS_URL+"?days="+days,{headers:tmaToolHeaders()})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'trafficCache=d;lsSet("an_traffic_cache",d);' .
+				'anRenderTraffic(d,w);' .
+			'}).catch(function(){' .
+				'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load traffic data.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderTraffic(d,w){' .
+			'var daily=d.daily||[];' .
+			'var totalViews=d.total_views||0;' .
+			'var avgViews=daily.length?Math.round(totalViews/daily.length):0;' .
+			'var peakDay=daily.reduce(function(best,r){return(r.views||0)>(best.views||0)?r:best;},{date:"—",views:0});' .
+			/* KPI row */
+			'var kpiHtml=\'<div class="an-traffic-kpis">\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(totalViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Total Views', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(avgViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Avg/Day', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(peakDay.views||0)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Peak', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+			'\'</div>\';' .
+			/* Chart */
+			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Daily Views', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-traffic-chart" height="180"></canvas></div>\';' .
+			/* Top pages */
+			'var pages=d.top_pages||d.pages||[];' .
+			'var pagesHtml="";' .
+			'if(pages.length){' .
+				'pagesHtml=\'<div style="padding:4px 12px 0"><div class="an-chart-title" style="font-weight:600;color:var(--tma-text)">' . esc_js( __( 'Top Pages', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+				'pagesHtml+=pages.slice(0,10).map(function(pg,i){' .
+					'return \'<div class="an-page-row"><div class="an-page-rank">\'+escH(i+1)+\'</div><div class="an-page-info"><div class="an-page-title">\'+escH(pg.title||pg.path||pg.url||"' . esc_js( __( 'Page', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div><div class="an-page-views">\'+escH(pg.views||0)+" ' . esc_js( __( 'views', 'mcp-ai-wpoos-pro' ) ) . '"+\'</div></div></div>\';' .
+				'}).join("");' .
+			'}' .
+			'w.innerHTML=kpiHtml+chartHtml+pagesHtml;' .
+			/* Render line chart */
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-traffic-chart");if(!cv)return;' .
+				'if(trafficChartInst)trafficChartInst.destroy();' .
+				'var lbls=daily.map(function(r){return r.date||"";});' .
+				'var vals=daily.map(function(r){return r.views||0;});' .
+				'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
+				'trafficChartInst=new Chart(cv,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Insights
+		   ══════════════════════════════════════════════════════════ */
+		'function anChatInit(){' .
+			'chatHist=lsGet("an_chat_hist",[]);' .
+			'var m=document.getElementById("an-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){anAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with analytics context */
+				'var views=overviewCache?overviewCache.total_views||0:0;' .
+				'var posts=overviewCache?overviewCache.total_posts||0:0;' .
+				'var comments=overviewCache?overviewCache.total_comments||0:0;' .
+				'var users=overviewCache?overviewCache.total_users||0:0;' .
+				'var ctx="[' . esc_js( __( 'Analytics Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+". ' .
+					esc_js( __( 'Period', 'mcp-ai-wpoos-pro' ) ) . ': "+days+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '. ' .
+					esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . ': "+views+", ' .
+					esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . ': "+posts+", ' .
+					esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . ': "+comments+", ' .
+					esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . ': "+users+".";' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'anAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your analytics assistant. I can help you understand your traffic trends, content performance, and site metrics. What would you like to know?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
 			'}' .
 		'}' .
-		'window.setDays=function(n){days=n;tmaHaptic("light");loadAnalytics();};' .
-		'loadAnalytics();' .
+
+		'function anAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="an-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=renderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("an-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.anChatSend=function(){' .
+			'var inp=document.getElementById("an-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});anAppendMsg("user",txt,false);' .
+			'lsSet("an_chat_hist",chatHist.slice(-50));' .
+			'var el=anAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=renderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("an_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("an-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")anChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function anRenderSettings(){' .
+			/* Default period label */
+			'var dpl=document.getElementById("an-default-period-label");' .
+			'if(dpl)dpl.textContent=days+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			/* Data summary */
+			'var ds=document.getElementById("an-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Overview cache', 'mcp-ai-wpoos-pro' ) ) . ': "+(overviewCache?"✓":"✗")+", ' .
+				esc_js( __( 'Content', 'mcp-ai-wpoos-pro' ) ) . ': "+(contentCache?contentCache.length:0)+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+			/* Freshness */
+			'var fr=document.getElementById("an-freshness");' .
+			'if(fr){' .
+				'if(lastUpdated)fr.textContent="' . esc_js( __( 'Last refreshed:', 'mcp-ai-wpoos-pro' ) ) . ' "+lastUpdated.toLocaleString();' .
+				'else fr.textContent="' . esc_js( __( 'No live data loaded yet', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'}' .
+		'}' .
+
+		'window.anSyncFromServer=function(){' .
+			'tmaHaptic("medium");anLoadOverview();anLoadContent();' .
+		'};' .
+
+		'window.anClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)anDoClear();});' .
+			'}else if(confirm(msg)){anDoClear();}' .
+		'};' .
+
+		'function anDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("an_overview_cache");' .
+				'localStorage.removeItem("an_content_cache");' .
+				'localStorage.removeItem("an_traffic_cache");' .
+				'localStorage.removeItem("an_chat_hist");' .
+				'localStorage.removeItem("an_font_size");' .
+				'localStorage.removeItem("an_compact");' .
+				'localStorage.removeItem("an_default_period");' .
+				'localStorage.removeItem("an_last_updated");' .
+			'}catch(e){}' .
+			'overviewCache=null;contentCache=null;trafficCache=null;chatHist=[];lastUpdated=null;' .
+			'anRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'overviewCache=lsGet("an_overview_cache",null);' .
+		'contentCache=lsGet("an_content_cache",null);' .
+		'trafficCache=lsGet("an_traffic_cache",null);' .
+		'days=lsGet("an_default_period",7);' .
+		'var savedTs=lsGet("an_last_updated",null);' .
+		'if(savedTs)lastUpdated=new Date(savedTs);' .
+		'anApplyDisplaySettings();' .
+
+		/* Render cached overview immediately, then refresh */
+		'if(overviewCache){var ow=document.getElementById("an-overview-wrap");if(ow)anRenderOverview(overviewCache,ow);}' .
+		'anLoadOverview();' .
+		'anLoadContent();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'anInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
