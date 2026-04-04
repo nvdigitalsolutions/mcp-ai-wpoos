@@ -642,26 +642,95 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name     = esc_html( $ctx['site_name'] );
+		$chat_url      = $ctx['chat_url'];
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- standalone HTML document; all values escaped inline.
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ai-chat-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#4CAF50;--tma-accent:#4CAF50;--tma-secondary-bg:#e8f5e9;' .
+			'--chat-base:14px;--chat-label:12px;--chat-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.chat-font-small{--chat-base:12px;--chat-label:10px;--chat-heading:14px}' .
+		'.chat-font-large{--chat-base:16px;--chat-label:14px;--chat-heading:18px}' .
+		'.chat-compact .tma-msg{padding:6px 10px}' .
+		'.chat-compact .chat-tool-card{padding:8px 10px;margin:0 8px 6px}' .
+		'.chat-compact .chat-settings-section{margin:0 8px 8px;padding:10px}' .
+
+		/* ── Chat messages ── */
 		'.tma-chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.tma-chat-welcome{text-align:center;padding:40px 20px;color:var(--tma-hint)}' .
 		'.tma-welcome-icon{font-size:48px;margin-bottom:12px}' .
-		'.tma-msg{max-width:80%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-wrap:break-word}' .
+		'.tma-msg{max-width:85%;padding:10px 14px;border-radius:18px;font-size:var(--chat-base);line-height:1.5;word-wrap:break-word}' .
 		'.tma-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
 		'.tma-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
-		'.tma-msg.loading::after{content:"...";animation:tma-dots 1s steps(3,end) infinite}' .
-		'@keyframes tma-dots{0%,33%{content:"."}33%,66%{content:".."}66%,100%{content:"..."}}' .
+		'.tma-msg.bot p{margin:0 0 6px}.tma-msg.bot p:last-child{margin-bottom:0}' .
+		'.tma-msg.bot ul,.tma-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.tma-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.tma-msg.typing::after{content:"\u2026";animation:tma-dots 1s steps(3,end) infinite}' .
+		'@keyframes tma-dots{0%,33%{content:"."}33%,66%{content:".."}66%,100%{content:"\u2026"}}' .
+
+		/* ── Chat input ── */
 		'.tma-chat-input-wrap{display:flex;align-items:flex-end;gap:8px;padding:8px 12px;background:var(--tma-secondary-bg);border-top:1px solid var(--tma-border);flex-shrink:0}' .
-		'.tma-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 16px;font-size:15px;background:var(--tma-bg);color:var(--tma-text);resize:none;outline:none;max-height:120px;overflow-y:auto;font-family:inherit;line-height:1.4}' .
+		'.tma-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 16px;font-size:var(--chat-base);background:var(--tma-bg);color:var(--tma-text);resize:none;outline:none;max-height:120px;overflow-y:auto;font-family:inherit;line-height:1.4}' .
 		'.tma-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}' .
 		'.tma-send-btn:active{opacity:.7}' .
+
+		/* ── Quick actions ── */
+		'.chat-quick-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}' .
+		'.chat-quick-btn{padding:6px 12px;border:1px solid var(--tma-border);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--chat-label);cursor:pointer;white-space:nowrap}' .
+		'.chat-quick-btn:active{background:var(--tma-secondary-bg)}' .
+
+		/* ── Rich content card ── */
+		'.chat-rich-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-top:6px}' .
+		'.chat-rich-card-title{font-size:var(--chat-base);font-weight:600;margin-bottom:2px}' .
+		'.chat-rich-card-meta{font-size:var(--chat-label);color:var(--tma-hint)}' .
+
+		/* ── Tools tab ── */
+		'.chat-tools-header{padding:14px 12px;text-align:center;color:var(--tma-hint);font-size:var(--chat-label)}' .
+		'.chat-tools-header h3{font-size:var(--chat-heading);color:var(--tma-text);margin:0 0 4px}' .
+		'.chat-tool-categories{display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
+		'.chat-cat-btn{padding:6px 14px;border:1px solid var(--tma-border);border-radius:16px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-label);font-weight:600;cursor:pointer;white-space:nowrap}' .
+		'.chat-cat-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.chat-tools-search{padding:0 12px 10px}' .
+		'.chat-tools-search input{width:100%;box-sizing:border-box;border:1px solid var(--tma-border);border-radius:10px;padding:10px 12px;font-size:var(--chat-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.chat-tool-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px;cursor:pointer}' .
+		'.chat-tool-card:active{opacity:.85}' .
+		'.chat-tool-icon{width:36px;height:36px;border-radius:50%;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}' .
+		'.chat-tool-info{flex:1;min-width:0}' .
+		'.chat-tool-name{font-size:var(--chat-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.chat-tool-desc{font-size:var(--chat-label);color:var(--tma-hint);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' .
+
+		/* ── Settings tab ── */
+		'.chat-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.chat-settings-title{font-size:var(--chat-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.chat-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.chat-settings-row:last-child{border-bottom:none}' .
+		'.chat-settings-label{font-size:var(--chat-base);color:var(--tma-text)}' .
+		'.chat-settings-value{font-size:var(--chat-base);color:var(--tma-hint)}' .
+		'.chat-font-btns{display:flex;gap:4px}' .
+		'.chat-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-label);cursor:pointer}' .
+		'.chat-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.chat-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.chat-toggle.on{background:var(--tma-btn)}' .
+		'.chat-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.chat-toggle.on::after{transform:translateX(20px)}' .
+		'.chat-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.chat-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.chat-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">💬</div></div>' .
 				'<div class="tma-header-info">' .
@@ -669,74 +738,427 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<div class="tma-header-status" id="tma-status-text">' . esc_html__( 'AI Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 				'<div class="tma-header-actions">' .
-					'<button class="tma-icon-btn" title="' . esc_attr__( 'Clear chat', 'mcp-ai-wpoos-pro' ) . '" onclick="tmaClearChat()">' .
+					'<button class="tma-icon-btn" title="' . esc_attr__( 'Clear chat', 'mcp-ai-wpoos-pro' ) . '" onclick="chatClearHistory()">' .
 						'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' .
 					'</button>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-chat-messages" id="tma-messages">' .
-				'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div>' .
-				'<p>' . esc_html__( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) . '</p></div>' .
-			'</div>' .
-			'<div class="tma-chat-input-wrap">' .
-				'<textarea id="tma-chat-input" class="tma-chat-input" rows="1"' .
-					' placeholder="' . esc_attr__( 'Type a message…', 'mcp-ai-wpoos-pro' ) . '"' .
-					' onkeydown="tmaChatKeydown(event)" oninput="tmaChatAutoResize(this)"></textarea>' .
-				'<button class="tma-send-btn" onclick="tmaSendMessage()">' .
-					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+
+			/* ── Content panes ── */
+			'<div class="tma-content">' .
+
+				/* Tab 1: Chat (default) */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-chat">' .
+					'<div class="chat-quick-actions" id="chat-quick-actions">' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Search content', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Search content', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Run a tool', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Run a tool', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Check remote sites', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Check remote sites', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div class="tma-chat-messages" id="tma-messages">' .
+						'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div>' .
+						'<p>' . esc_html__( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) . '</p></div>' .
+					'</div>' .
+					'<div class="tma-chat-input-wrap">' .
+						'<textarea id="tma-chat-input" class="tma-chat-input" rows="1"' .
+							' placeholder="' . esc_attr__( 'Type a message…', 'mcp-ai-wpoos-pro' ) . '"' .
+							' onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>' .
+						'<button class="tma-send-btn" onclick="chatSendMessage()">' .
+							'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 2: Tools */
+				'<div class="tma-tab-pane" id="tma-tab-tools">' .
+					'<div class="chat-tools-header"><h3>' . esc_html__( 'Tools', 'mcp-ai-wpoos-pro' ) . '</h3>' .
+						'<p>' . esc_html__( 'Discover available tools and capabilities', 'mcp-ai-wpoos-pro' ) . '</p>' .
+					'</div>' .
+					'<div class="chat-tool-categories" id="chat-tool-cats">' .
+						'<button class="chat-cat-btn active" data-cat="all" onclick="chatFilterCat(\'all\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="content" onclick="chatFilterCat(\'content\')">' . esc_html__( 'Content', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="analytics" onclick="chatFilterCat(\'analytics\')">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="remote" onclick="chatFilterCat(\'remote\')">' . esc_html__( 'Remote', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="ai" onclick="chatFilterCat(\'ai\')">' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div class="chat-tools-search">' .
+						'<input type="search" id="chat-tools-search" placeholder="' . esc_attr__( 'Search tools…', 'mcp-ai-wpoos-pro' ) . '" />' .
+					'</div>' .
+					'<div id="chat-tools-list"><div class="tma-empty">' . esc_html__( 'Loading tools…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="chat-font-btns" id="chat-font-btns">' .
+								'<button data-size="small" onclick="chatSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="chatSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="chatSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="chat-toggle" id="chat-compact-toggle" onclick="chatToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Auto-scroll', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="chat-toggle" id="chat-autoscroll-toggle" onclick="chatToggleAutoScroll()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Assistant section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Assistant ID', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="chat-settings-value" id="chat-assistant-id-val">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label" id="chat-data-summary"></span>' .
+						'</div>' .
+						'<button class="chat-settings-btn" onclick="chatSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="chat-settings-btn danger" onclick="chatClearData()">' .
+							esc_html__( 'Clear Chat History', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (3 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-chat" onclick="chatSwitch(\'chat\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'Chat', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-			'</div>' .
-		'</div>' .
+				'<button class="tma-nav-btn" id="tma-nav-tools" onclick="chatSwitch(\'tools\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' .
+					'<span>' . esc_html__( 'Tools', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="chatSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
-		'var sk="wp_mcp_ai_tma_ai_chat";var hist=[];var busy=false;' .
-		'function tmaExtractReply(d){' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="chat";' .
+		'var hist=[];' .
+		'var busy=false;' .
+		'var toolsCache=[];' .
+		'var activeCat="all";' .
+		'var SK="wp_mcp_ai_tma_ai_chat";' .
+
+		/* ── Helpers ── */
+		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ── Markdown renderer for bot messages ── */
+		'function chatRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Extract reply from API response ── */
+		'function chatExtractReply(d){' .
 			'if(!d||!d.data)return"";' .
 			'var data=d.data;' .
 			'if(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)return data.choices[0].message.content;' .
 			'if(data.content)return data.content;' .
 			'if(data.response)return data.response;' .
 			'return"";}' .
-		'try{var s=localStorage.getItem(sk);if(s)hist=JSON.parse(s)||[];}catch(e){}' .
-		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";hist.forEach(function(h){appendMsg(h.role,h.content);});}}' .
-		'function save(){try{localStorage.setItem(sk,JSON.stringify(hist.slice(-50)));}catch(e){}}' .
-		'function appendMsg(role,content){' .
-			'var el=document.createElement("div");el.className="tma-msg "+(role==="user"?"user":"bot");el.textContent=content;' .
+
+		/* ── Session init (Telegram WebApp auth) ── */
+		'function chatInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function chatApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("chat_font_size","medium");' .
+				'shell.classList.remove("chat-font-small","chat-font-large");' .
+				'if(size==="small")shell.classList.add("chat-font-small");' .
+				'else if(size==="large")shell.classList.add("chat-font-large");' .
+				'var compact=lsGet("chat_compact",false);' .
+				'if(compact)shell.classList.add("chat-compact");' .
+				'else shell.classList.remove("chat-compact");' .
+				'var btns=document.querySelectorAll("#chat-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("chat-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+				'var asTog=document.getElementById("chat-autoscroll-toggle");' .
+				'var autoScroll=lsGet("chat_auto_scroll",true);' .
+				'if(asTog)asTog.classList.toggle("on",!!autoScroll);' .
+			'}catch(e){}' .
+		'}' .
+		'window.chatSetFontSize=function(s){lsSet("chat_font_size",s);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+		'window.chatToggleCompact=function(){var c=!lsGet("chat_compact",false);lsSet("chat_compact",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+		'window.chatToggleAutoScroll=function(){var c=!lsGet("chat_auto_scroll",true);lsSet("chat_auto_scroll",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.chatSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="tools"&&!toolsCache.length)chatLoadTools();' .
+			'if(tab==="settings")chatRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Chat
+		   ══════════════════════════════════════════════════════════ */
+
+		'function chatScrollBottom(){' .
+			'var autoScroll=lsGet("chat_auto_scroll",true);if(!autoScroll)return;' .
+			'var m=document.getElementById("tma-messages");if(m)m.scrollTop=m.scrollHeight;' .
+		'}' .
+
+		'function chatSave(){try{localStorage.setItem(SK,JSON.stringify(hist.slice(-50)));}catch(e){}}' .
+
+		'function chatAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="tma-msg "+(role==="user"?"user":"bot");' .
+			'if(role==="bot"&&text){el.innerHTML=chatRenderMd(text);}' .
+			'else if(role==="user"){el.textContent=text;}' .
 			'var m=document.getElementById("tma-messages");' .
-			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
-			'return el;}' .
-		'window.tmaSendMessage=function(){' .
+			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);chatScrollBottom();}' .
+			'return el;' .
+		'}' .
+
+		/* Check if reply contains rich post references */
+		'function chatMaybeRichCards(text,container){' .
+			'var postPattern=/\\[post:(.+?)\\|(.+?)\\|(.+?)\\]/g;var match;' .
+			'while((match=postPattern.exec(text))!==null){' .
+				'var card=document.createElement("div");card.className="chat-rich-card";' .
+				'card.innerHTML=\'<div class="chat-rich-card-title">\'+escH(match[1])+\'</div><div class="chat-rich-card-meta">\'+escH(match[2])+" · "+escH(match[3])+\'</div>\';' .
+				'container.appendChild(card);' .
+			'}' .
+		'}' .
+
+		'window.chatQuickAction=function(text){' .
+			'var inp=document.getElementById("tma-chat-input");' .
+			'if(inp){inp.value=text;inp.focus();}' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+		'};' .
+
+		'window.chatSendMessage=function(){' .
 			'if(busy)return;' .
 			'var inp=document.getElementById("tma-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;' .
 			'inp.value="";inp.style.height="";tmaHaptic("light");' .
-			/* Push to history before building the payload so the current turn is included in messages. */
-			'hist.push({role:"user",content:txt});appendMsg("user",txt);save();' .
-			'busy=true;var el=appendMsg("bot","");el.classList.add("loading");' .
-			'var st=document.getElementById("tma-status-text");if(st)st.textContent="Thinking\u2026";' .
-			/* Dedicated chat UI: send up to 20 messages of context for rich multi-turn conversations. */
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+			'hist.push({role:"user",content:txt});chatAppendMsg("user",txt,false);chatSave();' .
+			'busy=true;' .
+			'var el=document.createElement("div");el.className="tma-msg bot typing";' .
+			'var m=document.getElementById("tma-messages");' .
+			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);chatScrollBottom();}' .
+			'var st=document.getElementById("tma-status-text");if(st)st.textContent="' . esc_js( __( 'Thinking…', 'mcp-ai-wpoos-pro' ) ) . '";' .
 			'var body={messages:hist.slice(-20)};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var rep=tmaExtractReply(d)||"' . esc_js( __( 'Sorry, I could not process that.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'el.classList.remove("loading");el.textContent=rep;hist.push({role:"assistant",content:rep});save();})' .
-			'.catch(function(){el.classList.remove("loading");el.textContent="' . esc_js( __( 'Connection error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
-			'.finally(function(){busy=false;if(st)st.textContent="' . esc_js( __( 'AI Assistant', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'var m=document.getElementById("tma-messages");if(m)m.scrollTop=m.scrollHeight;});' .
+				'var rep=chatExtractReply(d)||"' . esc_js( __( 'Sorry, I could not process that.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.classList.remove("typing");el.innerHTML=chatRenderMd(rep);' .
+				'chatMaybeRichCards(rep,el);' .
+				'hist.push({role:"assistant",content:rep});chatSave();})' .
+			'.catch(function(){el.classList.remove("typing");el.textContent="' . esc_js( __( 'Connection error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
+			'.finally(function(){busy=false;if(st)st.textContent="' . esc_js( __( 'AI Assistant', 'mcp-ai-wpoos-pro' ) ) . '";chatScrollBottom();});' .
 		'};' .
-		'window.tmaClearChat=function(){hist=[];save();tmaHaptic("medium");' .
+
+		'window.chatClearHistory=function(){' .
+			'hist=[];chatSave();tmaHaptic("medium");' .
 			'var m=document.getElementById("tma-messages");' .
-			'if(m)m.innerHTML=\'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div><p>' . esc_js( __( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) ) . '</p></div>\';};' .
-		'window.tmaChatKeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();tmaSendMessage();}};' .
-		'window.tmaChatAutoResize=function(el){el.style.height="";el.style.height=Math.min(el.scrollHeight,120)+"px";};' .
-		'})();</script>' .
-		'</body>';
+			'if(m)m.innerHTML=\'<div class="tma-chat-welcome"><div class="tma-welcome-icon">\u{1F916}</div><p>' . esc_js( __( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) ) . '</p></div>\';' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="flex";' .
+		'};' .
+
+		'window.chatKeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();chatSendMessage();}};' .
+		'window.chatAutoResize=function(el){el.style.height="";el.style.height=Math.min(el.scrollHeight,120)+"px";};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Tools
+		   ══════════════════════════════════════════════════════════ */
+
+		'var TOOL_CATS={' .
+			'content:["search","post","page","content","media","menu","taxonomy","term","category","tag"],' .
+			'analytics:["analytics","stats","report","log","monitor","count","metric"],' .
+			'remote:["remote","site","fetch","crawl","http","url","ping","external"],' .
+			'ai:["ai","gpt","generate","summarize","translate","chat","assistant","model"]' .
+		'};' .
+
+		'function chatToolCategory(name,desc){' .
+			'var s=(name+" "+desc).toLowerCase();' .
+			'var cats=Object.keys(TOOL_CATS);' .
+			'for(var i=0;i<cats.length;i++){' .
+				'var kws=TOOL_CATS[cats[i]];' .
+				'for(var j=0;j<kws.length;j++){if(s.indexOf(kws[j])>-1)return cats[i];}' .
+			'}return "other";' .
+		'}' .
+
+		'function chatToolIcon(cat){' .
+			'switch(cat){case "content":return "\u{1F4DD}";case "analytics":return "\u{1F4CA}";case "remote":return "\u{1F310}";case "ai":return "\u{1F916}";default:return "\u{1F527}";}' .
+		'}' .
+
+		'function chatLoadTools(){' .
+			'var l=document.getElementById("chat-tools-list");if(!l)return;' .
+			'var cached=lsGet("chat_tools_cache",[]);' .
+			'if(cached.length){toolsCache=cached;chatRenderTools(toolsCache);return;}' .
+			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading tools…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_available_tools",arguments:{}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var tools=(d&&d.data&&d.data.tools)?d.data.tools:[];' .
+				'if(!tools.length&&d&&d.data&&Array.isArray(d.data))tools=d.data;' .
+				'toolsCache=tools;lsSet("chat_tools_cache",tools);' .
+				'chatRenderTools(tools);' .
+			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load tools.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+		'}' .
+
+		'function chatRenderTools(tools){' .
+			'var l=document.getElementById("chat-tools-list");if(!l)return;' .
+			'var q=(document.getElementById("chat-tools-search")||{}).value||"";' .
+			'q=q.toLowerCase();' .
+			'var filtered=tools.filter(function(t){' .
+				'var name=t.name||t.slug||"";var desc=t.description||"";' .
+				'if(q&&(name+" "+desc).toLowerCase().indexOf(q)===-1)return false;' .
+				'if(activeCat!=="all"&&chatToolCategory(name,desc)!==activeCat)return false;' .
+				'return true;' .
+			'});' .
+			'if(!filtered.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No tools found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'l.innerHTML=filtered.map(function(t){' .
+				'var name=escH(t.name||t.slug||"");var desc=escH(t.description||"");' .
+				'var cat=chatToolCategory(t.name||t.slug||"",t.description||"");' .
+				'var icon=chatToolIcon(cat);' .
+				'return \'<div class="chat-tool-card" onclick="chatUseTool(\\\'\'+escH(t.name||t.slug||"")+\'\\\')">' .
+					'<div class="chat-tool-icon">\'+icon+\'</div>' .
+					'<div class="chat-tool-info">' .
+						'<div class="chat-tool-name">\'+name+\'</div>' .
+						'<div class="chat-tool-desc">\'+desc+\'</div>' .
+					'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		'window.chatUseTool=function(name){' .
+			'chatSwitch("chat");' .
+			'var inp=document.getElementById("tma-chat-input");' .
+			'if(inp){inp.value="' . esc_js( __( 'Use the ', 'mcp-ai-wpoos-pro' ) ) . '"+name+" ' . esc_js( __( 'tool to ', 'mcp-ai-wpoos-pro' ) ) . '";inp.focus();}' .
+		'};' .
+
+		'window.chatFilterCat=function(cat){' .
+			'activeCat=cat;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll("#chat-tool-cats .chat-cat-btn").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-cat")===cat);});' .
+			'chatRenderTools(toolsCache);' .
+		'};' .
+
+		/* Debounced search */
+		'var toolSearchTimer=null;' .
+		'document.getElementById("chat-tools-search").addEventListener("input",function(){' .
+			'clearTimeout(toolSearchTimer);toolSearchTimer=setTimeout(function(){chatRenderTools(toolsCache);},300);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function chatRenderSettings(){' .
+			'chatApplyDisplaySettings();' .
+			'var aid=document.getElementById("chat-assistant-id-val");' .
+			'if(aid)aid.textContent=ASSISTANT_ID||"' . esc_js( __( 'Default', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'var ds=document.getElementById("chat-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Messages', 'mcp-ai-wpoos-pro' ) ) . ': "+hist.length+", ' .
+				esc_js( __( 'Tools cached', 'mcp-ai-wpoos-pro' ) ) . ': "+toolsCache.length;' .
+		'}' .
+
+		'window.chatSyncFromServer=function(){' .
+			'tmaHaptic("medium");toolsCache=[];' .
+			'try{localStorage.removeItem("chat_tools_cache");}catch(e){}' .
+			'chatLoadTools();' .
+		'};' .
+
+		'window.chatClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all chat history? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)chatDoClear();});' .
+			'}else if(confirm(msg)){chatDoClear();}' .
+		'};' .
+
+		'function chatDoClear(){' .
+			'try{' .
+				'localStorage.removeItem(SK);' .
+				'localStorage.removeItem("chat_tools_cache");' .
+				'localStorage.removeItem("chat_font_size");' .
+				'localStorage.removeItem("chat_compact");' .
+				'localStorage.removeItem("chat_auto_scroll");' .
+			'}catch(e){}' .
+			'hist=[];toolsCache=[];' .
+			'chatRenderSettings();tmaHaptic("notificationSuccess");' .
+			'chatClearHistory();' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore chat history from localStorage */
+		'try{var s=localStorage.getItem(SK);if(s)hist=JSON.parse(s)||[];}catch(e){}' .
+		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+			'hist.forEach(function(h){chatAppendMsg(h.role,h.content,true);});' .
+		'}}' .
+
+		'chatApplyDisplaySettings();' .
+
+		/* Session init for Telegram WebApp */
+		'chatInitSession();' .
+
+		'})();</script></body>';
 		// phpcs:enable
 	}
 }
