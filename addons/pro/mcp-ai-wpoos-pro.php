@@ -714,6 +714,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Create_Remotion_Video'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
+			// Validate Image for Product Placement tool.
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Product' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-product.php',
+			// Validate Image for Vehicle Estimate tool.
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
 			// Product Price Lookup tool.
 			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
 			// Listing image download tools (Google Maps, Facebook, Instagram).
@@ -1576,6 +1580,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'check_jukebox_status'            => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
 			'product_actualization'           => 'external-tools',
+			// Validate Image for Product Placement - Requires OpenAI Vision API.
+			'validate_image_for_product'      => 'external-tools',
+			// Validate Image for Vehicle Estimate - Requires OpenAI Vision API.
+			'validate_image_for_vehicle'      => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
 			'lookup_product_price'            => 'external-tools',
 			// Listing image download tools - Require external API credentials.
