@@ -8449,6 +8449,11 @@
 
         return false;
     }
+
+    /**
+     * Check if a result object has the structure of a stored agent context response.
+     *
+     * store_agent_context returns {success, context_id, agent_id, stored_at, expires_at, ttl_human}.
      *
      * @param {*} result - Tool result to check
      * @return {boolean} True if result appears to be a store_agent_context response
