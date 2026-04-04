@@ -1930,7 +1930,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 				return 'openai_external_action' === $provider ? 'openai' : $provider;
 			}
 		}
-		return 'unknown';
+		return 'api';
 	}
 
 	/**
