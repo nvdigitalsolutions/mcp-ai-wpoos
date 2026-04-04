@@ -62,6 +62,13 @@ class WP_MCP_AI_Federation {
 	protected $mesh_peer_sync;
 
 	/**
+	 * A2A well-known handler.
+	 *
+	 * @var WP_MCP_AI_A2A_WellKnown
+	 */
+	protected $a2a_wellknown_handler;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
@@ -74,6 +81,9 @@ class WP_MCP_AI_Federation {
 
 		// Load federation components conditionally based on settings.
 		add_action( 'init', array( $this, 'maybe_load_federation_features' ), 5 );
+
+		// Load A2A well-known endpoint conditionally.
+		add_action( 'init', array( $this, 'maybe_load_a2a_features' ), 5 );
 
 		// Schedule health check cron.
 		add_action( 'wp_mcp_ai_verify_peers', array( 'WP_MCP_AI_Federation_Peer_Verifier', 'verify_all_peers' ) );
@@ -129,6 +139,17 @@ class WP_MCP_AI_Federation {
 		if ( get_transient( 'wp_mcp_ai_flush_rewrite_rules' ) ) {
 			delete_transient( 'wp_mcp_ai_flush_rewrite_rules' );
 			flush_rewrite_rules();
+		}
+	}
+
+	/**
+	 * Conditionally load A2A protocol features based on settings.
+	 */
+	public function maybe_load_a2a_features() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( ! empty( $settings['enable_a2a_server'] ) ) {
+			$this->a2a_wellknown_handler = new WP_MCP_AI_A2A_WellKnown();
 		}
 	}
 

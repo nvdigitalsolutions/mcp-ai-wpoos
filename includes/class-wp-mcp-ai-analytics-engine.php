@@ -712,17 +712,16 @@ class WP_MCP_AI_Analytics_Engine {
 			'errors'                => array(),
 		);
 
-		// Build query to fetch transcripts.
-		$where = '';
+		// Build query to fetch transcripts using a single wpdb->prepare() call.
+		// Table name is validated via $repository->table_exists() above and escaped for defense-in-depth.
+		$safe_table = esc_sql( $table );
 		if ( $user_id > 0 ) {
-			$where = $wpdb->prepare( 'WHERE cct_author_id = %d', $user_id );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
+			$transcripts = $wpdb->get_results( $wpdb->prepare( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} WHERE cct_author_id = %d ORDER BY request_started_at ASC", $user_id ) );
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
+			$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} ORDER BY request_started_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- No user-supplied values; table name escaped via esc_sql().
 		}
-
-		// Escape table name for defense-in-depth.
-		$table = esc_sql( $table );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table is escaped with esc_sql(), $where is prepared above with $wpdb->prepare().
-		$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
 
 		if ( empty( $transcripts ) ) {
 			return $results;

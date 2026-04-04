@@ -34,9 +34,21 @@ class WP_MCP_AI_Shortcode {
 	const STYLE_HANDLE = 'wp-mcp-ai-chat';
 
 	/**
-	 * Lifetime for guest access tokens (in seconds).
+	 * Default lifetime for guest access tokens (in seconds).
+	 * Used when no admin setting is configured.
 	 */
-	const GUEST_TOKEN_TTL = HOUR_IN_SECONDS;
+	const GUEST_TOKEN_TTL = DAY_IN_SECONDS;
+
+	/**
+	 * Maximum allowed lifetime for guest tokens (7 days).
+	 * Provides a hard cap regardless of configuration.
+	 */
+	const GUEST_TOKEN_MAX_TTL = 604800;
+
+	/**
+	 * Minimum allowed lifetime for guest tokens (60 seconds).
+	 */
+	const GUEST_TOKEN_MIN_TTL = 60;
 
 	/**
 	 * Prefix used for guest access transients.
@@ -197,6 +209,29 @@ class WP_MCP_AI_Shortcode {
 			$script_version,
 			true
 		);
+
+		// Register chat bubble assets (floating chat widget).
+		$bubble_script_relative = 'assets/js/chat-bubble.js';
+		$bubble_style_relative  = 'assets/css/chat-bubble.css';
+
+		if ( ! wp_script_is( 'wp-mcp-ai-chat-bubble', 'registered' ) ) {
+			wp_register_script(
+				'wp-mcp-ai-chat-bubble',
+				WP_MCP_AI_URL . $bubble_script_relative,
+				array( self::SCRIPT_HANDLE ),
+				$this->get_asset_version( $bubble_script_relative ),
+				true
+			);
+		}
+
+		if ( ! wp_style_is( 'wp-mcp-ai-chat-bubble-style', 'registered' ) ) {
+			wp_register_style(
+				'wp-mcp-ai-chat-bubble-style',
+				WP_MCP_AI_URL . $bubble_style_relative,
+				array( self::STYLE_HANDLE ),
+				$this->get_asset_version( $bubble_style_relative )
+			);
+		}
 
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
@@ -1277,7 +1312,7 @@ class WP_MCP_AI_Shortcode {
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $assistant_content is processed by apply_filters('the_content', ...) which applies standard WordPress content filters and escaping. ?>
+						<?php echo wp_kses_post( $assistant_content ); ?>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -1566,12 +1601,14 @@ class WP_MCP_AI_Shortcode {
 			return '';
 		}
 
+		$ttl = self::get_guest_token_ttl();
+
 		$record = array(
 			'assistant_id' => $assistant_id,
 			'created'      => time(),
 		);
 
-		$saved = set_transient( self::build_guest_token_key( $token ), $record, self::GUEST_TOKEN_TTL );
+		$saved = set_transient( self::build_guest_token_key( $token ), $record, $ttl );
 
 		if ( ! $saved ) {
 			return '';
@@ -1582,6 +1619,9 @@ class WP_MCP_AI_Shortcode {
 
 	/**
 	 * Validate a guest token and ensure it is scoped to the requested assistant.
+	 *
+	 * Enforces both the transient-based sliding TTL and an absolute maximum
+	 * lifetime from the token's creation timestamp to prevent indefinite renewal.
 	 *
 	 * @param string $token        Guest access token supplied by the client.
 	 * @param int    $assistant_id Assistant post ID provided in the request.
@@ -1600,13 +1640,21 @@ class WP_MCP_AI_Shortcode {
 			return false;
 		}
 
+		// Enforce absolute maximum lifetime.
+		$created = isset( $data['created'] ) ? absint( $data['created'] ) : 0;
+		if ( $created > 0 && ( time() - $created ) > self::GUEST_TOKEN_MAX_TTL ) {
+			delete_transient( self::build_guest_token_key( $token ) );
+			return false;
+		}
+
 		$stored_assistant = isset( $data['assistant_id'] ) ? absint( $data['assistant_id'] ) : 0;
 
 		if ( $assistant_id && $stored_assistant && $assistant_id !== $stored_assistant ) {
 			return false;
 		}
 
-		set_transient( self::build_guest_token_key( $token ), $data, self::GUEST_TOKEN_TTL );
+		// Refresh the sliding TTL for active sessions.
+		set_transient( self::build_guest_token_key( $token ), $data, self::get_guest_token_ttl() );
 
 		return $stored_assistant;
 	}
@@ -1619,6 +1667,28 @@ class WP_MCP_AI_Shortcode {
 	 */
 	protected static function build_guest_token_key( $token ) {
 		return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
+	}
+
+	/**
+	 * Get the configured guest token TTL from admin settings.
+	 *
+	 * Falls back to the default constant if the setting is not configured
+	 * and enforces the maximum allowed lifetime cap.
+	 *
+	 * @return int TTL in seconds.
+	 */
+	protected static function get_guest_token_ttl() {
+		$ttl = self::GUEST_TOKEN_TTL;
+
+		if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+			$configured = WP_MCP_AI_Settings_Registry::get_setting( 'guest_token_lifetime', self::GUEST_TOKEN_TTL );
+			$ttl        = absint( $configured );
+		}
+
+		// Enforce minimum and maximum caps.
+		$ttl = max( self::GUEST_TOKEN_MIN_TTL, min( $ttl, self::GUEST_TOKEN_MAX_TTL ) );
+
+		return $ttl;
 	}
 
 	/**

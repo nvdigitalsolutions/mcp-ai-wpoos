@@ -223,6 +223,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $webhook_status_page;
 			// Note: Class instantiates itself at the bottom of the file.
 		}
+
+		// Load Pro Agent Command Center (unified agent management dashboard).
+		$agent_command_center = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-agent-command-center.php';
+		if ( file_exists( $agent_command_center ) ) {
+			require_once $agent_command_center;
+			// Note: Class instantiates itself at the bottom of the file.
+		}
 	}
 }
 
@@ -854,6 +861,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
 				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
 				'WP_MCP_AI_Tool_Research_ECA'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-eca.php',
+				// Attendance & participation tools.
+				'WP_MCP_AI_Tool_Mark_ECA_Attendance'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-mark-eca-attendance.php',
+				'WP_MCP_AI_Tool_Get_ECA_Attendance_Report'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca-attendance-report.php',
+				'WP_MCP_AI_Tool_Get_Student_Participation_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student-participation-summary.php',
+				// Waitlist & enrollment automation.
+				'WP_MCP_AI_Tool_Manage_ECA_Waitlist'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-waitlist.php',
+				'WP_MCP_AI_Tool_Withdraw_Student_ECA'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-withdraw-student-eca.php',
+				'WP_MCP_AI_Tool_Bulk_Enroll_Students'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-bulk-enroll-students.php',
+				// Scheduling & conflict detection.
+				'WP_MCP_AI_Tool_Check_ECA_Conflicts'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-eca-conflicts.php',
+				'WP_MCP_AI_Tool_Set_ECA_Schedule'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-set-eca-schedule.php',
+				'WP_MCP_AI_Tool_Get_ECA_Timetable'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca-timetable.php',
+				// Notifications & communication.
+				'WP_MCP_AI_Tool_Send_ECA_Notification'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-eca-notification.php',
+				'WP_MCP_AI_Tool_Configure_ECA_Notifications'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-configure-eca-notifications.php',
+				'WP_MCP_AI_Tool_Send_ECA_Parent_Report'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-eca-parent-report.php',
+				// Reporting & analytics.
+				'WP_MCP_AI_Tool_Generate_ECA_Analytics'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-eca-analytics.php',
+				'WP_MCP_AI_Tool_Generate_ECA_Participation_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-eca-participation-report.php',
+				'WP_MCP_AI_Tool_Export_ECA_Data'                    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-eca-data.php',
+				// Integration tools.
+				'WP_MCP_AI_Tool_Sync_ECA_Enrollments_From_ISAMS'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-eca-enrollments-from-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_To_ISAMS'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-to-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_From_SOCS'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-socs.php',
+				// Workflow & lifecycle.
+				'WP_MCP_AI_Tool_Manage_ECA_Term'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-term.php',
+				'WP_MCP_AI_Tool_Create_ECA_Workflow_Rule'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca-workflow-rule.php',
+				'WP_MCP_AI_Tool_Import_ECAs_CSV'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-ecas-csv.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
 		}
@@ -1710,6 +1745,35 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['enroll_student_eca']       = 'wordpress-core';
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
 			$pro_tools['sync_ecas_from_isams']     = 'wordpress-core';
+			$pro_tools['research_eca']             = 'wordpress-core';
+			// Attendance & participation tools.
+			$pro_tools['mark_eca_attendance']              = 'wordpress-core';
+			$pro_tools['get_eca_attendance_report']        = 'wordpress-core';
+			$pro_tools['get_student_participation_summary'] = 'wordpress-core';
+			// Waitlist & enrollment automation.
+			$pro_tools['manage_eca_waitlist']      = 'wordpress-core';
+			$pro_tools['withdraw_student_eca']     = 'wordpress-core';
+			$pro_tools['bulk_enroll_students']     = 'wordpress-core';
+			// Scheduling & conflict detection.
+			$pro_tools['check_eca_conflicts']      = 'wordpress-core';
+			$pro_tools['set_eca_schedule']         = 'wordpress-core';
+			$pro_tools['get_eca_timetable']        = 'wordpress-core';
+			// Notifications & communication.
+			$pro_tools['send_eca_notification']        = 'wordpress-core';
+			$pro_tools['configure_eca_notifications']  = 'wordpress-core';
+			$pro_tools['send_eca_parent_report']       = 'wordpress-core';
+			// Reporting & analytics.
+			$pro_tools['generate_eca_analytics']             = 'wordpress-core';
+			$pro_tools['generate_eca_participation_report']  = 'wordpress-core';
+			$pro_tools['export_eca_data']                    = 'wordpress-core';
+			// Integration tools.
+			$pro_tools['sync_eca_enrollments_from_isams']   = 'wordpress-core';
+			$pro_tools['sync_ecas_to_isams']                = 'wordpress-core';
+			$pro_tools['sync_ecas_from_socs']               = 'wordpress-core';
+			// Workflow & lifecycle.
+			$pro_tools['manage_eca_term']                   = 'wordpress-core';
+			$pro_tools['create_eca_workflow_rule']           = 'wordpress-core';
+			$pro_tools['import_ecas_csv']                   = 'wordpress-core';
 		}
 
 		// Add health and wellness management tool mappings if enabled.
