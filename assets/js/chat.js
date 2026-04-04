@@ -8155,6 +8155,12 @@
             return;
         }
 
+        // Guard against multiple initializations.
+        if (panel.hasAttribute('data-agent-panel-initialized')) {
+            return;
+        }
+        panel.setAttribute('data-agent-panel-initialized', 'true');
+
         var toggle = panel.querySelector('.wp-mcp-ai-chat__agent-panel-toggle');
         var body = panel.querySelector('.wp-mcp-ai-chat__agent-panel-body');
 
@@ -8166,6 +8172,39 @@
                 body.hidden = expanded;
             });
         }
+    }
+
+    /**
+     * Check if an agent status is considered active/executing.
+     *
+     * @param {string} status - Agent status string.
+     * @return {boolean} True if the agent is actively working.
+     */
+    function isAgentActive(status) {
+        var s = (status || '').toLowerCase();
+        return s === 'active' || s === 'executing' || s === 'working';
+    }
+
+    /**
+     * Check if an agent status is considered completed/done.
+     *
+     * @param {string} status - Agent status string.
+     * @return {boolean} True if the agent has completed.
+     */
+    function isAgentCompleted(status) {
+        var s = (status || '').toLowerCase();
+        return s === 'completed' || s === 'done';
+    }
+
+    /**
+     * Check if an agent status is considered an error/failure.
+     *
+     * @param {string} status - Agent status string.
+     * @return {boolean} True if the agent encountered an error.
+     */
+    function isAgentError(status) {
+        var s = (status || '').toLowerCase();
+        return s === 'error' || s === 'failed';
     }
 
     /**
@@ -8193,7 +8232,7 @@
         // Update count badge.
         var countEl = panel.querySelector('.wp-mcp-ai-chat__agent-panel-count');
         if (countEl) {
-            var activeCount = agents.filter(function (a) { return a.status === 'active' || a.status === 'executing'; }).length;
+            var activeCount = agents.filter(function (a) { return isAgentActive(a.status); }).length;
             countEl.textContent = String(activeCount || agents.length);
             countEl.setAttribute('data-count', String(activeCount || agents.length));
         }
@@ -8204,12 +8243,11 @@
             cardsContainer.innerHTML = '';
             agents.forEach(function (agent) {
                 var statusClass = 'wp-mcp-ai-chat__agent-card';
-                var agentStatus = (agent.status || 'idle').toLowerCase();
-                if (agentStatus === 'active' || agentStatus === 'executing' || agentStatus === 'working') {
+                if (isAgentActive(agent.status)) {
                     statusClass += ' wp-mcp-ai-chat__agent-card--active';
-                } else if (agentStatus === 'completed' || agentStatus === 'done') {
+                } else if (isAgentCompleted(agent.status)) {
                     statusClass += ' wp-mcp-ai-chat__agent-card--completed';
-                } else if (agentStatus === 'error' || agentStatus === 'failed') {
+                } else if (isAgentError(agent.status)) {
                     statusClass += ' wp-mcp-ai-chat__agent-card--error';
                 } else {
                     statusClass += ' wp-mcp-ai-chat__agent-card--idle';
@@ -8280,7 +8318,7 @@
         panel.hidden = false;
 
         // Calculate progress from steps if not provided.
-        var completedSteps = steps.filter(function (s) { return s.status === 'completed' || s.status === 'done'; }).length;
+        var completedSteps = steps.filter(function (s) { return isAgentCompleted(s.status); }).length;
         var progress = typeof workflowData.progress === 'number' ? workflowData.progress : Math.round((completedSteps / steps.length) * 100);
 
         // Update progress text & bar.
