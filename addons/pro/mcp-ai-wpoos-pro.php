@@ -1579,7 +1579,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
 			'product_actualization'           => 'external-tools',
 			// Validate Image for Product Placement - Requires OpenAI Vision API.
-			'validate_image_for_product'     => 'external-tools',
+			'validate_image_for_product'      => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
 			'lookup_product_price'            => 'external-tools',
 			// Listing image download tools - Require external API credentials.

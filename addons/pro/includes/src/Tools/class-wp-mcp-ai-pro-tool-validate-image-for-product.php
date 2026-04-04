@@ -1198,61 +1198,32 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 	 * @return string|null Category name or null if unmapped.
 	 */
 	private function check_name_to_category( $check_name, array $type_config ) {
-		// Required body parts.
-		if ( str_starts_with( $check_name, 'body_part_' ) ) {
-			return 'required_body_parts';
+		// Prefix-based mappings for dynamic check names (body parts).
+		$prefix_map = array(
+			'body_part_'     => 'required_body_parts',
+			'optional_part_' => 'optional_body_parts',
+		);
+
+		foreach ( $prefix_map as $prefix => $category ) {
+			if ( 0 === strpos( $check_name, $prefix ) ) {
+				return $category;
+			}
 		}
 
-		// Optional body parts.
-		if ( str_starts_with( $check_name, 'optional_part_' ) ) {
-			return 'optional_body_parts';
-		}
+		// Exact-match mappings for static check names.
+		$exact_map = array(
+			'person_detected'      => 'required_body_parts',
+			'file_format'          => 'technical_format',
+			'file_size'            => 'technical_format',
+			'dimensions'           => 'image_dimensions',
+			'lighting'             => 'lighting',
+			'sharpness'            => 'sharpness',
+			'pose'                 => 'pose',
+			'obstructions'         => 'obstructions',
+			'single_person'        => 'single_person',
+			'existing_accessories' => 'existing_accessories',
+		);
 
-		// Person detection counts toward required body parts (no person = no body parts).
-		if ( 'person_detected' === $check_name ) {
-			return 'required_body_parts';
-		}
-
-		// Technical format checks.
-		if ( 'file_format' === $check_name || 'file_size' === $check_name ) {
-			return 'technical_format';
-		}
-
-		// Dimensions.
-		if ( 'dimensions' === $check_name ) {
-			return 'image_dimensions';
-		}
-
-		// Lighting.
-		if ( 'lighting' === $check_name ) {
-			return 'lighting';
-		}
-
-		// Sharpness.
-		if ( 'sharpness' === $check_name ) {
-			return 'sharpness';
-		}
-
-		// Pose.
-		if ( 'pose' === $check_name ) {
-			return 'pose';
-		}
-
-		// Obstructions.
-		if ( 'obstructions' === $check_name ) {
-			return 'obstructions';
-		}
-
-		// Single person.
-		if ( 'single_person' === $check_name ) {
-			return 'single_person';
-		}
-
-		// Existing accessories.
-		if ( 'existing_accessories' === $check_name ) {
-			return 'existing_accessories';
-		}
-
-		return null;
+		return isset( $exact_map[ $check_name ] ) ? $exact_map[ $check_name ] : null;
 	}
 }
