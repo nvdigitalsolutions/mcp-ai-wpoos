@@ -46,6 +46,11 @@ class WP_MCP_AI_Shortcode {
 	const GUEST_TOKEN_MAX_TTL = 604800;
 
 	/**
+	 * Minimum allowed lifetime for guest tokens (60 seconds).
+	 */
+	const GUEST_TOKEN_MIN_TTL = 60;
+
+	/**
 	 * Prefix used for guest access transients.
 	 */
 	const GUEST_TOKEN_TRANSIENT_PREFIX = 'wp_mcp_ai_guest_access_';
@@ -1680,8 +1685,8 @@ class WP_MCP_AI_Shortcode {
 			$ttl        = absint( $configured );
 		}
 
-		// Enforce minimum of 60 seconds and maximum cap.
-		$ttl = max( 60, min( $ttl, self::GUEST_TOKEN_MAX_TTL ) );
+		// Enforce minimum and maximum caps.
+		$ttl = max( self::GUEST_TOKEN_MIN_TTL, min( $ttl, self::GUEST_TOKEN_MAX_TTL ) );
 
 		return $ttl;
 	}
