@@ -642,26 +642,95 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name     = esc_html( $ctx['site_name'] );
+		$chat_url      = $ctx['chat_url'];
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- standalone HTML document; all values escaped inline.
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ai-chat-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#4CAF50;--tma-accent:#4CAF50;--tma-secondary-bg:#e8f5e9;' .
+			'--chat-base:14px;--chat-label:12px;--chat-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.chat-font-small{--chat-base:12px;--chat-label:10px;--chat-heading:14px}' .
+		'.chat-font-large{--chat-base:16px;--chat-label:14px;--chat-heading:18px}' .
+		'.chat-compact .tma-msg{padding:6px 10px}' .
+		'.chat-compact .chat-tool-card{padding:8px 10px;margin:0 8px 6px}' .
+		'.chat-compact .chat-settings-section{margin:0 8px 8px;padding:10px}' .
+
+		/* ── Chat messages ── */
 		'.tma-chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 12px;display:flex;flex-direction:column;gap:8px}' .
 		'.tma-chat-welcome{text-align:center;padding:40px 20px;color:var(--tma-hint)}' .
 		'.tma-welcome-icon{font-size:48px;margin-bottom:12px}' .
-		'.tma-msg{max-width:80%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-wrap:break-word}' .
+		'.tma-msg{max-width:85%;padding:10px 14px;border-radius:18px;font-size:var(--chat-base);line-height:1.5;word-wrap:break-word}' .
 		'.tma-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
 		'.tma-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
-		'.tma-msg.loading::after{content:"...";animation:tma-dots 1s steps(3,end) infinite}' .
-		'@keyframes tma-dots{0%,33%{content:"."}33%,66%{content:".."}66%,100%{content:"..."}}' .
+		'.tma-msg.bot p{margin:0 0 6px}.tma-msg.bot p:last-child{margin-bottom:0}' .
+		'.tma-msg.bot ul,.tma-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.tma-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.tma-msg.typing::after{content:"\u2026";animation:tma-dots 1s steps(3,end) infinite}' .
+		'@keyframes tma-dots{0%,33%{content:"."}33%,66%{content:".."}66%,100%{content:"\u2026"}}' .
+
+		/* ── Chat input ── */
 		'.tma-chat-input-wrap{display:flex;align-items:flex-end;gap:8px;padding:8px 12px;background:var(--tma-secondary-bg);border-top:1px solid var(--tma-border);flex-shrink:0}' .
-		'.tma-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 16px;font-size:15px;background:var(--tma-bg);color:var(--tma-text);resize:none;outline:none;max-height:120px;overflow-y:auto;font-family:inherit;line-height:1.4}' .
+		'.tma-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 16px;font-size:var(--chat-base);background:var(--tma-bg);color:var(--tma-text);resize:none;outline:none;max-height:120px;overflow-y:auto;font-family:inherit;line-height:1.4}' .
 		'.tma-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}' .
 		'.tma-send-btn:active{opacity:.7}' .
+
+		/* ── Quick actions ── */
+		'.chat-quick-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}' .
+		'.chat-quick-btn{padding:6px 12px;border:1px solid var(--tma-border);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--chat-label);cursor:pointer;white-space:nowrap}' .
+		'.chat-quick-btn:active{background:var(--tma-secondary-bg)}' .
+
+		/* ── Rich content card ── */
+		'.chat-rich-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-top:6px}' .
+		'.chat-rich-card-title{font-size:var(--chat-base);font-weight:600;margin-bottom:2px}' .
+		'.chat-rich-card-meta{font-size:var(--chat-label);color:var(--tma-hint)}' .
+
+		/* ── Tools tab ── */
+		'.chat-tools-header{padding:14px 12px;text-align:center;color:var(--tma-hint);font-size:var(--chat-label)}' .
+		'.chat-tools-header h3{font-size:var(--chat-heading);color:var(--tma-text);margin:0 0 4px}' .
+		'.chat-tool-categories{display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
+		'.chat-cat-btn{padding:6px 14px;border:1px solid var(--tma-border);border-radius:16px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-label);font-weight:600;cursor:pointer;white-space:nowrap}' .
+		'.chat-cat-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.chat-tools-search{padding:0 12px 10px}' .
+		'.chat-tools-search input{width:100%;box-sizing:border-box;border:1px solid var(--tma-border);border-radius:10px;padding:10px 12px;font-size:var(--chat-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.chat-tool-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px;cursor:pointer}' .
+		'.chat-tool-card:active{opacity:.85}' .
+		'.chat-tool-icon{width:36px;height:36px;border-radius:50%;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}' .
+		'.chat-tool-info{flex:1;min-width:0}' .
+		'.chat-tool-name{font-size:var(--chat-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.chat-tool-desc{font-size:var(--chat-label);color:var(--tma-hint);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}' .
+
+		/* ── Settings tab ── */
+		'.chat-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.chat-settings-title{font-size:var(--chat-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.chat-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.chat-settings-row:last-child{border-bottom:none}' .
+		'.chat-settings-label{font-size:var(--chat-base);color:var(--tma-text)}' .
+		'.chat-settings-value{font-size:var(--chat-base);color:var(--tma-hint)}' .
+		'.chat-font-btns{display:flex;gap:4px}' .
+		'.chat-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-label);cursor:pointer}' .
+		'.chat-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.chat-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.chat-toggle.on{background:var(--tma-btn)}' .
+		'.chat-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.chat-toggle.on::after{transform:translateX(20px)}' .
+		'.chat-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--chat-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.chat-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.chat-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">💬</div></div>' .
 				'<div class="tma-header-info">' .
@@ -669,74 +738,429 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 					'<div class="tma-header-status" id="tma-status-text">' . esc_html__( 'AI Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 				'<div class="tma-header-actions">' .
-					'<button class="tma-icon-btn" title="' . esc_attr__( 'Clear chat', 'mcp-ai-wpoos-pro' ) . '" onclick="tmaClearChat()">' .
+					'<button class="tma-icon-btn" title="' . esc_attr__( 'Clear chat', 'mcp-ai-wpoos-pro' ) . '" onclick="chatClearHistory()">' .
 						'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' .
 					'</button>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-chat-messages" id="tma-messages">' .
-				'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div>' .
-				'<p>' . esc_html__( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) . '</p></div>' .
-			'</div>' .
-			'<div class="tma-chat-input-wrap">' .
-				'<textarea id="tma-chat-input" class="tma-chat-input" rows="1"' .
-					' placeholder="' . esc_attr__( 'Type a message…', 'mcp-ai-wpoos-pro' ) . '"' .
-					' onkeydown="tmaChatKeydown(event)" oninput="tmaChatAutoResize(this)"></textarea>' .
-				'<button class="tma-send-btn" onclick="tmaSendMessage()">' .
-					'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+
+			/* ── Content panes ── */
+			'<div class="tma-content">' .
+
+				/* Tab 1: Chat (default) */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-chat">' .
+					'<div class="chat-quick-actions" id="chat-quick-actions">' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Search content', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Search content', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Run a tool', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Run a tool', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-quick-btn" onclick="chatQuickAction(\'' . esc_js( __( 'Check remote sites', 'mcp-ai-wpoos-pro' ) ) . '\')">' . esc_html__( 'Check remote sites', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div class="tma-chat-messages" id="tma-messages">' .
+						'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div>' .
+						'<p>' . esc_html__( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) . '</p></div>' .
+					'</div>' .
+					'<div class="tma-chat-input-wrap">' .
+						'<textarea id="tma-chat-input" class="tma-chat-input" rows="1"' .
+							' placeholder="' . esc_attr__( 'Type a message…', 'mcp-ai-wpoos-pro' ) . '"' .
+							' onkeydown="chatKeydown(event)" oninput="chatAutoResize(this)"></textarea>' .
+						'<button class="tma-send-btn" onclick="chatSendMessage()">' .
+							'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 2: Tools */
+				'<div class="tma-tab-pane" id="tma-tab-tools">' .
+					'<div class="chat-tools-header"><h3>' . esc_html__( 'Tools', 'mcp-ai-wpoos-pro' ) . '</h3>' .
+						'<p>' . esc_html__( 'Discover available tools and capabilities', 'mcp-ai-wpoos-pro' ) . '</p>' .
+					'</div>' .
+					'<div class="chat-tool-categories" id="chat-tool-cats">' .
+						'<button class="chat-cat-btn active" data-cat="all" onclick="chatFilterCat(\'all\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="content" onclick="chatFilterCat(\'content\')">' . esc_html__( 'Content', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="analytics" onclick="chatFilterCat(\'analytics\')">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="remote" onclick="chatFilterCat(\'remote\')">' . esc_html__( 'Remote', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'<button class="chat-cat-btn" data-cat="ai" onclick="chatFilterCat(\'ai\')">' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'</div>' .
+					'<div class="chat-tools-search">' .
+						'<input type="search" id="chat-tools-search" placeholder="' . esc_attr__( 'Search tools…', 'mcp-ai-wpoos-pro' ) . '" />' .
+					'</div>' .
+					'<div id="chat-tools-list"><div class="tma-empty">' . esc_html__( 'Loading tools…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="chat-font-btns" id="chat-font-btns">' .
+								'<button data-size="small" onclick="chatSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="chatSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="chatSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="chat-toggle" id="chat-compact-toggle" onclick="chatToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Auto-scroll', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="chat-toggle" id="chat-autoscroll-toggle" onclick="chatToggleAutoScroll()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Assistant section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label">' . esc_html__( 'Assistant ID', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="chat-settings-value" id="chat-assistant-id-val">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="chat-settings-section">' .
+						'<div class="chat-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="chat-settings-row">' .
+							'<span class="chat-settings-label" id="chat-data-summary"></span>' .
+						'</div>' .
+						'<button class="chat-settings-btn" onclick="chatSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="chat-settings-btn danger" onclick="chatClearData()">' .
+							esc_html__( 'Clear Chat History', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (3 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-chat" onclick="chatSwitch(\'chat\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'Chat', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-			'</div>' .
-		'</div>' .
+				'<button class="tma-nav-btn" id="tma-nav-tools" onclick="chatSwitch(\'tools\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' .
+					'<span>' . esc_html__( 'Tools', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="chatSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
-		'var sk="wp_mcp_ai_tma_ai_chat";var hist=[];var busy=false;' .
-		'function tmaExtractReply(d){' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="chat";' .
+		'var hist=[];' .
+		'var busy=false;' .
+		'var toolsCache=[];' .
+		'var activeCat="all";' .
+		'var SK="wp_mcp_ai_tma_ai_chat";' .
+
+		/* ── Helpers ── */
+		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ── Markdown renderer for bot messages ── */
+		'function chatRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Extract reply from API response ── */
+		'function chatExtractReply(d){' .
 			'if(!d||!d.data)return"";' .
 			'var data=d.data;' .
 			'if(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)return data.choices[0].message.content;' .
 			'if(data.content)return data.content;' .
 			'if(data.response)return data.response;' .
 			'return"";}' .
-		'try{var s=localStorage.getItem(sk);if(s)hist=JSON.parse(s)||[];}catch(e){}' .
-		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";hist.forEach(function(h){appendMsg(h.role,h.content);});}}' .
-		'function save(){try{localStorage.setItem(sk,JSON.stringify(hist.slice(-50)));}catch(e){}}' .
-		'function appendMsg(role,content){' .
-			'var el=document.createElement("div");el.className="tma-msg "+(role==="user"?"user":"bot");el.textContent=content;' .
+
+		/* ── Session init (Telegram WebApp auth) ── */
+		'function chatInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function chatApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("chat_font_size","medium");' .
+				'shell.classList.remove("chat-font-small","chat-font-large");' .
+				'if(size==="small")shell.classList.add("chat-font-small");' .
+				'else if(size==="large")shell.classList.add("chat-font-large");' .
+				'var compact=lsGet("chat_compact",false);' .
+				'if(compact)shell.classList.add("chat-compact");' .
+				'else shell.classList.remove("chat-compact");' .
+				'var btns=document.querySelectorAll("#chat-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("chat-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+				'var asTog=document.getElementById("chat-autoscroll-toggle");' .
+				'var autoScroll=lsGet("chat_auto_scroll",true);' .
+				'if(asTog)asTog.classList.toggle("on",!!autoScroll);' .
+			'}catch(e){}' .
+		'}' .
+		'window.chatSetFontSize=function(s){lsSet("chat_font_size",s);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+		'window.chatToggleCompact=function(){var c=!lsGet("chat_compact",false);lsSet("chat_compact",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+		'window.chatToggleAutoScroll=function(){var c=!lsGet("chat_auto_scroll",true);lsSet("chat_auto_scroll",c);tmaHaptic("selectionChanged");chatApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.chatSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="tools"&&!toolsCache.length)chatLoadTools();' .
+			'if(tab==="settings")chatRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Chat
+		   ══════════════════════════════════════════════════════════ */
+
+		'function chatScrollBottom(){' .
+			'var autoScroll=lsGet("chat_auto_scroll",true);if(!autoScroll)return;' .
+			'var m=document.getElementById("tma-messages");if(m)m.scrollTop=m.scrollHeight;' .
+		'}' .
+
+		'function chatSave(){try{localStorage.setItem(SK,JSON.stringify(hist.slice(-50)));}catch(e){}}' .
+
+		'function chatAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="tma-msg "+(role==="user"?"user":"bot");' .
+			'if(role==="bot"&&text){el.innerHTML=chatRenderMd(text);}' .
+			'else if(role==="user"){el.textContent=text;}' .
 			'var m=document.getElementById("tma-messages");' .
-			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
-			'return el;}' .
-		'window.tmaSendMessage=function(){' .
+			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);chatScrollBottom();}' .
+			'return el;' .
+		'}' .
+
+		/* Check if reply contains rich post references */
+		'function chatMaybeRichCards(text,container){' .
+			'var postPattern=/\\[post:(.+?)\\|(.+?)\\|(.+?)\\]/g;var match;' .
+			'while((match=postPattern.exec(text))!==null){' .
+				'var card=document.createElement("div");card.className="chat-rich-card";' .
+				'card.innerHTML=\'<div class="chat-rich-card-title">\'+escH(match[1])+\'</div><div class="chat-rich-card-meta">\'+escH(match[2])+" · "+escH(match[3])+\'</div>\';' .
+				'container.appendChild(card);' .
+			'}' .
+		'}' .
+
+		'window.chatQuickAction=function(text){' .
+			'var inp=document.getElementById("tma-chat-input");' .
+			'if(inp){inp.value=text;inp.focus();}' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+		'};' .
+
+		'window.chatSendMessage=function(){' .
 			'if(busy)return;' .
 			'var inp=document.getElementById("tma-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;' .
 			'inp.value="";inp.style.height="";tmaHaptic("light");' .
-			/* Push to history before building the payload so the current turn is included in messages. */
-			'hist.push({role:"user",content:txt});appendMsg("user",txt);save();' .
-			'busy=true;var el=appendMsg("bot","");el.classList.add("loading");' .
-			'var st=document.getElementById("tma-status-text");if(st)st.textContent="Thinking\u2026";' .
-			/* Dedicated chat UI: send up to 20 messages of context for rich multi-turn conversations. */
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+			'hist.push({role:"user",content:txt});chatAppendMsg("user",txt,false);chatSave();' .
+			'busy=true;' .
+			'var el=document.createElement("div");el.className="tma-msg bot typing";' .
+			'var m=document.getElementById("tma-messages");' .
+			'if(m){var w=m.querySelector(".tma-chat-welcome");if(w)w.remove();m.appendChild(el);chatScrollBottom();}' .
+			'var st=document.getElementById("tma-status-text");if(st)st.textContent="' . esc_js( __( 'Thinking…', 'mcp-ai-wpoos-pro' ) ) . '";' .
 			'var body={messages:hist.slice(-20)};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var rep=tmaExtractReply(d)||"' . esc_js( __( 'Sorry, I could not process that.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'el.classList.remove("loading");el.textContent=rep;hist.push({role:"assistant",content:rep});save();})' .
-			'.catch(function(){el.classList.remove("loading");el.textContent="' . esc_js( __( 'Connection error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
-			'.finally(function(){busy=false;if(st)st.textContent="' . esc_js( __( 'AI Assistant', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'var m=document.getElementById("tma-messages");if(m)m.scrollTop=m.scrollHeight;});' .
+				'var rep=chatExtractReply(d)||"' . esc_js( __( 'Sorry, I could not process that.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.classList.remove("typing");el.innerHTML=chatRenderMd(rep);' .
+				'chatMaybeRichCards(rep,el);' .
+				'hist.push({role:"assistant",content:rep});chatSave();})' .
+			'.catch(function(){el.classList.remove("typing");el.textContent="' . esc_js( __( 'Connection error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
+			'.finally(function(){busy=false;if(st)st.textContent="' . esc_js( __( 'AI Assistant', 'mcp-ai-wpoos-pro' ) ) . '";chatScrollBottom();});' .
 		'};' .
-		'window.tmaClearChat=function(){hist=[];save();tmaHaptic("medium");' .
+
+		'window.chatClearHistory=function(){' .
+			'hist=[];chatSave();tmaHaptic("medium");' .
 			'var m=document.getElementById("tma-messages");' .
-			'if(m)m.innerHTML=\'<div class="tma-chat-welcome"><div class="tma-welcome-icon">🤖</div><p>' . esc_js( __( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) ) . '</p></div>\';};' .
-		'window.tmaChatKeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();tmaSendMessage();}};' .
-		'window.tmaChatAutoResize=function(el){el.style.height="";el.style.height=Math.min(el.scrollHeight,120)+"px";};' .
-		'})();</script>' .
-		'</body>';
+			'if(m)m.innerHTML=\'<div class="tma-chat-welcome"><div class="tma-welcome-icon">\u{1F916}</div><p>' . esc_js( __( 'Hello! How can I assist you today?', 'mcp-ai-wpoos-pro' ) ) . '</p></div>\';' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="flex";' .
+		'};' .
+
+		'window.chatKeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();chatSendMessage();}};' .
+		'window.chatAutoResize=function(el){el.style.height="";el.style.height=Math.min(el.scrollHeight,120)+"px";};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Tools
+		   ══════════════════════════════════════════════════════════ */
+
+		'var TOOL_CATS={' .
+			'content:["search","post","page","content","media","menu","taxonomy","term","category","tag"],' .
+			'analytics:["analytics","stats","report","log","monitor","count","metric"],' .
+			'remote:["remote","site","fetch","crawl","http","url","ping","external"],' .
+			'ai:["ai","gpt","generate","summarize","translate","chat","assistant","model"]' .
+		'};' .
+
+		'function chatToolCategory(name,desc){' .
+			'var s=(name+" "+desc).toLowerCase();' .
+			'var cats=Object.keys(TOOL_CATS);' .
+			'for(var i=0;i<cats.length;i++){' .
+				'var kws=TOOL_CATS[cats[i]];' .
+				'for(var j=0;j<kws.length;j++){if(s.indexOf(kws[j])>-1)return cats[i];}' .
+			'}return "other";' .
+		'}' .
+
+		'function chatToolIcon(cat){' .
+			'switch(cat){case "content":return "\u{1F4DD}";case "analytics":return "\u{1F4CA}";case "remote":return "\u{1F310}";case "ai":return "\u{1F916}";default:return "\u{1F527}";}' .
+		'}' .
+
+		'function chatLoadTools(){' .
+			'var l=document.getElementById("chat-tools-list");if(!l)return;' .
+			'var cached=lsGet("chat_tools_cache",[]);' .
+			'if(cached.length){toolsCache=cached;chatRenderTools(toolsCache);return;}' .
+			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading tools…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"list_available_tools",arguments:{}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var tools=(d&&d.data&&d.data.tools)?d.data.tools:[];' .
+				'if(!tools.length&&d&&d.data&&Array.isArray(d.data))tools=d.data;' .
+				'toolsCache=tools;lsSet("chat_tools_cache",tools);' .
+				'chatRenderTools(tools);' .
+			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load tools.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+		'}' .
+
+		'function chatRenderTools(tools){' .
+			'var l=document.getElementById("chat-tools-list");if(!l)return;' .
+			'var q=(document.getElementById("chat-tools-search")||{}).value||"";' .
+			'q=q.toLowerCase();' .
+			'var filtered=tools.filter(function(t){' .
+				'var name=t.name||t.slug||"";var desc=t.description||"";' .
+				'if(q&&(name+" "+desc).toLowerCase().indexOf(q)===-1)return false;' .
+				'if(activeCat!=="all"&&chatToolCategory(name,desc)!==activeCat)return false;' .
+				'return true;' .
+			'});' .
+			'if(!filtered.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No tools found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'l.innerHTML=filtered.map(function(t){' .
+				'var name=escH(t.name||t.slug||"");var desc=escH(t.description||"");' .
+				'var cat=chatToolCategory(t.name||t.slug||"",t.description||"");' .
+				'var icon=chatToolIcon(cat);' .
+				'return \'<div class="chat-tool-card" onclick="chatUseTool(\\\'\'+escH(t.name||t.slug||"")+\'\\\')">' .
+					'<div class="chat-tool-icon">\'+icon+\'</div>' .
+					'<div class="chat-tool-info">' .
+						'<div class="chat-tool-name">\'+name+\'</div>' .
+						'<div class="chat-tool-desc">\'+desc+\'</div>' .
+					'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		'window.chatUseTool=function(name){' .
+			'chatSwitch("chat");' .
+			'var inp=document.getElementById("tma-chat-input");' .
+			'if(inp){inp.value="' . esc_js( __( 'Use the ', 'mcp-ai-wpoos-pro' ) ) . '"+name+" ' . esc_js( __( 'tool to ', 'mcp-ai-wpoos-pro' ) ) . '";inp.focus();}' .
+		'};' .
+
+		'window.chatFilterCat=function(cat){' .
+			'activeCat=cat;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll("#chat-tool-cats .chat-cat-btn").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-cat")===cat);});' .
+			'chatRenderTools(toolsCache);' .
+		'};' .
+
+		/* Debounced search */
+		'var toolSearchTimer=null;' .
+		'document.getElementById("chat-tools-search").addEventListener("input",function(){' .
+			'clearTimeout(toolSearchTimer);toolSearchTimer=setTimeout(function(){chatRenderTools(toolsCache);},300);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function chatRenderSettings(){' .
+			'chatApplyDisplaySettings();' .
+			'var aid=document.getElementById("chat-assistant-id-val");' .
+			'if(aid)aid.textContent=ASSISTANT_ID||"' . esc_js( __( 'Default', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'var ds=document.getElementById("chat-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Messages', 'mcp-ai-wpoos-pro' ) ) . ': "+hist.length+", ' .
+				esc_js( __( 'Tools cached', 'mcp-ai-wpoos-pro' ) ) . ': "+toolsCache.length;' .
+		'}' .
+
+		'window.chatSyncFromServer=function(){' .
+			'tmaHaptic("medium");toolsCache=[];' .
+			'try{localStorage.removeItem("chat_tools_cache");}catch(e){}' .
+			'chatLoadTools();' .
+		'};' .
+
+		'window.chatClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all chat history? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)chatDoClear();});' .
+			'}else if(confirm(msg)){chatDoClear();}' .
+		'};' .
+
+		'function chatDoClear(){' .
+			'try{' .
+				'localStorage.removeItem(SK);' .
+				'localStorage.removeItem("chat_tools_cache");' .
+				'localStorage.removeItem("chat_font_size");' .
+				'localStorage.removeItem("chat_compact");' .
+				'localStorage.removeItem("chat_auto_scroll");' .
+			'}catch(e){}' .
+			'hist=[];toolsCache=[];' .
+			'chatRenderSettings();tmaHaptic("notificationSuccess");' .
+			'chatClearHistory();' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore chat history from localStorage */
+		'try{var s=localStorage.getItem(SK);if(s){hist=JSON.parse(s)||[];' .
+			'hist=hist.filter(function(h){return h&&(h.role==="user"||h.role==="assistant")&&typeof h.content==="string";});' .
+		'}}catch(e){hist=[];}' .
+		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";' .
+			'var qa=document.getElementById("chat-quick-actions");if(qa)qa.style.display="none";' .
+			'hist.forEach(function(h){chatAppendMsg(h.role,h.content,true);});' .
+		'}}' .
+
+		'chatApplyDisplaySettings();' .
+
+		/* Session init for Telegram WebApp */
+		'chatInitSession();' .
+
+		'})();</script></body>';
 		// phpcs:enable
 	}
 }
@@ -778,168 +1202,722 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name      = esc_html( $ctx['site_name'] );
+		$tools_exec     = $ctx['tools_url'] . '/execute';
+		$chat_url       = $ctx['chat_url'];
+		$validate_url   = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id   = $ctx['assistant_id'];
+		$chart_js_url   = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$woo_source     = isset( $ctx['woo_source'] ) ? $ctx['woo_source'] : 'local';
+		$woo_connection = isset( $ctx['woo_connection_id'] ) ? $ctx['woo_connection_id'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ecommerce-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#9c27b0;--tma-accent:#9c27b0;--tma-secondary-bg:#f8f4fb;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#9c27b0;--tma-accent:#9c27b0;--tma-secondary-bg:#f8f4fb;' .
+			'--ec-base:14px;--ec-label:12px;--ec-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.ec-font-small{--ec-base:12px;--ec-label:10px;--ec-heading:14px}' .
+		'.ec-font-large{--ec-base:16px;--ec-label:14px;--ec-heading:18px}' .
+		'.ec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
+		'.ec-compact .tma-product-body{padding:4px 6px}' .
+		'.ec-compact .ec-cart-item{padding:8px 10px}' .
+		'.ec-compact .tma-order-item{padding:8px 10px;margin:0 8px 6px}' .
+
+		/* ── Search bar ── */
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
-		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:14px;padding:10px 0;background:transparent;color:var(--tma-text)}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--ec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Product grid ── */
 		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
-		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer}' .
+		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
 		'.tma-product-card:active{opacity:.8}' .
 		'.tma-product-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:32px}' .
+		'.tma-product-img img{width:100%;height:100%;object-fit:cover}' .
 		'.tma-product-body{padding:8px 10px}' .
-		'.tma-product-name{font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
-		'.tma-product-price{font-size:14px;color:var(--tma-btn);font-weight:700}' .
+		'.tma-product-name{font-size:var(--ec-label);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-product-price{font-size:var(--ec-base);color:var(--tma-btn);font-weight:700}' .
+		'.tma-product-price .ec-sale-price{text-decoration:line-through;color:var(--tma-hint);font-weight:400;font-size:var(--ec-label);margin-left:4px}' .
+		'.ec-stock-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600}' .
+		'.ec-stock-instock{background:#e8f5e9;color:#2e7d32}' .
+		'.ec-stock-outofstock{background:#ffebee;color:#c62828}' .
+		'.ec-add-cart-btn{display:block;width:100%;padding:6px 0;margin-top:6px;border:none;border-radius:6px;' .
+			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-label);font-weight:600;cursor:pointer}' .
+		'.ec-add-cart-btn:active{opacity:.8}' .
+
+		/* ── Cart ── */
+		'.ec-cart-item{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);' .
+			'border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.ec-cart-item-info{flex:1;min-width:0}' .
+		'.ec-cart-item-name{font-size:var(--ec-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.ec-cart-item-price{font-size:var(--ec-label);color:var(--tma-hint)}' .
+		'.ec-cart-qty{display:flex;align-items:center;gap:6px}' .
+		'.ec-cart-qty button{width:28px;height:28px;border:1px solid var(--tma-border);border-radius:50%;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.ec-cart-qty button:active{background:var(--tma-secondary-bg)}' .
+		'.ec-cart-qty span{font-size:var(--ec-base);font-weight:600;min-width:20px;text-align:center}' .
+		'.ec-cart-remove{background:none;border:none;color:#c62828;font-size:18px;cursor:pointer;padding:0 4px}' .
+		'.ec-cart-total{margin:12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'display:flex;justify-content:space-between;align-items:center;font-size:var(--ec-heading);font-weight:700}' .
+		'.ec-checkout-btn{display:block;margin:0 12px 12px;padding:14px;border:none;border-radius:var(--tma-radius);' .
+			'background:var(--tma-btn);color:var(--tma-btn-text);font-size:var(--ec-base);font-weight:700;width:calc(100% - 24px);cursor:pointer;text-align:center}' .
+		'.ec-checkout-btn:active{opacity:.8}' .
+
+		/* ── Badge on nav ── */
+		'.ec-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;' .
+			'background:#c62828;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}' .
+
+		/* ── Orders ── */
 		'.tma-order-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:14px}' .
 		'.tma-order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' .
-		'.tma-order-id{font-weight:700;font-size:14px}' .
-		'.tma-order-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--tma-secondary-bg);color:var(--tma-hint);font-weight:600}' .
-		'.tma-order-meta{font-size:12px;color:var(--tma-hint)}' .
-		'.tma-chat-fab{position:fixed;bottom:calc(var(--tma-nav-height)+16px);right:16px;width:48px;height:48px;' .
-			'background:var(--tma-btn);color:var(--tma-btn-text);border-radius:50%;border:none;' .
-			'display:flex;align-items:center;justify-content:center;cursor:pointer;' .
-			'box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:50;-webkit-tap-highlight-color:transparent}' .
-		'.tma-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none}' .
-		'.tma-overlay.open{display:flex;align-items:flex-end}' .
-		'.tma-drawer{background:var(--tma-bg);border-radius:20px 20px 0 0;width:100%;padding:20px;max-height:70vh;overflow-y:auto}' .
-		'.tma-drawer-handle{width:36px;height:4px;background:var(--tma-border);border-radius:2px;margin:0 auto 16px}' .
-		'.tma-drawer-messages{height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:10px}' .
-		'.tma-msg{max-width:85%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.4}' .
-		'.tma-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text)}' .
-		'.tma-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text)}' .
-		'.tma-drawer-input-row{display:flex;gap:8px}' .
-		'.tma-drawer-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:8px 14px;font-size:14px;background:var(--tma-bg);color:var(--tma-text);outline:none}' .
-		'.tma-send-btn-sm{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:36px;height:36px;min-width:36px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.tma-order-id{font-weight:700;font-size:var(--ec-base)}' .
+		'.tma-order-total{font-size:var(--ec-base);font-weight:700;color:var(--tma-btn);margin-top:4px}' .
+		'.tma-order-meta{font-size:var(--ec-label);color:var(--tma-hint)}' .
+		'.ec-status-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent}' .
+		'.ec-status-completed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.ec-status-processing{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.ec-status-pending,.ec-status-on-hold{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.ec-status-failed,.ec-status-cancelled,.ec-status-refunded{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.ec-pull-hint{text-align:center;font-size:var(--ec-label);color:var(--tma-hint);padding:8px 0}' .
+
+		/* ── Spending chart ── */
+		'.ec-chart-wrap{margin:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px}' .
+		'.ec-chart-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+
+		/* ── AI Chat ── */
+		'.ec-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.ec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.ec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--ec-base);line-height:1.5;word-wrap:break-word}' .
+		'.ec-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.ec-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.ec-msg.bot p{margin:0 0 6px}' .
+		'.ec-msg.bot p:last-child{margin-bottom:0}' .
+		'.ec-msg.bot ul,.ec-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.ec-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.ec-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.ec-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--ec-base);' .
+			'background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.ec-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;' .
+			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.ec-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.ec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.ec-settings-title{font-size:var(--ec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.ec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.ec-settings-row:last-child{border-bottom:none}' .
+		'.ec-settings-label{font-size:var(--ec-base);color:var(--tma-text)}' .
+		'.ec-settings-value{font-size:var(--ec-base);color:var(--tma-hint)}' .
+		'.ec-font-btns{display:flex;gap:4px}' .
+		'.ec-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:var(--ec-label);cursor:pointer}' .
+		'.ec-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.ec-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.ec-toggle.on{background:var(--tma-btn)}' .
+		'.ec-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.ec-toggle.on::after{transform:translateX(20px)}' .
+		'.ec-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-bg);color:var(--tma-text);font-size:var(--ec-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.ec-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.ec-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.ec-connection-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}' .
+		'.ec-connection-dot.online{background:#2e7d32}' .
+		'.ec-connection-dot.local{background:#e65100}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🛒</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'Online Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="ec-header-status">' . esc_html__( 'Online Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-search-bar">' .
+
+			/* ── Search bar (visible on Products tab) ── */
+			'<div class="tma-search-bar" id="ec-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
-					'<input type="search" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" oninput="tmaSearchProducts(this.value)" />' .
+					'<input type="search" id="ec-search-input" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" />' .
 				'</div>' .
 			'</div>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-tab-shop">' .
+
+				/* Tab 1: Products */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
 					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div class="tma-product-grid" id="tma-product-grid">' .
+					'<div class="tma-product-grid" id="ec-product-grid">' .
 						'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading products…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-tab-orders">' .
-					'<div class="tma-section-title">' . esc_html__( 'My Orders', 'mcp-ai-wpoos-pro' ) . '</div>' .
-					'<div id="tma-orders-list"><div class="tma-empty">' . esc_html__( 'Loading orders…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+
+				/* Tab 2: Cart */
+				'<div class="tma-tab-pane" id="tma-tab-cart">' .
+					'<div class="tma-section-title">' . esc_html__( 'Shopping Cart', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="ec-cart-list"><div class="tma-empty">' . esc_html__( 'Your cart is empty.', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="ec-cart-total" id="ec-cart-total" style="display:none">' .
+						'<span>' . esc_html__( 'Total', 'mcp-ai-wpoos-pro' ) . '</span><span id="ec-cart-total-val">0</span>' .
+					'</div>' .
+					'<button class="ec-checkout-btn" id="ec-checkout-btn" style="display:none" onclick="ecCheckout()">' .
+						esc_html__( 'Checkout', 'mcp-ai-wpoos-pro' ) .
+					'</button>' .
 				'</div>' .
-			'</div>' .
+
+				/* Tab 3: Orders */
+				'<div class="tma-tab-pane" id="tma-tab-orders">' .
+					'<div class="tma-section-title" style="display:flex;justify-content:space-between;align-items:center">' .
+						'<span>' . esc_html__( 'My Orders', 'mcp-ai-wpoos-pro' ) . '</span>' .
+						'<button style="background:none;border:none;color:var(--tma-btn);font-size:var(--ec-label);cursor:pointer" onclick="ecLoadOrders(true)">' .
+							esc_html__( 'Refresh', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+					'<div id="ec-orders-list"><div class="tma-empty">' . esc_html__( 'Loading orders…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="ec-chart-wrap" id="ec-chart-wrap" style="display:none">' .
+						'<div class="ec-chart-title">' . esc_html__( 'Monthly Spending', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="ec-spend-chart" height="160"></canvas>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 4: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="ec-chat-container">' .
+						'<div class="ec-chat-messages" id="ec-chat-messages"></div>' .
+						'<div class="ec-chat-input-row">' .
+							'<input type="text" id="ec-chat-input" class="ec-chat-input"' .
+								' placeholder="' . esc_attr__( 'Ask about products, orders…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="ec-send-btn" id="ec-send-btn" onclick="ecChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+					/* Display section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="ec-font-btns" id="ec-font-btns">' .
+								'<button data-size="small" onclick="ecSetFontSize(\'small\')">A-</button>' .
+								'<button data-size="medium" class="active" onclick="ecSetFontSize(\'medium\')">A</button>' .
+								'<button data-size="large" onclick="ecSetFontSize(\'large\')">A+</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="ec-toggle" id="ec-compact-toggle" onclick="ecToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Store section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Connection', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="ec-settings-value" id="ec-connection-info"></span>' .
+						'</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label">' . esc_html__( 'Currency', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="ec-settings-value" id="ec-currency-display">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="ec-settings-section">' .
+						'<div class="ec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="ec-settings-row">' .
+							'<span class="ec-settings-label" id="ec-data-summary"></span>' .
+						'</div>' .
+						'<button class="ec-settings-btn" onclick="ecSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="ec-settings-btn danger" onclick="ecClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
 			'<nav class="tma-nav">' .
-				'<button class="tma-nav-btn tma-active" id="tma-nav-shop" onclick="tmaSwitch(\'shop\')">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="ecSwitch(\'products\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
 					'<span>' . esc_html__( 'Shop', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-orders" onclick="tmaSwitch(\'orders\')">' .
+				'<button class="tma-nav-btn" id="tma-nav-cart" onclick="ecSwitch(\'cart\')" style="position:relative">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' .
+					'<span id="ec-cart-badge" class="ec-badge" style="display:none"></span>' .
+					'<span>' . esc_html__( 'Cart', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-orders" onclick="ecSwitch(\'orders\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' .
 					'<span>' . esc_html__( 'Orders', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="ecSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="ecSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
 			'</nav>' .
-		'</div>' .
-		'<button class="tma-chat-fab" onclick="tmaOpenDrawer()">' .
-			'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
-		'</button>' .
-		'<div class="tma-overlay" id="tma-overlay" onclick="tmaCloseDrawer()">' .
-			'<div class="tma-drawer" onclick="event.stopPropagation()">' .
-				'<div class="tma-drawer-handle"></div>' .
-				'<div style="font-weight:700;font-size:16px;margin-bottom:12px">' . esc_html__( 'AI Shopping Assistant', 'mcp-ai-wpoos-pro' ) . '</div>' .
-				'<div class="tma-drawer-messages" id="tma-drawer-msgs"></div>' .
-				'<div class="tma-drawer-input-row">' .
-					'<input type="text" id="tma-drawer-input" class="tma-drawer-input"' .
-						' placeholder="' . esc_attr__( 'Ask about products…', 'mcp-ai-wpoos-pro' ) . '"' .
-						' onkeydown="if(event.key===\'Enter\')tmaDrawerSend()" />' .
-					'<button class="tma-send-btn-sm" onclick="tmaDrawerSend()">' .
-						'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
-					'</button>' .
-				'</div>' .
-			'</div>' .
-		'</div>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
-		'var activeTab="shop";var chatHist=[];' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var WOO_SOURCE=' . wp_json_encode( $woo_source ) . ';' .
+		'var WOO_CONNECTION_ID=' . wp_json_encode( $woo_connection ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="products";' .
+		'var cart=[];' .
+		'var orders=[];' .
+		'var chatHist=[];' .
+		'var productsCache=[];' .
+		'var spendChartInst=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.tmaSwitch=function(tab){' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function ecRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── localStorage helpers ── */
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ── Tool call helper (supports local/remote WooCommerce) ── */
+		'function ecToolCall(slug,args,cb){' .
+			'var body;' .
+			'if(WOO_SOURCE==="remote"&&WOO_CONNECTION_ID){' .
+				'body={slug:"remote_wp_connection",arguments:{connection_id:WOO_CONNECTION_ID,tool:slug,arguments:args}};' .
+			'}else{' .
+				'body={slug:slug,arguments:args};' .
+			'}' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){cb(null,d);})' .
+			'.catch(function(e){cb(e,null);});' .
+		'}' .
+
+		/* ── Session init (matches medical_vitals pattern) ── */
+		'function ecInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}ecLoadProducts();ecLoadOrders(false);})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function ecApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("ec_font_size","medium");' .
+				'shell.classList.remove("ec-font-small","ec-font-large");' .
+				'if(size==="small")shell.classList.add("ec-font-small");' .
+				'else if(size==="large")shell.classList.add("ec-font-large");' .
+				'var compact=lsGet("ec_compact",false);' .
+				'if(compact)shell.classList.add("ec-compact");' .
+				'else shell.classList.remove("ec-compact");' .
+				/* Update settings UI */
+				'var btns=document.querySelectorAll("#ec-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("ec-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.ecSetFontSize=function(s){lsSet("ec_font_size",s);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
+		'window.ecToggleCompact=function(){var c=!lsGet("ec_compact",false);lsSet("ec_compact",c);tmaHaptic("selectionChanged");ecApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.ecSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
 			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
 			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
-			'activeTab=tab;if(tab==="orders")loadOrders();' .
+			'var sb=document.getElementById("ec-search-bar");if(sb)sb.style.display=tab==="products"?"":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="orders")ecLoadOrders(false);' .
+			'if(tab==="cart")ecRenderCart();' .
+			'if(tab==="assistant"&&!chatHist.length)ecChatInit();' .
+			'if(tab==="settings")ecRenderSettings();' .
 		'};' .
-		'function loadProducts(q){' .
-			'var g=document.getElementById("tma-product-grid");if(!g)return;' .
-			'g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"search_woocommerce_products",arguments:{search:q||"",per_page:10}})})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Products
+		   ══════════════════════════════════════════════════════════ */
+		'function ecLoadProducts(q){' .
+			'var g=document.getElementById("ec-product-grid");if(!g)return;' .
+			/* Show cached products immediately while fetching */
+			'if(!q&&productsCache.length){ecRenderProducts(productsCache);}'  .
+			'if(!q&&!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'ecToolCall("search_woocommerce_products",{search:q||"",per_page:20},function(err,d){' .
+				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var ps=(d&&d.data&&d.data.products)?d.data.products:[];' .
-				'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'g.innerHTML=ps.map(function(p){return \'<div class="tma-product-card"><div class="tma-product-img">🛍️</div><div class="tma-product-body"><div class="tma-product-name">\'+escH(p.name||"Product")+\'</div><div class="tma-product-price">\'+escH(p.price_html||p.price||"")+\'</div></div></div>\';}).join("");' .
-			'}).catch(function(){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+				'if(!q){productsCache=ps;lsSet("ec_products_cache",ps);}' .
+				'ecRenderProducts(ps);' .
+			'});' .
 		'}' .
-		'var st=null;window.tmaSearchProducts=function(q){clearTimeout(st);st=setTimeout(function(){loadProducts(q);},400);};' .
-		'function loadOrders(){' .
-			'var l=document.getElementById("tma-orders-list");if(!l)return;' .
+
+		'function ecRenderProducts(ps){' .
+			'var g=document.getElementById("ec-product-grid");if(!g)return;' .
+			'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'g.innerHTML=ps.map(function(p,i){' .
+				'var img=(p.images&&p.images[0]&&p.images[0].src)?"<img src=\\""+escH(p.images[0].src)+"\\" alt=\\"\\"/>":"🛍️";' .
+				'var stock=(p.stock_status==="instock"||p.in_stock===true);' .
+				'var stockCls=stock?"ec-stock-instock":"ec-stock-outofstock";' .
+				'var stockTxt=stock?"' . esc_js( __( 'In Stock', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'Out of Stock', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				/* Price display with sale support */
+				'var priceHtml="";' .
+				'if(p.sale_price&&p.regular_price&&p.sale_price!==p.regular_price){' .
+					'priceHtml=escH(p.price_html||p.sale_price)+"<span class=\\"ec-sale-price\\">"+escH(p.regular_price)+"</span>";' .
+				'}else{' .
+					'priceHtml=escH(p.price_html||p.price||"");' .
+				'}' .
+				'var addBtn=stock?"<button class=\\"ec-add-cart-btn\\" onclick=\\"ecAddToCart("+i+");event.stopPropagation()\\">' . esc_js( __( 'Add to Cart', 'mcp-ai-wpoos-pro' ) ) . '</button>":"";' .
+				'return \'<div class="tma-product-card">' .
+					'<span class="ec-stock-badge \'+stockCls+\'">\'+escH(stockTxt)+\'</span>' .
+					'<div class="tma-product-img">\'+img+\'</div>' .
+					'<div class="tma-product-body">' .
+						'<div class="tma-product-name">\'+escH(p.name||"Product")+\'</div>' .
+						'<div class="tma-product-price">\'+priceHtml+\'</div>' .
+						'\'+addBtn+\'' .
+					'</div></div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("ec-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value;' .
+			'searchTimer=setTimeout(function(){ecLoadProducts(q);},400);' .
+		'});' .
+
+		/* Add to cart from product grid */
+		'window.ecAddToCart=function(idx){' .
+			'var p=productsCache[idx];if(!p)return;tmaHaptic("light");' .
+			'var existing=cart.find(function(c){return c.id===p.id;});' .
+			'if(existing){existing.qty+=1;}else{' .
+				'var rawPrice=String(p.price||"0").replace(/[^0-9.\\-]/g,"");' .
+				'cart.push({id:p.id,name:p.name||"Product",price:parseFloat(rawPrice)||0,qty:1,' .
+					'image:(p.images&&p.images[0]&&p.images[0].src)||""});' .
+			'}' .
+			'lsSet("ec_cart",cart);ecUpdateCartBadge();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Cart
+		   ══════════════════════════════════════════════════════════ */
+		'function ecRenderCart(){' .
+			'var l=document.getElementById("ec-cart-list");if(!l)return;' .
+			'var totEl=document.getElementById("ec-cart-total");' .
+			'var chkEl=document.getElementById("ec-checkout-btn");' .
+			'if(!cart.length){' .
+				'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Your cart is empty.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+				'if(totEl)totEl.style.display="none";if(chkEl)chkEl.style.display="none";return;' .
+			'}' .
+			'var total=0;' .
+			'l.innerHTML=cart.map(function(c,i){' .
+				'total+=c.price*c.qty;' .
+				'return \'<div class="ec-cart-item">' .
+					'<div class="ec-cart-item-info"><div class="ec-cart-item-name">\'+escH(c.name)+\'</div>' .
+					'<div class="ec-cart-item-price">\'+escH(c.price.toFixed(2))+\' × \'+c.qty+\'</div></div>' .
+					'<div class="ec-cart-qty">' .
+						'<button onclick="ecCartQty(\'+i+\',-1)">−</button>' .
+						'<span>\'+c.qty+\'</span>' .
+						'<button onclick="ecCartQty(\'+i+\',1)">+</button>' .
+					'</div>' .
+					'<button class="ec-cart-remove" onclick="ecCartRemove(\'+i+\')">✕</button>' .
+				'</div>\';' .
+			'}).join("");' .
+			'if(totEl){totEl.style.display="flex";document.getElementById("ec-cart-total-val").textContent=total.toFixed(2);}' .
+			'if(chkEl)chkEl.style.display="block";' .
+		'}' .
+
+		'window.ecCartQty=function(i,d){' .
+			'if(!cart[i])return;tmaHaptic("light");' .
+			'cart[i].qty+=d;' .
+			'if(cart[i].qty<1)cart.splice(i,1);' .
+			'lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+		'};' .
+
+		'window.ecCartRemove=function(i){' .
+			'tmaHaptic("light");cart.splice(i,1);lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+		'};' .
+
+		'function ecUpdateCartBadge(){' .
+			'var b=document.getElementById("ec-cart-badge");if(!b)return;' .
+			'var cnt=cart.reduce(function(s,c){return s+c.qty;},0);' .
+			'if(cnt>0){b.textContent=cnt>99?"99+":cnt;b.style.display="flex";}' .
+			'else{b.style.display="none";}' .
+		'}' .
+
+		'window.ecCheckout=function(){' .
+			'tmaHaptic("medium");' .
+			'var total=cart.reduce(function(s,c){return s+c.price*c.qty;},0);' .
+			'var items=cart.map(function(c){return c.name+" x"+c.qty;}).join(", ");' .
+			/* Attempt WooCommerce create order via tool, fallback to summary */
+			'ecToolCall("create_woocommerce_order",{line_items:cart.map(function(c){return{product_id:c.id,quantity:c.qty};})},function(err,d){' .
+				'if(!err&&d&&d.data&&d.data.order){' .
+					'var orderId=d.data.order.id||"";' .
+					'cart=[];lsSet("ec_cart",cart);ecUpdateCartBadge();ecRenderCart();' .
+					'var sMsg="' . esc_js( __( 'Order placed successfully!', 'mcp-ai-wpoos-pro' ) ) . '"+(orderId?" #"+orderId:"");' .
+					'if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.showAlert(sMsg,function(){ecLoadOrders(true);ecSwitch("orders");});}' .
+					'else{alert(sMsg);ecLoadOrders(true);ecSwitch("orders");}' .
+				'}else{' .
+					'var msg="' . esc_js( __( 'Order Summary', 'mcp-ai-wpoos-pro' ) ) . ':\\n"+items+"\\n' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . ': "+total.toFixed(2);' .
+					'if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.showAlert(msg);}else{alert(msg);}' .
+				'}' .
+			'});' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Orders
+		   ══════════════════════════════════════════════════════════ */
+		'function ecLoadOrders(force){' .
+			'var l=document.getElementById("ec-orders-list");if(!l)return;' .
+			/* Show cached orders immediately */
+			'if(!force&&!orders.length){orders=lsGet("ec_orders_cache",[]);}' .
+			'if(orders.length&&!force){ecRenderOrders(orders);return;}' .
 			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading orders…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_woocommerce_orders",arguments:{per_page:10}})})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){' .
+			'ecToolCall("get_woocommerce_orders",{per_page:20},function(err,d){' .
+				'if(err){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load orders.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var os=(d&&d.data&&d.data.orders)?d.data.orders:[];' .
-				'if(!os.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No orders found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'l.innerHTML=os.map(function(o){var s=o.status||"processing";' .
-					'return \'<div class="tma-order-item"><div class="tma-order-header"><span class="tma-order-id">#\'+escH(o.id||"")+\'</span><span class="tma-order-badge">\'+escH(s)+\'</span></div><div class="tma-order-meta">\'+escH(o.date_created||"")+\'</div></div>\';' .
-				'}).join("");' .
-			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load orders.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+				'orders=os;lsSet("ec_orders_cache",os);ecRenderOrders(os);' .
+			'});' .
 		'}' .
-		'window.tmaOpenDrawer=function(){tmaHaptic("light");document.getElementById("tma-overlay").classList.add("open");' .
-			'if(!chatHist.length){appendDrawer("bot","' . esc_js( __( 'Hi! I can help you find products or check your orders. What can I do for you?', 'mcp-ai-wpoos-pro' ) ) . '");}};' .
-		'window.tmaCloseDrawer=function(){document.getElementById("tma-overlay").classList.remove("open");};' .
-		'function appendDrawer(role,text){var el=document.createElement("div");el.className="tma-msg "+role;el.textContent=text;var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}}' .
-		'window.tmaDrawerSend=function(){' .
-			'var inp=document.getElementById("tma-drawer-input");if(!inp)return;' .
+
+		'function ecStatusClass(s){' .
+			'switch(s){' .
+				'case "completed":return "ec-status-completed";' .
+				'case "processing":return "ec-status-processing";' .
+				'case "pending":case "on-hold":return "ec-status-pending";' .
+				'default:return "ec-status-failed";' .
+			'}' .
+		'}' .
+
+		'function ecRenderOrders(os){' .
+			'var l=document.getElementById("ec-orders-list");if(!l)return;' .
+			'if(!os.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No orders found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';ecHideChart();return;}' .
+			'l.innerHTML=os.map(function(o){' .
+				'var s=o.status||"processing";' .
+				'var total=o.total||o.order_total||"";' .
+				'var date=o.date_created||o.date||"";' .
+				'if(date&&date.length>10)date=date.substring(0,10);' .
+				'return \'<div class="tma-order-item">' .
+					'<div class="tma-order-header">' .
+						'<span class="tma-order-id">#\'+escH(o.id||"")+\'</span>' .
+						'<span class="ec-status-badge \'+ecStatusClass(s)+\'">\'+escH(s)+\'</span>' .
+					'</div>' .
+					'<div class="tma-order-meta">\'+escH(date)+\'</div>' .
+					'<div class="tma-order-total">\'+escH(total)+\'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+			'ecRenderSpendChart(os);' .
+		'}' .
+
+		'function ecHideChart(){var w=document.getElementById("ec-chart-wrap");if(w)w.style.display="none";}' .
+
+		/* ── Spending Chart (Chart.js) ── */
+		'function ecLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function ecRenderSpendChart(os){' .
+			'ecLoadChartJs(function(){' .
+				'if(!window.Chart){ecHideChart();return;}' .
+				'var monthly={};' .
+				'os.forEach(function(o){' .
+					'var d=o.date_created||o.date||"";if(!d)return;' .
+					/* Parse ISO or common date formats to YYYY-MM */
+					'var dt=new Date(d);var m;' .
+					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+("0"+(dt.getMonth()+1)).slice(-2);}' .
+					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
+					'else{return;}' .
+					'var t=parseFloat(o.total||o.order_total||0);' .
+					'if(!monthly[m])monthly[m]=0;monthly[m]+=t;' .
+				'});' .
+				'var keys=Object.keys(monthly).sort();' .
+				'if(!keys.length){ecHideChart();return;}' .
+				'var labels=keys;var data=keys.map(function(k){return Math.round(monthly[k]*100)/100;});' .
+				'var wrap=document.getElementById("ec-chart-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("ec-spend-chart");if(!cv)return;' .
+				'if(spendChartInst){spendChartInst.destroy();}' .
+				'spendChartInst=new Chart(cv.getContext("2d"),{type:"line",data:{labels:labels,datasets:[{' .
+					'label:"' . esc_js( __( 'Spending', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'data:data,borderColor:"#9c27b0",backgroundColor:"rgba(156,39,176,0.1)",' .
+					'fill:true,tension:0.3,pointRadius:3' .
+				'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function ecChatInit(){' .
+			/* Load chat history from localStorage */
+			'chatHist=lsGet("ec_chat_hist",[]);' .
+			'var m=document.getElementById("ec-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){ecAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with store context */
+				'var ctx="[' . esc_js( __( 'Store context', 'mcp-ai-wpoos-pro' ) ) . '] ' . esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+", ' .
+					esc_js( __( 'Cart items', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
+					esc_js( __( 'Recent orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length;' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'ecAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your shopping assistant. I can help you find products, track orders, and answer questions about our store.', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function ecAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="ec-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=ecRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("ec-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.ecChatSend=function(){' .
+			'var inp=document.getElementById("ec-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
-			/* Push before payload so the current turn is included in messages. */
-			'chatHist.push({role:"user",content:txt});appendDrawer("user",txt);' .
-			'var el=document.createElement("div");el.className="tma-msg bot";el.textContent="\u2026";' .
-			'var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
-			/* Floating drawer: 10 messages gives enough context for a shopping assistant without bloating the request. */
-			'var body={messages:chatHist.slice(-10)};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+			'chatHist.push({role:"user",content:txt});ecAppendMsg("user",txt,false);' .
+			'lsSet("ec_chat_hist",chatHist.slice(-50));' .
+			'var el=ecAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			/* Include system context */
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var data=d&&d.data;' .
 				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
 					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'el.textContent=rep;chatHist.push({role:"assistant",content:rep});})' .
+				'el.innerHTML=ecRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("ec_chat_hist",chatHist.slice(-50));' .
+			'})' .
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
-		'loadProducts();' .
+
+		/* Enter to send */
+		'document.getElementById("ec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")ecChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function ecRenderSettings(){' .
+			/* Connection indicator */
+			'var ci=document.getElementById("ec-connection-info");' .
+			'if(ci){' .
+				'if(WOO_SOURCE==="remote"){' .
+					'ci.innerHTML=\'<span class="ec-connection-dot online"></span>' . esc_js( __( 'Remote Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}else{' .
+					'ci.innerHTML=\'<span class="ec-connection-dot local"></span>' . esc_js( __( 'Local Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}' .
+			'}' .
+			/* Data summary */
+			'var ds=document.getElementById("ec-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", ' .
+				esc_js( __( 'Orders', 'mcp-ai-wpoos-pro' ) ) . ': "+orders.length+", ' .
+				esc_js( __( 'Cart', 'mcp-ai-wpoos-pro' ) ) . ': "+cart.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+			/* Currency display */
+			'var cd=document.getElementById("ec-currency-display");' .
+			'if(cd){' .
+				'if(orders.length&&orders[0].currency){cd.textContent=orders[0].currency;}' .
+				'else if(orders.length&&orders[0].currency_symbol){cd.textContent=orders[0].currency_symbol;}' .
+				'else{cd.textContent="\u2014";}' .
+			'}' .
+		'}' .
+
+		'window.ecSyncFromServer=function(){' .
+			'tmaHaptic("medium");ecLoadProducts();ecLoadOrders(true);' .
+		'};' .
+
+		'window.ecClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)ecDoClear();});' .
+			'}else if(confirm(msg)){ecDoClear();}' .
+		'};' .
+
+		'function ecDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("ec_products_cache");' .
+				'localStorage.removeItem("ec_orders_cache");' .
+				'localStorage.removeItem("ec_cart");' .
+				'localStorage.removeItem("ec_chat_hist");' .
+				'localStorage.removeItem("ec_font_size");' .
+				'localStorage.removeItem("ec_compact");' .
+			'}catch(e){}' .
+			'productsCache=[];orders=[];cart=[];chatHist=[];' .
+			'ecUpdateCartBadge();ecRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'cart=lsGet("ec_cart",[]);' .
+		'productsCache=lsGet("ec_products_cache",[]);' .
+		'orders=lsGet("ec_orders_cache",[]);' .
+		'ecUpdateCartBadge();' .
+		'ecApplyDisplaySettings();' .
+
+		/* Render cached products immediately, then refresh */
+		'if(productsCache.length)ecRenderProducts(productsCache);' .
+		'ecLoadProducts();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'ecInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
@@ -982,137 +1960,661 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name    = esc_html( $ctx['site_name'] );
-		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_url     = $ctx['chat_url'];
-		$assistant_id = $ctx['assistant_id'];
+		$site_name     = esc_html( $ctx['site_name'] );
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-crm-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#e65100;--tma-accent:#e65100;--tma-secondary-bg:#fff3ee;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#e65100;--tma-accent:#e65100;--tma-secondary-bg:#fff3ee;' .
+			'--crm-base:14px;--crm-label:12px;--crm-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.crm-font-small{--crm-base:12px;--crm-label:10px;--crm-heading:14px}' .
+		'.crm-font-large{--crm-base:16px;--crm-label:14px;--crm-heading:18px}' .
+		'.crm-compact .tma-contact-row{padding:8px 12px}' .
+		'.crm-compact .tma-pipeline-card{padding:6px 8px;margin-bottom:4px}' .
+		'.crm-compact .crm-deal-card{padding:8px 10px;margin:0 8px 6px}' .
+
+		/* ── Search bar ── */
 		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
 		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
-		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:14px;padding:10px 0;background:transparent;color:var(--tma-text)}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--crm-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Contacts ── */
 		'.tma-contact-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--tma-border);cursor:pointer}' .
 		'.tma-contact-row:active{background:var(--tma-secondary-bg)}' .
 		'.tma-contact-avatar{width:40px;height:40px;border-radius:50%;background:var(--tma-btn);color:var(--tma-btn-text);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}' .
 		'.tma-contact-info{flex:1;min-width:0}' .
-		'.tma-contact-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
-		'.tma-contact-sub{font-size:12px;color:var(--tma-hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-contact-name{font-weight:600;font-size:var(--crm-base);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}' .
+		'.tma-contact-sub{font-size:var(--crm-label);color:var(--tma-hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-contact-meta{font-size:var(--crm-label);color:var(--tma-subtitle);margin-top:2px}' .
+		'.crm-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}' .
+		'.crm-status-active{background:#4caf50}' .
+		'.crm-status-inactive{background:#9e9e9e}' .
+		'.crm-status-new{background:#2196f3}' .
+		'.crm-pull-hint{text-align:center;font-size:var(--crm-label);color:var(--tma-hint);padding:8px 0}' .
+
+		/* ── Pipeline ── */
 		'.tma-pipeline{display:flex;gap:10px;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}' .
-		'.tma-pipeline-col{min-width:160px;background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:10px;flex-shrink:0}' .
-		'.tma-pipeline-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint);margin-bottom:8px}' .
-		'.tma-pipeline-card{background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px}' .
+		'.tma-pipeline-col{min-width:170px;background:var(--tma-secondary-bg);border-radius:var(--tma-radius);padding:10px;flex-shrink:0}' .
+		'.tma-pipeline-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}' .
+		'.tma-pipeline-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}' .
+		'.tma-pipeline-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
+		'.tma-pipeline-stats{font-size:10px;color:var(--tma-subtitle);margin-left:auto;white-space:nowrap}' .
+		'.tma-pipeline-card{background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:var(--crm-label);cursor:pointer}' .
+		'.tma-pipeline-card:active{opacity:.85}' .
+		'.tma-pipeline-card-name{font-weight:600;font-size:var(--crm-base);margin-bottom:2px}' .
+		'.tma-pipeline-card-value{color:var(--tma-btn);font-weight:700;font-size:var(--crm-base)}' .
+		'.tma-pipeline-card-detail{display:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--tma-border);font-size:var(--crm-label);color:var(--tma-hint)}' .
+		'.tma-pipeline-card.expanded .tma-pipeline-card-detail{display:block}' .
+
+		/* ── Deals ── */
+		'.crm-kpi-row{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
+		'.crm-kpi-card{flex:1;min-width:90px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.crm-kpi-value{font-size:var(--crm-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.crm-kpi-label{font-size:var(--crm-label);color:var(--tma-hint);margin-top:2px}' .
+		'.crm-donut-wrap{margin:8px 12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px}' .
+		'.crm-donut-title{font-size:var(--crm-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+		'.crm-deal-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.crm-deal-info{flex:1;min-width:0}' .
+		'.crm-deal-name{font-size:var(--crm-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.crm-deal-value{font-size:var(--crm-base);font-weight:700;color:var(--tma-btn);flex-shrink:0}' .
+		'.crm-deal-meta{font-size:var(--crm-label);color:var(--tma-hint);margin-top:2px}' .
+		'.crm-stage-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap}' .
+		'.crm-stage-lead{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.crm-stage-qualified{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.crm-stage-proposal{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}' .
+		'.crm-stage-won{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.crm-stage-lost{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.crm-deal-status-won{border-left:3px solid #4caf50}' .
+		'.crm-deal-status-lost{border-left:3px solid #e53935}' .
+		'.crm-deal-status-stale{border-left:3px solid #ff9800}' .
+		'.crm-deal-status-active{border-left:3px solid #2196f3}' .
+
+		/* ── AI Coach chat ── */
+		'.crm-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.crm-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.crm-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--crm-base);line-height:1.5;word-wrap:break-word}' .
+		'.crm-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.crm-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.crm-msg.bot p{margin:0 0 6px}.crm-msg.bot p:last-child{margin-bottom:0}' .
+		'.crm-msg.bot ul,.crm-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.crm-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.crm-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.crm-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--crm-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.crm-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.crm-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.crm-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.crm-settings-title{font-size:var(--crm-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.crm-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.crm-settings-row:last-child{border-bottom:none}' .
+		'.crm-settings-label{font-size:var(--crm-base);color:var(--tma-text)}' .
+		'.crm-settings-value{font-size:var(--crm-base);color:var(--tma-hint)}' .
+		'.crm-font-btns{display:flex;gap:4px}' .
+		'.crm-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--crm-label);cursor:pointer}' .
+		'.crm-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.crm-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.crm-toggle.on{background:var(--tma-btn)}' .
+		'.crm-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.crm-toggle.on::after{transform:translateX(20px)}' .
+		'.crm-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--crm-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.crm-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.crm-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">👥</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'CRM', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="crm-header-status">' . esc_html__( 'CRM', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
-			'<div class="tma-search-bar">' .
+
+			/* ── Search bar (visible on Contacts tab) ── */
+			'<div class="tma-search-bar" id="crm-search-bar">' .
 				'<div class="tma-search-wrap">' .
 					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
-					'<input type="search" placeholder="' . esc_attr__( 'Search contacts…', 'mcp-ai-wpoos-pro' ) . '" oninput="tmaSearchContacts(this.value)" />' .
+					'<input type="search" id="crm-search-input" placeholder="' . esc_attr__( 'Search contacts…', 'mcp-ai-wpoos-pro' ) . '" />' .
 				'</div>' .
 			'</div>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
+
+				/* Tab 1: Contacts */
 				'<div class="tma-tab-pane tma-active" id="tma-tab-contacts">' .
-					'<div id="tma-contact-list"><div class="tma-empty">' . esc_html__( 'Loading contacts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div id="crm-contact-list"><div class="tma-empty">' . esc_html__( 'Loading contacts…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="crm-pull-hint" id="crm-pull-hint" style="display:none">' . esc_html__( '↑ Pull to refresh', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
+
+				/* Tab 2: Pipeline */
 				'<div class="tma-tab-pane" id="tma-tab-pipeline">' .
-					'<div class="tma-pipeline" id="tma-pipeline"><div class="tma-empty">' . esc_html__( 'Loading pipeline…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+					'<div class="tma-pipeline" id="crm-pipeline"><div class="tma-empty">' . esc_html__( 'Loading pipeline…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-tab-compose">' .
-					'<div style="padding:16px">' .
-						'<div class="tma-section-title" style="padding:0 0 8px">' . esc_html__( 'AI Follow-up Draft', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<textarea id="tma-compose-ctx" class="tma-input" rows="3" style="margin-bottom:8px;resize:none" placeholder="' . esc_attr__( 'Describe the customer or situation…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%;margin-bottom:12px" onclick="tmaGenerateDraft()">' . esc_html__( '✨ Generate Draft', 'mcp-ai-wpoos-pro' ) . '</button>' .
-						'<textarea id="tma-compose-draft" class="tma-input" rows="6" style="resize:none" placeholder="' . esc_attr__( 'Your AI-generated message will appear here…', 'mcp-ai-wpoos-pro' ) . '"></textarea>' .
+
+				/* Tab 3: Deals */
+				'<div class="tma-tab-pane" id="tma-tab-deals">' .
+					'<div class="crm-kpi-row" id="crm-kpi-row"></div>' .
+					'<div class="crm-donut-wrap" id="crm-donut-wrap" style="display:none">' .
+						'<div class="crm-donut-title">' . esc_html__( 'Deal Value by Stage', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="crm-donut-chart" height="200"></canvas>' .
+					'</div>' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'All Deals', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="crm-deals-list"><div class="tma-empty">' . esc_html__( 'Loading deals…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Coach */
+				'<div class="tma-tab-pane" id="tma-tab-coach">' .
+					'<div class="crm-chat-container">' .
+						'<div class="crm-chat-messages" id="crm-chat-messages"></div>' .
+						'<div class="crm-chat-input-row">' .
+							'<input type="text" class="crm-chat-input" id="crm-chat-input" placeholder="' . esc_attr__( 'Ask your CRM coach…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="crm-send-btn" onclick="crmChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-			'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="crm-settings-section">' .
+						'<div class="crm-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="crm-font-btns" id="crm-font-btns">' .
+								'<button data-size="small" onclick="crmSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="crmSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="crmSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="crm-toggle" id="crm-compact-toggle" onclick="crmToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label">' . esc_html__( 'Default Pipeline View', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="crm-settings-value" id="crm-default-view-label">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="crm-settings-section">' .
+						'<div class="crm-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="crm-settings-row">' .
+							'<span class="crm-settings-label" id="crm-data-summary"></span>' .
+						'</div>' .
+						'<button class="crm-settings-btn" onclick="crmSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="crm-settings-btn danger" onclick="crmClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
 			'<nav class="tma-nav">' .
-				'<button class="tma-nav-btn tma-active" id="tma-nav-contacts" onclick="tmaSwitch(\'contacts\')">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-contacts" onclick="crmSwitch(\'contacts\')">' .
 					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' .
 					'<span>' . esc_html__( 'Contacts', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-pipeline" onclick="tmaSwitch(\'pipeline\')">' .
-					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' .
+				'<button class="tma-nav-btn" id="tma-nav-pipeline" onclick="crmSwitch(\'pipeline\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>' .
 					'<span>' . esc_html__( 'Pipeline', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
-				'<button class="tma-nav-btn" id="tma-nav-compose" onclick="tmaSwitch(\'compose\')">' .
-					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' .
-					'<span>' . esc_html__( 'Compose', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'<button class="tma-nav-btn" id="tma-nav-deals" onclick="crmSwitch(\'deals\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' .
+					'<span>' . esc_html__( 'Deals', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-coach" onclick="crmSwitch(\'coach\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="crmSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
 				'</button>' .
 			'</nav>' .
-		'</div>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
 		'var activeTab="contacts";' .
+		'var contactsCache=[];' .
+		'var pipelineCache=[];' .
+		'var dealsCache=[];' .
+		'var chatHist=[];' .
+		'var donutChartInst=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.tmaSwitch=function(tab){' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function crmRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecommerce / medical_vitals pattern) ── */
+		'function crmInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}loadContacts();loadPipeline();})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function crmApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("crm_font_size","medium");' .
+				'shell.classList.remove("crm-font-small","crm-font-large");' .
+				'if(size==="small")shell.classList.add("crm-font-small");' .
+				'else if(size==="large")shell.classList.add("crm-font-large");' .
+				'var compact=lsGet("crm_compact",false);' .
+				'if(compact)shell.classList.add("crm-compact");' .
+				'else shell.classList.remove("crm-compact");' .
+				'var btns=document.querySelectorAll("#crm-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("crm-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.crmSetFontSize=function(s){lsSet("crm_font_size",s);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
+		'window.crmToggleCompact=function(){var c=!lsGet("crm_compact",false);lsSet("crm_compact",c);tmaHaptic("selectionChanged");crmApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.crmSwitch=function(tab){' .
 			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
 			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
 			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
 			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
 			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
-			'activeTab=tab;if(tab==="contacts")loadContacts();if(tab==="pipeline")loadPipeline();' .
+			'var sb=document.getElementById("crm-search-bar");if(sb)sb.style.display=tab==="contacts"?"":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="contacts")loadContacts();' .
+			'if(tab==="pipeline")loadPipeline();' .
+			'if(tab==="deals")crmRenderDeals();' .
+			'if(tab==="coach"&&!chatHist.length)crmChatInit();' .
+			'if(tab==="settings")crmRenderSettings();' .
 		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Contacts
+		   ══════════════════════════════════════════════════════════ */
+		'function crmStatusDot(s){' .
+			'var cls="crm-status-inactive";' .
+			'if(s==="active")cls="crm-status-active";' .
+			'else if(s==="new")cls="crm-status-new";' .
+			'return \'<span class="crm-status-dot \'+cls+\'"></span>\';' .
+		'}' .
+
 		'function loadContacts(q){' .
-			'var l=document.getElementById("tma-contact-list");if(!l)return;' .
-			'l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"list_crm_contacts",arguments:{search:q||"",per_page:20}})})' .
+			'var l=document.getElementById("crm-contact-list");if(!l)return;' .
+			/* Show cached contacts while fetching */
+			'if(!q&&contactsCache.length){crmRenderContacts(contactsCache);}' .
+			'if(!q&&!contactsCache.length)l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"manage_crm_contact",arguments:{action:"list",search:q||"",per_page:20}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var cs=(d&&d.data&&d.data.contacts)?d.data.contacts:[];' .
-				'if(!cs.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No contacts found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'l.innerHTML=cs.map(function(c){var init=(c.name||"?").charAt(0).toUpperCase();' .
-					'return \'<div class="tma-contact-row"><div class="tma-contact-avatar">\'+escH(init)+\'</div><div class="tma-contact-info"><div class="tma-contact-name">\'+escH(c.name||"Unknown")+\'</div><div class="tma-contact-sub">\'+escH(c.email||c.phone||"")+\'</div></div></div>\';' .
-				'}).join("");' .
+				'if(!q){contactsCache=cs;lsSet("crm_contacts_cache",cs);}' .
+				'crmRenderContacts(cs);' .
 			'}).catch(function(){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load contacts.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
 		'}' .
-		'var st=null;window.tmaSearchContacts=function(q){clearTimeout(st);st=setTimeout(function(){loadContacts(q);},400);};' .
+
+		'function crmRenderContacts(cs){' .
+			'var l=document.getElementById("crm-contact-list");if(!l)return;' .
+			'var hint=document.getElementById("crm-pull-hint");' .
+			'if(!cs.length){l.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No contacts found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';if(hint)hint.style.display="none";return;}' .
+			'l.innerHTML=cs.map(function(c){' .
+				'var init=(c.name||"?").charAt(0).toUpperCase();' .
+				'var status=c.status||"active";' .
+				'var company=c.company?"  ·  "+escH(c.company):"";' .
+				'var lastAct=c.last_activity||c.modified||"";' .
+				'if(lastAct&&lastAct.length>10)lastAct=lastAct.substring(0,10);' .
+				'var sub=escH(c.email||c.phone||"");' .
+				'return \'<div class="tma-contact-row">' .
+					'<div class="tma-contact-avatar">\'+escH(init)+\'</div>' .
+					'<div class="tma-contact-info">' .
+						'<div class="tma-contact-name">\'+crmStatusDot(status)+escH(c.name||"' . esc_js( __( 'Unknown', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div>' .
+						'<div class="tma-contact-sub">\'+sub+company+\'</div>' .
+						'\'+(lastAct?\'<div class="tma-contact-meta">\'+escH(lastAct)+\'</div>\':\'\')+\'' .
+					'</div>' .
+				'</div>\';' .
+			'}).join("");' .
+			'if(hint)hint.style.display="block";' .
+		'}' .
+
+		/* Pull-to-refresh for contacts */
+		'(function(){' .
+			'var startY=0;var el=document.getElementById("tma-tab-contacts");if(!el)return;' .
+			'el.addEventListener("touchstart",function(e){startY=e.touches[0].clientY;},{passive:true});' .
+			'el.addEventListener("touchend",function(e){' .
+				'if(el.scrollTop===0&&e.changedTouches[0].clientY-startY>80){tmaHaptic("light");loadContacts();}' .
+			'},{passive:true});' .
+		'})();' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("crm-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value;' .
+			'searchTimer=setTimeout(function(){loadContacts(q);},400);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Pipeline
+		   ══════════════════════════════════════════════════════════ */
+		'var STAGE_COLORS={lead:"#2196f3",qualified:"#ff9800",proposal:"#9c27b0",won:"#4caf50",lost:"#e53935"};' .
+
+		'function crmStageKey(label){' .
+			'var lc=String(label).toLowerCase();' .
+			'if(lc.indexOf("lead")>-1)return "lead";' .
+			'if(lc.indexOf("qualif")>-1)return "qualified";' .
+			'if(lc.indexOf("propos")>-1)return "proposal";' .
+			'if(lc.indexOf("won")>-1||lc.indexOf("closed won")>-1)return "won";' .
+			'if(lc.indexOf("lost")>-1||lc.indexOf("closed lost")>-1)return "lost";' .
+			'return "lead";' .
+		'}' .
+
 		'function loadPipeline(){' .
-			'var w=document.getElementById("tma-pipeline");if(!w)return;' .
-			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_crm_pipeline",arguments:{}})})' .
+			'var w=document.getElementById("crm-pipeline");if(!w)return;' .
+			'if(pipelineCache.length){crmRenderPipeline(pipelineCache);}' .
+			'if(!pipelineCache.length)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_crm_pipeline",arguments:{}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var stages=(d&&d.data&&d.data.stages)?d.data.stages:[{label:"' . esc_js( __( 'Lead', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Qualified', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]}];' .
-				'w.innerHTML=stages.map(function(s){' .
-					'var cards=(s.contacts||[]).map(function(c){return \'<div class="tma-pipeline-card"><div style="font-weight:600">\'+escH(c.name||"Contact")+\'</div><div style="font-size:11px;color:var(--tma-hint)">\'+escH(c.value||"")+\'</div></div>\';}).join("");' .
-					'return \'<div class="tma-pipeline-col"><div class="tma-pipeline-label">\'+escH(s.label)+\'</div>\'+cards+\'</div>\';' .
-				'}).join("");' .
+				'var stages=(d&&d.data&&d.data.stages)?d.data.stages:[];' .
+				'if(!stages.length)stages=[{label:"' . esc_js( __( 'Lead', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Qualified', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Proposal', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]},{label:"' . esc_js( __( 'Lost', 'mcp-ai-wpoos-pro' ) ) . '",contacts:[]}];' .
+				'pipelineCache=stages;lsSet("crm_pipeline_cache",stages);' .
+				'crmRenderPipeline(stages);' .
+				'crmBuildDealsFromPipeline(stages);' .
 			'}).catch(function(){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Pipeline unavailable.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
 		'}' .
-		'window.tmaGenerateDraft=function(){' .
-			'var ctx=(document.getElementById("tma-compose-ctx")||{}).value||"";' .
-			'var draft=document.getElementById("tma-compose-draft");' .
-			'if(!ctx.trim()){if(draft)draft.value="' . esc_js( __( 'Please describe the customer or situation first.', 'mcp-ai-wpoos-pro' ) ) . '";return;}' .
-			'if(draft)draft.value="' . esc_js( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ) . '";' .
-			/* Draft generation is a single-shot prompt — no conversation history needed. */
-			'var body={messages:[{role:"user",content:"' . esc_js( __( 'Write a professional follow-up message for: ', 'mcp-ai-wpoos-pro' ) ) . '"+ctx}]};' .
-			'if(assistantId)body.assistant_id=assistantId;' .
-			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify(body)})' .
+
+		'function crmRenderPipeline(stages){' .
+			'var w=document.getElementById("crm-pipeline");if(!w)return;' .
+			'if(!stages.length){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No pipeline data.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'w.innerHTML=stages.map(function(s){' .
+				'var key=crmStageKey(s.label);var color=STAGE_COLORS[key]||"#607d8b";' .
+				'var contacts=s.contacts||[];' .
+				'var total=contacts.reduce(function(sum,c){return sum+parseFloat(c.value||0);},0);' .
+				'var stats=contacts.length+" · $"+Math.round(total).toLocaleString();' .
+				'var cards=contacts.map(function(c){' .
+					'var val=parseFloat(c.value||0);' .
+					'var detail=c.email||c.phone||"";' .
+					'return \'<div class="tma-pipeline-card" onclick="this.classList.toggle(\\\'expanded\\\')">' .
+						'<div class="tma-pipeline-card-name">\'+escH(c.name||"' . esc_js( __( 'Contact', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div>' .
+						'\'+(val?\'<div class="tma-pipeline-card-value">$\'+escH(val.toLocaleString())+\'</div>\':\'\')+\'' .
+						'<div class="tma-pipeline-card-detail">\'+escH(detail)+\'</div>' .
+					'</div>\';' .
+				'}).join("");' .
+				'return \'<div class="tma-pipeline-col">' .
+					'<div class="tma-pipeline-header">' .
+						'<span class="tma-pipeline-dot" style="background:\'+color+\'"></span>' .
+						'<span class="tma-pipeline-label">\'+escH(s.label)+\'</span>' .
+						'<span class="tma-pipeline-stats">\'+escH(stats)+\'</span>' .
+					'</div>' .
+					'\'+cards+\'' .
+				'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Deals
+		   ══════════════════════════════════════════════════════════ */
+		'function crmBuildDealsFromPipeline(stages){' .
+			'var deals=[];' .
+			'stages.forEach(function(s){' .
+				'var key=crmStageKey(s.label);' .
+				'(s.contacts||[]).forEach(function(c){' .
+					'deals.push({name:c.name||"' . esc_js( __( 'Deal', 'mcp-ai-wpoos-pro' ) ) . '",value:parseFloat(c.value||0),stage:s.label,stageKey:key,' .
+						'last_activity:c.last_activity||c.modified||"",email:c.email||"",phone:c.phone||""});' .
+				'});' .
+			'});' .
+			'deals.sort(function(a,b){return b.value-a.value;});' .
+			'dealsCache=deals;lsSet("crm_deals_cache",deals);' .
+		'}' .
+
+		'function crmDealStatus(d){' .
+			'if(d.stageKey==="won")return "won";' .
+			'if(d.stageKey==="lost")return "lost";' .
+			'if(d.last_activity){' .
+				'var diff=Date.now()-new Date(d.last_activity).getTime();' .
+				'if(diff>30*86400000)return "stale";' .
+			'}' .
+			'return "active";' .
+		'}' .
+
+		'function crmStageBadgeClass(key){' .
+			'switch(key){case "lead":return "crm-stage-lead";case "qualified":return "crm-stage-qualified";' .
+				'case "proposal":return "crm-stage-proposal";case "won":return "crm-stage-won";case "lost":return "crm-stage-lost";' .
+				'default:return "crm-stage-lead";}' .
+		'}' .
+
+		'function crmRenderDeals(){' .
+			'if(!dealsCache.length&&pipelineCache.length)crmBuildDealsFromPipeline(pipelineCache);' .
+			'var kpi=document.getElementById("crm-kpi-row");' .
+			'var dl=document.getElementById("crm-deals-list");' .
+			'var totalVal=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
+			'var wonVal=dealsCache.filter(function(d){return d.stageKey==="won";}).reduce(function(s,d){return s+d.value;},0);' .
+			'var activeCount=dealsCache.filter(function(d){return d.stageKey!=="won"&&d.stageKey!=="lost";}).length;' .
+			/* KPI cards */
+			'if(kpi)kpi.innerHTML=' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(totalVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Pipeline', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">$\'+Math.round(wonVal).toLocaleString()+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Won', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="crm-kpi-card"><div class="crm-kpi-value">\'+activeCount+\'</div><div class="crm-kpi-label">' . esc_js( __( 'Active', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+			/* Deal list */
+			'if(dl){' .
+				'if(!dealsCache.length){dl.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No deals found. Load pipeline first.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';crmHideDonut();return;}' .
+				'dl.innerHTML=dealsCache.map(function(d){' .
+					'var status=crmDealStatus(d);' .
+					'var lastAct=d.last_activity;if(lastAct&&lastAct.length>10)lastAct=lastAct.substring(0,10);' .
+					'return \'<div class="crm-deal-card crm-deal-status-\'+status+\'">' .
+						'<div class="crm-deal-info">' .
+							'<div class="crm-deal-name">\'+escH(d.name)+\'</div>' .
+							'<div class="crm-deal-meta"><span class="crm-stage-badge \'+crmStageBadgeClass(d.stageKey)+\'">\'+escH(d.stage)+\'</span>' .
+								'\'+(lastAct?" · "+escH(lastAct):"")+\'</div>' .
+						'</div>' .
+						'<div class="crm-deal-value">$\'+escH(d.value.toLocaleString())+\'</div>' .
+					'</div>\';' .
+				'}).join("");' .
+			'}' .
+			/* Donut chart */
+			'crmRenderDonut();' .
+		'}' .
+
+		/* ── Chart.js donut ── */
+		'function crmLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function crmHideDonut(){var w=document.getElementById("crm-donut-wrap");if(w)w.style.display="none";}' .
+
+		'function crmRenderDonut(){' .
+			'crmLoadChartJs(function(){' .
+				'if(!window.Chart||!dealsCache.length){crmHideDonut();return;}' .
+				'var byStage={};' .
+				'dealsCache.forEach(function(d){' .
+					'var k=d.stage||"Other";' .
+					'if(!byStage[k])byStage[k]=0;byStage[k]+=d.value;' .
+				'});' .
+				'var labels=Object.keys(byStage);var data=labels.map(function(k){return Math.round(byStage[k]*100)/100;});' .
+				'var colors=labels.map(function(k){var sk=crmStageKey(k);return STAGE_COLORS[sk]||"#607d8b";});' .
+				'if(!labels.length){crmHideDonut();return;}' .
+				'var wrap=document.getElementById("crm-donut-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("crm-donut-chart");if(!cv)return;' .
+				'if(donutChartInst){donutChartInst.destroy();}' .
+				'donutChartInst=new Chart(cv.getContext("2d"),{type:"doughnut",data:{labels:labels,datasets:[{' .
+					'data:data,backgroundColor:colors,borderWidth:1' .
+				'}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:12,font:{size:11}}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Coach
+		   ══════════════════════════════════════════════════════════ */
+		'function crmChatInit(){' .
+			'chatHist=lsGet("crm_chat_hist",[]);' .
+			'var m=document.getElementById("crm-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){crmAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with CRM context */
+				'var totalContacts=contactsCache.length;' .
+				'var stageCounts=pipelineCache.map(function(s){return escH(s.label)+"("+((s.contacts||[]).length)+")";}).join(", ");' .
+				'var totalPipeline=dealsCache.reduce(function(s,d){return s+d.value;},0);' .
+				'var ctx="[' . esc_js( __( 'CRM Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Total contacts', 'mcp-ai-wpoos-pro' ) ) . ': "+totalContacts+", ' .
+					esc_js( __( 'Pipeline stages', 'mcp-ai-wpoos-pro' ) ) . ': "+stageCounts+". ' .
+					esc_js( __( 'Total pipeline value', 'mcp-ai-wpoos-pro' ) ) . ': $"+Math.round(totalPipeline).toLocaleString();' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'crmAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your CRM coach. I can help you prioritize leads, suggest follow-ups, and analyze your pipeline. What would you like to know?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function crmAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="crm-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=crmRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("crm-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.crmChatSend=function(){' .
+			'var inp=document.getElementById("crm-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});crmAppendMsg("user",txt,false);' .
+			'lsSet("crm_chat_hist",chatHist.slice(-50));' .
+			'var el=crmAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var data=d&&d.data;' .
 				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
-					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Could not generate draft.', 'mcp-ai-wpoos-pro' ) ) . '";' .
-				'if(draft)draft.value=rep;})' .
-			'.catch(function(){if(draft)draft.value="' . esc_js( __( 'Error generating draft.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=crmRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("crm_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
+
+		/* Enter to send */
+		'document.getElementById("crm-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")crmChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function crmRenderSettings(){' .
+			/* Default pipeline view label */
+			'var dvl=document.getElementById("crm-default-view-label");' .
+			'if(dvl){var dv=lsGet("crm_default_view","kanban");dvl.textContent=dv==="kanban"?"' . esc_js( __( 'Kanban', 'mcp-ai-wpoos-pro' ) ) . '":"' . esc_js( __( 'List', 'mcp-ai-wpoos-pro' ) ) . '";}' .
+			/* Data summary */
+			'var ds=document.getElementById("crm-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Contacts', 'mcp-ai-wpoos-pro' ) ) . ': "+contactsCache.length+", ' .
+				esc_js( __( 'Deals', 'mcp-ai-wpoos-pro' ) ) . ': "+dealsCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.crmSyncFromServer=function(){' .
+			'tmaHaptic("medium");loadContacts();loadPipeline();' .
+		'};' .
+
+		'window.crmClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)crmDoClear();});' .
+			'}else if(confirm(msg)){crmDoClear();}' .
+		'};' .
+
+		'function crmDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("crm_contacts_cache");' .
+				'localStorage.removeItem("crm_pipeline_cache");' .
+				'localStorage.removeItem("crm_deals_cache");' .
+				'localStorage.removeItem("crm_chat_hist");' .
+				'localStorage.removeItem("crm_font_size");' .
+				'localStorage.removeItem("crm_compact");' .
+				'localStorage.removeItem("crm_default_view");' .
+			'}catch(e){}' .
+			'contactsCache=[];pipelineCache=[];dealsCache=[];chatHist=[];' .
+			'crmRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'contactsCache=lsGet("crm_contacts_cache",[]);' .
+		'pipelineCache=lsGet("crm_pipeline_cache",[]);' .
+		'dealsCache=lsGet("crm_deals_cache",[]);' .
+		'crmApplyDisplaySettings();' .
+
+		/* Render cached contacts immediately, then refresh */
+		'if(contactsCache.length)crmRenderContacts(contactsCache);' .
 		'loadContacts();' .
+		'loadPipeline();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'crmInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
@@ -1156,74 +2658,612 @@ class WP_MCP_AI_TMA_Template_Analytics extends WP_MCP_AI_Telegram_Mini_App_Templ
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
 		$site_name     = esc_html( $ctx['site_name'] );
-		$analytics_url = $ctx['analytics_url'];
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+		$analytics_url = isset( $ctx['analytics_url'] ) ? $ctx['analytics_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-analytics-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#00796b;--tma-accent:#00796b;--tma-secondary-bg:#e0f2f1;}' .
-		'.tma-analytics-wrap{padding:12px;overflow-y:auto;height:100%}' .
-		'.tma-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}' .
-		'.tma-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;text-align:center}' .
-		'.tma-kpi-value{font-size:28px;font-weight:700;color:var(--tma-btn);line-height:1.1;margin-bottom:4px}' .
-		'.tma-kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
-		'.tma-chart-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;margin-bottom:14px}' .
-		'.tma-chart-title{font-size:13px;font-weight:600;margin-bottom:10px}' .
-		'.tma-period-bar{display:flex;gap:8px;margin-bottom:14px}' .
-		'.tma-period-btn{flex:1;padding:7px;border:1px solid var(--tma-border);border-radius:8px;background:var(--tma-secondary-bg);color:var(--tma-hint);font-size:12px;font-weight:600;cursor:pointer}' .
-		'.tma-period-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#00796b;--tma-accent:#00796b;--tma-secondary-bg:#e0f2f1;' .
+			'--an-base:14px;--an-label:12px;--an-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.an-font-small{--an-base:12px;--an-label:10px;--an-heading:14px}' .
+		'.an-font-large{--an-base:16px;--an-label:14px;--an-heading:18px}' .
+		'.an-compact .an-kpi-grid{gap:6px}' .
+		'.an-compact .an-kpi-card{padding:8px}' .
+		'.an-compact .an-chart-card{padding:8px}' .
+		'.an-compact .an-content-row{padding:8px 10px}' .
+
+		/* ── Period bar ── */
+		'.an-period-bar{display:flex;gap:8px;margin-bottom:14px;padding:0 12px}' .
+		'.an-period-btn{flex:1;padding:7px;border:1px solid var(--tma-border);border-radius:8px;background:var(--tma-secondary-bg);' .
+			'color:var(--tma-hint);font-size:var(--an-label);font-weight:600;cursor:pointer}' .
+		'.an-period-btn.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+
+		/* ── KPI grid ── */
+		'.an-kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;padding:0 12px}' .
+		'.an-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px;text-align:center}' .
+		'.an-kpi-value{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn);line-height:1.1;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:4px}' .
+		'.an-kpi-label{font-size:var(--an-label);text-transform:uppercase;letter-spacing:.5px;color:var(--tma-hint)}' .
+		'.an-trend-up{color:#2e7d32;font-size:var(--an-label)}' .
+		'.an-trend-down{color:#c62828;font-size:var(--an-label)}' .
+		'.an-trend-flat{color:var(--tma-hint);font-size:var(--an-label)}' .
+
+		/* ── Chart card ── */
+		'.an-chart-card{margin:0 12px 14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:14px}' .
+		'.an-chart-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-align:center}' .
+
+		/* ── Content tab ── */
+		'.an-content-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--tma-border)}' .
+		'.an-content-info{flex:1;min-width:0}' .
+		'.an-content-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.an-content-meta{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+		'.an-status-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap}' .
+		'.an-status-publish{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.an-status-draft{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.an-status-other{background:#e3f2fd;color:#1565c0;border-color:#90caf9}' .
+		'.an-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px}' .
+		'.an-summary-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.an-summary-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.an-summary-lbl{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+
+		/* ── Traffic tab ── */
+		'.an-traffic-kpis{display:flex;gap:8px;padding:10px 12px;overflow-x:auto}' .
+		'.an-traffic-kpi{flex:1;min-width:80px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px;text-align:center}' .
+		'.an-traffic-val{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn)}' .
+		'.an-traffic-lbl{font-size:var(--an-label);color:var(--tma-hint);margin-top:2px}' .
+		'.an-page-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--tma-border)}' .
+		'.an-page-rank{font-size:var(--an-heading);font-weight:700;color:var(--tma-btn);min-width:24px;text-align:center}' .
+		'.an-page-info{flex:1;min-width:0}' .
+		'.an-page-title{font-size:var(--an-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.an-page-views{font-size:var(--an-label);color:var(--tma-hint)}' .
+
+		/* ── AI Chat ── */
+		'.an-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.an-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.an-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--an-base);line-height:1.5;word-wrap:break-word}' .
+		'.an-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.an-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.an-msg.bot p{margin:0 0 6px}.an-msg.bot p:last-child{margin-bottom:0}' .
+		'.an-msg.bot ul,.an-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.an-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.an-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.an-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--an-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.an-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.an-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.an-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.an-settings-title{font-size:var(--an-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.an-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.an-settings-row:last-child{border-bottom:none}' .
+		'.an-settings-label{font-size:var(--an-base);color:var(--tma-text)}' .
+		'.an-settings-value{font-size:var(--an-base);color:var(--tma-hint)}' .
+		'.an-font-btns{display:flex;gap:4px}' .
+		'.an-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--an-label);cursor:pointer}' .
+		'.an-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.an-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.an-toggle.on{background:var(--tma-btn)}' .
+		'.an-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.an-toggle.on::after{transform:translateX(20px)}' .
+		'.an-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--an-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.an-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.an-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.an-freshness{font-size:var(--an-label);color:var(--tma-hint);text-align:center;padding:6px 0}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📊</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status" id="tma-update-time">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</div>' .
-				'</div>' .
-				'<div class="tma-header-actions">' .
-					'<button class="tma-icon-btn" title="' . esc_attr__( 'Refresh', 'mcp-ai-wpoos-pro' ) . '" onclick="loadAnalytics()">' .
-						'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' .
-					'</button>' .
+					'<div class="tma-header-status" id="an-header-status">' . esc_html__( 'Analytics', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
+
+			/* ── Content panes ── */
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-tab-dashboard">' .
-					'<div class="tma-analytics-wrap" id="tma-analytics-wrap">' .
-						'<div class="tma-empty">' . esc_html__( 'Loading analytics…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+				/* Tab 1: Overview */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-overview">' .
+					'<div id="an-overview-wrap"><div class="tma-empty">' . esc_html__( 'Loading analytics…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 2: Content */
+				'<div class="tma-tab-pane" id="tma-tab-content">' .
+					'<div id="an-content-wrap"><div class="tma-empty">' . esc_html__( 'Loading content…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: Traffic */
+				'<div class="tma-tab-pane" id="tma-tab-traffic">' .
+					'<div id="an-traffic-wrap"><div class="tma-empty">' . esc_html__( 'Loading traffic…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Insights */
+				'<div class="tma-tab-pane" id="tma-tab-insights">' .
+					'<div class="an-chat-container">' .
+						'<div class="an-chat-messages" id="an-chat-messages"></div>' .
+						'<div class="an-chat-input-row">' .
+							'<input type="text" class="an-chat-input" id="an-chat-input" placeholder="' . esc_attr__( 'Ask about your analytics…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="an-send-btn" onclick="anChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-			'</div>' .
-		'</div>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="an-settings-section">' .
+						'<div class="an-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="an-font-btns" id="an-font-btns">' .
+								'<button data-size="small" onclick="anSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="anSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="anSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="an-toggle" id="an-compact-toggle" onclick="anToggleCompact()"></button>' .
+						'</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label">' . esc_html__( 'Default Period', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="an-settings-value" id="an-default-period-label">—</span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="an-settings-section">' .
+						'<div class="an-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="an-settings-row">' .
+							'<span class="an-settings-label" id="an-data-summary"></span>' .
+						'</div>' .
+						'<div class="an-freshness" id="an-freshness"></div>' .
+						'<button class="an-settings-btn" onclick="anSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="an-settings-btn danger" onclick="anClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-overview" onclick="anSwitch(\'overview\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' .
+					'<span>' . esc_html__( 'Overview', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-content" onclick="anSwitch(\'content\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' .
+					'<span>' . esc_html__( 'Content', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-traffic" onclick="anSwitch(\'traffic\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' .
+					'<span>' . esc_html__( 'Traffic', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-insights" onclick="anSwitch(\'insights\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="anSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var analyticsUrl=' . wp_json_encode( $analytics_url ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
-		'var days=7;var chartInst=null;' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var ANALYTICS_URL=' . wp_json_encode( $analytics_url ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="overview";' .
+		'var days=7;' .
+		'var overviewCache=null;' .
+		'var contentCache=null;' .
+		'var trafficCache=null;' .
+		'var chatHist=[];' .
+		'var overviewChartInst=null;' .
+		'var contentChartInst=null;' .
+		'var trafficChartInst=null;' .
+		'var lastUpdated=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'window.loadAnalytics=function(){' .
-			'var w=document.getElementById("tma-analytics-wrap");if(!w)return;' .
-			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(analyticsUrl+"?days="+days,{headers:{"X-WP-Nonce":nonce}})' .
-			'.then(function(r){return r.json();})' .
-			'.then(function(d){renderDash(d,w);var st=document.getElementById("tma-update-time");if(st)st.textContent="' . esc_js( __( 'Updated', 'mcp-ai-wpoos-pro' ) ) . ' "+(new Date()).toLocaleTimeString();})' .
-			'.catch(function(){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load analytics.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';});' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function renderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecInitSession / crmInitSession pattern) ── */
+		'function anInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}anLoadOverview();anLoadContent();})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function anApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("an_font_size","medium");' .
+				'shell.classList.remove("an-font-small","an-font-large");' .
+				'if(size==="small")shell.classList.add("an-font-small");' .
+				'else if(size==="large")shell.classList.add("an-font-large");' .
+				'var compact=lsGet("an_compact",false);' .
+				'if(compact)shell.classList.add("an-compact");' .
+				'else shell.classList.remove("an-compact");' .
+				'var btns=document.querySelectorAll("#an-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("an-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.anSetFontSize=function(s){lsSet("an_font_size",s);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
+		'window.anToggleCompact=function(){var c=!lsGet("an_compact",false);lsSet("an_compact",c);tmaHaptic("selectionChanged");anApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.anSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="overview")anLoadOverview();' .
+			'if(tab==="content")anLoadContent();' .
+			'if(tab==="traffic")anLoadTraffic();' .
+			'if(tab==="insights"&&!chatHist.length)anChatInit();' .
+			'if(tab==="settings")anRenderSettings();' .
 		'};' .
-		'function renderDash(d,w){' .
-			'var kpis=[{l:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_views||0},{l:"' . esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_posts||0},{l:"' . esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_comments||0},{l:"' . esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_users||0}];' .
-			'var pb=[7,14,30].map(function(n){return \'<button class="tma-period-btn\'+(n===days?" active":"")+\'" onclick="setDays(\'+n+\')">\'+(n)+" ' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '"+"</button>";}).join("");' .
-			'var kh=kpis.map(function(k){return \'<div class="tma-kpi-card"><div class="tma-kpi-value">\'+escH(k.v)+\'</div><div class="tma-kpi-label">\'+escH(k.l)+\'</div></div>\';}).join("");' .
-			'w.innerHTML=\'<div class="tma-period-bar">\'+pb+\'</div><div class="tma-kpi-grid">\'+kh+\'</div><div class="tma-chart-card"><div class="tma-chart-title">' . esc_js( __( 'Activity Over Time', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="tma-chart" height="180"></canvas></div>\';' .
-			'if(window.Chart){' .
-				'var canvas=document.getElementById("tma-chart");' .
-				'if(canvas){if(chartInst)chartInst.destroy();' .
-					'var lbls=(d.daily||[]).map(function(r){return r.date||"";});' .
-					'var vals=(d.daily||[]).map(function(r){return r.views||0;});' .
-					'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
-					'chartInst=new Chart(canvas,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
-				'}' .
+
+		/* ── Trend indicator helper ── */
+		'function anTrend(cur,prev){' .
+			'if(typeof prev==="undefined"||prev===null)return \'<span class="an-trend-flat">—</span>\';' .
+			'if(cur>prev)return \'<span class="an-trend-up">▲</span>\';' .
+			'if(cur<prev)return \'<span class="an-trend-down">▼</span>\';' .
+			'return \'<span class="an-trend-flat">●</span>\';' .
+		'}' .
+
+		/* ── Chart.js lazy loader ── */
+		'function anLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Overview
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadOverview(){' .
+			'var w=document.getElementById("an-overview-wrap");if(!w)return;' .
+			'if(overviewCache){anRenderOverview(overviewCache,w);}' .
+			'if(!overviewCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(ANALYTICS_URL+"?days="+days,{headers:tmaToolHeaders()})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'overviewCache=d;lsSet("an_overview_cache",d);' .
+				'lastUpdated=new Date();lsSet("an_last_updated",lastUpdated.toISOString());' .
+				'anRenderOverview(d,w);' .
+				'trafficCache=d;lsSet("an_traffic_cache",d);' .
+				'var st=document.getElementById("an-header-status");' .
+				'if(st)st.textContent="' . esc_js( __( 'Updated', 'mcp-ai-wpoos-pro' ) ) . ' "+lastUpdated.toLocaleTimeString();' .
+			'}).catch(function(){' .
+				'if(!overviewCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load analytics.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderOverview(d,w){' .
+			'var prev=d.previous||{};' .
+			'var kpis=[' .
+				'{l:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_views||0,p:prev.total_views},' .
+				'{l:"' . esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_posts||0,p:prev.total_posts},' .
+				'{l:"' . esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_comments||0,p:prev.total_comments},' .
+				'{l:"' . esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . '",v:d.total_users||0,p:prev.total_users}' .
+			'];' .
+			'var pb=[7,14,30,90].map(function(n){return \'<button class="an-period-btn\'+(n===days?" active":"")+\'" onclick="anSetDays(\'+n+\')">\'+(n)+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '</button>";}).join("");' .
+			'var kh=kpis.map(function(k){return \'<div class="an-kpi-card"><div class="an-kpi-value">\'+escH(k.v)+\' \'+anTrend(k.v,k.p)+\'</div><div class="an-kpi-label">\'+escH(k.l)+\'</div></div>\';}).join("");' .
+			'var ts=lastUpdated?\'<div class="an-freshness">' . esc_js( __( 'Last updated:', 'mcp-ai-wpoos-pro' ) ) . ' \'+escH(lastUpdated.toLocaleTimeString())+\'</div>\':\'<div class="an-freshness">' . esc_js( __( 'Cached data', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'w.innerHTML=\'<div class="an-period-bar">\'+pb+\'</div><div class="an-kpi-grid">\'+kh+\'</div><div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Activity Over Time', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-overview-chart" height="180"></canvas></div>\'+ts;' .
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-overview-chart");if(!cv)return;' .
+				'if(overviewChartInst)overviewChartInst.destroy();' .
+				'var lbls=(d.daily||[]).map(function(r){return r.date||"";});' .
+				'var vals=(d.daily||[]).map(function(r){return r.views||0;});' .
+				'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
+				'overviewChartInst=new Chart(cv,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		'window.anSetDays=function(n){days=n;lsSet("an_default_period",n);tmaHaptic("light");anLoadOverview();};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Content
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadContent(){' .
+			'var w=document.getElementById("an-content-wrap");if(!w)return;' .
+			'if(contentCache){anRenderContent(contentCache,w);}' .
+			'if(!contentCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_recent_posts",arguments:{per_page:20,post_type:"any"}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var posts=(d&&d.data&&d.data.posts)?d.data.posts:((d&&d.data&&Array.isArray(d.data))?d.data:[]);' .
+				'contentCache=posts;lsSet("an_content_cache",posts);' .
+				'anRenderContent(posts,w);' .
+			'}).catch(function(){' .
+				'if(!contentCache)w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load content.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderContent(posts,w){' .
+			'if(!posts.length){w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No content found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			/* Count by type */
+			'var byType={};var published=0;var drafts=0;' .
+			'posts.forEach(function(p){' .
+				'var t=p.post_type||p.type||"post";' .
+				'if(!byType[t])byType[t]=0;byType[t]++;' .
+				'var s=p.status||p.post_status||"publish";' .
+				'if(s==="publish")published++;else if(s==="draft")drafts++;' .
+			'});' .
+			/* Summary */
+			'var sumHtml=\'<div class="an-summary-grid">\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+posts.length+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Total', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+published+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Published', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-summary-card"><div class="an-summary-val">\'+drafts+\'</div><div class="an-summary-lbl">' . esc_js( __( 'Drafts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+			'\'</div>\';' .
+			/* Chart */
+			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Content by Type', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-content-chart" height="160"></canvas></div>\';' .
+			/* Top 5 recent posts */
+			'var top5=posts.slice(0,5);' .
+			'var listHtml=\'<div style="padding:4px 12px 0"><div class="an-chart-title" style="font-weight:600;color:var(--tma-text)">' . esc_js( __( 'Recent Posts', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+			'listHtml+=top5.map(function(p){' .
+				'var s=p.status||p.post_status||"publish";' .
+				'var badgeCls="an-status-other";' .
+				'if(s==="publish")badgeCls="an-status-publish";' .
+				'else if(s==="draft")badgeCls="an-status-draft";' .
+				'var dt=p.date||p.post_date||"";if(dt&&dt.length>10)dt=dt.substring(0,10);' .
+				'return \'<div class="an-content-row"><div class="an-content-info"><div class="an-content-title">\'+escH(p.title||p.post_title||"' . esc_js( __( 'Untitled', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div><div class="an-content-meta">\'+escH(dt)+\'</div></div><span class="an-status-badge \'+badgeCls+\'">\'+escH(s)+\'</span></div>\';' .
+			'}).join("");' .
+			'w.innerHTML=sumHtml+chartHtml+listHtml;' .
+			/* Render horizontal bar chart */
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-content-chart");if(!cv)return;' .
+				'if(contentChartInst)contentChartInst.destroy();' .
+				'var labels=Object.keys(byType);var data=labels.map(function(k){return byType[k];});' .
+				'var colors=["#00796b","#0097a7","#00897b","#26a69a","#4db6ac","#80cbc4"];' .
+				'contentChartInst=new Chart(cv,{type:"bar",data:{labels:labels,datasets:[{label:"' . esc_js( __( 'Count', 'mcp-ai-wpoos-pro' ) ) . '",data:data,backgroundColor:colors.slice(0,labels.length),borderWidth:0}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#999"},beginAtZero:true},y:{ticks:{color:"#999"}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Traffic
+		   ══════════════════════════════════════════════════════════ */
+		'function anLoadTraffic(){' .
+			'var w=document.getElementById("an-traffic-wrap");if(!w)return;' .
+			'if(trafficCache){anRenderTraffic(trafficCache,w);return;}' .
+			'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(ANALYTICS_URL+"?days="+days,{headers:tmaToolHeaders()})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'trafficCache=d;lsSet("an_traffic_cache",d);' .
+				'anRenderTraffic(d,w);' .
+			'}).catch(function(){' .
+				'w.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Could not load traffic data.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'});' .
+		'}' .
+
+		'function anRenderTraffic(d,w){' .
+			'var daily=d.daily||[];' .
+			'var totalViews=d.total_views||0;' .
+			'var avgViews=daily.length?Math.round(totalViews/daily.length):0;' .
+			'var peakDay=daily.reduce(function(best,r){return(r.views||0)>(best.views||0)?r:best;},{date:"—",views:0});' .
+			/* KPI row */
+			'var kpiHtml=\'<div class="an-traffic-kpis">\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(totalViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Total Views', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(avgViews)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Avg/Day', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+				'\'<div class="an-traffic-kpi"><div class="an-traffic-val">\'+escH(peakDay.views||0)+\'</div><div class="an-traffic-lbl">' . esc_js( __( 'Peak', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\'+' .
+			'\'</div>\';' .
+			/* Chart */
+			'var chartHtml=\'<div class="an-chart-card"><div class="an-chart-title">' . esc_js( __( 'Daily Views', 'mcp-ai-wpoos-pro' ) ) . '</div><canvas id="an-traffic-chart" height="180"></canvas></div>\';' .
+			/* Top pages */
+			'var pages=d.top_pages||d.pages||[];' .
+			'var pagesHtml="";' .
+			'if(pages.length){' .
+				'pagesHtml=\'<div style="padding:4px 12px 0"><div class="an-chart-title" style="font-weight:600;color:var(--tma-text)">' . esc_js( __( 'Top Pages', 'mcp-ai-wpoos-pro' ) ) . '</div></div>\';' .
+				'pagesHtml+=pages.slice(0,10).map(function(pg,i){' .
+					'return \'<div class="an-page-row"><div class="an-page-rank">\'+escH(i+1)+\'</div><div class="an-page-info"><div class="an-page-title">\'+escH(pg.title||pg.path||pg.url||"' . esc_js( __( 'Page', 'mcp-ai-wpoos-pro' ) ) . '")+\'</div><div class="an-page-views">\'+escH(pg.views||0)+" ' . esc_js( __( 'views', 'mcp-ai-wpoos-pro' ) ) . '"+\'</div></div></div>\';' .
+				'}).join("");' .
+			'}' .
+			'w.innerHTML=kpiHtml+chartHtml+pagesHtml;' .
+			/* Render line chart */
+			'anLoadChartJs(function(){' .
+				'if(!window.Chart)return;' .
+				'var cv=document.getElementById("an-traffic-chart");if(!cv)return;' .
+				'if(trafficChartInst)trafficChartInst.destroy();' .
+				'var lbls=daily.map(function(r){return r.date||"";});' .
+				'var vals=daily.map(function(r){return r.views||0;});' .
+				'var bc=getComputedStyle(document.documentElement).getPropertyValue("--tma-btn").trim()||"#00796b";' .
+				'trafficChartInst=new Chart(cv,{type:"line",data:{labels:lbls,datasets:[{label:"' . esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . '",data:vals,borderColor:bc,backgroundColor:bc+"22",tension:.3,fill:true,pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:6,color:"#999"}},y:{ticks:{color:"#999"},beginAtZero:true}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Insights
+		   ══════════════════════════════════════════════════════════ */
+		'function anChatInit(){' .
+			'chatHist=lsGet("an_chat_hist",[]);' .
+			'var m=document.getElementById("an-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){anAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				/* Pre-seed with analytics context */
+				'var views=overviewCache?overviewCache.total_views||0:0;' .
+				'var posts=overviewCache?overviewCache.total_posts||0:0;' .
+				'var comments=overviewCache?overviewCache.total_comments||0:0;' .
+				'var users=overviewCache?overviewCache.total_users||0:0;' .
+				'var ctx="[' . esc_js( __( 'Analytics Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+". ' .
+					esc_js( __( 'Period', 'mcp-ai-wpoos-pro' ) ) . ': "+days+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '. ' .
+					esc_js( __( 'Views', 'mcp-ai-wpoos-pro' ) ) . ': "+views+", ' .
+					esc_js( __( 'Posts', 'mcp-ai-wpoos-pro' ) ) . ': "+posts+", ' .
+					esc_js( __( 'Comments', 'mcp-ai-wpoos-pro' ) ) . ': "+comments+", ' .
+					esc_js( __( 'Users', 'mcp-ai-wpoos-pro' ) ) . ': "+users+".";' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'anAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your analytics assistant. I can help you understand your traffic trends, content performance, and site metrics. What would you like to know?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
 			'}' .
 		'}' .
-		'window.setDays=function(n){days=n;tmaHaptic("light");loadAnalytics();};' .
-		'loadAnalytics();' .
+
+		'function anAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="an-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=renderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("an-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.anChatSend=function(){' .
+			'var inp=document.getElementById("an-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});anAppendMsg("user",txt,false);' .
+			'lsSet("an_chat_hist",chatHist.slice(-50));' .
+			'var el=anAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=renderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("an_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("an-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")anChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function anRenderSettings(){' .
+			/* Default period label */
+			'var dpl=document.getElementById("an-default-period-label");' .
+			'if(dpl)dpl.textContent=days+"' . esc_js( __( 'd', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			/* Data summary */
+			'var ds=document.getElementById("an-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Overview cache', 'mcp-ai-wpoos-pro' ) ) . ': "+(overviewCache?"✓":"✗")+", ' .
+				esc_js( __( 'Content', 'mcp-ai-wpoos-pro' ) ) . ': "+(contentCache?contentCache.length:0)+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+			/* Freshness */
+			'var fr=document.getElementById("an-freshness");' .
+			'if(fr){' .
+				'if(lastUpdated)fr.textContent="' . esc_js( __( 'Last refreshed:', 'mcp-ai-wpoos-pro' ) ) . ' "+lastUpdated.toLocaleString();' .
+				'else fr.textContent="' . esc_js( __( 'No live data loaded yet', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'}' .
+		'}' .
+
+		'window.anSyncFromServer=function(){' .
+			'tmaHaptic("medium");anLoadOverview();anLoadContent();' .
+		'};' .
+
+		'window.anClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)anDoClear();});' .
+			'}else if(confirm(msg)){anDoClear();}' .
+		'};' .
+
+		'function anDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("an_overview_cache");' .
+				'localStorage.removeItem("an_content_cache");' .
+				'localStorage.removeItem("an_traffic_cache");' .
+				'localStorage.removeItem("an_chat_hist");' .
+				'localStorage.removeItem("an_font_size");' .
+				'localStorage.removeItem("an_compact");' .
+				'localStorage.removeItem("an_default_period");' .
+				'localStorage.removeItem("an_last_updated");' .
+			'}catch(e){}' .
+			'overviewCache=null;contentCache=null;trafficCache=null;chatHist=[];lastUpdated=null;' .
+			'anRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'overviewCache=lsGet("an_overview_cache",null);' .
+		'contentCache=lsGet("an_content_cache",null);' .
+		'trafficCache=lsGet("an_traffic_cache",null);' .
+		'days=lsGet("an_default_period",7);' .
+		'var savedTs=lsGet("an_last_updated",null);' .
+		'if(savedTs)lastUpdated=new Date(savedTs);' .
+		'anApplyDisplaySettings();' .
+
+		/* Render cached overview immediately, then refresh */
+		'if(overviewCache){var ow=document.getElementById("an-overview-wrap");if(ow)anRenderOverview(overviewCache,ow);}' .
+		'anLoadOverview();' .
+		'anLoadContent();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		'anInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
@@ -1266,15 +3306,32 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name  = esc_html( $ctx['site_name'] );
-		$tools_exec = $ctx['tools_url'] . '/execute';
+		$site_name     = esc_html( $ctx['site_name'] );
+		$tools_exec    = $ctx['tools_url'] . '/execute';
+		$chat_url      = $ctx['chat_url'];
+		$validate_url  = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id  = $ctx['assistant_id'];
+		$chart_js_url  = isset( $ctx['chart_js_url'] ) ? $ctx['chart_js_url'] : '';
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-booking-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
-		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e8eaf6;}' .
+
+		/* ── Theme variables ── */
+		':root{--tma-btn:#1565c0;--tma-accent:#1565c0;--tma-secondary-bg:#e8eaf6;' .
+			'--bk-base:14px;--bk-label:12px;--bk-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.bk-font-small{--bk-base:12px;--bk-label:10px;--bk-heading:14px}' .
+		'.bk-font-large{--bk-base:16px;--bk-label:14px;--bk-heading:18px}' .
+		'.bk-compact .bk-apt-card{padding:8px 10px;margin:0 8px 6px}' .
+		'.bk-compact .tma-booking-form{padding:10px}' .
+		'.bk-compact .tma-calendar{padding:8px}' .
+
+		/* ── Calendar ── */
 		'.tma-calendar{padding:12px}' .
 		'.tma-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}' .
-		'.tma-cal-month{font-size:16px;font-weight:700}' .
+		'.tma-cal-month{font-size:var(--bk-heading);font-weight:700}' .
 		'.tma-cal-nav{background:none;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tma-text);font-size:18px;-webkit-tap-highlight-color:transparent}' .
 		'.tma-cal-nav:active{background:var(--tma-secondary-bg)}' .
 		'.tma-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}' .
@@ -1285,76 +3342,340 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'.tma-cal-day.selected{background:var(--tma-btn);color:#fff;font-weight:700}' .
 		'.tma-cal-day.empty,.tma-cal-day.past{color:var(--tma-hint);cursor:default;opacity:.4}' .
 		'.tma-slots{padding:0 12px}' .
-		'.tma-slots-title{font-size:13px;font-weight:600;color:var(--tma-section-header);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}' .
+		'.tma-slots-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-section-header);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}' .
 		'.tma-slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}' .
 		'.tma-slot{padding:10px;border:1px solid var(--tma-border);border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:var(--tma-bg);color:var(--tma-text);-webkit-tap-highlight-color:transparent}' .
 		'.tma-slot.selected{background:var(--tma-btn);color:#fff;border-color:var(--tma-btn)}' .
 		'.tma-slot:active{opacity:.7}' .
 		'.tma-booking-form{padding:16px}' .
-		'.tma-form-label{font-size:12px;font-weight:600;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;display:block}' .
+		'.tma-form-label{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;display:block}' .
 		'.tma-confirm-wrap{text-align:center;padding:40px 20px}' .
 		'.tma-confirm-icon{font-size:64px;margin-bottom:16px}' .
+
+		/* ── Appointment cards ── */
+		'.bk-apt-card{display:flex;align-items:center;gap:10px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);margin:0 12px 8px;padding:12px 14px}' .
+		'.bk-apt-info{flex:1;min-width:0}' .
+		'.bk-apt-name{font-size:var(--bk-base);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.bk-apt-meta{font-size:var(--bk-label);color:var(--tma-hint);margin-top:2px}' .
+		'.bk-apt-time{font-size:var(--bk-base);font-weight:700;color:var(--tma-btn);flex-shrink:0}' .
+
+		/* ── Status badges ── */
+		'.bk-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid transparent;white-space:nowrap;display:inline-block}' .
+		'.bk-status-confirmed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.bk-status-pending{background:#fff3e0;color:#e65100;border-color:#ffcc80}' .
+		'.bk-status-cancelled{background:#ffebee;color:#c62828;border-color:#ef9a9a}' .
+		'.bk-status-completed{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}' .
+		'.bk-status-no-show{background:#f5f5f5;color:#616161;border-color:#e0e0e0}' .
+
+		/* ── History chart ── */
+		'.bk-chart-wrap{margin:0 12px 12px;padding:12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.bk-chart-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:6px;text-align:center}' .
+
+		/* ── AI chat ── */
+		'.bk-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.bk-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.bk-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--bk-base);line-height:1.5;word-wrap:break-word}' .
+		'.bk-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.bk-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.bk-msg.bot p{margin:0 0 6px}.bk-msg.bot p:last-child{margin-bottom:0}' .
+		'.bk-msg.bot ul,.bk-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.bk-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.bk-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.bk-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--bk-base);background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.bk-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.bk-send-btn:active{opacity:.8}' .
+		'.bk-suggest-row{display:flex;gap:6px;padding:4px 12px;flex-wrap:wrap}' .
+		'.bk-suggest-btn{padding:6px 12px;border:1px solid var(--tma-btn);border-radius:16px;background:var(--tma-bg);color:var(--tma-btn);font-size:var(--bk-label);cursor:pointer;white-space:nowrap}' .
+		'.bk-suggest-btn:active{opacity:.7}' .
+
+		/* ── Settings ── */
+		'.bk-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.bk-settings-title{font-size:var(--bk-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.bk-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.bk-settings-row:last-child{border-bottom:none}' .
+		'.bk-settings-label{font-size:var(--bk-base);color:var(--tma-text)}' .
+		'.bk-settings-value{font-size:var(--bk-base);color:var(--tma-hint)}' .
+		'.bk-font-btns{display:flex;gap:4px}' .
+		'.bk-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);color:var(--tma-text);font-size:var(--bk-label);cursor:pointer}' .
+		'.bk-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.bk-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.bk-toggle.on{background:var(--tma-btn)}' .
+		'.bk-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.bk-toggle.on::after{transform:translateX(20px)}' .
+		'.bk-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);background:var(--tma-bg);color:var(--tma-text);font-size:var(--bk-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.bk-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.bk-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+
 		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
 		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
 			'<header class="tma-header">' .
 				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">📅</div></div>' .
 				'<div class="tma-header-info">' .
 					'<div class="tma-header-name">' . $site_name . '</div>' .
-					'<div class="tma-header-status">' . esc_html__( 'Book Appointment', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-header-status" id="bk-header-status">' . esc_html__( 'Book Appointment', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
 			'</header>' .
 			'<div class="tma-content">' .
-				'<div class="tma-tab-pane tma-active" id="tma-step-calendar">' .
-					'<div class="tma-calendar">' .
-						'<div class="tma-cal-header">' .
-							'<button class="tma-cal-nav" onclick="tmaCalPrev()">&#8249;</button>' .
-							'<div class="tma-cal-month" id="tma-cal-month-label"></div>' .
-							'<button class="tma-cal-nav" onclick="tmaCalNext()">&#8250;</button>' .
+
+				/* Tab 1: Book (calendar flow) */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-book">' .
+					'<div id="bk-step-calendar">' .
+						'<div class="tma-calendar">' .
+							'<div class="tma-cal-header">' .
+								'<button class="tma-cal-nav" onclick="tmaCalPrev()">&#8249;</button>' .
+								'<div class="tma-cal-month" id="tma-cal-month-label"></div>' .
+								'<button class="tma-cal-nav" onclick="tmaCalNext()">&#8250;</button>' .
+							'</div>' .
+							'<div class="tma-cal-grid" id="tma-cal-grid"></div>' .
 						'</div>' .
-						'<div class="tma-cal-grid" id="tma-cal-grid"></div>' .
+						'<div class="tma-slots" id="tma-slots" style="display:none">' .
+							'<div class="tma-slots-title" id="tma-slots-date"></div>' .
+							'<div class="tma-slot-grid" id="tma-slot-grid"></div>' .
+						'</div>' .
+						'<div style="padding:16px;display:none" id="tma-next-wrap">' .
+							'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaGoToForm()">' . esc_html__( 'Continue →', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
-					'<div class="tma-slots" id="tma-slots" style="display:none">' .
-						'<div class="tma-slots-title" id="tma-slots-date"></div>' .
-						'<div class="tma-slot-grid" id="tma-slot-grid"></div>' .
+					'<div id="bk-step-form" style="display:none">' .
+						'<div class="tma-booking-form">' .
+							'<div class="tma-section-title" style="padding:0 0 12px">' . esc_html__( 'Your Details', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="text" id="tma-book-name" class="tma-input" placeholder="' . esc_attr__( 'Full name', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="email" id="tma-book-email" class="tma-input" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
+							'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<textarea id="tma-book-notes" class="tma-input" rows="3" style="resize:none" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea></div>' .
+							'<div id="tma-book-error" style="color:#e53935;font-size:13px;margin-bottom:8px;display:none"></div>' .
+							'<button class="tma-btn tma-btn-secondary" style="width:100%;margin-bottom:8px" onclick="tmaGoToCalendar()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaConfirm()">' . esc_html__( 'Confirm Booking', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
-					'<div style="padding:16px;display:none" id="tma-next-wrap">' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaGoToForm()">' . esc_html__( 'Continue →', 'mcp-ai-wpoos-pro' ) . '</button>' .
+					'<div id="bk-step-confirm" style="display:none">' .
+						'<div class="tma-confirm-wrap">' .
+							'<div class="tma-confirm-icon">&#9989;</div>' .
+							'<div style="font-size:20px;font-weight:700;margin-bottom:8px">' . esc_html__( 'Booking Confirmed!', 'mcp-ai-wpoos-pro' ) . '</div>' .
+							'<div id="tma-confirm-details" style="font-size:14px;color:var(--tma-hint);line-height:1.6"></div>' .
+							'<button class="tma-btn tma-btn-primary" style="margin-top:24px" onclick="tmaReset()">' . esc_html__( 'Book Another', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-step-form">' .
-					'<div class="tma-booking-form">' .
-						'<div class="tma-section-title" style="padding:0 0 12px">' . esc_html__( 'Your Details', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="text" id="tma-book-name" class="tma-input" placeholder="' . esc_attr__( 'Full name', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<input type="email" id="tma-book-email" class="tma-input" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" /></div>' .
-						'<div style="margin-bottom:12px"><label class="tma-form-label">' . esc_html__( 'Notes', 'mcp-ai-wpoos-pro' ) . '</label>' .
-						'<textarea id="tma-book-notes" class="tma-input" rows="3" style="resize:none" placeholder="' . esc_attr__( 'Optional notes…', 'mcp-ai-wpoos-pro' ) . '"></textarea></div>' .
-						'<div id="tma-book-error" style="color:#e53935;font-size:13px;margin-bottom:8px;display:none"></div>' .
-						'<button class="tma-btn tma-btn-secondary" style="width:100%;margin-bottom:8px" onclick="tmaGoToCalendar()">&#8592; ' . esc_html__( 'Back', 'mcp-ai-wpoos-pro' ) . '</button>' .
-						'<button class="tma-btn tma-btn-primary" style="width:100%" onclick="tmaConfirm()">' . esc_html__( 'Confirm Booking', 'mcp-ai-wpoos-pro' ) . '</button>' .
+
+				/* Tab 2: Upcoming */
+				'<div class="tma-tab-pane" id="tma-tab-upcoming">' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'Upcoming Appointments', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="bk-upcoming-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 3: History */
+				'<div class="tma-tab-pane" id="tma-tab-history">' .
+					'<div class="bk-chart-wrap" id="bk-chart-wrap" style="display:none">' .
+						'<div class="bk-chart-title">' . esc_html__( 'Bookings per Month', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<canvas id="bk-history-chart" height="200"></canvas>' .
+					'</div>' .
+					'<div class="tma-section-title" style="padding:4px 12px 0">' . esc_html__( 'Past Appointments', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div id="bk-history-list"><div class="tma-empty">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div></div>' .
+				'</div>' .
+
+				/* Tab 4: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="bk-chat-container">' .
+						'<div class="bk-chat-messages" id="bk-chat-messages"></div>' .
+						'<div class="bk-suggest-row" id="bk-suggest-row">' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Find available times', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Book an appointment', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'<button class="bk-suggest-btn" onclick="bkSuggest(this)">' . esc_html__( 'Check my schedule', 'mcp-ai-wpoos-pro' ) . '</button>' .
+						'</div>' .
+						'<div class="bk-chat-input-row">' .
+							'<input type="text" class="bk-chat-input" id="bk-chat-input" placeholder="' . esc_attr__( 'Ask about scheduling…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="bk-send-btn" onclick="bkChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
 					'</div>' .
 				'</div>' .
-				'<div class="tma-tab-pane" id="tma-step-confirm">' .
-					'<div class="tma-confirm-wrap">' .
-						'<div class="tma-confirm-icon">&#9989;</div>' .
-						'<div style="font-size:20px;font-weight:700;margin-bottom:8px">' . esc_html__( 'Booking Confirmed!', 'mcp-ai-wpoos-pro' ) . '</div>' .
-						'<div id="tma-confirm-details" style="font-size:14px;color:var(--tma-hint);line-height:1.6"></div>' .
-						'<button class="tma-btn tma-btn-primary" style="margin-top:24px" onclick="tmaReset()">' . esc_html__( 'Book Another', 'mcp-ai-wpoos-pro' ) . '</button>' .
+
+				/* Tab 5: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div style="padding-top:12px">' .
+
+					/* Display section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="bk-font-btns" id="bk-font-btns">' .
+								'<button data-size="small" onclick="bkSetFontSize(\'small\')">' . esc_html__( 'S', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="medium" onclick="bkSetFontSize(\'medium\')">' . esc_html__( 'M', 'mcp-ai-wpoos-pro' ) . '</button>' .
+								'<button data-size="large" onclick="bkSetFontSize(\'large\')">' . esc_html__( 'L', 'mcp-ai-wpoos-pro' ) . '</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="bk-toggle" id="bk-compact-toggle" onclick="bkToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Defaults section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Booking Defaults', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row" style="flex-direction:column;align-items:stretch;gap:4px">' .
+							'<label class="bk-settings-label" style="margin-bottom:2px">' . esc_html__( 'Default Name', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="text" class="tma-input" id="bk-default-name" placeholder="' . esc_attr__( 'Your name', 'mcp-ai-wpoos-pro' ) . '" onchange="lsSet(\'bk_default_name\',this.value)" />' .
+						'</div>' .
+						'<div class="bk-settings-row" style="flex-direction:column;align-items:stretch;gap:4px">' .
+							'<label class="bk-settings-label" style="margin-bottom:2px">' . esc_html__( 'Default Email', 'mcp-ai-wpoos-pro' ) . '</label>' .
+							'<input type="email" class="tma-input" id="bk-default-email" placeholder="' . esc_attr__( 'email@example.com', 'mcp-ai-wpoos-pro' ) . '" onchange="lsSet(\'bk_default_email\',this.value)" />' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="bk-settings-section">' .
+						'<div class="bk-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="bk-settings-row">' .
+							'<span class="bk-settings-label" id="bk-data-summary"></span>' .
+						'</div>' .
+						'<button class="bk-settings-btn" onclick="bkSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="bk-settings-btn danger" onclick="bkClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+
 					'</div>' .
 				'</div>' .
-			'</div>' .
-		'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (5 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-book" onclick="bkSwitch(\'book\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' .
+					'<span>' . esc_html__( 'Book', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-upcoming" onclick="bkSwitch(\'upcoming\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' .
+					'<span>' . esc_html__( 'Upcoming', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-history" onclick="bkSwitch(\'history\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' .
+					'<span>' . esc_html__( 'History', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="bkSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="bkSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="book";' .
+		'var upcomingCache=[];' .
+		'var historyCache=[];' .
+		'var bookingsLocal=[];' .
+		'var chatHist=[];' .
+		'var histChartInst=null;' .
 		'var today=new Date();var vy=today.getFullYear();var vm=today.getMonth();' .
 		'var selDate=null;var selSlot=null;' .
+
+		/* ── Helpers ── */
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
-		'function showStep(id){document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});var el=document.getElementById(id);if(el)el.classList.add("tma-active");}' .
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function bkRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── Session init (matches ecommerce / crm pattern) ── */
+		'function bkInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData)return;' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}})' .
+			'.catch(function(){});' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function bkApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("bk_font_size","medium");' .
+				'shell.classList.remove("bk-font-small","bk-font-large");' .
+				'if(size==="small")shell.classList.add("bk-font-small");' .
+				'else if(size==="large")shell.classList.add("bk-font-large");' .
+				'var compact=lsGet("bk_compact",false);' .
+				'if(compact)shell.classList.add("bk-compact");' .
+				'else shell.classList.remove("bk-compact");' .
+				'var btns=document.querySelectorAll("#bk-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("bk-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.bkSetFontSize=function(s){lsSet("bk_font_size",s);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
+		'window.bkToggleCompact=function(){var c=!lsGet("bk_compact",false);lsSet("bk_compact",c);tmaHaptic("selectionChanged");bkApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.bkSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'activeTab=tab;' .
+			'if(tab==="upcoming")bkLoadUpcoming(false);' .
+			'if(tab==="history")bkLoadHistory(false);' .
+			'if(tab==="assistant"&&!chatHist.length)bkChatInit();' .
+			'if(tab==="settings")bkRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Book (Calendar flow)
+		   ══════════════════════════════════════════════════════════ */
+		'function showStep(id){' .
+			'["bk-step-calendar","bk-step-form","bk-step-confirm"].forEach(function(s){' .
+				'var el=document.getElementById(s);if(el)el.style.display=s===id?"":"none";' .
+			'});' .
+		'}' .
+
 		'var DAYS=["' . esc_js( __( 'Su', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Mo', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Tu', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'We', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Th', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Fr', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Sa', 'mcp-ai-wpoos-pro' ) ) . '"];' .
 		'var MONTHS=["' . esc_js( __( 'January', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'February', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'March', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'April', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'May', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'June', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'July', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'August', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'September', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'October', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'November', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'December', 'mcp-ai-wpoos-pro' ) ) . '"];' .
+
 		'function renderCal(){' .
 			'var lbl=document.getElementById("tma-cal-month-label");if(lbl)lbl.textContent=MONTHS[vm]+" "+vy;' .
 			'var grid=document.getElementById("tma-cal-grid");if(!grid)return;' .
@@ -1375,13 +3696,14 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'window.tmaCalPrev=function(){tmaHaptic("light");vm--;if(vm<0){vm=11;vy--;}renderCal();};' .
 		'window.tmaCalNext=function(){tmaHaptic("light");vm++;if(vm>11){vm=0;vy++;}renderCal();};' .
 		'window.tmaSelDate=function(ds){tmaHaptic("light");selDate=ds;selSlot=null;renderCal();loadSlots(ds);};' .
+
 		'function loadSlots(ds){' .
 			'var sw=document.getElementById("tma-slots");var dl=document.getElementById("tma-slots-date");' .
 			'var sg=document.getElementById("tma-slot-grid");var nw=document.getElementById("tma-next-wrap");' .
 			'if(sw)sw.style.display="block";if(nw)nw.style.display="none";if(dl)dl.textContent=ds;' .
 			'if(sg)sg.innerHTML=\'<div style="grid-column:span 3;text-align:center;color:var(--tma-hint);padding:12px">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"get_available_slots",arguments:{date:ds}})})' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_available_slots",arguments:{date:ds}})})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
 				'var slots=(d&&d.data&&d.data.slots)?d.data.slots:["09:00","10:00","11:00","14:00","15:00","16:00"];' .
@@ -1393,8 +3715,14 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'});' .
 		'}' .
 		'window.tmaSelSlot=function(s,el){tmaHaptic("light");selSlot=s;document.querySelectorAll(".tma-slot").forEach(function(b){b.classList.remove("selected");});if(el)el.classList.add("selected");var nw=document.getElementById("tma-next-wrap");if(nw)nw.style.display="block";};' .
-		'window.tmaGoToForm=function(){if(!selDate||!selSlot)return;tmaHaptic("medium");showStep("tma-step-form");};' .
-		'window.tmaGoToCalendar=function(){showStep("tma-step-calendar");};' .
+		'window.tmaGoToForm=function(){' .
+			'if(!selDate||!selSlot)return;tmaHaptic("medium");' .
+			'var ni=document.getElementById("tma-book-name");var ei=document.getElementById("tma-book-email");' .
+			'if(ni&&!ni.value){var dn=lsGet("bk_default_name","");if(dn)ni.value=dn;}' .
+			'if(ei&&!ei.value){var de=lsGet("bk_default_email","");if(de)ei.value=de;}' .
+			'showStep("bk-step-form");' .
+		'};' .
+		'window.tmaGoToCalendar=function(){showStep("bk-step-calendar");};' .
 		'window.tmaConfirm=function(){' .
 			'var name=(document.getElementById("tma-book-name")||{}).value||"";' .
 			'var email=(document.getElementById("tma-book-email")||{}).value||"";' .
@@ -1402,22 +3730,271 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'var err=document.getElementById("tma-book-error");' .
 			'if(!name.trim()||!email.trim()){if(err){err.style.display="block";err.textContent="' . esc_js( __( 'Name and email are required.', 'mcp-ai-wpoos-pro' ) ) . '";}return;}' .
 			'if(err)err.style.display="none";tmaHaptic("medium");' .
-			'fetch(toolsExec,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({tool:"create_booking",arguments:{date:selDate,time:selSlot,name:name,email:email,notes:notes}})})' .
-			'.then(function(){}).catch(function(){}).finally(function(){' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"create_booking",arguments:{date:selDate,time:selSlot,name:name,email:email,notes:notes}})})' .
+			'.then(function(){' .
+				'var bk={date:selDate,time:selSlot,name:name,email:email,notes:notes,status:"confirmed",created:new Date().toISOString()};' .
+				'bookingsLocal.push(bk);lsSet("bk_bookings",bookingsLocal);' .
+			'}).catch(function(){}).finally(function(){' .
 				'tmaHaptic("success");' .
 				'var det=document.getElementById("tma-confirm-details");' .
 				'if(det)det.innerHTML="<strong>"+escH(selDate)+" "+escH(selSlot)+"</strong><br>"+escH(name)+"<br>"+escH(email);' .
-				'showStep("tma-step-confirm");' .
+				'showStep("bk-step-confirm");' .
 			'});' .
 		'};' .
 		'window.tmaReset=function(){' .
 			'selDate=null;selSlot=null;' .
 			'var sw=document.getElementById("tma-slots");if(sw)sw.style.display="none";' .
 			'var nw=document.getElementById("tma-next-wrap");if(nw)nw.style.display="none";' .
-			'showStep("tma-step-calendar");renderCal();' .
+			'var ni=document.getElementById("tma-book-name");if(ni)ni.value="";' .
+			'var ei=document.getElementById("tma-book-email");if(ei)ei.value="";' .
+			'var nt=document.getElementById("tma-book-notes");if(nt)nt.value="";' .
+			'showStep("bk-step-calendar");renderCal();' .
 		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – Upcoming Appointments
+		   ══════════════════════════════════════════════════════════ */
+		'function bkStatusCls(s){' .
+			'var k=String(s||"").toLowerCase().replace(/[\\s_]+/g,"-");' .
+			'if(k==="confirmed")return "bk-status-confirmed";' .
+			'if(k==="pending")return "bk-status-pending";' .
+			'if(k==="cancelled"||k==="canceled")return "bk-status-cancelled";' .
+			'if(k==="completed")return "bk-status-completed";' .
+			'if(k==="no-show"||k==="noshow")return "bk-status-no-show";' .
+			'return "";' .
+		'}' .
+
+		'function bkLoadUpcoming(force){' .
+			'var list=document.getElementById("bk-upcoming-list");if(!list)return;' .
+			'if(!force&&upcomingCache.length){bkRenderUpcoming(upcomingCache);return;}' .
+			'list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_appointment_details",arguments:{status:"upcoming",per_page:20}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var apts=(d&&d.data&&d.data.appointments)?d.data.appointments:' .
+					'(d&&d.data&&Array.isArray(d.data))?d.data:[];' .
+				'if(apts.length){upcomingCache=apts;lsSet("bk_upcoming_cache",apts);bkRenderUpcoming(apts);}' .
+				'else{' .
+					'var local=bookingsLocal.filter(function(b){return b.date>=today.toISOString().slice(0,10);});' .
+					'if(local.length){bkRenderUpcoming(local);}' .
+					'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+				'}' .
+			'}).catch(function(){' .
+				'var local=bookingsLocal.filter(function(b){return b.date>=today.toISOString().slice(0,10);});' .
+				'if(local.length){bkRenderUpcoming(local);}' .
+				'else if(upcomingCache.length){bkRenderUpcoming(upcomingCache);}' .
+				'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+			'});' .
+		'}' .
+
+		'function bkRenderUpcoming(apts){' .
+			'var list=document.getElementById("bk-upcoming-list");if(!list)return;' .
+			'if(!apts.length){list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No upcoming appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=apts.map(function(a){' .
+				'var status=a.status||"pending";' .
+				'var name=a.name||a.service||a.title||"' . esc_js( __( 'Appointment', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'return \'<div class="bk-apt-card">\'+' .
+					'\'<div class="bk-apt-info">\'+' .
+						'\'<div class="bk-apt-name">\'+escH(name)+\'</div>\'+' .
+						'\'<div class="bk-apt-meta">\'+escH(a.date||"")+\'</div>\'+' .
+					'\'</div>\'+' .
+					'\'<div class="bk-apt-time">\'+escH(a.time||"")+\'</div>\'+' .
+					'\'<span class="bk-status \'+bkStatusCls(status)+\'">\'+escH(status)+\'</span>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – History
+		   ══════════════════════════════════════════════════════════ */
+		'function bkLoadHistory(force){' .
+			'var list=document.getElementById("bk-history-list");if(!list)return;' .
+			'if(!force&&historyCache.length){bkRenderHistory(historyCache);return;}' .
+			'list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),' .
+				'body:JSON.stringify({slug:"get_appointment_details",arguments:{status:"past",per_page:20}})})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var apts=(d&&d.data&&d.data.appointments)?d.data.appointments:' .
+					'(d&&d.data&&Array.isArray(d.data))?d.data:[];' .
+				'if(apts.length){historyCache=apts;lsSet("bk_history_cache",apts);}' .
+				'else{' .
+					'var local=bookingsLocal.filter(function(b){return b.date<today.toISOString().slice(0,10);});' .
+					'if(local.length)apts=local;' .
+				'}' .
+				'bkRenderHistory(apts);bkRenderHistChart(apts);' .
+			'}).catch(function(){' .
+				'if(historyCache.length){bkRenderHistory(historyCache);bkRenderHistChart(historyCache);}' .
+				'else{list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No past appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';}' .
+			'});' .
+		'}' .
+
+		'function bkRenderHistory(apts){' .
+			'var list=document.getElementById("bk-history-list");if(!list)return;' .
+			'if(!apts.length){list.innerHTML=\'<div class="tma-empty">' . esc_js( __( 'No past appointments', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'list.innerHTML=apts.map(function(a){' .
+				'var status=a.status||"completed";' .
+				'var name=a.name||a.service||a.title||"' . esc_js( __( 'Appointment', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'return \'<div class="bk-apt-card">\'+' .
+					'\'<div class="bk-apt-info">\'+' .
+						'\'<div class="bk-apt-name">\'+escH(name)+\'</div>\'+' .
+						'\'<div class="bk-apt-meta">\'+escH(a.date||"")+\'</div>\'+' .
+					'\'</div>\'+' .
+					'\'<div class="bk-apt-time">\'+escH(a.time||"")+\'</div>\'+' .
+					'\'<span class="bk-status \'+bkStatusCls(status)+\'">\'+escH(status)+\'</span>\'+' .
+				'\'</div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* ── Chart.js loader ── */
+		'function bkLoadChartJs(cb){' .
+			'if(window.Chart){cb();return;}' .
+			'if(!CHART_JS_URL){cb();return;}' .
+			'var s=document.createElement("script");s.src=CHART_JS_URL;s.onload=cb;s.onerror=cb;document.head.appendChild(s);' .
+		'}' .
+
+		'function bkHideChart(){var w=document.getElementById("bk-chart-wrap");if(w)w.style.display="none";}' .
+
+		'function bkRenderHistChart(apts){' .
+			'bkLoadChartJs(function(){' .
+				'if(!window.Chart||!apts.length){bkHideChart();return;}' .
+				'var monthly={};' .
+				'apts.forEach(function(a){' .
+					'var d=a.date||a.created||"";if(!d)return;' .
+					'var dt=new Date(d);var m;' .
+					'if(!isNaN(dt.getTime())){m=dt.getFullYear()+"-"+("0"+(dt.getMonth()+1)).slice(-2);}' .
+					'else if(/^\\d{4}-\\d{2}/.test(d)){m=d.substring(0,7);}' .
+					'else{return;}' .
+					'if(!monthly[m])monthly[m]=0;monthly[m]++;' .
+				'});' .
+				'var keys=Object.keys(monthly).sort().slice(-6);' .
+				'if(!keys.length){bkHideChart();return;}' .
+				'var labels=keys;var data=keys.map(function(k){return monthly[k];});' .
+				'var wrap=document.getElementById("bk-chart-wrap");if(wrap)wrap.style.display="block";' .
+				'var cv=document.getElementById("bk-history-chart");if(!cv)return;' .
+				'if(histChartInst){histChartInst.destroy();}' .
+				'histChartInst=new Chart(cv.getContext("2d"),{type:"bar",data:{labels:labels,datasets:[{' .
+					'label:"' . esc_js( __( 'Bookings', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'data:data,backgroundColor:"rgba(21,101,192,0.6)",borderColor:"#1565c0",' .
+					'borderWidth:1,borderRadius:4' .
+				'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});' .
+			'});' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 4 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function bkChatInit(){' .
+			'chatHist=lsGet("bk_chat_hist",[]);' .
+			'var m=document.getElementById("bk-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){bkAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				'var ctx="[' . esc_js( __( 'Booking Context', 'mcp-ai-wpoos-pro' ) ) . '] ' .
+					esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+". ' .
+					esc_js( __( 'Use get_available_slots and create_booking tools to help with scheduling.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'bkAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your booking assistant. I can help you find available times, schedule appointments, and manage your bookings. What would you like to do?', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function bkAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="bk-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=bkRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("bk-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.bkChatSend=function(){' .
+			'var inp=document.getElementById("bk-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});bkAppendMsg("user",txt,false);' .
+			'lsSet("bk_chat_hist",chatHist.slice(-50));' .
+			'var sr=document.getElementById("bk-suggest-row");if(sr)sr.style.display="none";' .
+			'var el=bkAppendMsg("bot","\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=bkRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("bk_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		'window.bkSuggest=function(btn){' .
+			'var inp=document.getElementById("bk-chat-input");' .
+			'if(inp){inp.value=btn.textContent;bkChatSend();}' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("bk-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")bkChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 5 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function bkRenderSettings(){' .
+			/* Default name/email */
+			'var dni=document.getElementById("bk-default-name");if(dni)dni.value=lsGet("bk_default_name","");' .
+			'var dei=document.getElementById("bk-default-email");if(dei)dei.value=lsGet("bk_default_email","");' .
+			/* Data summary */
+			'var ds=document.getElementById("bk-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Total bookings cached', 'mcp-ai-wpoos-pro' ) ) . ': "+bookingsLocal.length+", ' .
+				esc_js( __( 'Upcoming', 'mcp-ai-wpoos-pro' ) ) . ': "+upcomingCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.bkSyncFromServer=function(){' .
+			'tmaHaptic("medium");bkLoadUpcoming(true);bkLoadHistory(true);' .
+		'};' .
+
+		'window.bkClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)bkDoClear();});' .
+			'}else if(confirm(msg)){bkDoClear();}' .
+		'};' .
+
+		'function bkDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("bk_bookings");' .
+				'localStorage.removeItem("bk_upcoming_cache");' .
+				'localStorage.removeItem("bk_history_cache");' .
+				'localStorage.removeItem("bk_chat_hist");' .
+				'localStorage.removeItem("bk_font_size");' .
+				'localStorage.removeItem("bk_compact");' .
+				'localStorage.removeItem("bk_default_name");' .
+				'localStorage.removeItem("bk_default_email");' .
+			'}catch(e){}' .
+			'bookingsLocal=[];upcomingCache=[];historyCache=[];chatHist=[];' .
+			'bkRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		/* Restore state from localStorage */
+		'bookingsLocal=lsGet("bk_bookings",[]);' .
+		'upcomingCache=lsGet("bk_upcoming_cache",[]);' .
+		'historyCache=lsGet("bk_history_cache",[]);' .
+		'bkApplyDisplaySettings();' .
+
+		/* Render calendar immediately */
 		'renderCal();' .
+
+		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN) */
+		'bkInitSession();' .
+
 		'})();</script></body>';
 		// phpcs:enable
 	}
@@ -4220,7 +6797,24 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 		return '#7c3aed';
 	}
 
-	/** @inheritdoc */
+	/**
+	 * Render the body HTML for the WooCommerce Shop React SPA template.
+	 *
+	 * Injects a `window.wpTmaWooConfig` JS object with all URLs, IDs, and
+	 * extended context the React app needs.  The config includes:
+	 *
+	 *   - Core endpoints: validateUrl, toolsUrl, chatUrl, analyticsUrl
+	 *   - Auth:           nonce (initial), assistantId
+	 *   - Site meta:      siteName, siteUrl
+	 *   - WooCommerce:    wooSource ('local'|'remote'), wooConnectionId
+	 *   - Charts:         chartJsUrl (CDN URL for lazy Chart.js loading)
+	 *   - Member context: memberId, memberName (from session when available)
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param  array $ctx Context variables injected by the TMA controller.
+	 * @return string     HTML body fragment.
+	 */
 	public function render_html( array $ctx ) {
 		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.js' : '';
 		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-woo-shop/tma-woo-shop.css' : '';
@@ -4232,12 +6826,16 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 				'validateUrl'     => $ctx['validate_url'] ?? '',
 				'toolsUrl'        => $ctx['tools_url'] ?? '',
 				'chatUrl'         => $ctx['chat_url'] ?? '',
+				'analyticsUrl'    => $ctx['analytics_url'] ?? '',
 				'nonce'           => $ctx['nonce'] ?? '',
 				'assistantId'     => $ctx['assistant_id'] ?? '',
 				'siteName'        => $ctx['site_name'] ?? get_bloginfo( 'name' ),
 				'siteUrl'         => home_url(),
 				'wooSource'       => $ctx['woo_source'] ?? 'local',
 				'wooConnectionId' => $ctx['woo_connection_id'] ?? '',
+				'chartJsUrl'      => $ctx['chart_js_url'] ?? '',
+				'memberId'        => $ctx['member_id'] ?? '',
+				'memberName'      => $ctx['member_name'] ?? '',
 			)
 		);
 
@@ -4317,13 +6915,17 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 	 * build directory.
 	 *
 	 * Context keys used:
-	 *   validate_url         – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
-	 *   tools_url            – Base URL for the tool-execution endpoint.
-	 *   chat_url             – TMA-aware chat endpoint.
-	 *   nonce                – Initial WordPress nonce.
-	 *   assistant_id         – Resolved Mini App assistant ID.
-	 *   site_name            – Site display name.
+	 *   validate_url          – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
+	 *   tools_url             – Base URL for the tool-execution endpoint.
+	 *   chat_url              – TMA-aware chat endpoint.
+	 *   analytics_url         – Analytics endpoint for order/revenue data.
+	 *   nonce                 – Initial WordPress nonce.
+	 *   assistant_id          – Resolved Mini App assistant ID.
+	 *   site_name             – Site display name.
 	 *   shopify_connection_id – Shopify Remote Sites connection ID (optional; falls back to global option).
+	 *   chart_js_url          – CDN URL for Chart.js lazy loading.
+	 *   member_id             – Active member ID (from TMA session, if available).
+	 *   member_name           – Active member display name (from TMA session, if available).
 	 *
 	 * @param  array $ctx Context variables injected by the TMA controller.
 	 * @return string     HTML body fragment.
@@ -4347,10 +6949,15 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 				'validateUrl'  => $ctx['validate_url']  ?? '',
 				'toolsUrl'     => $ctx['tools_url']     ?? '',
 				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'analyticsUrl' => $ctx['analytics_url'] ?? '',
 				'nonce'        => $ctx['nonce']         ?? '',
 				'assistantId'  => $ctx['assistant_id']  ?? '',
 				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'siteUrl'      => home_url(),
 				'connectionId' => $connection_id,
+				'chartJsUrl'   => $ctx['chart_js_url']  ?? '',
+				'memberId'     => $ctx['member_id']     ?? '',
+				'memberName'   => $ctx['member_name']   ?? '',
 			)
 		);
 
