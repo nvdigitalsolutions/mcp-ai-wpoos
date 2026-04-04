@@ -1834,8 +1834,17 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 			$assistant_name = $assistant_id ? get_the_title( $assistant_id ) : '';
 
 			$timestamp = isset( $entry['time'] ) ? strtotime( $entry['time'] ) : false;
+			if ( false === $timestamp && isset( $entry['timestamp'] ) && '' !== $entry['timestamp'] ) {
+				// Logger stores MySQL datetime strings (e.g. "2026-04-04 08:42:04").
+				if ( is_numeric( $entry['timestamp'] ) ) {
+					$timestamp = (int) $entry['timestamp'];
+				} else {
+					$parsed    = strtotime( $entry['timestamp'] );
+					$timestamp = ( false !== $parsed ) ? $parsed : 0;
+				}
+			}
 			if ( false === $timestamp ) {
-				$timestamp = isset( $entry['timestamp'] ) ? (int) $entry['timestamp'] : 0;
+				$timestamp = 0;
 			}
 
 			// Determine the normalised type and human-readable message.

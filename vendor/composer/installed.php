@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-empty-activity-log',
+        'version' => 'dev-copilot/fix-empty-activity-log',
+        'reference' => 'd425e6c7ad95db4dc60a7a1f6b07438822c81ac4',
         'pretty_version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
         'version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
         'reference' => 'b33720f665d86d9481f8d8aaee4671f3aabaa3b9',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-empty-activity-log',
+            'version' => 'dev-copilot/fix-empty-activity-log',
+            'reference' => 'd425e6c7ad95db4dc60a7a1f6b07438822c81ac4',
             'pretty_version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
             'version' => 'dev-copilot/add-protocol-enhancement-to-plugin',
             'reference' => 'b33720f665d86d9481f8d8aaee4671f3aabaa3b9',
