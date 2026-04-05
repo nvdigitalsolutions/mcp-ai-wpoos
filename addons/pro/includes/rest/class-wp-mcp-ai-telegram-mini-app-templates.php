@@ -550,6 +550,13 @@ function wp_mcp_ai_tma_base_js() {
 		'var h=twa?twa.viewportStableHeight:window.innerHeight;' .
 		'document.documentElement.style.setProperty("--tma-vh",h+"px");' .
 	'}' .
+	/*
+	 * Haptic feedback helper – routes to the correct Telegram WebApp API method:
+	 *   - "selectionChanged"       → HapticFeedback.selectionChanged()
+	 *   - "success"/"error"/"warning" → HapticFeedback.notificationOccurred(type)
+	 *   - "notification*" prefix   → legacy compat, e.g. "notificationSuccess" → notificationOccurred("success")
+	 *   - anything else            → HapticFeedback.impactOccurred(style), default "light"
+	 */
 	'function tmaHaptic(t){if(!twa||!twa.HapticFeedback)return;var h=twa.HapticFeedback;if(t==="selectionChanged"){h.selectionChanged();}else if(t==="success"||t==="error"||t==="warning"){h.notificationOccurred(t);}else if(t&&t.indexOf("notification")===0){h.notificationOccurred(t.slice(12).toLowerCase()||"success");}else{h.impactOccurred(t||"light");}}' .
 	/* Build tool-execution request headers, including TMA token when available */
 	'function tmaToolHeaders(){' .

@@ -3717,7 +3717,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		try {
 			$result = $tool->execute( $arguments, $context );
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return new WP_Error(
 				'wp_mcp_ai_tma_tool_execution_error',
 				/* translators: %s: error message from the tool */
