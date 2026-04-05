@@ -15,21 +15,23 @@ import { useTMA } from '../context/TMAContext';
 
 /**
  * Sanitize and render basic markdown in assistant replies.
- * Uses textContent extraction for safety instead of dangerouslySetInnerHTML.
+ *
+ * Escapes HTML entities first so user-supplied content is safe, then applies
+ * limited markdown formatting (bold, italic, line breaks). Only the
+ * formatting tags we introduce are present in the output.
  *
  * @param {string} text Raw assistant reply text.
- * @return {string}     Safe HTML string.
+ * @return {string}     Safe HTML string containing only strong/em/br tags.
  */
 function renderReply( text ) {
-	// Convert basic markdown to HTML, then sanitize via textContent round-trip.
-	const withMarkdown = text
+	const escaped = text
 		.replace( /&/g, '&amp;' )
 		.replace( /</g, '&lt;' )
-		.replace( />/g, '&gt;' )
+		.replace( />/g, '&gt;' );
+	return escaped
 		.replace( /\*\*(.+?)\*\*/g, '<strong>$1</strong>' )
 		.replace( /\*(.+?)\*/g, '<em>$1</em>' )
 		.replace( /\n/g, '<br>' );
-	return withMarkdown;
 }
 
 /** @param {{ params:object }} props */

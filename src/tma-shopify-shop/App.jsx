@@ -17,7 +17,7 @@
  * @since   1.2.0
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { CartProvider } from './context/CartContext';
 import { TMAProvider } from './context/TMAContext';
 import { NavContext } from './context/NavContext';
@@ -47,17 +47,26 @@ const PAGES = {
 export default function App() {
 	const [ route, setRoute ] = useState( { page: 'shop', params: {} } );
 
+	const backHandler = useRef( null );
+
 	const navigate = useCallback( ( page, params = {} ) => {
 		setRoute( { page, params } );
 
 		// Integrate with Telegram BackButton.
 		const twa = window.Telegram?.WebApp;
 		if ( twa ) {
+			// Remove previous handler to avoid accumulation.
+			if ( backHandler.current ) {
+				twa.BackButton.offClick( backHandler.current );
+			}
 			if ( page === 'shop' ) {
 				twa.BackButton.hide();
+				backHandler.current = null;
 			} else {
+				const handler = () => setRoute( { page: 'shop', params: {} } );
+				backHandler.current = handler;
 				twa.BackButton.show();
-				twa.BackButton.onClick( () => setRoute( { page: 'shop', params: {} } ) );
+				twa.BackButton.onClick( handler );
 			}
 		}
 	}, [] );

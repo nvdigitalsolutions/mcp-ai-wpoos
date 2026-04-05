@@ -13,7 +13,7 @@
  * @since   1.2.0
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNav } from '../context/NavContext';
 import { useTMA } from '../context/TMAContext';
 import { useCart } from '../context/CartContext';
@@ -88,13 +88,16 @@ export default function ShopPage() {
 
 	// Filter products by collection (client-side, since Shopify tool may
 	// not support collection filter directly).
-	const filtered = collectionId
-		? products.filter( ( p ) => {
+	const filtered = useMemo( () => {
+		if ( ! collectionId ) {
+			return products;
+		}
+		return products.filter( ( p ) => {
 			const cols = p.collections?.edges?.map( ( e ) => e.node?.id ) ??
 						p.collections?.nodes?.map( ( n ) => n.id ) ?? [];
 			return cols.includes( collectionId );
-		} )
-		: products;
+		} );
+	}, [ products, collectionId ] );
 
 	return (
 		<div className="tma-shopify-page tma-shopify-shop-page">
