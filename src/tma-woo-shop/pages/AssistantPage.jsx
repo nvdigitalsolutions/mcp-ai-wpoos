@@ -93,7 +93,7 @@ export default function AssistantPage() {
 						{ user?.first_name && (
 							<p>Hi { user.first_name }! 👋</p>
 						) }
-						<p>I'm your AI shopping assistant. Ask me about products, recommendations, or your orders.</p>
+						<p>I&apos;m your AI shopping assistant. Ask me about products, recommendations, or your orders.</p>
 						<div className="tma-woo-assistant-page__suggestions">
 							{ [
 								'What are your bestsellers?',

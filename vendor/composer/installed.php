@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/revert-fix-tma-haptic-feedback-again',
+        'version' => 'dev-copilot/revert-fix-tma-haptic-feedback-again',
+        'reference' => '65c598694cba638bbcc33ab680c82138fe183a49',
         'pretty_version' => 'dev-copilot/update-telegram-ecommerce-connection',
         'version' => 'dev-copilot/update-telegram-ecommerce-connection',
         'reference' => '9ad102216eb2991aac9604f172c7dccca3198104',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/revert-fix-tma-haptic-feedback-again',
+            'version' => 'dev-copilot/revert-fix-tma-haptic-feedback-again',
+            'reference' => '65c598694cba638bbcc33ab680c82138fe183a49',
             'pretty_version' => 'dev-copilot/update-telegram-ecommerce-connection',
             'version' => 'dev-copilot/update-telegram-ecommerce-connection',
             'reference' => '9ad102216eb2991aac9604f172c7dccca3198104',

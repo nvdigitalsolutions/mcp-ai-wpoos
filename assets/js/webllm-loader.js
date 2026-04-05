@@ -48,7 +48,7 @@
 				window.dispatchEvent(new Event('webllm-ready'));
 			} else {
 				// Fallback for older browsers.
-				var event = document.createEvent('Event');
+				const event = document.createEvent('Event');
 				event.initEvent('webllm-ready', true, true);
 				window.dispatchEvent(event);
 			}
@@ -74,7 +74,7 @@
 				}));
 			} else {
 				// Fallback for older browsers.
-				var event = document.createEvent('CustomEvent');
+				const event = document.createEvent('CustomEvent');
 				event.initCustomEvent('webllm-error', true, true, { error: error });
 				window.dispatchEvent(event);
 			}

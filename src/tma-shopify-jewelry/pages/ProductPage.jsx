@@ -94,7 +94,7 @@ export default function ProductPage( { params } ) {
 					variantId: variantId || null,
 					name:      product.title ?? product.name,
 					price:     extractProductPrice( product ),
-					image:     image,
+					image,
 					qty,
 				},
 			},

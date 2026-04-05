@@ -89,12 +89,12 @@
 		 * @returns {Promise<Array>} Promise resolving to array of tools
 		 */
 		async fetchTools() {
-			var endpoint = window.wpMcpAiChat && window.wpMcpAiChat.toolsEndpoint;
+			const endpoint = window.wpMcpAiChat && window.wpMcpAiChat.toolsEndpoint;
 			if ( ! endpoint ) {
 				throw new Error( 'Tools endpoint not configured' );
 			}
 			
-			var response = await fetch( endpoint, {
+			const response = await fetch( endpoint, {
 				method: 'GET',
 				headers: {
 					'X-WP-Nonce': window.wpMcpAiChat && window.wpMcpAiChat.nonce || ''
@@ -105,7 +105,7 @@
 				throw new Error( 'Failed to fetch tools: ' + response.statusText );
 			}
 			
-			var data = await response.json();
+			const data = await response.json();
 			return data.tools || data || [];
 		}
 		
@@ -117,12 +117,12 @@
 		 * @returns {Promise<Object>} Tool execution result
 		 */
 		async executeTool( toolName, args ) {
-			var endpoint = window.wpMcpAiChat && window.wpMcpAiChat.toolsEndpoint;
+			const endpoint = window.wpMcpAiChat && window.wpMcpAiChat.toolsEndpoint;
 			if ( ! endpoint ) {
 				throw new Error( 'Tools endpoint not configured' );
 			}
 			
-			var response = await fetch( endpoint, {
+			const response = await fetch( endpoint, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -150,7 +150,7 @@
 		window.dispatchEvent( new Event( 'wp-mcp-ai-tool-adapter-ready' ) );
 	} else {
 		// Fallback for older browsers
-		var event = document.createEvent( 'Event' );
+		const event = document.createEvent( 'Event' );
 		event.initEvent( 'wp-mcp-ai-tool-adapter-ready', true, true );
 		window.dispatchEvent( event );
 	}
