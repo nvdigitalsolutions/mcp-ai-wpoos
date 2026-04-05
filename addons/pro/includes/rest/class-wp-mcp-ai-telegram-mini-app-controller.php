@@ -3669,6 +3669,16 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$slug      = $request->get_param( 'slug' );
 		$arguments = $request->get_param( 'arguments' );
 
+		if ( empty( $slug ) || ! is_string( $slug ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_invalid_slug',
+				__( 'Tool slug must be a non-empty string.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$slug = sanitize_text_field( $slug );
+
 		if ( ! is_array( $arguments ) ) {
 			$arguments = array();
 		}
@@ -3705,7 +3715,16 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			'source'  => 'telegram_mini_app',
 		);
 
-		$result = $tool->execute( $arguments, $context );
+		try {
+			$result = $tool->execute( $arguments, $context );
+		} catch ( \Throwable $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_tool_execution_error',
+				/* translators: %s: error message from the tool */
+				sprintf( __( 'Tool execution failed: %s', 'mcp-ai-wpoos-pro' ), $e->getMessage() ),
+				array( 'status' => 500 )
+			);
+		}
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
