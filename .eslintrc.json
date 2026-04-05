@@ -54,7 +54,7 @@
 				"**/orchestration/autonomous-orchestrator.js",
 				"**/orchestration/browser-circuit-breaker.js",
 				"**/orchestration/research-compiler.js",
-			"**/sse-service.js"
+				"**/sse-service.js"
 			],
 			"parserOptions": {
 				"sourceType": "module"
