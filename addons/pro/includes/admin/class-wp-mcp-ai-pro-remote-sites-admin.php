@@ -5749,6 +5749,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				telegramFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+				// Re-apply template-based data source row visibility so only the
+				// relevant row (WooCommerce or Shopify) is shown, not both.
+				var _tplSel = document.getElementById( 'telegram_mini_app_template' );
+				if ( _tplSel ) {
+					var _val         = _tplSel.value;
+					var _wooRow      = document.querySelector( '.tma-woo-source-row' );
+					var _shopifyRow  = document.querySelector( '.tma-shopify-source-row' );
+					var _wooTpls     = [ 'woo_shop', 'ecommerce' ];
+					var _shopifyTpls = [ 'shopify_shop', 'jewelry_shop' ];
+					if ( _wooRow )     { _wooRow.style.display     = _wooTpls.indexOf( _val ) !== -1     ? 'table-row' : 'none'; }
+					if ( _shopifyRow ) { _shopifyRow.style.display = _shopifyTpls.indexOf( _val ) !== -1 ? 'table-row' : 'none'; }
+				}
 				// Telegram uses Bot API with bot token
 				urlField.value = 'https://api.telegram.org';
 				urlField.readOnly = true;
