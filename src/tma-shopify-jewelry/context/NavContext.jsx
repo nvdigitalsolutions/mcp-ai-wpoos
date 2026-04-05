@@ -7,7 +7,7 @@
  * @since   1.2.0
  */
 
-import { createContext, useContext } from '@wordpress/element';
+import { createContext, useContext } from 'react';
 
 export const NavContext = createContext( {
 	route:    { page: 'shop', params: {} },

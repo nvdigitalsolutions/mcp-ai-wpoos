@@ -8,7 +8,7 @@
  * @since   1.1.5
  */
 
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback } from 'react';
 import { wooFetch } from '../api/client';
 
 /**

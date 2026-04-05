@@ -6871,11 +6871,6 @@ class WP_MCP_AI_TMA_Template_Woo_Shop extends WP_MCP_AI_Telegram_Mini_App_Templa
 			'<div id="tma-woo-shop-root"></div>' .
 			'<script>window.wpTmaWooConfig=' . $config . ';</script>' .
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
-			// Guard: stale/cached builds compiled with DependencyExtractionWebpackPlugin
-			// try to dereference window.wp.element which does not exist in Telegram
-			// WebView. Provide empty stubs so the property access does not throw an
-			// unrecoverable TypeError; the app will still fail gracefully.
-			'<script>window.wp=window.wp||{};window.wp.element=window.wp.element||{};</script>' .
 			( $js_url ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
 		// phpcs:enable
@@ -6998,11 +6993,6 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 			'<div id="tma-shopify-jewelry-root"></div>' .
 			'<script>window.wpTmaJewelryConfig=' . $config . ';</script>' .
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
-			// Guard: stale/cached builds compiled with DependencyExtractionWebpackPlugin
-			// try to dereference window.wp.element which does not exist in Telegram
-			// WebView. Provide empty stubs so the property access does not throw an
-			// unrecoverable TypeError; the app will still fail gracefully.
-			'<script>window.wp=window.wp||{};window.wp.element=window.wp.element||{};</script>' .
 			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
 		// phpcs:enable

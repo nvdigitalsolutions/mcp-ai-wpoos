@@ -9,7 +9,7 @@
  * @since   1.1.5
  */
 
-import { useState, useRef, useEffect } from '@wordpress/element';
+import { useState, useRef, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { useAssistant } from '../hooks/useAssistant';
 import { useTMA } from '../context/TMAContext';

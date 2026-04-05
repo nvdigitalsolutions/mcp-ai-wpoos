@@ -14,7 +14,7 @@ import {
 	useContext,
 	useEffect,
 	useState,
-} from '@wordpress/element';
+} from 'react';
 
 /** @type {React.Context<{twa: object|null, user: object|null, haptic: Function}>} */
 const TMAContext = createContext( {
