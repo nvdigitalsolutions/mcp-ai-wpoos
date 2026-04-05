@@ -53,7 +53,7 @@ const WorkflowSidebar = ( { onLoadTemplate, onLoadWorkflow, onDeleteWorkflow } )
 		if ( activeTab === 'templates' && templates.length === 0 ) {
 			loadTemplates();
 		}
-	}, [activeTab, templates.length] );
+	}, [activeTab] );
 
 	/**
 	 * Load saved workflows when that tab is active
@@ -228,10 +228,7 @@ const WorkflowSidebar = ( { onLoadTemplate, onLoadWorkflow, onDeleteWorkflow } )
 										<div
 											key={index}
 											className="template-item"
-											role="button"
-											tabIndex={0}
 											onClick={() => handleTemplateClick( template )}
-											onKeyDown={( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) { handleTemplateClick( template ); } }}
 										>
 											<div className="template-name">{preview.name}</div>
 											<div className="template-description">{preview.description}</div>
@@ -277,10 +274,7 @@ const WorkflowSidebar = ( { onLoadTemplate, onLoadWorkflow, onDeleteWorkflow } )
 									<div key={workflow.id} className="workflow-list-item">
 										<div
 											className="workflow-list-item-info"
-											role="button"
-											tabIndex={0}
 											onClick={() => onLoadWorkflow && onLoadWorkflow( workflow )}
-											onKeyDown={( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) { if ( onLoadWorkflow ) { onLoadWorkflow( workflow ); } } }}
 										>
 											<div className="workflow-list-name">{workflow.name}</div>
 											{workflow.description && (

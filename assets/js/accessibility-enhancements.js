@@ -91,7 +91,7 @@
 		 * Keyboard Navigation Enhancements
 		 */
 		initKeyboardNavigation: function() {
-			const _self = this;
+			const self = this;
 			
 			// Arrow key navigation for tabs
 			$('.nav-tab-wrapper').on('keydown', '.nav-tab', function(e) {
@@ -330,7 +330,7 @@
 			// Apply to existing filter buttons
 			$('#wp-mcp-ai-filter-tools').on('click', function() {
 				const $button = $(this);
-				const _$icon = $button.find('.dashicons');
+				const $icon = $button.find('.dashicons');
 				
 				$button.prop('disabled', true).addClass('is-loading');
 				

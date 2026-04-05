@@ -7,7 +7,7 @@
  * @since 2.2.0
  */
 
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { getExecutionHistory, formatExecution, clearExecutionHistory } from '../utils/executionHistory';
 
@@ -18,17 +18,16 @@ const ExecutionHistoryPanel = ( { workflowId, onClose, onReplay } ) => {
 	const [ history, setHistory ] = useState( [] );
 	const [ selectedExecution, setSelectedExecution ] = useState( null );
 
-	const loadHistory = useCallback( () => {
-		const executions = getExecutionHistory( workflowId );
-		setHistory( executions );
-	}, [ workflowId ] );
-
 	useEffect( () => {
 		loadHistory();
-	}, [ workflowId, loadHistory ] );
+	}, [ workflowId ] );
+
+	const loadHistory = () => {
+		const executions = getExecutionHistory( workflowId );
+		setHistory( executions );
+	};
 
 	const handleClearHistory = () => {
-		// eslint-disable-next-line no-alert
 		if ( window.confirm( __( 'Are you sure you want to clear execution history?', 'mcp-ai-wpoos' ) ) ) {
 			clearExecutionHistory( workflowId );
 			setHistory( [] );
@@ -107,10 +106,7 @@ const ExecutionHistoryPanel = ( { workflowId, onClose, onReplay } ) => {
 										className={`history-item ${getStatusClass( execution.status )} ${
 											selectedExecution?.id === execution.id ? 'selected' : ''
 										}`}
-										role="button"
-										tabIndex={0}
 										onClick={() => handleSelectExecution( execution )}
-										onKeyDown={( e ) => { if ( e.key === 'Enter' || e.key === ' ' ) { handleSelectExecution( execution ); } }}
 									>
 										<div className="history-item-status">
 											<span className={`status-icon ${getStatusClass( execution.status )}`}>
