@@ -437,6 +437,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_Ecommerce() );
 		$this->register( new WP_MCP_AI_TMA_Template_Woo_Shop() );
 		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Jewelry() );
+		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Shop() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -6992,6 +6993,130 @@ class WP_MCP_AI_TMA_Template_Shopify_Jewelry extends WP_MCP_AI_Telegram_Mini_App
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-jw-template">' .
 			'<div id="tma-shopify-jewelry-root"></div>' .
 			'<script>window.wpTmaJewelryConfig=' . $config . ';</script>' .
+			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
+			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
+			'</body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   TEMPLATE: Shopify Shop (General Purpose)
+   ========================================================================== */
+
+/**
+ * General-purpose Shopify Store Telegram Mini App template.
+ *
+ * Modern React SPA for any Shopify store. Connects via the plugin's Remote
+ * Sites / Shopify tools infrastructure. Features:
+ *
+ *  - Product catalog with collection filters and search
+ *  - Product detail with variant selector and image gallery
+ *  - Shopping cart with quantity controls
+ *  - Checkout via AI assistant
+ *  - Shopify order history with status badges
+ *  - AI shopping assistant chat
+ *  - Pull-to-refresh and skeleton loading states
+ *  - Share product via Telegram
+ *
+ * The compiled React bundle lives at:
+ *   addons/pro/build/tma-shopify-shop/tma-shopify-shop.js
+ *   addons/pro/build/tma-shopify-shop/tma-shopify-shop.css
+ *
+ * Build with: npm run build:tma-shopify-shop
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'shopify_shop';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'Shopify Shop (React)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Full-featured React SPA for Shopify stores. Product catalog with collection filters, variant selector, cart, checkout, order history, and AI shopping assistant. Connect to any Shopify store via Remote Sites.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '🛒';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#5c6ac4';
+	}
+
+	/**
+	 * Render the body HTML for this template.
+	 *
+	 * Injects a `window.wpTmaShopifyConfig` JS object with all URLs and IDs
+	 * the React SPA needs, then loads the compiled bundle from the pro addon's
+	 * build directory.
+	 *
+	 * Context keys used:
+	 *   validate_url            – POST endpoint to verify Telegram initData and receive a fresh nonce/token.
+	 *   tools_url               – Base URL for the tool-execution endpoint.
+	 *   chat_url                – TMA-aware chat endpoint.
+	 *   analytics_url           – Analytics endpoint for data visualisation.
+	 *   nonce                   – Initial WordPress nonce.
+	 *   assistant_id            – Resolved Mini App assistant ID.
+	 *   site_name               – Site display name.
+	 *   shopify_connection_id   – Shopify Remote Sites connection ID (optional; falls back to global option).
+	 *   chart_js_url            – CDN URL for Chart.js lazy loading.
+	 *   member_id               – Active member ID (from TMA session, if available).
+	 *   member_name             – Active member display name (from TMA session, if available).
+	 *
+	 * @param  array $ctx Context variables injected by the TMA controller.
+	 * @return string     HTML body fragment.
+	 */
+	public function render_html( array $ctx ) {
+		$js_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-shop/tma-shopify-shop.js' : '';
+		$css_url = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL . 'build/tma-shopify-shop/tma-shopify-shop.css' : '';
+
+		// Resolve the Shopify connection ID: per-context value, then global option.
+		$connection_id = '';
+		if ( ! empty( $ctx['shopify_connection_id'] ) ) {
+			$connection_id = sanitize_key( $ctx['shopify_connection_id'] );
+		} else {
+			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_shopify_shop_connection_id', '' ) );
+		}
+
+		// wp_json_encode() uses JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+		// ensuring the output is safe for inline <script> embedding.
+		$config = wp_json_encode(
+			array(
+				'validateUrl'  => $ctx['validate_url']  ?? '',
+				'toolsUrl'     => $ctx['tools_url']     ?? '',
+				'chatUrl'      => $ctx['chat_url']      ?? '',
+				'analyticsUrl' => $ctx['analytics_url'] ?? '',
+				'nonce'        => $ctx['nonce']         ?? '',
+				'assistantId'  => $ctx['assistant_id']  ?? '',
+				'siteName'     => $ctx['site_name']     ?? get_bloginfo( 'name' ),
+				'siteUrl'      => home_url(),
+				'connectionId' => $connection_id,
+				'chartJsUrl'   => $ctx['chart_js_url']  ?? '',
+				'memberId'     => $ctx['member_id']     ?? '',
+				'memberName'   => $ctx['member_name']   ?? '',
+			)
+		);
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $config produced by wp_json_encode (HTML-safe); CSS/JS URLs escaped with esc_url().
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-shopify-shop-template">' .
+			'<div id="tma-shopify-shop-root"></div>' .
+			'<script>window.wpTmaShopifyConfig=' . $config . ';</script>' .
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
 			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';

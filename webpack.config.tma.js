@@ -22,15 +22,18 @@
  *   webpack.config.tma-builder.js
  *   webpack.config.tma-woo-shop.js
  *   webpack.config.tma-shopify-jewelry.js
+ *   webpack.config.tma-shopify-shop.js
  *
  * Usage:
  *   npm run build:tma-builder          → production bundle (tma-template-builder)
  *   npm run build:tma-woo-shop         → production bundle (tma-woo-shop)
  *   npm run build:tma-shopify-jewelry  → production bundle (tma-shopify-jewelry)
+ *   npm run build:tma-shopify-shop     → production bundle (tma-shopify-shop)
  *   npm run start:tma-builder          → watch mode (tma-template-builder)
  *   npm run start:tma-woo-shop         → watch mode (tma-woo-shop)
  *   npm run start:tma-shopify-jewelry  → watch mode (tma-shopify-jewelry)
- *   npm run build:tma                  → all three bundles in one pass
+ *   npm run start:tma-shopify-shop     → watch mode (tma-shopify-shop)
+ *   npm run build:tma                  → all four bundles in one pass
  *
  * To build only a specific TMA during development, pass the ENTRY env var:
  *   ENTRY=tma-template-builder npm run build:tma
@@ -39,6 +42,7 @@
  *   addons/pro/build/tma-template-builder/   (tma-template-builder.js/css/asset.php)
  *   addons/pro/build/tma-woo-shop/           (tma-woo-shop.js/css/asset.php)
  *   addons/pro/build/tma-shopify-jewelry/    (tma-shopify-jewelry.js/css/asset.php)
+ *   addons/pro/build/tma-shopify-shop/       (tma-shopify-shop.js/css/asset.php)
  *
  * @package WP_MCP_AI
  * @since   1.2.0
@@ -85,6 +89,11 @@ const TMA_ENTRIES = [
 		name:   'tma-shopify-jewelry',
 		entry:  'src/tma-shopify-jewelry/index.jsx',
 		output: 'addons/pro/build/tma-shopify-jewelry',
+	},
+	{
+		name:   'tma-shopify-shop',
+		entry:  'src/tma-shopify-shop/index.jsx',
+		output: 'addons/pro/build/tma-shopify-shop',
 	},
 ];
 
