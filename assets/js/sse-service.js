@@ -26,7 +26,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 	 * EventSource ready state constants (for backward compatibility)
 	 * These mirror the EventSource.readyState values for clarity
 	 */
-	const _READY_STATE = {
+	const READY_STATE = {
 		CONNECTING: 0,
 		OPEN: 1,
 		CLOSED: 2

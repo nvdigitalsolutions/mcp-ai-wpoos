@@ -21,7 +21,7 @@
 	 */
 	function waitForDependencies() {
 		return new Promise( function( resolve, reject ) {
-			const checkInterval = setInterval( function() {
+			var checkInterval = setInterval( function() {
 				if ( window.WP_MCP_AI_WebLLM_FunctionCalling ) {
 					clearInterval( checkInterval );
 					resolve();
@@ -40,7 +40,7 @@
 	 * Available vision models (loaded on-demand from MLC AI CDN)
 	 * Models are downloaded to user's browser, not bundled in plugin
 	 */
-	const VISION_MODELS = {
+	var VISION_MODELS = {
 		'LLaVA-1.5-7B-q4f16_1-MLC': {
 			name: 'LLaVA 1.5 7B',
 			size: '~4GB',
@@ -124,7 +124,7 @@
 			
 			// Check if current model supports vision
 			if ( ! this.supportsVision() ) {
-				const _modelInfo = this.getVisionModelInfo( this.currentModelId );
+				var modelInfo = this.getVisionModelInfo( this.currentModelId );
 				throw new Error( 
 					'Current model (' + this.currentModelId + ') does not support vision. ' +
 					'Please load a vision model like LLaVA-1.5-7B or Qwen2-VL-2B.'
@@ -140,7 +140,7 @@
 			} );
 			
 			// Format messages with images
-			const formattedMessages = this.formatMessagesWithImages( messages, images );
+			var formattedMessages = this.formatMessagesWithImages( messages, images );
 			
 			// Use parent class chatWithTools method if tools provided
 			if ( tools && tools.length > 0 ) {
@@ -161,7 +161,7 @@
 		 * @returns {Array} Formatted messages
 		 */
 		formatMessagesWithImages( messages, images ) {
-			const _self = this;
+			var self = this;
 			
 			// If no images provided separately, return messages as-is
 			// (images might already be embedded in message content)
@@ -170,8 +170,8 @@
 			}
 			
 			// Find the last user message and add images to it
-			let lastUserIndex = -1;
-			for ( let i = messages.length - 1; i >= 0; i-- ) {
+			var lastUserIndex = -1;
+			for ( var i = messages.length - 1; i >= 0; i-- ) {
 				if ( messages[i].role === 'user' ) {
 					lastUserIndex = i;
 					break;
@@ -189,8 +189,8 @@
 			}
 			
 			// Format the user message with images
-			const userMessage = messages[lastUserIndex];
-			let formattedContent = [];
+			var userMessage = messages[lastUserIndex];
+			var formattedContent = [];
 			
 			// Add text content
 			if ( typeof userMessage.content === 'string' ) {
@@ -214,7 +214,7 @@
 			} );
 			
 			// Create new messages array with formatted user message
-			const formattedMessages = messages.slice();
+			var formattedMessages = messages.slice();
 			formattedMessages[lastUserIndex] = {
 				role: 'user',
 				content: formattedContent
@@ -248,7 +248,7 @@
 				instanceId: this.instanceId
 			} );
 			
-			const messages = [
+			var messages = [
 				{
 					role: 'user',
 					content: question || 'What do you see in this image?'
@@ -288,7 +288,7 @@
 		if ( typeof Event === 'function' ) {
 			window.dispatchEvent( new Event( 'wp-mcp-ai-webllm-multimodal-ready' ) );
 		} else {
-			const event = document.createEvent( 'Event' );
+			var event = document.createEvent( 'Event' );
 			event.initEvent( 'wp-mcp-ai-webllm-multimodal-ready', true, true );
 			window.dispatchEvent( event );
 		}

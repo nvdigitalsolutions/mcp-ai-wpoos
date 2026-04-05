@@ -357,9 +357,8 @@ const WorkflowPropertiesPanel = ( {
 							/>
 						</div>
 						<div className="property-group">
-							<label className="property-checkbox-label" htmlFor="auto-approve-checkbox">
+							<label className="property-checkbox-label">
 								<input
-									id="auto-approve-checkbox"
 									type="checkbox"
 									checked={node.data.config?.auto_approve || false}
 									onChange={( e ) => handleChange( 'auto_approve', e.target.checked )}

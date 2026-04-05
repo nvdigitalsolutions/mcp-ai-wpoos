@@ -34,7 +34,7 @@
 		const $toolsList = $('#profession-default-tools-list');
 		const $noResultsMsg = $('#no-tools-found');
 		const $searchInput = $('#profession-tools-search');
-		const _$selectedCount = $('#tools-selected-count');
+		const $selectedCount = $('#tools-selected-count');
 		const $countNumber = $('#tools-count-number');
 
 		// Update selected count.

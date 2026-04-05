@@ -57,7 +57,7 @@
 		 * Setup auto-refresh functionality.
 		 */
 		setupAutoRefresh: function() {
-			const _self = this;
+			const self = this;
 			
 			// Check if auto-refresh is enabled
 			const toggleCheckbox = $('#toggle-auto-refresh');
@@ -453,7 +453,7 @@
 
 			const $button = $(e.currentTarget);
 			const $icon = $button.find('.dashicons');
-			const _originalText = $button.html();
+			const originalText = $button.html();
 
 			// Show loading state
 			$button.prop('disabled', true);

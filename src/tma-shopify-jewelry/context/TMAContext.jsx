@@ -94,19 +94,9 @@ export function TMAProvider( { children } ) {
 		twa.expand();
 	}, [ twa ] );
 
-	/** @param {'light'|'medium'|'heavy'|'rigid'|'soft'|'selectionChanged'|'success'|'error'|'warning'} type */
+	/** @param {'light'|'medium'|'heavy'|'rigid'|'soft'} type */
 	const haptic = ( type = 'light' ) => {
-		const hf = twa?.HapticFeedback;
-		if ( ! hf ) {
-			return;
-		}
-		if ( type === 'selectionChanged' ) {
-			hf.selectionChanged();
-		} else if ( [ 'success', 'error', 'warning' ].includes( type ) ) {
-			hf.notificationOccurred( type );
-		} else {
-			hf.impactOccurred( type );
-		}
+		twa?.HapticFeedback?.impactOccurred( type );
 	};
 
 	return (

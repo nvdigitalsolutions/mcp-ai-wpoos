@@ -25,7 +25,7 @@ import ErrorMessage from '../components/ErrorMessage';
 /** @param {{ params:object }} props */
 export default function ShopPage() {
 	const { navigate } = useNav();
-	const { haptic } = useTMA();
+	const { haptic, twa } = useTMA();
 
 	const [ search, setSearch ] = useState( '' );
 	const [ categoryId, setCategoryId ] = useState( '' );

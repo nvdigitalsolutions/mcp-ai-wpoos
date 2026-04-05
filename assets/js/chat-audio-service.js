@@ -24,7 +24,7 @@
 	const SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
 
 	// Audio transcription constants
-	const _TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
+	const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
 	const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
 	const MAX_TRANSCRIBE_BYTES = 26214400; // 25MB
 
@@ -1465,7 +1465,7 @@
 	 * @param {string} text - Translated text
 	 * @param {Object} helpers - Helper functions
 	 */
-	function insertTranslatedText(state, text, _helpers) {
+	function insertTranslatedText(state, text, helpers) {
 		if (!state || !state.textarea || !text) {
 			return;
 		}
@@ -1796,7 +1796,7 @@
 				// Initialize Voice Activity Detection for hands-free auto-stop
 				initVoiceActivityDetection(state, stream, helpers);
 			})
-			.catch(function (_error) {
+			.catch(function (error) {
 				if (helpers && helpers.setStatus && helpers.getString) {
 					helpers.setStatus(
 						state.container,
@@ -1963,7 +1963,7 @@
 			lastModified: Date.now(),
 		});
 
-		let _uploadedRecord = null;
+		let uploadedRecord = null;
 
 		if (!helpers || !helpers.uploadAudioForTranscription || !helpers.requestTranscription) {
 			state.voiceChatProcessing = false;
@@ -1976,7 +1976,7 @@
 
 		helpers.uploadAudioForTranscription(state, file)
 			.then(function (record) {
-				_uploadedRecord = record;
+				uploadedRecord = record;
 				if (!record || typeof record.id === 'undefined') {
 					throw new Error('Upload failed');
 				}

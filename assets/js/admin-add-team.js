@@ -8,7 +8,7 @@
 (function($) {
 	'use strict';
 
-	let modal = null;
+	var modal = null;
 
 	$(document).ready(function() {
 		modal = $('#wp-mcp-ai-deploy-results-modal');
@@ -17,14 +17,14 @@
 		$('.wp-mcp-ai-deploy-team').on('click', function(e) {
 			e.preventDefault();
 
-			const button = $(this);
-			const card = button.closest('.wp-mcp-ai-team-card');
-			const teamId = button.data('team-id');
-			const originalButtonText = button.text();
+			var button = $(this);
+			var card = button.closest('.wp-mcp-ai-team-card');
+			var teamId = button.data('team-id');
+			var originalButtonText = button.text();
 
 			// Confirm deployment
-			const membersCount = button.text().match(/\d+/)[0];
-			const confirmMessage = membersCount == 1 
+			var membersCount = button.text().match(/\d+/)[0];
+			var confirmMessage = membersCount == 1 
 				? 'Are you sure you want to deploy this team? 1 assistant will be created.'
 				: 'Are you sure you want to deploy this team? ' + membersCount + ' assistants will be created.';
 			
@@ -70,7 +70,7 @@
 	});
 
 	function showResults(data) {
-		let html = '';
+		var html = '';
 
 		// Success message
 		if (data.message) {
@@ -105,7 +105,7 @@
 	}
 
 	function escapeHtml(text) {
-		const map = {
+		var map = {
 			'&': '&amp;',
 			'<': '&lt;',
 			'>': '&gt;',

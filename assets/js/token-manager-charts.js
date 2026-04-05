@@ -15,7 +15,7 @@
 	/**
 	 * Token Manager Charts object.
 	 */
-	const TokenCharts = {
+	var TokenCharts = {
 		/**
 		 * Chart instances.
 		 */
@@ -42,15 +42,15 @@
 		 * Initialize usage trend line chart.
 		 */
 		initUsageTrendChart: function() {
-			const canvas = document.getElementById('wp-mcp-ai-usage-trend-chart');
+			var canvas = document.getElementById('wp-mcp-ai-usage-trend-chart');
 			if (!canvas) {
 				return;
 			}
 
-			const ctx = canvas.getContext('2d');
+			var ctx = canvas.getContext('2d');
 			
 			// Initial configuration - will be populated from server data
-			const config = {
+			var config = {
 				type: 'line',
 				data: {
 					labels: [],
@@ -89,15 +89,15 @@
 		 * Initialize tier distribution pie chart.
 		 */
 		initTierDistributionChart: function() {
-			const canvas = document.getElementById('wp-mcp-ai-tier-distribution-chart');
+			var canvas = document.getElementById('wp-mcp-ai-tier-distribution-chart');
 			if (!canvas) {
 				return;
 			}
 
-			const ctx = canvas.getContext('2d');
+			var ctx = canvas.getContext('2d');
 			
 			// Initial configuration - will be populated from server data
-			const config = {
+			var config = {
 				type: 'pie',
 				data: {
 					labels: ['Free', 'Pro', 'Enterprise'],
@@ -140,15 +140,15 @@
 		 * Initialize tool breakdown bar chart.
 		 */
 		initToolBreakdownChart: function() {
-			const canvas = document.getElementById('wp-mcp-ai-tool-breakdown-chart');
+			var canvas = document.getElementById('wp-mcp-ai-tool-breakdown-chart');
 			if (!canvas) {
 				return;
 			}
 
-			const ctx = canvas.getContext('2d');
+			var ctx = canvas.getContext('2d');
 			
 			// Initial configuration - will be populated from server data
-			const config = {
+			var config = {
 				type: 'bar',
 				data: {
 					labels: [],
@@ -193,15 +193,15 @@
 		 * Initialize provider distribution pie chart.
 		 */
 		initProviderDistributionChart: function() {
-			const canvas = document.getElementById('wp-mcp-ai-provider-distribution-chart');
+			var canvas = document.getElementById('wp-mcp-ai-provider-distribution-chart');
 			if (!canvas) {
 				return;
 			}
 
-			const ctx = canvas.getContext('2d');
+			var ctx = canvas.getContext('2d');
 			
 			// Initial configuration - will be populated from server data
-			const config = {
+			var config = {
 				type: 'doughnut',
 				data: {
 					labels: [],
@@ -235,15 +235,15 @@
 		 * Initialize model distribution pie chart.
 		 */
 		initModelDistributionChart: function() {
-			const canvas = document.getElementById('wp-mcp-ai-model-distribution-chart');
+			var canvas = document.getElementById('wp-mcp-ai-model-distribution-chart');
 			if (!canvas) {
 				return;
 			}
 
-			const ctx = canvas.getContext('2d');
+			var ctx = canvas.getContext('2d');
 			
 			// Initial configuration - will be populated from server data
-			const config = {
+			var config = {
 				type: 'doughnut',
 				data: {
 					labels: [],
@@ -277,7 +277,7 @@
 		 * Load usage trend data via AJAX.
 		 */
 		loadUsageTrendData: function() {
-			const self = this;
+			var self = this;
 
 			// Fetch token usage trend data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
@@ -319,7 +319,7 @@
 		 * Load tier distribution data via AJAX.
 		 */
 		loadTierDistributionData: function() {
-			const self = this;
+			var self = this;
 
 			// Fetch tier distribution data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
@@ -355,7 +355,7 @@
 		 * Load tool breakdown data via AJAX.
 		 */
 		loadToolBreakdownData: function() {
-			const self = this;
+			var self = this;
 
 			// Fetch tool breakdown data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
@@ -386,7 +386,7 @@
 		 * Load provider distribution data via AJAX.
 		 */
 		loadProviderDistributionData: function() {
-			const self = this;
+			var self = this;
 
 			// Fetch provider distribution data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
@@ -416,7 +416,7 @@
 		 * Load model distribution data via AJAX.
 		 */
 		loadModelDistributionData: function() {
-			const self = this;
+			var self = this;
 
 			// Fetch model distribution data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
@@ -447,11 +447,11 @@
 		 * Bind UI events.
 		 */
 		bindEvents: function() {
-			const self = this;
+			var self = this;
 			
 			// Refresh charts when time period changes
 			$(document).on('change', '.wp-mcp-ai-chart-period-select', function() {
-				const period = parseInt($(this).val(), 10);
+				var period = parseInt($(this).val(), 10);
 				self.currentPeriod = period;
 				self.refreshCharts();
 			});
@@ -467,7 +467,7 @@
 		 */
 		refreshCharts: function() {
 			// Update chart title with period
-			const periodText = this.currentPeriod === 1 ? 'Today' :
+			var periodText = this.currentPeriod === 1 ? 'Today' :
 							 this.currentPeriod === 7 ? '7 Days' : 
 							 this.currentPeriod === 30 ? '30 Days' : '90 Days';
 			

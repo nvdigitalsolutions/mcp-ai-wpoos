@@ -15,7 +15,7 @@
 	/**
 	 * Analytics Dashboard object.
 	 */
-	const AnalyticsDashboard = {
+	var AnalyticsDashboard = {
 		/**
 		 * Chart instances.
 		 */
@@ -45,19 +45,19 @@
 		 * Initialize gauge chart for current usage percentage.
 		 */
 		initGaugeChart: function() {
-			const gaugeCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-gauge');
+			var gaugeCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-gauge');
 			if (!gaugeCanvas || typeof Chart === 'undefined') {
 				return;
 			}
 
 			// Get gauge data from data attribute.
-			const gaugeData = $(gaugeCanvas).data('gauge-data');
+			var gaugeData = $(gaugeCanvas).data('gauge-data');
 			if (!gaugeData) {
 				return;
 			}
 
 			// Create gauge chart (doughnut with half circle).
-			const gaugeChart = new Chart(gaugeCanvas.getContext('2d'), {
+			var gaugeChart = new Chart(gaugeCanvas.getContext('2d'), {
 				type: 'doughnut',
 				data: {
 					labels: [gaugeData.label || 'Usage', 'Available'],
@@ -92,19 +92,19 @@
 		 * Initialize usage trend line chart.
 		 */
 		initUsageTrendChart: function() {
-			const trendCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-trend');
+			var trendCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-trend');
 			if (!trendCanvas || typeof Chart === 'undefined') {
 				return;
 			}
 
 			// Get chart data from data attribute.
-			const chartData = $(trendCanvas).data('chart-data');
+			var chartData = $(trendCanvas).data('chart-data');
 			if (!chartData) {
 				return;
 			}
 
 			// Create chart instance with enhanced tooltips.
-			const chart = new Chart(trendCanvas.getContext('2d'), {
+			var chart = new Chart(trendCanvas.getContext('2d'), {
 				type: 'line',
 				data: chartData,
 				options: {
@@ -136,7 +136,7 @@
 									return tooltipItems[0].label;
 								},
 								label: function(context) {
-									let label = context.dataset.label || '';
+									var label = context.dataset.label || '';
 									if (label) {
 										label += ': ';
 									}
@@ -145,9 +145,9 @@
 								},
 								afterLabel: function(context) {
 									// Add percentage of peak.
-									const dataset = context.dataset.data;
-									const maxValue = Math.max.apply(null, dataset);
-									const percentage = ((context.parsed.y / maxValue) * 100).toFixed(1);
+									var dataset = context.dataset.data;
+									var maxValue = Math.max.apply(null, dataset);
+									var percentage = ((context.parsed.y / maxValue) * 100).toFixed(1);
 									return 'Peak: ' + percentage + '%';
 								}
 							}
@@ -190,26 +190,26 @@
 		 * Bind UI events.
 		 */
 		bindEvents: function() {
-			const self = this;
+			var self = this;
 
 			// Refresh chart data when requested.
 			$(document).on('click', '.wp-mcp-ai-refresh-chart', function(e) {
 				e.preventDefault();
-				const chartId = $(this).data('chart-id');
+				var chartId = $(this).data('chart-id');
 				self.refreshChart(chartId);
 			});
 
 			// Handle chart period changes.
 			$(document).on('change', '.wp-mcp-ai-chart-period', function() {
-				const chartId = $(this).data('chart-id');
-				const period = $(this).val();
+				var chartId = $(this).data('chart-id');
+				var period = $(this).val();
 				self.updateChartPeriod(chartId, period);
 			});
 
 			// Export chart as PNG.
 			$(document).on('click', '.wp-mcp-ai-export-chart', function(e) {
 				e.preventDefault();
-				const chartId = $(this).data('chart-id');
+				var chartId = $(this).data('chart-id');
 				self.exportChart(chartId);
 			});
 		},
@@ -225,7 +225,7 @@
 				return;
 			}
 
-			const self = this;
+			var self = this;
 
 			$.ajax({
 				url: wpMcpAiAnalytics.ajaxUrl,
@@ -264,7 +264,7 @@
 				return;
 			}
 
-			const self = this;
+			var self = this;
 
 			$.ajax({
 				url: wpMcpAiAnalytics.ajaxUrl,
@@ -293,7 +293,7 @@
 		 * @param {Object} data New chart data.
 		 */
 		updateChartData: function(chartId, data) {
-			const chart = this.charts[chartId];
+			var chart = this.charts[chartId];
 			if (chart && data) {
 				chart.data = data;
 				chart.update();
@@ -306,24 +306,24 @@
 		 * @param {string} chartId Chart identifier.
 		 */
 		exportChart: function(chartId) {
-			const chart = this.charts[chartId];
+			var chart = this.charts[chartId];
 			if (!chart) {
 				console.error('Chart not found:', chartId);
 				return;
 			}
 
 			// Get canvas element.
-			const canvas = chart.canvas;
+			var canvas = chart.canvas;
 			if (!canvas) {
 				console.error('Canvas not found for chart:', chartId);
 				return;
 			}
 
 			// Convert to data URL.
-			const url = canvas.toDataURL('image/png');
+			var url = canvas.toDataURL('image/png');
 
 			// Create download link.
-			const link = document.createElement('a');
+			var link = document.createElement('a');
 			link.download = chartId + '-' + Date.now() + '.png';
 			link.href = url;
 			link.click();

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-mini-app-errors',
-        'version' => 'dev-copilot/fix-telegram-mini-app-errors',
-        'reference' => '3315ab346ebc557f08533db14b8491616e503094',
+        'pretty_version' => 'dev-copilot/fix-agent-performance-analytics',
+        'version' => 'dev-copilot/fix-agent-performance-analytics',
+        'reference' => '781990fd925e596da377179d5ac03029b0c812c2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-mini-app-errors',
-            'version' => 'dev-copilot/fix-telegram-mini-app-errors',
-            'reference' => '3315ab346ebc557f08533db14b8491616e503094',
+            'pretty_version' => 'dev-copilot/fix-agent-performance-analytics',
+            'version' => 'dev-copilot/fix-agent-performance-analytics',
+            'reference' => '781990fd925e596da377179d5ac03029b0c812c2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -21,7 +21,7 @@
 	 */
 	function waitForDependencies() {
 		return new Promise( function( resolve, reject ) {
-			const checkInterval = setInterval( function() {
+			var checkInterval = setInterval( function() {
 				if ( window.WP_MCP_AI_EmbeddedLLM && window.WP_MCP_AI_ToolAdapter ) {
 					clearInterval( checkInterval );
 					resolve();
@@ -60,7 +60,7 @@
 			async loadTools() {
 				try {
 					console.log( '[NV oOS WebLLM] Loading available tools...' );
-					const tools = await this.toolAdapter.fetchTools();
+					var tools = await this.toolAdapter.fetchTools();
 					this.availableTools = tools;
 					console.log( '[NV oOS WebLLM] Loaded ' + tools.length + ' tools' );
 					return tools;
@@ -85,7 +85,7 @@
 				}
 				
 				// Diagnostic: Log system prompt configuration
-				const systemMessage = messages.find( function( msg ) {
+				var systemMessage = messages.find( function( msg ) {
 					return msg.role === 'system';
 				} );
 				
@@ -101,14 +101,14 @@
 				}
 				
 				// Use provided tools or loaded tools
-				let toolsToUse = tools || this.availableTools;
+				var toolsToUse = tools || this.availableTools;
 				if ( toolsToUse.length === 0 ) {
 					console.warn( '[NV oOS WebLLM] No tools available, loading...' );
 					toolsToUse = await this.loadTools();
 				}
 				
 				// Convert WordPress tools to OpenAI function format
-				const formattedTools = this.toolAdapter.convertTools( toolsToUse );
+				var formattedTools = this.toolAdapter.convertTools( toolsToUse );
 				
 				console.log( '[NV oOS WebLLM] Starting chat with tools:', {
 					toolCount: formattedTools.length,
@@ -120,7 +120,7 @@
 				} );
 				
 				try {
-					const response = await this.currentEngine.chat.completions.create( {
+					var response = await this.currentEngine.chat.completions.create( {
 						messages: messages,
 						tools: formattedTools,
 						tool_choice: options.tool_choice || 'auto',
@@ -144,22 +144,22 @@
 			 * @returns {AsyncGenerator} Generator yielding chunks
 			 */
 			async *processToolStream( stream, onChunk ) {
-				let contentBuffer = '';
-				let reasoningBuffer = '';
-				const toolCallsBuffer = [];
-				let chunkCount = 0;
+				var contentBuffer = '';
+				var reasoningBuffer = '';
+				var toolCallsBuffer = [];
+				var chunkCount = 0;
 				
 				try {
-					for await ( const chunk of stream ) {
+					for await ( var chunk of stream ) {
 						chunkCount++;
-						const delta = chunk.choices && chunk.choices[0] && chunk.choices[0].delta;
+						var delta = chunk.choices && chunk.choices[0] && chunk.choices[0].delta;
 						
 						if ( ! delta ) {
 							continue;
 						}
 						
 						// Handle reasoning/thinking content from models like Qwen3, DeepSeek R1
-						const reasoningDelta = delta.reasoning_content || delta.reasoning || '';
+						var reasoningDelta = delta.reasoning_content || delta.reasoning || '';
 						if ( reasoningDelta ) {
 							reasoningBuffer += reasoningDelta;
 							if ( onChunk ) {
@@ -217,7 +217,7 @@
 			 */
 			bufferToolCalls( buffer, toolCallDeltas ) {
 				toolCallDeltas.forEach( function( delta ) {
-					const index = delta.index || 0;
+					var index = delta.index || 0;
 					
 					if ( ! buffer[index] ) {
 						buffer[index] = {
@@ -246,15 +246,15 @@
 			 * @returns {Promise<Array>} Tool execution results
 			 */
 			async executeToolCalls( toolCalls ) {
-				const results = [];
+				var results = [];
 				
 				console.log( '[NV oOS WebLLM] Executing ' + toolCalls.length + ' tool calls' );
 				
-				for ( let i = 0; i < toolCalls.length; i++ ) {
-					const toolCall = toolCalls[i];
+				for ( var i = 0; i < toolCalls.length; i++ ) {
+					var toolCall = toolCalls[i];
 					try {
-						const args = JSON.parse( toolCall.function.arguments );
-						const result = await this.toolAdapter.executeTool( toolCall.function.name, args );
+						var args = JSON.parse( toolCall.function.arguments );
+						var result = await this.toolAdapter.executeTool( toolCall.function.name, args );
 						
 						results.push( {
 							tool_call_id: toolCall.id,
@@ -286,7 +286,7 @@
 		if ( typeof Event === 'function' ) {
 			window.dispatchEvent( new Event( 'wp-mcp-ai-webllm-function-calling-ready' ) );
 		} else {
-			const event = document.createEvent( 'Event' );
+			var event = document.createEvent( 'Event' );
 			event.initEvent( 'wp-mcp-ai-webllm-function-calling-ready', true, true );
 			window.dispatchEvent( event );
 		}

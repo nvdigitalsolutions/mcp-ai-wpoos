@@ -60,7 +60,7 @@
 						SupplierSecurityManager.showSupplierModal(response.supplier);
 					}
 				},
-				error: function(_xhr) {
+				error: function(xhr) {
 					alert('Failed to load supplier details');
 				}
 			});
@@ -147,7 +147,7 @@
 						location.reload();
 					}
 				},
-				error: function(_xhr) {
+				error: function(xhr) {
 					alert('Failed to record incident');
 				}
 			});
@@ -186,7 +186,7 @@
 						alert('SBOM generated successfully');
 					}
 				},
-				error: function(_xhr) {
+				error: function(xhr) {
 					alert('Failed to generate SBOM');
 				},
 				complete: function() {
@@ -227,7 +227,7 @@
 						}
 					}
 				},
-				error: function(_xhr) {
+				error: function(xhr) {
 					alert('Failed to scan dependencies');
 				},
 				complete: function() {

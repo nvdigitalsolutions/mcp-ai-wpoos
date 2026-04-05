@@ -8,8 +8,8 @@
 (function($) {
 	'use strict';
 
-	let modal = null;
-	let currentProfessionId = null;
+	var modal = null;
+	var currentProfessionId = null;
 
 	$(document).ready(function() {
 		modal = $('#wp-mcp-ai-create-modal');
@@ -21,8 +21,8 @@
 			$('#profession-id').val(currentProfessionId);
 			
 			// Get the profession title to pre-fill the assistant title
-			const card = $(this).closest('.wp-mcp-ai-professional-card');
-			const professionTitle = card.find('h3').text();
+			var card = $(this).closest('.wp-mcp-ai-professional-card');
+			var professionTitle = card.find('h3').text();
 			$('#assistant-title').val('');
 			$('#assistant-title').attr('placeholder', professionTitle);
 			
@@ -39,12 +39,12 @@
 		$('#wp-mcp-ai-create-form').on('submit', function(e) {
 			e.preventDefault();
 
-			const _form = $(this);
-			const submitButton = $('#wp-mcp-ai-submit-create');
-			const originalButtonText = submitButton.text();
+			var form = $(this);
+			var submitButton = $('#wp-mcp-ai-submit-create');
+			var originalButtonText = submitButton.text();
 
 			// Validate
-			const title = $('#assistant-title').val().trim();
+			var title = $('#assistant-title').val().trim();
 			if (!title) {
 				alert(wpMcpAiAddAssistant.strings.error);
 				return;

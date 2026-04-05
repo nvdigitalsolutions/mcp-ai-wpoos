@@ -9,10 +9,10 @@
 	'use strict';
 
 	$(document).ready(function() {
-		const modal = $('#wp-mcp-ai-create-assistant-modal');
-		const form = $('#wp-mcp-ai-create-assistant-form');
-		let activeTab = 'manual';
-		const _chatInstance = null;
+		var modal = $('#wp-mcp-ai-create-assistant-modal');
+		var form = $('#wp-mcp-ai-create-assistant-form');
+		var activeTab = 'manual';
+		var chatInstance = null;
 
 		// Open modal
 		$(document).on('click', '#wp-mcp-ai-open-create-modal', function(e) {
@@ -34,7 +34,7 @@
 			e.preventDefault();
 			e.stopPropagation();
 			
-			const tabId = $(this).data('tab');
+			var tabId = $(this).data('tab');
 			
 			if (tabId === activeTab) {
 				return;
@@ -75,13 +75,13 @@
 		 * Initialize the chat in the Prompt tab and show the Build button.
 		 */
 		function initPromptTabChat() {
-			const $chatContainer = $('#wp-mcp-ai-tab-prompt .wp-mcp-ai-chat');
+			var $chatContainer = $('#wp-mcp-ai-tab-prompt .wp-mcp-ai-chat');
 			if ($chatContainer.length === 0) {
 				return;
 			}
 
 			// Show the Build button in the chat interface
-			const $buildButton = $chatContainer.find('.wp-mcp-ai-chat__build');
+			var $buildButton = $chatContainer.find('.wp-mcp-ai-chat__build');
 			if ($buildButton.length > 0) {
 				$buildButton.removeAttr('hidden').show();
 			}
@@ -94,7 +94,7 @@
 		 * Update footer buttons based on active tab.
 		 */
 		function updateFooterButtons() {
-			const submitButton = $('#wp-mcp-ai-submit-create');
+			var submitButton = $('#wp-mcp-ai-submit-create');
 			
 			if (activeTab === 'prompt') {
 				// In Prompt tab, hide the manual Create button (chat has its own Build button)
@@ -109,8 +109,8 @@
 		$(document).on('click', '.wp-mcp-ai-modal-chat-container .wp-mcp-ai-chat__build', function(e) {
 			e.preventDefault();
 			
-			const $button = $(this);
-			const $chat = $button.closest('.wp-mcp-ai-chat');
+			var $button = $(this);
+			var $chat = $button.closest('.wp-mcp-ai-chat');
 			
 			if ($button.prop('disabled')) {
 				return;
@@ -118,11 +118,11 @@
 
 			// Disable button and show loading state
 			$button.prop('disabled', true);
-			const originalText = $button.text();
+			var originalText = $button.text();
 			$button.text(wpMcpAiChat && wpMcpAiChat.strings && wpMcpAiChat.strings.building ? wpMcpAiChat.strings.building : 'Building...');
 
 			// Get the conversation history from the chat
-			const conversationData = collectConversationData($chat);
+			var conversationData = collectConversationData($chat);
 			
 			if (!conversationData || !conversationData.messages || conversationData.messages.length === 0) {
 				alert('Please describe what kind of assistant you want to create before clicking Build.');
@@ -131,7 +131,7 @@
 			}
 
 			// Get attachment IDs from the chat
-			const attachmentIds = collectAttachmentIds($chat);
+			var attachmentIds = collectAttachmentIds($chat);
 
 			// Send request to build the assistant
 			$.ajax({
@@ -176,12 +176,12 @@
 		 * Collect conversation data from the chat interface.
 		 */
 		function collectConversationData($chat) {
-			const messages = [];
-			const $messagesContainer = $chat.find('.wp-mcp-ai-chat__messages');
+			var messages = [];
+			var $messagesContainer = $chat.find('.wp-mcp-ai-chat__messages');
 			
 			$messagesContainer.find('.wp-mcp-ai-chat__message').each(function() {
-				const $msg = $(this);
-				let role = 'user';
+				var $msg = $(this);
+				var role = 'user';
 				
 				if ($msg.hasClass('wp-mcp-ai-chat__message--assistant')) {
 					role = 'assistant';
@@ -189,7 +189,7 @@
 					role = 'system';
 				}
 
-				const content = $msg.find('.wp-mcp-ai-chat__message-content').text().trim();
+				var content = $msg.find('.wp-mcp-ai-chat__message-content').text().trim();
 				
 				if (content) {
 					messages.push({
@@ -200,8 +200,8 @@
 			});
 
 			// Also get the current input if it has content
-			const $input = $chat.find('.wp-mcp-ai-chat__input');
-			const currentInput = $input.val().trim();
+			var $input = $chat.find('.wp-mcp-ai-chat__input');
+			var currentInput = $input.val().trim();
 			if (currentInput) {
 				messages.push({
 					role: 'user',
@@ -219,9 +219,9 @@
 		 * Collect attachment IDs from the chat interface.
 		 */
 		function collectAttachmentIds($chat) {
-			const ids = [];
+			var ids = [];
 			$chat.find('.wp-mcp-ai-chat__attachments-list [data-attachment-id]').each(function() {
-				const id = $(this).data('attachment-id');
+				var id = $(this).data('attachment-id');
 				if (id) {
 					ids.push(id);
 				}
@@ -236,8 +236,8 @@
 			// Remove existing messages
 			$('.wp-mcp-ai-error-message, .wp-mcp-ai-success-message').remove();
 			
-			const className = type === 'success' ? 'wp-mcp-ai-success-message' : 'wp-mcp-ai-error-message';
-			const $message = $('<div class="' + className + '">' + message + '</div>');
+			var className = type === 'success' ? 'wp-mcp-ai-success-message' : 'wp-mcp-ai-error-message';
+			var $message = $('<div class="' + className + '">' + message + '</div>');
 			$('.wp-mcp-ai-modal-body').prepend($message);
 			$('.wp-mcp-ai-modal-body').scrollTop(0);
 		}
@@ -255,7 +255,7 @@
 			$('.wp-mcp-ai-error-message, .wp-mcp-ai-success-message').remove();
 
 			// Validate professions (max 3)
-			const professions = $('#assistant-professions').val();
+			var professions = $('#assistant-professions').val();
 			if (!professions || professions.length === 0) {
 				showError(wpMcpAiCreateAssistant.strings.required);
 				return;
@@ -266,7 +266,7 @@
 			}
 
 			// Validate regions (max 2)
-			const regions = $('#assistant-regions').val();
+			var regions = $('#assistant-regions').val();
 			if (!regions || regions.length === 0) {
 				showError(wpMcpAiCreateAssistant.strings.required);
 				return;
@@ -281,16 +281,16 @@
 			$('#wp-mcp-ai-submit-create').prop('disabled', true).text(wpMcpAiCreateAssistant.strings.creating);
 
 			// Collect attachment IDs from uploaded files
-			const attachmentIds = [];
+			var attachmentIds = [];
 			$('#assistant-attachments-list .wp-mcp-ai-attachment-item').each(function() {
-				const id = $(this).data('attachment-id');
+				var id = $(this).data('attachment-id');
 				if (id) {
 					attachmentIds.push(id);
 				}
 			});
 
 			// Prepare form data
-			const formData = {
+			var formData = {
 				action: 'wp_mcp_ai_create_assistant_from_modal',
 				nonce: wpMcpAiCreateAssistant.nonce,
 				title: $('#assistant-title').val(),
@@ -343,20 +343,20 @@
 
 		// Handle file attachments in Manual tab
 		$('#assistant-attachments').on('change', function(e) {
-			const files = e.target.files;
+			var files = e.target.files;
 			if (!files || files.length === 0) {
 				return;
 			}
 
-			const $list = $('#assistant-attachments-list');
-			const allowedTypes = ['text/plain', 'text/markdown', 'application/pdf', 
+			var $list = $('#assistant-attachments-list');
+			var allowedTypes = ['text/plain', 'text/markdown', 'application/pdf', 
 				'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
-			for (let i = 0; i < files.length; i++) {
-				const file = files[i];
+			for (var i = 0; i < files.length; i++) {
+				var file = files[i];
 				
 				// Basic type validation
-				const isValid = allowedTypes.some(function(type) {
+				var isValid = allowedTypes.some(function(type) {
 					return file.type === type || file.name.match(/\.(txt|md|pdf|doc|docx)$/i);
 				});
 
@@ -377,13 +377,13 @@
 		 * Upload an attachment file.
 		 */
 		function uploadAttachment(file, $list) {
-			const formData = new FormData();
+			var formData = new FormData();
 			formData.append('file', file);
 			formData.append('action', 'wp_mcp_ai_upload_assistant_attachment');
 			formData.append('nonce', wpMcpAiCreateAssistant.nonce);
 
 			// Create placeholder item
-			const $item = $('<li class="wp-mcp-ai-attachment-item uploading">' +
+			var $item = $('<li class="wp-mcp-ai-attachment-item uploading">' +
 				'<span class="name">' + file.name + '</span>' +
 				'<span class="status">Uploading...</span>' +
 				'</li>');
@@ -418,14 +418,14 @@
 		});
 
 		function showError(message) {
-			const errorHtml = '<div class="wp-mcp-ai-error-message">' + message + '</div>';
+			var errorHtml = '<div class="wp-mcp-ai-error-message">' + message + '</div>';
 			$('.wp-mcp-ai-modal-body').prepend(errorHtml);
 			// Scroll to top of modal body
 			$('.wp-mcp-ai-modal-body').scrollTop(0);
 		}
 
 		function showSuccess(message) {
-			const successHtml = '<div class="wp-mcp-ai-success-message">' + message + '</div>';
+			var successHtml = '<div class="wp-mcp-ai-success-message">' + message + '</div>';
 			$('.wp-mcp-ai-modal-body').prepend(successHtml);
 			// Scroll to top of modal body
 			$('.wp-mcp-ai-modal-body').scrollTop(0);
