@@ -12,7 +12,7 @@
 		const modal = $('#wp-mcp-ai-create-assistant-modal');
 		const form = $('#wp-mcp-ai-create-assistant-form');
 		let activeTab = 'manual';
-		const _chatInstance = null;
+		let _chatInstance = null;
 
 		// Open modal
 		$(document).on('click', '#wp-mcp-ai-open-create-modal', function(e) {
@@ -87,7 +87,7 @@
 			}
 
 			// Store reference to chat container
-			chatInstance = $chatContainer;
+			_chatInstance = $chatContainer;
 		}
 
 		/**

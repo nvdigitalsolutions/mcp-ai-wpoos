@@ -31,8 +31,8 @@ import MetricsDashboard from './MetricsDashboard';
 import nodeTypes from '../nodes';
 import { exportWorkflow, importWorkflow, generateNodeId, validateWorkflow } from '../utils/workflowHelpers';
 import { WorkflowHistory, debounce } from '../utils/workflowHistory';
-import { createVersion, saveVersionToLocal, getVersionsFromLocal } from '../utils/workflowVersioning';
-import { WorkflowExecutor, ExecutionStatus } from '../utils/workflowExecutor';
+import { createVersion, saveVersionToLocal } from '../utils/workflowVersioning';
+import { WorkflowExecutor } from '../utils/workflowExecutor';
 import { saveExecutionHistory } from '../utils/executionHistory';
 
 /**
@@ -60,15 +60,15 @@ const WorkflowBuilderInner = () => {
 	const [debugMode, setDebugMode] = useState( false );
 	const [showHistory, setShowHistory] = useState( false );
 	const [showMetrics, setShowMetrics] = useState( false );
-	const [executionState, setExecutionState] = useState( null );
+	const [ , setExecutionState] = useState( null );
 	const executorRef = useRef( null );
 
 	/**
 	 * Update history when nodes or edges change
 	 */
 	const updateHistory = useRef(
-		debounce( ( nodes, edges ) => {
-			historyManager.current.push( { nodes, edges } );
+		debounce( ( updatedNodes, updatedEdges ) => {
+			historyManager.current.push( { nodes: updatedNodes, edges: updatedEdges } );
 			updateHistoryButtons();
 		}, 500 )
 	);
@@ -202,7 +202,7 @@ const WorkflowBuilderInner = () => {
 			);
 		} );
 
-		executor.on( 'onExecutionComplete', ( result ) => {
+		executor.on( 'onExecutionComplete', () => {
 			setIsExecuting( false );
 			setExecutionState( executor.getState() );
 
