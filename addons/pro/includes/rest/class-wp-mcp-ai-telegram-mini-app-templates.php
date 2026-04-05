@@ -1535,16 +1535,34 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
 		/* ── Tool call helper (supports local/remote WooCommerce) ── */
+		/* Remote actions map to remote_wp_connection action parameter values (uses per_page natively) */
+		'var EC_REMOTE_MAP={"search_woocommerce_products":"get_wc_products","get_woocommerce_orders":"get_wc_orders","create_woocommerce_order":"create_wc_order"};' .
+		/* Local tool slugs; create_woocommerce_order has no local equivalent – the checkout callback already has a fallback alert */
+		'var EC_LOCAL_MAP={"search_woocommerce_products":"get_woo_products","get_woocommerce_orders":"get_woo_recent_orders"};' .
 		'function ecToolCall(slug,args,cb){' .
 			'var body;' .
 			'if(WOO_SOURCE==="remote"&&WOO_CONNECTION_ID){' .
-				'body={slug:"remote_wp_connection",arguments:{connection_id:WOO_CONNECTION_ID,tool:slug,arguments:args}};' .
+				/* Remote: route through remote_wp_connection with action + flat args */
+				'var remoteAction=EC_REMOTE_MAP[slug]||slug;' .
+				'var remoteArgs={action:remoteAction,connection_id:WOO_CONNECTION_ID};' .
+				'for(var k in args){if(args.hasOwnProperty(k)){remoteArgs[k]=args[k];}}' .
+				'body={slug:"remote_wp_connection",arguments:remoteArgs};' .
 			'}else{' .
-				'body={slug:slug,arguments:args};' .
+				/* Local: map to actual registered tool slugs and adapt args.
+				   Local WooCommerce tools use "limit" instead of "per_page";
+				   remote tools accept "per_page" natively via the WC REST API. */
+				'var localSlug=EC_LOCAL_MAP[slug]||slug;' .
+				'var localArgs={};for(var k in args){if(args.hasOwnProperty(k)){localArgs[k]=args[k];}}' .
+				'if(localArgs.per_page&&!localArgs.limit){localArgs.limit=localArgs.per_page;delete localArgs.per_page;}' .
+				'body={slug:localSlug,arguments:localArgs};' .
 			'}' .
 			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
-			'.then(function(d){cb(null,d);})' .
+			'.then(function(d){' .
+				/* Normalise: controller returns {success,result} but callbacks expect {data} */
+				'if(d&&d.result&&!d.data){d.data=d.result;}' .
+				'cb(null,d);' .
+			'})' .
 			'.catch(function(e){cb(e,null);});' .
 		'}' .
 

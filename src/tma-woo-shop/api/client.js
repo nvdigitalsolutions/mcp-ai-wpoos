@@ -94,7 +94,7 @@ export async function executeTool( tool, args ) {
 	const res = await fetch( url, {
 		method: 'POST',
 		headers: buildHeaders(),
-		body: JSON.stringify( { tool, arguments: args } ),
+		body: JSON.stringify( { slug: tool, arguments: args } ),
 	} );
 	if ( ! res.ok ) {
 		throw new Error( `Tool "${ tool }" failed: HTTP ${ res.status }` );
@@ -106,18 +106,21 @@ export async function executeTool( tool, args ) {
 
 /**
  * Normalise the response shape from both local tools and remote_wp_connection.
- * Both return data inside `result.data` but the key name differs per action.
+ * The TMA controller wraps tool results in {success, result: {...}} while some
+ * legacy paths may use {data: {...}}.
  *
  * @param {any}    raw
  * @param {string} dataKey  e.g. 'products', 'orders', 'categories', 'product'
  * @return {any}
  */
 function extractData( raw, dataKey ) {
-	// Local tools wrap in raw.data.<key>; remote wraps in raw.data.<key> too
-	// but may also use raw.<key> directly.
+	// Controller returns {success, result: {...}} – check result first,
+	// then fall back to legacy data paths for backward compatibility.
 	return (
+		raw?.result?.[ dataKey ] ??
 		raw?.data?.[ dataKey ] ??
 		raw?.[ dataKey ] ??
+		raw?.result ??
 		raw?.data ??
 		null
 	);

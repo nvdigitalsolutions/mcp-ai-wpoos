@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-telegram-ecommerce-connection',
+        'version' => 'dev-copilot/update-telegram-ecommerce-connection',
+        'reference' => '9ad102216eb2991aac9604f172c7dccca3198104',
         'pretty_version' => 'dev-copilot/fix-telegram-mini-app-error',
         'version' => 'dev-copilot/fix-telegram-mini-app-error',
         'reference' => 'a8ab789224ca30df595bc47dbb74a246d0d81151',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-telegram-ecommerce-connection',
+            'version' => 'dev-copilot/update-telegram-ecommerce-connection',
+            'reference' => '9ad102216eb2991aac9604f172c7dccca3198104',
             'pretty_version' => 'dev-copilot/fix-telegram-mini-app-error',
             'version' => 'dev-copilot/fix-telegram-mini-app-error',
             'reference' => 'a8ab789224ca30df595bc47dbb74a246d0d81151',
