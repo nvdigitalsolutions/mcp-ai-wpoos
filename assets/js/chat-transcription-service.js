@@ -195,7 +195,7 @@
 		 * @param {Function} helpers.updateTranscribeButtonState  - Function to update button state.
 		 */
 		startTranscribeRecording: function(state, helpers) {
-			const self = this;
+			const _self = this;
 			if (!state || !this.supportsAudioRecording()) {
 				return;
 			}

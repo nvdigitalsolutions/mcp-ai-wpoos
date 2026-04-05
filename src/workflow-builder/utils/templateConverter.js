@@ -44,7 +44,7 @@ export const convertTemplateToWorkflow = ( template ) => {
 		const nodeId = generateNodeId( nodeType );
 
 		// Calculate position based on step type
-		let xPosition = 250;
+		const xPosition = 250;
 		if ( step.type === 'parallel' && step.roles && step.roles.length > 1 ) {
 			// Create multiple parallel nodes
 			const parallelNodeIds = [];

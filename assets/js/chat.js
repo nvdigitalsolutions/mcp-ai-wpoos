@@ -8150,7 +8150,7 @@
      * @param {HTMLElement} container - Chat container element.
      */
     function initAgentPanel(container) {
-        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        const panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
         if (!panel) {
             return;
         }
@@ -8161,13 +8161,13 @@
         }
         panel.setAttribute('data-agent-panel-initialized', 'true');
 
-        var toggle = panel.querySelector('.wp-mcp-ai-chat__agent-panel-toggle');
-        var body = panel.querySelector('.wp-mcp-ai-chat__agent-panel-body');
+        const toggle = panel.querySelector('.wp-mcp-ai-chat__agent-panel-toggle');
+        const body = panel.querySelector('.wp-mcp-ai-chat__agent-panel-body');
 
         if (toggle && body) {
             toggle.addEventListener('click', function (e) {
                 e.preventDefault();
-                var expanded = toggle.getAttribute('aria-expanded') === 'true';
+                const expanded = toggle.getAttribute('aria-expanded') === 'true';
                 toggle.setAttribute('aria-expanded', String(!expanded));
                 body.hidden = expanded;
             });
@@ -8181,7 +8181,7 @@
      * @return {boolean} True if the agent is actively working.
      */
     function isAgentActive(status) {
-        var s = (status || '').toLowerCase();
+        const s = (status || '').toLowerCase();
         return s === 'active' || s === 'executing' || s === 'working';
     }
 
@@ -8192,7 +8192,7 @@
      * @return {boolean} True if the agent has completed.
      */
     function isAgentCompleted(status) {
-        var s = (status || '').toLowerCase();
+        const s = (status || '').toLowerCase();
         return s === 'completed' || s === 'done';
     }
 
@@ -8203,7 +8203,7 @@
      * @return {boolean} True if the agent encountered an error.
      */
     function isAgentError(status) {
-        var s = (status || '').toLowerCase();
+        const s = (status || '').toLowerCase();
         return s === 'error' || s === 'failed';
     }
 
@@ -8216,12 +8216,12 @@
      * @param {Array}       teamData.agents    - Array of agent objects with id, name, role, status, task.
      */
     function updateAgentPanel(container, teamData) {
-        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        const panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
         if (!panel || !teamData) {
             return;
         }
 
-        var agents = teamData.agents || teamData.members || [];
+        const agents = teamData.agents || teamData.members || [];
         if (agents.length === 0) {
             panel.hidden = true;
             return;
@@ -8230,19 +8230,19 @@
         panel.hidden = false;
 
         // Update count badge.
-        var countEl = panel.querySelector('.wp-mcp-ai-chat__agent-panel-count');
+        const countEl = panel.querySelector('.wp-mcp-ai-chat__agent-panel-count');
         if (countEl) {
-            var activeCount = agents.filter(function (a) { return isAgentActive(a.status); }).length;
+            const activeCount = agents.filter(function (a) { return isAgentActive(a.status); }).length;
             countEl.textContent = String(activeCount || agents.length);
             countEl.setAttribute('data-count', String(activeCount || agents.length));
         }
 
         // Render agent cards.
-        var cardsContainer = panel.querySelector('.wp-mcp-ai-chat__agent-cards');
+        const cardsContainer = panel.querySelector('.wp-mcp-ai-chat__agent-cards');
         if (cardsContainer) {
             cardsContainer.innerHTML = '';
             agents.forEach(function (agent) {
-                var statusClass = 'wp-mcp-ai-chat__agent-card';
+                let statusClass = 'wp-mcp-ai-chat__agent-card';
                 if (isAgentActive(agent.status)) {
                     statusClass += ' wp-mcp-ai-chat__agent-card--active';
                 } else if (isAgentCompleted(agent.status)) {
@@ -8253,29 +8253,29 @@
                     statusClass += ' wp-mcp-ai-chat__agent-card--idle';
                 }
 
-                var card = document.createElement('div');
+                const card = document.createElement('div');
                 card.className = statusClass;
                 card.setAttribute('role', 'listitem');
 
-                var statusDot = document.createElement('span');
+                const statusDot = document.createElement('span');
                 statusDot.className = 'wp-mcp-ai-chat__agent-card-status';
                 statusDot.setAttribute('aria-hidden', 'true');
                 card.appendChild(statusDot);
 
-                var nameEl = document.createElement('span');
+                const nameEl = document.createElement('span');
                 nameEl.className = 'wp-mcp-ai-chat__agent-card-name';
                 nameEl.textContent = agent.name || agent.id || 'Agent';
                 card.appendChild(nameEl);
 
                 if (agent.role) {
-                    var roleEl = document.createElement('span');
+                    const roleEl = document.createElement('span');
                     roleEl.className = 'wp-mcp-ai-chat__agent-card-role';
                     roleEl.textContent = agent.role;
                     card.appendChild(roleEl);
                 }
 
                 if (agent.task) {
-                    var taskEl = document.createElement('span');
+                    const taskEl = document.createElement('span');
                     taskEl.className = 'wp-mcp-ai-chat__agent-card-task';
                     taskEl.textContent = agent.task;
                     taskEl.title = agent.task;
@@ -8296,17 +8296,17 @@
      * @param {number}      workflowData.progress - Overall progress percentage (0-100).
      */
     function updateWorkflowTracker(container, workflowData) {
-        var panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
+        const panel = container.querySelector('.wp-mcp-ai-chat__agent-panel');
         if (!panel) {
             return;
         }
 
-        var tracker = panel.querySelector('.wp-mcp-ai-chat__workflow-tracker');
+        const tracker = panel.querySelector('.wp-mcp-ai-chat__workflow-tracker');
         if (!tracker || !workflowData) {
             return;
         }
 
-        var steps = workflowData.steps || [];
+        const steps = workflowData.steps || [];
         if (steps.length === 0) {
             tracker.hidden = true;
             return;
@@ -8318,30 +8318,30 @@
         panel.hidden = false;
 
         // Calculate progress from steps if not provided.
-        var completedSteps = steps.filter(function (s) { return isAgentCompleted(s.status); }).length;
-        var progress = typeof workflowData.progress === 'number' ? workflowData.progress : Math.round((completedSteps / steps.length) * 100);
+        const completedSteps = steps.filter(function (s) { return isAgentCompleted(s.status); }).length;
+        const progress = typeof workflowData.progress === 'number' ? workflowData.progress : Math.round((completedSteps / steps.length) * 100);
 
         // Update progress text & bar.
-        var progressEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-progress');
+        const progressEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-progress');
         if (progressEl) {
             progressEl.textContent = progress + '%';
         }
 
-        var fillEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-fill');
+        const fillEl = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-fill');
         if (fillEl) {
             fillEl.style.width = progress + '%';
         }
 
         // Render step list.
-        var stepsList = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-steps');
+        const stepsList = tracker.querySelector('.wp-mcp-ai-chat__workflow-tracker-steps');
         if (stepsList) {
             stepsList.innerHTML = '';
             steps.forEach(function (step, index) {
-                var stepEl = document.createElement('li');
-                var stepStatus = (step.status || 'pending').toLowerCase();
+                const stepEl = document.createElement('li');
+                const stepStatus = (step.status || 'pending').toLowerCase();
                 stepEl.className = 'wp-mcp-ai-chat__workflow-step wp-mcp-ai-chat__workflow-step--' + stepStatus;
 
-                var iconEl = document.createElement('span');
+                const iconEl = document.createElement('span');
                 iconEl.className = 'wp-mcp-ai-chat__workflow-step-icon';
                 if (stepStatus === 'completed' || stepStatus === 'done') {
                     iconEl.textContent = '✓';
@@ -8354,7 +8354,7 @@
                 }
                 stepEl.appendChild(iconEl);
 
-                var labelEl = document.createElement('span');
+                const labelEl = document.createElement('span');
                 labelEl.className = 'wp-mcp-ai-chat__workflow-step-label';
                 labelEl.textContent = step.label || step.name || ('Step ' + (index + 1));
                 stepEl.appendChild(labelEl);
@@ -8374,9 +8374,9 @@
      * @return {HTMLElement} The delegation notice element.
      */
     function createDelegationNotice(delegationData) {
-        var statusClass = 'wp-mcp-ai-chat__delegation-notice';
-        var icon = '🔀';
-        var title = 'Delegating to sub-agent';
+        let statusClass = 'wp-mcp-ai-chat__delegation-notice';
+        let icon = '🔀';
+        let title = 'Delegating to sub-agent';
 
         if (delegationData.status === 'complete' || delegationData.status === 'completed') {
             statusClass += ' wp-mcp-ai-chat__delegation-notice--complete';
@@ -8388,27 +8388,27 @@
             title = 'Sub-agent failed';
         }
 
-        var notice = document.createElement('div');
+        const notice = document.createElement('div');
         notice.className = statusClass;
 
-        var iconEl = document.createElement('span');
+        const iconEl = document.createElement('span');
         iconEl.className = 'wp-mcp-ai-chat__delegation-notice-icon';
         iconEl.setAttribute('aria-hidden', 'true');
         iconEl.textContent = icon;
         notice.appendChild(iconEl);
 
-        var content = document.createElement('div');
+        const content = document.createElement('div');
         content.className = 'wp-mcp-ai-chat__delegation-notice-content';
 
-        var titleEl = document.createElement('div');
+        const titleEl = document.createElement('div');
         titleEl.className = 'wp-mcp-ai-chat__delegation-notice-title';
         titleEl.textContent = title;
         content.appendChild(titleEl);
 
         if (delegationData.agent_name || delegationData.task) {
-            var details = document.createElement('div');
+            const details = document.createElement('div');
             details.className = 'wp-mcp-ai-chat__delegation-notice-details';
-            var detailParts = [];
+            const detailParts = [];
             if (delegationData.agent_name) {
                 detailParts.push('Agent: ' + delegationData.agent_name);
             }
@@ -8444,9 +8444,9 @@
 
         // Handle delegate_to_agent or delegate_to_a2a_agent result.
         if ((toolName === 'delegate_to_agent' || toolName === 'delegate_to_a2a_agent') && result.delegated_to) {
-            var messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
+            const messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
             if (messagesEl) {
-                var notice = createDelegationNotice({
+                const notice = createDelegationNotice({
                     agent_name: result.delegated_to,
                     task: result.task || result.message || '',
                     status: result.status || 'delegated'
@@ -8458,9 +8458,9 @@
 
         // Handle aggregate_agent_results - show completion.
         if (toolName === 'aggregate_agent_results' && result.success) {
-            var messagesEl2 = container.querySelector('.wp-mcp-ai-chat__messages');
+            const messagesEl2 = container.querySelector('.wp-mcp-ai-chat__messages');
             if (messagesEl2) {
-                var completeNotice = createDelegationNotice({
+                const completeNotice = createDelegationNotice({
                     agent_name: '',
                     task: result.summary || 'Agent results aggregated',
                     status: 'complete'
@@ -14028,7 +14028,7 @@
                         state.streamingContent = null;
 
                         // Build a non-streaming payload (same as payload but without stream flag)
-                        var nonStreamPayload = Object.assign({}, payload);
+                        const nonStreamPayload = Object.assign({}, payload);
                         delete nonStreamPayload.stream;
 
                         return postJson(
