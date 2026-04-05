@@ -265,7 +265,6 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'get_wc_categories',
 			'get_wc_orders',
 			'get_wc_order',
-			'get_wc_customers',
 			'create_wc_order',
 		);
 		$required_cap = ( $is_tma && in_array( $action, $tma_storefront_actions, true ) )
