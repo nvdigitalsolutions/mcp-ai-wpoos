@@ -7,7 +7,7 @@
  * @since   1.2.0
  */
 
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect } from 'react';
 import { getProduct } from '../api/client';
 
 /**

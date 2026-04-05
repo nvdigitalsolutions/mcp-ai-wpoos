@@ -7,7 +7,7 @@
  * @since   1.2.0
  */
 
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback } from 'react';
 import { getOrders } from '../api/client';
 
 /**

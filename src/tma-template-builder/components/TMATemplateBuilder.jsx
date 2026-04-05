@@ -13,7 +13,7 @@
  * @since   1.1.3
  */
 
-import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { __ } from '@wordpress/i18n';
 import {
 	DndContext,

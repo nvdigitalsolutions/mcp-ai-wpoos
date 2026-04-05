@@ -20,7 +20,7 @@ import {
 	useContext,
 	useReducer,
 	useEffect,
-} from '@wordpress/element';
+} from 'react';
 
 const STORAGE_KEY = 'wpTmaWooCart';
 
