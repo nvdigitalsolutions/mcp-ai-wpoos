@@ -24,7 +24,7 @@
 			.replace(/'/g, '&#039;');
 	}
 
-	var WorkflowEditor = {
+	const WorkflowEditor = {
 		currentWorkflow: null,
 		steps: [],
 

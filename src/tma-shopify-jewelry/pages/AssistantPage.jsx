@@ -88,7 +88,7 @@ export default function AssistantPage() {
 						{ user?.first_name && (
 							<p>Hello { user.first_name }! 👋</p>
 						) }
-						<p>I'm your personal jewelry concierge. Ask me about our collection, materials, sizing, or custom pieces.</p>
+						<p>I&apos;m your personal jewelry concierge. Ask me about our collection, materials, sizing, or custom pieces.</p>
 						<div className="tma-jw-assistant-page__suggestions">
 							{ [
 								'Show me engagement rings',
