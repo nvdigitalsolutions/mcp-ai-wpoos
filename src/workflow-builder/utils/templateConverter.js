@@ -39,7 +39,7 @@ export const convertTemplateToWorkflow = ( template ) => {
 	yPosition += ySpacing;
 
 	// Convert workflow steps to nodes
-	template.workflow.forEach( ( step, index ) => {
+	template.workflow.forEach( ( step ) => {
 		const nodeType = mapStepTypeToNodeType( step.type );
 		const nodeId = generateNodeId( nodeType );
 

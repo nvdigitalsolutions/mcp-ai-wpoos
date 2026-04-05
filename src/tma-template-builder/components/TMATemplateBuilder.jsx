@@ -304,13 +304,14 @@ const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
 			{ activeTab === 'appearance' && (
 				<div className="tma-tpl-editor__body">
 					<div className="tma-tpl-editor__row">
-						<label className="tma-tpl-editor__label">
+						<label className="tma-tpl-editor__label" htmlFor="tma-tpl-icon">
 							{ __( 'Icon / Emoji', 'mcp-ai-wpoos-pro' ) }
 							<span className="tma-tpl-editor__hint">
 								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_icon || '' })` }
 							</span>
 						</label>
 						<input
+							id="tma-tpl-icon"
 							type="text"
 							className="tma-tpl-editor__input tma-tpl-editor__input--icon"
 							value={ draft.icon }
@@ -321,13 +322,14 @@ const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
 					</div>
 
 					<div className="tma-tpl-editor__row">
-						<label className="tma-tpl-editor__label">
+						<label className="tma-tpl-editor__label" htmlFor="tma-tpl-display-name">
 							{ __( 'Display Name', 'mcp-ai-wpoos-pro' ) }
 							<span className="tma-tpl-editor__hint">
 								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_name || '' })` }
 							</span>
 						</label>
 						<input
+							id="tma-tpl-display-name"
 							type="text"
 							className="tma-tpl-editor__input"
 							value={ draft.name }
@@ -338,13 +340,14 @@ const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
 					</div>
 
 					<div className="tma-tpl-editor__row">
-						<label className="tma-tpl-editor__label">
+						<label className="tma-tpl-editor__label" htmlFor="tma-tpl-description">
 							{ __( 'Description', 'mcp-ai-wpoos-pro' ) }
 							<span className="tma-tpl-editor__hint">
 								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_description || '' })` }
 							</span>
 						</label>
 						<textarea
+							id="tma-tpl-description"
 							className="tma-tpl-editor__input tma-tpl-editor__textarea"
 							value={ draft.description }
 							maxLength={ 500 }
@@ -355,7 +358,7 @@ const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
 					</div>
 
 					<div className="tma-tpl-editor__row">
-						<label className="tma-tpl-editor__label">
+						<label className="tma-tpl-editor__label" htmlFor="tma-tpl-accent-color">
 							{ __( 'Accent Color', 'mcp-ai-wpoos-pro' ) }
 							<span className="tma-tpl-editor__hint">
 								{ `(${ __( 'default:', 'mcp-ai-wpoos-pro' ) } ${ template.base_accent_color || '#2481cc' })` }
@@ -363,6 +366,7 @@ const TemplateEditor = ( { template, config, onClose, onSaved, onReset } ) => {
 						</label>
 						<div className="tma-tpl-editor__color-row">
 							<input
+								id="tma-tpl-accent-color"
 								type="color"
 								className="tma-tpl-editor__color-swatch"
 								value={ /^#[0-9a-f]{6}$/i.test( draft.accent_color ) ? draft.accent_color : ( template.base_accent_color || '#2481cc' ) }
