@@ -102,4 +102,11 @@ module.exports = entries.map( ( tma ) => ( {
 		path: path.resolve( __dirname, tma.output ),
 	},
 	plugins: tmaPlugins,
+
+	// Explicitly clear externals so that React, ReactDOM, and @wordpress/*
+	// packages are always bundled into the TMA output.  The
+	// DependencyExtractionWebpackPlugin is already removed above, but an
+	// explicit empty object guards against any other plugin or config layer
+	// that might inject externals.
+	externals: {},
 } ) );
