@@ -658,6 +658,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'mini_app_template'            => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
 				'mini_app_woo_source'          => ( isset( $_POST['telegram_mini_app_woo_source'] ) && 'remote' === $_POST['telegram_mini_app_woo_source'] ) ? 'remote' : 'local',
 				'mini_app_woo_connection_id'   => isset( $_POST['telegram_mini_app_woo_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_woo_connection_id'] ) ) : '',
+				'mini_app_shopify_connection_id' => isset( $_POST['telegram_mini_app_shopify_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_shopify_connection_id'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -2933,21 +2934,73 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
+				<?php
+				/*
+				 * Shopify Data Source row – visible only when a Shopify Mini App
+				 * template (shopify_shop or jewelry_shop) is selected for this connection.
+				 */
+				$tg_shopify_connection_id = ( $is_edit && isset( $connection['mini_app_shopify_connection_id'] ) )
+					? sanitize_key( $connection['mini_app_shopify_connection_id'] )
+					: '';
+
+				// Gather all Shopify remote connections for the dropdown.
+				$_shopify_remote_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
+						if ( isset( $_rc['connection_type'] ) && 'shopify' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+							$_shopify_remote_connections[] = $_rc;
+						}
+					}
+				}
+				?>
+				<tr class="telegram-only-field tma-shopify-source-row" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Shopify Data Source', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<select name="telegram_mini_app_shopify_connection_id" id="telegram_mini_app_shopify_connection_id">
+							<option value=""><?php esc_html_e( '— Select a Shopify connection —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $_shopify_remote_connections as $_rc ) : ?>
+								<option value="<?php echo esc_attr( $_rc['id'] ); ?>" <?php selected( $tg_shopify_connection_id, $_rc['id'] ); ?>>
+									<?php echo esc_html( ( $_rc['name'] ?? $_rc['id'] ) . ' (' . ( $_rc['url'] ?? '' ) . ')' ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<?php if ( empty( $_shopify_remote_connections ) ) : ?>
+							<p class="description" style="color:#d63638;">
+								<?php
+								printf(
+									/* translators: %s: link to remote sites admin page */
+									esc_html__( 'No Shopify remote connections found. %s first.', 'mcp-ai-wpoos-pro' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '">' . esc_html__( 'Add one in Remote Sites', 'mcp-ai-wpoos-pro' ) . '</a>'
+								);
+								?>
+							</p>
+						<?php endif; ?>
+						<p class="description">
+							<?php esc_html_e( 'Choose the Shopify store connection that this Mini App reads its product and order data from. Configure Shopify connections in Remote Sites.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<script>
 				( function() {
-					/* Toggle the WooCommerce Data Source row when the template changes. */
+					/* Toggle the WooCommerce / Shopify Data Source rows when the template changes. */
 					var tplSel      = document.getElementById( 'telegram_mini_app_template' );
 					var wooRow      = document.querySelector( '.tma-woo-source-row' );
+					var shopifyRow  = document.querySelector( '.tma-shopify-source-row' );
 					var remoteWrap  = document.getElementById( 'tma-woo-remote-wrap' );
 					var radioLocal  = document.getElementById( 'tma-woo-source-local' );
 					var radioRemote = document.getElementById( 'tma-woo-source-remote' );
 
-					var ecommerceTemplates = [ 'woo_shop', 'ecommerce' ];
+					var wooTemplates     = [ 'woo_shop', 'ecommerce' ];
+					var shopifyTemplates = [ 'shopify_shop', 'jewelry_shop' ];
 
-					function toggleWooRow() {
-						if ( ! tplSel || ! wooRow ) { return; }
-						var show = ecommerceTemplates.indexOf( tplSel.value ) !== -1;
-						wooRow.style.display = show ? '' : 'none';
+					function toggleDataSourceRows() {
+						if ( ! tplSel ) { return; }
+						var val = tplSel.value;
+						if ( wooRow )     { wooRow.style.display     = wooTemplates.indexOf( val ) !== -1     ? '' : 'none'; }
+						if ( shopifyRow ) { shopifyRow.style.display = shopifyTemplates.indexOf( val ) !== -1 ? '' : 'none'; }
 					}
 
 					function toggleRemoteWrap() {
@@ -2956,8 +3009,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					}
 
 					if ( tplSel ) {
-						tplSel.addEventListener( 'change', toggleWooRow );
-						toggleWooRow();
+						tplSel.addEventListener( 'change', toggleDataSourceRows );
+						toggleDataSourceRows();
 					}
 					if ( radioLocal )  { radioLocal.addEventListener( 'change', toggleRemoteWrap ); }
 					if ( radioRemote ) { radioRemote.addEventListener( 'change', toggleRemoteWrap ); }
