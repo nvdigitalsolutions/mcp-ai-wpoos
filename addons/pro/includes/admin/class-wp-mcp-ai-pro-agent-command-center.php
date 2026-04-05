@@ -2364,7 +2364,9 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	public function record_tool_execution( $tool_slug, $arguments, $context, $result ) {
 		$agent_id   = isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0;
 		$agent_name = $agent_id ? get_the_title( $agent_id ) : '';
-		$status     = is_wp_error( $result ) || ( is_array( $result ) && ! empty( $result['error'] ) ) ? 'failed' : 'success';
+
+		$is_error = is_wp_error( $result ) || ( is_array( $result ) && ! empty( $result['error'] ) );
+		$status   = $is_error ? 'failed' : 'success';
 
 		/* translators: 1: tool name, 2: execution status */
 		$message = sprintf( __( 'Tool "%1$s" executed: %2$s', 'mcp-ai-wpoos-pro' ), $tool_slug, $status );
@@ -2502,14 +2504,7 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$metrics[ $today ][ $key ] += $value;
 
-		// Keep last 90 days of metrics.
-		$cutoff = gmdate( 'Y-m-d', strtotime( '-90 days' ) );
-		foreach ( array_keys( $metrics ) as $date ) {
-			if ( $date < $cutoff ) {
-				unset( $metrics[ $date ] );
-			}
-		}
-
+		$metrics = $this->prune_old_metrics( $metrics );
 		update_option( self::USAGE_METRICS_OPTION, $metrics, false );
 	}
 
@@ -2548,15 +2543,26 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 
 		$metrics[ $today ]['agents'][ $aid ][ $key ] += $value;
 
-		// Keep last 90 days of metrics.
+		$metrics = $this->prune_old_metrics( $metrics );
+		update_option( self::USAGE_METRICS_OPTION, $metrics, false );
+	}
+
+	/**
+	 * Remove metric entries older than 90 days.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $metrics Daily metrics array keyed by date.
+	 * @return array Pruned metrics array.
+	 */
+	private function prune_old_metrics( $metrics ) {
 		$cutoff = gmdate( 'Y-m-d', strtotime( '-90 days' ) );
 		foreach ( array_keys( $metrics ) as $date ) {
 			if ( $date < $cutoff ) {
 				unset( $metrics[ $date ] );
 			}
 		}
-
-		update_option( self::USAGE_METRICS_OPTION, $metrics, false );
+		return $metrics;
 	}
 
 	/**
