@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-45e93c6e-99d9-4491-bf46-070a552fe90c',
-        'version' => 'dev-copilot/rebuild-all-zips-45e93c6e-99d9-4491-bf46-070a552fe90c',
-        'reference' => 'aa4814d81be41d5d222f0ee188e1b09a22ddab76',
+        'pretty_version' => 'dev-copilot/update-pro-schedule-manager-install',
+        'version' => 'dev-copilot/update-pro-schedule-manager-install',
+        'reference' => 'c3e29f7fd9fd0f9e329e1febe946ad7165eccf1c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-45e93c6e-99d9-4491-bf46-070a552fe90c',
-            'version' => 'dev-copilot/rebuild-all-zips-45e93c6e-99d9-4491-bf46-070a552fe90c',
-            'reference' => 'aa4814d81be41d5d222f0ee188e1b09a22ddab76',
+            'pretty_version' => 'dev-copilot/update-pro-schedule-manager-install',
+            'version' => 'dev-copilot/update-pro-schedule-manager-install',
+            'reference' => 'c3e29f7fd9fd0f9e329e1febe946ad7165eccf1c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

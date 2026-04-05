@@ -402,4 +402,88 @@ class Test_Pro_Schedule_Presets extends WP_UnitTestCase {
 			);
 		}
 	}
+
+	// -------------------------------------------------------------------------
+	// Preset installation with overrides
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that an assistant_run preset can be installed when assistant_id is
+	 * supplied via overrides.
+	 */
+	public function test_install_assistant_run_preset_with_override() {
+		// Create a dummy assistant post for the ID.
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
+
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset(
+			'daily_sales_report',
+			$this->admin_id,
+			array( 'assistant_id' => $assistant_id )
+		);
+
+		$this->assertIsString( $result, 'install_preset should return a schedule ID string for assistant_run with override.' );
+		$this->assertNotEmpty( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $result );
+		$this->assertSame( $assistant_id, $schedule['assistant_config']['assistant_id'] );
+	}
+
+	/**
+	 * Test that an assistant_run preset without an assistant_id override
+	 * returns a WP_Error from create_schedule validation.
+	 */
+	public function test_install_assistant_run_preset_without_override_fails() {
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset(
+			'daily_sales_report',
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_assistant_id', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that a channel_broadcast preset can be installed when credentials
+	 * are supplied via overrides.
+	 */
+	public function test_install_channel_broadcast_preset_with_override() {
+		$credentials = array(
+			'slack' => array(
+				'token'   => 'xoxb-test-token',
+				'channel' => '#general',
+			),
+		);
+
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset(
+			'order_status_broadcast',
+			$this->admin_id,
+			array( 'credentials' => $credentials )
+		);
+
+		$this->assertIsString( $result, 'install_preset should return a schedule ID string for channel_broadcast with override.' );
+		$this->assertNotEmpty( $result );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $result );
+		$this->assertSame( $credentials, $schedule['broadcast_config']['credentials'] );
+	}
+
+	/**
+	 * Test that a channel_broadcast preset without credentials override
+	 * returns a WP_Error from create_schedule validation.
+	 */
+	public function test_install_channel_broadcast_preset_without_override_fails() {
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset(
+			'order_status_broadcast',
+			$this->admin_id
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'missing_broadcast_credentials', $result->get_error_code() );
+	}
 }
