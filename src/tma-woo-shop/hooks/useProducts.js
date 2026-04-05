@@ -5,31 +5,39 @@
  * local WooCommerce tools or the `remote_wp_connection` tool depending on
  * the `wooSource` / `wooConnectionId` config set by PHP.
  *
+ * Data loading is deferred until `authReady` (from TMAContext) is `true` so
+ * that tool-execution requests carry the TMA session token.
+ *
  * @package WP_MCP_AI
  * @since   1.1.5
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { wooFetch } from '../api/client';
+import { useTMA } from '../context/TMAContext';
 
 /**
  * @param {{ search?: string, categoryId?: number|string, perPage?: number, orderby?: string, order?: string }} params
  * @return {{ products:object[], loading:boolean, error:string|null, reload:Function }}
  */
 export function useProducts( params = {} ) {
+	const { authReady } = useTMA();
 	const [ products, setProducts ] = useState( [] );
 	const [ loading, setLoading ] = useState( true );
 	const [ error, setError ] = useState( null );
 	const timer = useRef( null );
 
 	const load = useCallback( () => {
+		if ( ! authReady ) {
+			return;
+		}
 		clearTimeout( timer.current );
 		timer.current = setTimeout( async () => {
 			setLoading( true );
 			setError( null );
 			try {
 				const list = await wooFetch( 'get_wc_products', {
-					limit:    params.perPage ?? 20,
+					per_page: params.perPage ?? 20,
 					search:   params.search ?? '',
 					category: params.categoryId ? String( params.categoryId ) : '',
 					orderby:  params.orderby ?? '',
@@ -42,7 +50,7 @@ export function useProducts( params = {} ) {
 				setLoading( false );
 			}
 		}, 350 );
-	}, [ params.search, params.categoryId, params.perPage, params.orderby, params.order ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ authReady, params.search, params.categoryId, params.perPage, params.orderby, params.order ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect( () => {
 		load();

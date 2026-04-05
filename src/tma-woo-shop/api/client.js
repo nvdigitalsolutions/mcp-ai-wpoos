@@ -149,10 +149,19 @@ export async function wooFetch( action, args = {} ) {
 
 	if ( source === 'remote' && connectionId ) {
 		// Route through the remote_wp_connection tool.
+		// Remote WC REST API uses `per_page`; callers may pass `limit` (the
+		// local tool convention).  Normalise so the remote tool always receives
+		// `per_page`.
+		const remoteArgs = { ...args };
+		if ( remoteArgs.limit && ! remoteArgs.per_page ) {
+			remoteArgs.per_page = remoteArgs.limit;
+		}
+		delete remoteArgs.limit;
+
 		const raw = await executeTool( 'remote_wp_connection', {
 			action,
 			connection_id: connectionId,
-			...args,
+			...remoteArgs,
 		} );
 
 		// remote_wp_connection returns { data: { products/orders/... } } or similar.
@@ -171,7 +180,7 @@ export async function wooFetch( action, args = {} ) {
 	switch ( action ) {
 		case 'get_wc_products': {
 			const raw = await executeTool( 'get_woo_products', {
-				limit:   args.limit ?? 20,
+				limit:   args.per_page ?? args.limit ?? 20,
 				search:  args.search ?? '',
 				category: args.category ?? '',
 				orderby: args.orderby ?? '',
@@ -207,7 +216,7 @@ export async function wooFetch( action, args = {} ) {
 		}
 		case 'get_wc_orders': {
 			const raw = await executeTool( 'get_woo_recent_orders', {
-				per_page: args.per_page ?? 10,
+				limit: args.per_page ?? args.limit ?? 10,
 			} );
 			return extractData( raw, 'orders' ) ?? [];
 		}
