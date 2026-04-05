@@ -2785,7 +2785,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 						<p class="description" style="margin-top: 6px;">
 							<strong><?php esc_html_e( 'Mini App URL:', 'mcp-ai-wpoos-pro' ); ?></strong>
-							<input type="text" readonly="readonly" value="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-mini-app' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">
+							<?php
+							// Use the per-connection URL when editing so each bot has a unique Mini App address.
+							$_tma_url = ( $is_edit && '' !== $editing )
+								? rest_url( 'mcp-ai/v1/telegram-mini-app/' . sanitize_key( $editing ) )
+								: rest_url( 'mcp-ai/v1/telegram-mini-app' );
+							?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $_tma_url ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">
+							<?php if ( $is_edit && '' !== $editing ) : ?>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'This URL is unique to this bot. Use it when configuring the Mini App in @BotFather so that each bot resolves its own settings and credentials.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
 						</p>
 					</td>
 				</tr>

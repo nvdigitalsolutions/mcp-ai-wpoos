@@ -468,6 +468,339 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// ── Per-connection routes ──────────────────────────────────────────────
+		// Mirror every user-facing endpoint under a {connection_id} prefix so
+		// that each Telegram bot can have its own unique Mini App URL.
+		// The connection_id in the path tells the server which bot token to use
+		// for initData HMAC validation, which template to render, and which
+		// assistant to use.  Industry standard: URL path segmentation per bot.
+		$this->register_per_connection_routes();
+	}
+
+	/**
+	 * Register per-connection variants of all user-facing Mini App endpoints.
+	 *
+	 * Each route mirrors its global counterpart but includes a
+	 * {connection_id} path segment that is passed into the handler.
+	 * Admin-only endpoints (templates, template customization) are NOT
+	 * duplicated because they operate on global/site-wide settings.
+	 *
+	 * @since 1.3.0
+	 */
+	protected function register_per_connection_routes() {
+		$conn_prefix = '/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)';
+		$conn_arg    = array(
+			'connection_id' => array(
+				'required'          => true,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_key',
+				'description'       => __( 'Telegram connection ID for multi-bot setups.', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+
+		// Main Mini App page (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix,
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_mini_app' ),
+				'permission_callback' => '__return_true',
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'assistant' => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'description'       => __( 'Optional assistant slug to pre-select in the chat interface.', 'mcp-ai-wpoos-pro' ),
+						),
+					)
+				),
+			)
+		);
+
+		// initData validation endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/validate',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_validate_init_data' ),
+				'permission_callback' => '__return_true',
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'init_data' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => array( $this, 'sanitize_init_data' ),
+							'description'       => __( 'Raw initData string from window.Telegram.WebApp.initData.', 'mcp-ai-wpoos-pro' ),
+						),
+					)
+				),
+			)
+		);
+
+		// Content (CPT posts) data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/content',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_content' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'post_type' => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => 'post',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'page'      => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 1,
+							'minimum'  => 1,
+						),
+						'per_page'  => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 20,
+							'minimum'  => 1,
+							'maximum'  => 100,
+						),
+						'search'    => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					)
+				),
+			)
+		);
+
+		// Content update / create endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/content',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_update_content' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'id'           => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 0,
+						),
+						'post_type'    => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => 'post',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'title'        => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'content'      => array(
+							'required' => false,
+							'type'     => 'string',
+							'default'  => '',
+						),
+						'status'       => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => 'draft',
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'date'         => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					)
+				),
+			)
+		);
+
+		// Tools & slash-commands data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/tools',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_tools' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => $conn_arg,
+			)
+		);
+
+		// Tool execution endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/tools/execute',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_execute_tool' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'slug'      => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'arguments' => array(
+							'required' => false,
+							'type'     => 'object',
+							'default'  => array(),
+						),
+					)
+				),
+			)
+		);
+
+		// TMA-specific chat endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/chat',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_tma_chat_request' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'messages'     => array(
+							'required'          => true,
+							'type'              => 'array',
+							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
+						),
+						'assistant_id' => array(
+							'required'          => false,
+							'type'              => array( 'integer', 'string' ),
+							'description'       => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
+						),
+					)
+				),
+			)
+		);
+
+		// Media library data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/media',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_media' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'page'     => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 1,
+							'minimum'  => 1,
+						),
+						'per_page' => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 20,
+							'minimum'  => 1,
+							'maximum'  => 100,
+						),
+						'search'   => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'type'     => array(
+							'required'          => false,
+							'type'              => 'string',
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					)
+				),
+			)
+		);
+
+		// User settings endpoint (GET + POST).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/settings',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_get_settings' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => $conn_arg,
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_save_settings' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array_merge(
+						$conn_arg,
+						array(
+							'action' => array(
+								'required'          => true,
+								'type'              => 'string',
+								'sanitize_callback' => 'sanitize_text_field',
+								'description'       => __( 'Settings action: save_preferences, link_account, or unlink_account.', 'mcp-ai-wpoos-pro' ),
+							),
+						)
+					),
+				),
+			)
+		);
+
+		// Analytics endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/analytics',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_analytics' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array_merge(
+					$conn_arg,
+					array(
+						'days' => array(
+							'required' => false,
+							'type'     => 'integer',
+							'default'  => 7,
+							'minimum'  => 1,
+							'maximum'  => 90,
+						),
+					)
+				),
+			)
+		);
+
+		// Shop balance endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			$conn_prefix . '/shop/balance',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_shop_balance' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => $conn_arg,
+			)
+		);
 	}
 
 	// =========================================================================
@@ -633,7 +966,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	public function handle_mini_app( $request ) {
 		// Resolve the active Telegram connection once; used both for assistant
 		// lookup and for extracting the bot username shown in the Settings tab.
-		$connection = $this->get_active_telegram_connection();
+		// When a connection_id is present in the URL, use it for multi-bot support.
+		$connection_id = $request->get_param( 'connection_id' );
+		$connection    = $this->resolve_connection_from_request( $request );
+
+		// Build the connection-scoped REST base for all sub-endpoint URLs.
+		$scoped_base = $this->get_scoped_rest_base( $request );
 
 		// ── Template resolution (preview → per-connection → global → default) ──
 		$this->load_template_registry();
@@ -669,8 +1007,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				 * @param string $title Default page title.
 				 */
 				$page_title       = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
-				$tools_url        = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
-				$analytics_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$tools_url        = rest_url( $this->namespace . '/' . $scoped_base . '/tools' );
+				$analytics_url    = rest_url( $this->namespace . '/' . $scoped_base . '/analytics' );
 				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
 				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
@@ -682,15 +1020,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				// via the TMA session token (X-WP-MCP-AI-TMA-Token) returned by /validate,
 				// without requiring a WordPress auth cookie that may not persist inside
 				// Telegram's built-in WebView.
-				$chat_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/chat' );
-				$validate_url = rest_url( $this->namespace . '/' . $this->rest_base . '/validate' );
+				$chat_url     = rest_url( $this->namespace . '/' . $scoped_base . '/chat' );
+				$validate_url = rest_url( $this->namespace . '/' . $scoped_base . '/validate' );
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
 					'request'              => $request,
 					'connection'           => $connection,
 					'namespace'            => $this->namespace,
-					'rest_base'            => $this->rest_base,
+					'rest_base'            => $scoped_base,
 					'assistant'            => $request->get_param( 'assistant' ),
 					'assistant_id'         => $assistant_id,
 					'chat_url'             => $chat_url,
@@ -701,6 +1039,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					'analytics_url'        => $analytics_url,
 					'chart_js_url'         => $chart_js_url,
 					'markdown_js_url'      => $markdown_js_url,
+					'connection_id'        => $connection_id ? sanitize_key( $connection_id ) : '',
 					'member_id'            => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
@@ -785,14 +1124,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		*/
 		$bot_username = apply_filters( 'wp_mcp_ai_telegram_mini_app_bot_username', $bot_username, $connection ? $connection : array() );
 
-		$validate_url = rest_url( $this->namespace . '/' . $this->rest_base . '/validate' );
-		$content_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/content' );
-		$tools_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
-		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
-		$settings_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
-		$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
-		$shop_url      = rest_url( $this->namespace . '/' . $this->rest_base . '/shop/balance' );
-		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
+		$validate_url  = rest_url( $this->namespace . '/' . $scoped_base . '/validate' );
+		$content_url   = rest_url( $this->namespace . '/' . $scoped_base . '/content' );
+		$tools_url     = rest_url( $this->namespace . '/' . $scoped_base . '/tools' );
+		$media_url     = rest_url( $this->namespace . '/' . $scoped_base . '/media' );
+		$settings_url  = rest_url( $this->namespace . '/' . $scoped_base . '/settings' );
+		$analytics_url = rest_url( $this->namespace . '/' . $scoped_base . '/analytics' );
+		$shop_url      = rest_url( $this->namespace . '/' . $scoped_base . '/shop/balance' );
+		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $scoped_base ) );
 
 		// Serve Chart.js from the local plugin bundle so the analytics
 		// dashboard works reliably inside Telegram's WebView where CDN
@@ -3237,7 +3576,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// mirroring the /tools slash-command behaviour. Falls back to the full registry
 		// when no assistant is resolved or the assistant has no explicit tool restriction.
 		$allowed_slugs = array(); // Empty = no restriction.
-		$connection    = $this->get_active_telegram_connection();
+		$connection    = $this->resolve_connection_from_request( $request );
 		$assistant_id  = (int) $this->resolve_mini_app_assistant( $request, $connection );
 		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
@@ -3416,7 +3755,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// resolution used when rendering the Mini App HTML page.
 		$request_assistant_id = $request->get_param( 'assistant_id' );
 		if ( null === $request_assistant_id || '' === (string) $request_assistant_id || 0 === (int) $request_assistant_id ) {
-			$connection   = $this->get_active_telegram_connection();
+			$connection   = $this->resolve_connection_from_request( $request );
 			$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
 			if ( ! empty( $assistant_id ) ) {
 				$request->set_param( 'assistant_id', $assistant_id );
@@ -3542,7 +3881,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Resolve the active assistant name.
-		$connection     = $this->get_active_telegram_connection();
+		$connection     = $this->resolve_connection_from_request( $request );
 		$assistant_slug = $this->resolve_mini_app_assistant( new WP_REST_Request(), $connection );
 		$assistant_name = '';
 		if ( ! empty( $assistant_slug ) ) {
@@ -4019,7 +4358,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$connection = $this->get_active_telegram_connection();
+		$connection = $this->resolve_connection_from_request( $request );
 
 		if ( ! $connection || empty( $connection['api_key'] ) ) {
 			return new WP_Error(
@@ -5105,7 +5444,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		}
 	}
 
-	protected function get_active_telegram_connection() {
+	protected function get_active_telegram_connection( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 			if ( file_exists( $file ) ) {
@@ -5117,12 +5456,33 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			return null;
 		}
 
+		// When a specific connection is requested, use the Remote Site Manager's
+		// direct array-key lookup (mirrors the webhook controller pattern).
+		if ( $connection_id ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if (
+				$connection
+				&& isset( $connection['connection_type'] )
+				&& 'telegram' === $connection['connection_type']
+				&& ! empty( $connection['enabled'] )
+			) {
+				return $connection;
+			}
+
+			// Specific connection requested but not found — do not fall back to
+			// a different connection; return null so the caller can surface a
+			// descriptive error instead of silently using wrong credentials.
+			return null;
+		}
+
 		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 
 		if ( ! is_array( $connections ) ) {
 			return null;
 		}
 
+		// Fallback: return the first active Telegram connection (single-bot / legacy behaviour).
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
 				continue;
@@ -5148,8 +5508,49 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	*
 	* @return string Fully-qualified HTTPS URL to the Mini App endpoint.
 	*/
-	public static function get_mini_app_url() {
-		return rest_url( 'mcp-ai/v1/telegram-mini-app' );
+	public static function get_mini_app_url( $connection_id = '' ) {
+		$base = 'mcp-ai/v1/telegram-mini-app';
+		if ( '' !== $connection_id ) {
+			$base .= '/' . sanitize_key( $connection_id );
+		}
+		return rest_url( $base );
+	}
+
+	/**
+	 * Build the connection-scoped REST base path for URL construction.
+	 *
+	 * When a connection_id is present in the request (per-connection route),
+	 * all sub-endpoint URLs (validate, chat, tools, etc.) must include the
+	 * connection_id segment so that subsequent requests resolve the same bot.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_REST_Request $request Current REST request.
+	 * @return string REST base path, e.g. 'telegram-mini-app' or 'telegram-mini-app/{id}'.
+	 */
+	protected function get_scoped_rest_base( $request ) {
+		$connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $connection_id ) ) {
+			return $this->rest_base . '/' . sanitize_key( $connection_id );
+		}
+		return $this->rest_base;
+	}
+
+	/**
+	 * Resolve the Telegram connection for the current request.
+	 *
+	 * Extracts the optional connection_id URL parameter and delegates to
+	 * get_active_telegram_connection().  When no connection_id is present,
+	 * the first enabled Telegram connection is returned (legacy behaviour).
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_REST_Request $request Current REST request.
+	 * @return array|null Connection array or null if none found.
+	 */
+	protected function resolve_connection_from_request( $request ) {
+		$connection_id = sanitize_key( (string) $request->get_param( 'connection_id' ) );
+		return $this->get_active_telegram_connection( $connection_id ? $connection_id : null );
 	}
 
 	/**

@@ -649,6 +649,30 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$mini_app_url = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' )
 			? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url()
 			: rest_url( 'mcp-ai/v1/telegram-mini-app' );
+
+		// Gather per-connection Mini App URLs for multi-bot setups.
+		$per_connection_urls = array();
+		if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+			if ( is_array( $all_connections ) ) {
+				foreach ( $all_connections as $conn_id => $conn ) {
+					if (
+						isset( $conn['connection_type'] )
+						&& 'telegram' === $conn['connection_type']
+						&& ! empty( $conn['enabled'] )
+					) {
+						$label = ! empty( $conn['name'] ) ? $conn['name'] : $conn_id;
+						$per_connection_urls[] = array(
+							'id'    => sanitize_key( $conn_id ),
+							'label' => $label,
+							'url'   => class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' )
+								? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url( sanitize_key( $conn_id ) )
+								: rest_url( 'mcp-ai/v1/telegram-mini-app/' . sanitize_key( $conn_id ) ),
+						);
+					}
+				}
+			}
+		}
 		?>
 		<div class="platform-config">
 			<div class="platform-config-header">
@@ -694,6 +718,20 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 								);
 								?>
 							</p>
+							<?php if ( count( $per_connection_urls ) > 1 ) : ?>
+								<div style="margin-top: 10px; padding: 10px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 2px;">
+									<strong><?php esc_html_e( 'Per-Bot Mini App URLs (multi-bot):', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<p class="description" style="margin-top: 4px;">
+										<?php esc_html_e( 'When running multiple Telegram bots, each bot must use its own unique URL below so that initData validation uses the correct bot token.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+									<?php foreach ( $per_connection_urls as $_pcu ) : ?>
+										<div style="margin-top: 6px;">
+											<label style="font-weight: 600; display: block; margin-bottom: 2px;"><?php echo esc_html( $_pcu['label'] ); ?></label>
+											<input type="text" readonly="readonly" value="<?php echo esc_url( $_pcu['url'] ); ?>" class="large-text code" onclick="this.select();" onfocus="this.select();" style="background-color:#f0f0f0;" />
+										</div>
+									<?php endforeach; ?>
+								</div>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
