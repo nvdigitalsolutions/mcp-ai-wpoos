@@ -42,7 +42,8 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 	 * Initialize the page (hooks).
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 25 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 5 );
+		add_action( 'admin_menu', array( __CLASS__, 'make_dashboard_default' ), 999 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_eca_dashboard_data', array( __CLASS__, 'ajax_get_dashboard_data' ) );
 	}
@@ -59,6 +60,44 @@ class WP_MCP_AI_ECA_Dashboard_Page {
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
 		);
+	}
+
+	/**
+	 * Reorder the ECA submenu so Dashboard is the first item, making it the
+	 * default page when clicking the top-level ECAs menu.
+	 *
+	 * Runs at a very late priority (999) so all submenu items are already registered.
+	 */
+	public static function make_dashboard_default() {
+		global $submenu;
+
+		$parent = self::PARENT_SLUG;
+
+		if ( empty( $submenu[ $parent ] ) ) {
+			return;
+		}
+
+		$dashboard_item = null;
+		$dashboard_key  = null;
+
+		foreach ( $submenu[ $parent ] as $key => $item ) {
+			if ( self::PAGE_SLUG === $item[2] ) {
+				$dashboard_item = $item;
+				$dashboard_key  = $key;
+				break;
+			}
+		}
+
+		if ( null === $dashboard_item ) {
+			return;
+		}
+
+		// Remove the dashboard entry from its current position.
+		unset( $submenu[ $parent ][ $dashboard_key ] );
+
+		// Prepend it so it becomes the first (default) submenu item.
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Intentional reorder.
+		$submenu[ $parent ] = array_values( array_merge( array( $dashboard_item ), $submenu[ $parent ] ) );
 	}
 
 	/**
