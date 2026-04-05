@@ -94,8 +94,8 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		add_action( 'wp_ajax_wp_mcp_ai_acc_get_analytics', array( $this, 'ajax_get_analytics' ) );
 
 		// Record agent events for activity tracking.
-		add_action( 'wp_mcp_ai_tool_executed', array( $this, 'record_tool_execution' ), 10, 3 );
-		add_action( 'wp_mcp_ai_chat_response', array( $this, 'record_chat_response' ), 10, 2 );
+		add_action( 'wp_mcp_ai_after_tool_execution', array( $this, 'record_tool_execution' ), 10, 4 );
+		add_action( 'wp_mcp_ai_after_chat_response', array( $this, 'record_chat_response' ), 10, 3 );
 		add_action( 'wp_mcp_ai_session_started', array( $this, 'record_session_start' ), 10, 2 );
 		add_action( 'wp_mcp_ai_session_ended', array( $this, 'record_session_end' ), 10, 2 );
 	}
@@ -2153,17 +2153,43 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		$avg_response = $response_count > 0 ? round( $total_response / $response_count ) : 0;
 		$success_rate = $total_requests > 0 ? round( ( $total_successes / $total_requests ) * 100, 1 ) : 100;
 
-		// Build agent performance data.
+		// Build agent performance data from per-agent metrics.
 		$agent_performance = array();
 		foreach ( $assistants as $a ) {
+			$agent_id         = $a['id'];
+			$aid              = (string) $agent_id;
+			$agent_sessions   = 0;
+			$agent_tokens     = 0;
+			$agent_tool_calls = 0;
+			$agent_successes  = 0;
+			$agent_requests   = 0;
+
+			foreach ( $metrics as $date => $day_data ) {
+				if ( $date < $cutoff_day ) {
+					continue;
+				}
+				if ( isset( $day_data['agents'][ $aid ] ) ) {
+					$agent_day         = $day_data['agents'][ $aid ];
+					$agent_sessions   += isset( $agent_day['sessions'] ) ? (int) $agent_day['sessions'] : 0;
+					$agent_tokens     += isset( $agent_day['tokens'] ) ? (int) $agent_day['tokens'] : 0;
+					$agent_tool_calls += isset( $agent_day['tool_calls'] ) ? (int) $agent_day['tool_calls'] : 0;
+					$agent_successes  += isset( $agent_day['successes'] ) ? (int) $agent_day['successes'] : 0;
+					$agent_requests   += isset( $agent_day['total_requests'] ) ? (int) $agent_day['total_requests'] : 0;
+				}
+			}
+
+			$agent_success_rate = $agent_requests > 0
+				? round( ( $agent_successes / $agent_requests ) * 100, 1 )
+				: 100;
+
 			$agent_performance[] = array(
 				'name'         => $a['title'],
-				'sessions'     => 0,
-				'tokens'       => 0,
-				'tool_calls'   => 0,
+				'sessions'     => $agent_sessions,
+				'tokens'       => $agent_tokens,
+				'tool_calls'   => $agent_tool_calls,
 				'avg_response' => '0ms',
-				'success_rate' => '100%',
-				'status'       => $this->get_agent_status( $a['id'] ),
+				'success_rate' => $agent_success_rate . '%',
+				'status'       => $this->get_agent_status( $agent_id ),
 			);
 		}
 
@@ -2326,19 +2352,22 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 	/**
 	 * Record a tool execution event.
 	 *
+	 * Hooked to `wp_mcp_ai_after_tool_execution`.
+	 *
 	 * @since 2.1.0
 	 *
-	 * @param string $tool_name Tool slug.
-	 * @param array  $result    Tool result.
-	 * @param array  $context   Execution context.
+	 * @param string $tool_slug  Tool slug.
+	 * @param array  $arguments  Tool arguments.
+	 * @param array  $context    Execution context.
+	 * @param mixed  $result     Tool result.
 	 */
-	public function record_tool_execution( $tool_name, $result, $context ) {
+	public function record_tool_execution( $tool_slug, $arguments, $context, $result ) {
 		$agent_id   = isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0;
 		$agent_name = $agent_id ? get_the_title( $agent_id ) : '';
-		$status     = ! empty( $result['error'] ) ? 'failed' : 'success';
+		$status     = is_wp_error( $result ) || ( is_array( $result ) && ! empty( $result['error'] ) ) ? 'failed' : 'success';
 
 		/* translators: 1: tool name, 2: execution status */
-		$message = sprintf( __( 'Tool "%1$s" executed: %2$s', 'mcp-ai-wpoos-pro' ), $tool_name, $status );
+		$message = sprintf( __( 'Tool "%1$s" executed: %2$s', 'mcp-ai-wpoos-pro' ), $tool_slug, $status );
 
 		$this->log_activity( 'tool_execution', $agent_id, $agent_name, $message );
 
@@ -2353,18 +2382,30 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		if ( 'success' === $status ) {
 			$this->increment_daily_metric( 'successes', 1 );
 		}
+
+		// Update per-agent metrics.
+		if ( $agent_id ) {
+			$this->increment_agent_metric( $agent_id, 'tool_calls', 1 );
+			$this->increment_agent_metric( $agent_id, 'total_requests', 1 );
+			if ( 'success' === $status ) {
+				$this->increment_agent_metric( $agent_id, 'successes', 1 );
+			}
+		}
 	}
 
 	/**
 	 * Record a chat response event.
 	 *
+	 * Hooked to `wp_mcp_ai_after_chat_response`.
+	 *
 	 * @since 2.1.0
 	 *
-	 * @param array $response Response data.
-	 * @param array $context  Response context.
+	 * @param int             $assistant_id Assistant post ID.
+	 * @param array           $response     Response data from AI provider.
+	 * @param WP_REST_Request $request      REST request instance.
 	 */
-	public function record_chat_response( $response, $context ) {
-		$agent_id   = isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0;
+	public function record_chat_response( $assistant_id, $response, $request ) {
+		$agent_id   = (int) $assistant_id;
 		$agent_name = $agent_id ? get_the_title( $agent_id ) : '';
 
 		$tokens = 0;
@@ -2385,6 +2426,14 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		// Update token usage.
 		if ( $tokens > 0 ) {
 			$this->increment_daily_metric( 'tokens', $tokens );
+		}
+
+		// Update per-agent metrics.
+		if ( $agent_id ) {
+			$this->increment_agent_metric( $agent_id, 'sessions', 1 );
+			if ( $tokens > 0 ) {
+				$this->increment_agent_metric( $agent_id, 'tokens', $tokens );
+			}
 		}
 	}
 
@@ -2452,6 +2501,52 @@ class WP_MCP_AI_Pro_Agent_Command_Center {
 		}
 
 		$metrics[ $today ][ $key ] += $value;
+
+		// Keep last 90 days of metrics.
+		$cutoff = gmdate( 'Y-m-d', strtotime( '-90 days' ) );
+		foreach ( array_keys( $metrics ) as $date ) {
+			if ( $date < $cutoff ) {
+				unset( $metrics[ $date ] );
+			}
+		}
+
+		update_option( self::USAGE_METRICS_OPTION, $metrics, false );
+	}
+
+	/**
+	 * Increment a per-agent daily usage metric.
+	 *
+	 * Stores agent-specific counters inside each day's metric entry under
+	 * an 'agents' sub-array keyed by agent post ID.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int    $agent_id Agent (assistant) post ID.
+	 * @param string $key      Metric key (e.g. 'tokens', 'tool_calls', 'sessions').
+	 * @param int    $value    Amount to add.
+	 */
+	private function increment_agent_metric( $agent_id, $key, $value ) {
+		$metrics = get_option( self::USAGE_METRICS_OPTION, array() );
+		$today   = gmdate( 'Y-m-d' );
+		$aid     = (string) $agent_id;
+
+		if ( ! isset( $metrics[ $today ] ) ) {
+			$metrics[ $today ] = array();
+		}
+
+		if ( ! isset( $metrics[ $today ]['agents'] ) ) {
+			$metrics[ $today ]['agents'] = array();
+		}
+
+		if ( ! isset( $metrics[ $today ]['agents'][ $aid ] ) ) {
+			$metrics[ $today ]['agents'][ $aid ] = array();
+		}
+
+		if ( ! isset( $metrics[ $today ]['agents'][ $aid ][ $key ] ) ) {
+			$metrics[ $today ]['agents'][ $aid ][ $key ] = 0;
+		}
+
+		$metrics[ $today ]['agents'][ $aid ][ $key ] += $value;
 
 		// Keep last 90 days of metrics.
 		$cutoff = gmdate( 'Y-m-d', strtotime( '-90 days' ) );
