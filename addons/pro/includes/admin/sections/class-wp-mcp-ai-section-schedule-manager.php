@@ -202,6 +202,24 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			$schedule_options[ $key ] = $cron_schedule['display'];
 		}
 
+		// Build a lightweight assistant list for preset install prompts.
+		$preset_assistants = array();
+		$ast_posts         = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		foreach ( $ast_posts as $ast_post ) {
+			$preset_assistants[] = array(
+				'id'    => $ast_post->ID,
+				'title' => $ast_post->post_title,
+			);
+		}
+
 		wp_localize_script(
 			'wp-mcp-ai-schedule-manager',
 			'wpMcpAiScheduleManager',
@@ -209,6 +227,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 				'nonce'           => wp_create_nonce( self::NONCE_ACTION ),
 				'scheduleOptions' => $schedule_options,
+				'assistants'      => $preset_assistants,
 				'strings'         => array(
 					'confirmDelete'   => __( 'Are you sure you want to delete this schedule and all its history?', 'mcp-ai-wpoos-pro' ),
 					'confirmClear'    => __( 'Are you sure you want to clear the run history for this schedule?', 'mcp-ai-wpoos-pro' ),
@@ -247,7 +266,12 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'presetInstalling'     => __( 'Installing…', 'mcp-ai-wpoos-pro' ),
 					'presetInstalled'      => __( 'Preset installed successfully.', 'mcp-ai-wpoos-pro' ),
 					'presetNoResults'      => __( 'No presets match your filters.', 'mcp-ai-wpoos-pro' ),
-					'presetConfirmInstall' => __( 'Install this schedule preset?', 'mcp-ai-wpoos-pro' ),
+					'presetConfirmInstall'   => __( 'Install this schedule preset?', 'mcp-ai-wpoos-pro' ),
+					'presetSelectAssistant'  => __( 'Select an assistant for this schedule:', 'mcp-ai-wpoos-pro' ),
+					'presetNoAssistants'     => __( 'No assistants found. Please create an assistant first.', 'mcp-ai-wpoos-pro' ),
+					'presetInvalidAssistant' => __( 'Please enter a valid assistant ID from the list above.', 'mcp-ai-wpoos-pro' ),
+					'presetEnterCredentials' => __( 'Enter channel credentials JSON for this broadcast schedule:', 'mcp-ai-wpoos-pro' ),
+					'presetInvalidJson'      => __( 'Invalid JSON. Please enter valid channel credentials.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -1357,7 +1381,32 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'No preset ID provided.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, get_current_user_id() );
+		// Collect optional overrides for types that require user-supplied values.
+		$overrides = array();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().
+		if ( ! empty( $_POST['assistant_id'] ) ) {
+			$aid = absint( $_POST['assistant_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			if ( $aid && 'mcp_ai_assistant' === get_post_type( $aid ) && 'publish' === get_post_status( $aid ) ) {
+				$overrides['assistant_id'] = $aid;
+			}
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().
+		if ( ! empty( $_POST['credentials'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified via verify_request(); raw JSON decoded and type-checked below.
+			$raw_creds = wp_unslash( $_POST['credentials'] );
+			if ( is_string( $raw_creds ) ) {
+				$decoded = json_decode( $raw_creds, true );
+				if ( is_array( $decoded ) ) {
+					$overrides['credentials'] = $decoded;
+				}
+			} elseif ( is_array( $raw_creds ) ) {
+				$overrides['credentials'] = $raw_creds;
+			}
+		}
+
+		$result = WP_MCP_AI_Pro_Schedule_Presets::install_preset( $preset_id, get_current_user_id(), $overrides );
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
