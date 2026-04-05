@@ -24,6 +24,8 @@
 		"start:tma-woo-shop": "ENTRY=tma-woo-shop wp-scripts start --config webpack.config.tma.js",
 		"build:tma-shopify-jewelry": "ENTRY=tma-shopify-jewelry wp-scripts build --config webpack.config.tma.js",
 		"start:tma-shopify-jewelry": "ENTRY=tma-shopify-jewelry wp-scripts start --config webpack.config.tma.js",
+		"build:tma-shopify-shop": "ENTRY=tma-shopify-shop wp-scripts build --config webpack.config.tma.js",
+		"start:tma-shopify-shop": "ENTRY=tma-shopify-shop wp-scripts start --config webpack.config.tma.js",
 		"cosmos:tma": "cosmos --config cosmos.config.json",
 		"cosmos:tma:export": "cosmos-export --config cosmos.config.json",
 		"build": "npm run build:css && npm run build:js && npm run build:js:pro",
