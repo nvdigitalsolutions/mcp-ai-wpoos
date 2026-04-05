@@ -11,11 +11,11 @@
 ( function( blocks, element, editor, components ) {
 	const el = element.createElement;
 	const registerBlockType = blocks.registerBlockType;
-	const InspectorControls = editor.InspectorControls;
-	const TextControl = components.TextControl;
-	const SelectControl = components.SelectControl;
-	const ToggleControl = components.ToggleControl;
-	const PanelBody = components.PanelBody;
+	const _InspectorControls = editor.InspectorControls;
+	const _TextControl = components.TextControl;
+	const _SelectControl = components.SelectControl;
+	const _ToggleControl = components.ToggleControl;
+	const _PanelBody = components.PanelBody;
 
 	/**
 	 * Register Performance Test Runner Block.

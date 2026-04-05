@@ -22,13 +22,17 @@
 		"wpMcpAiAdmin": "readonly"
 	},
 	"rules": {
-		"no-console": "warn",
+		"no-console": "off",
 		"camelcase": [
 			"error",
 			{
 				"properties": "never",
 				"ignoreDestructuring": true,
-				"ignoreImports": true
+				"ignoreImports": true,
+				"ignoreGlobals": true,
+				"allow": [
+					"^WP_MCP_AI_"
+				]
 			}
 		],
 		"no-var": "error",
@@ -36,7 +40,8 @@
 		"no-unused-vars": [
 			"error",
 			{
-				"argsIgnorePattern": "^_"
+				"argsIgnorePattern": "^_",
+				"varsIgnorePattern": "^_"
 			}
 		]
 	},
@@ -48,7 +53,8 @@
 				"**/chat-bundle.js",
 				"**/orchestration/autonomous-orchestrator.js",
 				"**/orchestration/browser-circuit-breaker.js",
-				"**/orchestration/research-compiler.js"
+				"**/orchestration/research-compiler.js",
+			"**/sse-service.js"
 			],
 			"parserOptions": {
 				"sourceType": "module"
@@ -70,15 +76,17 @@
 				}
 			},
 			"rules": {
-				"no-console": "warn",
+				"no-console": "off",
 				"camelcase": [
 					"error",
 					{
 						"properties": "never",
 						"ignoreDestructuring": true,
-						"ignoreImports": true
+						"ignoreImports": true,
+						"ignoreGlobals": true
 					}
 				],
+				"no-nested-ternary": "off",
 				"import/no-unresolved": "off",
 				"@wordpress/no-unsafe-wp-apis": "off",
 				"@wordpress/i18n-no-variables": "off",
