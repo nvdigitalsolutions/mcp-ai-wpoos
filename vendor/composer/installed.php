@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-products-loading-issue',
+        'version' => 'dev-copilot/fix-products-loading-issue',
+        'reference' => '71fc1adcadd343bdb21291091135caa955d52afc',
         'pretty_version' => 'dev-copilot/update-pro-schedule-manager-install',
         'version' => 'dev-copilot/update-pro-schedule-manager-install',
         'reference' => 'c3e29f7fd9fd0f9e329e1febe946ad7165eccf1c',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-products-loading-issue',
+            'version' => 'dev-copilot/fix-products-loading-issue',
+            'reference' => '71fc1adcadd343bdb21291091135caa955d52afc',
             'pretty_version' => 'dev-copilot/update-pro-schedule-manager-install',
             'version' => 'dev-copilot/update-pro-schedule-manager-install',
             'reference' => 'c3e29f7fd9fd0f9e329e1febe946ad7165eccf1c',
