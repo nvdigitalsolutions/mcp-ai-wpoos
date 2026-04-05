@@ -17,7 +17,7 @@
  * @since   1.1.5
  */
 
-import { useState, useCallback, useMemo } from '@wordpress/element';
+import { useState, useCallback, useMemo } from 'react';
 import { CartProvider } from './context/CartContext';
 import { TMAProvider } from './context/TMAContext';
 import { NavContext } from './context/NavContext';

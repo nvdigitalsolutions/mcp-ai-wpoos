@@ -36,10 +36,11 @@ on:
       - 'package.json'
       - 'bin/build-plugin-zip.sh'
       - 'src/tma-template-builder/**'
-      - 'webpack.config.tma-builder.js'
+      - 'src/tma-woo-shop/**'
+      - 'src/tma-shopify-jewelry/**'
+      - 'webpack.config.tma.js'
       - 'src/workflow-builder/**'
       - 'webpack.config.workflow.js'
-      - 'src/tma-woo-shop/**'
   pull_request:
     branches:
       - main
@@ -53,10 +54,11 @@ on:
       - 'composer.json'
       - 'package.json'
       - 'src/tma-template-builder/**'
-      - 'webpack.config.tma-builder.js'
+      - 'src/tma-woo-shop/**'
+      - 'src/tma-shopify-jewelry/**'
+      - 'webpack.config.tma.js'
       - 'src/workflow-builder/**'
       - 'webpack.config.workflow.js'
-      - 'src/tma-woo-shop/**'
   workflow_dispatch:
 
 permissions:
@@ -119,6 +121,7 @@ jobs:
           git add -f build/*.zip
           git add -f addons/pro/build/tma-template-builder/ 2>/dev/null || true
           git add -f addons/pro/build/tma-woo-shop/ 2>/dev/null || true
+          git add -f addons/pro/build/tma-shopify-jewelry/ 2>/dev/null || true
           git add -f addons/pro/build/workflow-builder/ 2>/dev/null || true
           
           # Check if anything changed

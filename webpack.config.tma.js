@@ -3,14 +3,20 @@
  *
  * Consolidated config for all Telegram Mini App React SPAs. Each TMA gets its
  * own entry point and output directory but shares the same @wordpress/scripts
- * defaults (loaders, optimisation) with one critical override: the WordPress
- * DependencyExtractionWebpackPlugin is removed so that `@wordpress/element`
- * (React 18) and other WP packages are **bundled** into the output instead of
- * being treated as externals pointing at `window.wp.*`.
+ * defaults (loaders, optimisation) with two critical overrides:
+ *
+ * 1. The WordPress DependencyExtractionWebpackPlugin is removed so that React
+ *    and other packages are **bundled** into the output instead of being
+ *    treated as externals pointing at `window.wp.*`.
+ *
+ * 2. `externals` is set to `{}` to ensure nothing is externalised.
+ *
+ * TMA source files import directly from `react` / `react-dom` (not from the
+ * `@wordpress/element` wrapper) so the bundles are completely standalone and
+ * do not depend on WordPress globals at runtime.
  *
  * TMA pages run inside Telegram's WebView, outside of WordPress, so the `wp`
- * global does not exist. Without this override the bundle crashes with:
- *   "Cannot read properties of undefined (reading 'element')"
+ * global does not exist.
  *
  * Replaces the three individual configs:
  *   webpack.config.tma-builder.js

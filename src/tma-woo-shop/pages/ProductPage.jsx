@@ -8,7 +8,7 @@
  * @since   1.1.5
  */
 
-import { useState } from '@wordpress/element';
+import { useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useProduct } from '../hooks/useProduct';
 import { useCart } from '../context/CartContext';

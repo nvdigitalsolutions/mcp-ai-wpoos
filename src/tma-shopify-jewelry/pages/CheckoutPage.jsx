@@ -13,7 +13,7 @@
  * @since   1.2.0
  */
 
-import { useState } from '@wordpress/element';
+import { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useTMA } from '../context/TMAContext';
 import { useNav } from '../context/NavContext';
