@@ -41,7 +41,7 @@
 
 			const $button = $(e.currentTarget);
 			const $row = $button.closest('tr');
-			const index = $row.index();
+			const _index = $row.index();
 
 			// Get peer data from the row.
 			const name = $row.find('input[name*="[name]"]').val();

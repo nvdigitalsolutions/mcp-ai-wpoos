@@ -20,7 +20,7 @@
 		// Edit button click handler
 		$(document).on('click', '.wp-mcp-ai-edit-tool', function (e) {
 			e.preventDefault();
-			const toolSlug = $(this).data('tool-slug');
+			const _toolSlug = $(this).data('tool-slug');
 			const $row = $(this).closest('tr');
 			
 			// Switch to edit mode
@@ -36,8 +36,8 @@
 		// Cancel button click handler
 		$(document).on('click', '.wp-mcp-ai-cancel-edit', function (e) {
 			e.preventDefault();
-			const toolSlug = $(this).data('tool-slug');
-			const $row = $(this).closest('tr');
+			const _toolSlug = $(this).data('tool-slug');
+			const _$row = $(this).closest('tr');
 			
 			// Reload page to reset changes
 			window.location.reload();
@@ -88,7 +88,7 @@
 						$button.prop('disabled', false).text(wp.i18n.__('Save', 'mcp-ai-wpoos'));
 					}
 				},
-				error: function(xhr, status, error) {
+				error: function(_xhr, _status, _error) {
 					showNotice('error', wp.i18n.__('An error occurred while saving tool settings.', 'mcp-ai-wpoos'));
 					$button.prop('disabled', false).text(wp.i18n.__('Save', 'mcp-ai-wpoos'));
 				}
@@ -134,7 +134,7 @@
 						$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'mcp-ai-wpoos'));
 					}
 				},
-				error: function(xhr, status, error) {
+				error: function(_xhr, _status, _error) {
 					showNotice('error', wp.i18n.__('An error occurred while resetting tool settings.', 'mcp-ai-wpoos'));
 					$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'mcp-ai-wpoos'));
 				}

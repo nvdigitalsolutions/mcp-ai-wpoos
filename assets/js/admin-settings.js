@@ -1127,7 +1127,7 @@ window.wpMcpAiSaveExpandedState = function() {
             e.preventDefault();
             
             const $btn = $(this);
-            const $row = $btn.closest('.wp-mcp-ai-model-row');
+            const _$row = $btn.closest('.wp-mcp-ai-model-row');
             const modelSlug = $btn.data('model-slug');
             
             log('Delete button clicked', { model: modelSlug });
