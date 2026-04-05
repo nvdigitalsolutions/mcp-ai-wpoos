@@ -269,6 +269,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 					'presetConfirmInstall'   => __( 'Install this schedule preset?', 'mcp-ai-wpoos-pro' ),
 					'presetSelectAssistant'  => __( 'Select an assistant for this schedule:', 'mcp-ai-wpoos-pro' ),
 					'presetNoAssistants'     => __( 'No assistants found. Please create an assistant first.', 'mcp-ai-wpoos-pro' ),
+					'presetInvalidAssistant' => __( 'Please enter a valid assistant ID from the list above.', 'mcp-ai-wpoos-pro' ),
 					'presetEnterCredentials' => __( 'Enter channel credentials JSON for this broadcast schedule:', 'mcp-ai-wpoos-pro' ),
 					'presetInvalidJson'      => __( 'Invalid JSON. Please enter valid channel credentials.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -1385,7 +1386,10 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().
 		if ( ! empty( $_POST['assistant_id'] ) ) {
-			$overrides['assistant_id'] = absint( $_POST['assistant_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$aid = absint( $_POST['assistant_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			if ( $aid && 'mcp_ai_assistant' === get_post_type( $aid ) && 'publish' === get_post_status( $aid ) ) {
+				$overrides['assistant_id'] = $aid;
+			}
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via verify_request().

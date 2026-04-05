@@ -1346,9 +1346,10 @@
 					return; // User cancelled.
 				}
 				const assistantId = parseInt( input.trim(), 10 );
-				if ( ! assistantId || assistantId <= 0 ) {
+				const validIds    = assistants.map( function ( a ) { return a.id; } );
+				if ( ! assistantId || assistantId <= 0 || -1 === $.inArray( assistantId, validIds ) ) {
 					// eslint-disable-next-line no-alert
-					alert( str.presetNoAssistants || 'Invalid assistant ID.' );
+					alert( str.presetInvalidAssistant || 'Please enter a valid assistant ID from the list above.' );
 					return;
 				}
 				data.assistant_id = assistantId;
