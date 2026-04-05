@@ -87,7 +87,7 @@ export async function executeTool( tool, args ) {
 	const res = await fetch( url, {
 		method:  'POST',
 		headers: buildHeaders(),
-		body:    JSON.stringify( { tool, arguments: args } ),
+		body:    JSON.stringify( { slug: tool, arguments: args } ),
 	} );
 	if ( ! res.ok ) {
 		throw new Error( `Tool "${ tool }" failed: HTTP ${ res.status }` );
@@ -169,8 +169,10 @@ export function extractDefaultVariantId( product ) {
  */
 function extractProducts( raw ) {
 	return (
+		raw?.result?.products ??
 		raw?.data?.products ??
 		raw?.products ??
+		raw?.result ??
 		raw?.data ??
 		[]
 	);
@@ -184,8 +186,10 @@ function extractProducts( raw ) {
  */
 function extractOrders( raw ) {
 	return (
+		raw?.result?.orders ??
 		raw?.data?.orders ??
 		raw?.orders ??
+		raw?.result ??
 		raw?.data ??
 		[]
 	);
@@ -228,7 +232,7 @@ export async function getProduct( productId ) {
 		connection_id: cfg.connectionId,
 		product_id:    productId,
 	} );
-	return raw?.data?.product ?? raw?.product ?? raw?.data ?? null;
+	return raw?.result?.product ?? raw?.data?.product ?? raw?.product ?? raw?.result ?? raw?.data ?? null;
 }
 
 /**
