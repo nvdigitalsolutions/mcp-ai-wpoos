@@ -1543,13 +1543,13 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		/* ── Session init (matches medical_vitals pattern) ── */
 		'function ecInitSession(){' .
-			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp)return;' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){ecLoadProducts();return;}' .
 			'var initData=window.Telegram.WebApp.initData;' .
-			'if(!initData)return;' .
+			'if(!initData){ecLoadProducts();return;}' .
 			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
 			'.then(function(r){return r.ok?r.json():null;})' .
-			'.then(function(d){if(!d)return;if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}ecLoadProducts();ecLoadOrders(false);})' .
-			'.catch(function(){});' .
+			'.then(function(d){if(!d){ecLoadProducts();return;}if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}ecLoadProducts();ecLoadOrders(false);})' .
+			'.catch(function(){ecLoadProducts();});' .
 		'}' .
 
 		/* ── Display settings ── */
@@ -1916,9 +1916,8 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 
 		/* Render cached products immediately, then refresh */
 		'if(productsCache.length)ecRenderProducts(productsCache);' .
-		'ecLoadProducts();' .
 
-		/* Session init for Telegram WebApp (refreshes NONCE/TMA_TOKEN, then reloads data) */
+		/* Session init for Telegram WebApp (authenticates, then loads fresh data) */
 		'ecInitSession();' .
 
 		'})();</script></body>';
