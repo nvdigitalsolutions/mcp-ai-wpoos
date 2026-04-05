@@ -3,8 +3,14 @@
  *
  * Consolidated config for all Telegram Mini App React SPAs. Each TMA gets its
  * own entry point and output directory but shares the same @wordpress/scripts
- * defaults (loaders, externals, optimisation) to keep bundle behaviour identical
- * to the previous per-file configs.
+ * defaults (loaders, optimisation) with one critical override: the WordPress
+ * DependencyExtractionWebpackPlugin is removed so that `@wordpress/element`
+ * (React 18) and other WP packages are **bundled** into the output instead of
+ * being treated as externals pointing at `window.wp.*`.
+ *
+ * TMA pages run inside Telegram's WebView, outside of WordPress, so the `wp`
+ * global does not exist. Without this override the bundle crashes with:
+ *   "Cannot read properties of undefined (reading 'element')"
  *
  * Replaces the three individual configs:
  *   webpack.config.tma-builder.js
@@ -36,6 +42,19 @@
 
 const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 const path          = require( 'path' );
+
+/**
+ * Strip the DependencyExtractionWebpackPlugin that @wordpress/scripts adds by
+ * default. That plugin externalises every `@wordpress/*` import to the
+ * corresponding `window.wp.*` global and emits a `.asset.php` manifest.
+ *
+ * TMA bundles are standalone SPAs loaded outside WordPress, so those globals
+ * do not exist. Removing the plugin causes webpack to bundle React, React DOM,
+ * and the thin @wordpress/element wrapper directly into the output file.
+ */
+const tmaPlugins = ( defaultConfig.plugins || [] ).filter(
+	( plugin ) => plugin.constructor.name !== 'DependencyExtractionWebpackPlugin'
+);
 
 /**
  * TMA entry definitions.
@@ -82,4 +101,5 @@ module.exports = entries.map( ( tma ) => ( {
 		...defaultConfig.output,
 		path: path.resolve( __dirname, tma.output ),
 	},
+	plugins: tmaPlugins,
 } ) );
