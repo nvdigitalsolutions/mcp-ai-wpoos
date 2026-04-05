@@ -1535,7 +1535,9 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
 
 		/* ── Tool call helper (supports local/remote WooCommerce) ── */
+		/* Remote actions map to remote_wp_connection action parameter values (uses per_page natively) */
 		'var EC_REMOTE_MAP={"search_woocommerce_products":"get_wc_products","get_woocommerce_orders":"get_wc_orders","create_woocommerce_order":"create_wc_order"};' .
+		/* Local tool slugs; create_woocommerce_order has no local equivalent – the checkout callback already has a fallback alert */
 		'var EC_LOCAL_MAP={"search_woocommerce_products":"get_woo_products","get_woocommerce_orders":"get_woo_recent_orders"};' .
 		'function ecToolCall(slug,args,cb){' .
 			'var body;' .
@@ -1546,7 +1548,9 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 				'for(var k in args){if(args.hasOwnProperty(k)){remoteArgs[k]=args[k];}}' .
 				'body={slug:"remote_wp_connection",arguments:remoteArgs};' .
 			'}else{' .
-				/* Local: map to actual registered tool slugs and adapt args */
+				/* Local: map to actual registered tool slugs and adapt args.
+				   Local WooCommerce tools use "limit" instead of "per_page";
+				   remote tools accept "per_page" natively via the WC REST API. */
 				'var localSlug=EC_LOCAL_MAP[slug]||slug;' .
 				'var localArgs={};for(var k in args){if(args.hasOwnProperty(k)){localArgs[k]=args[k];}}' .
 				'if(localArgs.per_page&&!localArgs.limit){localArgs.limit=localArgs.per_page;delete localArgs.per_page;}' .
