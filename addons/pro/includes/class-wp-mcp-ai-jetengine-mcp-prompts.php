@@ -129,7 +129,16 @@ class WP_MCP_AI_JetEngine_MCP_Prompts {
 		}
 
 		// Fallback: return as JSON string.
-		return wp_json_encode( $result );
+		$encoded = wp_json_encode( $result );
+
+		if ( false === $encoded ) {
+			return new WP_Error(
+				'mcp_prompt_encode_error',
+				__( 'Failed to encode prompt response.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $encoded;
 	}
 
 	/**

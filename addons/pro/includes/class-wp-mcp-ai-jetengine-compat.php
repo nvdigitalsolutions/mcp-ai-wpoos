@@ -234,7 +234,9 @@ class WP_MCP_AI_JetEngine_Compat {
 			return true;
 		}
 
-		// Assume available if version is 3.8+ (route may register later).
+		// Assume available if version is 3.8+ (route may not be registered yet at this point).
+		// This is an optimistic check — tools that depend on MCP will gracefully handle
+		// connection failures if the MCP module is ultimately not available.
 		return true;
 	}
 
