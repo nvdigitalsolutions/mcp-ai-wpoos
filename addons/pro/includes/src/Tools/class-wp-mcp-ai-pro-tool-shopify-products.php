@@ -615,8 +615,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			$query = $this->build_catalog_browse_query( $connection );
 		}
 
+		// Build filters — scope to the configured store when a Shop ID is set.
+		$filters = array();
+		$shop_id = $client->get_catalog_shop_id();
+		if ( ! empty( $shop_id ) ) {
+			$filters['shop_ids'] = $shop_id;
+		}
+
 		// --- Primary search. ---
-		$response = $client->catalog_search( $query, $limit );
+		$response = $client->catalog_search( $query, $limit, $filters );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -641,7 +648,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 				$result_sets = array();
 
 				foreach ( $sub_queries as $sub_query ) {
-					$sub_response = $client->catalog_search( $sub_query, $limit );
+					$sub_response = $client->catalog_search( $sub_query, $limit, $filters );
 
 					if ( is_wp_error( $sub_response ) ) {
 						continue;
