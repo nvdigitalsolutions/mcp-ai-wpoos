@@ -7632,10 +7632,14 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 
 		'function ecBootstrap(){' .
 			'ecLoadCollections();ecLoadProducts();' .
-			/* Catalog API has no order endpoints — hide the Orders tab and skip loading. */
+			/* Catalog API is a global discovery API — it has no store-specific
+			   order or checkout endpoints.  Hide Orders + Cart tabs and skip
+			   loading order data. */
 			'if(SHOPIFY_API_MODE==="catalog_api"){' .
 				'var oNav=document.getElementById("tma-nav-orders");if(oNav)oNav.style.display="none";' .
 				'var oPane=document.getElementById("tma-tab-orders");if(oPane)oPane.style.display="none";' .
+				'var cNav=document.getElementById("tma-nav-cart");if(cNav)cNav.style.display="none";' .
+				'var cPane=document.getElementById("tma-tab-cart");if(cPane)cPane.style.display="none";' .
 			'}else{ecLoadOrders(false);}' .
 		'}' .
 
@@ -7748,7 +7752,11 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'}else{' .
 					'priceHtml=escH((cur?cur+" ":"")+price.toFixed(2));' .
 				'}' .
-				'var addBtn=stock?"<button class=\\"ec-add-cart-btn\\" onclick=\\"ecAddToCart("+i+");event.stopPropagation()\\">' . esc_js( __( 'Add to Cart', 'mcp-ai-wpoos-pro' ) ) . '</button>":"";' .
+				/* Catalog API is discovery-only — no store-specific cart/checkout. */
+				'var addBtn="";' .
+				'if(SHOPIFY_API_MODE!=="catalog_api"&&stock){' .
+					'addBtn="<button class=\\"ec-add-cart-btn\\" onclick=\\"ecAddToCart("+i+");event.stopPropagation()\\">' . esc_js( __( 'Add to Cart', 'mcp-ai-wpoos-pro' ) ) . '</button>";' .
+				'}' .
 				'return \'<div class="tma-product-card">' .
 					'<span class="ec-stock-badge \'+stockCls+\'">\'+escH(stockTxt)+\'</span>' .
 					'<div class="tma-product-img">\'+img+\'</div>' .

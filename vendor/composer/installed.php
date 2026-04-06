@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
         'version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
-        'reference' => 'c2452713208b9795769b5f5fe62e289ed695f27c',
+        'reference' => 'a505dd54f6271152e7532110d9ad57f286dd7c6d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
             'version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
-            'reference' => 'c2452713208b9795769b5f5fe62e289ed695f27c',
+            'reference' => 'a505dd54f6271152e7532110d9ad57f286dd7c6d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

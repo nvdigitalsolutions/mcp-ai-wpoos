@@ -666,7 +666,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	protected function handle_catalog_search( $client, array $arguments ) {
 		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
-		$limit = isset( $arguments['first'] ) ? max( 1, min( 100, absint( $arguments['first'] ) ) ) : 20;
+
+		// The Catalog API enforces a maximum limit of 10 results per request.
+		$limit = isset( $arguments['first'] ) ? max( 1, min( 10, absint( $arguments['first'] ) ) ) : 10;
 
 		// The Catalog API requires a non-empty query.  For "list" (browse)
 		// requests send a broad wildcard so the API returns results.
