@@ -779,9 +779,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		if ( isset( $raw['price_min'] ) ) {
 			$price = (string) $raw['price_min'];
 		} elseif ( ! empty( $raw['pricerange']['min']['amount'] ) ) {
-			$price = (string) round( absint( $raw['pricerange']['min']['amount'] ) / 100, 2 );
+			$price = number_format( absint( $raw['pricerange']['min']['amount'] ) / 100, 2, '.', '' );
 		} elseif ( ! empty( $raw['priceRange']['min']['amount'] ) ) {
-			$price = (string) round( absint( $raw['priceRange']['min']['amount'] ) / 100, 2 );
+			$price = number_format( absint( $raw['priceRange']['min']['amount'] ) / 100, 2, '.', '' );
 		} elseif ( isset( $raw['price'] ) ) {
 			$price = (string) $raw['price'];
 		}
@@ -860,7 +860,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 				if ( isset( $v['price'] ) && is_numeric( $v['price'] ) ) {
 					$v_price = (string) $v['price'];
 				} elseif ( isset( $v['price'] ) && is_array( $v['price'] ) && ! empty( $v['price']['amount'] ) ) {
-					$v_price = (string) round( absint( $v['price']['amount'] ) / 100, 2 );
+					$v_price = number_format( absint( $v['price']['amount'] ) / 100, 2, '.', '' );
 				}
 
 				// ID: vid (plugin wrapper) → id (raw API GID).
