@@ -139,7 +139,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations implements WP_MCP_AI_Tool_In
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Result or error.
 	 */
-	public function execute( array $arguments, array $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error( 'insufficient_permissions', __( 'Requires manage_options capability.', 'mcp-ai-wpoos-pro' ) );
 		}
