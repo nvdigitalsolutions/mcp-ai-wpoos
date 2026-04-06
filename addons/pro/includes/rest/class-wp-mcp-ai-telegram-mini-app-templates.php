@@ -438,6 +438,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_Woo_Shop() );
 		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Jewelry() );
 		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Shop() );
+		$this->register( new WP_MCP_AI_TMA_Template_Flowhub_Ecommerce() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -7120,6 +7121,603 @@ class WP_MCP_AI_TMA_Template_Shopify_Shop extends WP_MCP_AI_Telegram_Mini_App_Te
 			( $css_url ? '<link rel="stylesheet" href="' . esc_url( $css_url ) . '">' : '' ) .
 			( $js_url  ? '<script src="' . esc_url( $js_url ) . '"></script>' : '' ) .
 			'</body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   TEMPLATE: Flowhub E-Commerce Store (Inline)
+   ========================================================================== */
+
+/**
+ * Flowhub E-Commerce Store Telegram Mini App template (inline HTML/CSS/JS).
+ *
+ * A Flowhub-powered storefront for cannabis dispensaries and retail businesses
+ * using the Flowhub POS platform.  Uses the `flowhub_get_products` tool via
+ * the Remote Sites infrastructure.  Three-tab layout (Shop, AI, Settings)
+ * rendered entirely inline – no React build step required.
+ *
+ * Features:
+ *  - Product catalog with debounced search
+ *  - Category filter chips (flower, concentrate, edible, accessories)
+ *  - Product cards with THC/CBD percentages, strain type, and brand
+ *  - AI shopping assistant chat
+ *  - Settings: font size, compact mode, connection info, data management
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'flowhub_ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'E-Commerce Store (Flowhub)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Shop assistant with product search, category filters, and AI-powered recommendations. Designed for Flowhub stores connected via Remote Sites.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '🌿';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#00a32a';
+	}
+
+	/** @inheritdoc */
+	public function render_html( array $ctx ) {
+		$site_name    = esc_html( $ctx['site_name'] );
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$validate_url = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id = $ctx['assistant_id'];
+
+		// Resolve Flowhub connection ID: per-context value → global option.
+		$connection_id = '';
+		if ( ! empty( $ctx['flowhub_connection_id'] ) ) {
+			$connection_id = sanitize_key( $ctx['flowhub_connection_id'] );
+		} else {
+			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_flowhub_ecommerce_connection_id', '' ) );
+		}
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-flowhub-ec-template">' .
+		'<style>' . wp_mcp_ai_tma_base_css() .
+
+		/* ── Theme variables (Flowhub green) ── */
+		':root{--tma-btn:#00a32a;--tma-accent:#00a32a;--tma-secondary-bg:#f2faf4;' .
+			'--fec-base:14px;--fec-label:12px;--fec-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.fec-font-small{--fec-base:12px;--fec-label:10px;--fec-heading:14px}' .
+		'.fec-font-large{--fec-base:16px;--fec-label:14px;--fec-heading:18px}' .
+		'.fec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
+		'.fec-compact .tma-product-body{padding:4px 6px}' .
+
+		/* ── Search bar ── */
+		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
+		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--fec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Category filter chips ── */
+		'.fec-category-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--tma-bg)}' .
+		'.fec-category-bar::-webkit-scrollbar{display:none}' .
+		'.fec-chip{flex:0 0 auto;padding:6px 14px;border:1px solid var(--tma-border);border-radius:20px;' .
+			'font-size:var(--fec-label);cursor:pointer;background:var(--tma-bg);color:var(--tma-text);white-space:nowrap}' .
+		'.fec-chip.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.fec-chip:active{opacity:.7}' .
+
+		/* ── Product grid ── */
+		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
+		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
+		'.tma-product-card:active{opacity:.8}' .
+		'.tma-product-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:32px}' .
+		'.tma-product-img img{width:100%;height:100%;object-fit:cover}' .
+		'.tma-product-body{padding:8px 10px}' .
+		'.tma-product-name{font-size:var(--fec-label);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-product-price{font-size:var(--fec-base);color:var(--tma-btn);font-weight:700}' .
+		'.fec-product-meta{font-size:var(--fec-label);color:var(--tma-hint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.fec-strain-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600}' .
+		'.fec-strain-sativa{background:#fff3e0;color:#e65100}' .
+		'.fec-strain-indica{background:#e8eaf6;color:#283593}' .
+		'.fec-strain-hybrid{background:#e8f5e9;color:#2e7d32}' .
+		'.fec-strain-cbd{background:#e3f2fd;color:#1565c0}' .
+		'.fec-strain-default{background:#f5f5f5;color:#616161}' .
+
+		/* ── AI Chat ── */
+		'.fec-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.fec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.fec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--fec-base);line-height:1.5;word-wrap:break-word}' .
+		'.fec-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.fec-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.fec-msg.bot p{margin:0 0 6px}' .
+		'.fec-msg.bot p:last-child{margin-bottom:0}' .
+		'.fec-msg.bot ul,.fec-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.fec-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.fec-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.fec-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--fec-base);' .
+			'background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.fec-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;' .
+			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.fec-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.fec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.fec-settings-title{font-size:var(--fec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.fec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.fec-settings-row:last-child{border-bottom:none}' .
+		'.fec-settings-label{font-size:var(--fec-base);color:var(--tma-text)}' .
+		'.fec-settings-value{font-size:var(--fec-base);color:var(--tma-hint)}' .
+		'.fec-font-btns{display:flex;gap:4px}' .
+		'.fec-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:var(--fec-label);cursor:pointer}' .
+		'.fec-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.fec-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.fec-toggle.on{background:var(--tma-btn)}' .
+		'.fec-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.fec-toggle.on::after{transform:translateX(20px)}' .
+		'.fec-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-bg);color:var(--tma-text);font-size:var(--fec-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.fec-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.fec-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.fec-connection-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}' .
+		'.fec-connection-dot.online{background:#2e7d32}' .
+		'.fec-connection-dot.offline{background:#c62828}' .
+
+		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
+		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
+			'<header class="tma-header">' .
+				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🌿</div></div>' .
+				'<div class="tma-header-info">' .
+					'<div class="tma-header-name">' . $site_name . '</div>' .
+					'<div class="tma-header-status" id="fec-header-status">' . esc_html__( 'Flowhub Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
+			'</header>' .
+
+			/* ── Search bar (visible on Products tab) ── */
+			'<div class="tma-search-bar" id="fec-search-bar">' .
+				'<div class="tma-search-wrap">' .
+					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
+					'<input type="search" id="fec-search-input" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+			'</div>' .
+
+			/* ── Category filter chips ── */
+			'<div class="fec-category-bar" id="fec-category-bar">' .
+				'<button class="fec-chip active" onclick="fecFilterCategory(\'\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'<button class="fec-chip" onclick="fecFilterCategory(\'flower\')">' . esc_html__( 'Flower', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'<button class="fec-chip" onclick="fecFilterCategory(\'concentrate\')">' . esc_html__( 'Concentrates', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'<button class="fec-chip" onclick="fecFilterCategory(\'edible\')">' . esc_html__( 'Edibles', 'mcp-ai-wpoos-pro' ) . '</button>' .
+				'<button class="fec-chip" onclick="fecFilterCategory(\'accessories\')">' . esc_html__( 'Accessories', 'mcp-ai-wpoos-pro' ) . '</button>' .
+			'</div>' .
+
+			/* ── Content panes ── */
+			'<div class="tma-content">' .
+
+				/* Tab 1: Products */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
+					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-product-grid" id="fec-product-grid">' .
+						'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading products…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 2: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="fec-chat-container">' .
+						'<div class="fec-chat-messages" id="fec-chat-messages"></div>' .
+						'<div class="fec-chat-input-row">' .
+							'<input type="text" id="fec-chat-input" class="fec-chat-input"' .
+								' placeholder="' . esc_attr__( 'Ask about products…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="fec-send-btn" id="fec-send-btn" onclick="fecChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 3: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+					/* Display section */
+					'<div class="fec-settings-section">' .
+						'<div class="fec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="fec-settings-row">' .
+							'<span class="fec-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="fec-font-btns" id="fec-font-btns">' .
+								'<button data-size="small" onclick="fecSetFontSize(\'small\')">A-</button>' .
+								'<button data-size="medium" class="active" onclick="fecSetFontSize(\'medium\')">A</button>' .
+								'<button data-size="large" onclick="fecSetFontSize(\'large\')">A+</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="fec-settings-row">' .
+							'<span class="fec-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="fec-toggle" id="fec-compact-toggle" onclick="fecToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Store section */
+					'<div class="fec-settings-section">' .
+						'<div class="fec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="fec-settings-row">' .
+							'<span class="fec-settings-label">' . esc_html__( 'Connection', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="fec-settings-value" id="fec-connection-info"></span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="fec-settings-section">' .
+						'<div class="fec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="fec-settings-row">' .
+							'<span class="fec-settings-label" id="fec-data-summary"></span>' .
+						'</div>' .
+						'<button class="fec-settings-btn" onclick="fecSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="fec-settings-btn danger" onclick="fecClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (3 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="fecSwitch(\'products\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
+					'<span>' . esc_html__( 'Shop', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="fecSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="fecSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
+		'<script>(function(){"use strict";' .
+		wp_mcp_ai_tma_base_js() .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var FLOWHUB_CONNECTION_ID=' . wp_json_encode( $connection_id ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="products";' .
+		'var chatHist=[];' .
+		'var productsCache=[];' .
+		'var activeCategory="";' .
+
+		/* ── Helpers ── */
+		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function fecRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── localStorage helpers ── */
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Flowhub data extraction helpers
+		   ══════════════════════════════════════════════════════════ */
+
+		/* Normalize tool response: controller returns {success,result} or {data} */
+		'function fhExtract(raw,key){' .
+			'return (raw&&raw.result&&raw.result[key])||(raw&&raw.data&&raw.data[key])||(raw&&raw[key])||' .
+				'(raw&&raw.result)||(raw&&raw.data)||null;' .
+		'}' .
+
+		/* ── Flowhub tool call wrapper ── */
+		'function fecToolCall(slug,args,cb){' .
+			'if(FLOWHUB_CONNECTION_ID)args.connection_id=FLOWHUB_CONNECTION_ID;' .
+			'var body={slug:slug,arguments:args};' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){' .
+				'if(!r.ok){' .
+					'return r.json().catch(function(){return {};}).then(function(errBody){' .
+						'var msg=errBody&&errBody.message?errBody.message:"HTTP "+r.status;' .
+						'console.error("[FEC] Tool "+slug+" HTTP "+r.status+":",msg);' .
+						'throw new Error(msg);' .
+					'});' .
+				'}' .
+				'return r.json();' .
+			'})' .
+			'.then(function(d){' .
+				'if(d&&d.result&&!d.data){d.data=d.result;}' .
+				'cb(null,d);' .
+			'})' .
+			'.catch(function(e){console.error("[FEC] Tool "+slug+" error:",e);cb(e,null);});' .
+		'}' .
+
+		/* ── Session init ── */
+		'function fecInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){fecBootstrap();return;}' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData){fecBootstrap();return;}' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d){fecBootstrap();return;}if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}fecBootstrap();})' .
+			'.catch(function(){fecBootstrap();});' .
+		'}' .
+
+		'function fecBootstrap(){' .
+			'fecLoadProducts();' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function fecApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("fec_font_size","medium");' .
+				'shell.classList.remove("fec-font-small","fec-font-large");' .
+				'if(size==="small")shell.classList.add("fec-font-small");' .
+				'else if(size==="large")shell.classList.add("fec-font-large");' .
+				'var compact=lsGet("fec_compact",false);' .
+				'if(compact)shell.classList.add("fec-compact");' .
+				'else shell.classList.remove("fec-compact");' .
+				'var btns=document.querySelectorAll("#fec-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("fec-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.fecSetFontSize=function(s){lsSet("fec_font_size",s);tmaHaptic("selectionChanged");fecApplyDisplaySettings();};' .
+		'window.fecToggleCompact=function(){var c=!lsGet("fec_compact",false);lsSet("fec_compact",c);tmaHaptic("selectionChanged");fecApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.fecSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'var sb=document.getElementById("fec-search-bar");if(sb)sb.style.display=tab==="products"?"":"none";' .
+			'var cb=document.getElementById("fec-category-bar");if(cb)cb.style.display=tab==="products"?"flex":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="assistant"&&!chatHist.length)fecChatInit();' .
+			'if(tab==="settings")fecRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Category filtering
+		   ══════════════════════════════════════════════════════════ */
+		'window.fecFilterCategory=function(cat){' .
+			'activeCategory=cat;tmaHaptic("selectionChanged");' .
+			'var btns=document.querySelectorAll("#fec-category-bar .fec-chip");' .
+			'btns.forEach(function(b){' .
+				'var bCat=b.getAttribute("onclick")||"";' .
+				'var match=bCat.match(/fecFilterCategory\\(\'(.*)\'\\)/);' .
+				'var c=match?match[1]:"";' .
+				'b.classList.toggle("active",c===cat);' .
+			'});' .
+			'fecLoadProducts(cat);' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Products
+		   ══════════════════════════════════════════════════════════ */
+		'function fecLoadProducts(cat){' .
+			'var g=document.getElementById("fec-product-grid");if(!g)return;' .
+			'if(!cat&&productsCache.length){fecRenderProducts(productsCache);}' .
+			'if(!cat&&!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'var args={limit:20,offset:0};' .
+			'if(cat)args.category=cat;' .
+			'fecToolCall("flowhub_get_products",args,function(err,d){' .
+				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'var ps=fhExtract(d,"products");' .
+				'if(!ps||!Array.isArray(ps)){' .
+					'ps=fhExtract(d,"data");' .
+					'if(!ps||!Array.isArray(ps))ps=[];' .
+				'}' .
+				'if(!cat){productsCache=ps;lsSet("fec_products_cache",ps);}' .
+				'fecRenderProducts(ps);' .
+			'});' .
+		'}' .
+
+		'function fecRenderProducts(ps){' .
+			'var g=document.getElementById("fec-product-grid");if(!g)return;' .
+			'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'g.innerHTML=ps.map(function(p){' .
+				'var name=p.name||p.title||"' . esc_js( __( 'Product', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'var price=parseFloat(p.price||0);' .
+				'var brand=p.brand||"";' .
+				'var strain=(p.strain_type||p.strainType||"").toLowerCase();' .
+				'var thc=p.thc_percent||p.thcPercent||"";' .
+				'var cbd=p.cbd_percent||p.cbdPercent||"";' .
+
+				/* Strain badge */
+				'var strainCls="fec-strain-default";' .
+				'if(strain==="sativa")strainCls="fec-strain-sativa";' .
+				'else if(strain==="indica")strainCls="fec-strain-indica";' .
+				'else if(strain==="hybrid")strainCls="fec-strain-hybrid";' .
+				'else if(strain==="cbd")strainCls="fec-strain-cbd";' .
+				'var strainBadge=strain?"<span class=\\"fec-strain-badge "+strainCls+"\\">"+escH(strain)+"</span>":"";' .
+
+				/* Product image */
+				'var imgUrl="";' .
+				'if(p.images&&Array.isArray(p.images)&&p.images[0])imgUrl=p.images[0].url||p.images[0].src||p.images[0];' .
+				'else if(p.image)imgUrl=p.image.url||p.image.src||p.image;' .
+				'else if(p.image_url)imgUrl=p.image_url;' .
+				'var img=imgUrl?"<img src=\\""+escH(imgUrl)+"\\" alt=\\"\\"/>":"🌿";' .
+
+				/* Meta line: THC / CBD / Brand */
+				'var metaParts=[];' .
+				'if(thc)metaParts.push("THC "+escH(thc)+"%");' .
+				'if(cbd)metaParts.push("CBD "+escH(cbd)+"%");' .
+				'if(brand)metaParts.push(escH(brand));' .
+				'var metaHtml=metaParts.length?"<div class=\\"fec-product-meta\\">"+metaParts.join(" · ")+"</div>":"";' .
+
+				'return \'<div class="tma-product-card">' .
+					'\'+strainBadge+\'' .
+					'<div class="tma-product-img">\'+img+\'</div>' .
+					'<div class="tma-product-body">' .
+						'<div class="tma-product-name">\'+escH(name)+\'</div>' .
+						'<div class="tma-product-price">$\'+price.toFixed(2)+\'</div>' .
+						'\'+metaHtml+\'' .
+					'</div></div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("fec-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value.trim();' .
+			'searchTimer=setTimeout(function(){' .
+				'activeCategory="";' .
+				'var btns=document.querySelectorAll("#fec-category-bar .fec-chip");' .
+				'btns.forEach(function(b,i){b.classList.toggle("active",i===0);});' .
+				'if(q){' .
+					/* Filter cached products locally by name match. */
+					'var filtered=productsCache.filter(function(p){' .
+						'return (p.name||p.title||"").toLowerCase().indexOf(q.toLowerCase())!==-1;' .
+					'});' .
+					'fecRenderProducts(filtered);' .
+				'}else{fecRenderProducts(productsCache);}' .
+			'},400);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function fecChatInit(){' .
+			'chatHist=lsGet("fec_chat_hist",[]);' .
+			'var m=document.getElementById("fec-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){fecAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				'var ctx="[' . esc_js( __( 'Flowhub store context', 'mcp-ai-wpoos-pro' ) ) . '] ' . esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+", ' .
+					esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length;' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'fecAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your Flowhub shopping assistant. I can help you find products and answer questions about our store.', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function fecAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="fec-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=fecRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("fec-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.fecChatSend=function(){' .
+			'var inp=document.getElementById("fec-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});fecAppendMsg("user",txt,false);' .
+			'lsSet("fec_chat_hist",chatHist.slice(-50));' .
+			'var el=fecAppendMsg("bot","\\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=fecRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("fec_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("fec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")fecChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function fecRenderSettings(){' .
+			'var ci=document.getElementById("fec-connection-info");' .
+			'if(ci){' .
+				'if(FLOWHUB_CONNECTION_ID){' .
+					'ci.innerHTML=\'<span class="fec-connection-dot online"></span>' . esc_js( __( 'Flowhub Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}else{' .
+					'ci.innerHTML=\'<span class="fec-connection-dot offline"></span>' . esc_js( __( 'Not Connected', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}' .
+			'}' .
+			'var ds=document.getElementById("fec-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.fecSyncFromServer=function(){' .
+			'tmaHaptic("medium");fecLoadProducts();' .
+		'};' .
+
+		'window.fecClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)fecDoClear();});' .
+			'}else if(confirm(msg)){fecDoClear();}' .
+		'};' .
+
+		'function fecDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("fec_products_cache");' .
+				'localStorage.removeItem("fec_chat_hist");' .
+				'localStorage.removeItem("fec_font_size");' .
+				'localStorage.removeItem("fec_compact");' .
+			'}catch(e){}' .
+			'productsCache=[];chatHist=[];activeCategory="";' .
+			'fecRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		'productsCache=lsGet("fec_products_cache",[]);' .
+		'fecApplyDisplaySettings();' .
+
+		'if(productsCache.length)fecRenderProducts(productsCache);' .
+
+		'fecInitSession();' .
+
+		'})();</script></body>';
 		// phpcs:enable
 	}
 }

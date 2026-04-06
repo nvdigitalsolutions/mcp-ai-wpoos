@@ -106,8 +106,13 @@ class WP_MCP_AI_Tool_Flowhub_Get_Products implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		if ( $user_id ) {
-			// Require manage_woocommerce or manage_options capability.
-			if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'manage_options' ) ) {
+			// TMA storefront: subscribers only need the 'read' capability.
+			$is_tma = isset( $context['source'] ) && 'telegram_mini_app' === $context['source'];
+			if ( $is_tma ) {
+				if ( ! user_can( $user_id, 'read' ) ) {
+					return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retrieve product data.', 'mcp-ai-wpoos' ) );
+				}
+			} elseif ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'manage_options' ) ) {
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retrieve product data.', 'mcp-ai-wpoos' ) );
 			}
 
