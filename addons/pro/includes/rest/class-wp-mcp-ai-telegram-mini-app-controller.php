@@ -3742,16 +3742,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			// Ensure tool errors carry an appropriate HTTP status so they are
 			// not returned as generic 500s.  Permission errors → 403, missing
 			// resources → 404, everything else → 400 (bad request).
-			$data = $result->get_error_data();
-			if ( ! is_array( $data ) || ! isset( $data['status'] ) ) {
-				$code   = $result->get_error_code();
+			$code          = $result->get_error_code();
+			$existing_data = $result->get_error_data( $code );
+			if ( ! is_array( $existing_data ) || ! isset( $existing_data['status'] ) ) {
 				$status = 400;
 				if ( false !== strpos( $code, 'forbidden' ) ) {
 					$status = 403;
 				} elseif ( false !== strpos( $code, 'not_found' ) ) {
 					$status = 404;
 				}
-				$result->add_data( array( 'status' => $status ), $code );
+				$merged = is_array( $existing_data ) ? $existing_data : array();
+				$merged['status'] = $status;
+				$result->add_data( $merged, $code );
 			}
 			return $result;
 		}

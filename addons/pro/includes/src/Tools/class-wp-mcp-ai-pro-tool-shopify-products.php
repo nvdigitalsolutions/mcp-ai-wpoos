@@ -755,10 +755,24 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		$currency   = isset( $raw['currency'] ) ? $raw['currency'] : '';
 		$image_url  = isset( $raw['image_url'] ) ? $raw['image_url'] : '';
 		$in_stock   = isset( $raw['in_stock'] ) ? (bool) $raw['in_stock'] : true;
-		$id         = isset( $raw['upid'] ) ? $raw['upid'] : ( isset( $raw['id'] ) ? $raw['id'] : '' );
-		$vendor     = isset( $raw['shop_name'] ) ? $raw['shop_name'] : ( isset( $raw['vendor'] ) ? $raw['vendor'] : '' );
 		$handle     = isset( $raw['handle'] ) ? $raw['handle'] : '';
 		$url        = isset( $raw['url'] ) ? $raw['url'] : '';
+
+		// Resolve the unique product identifier (UPID preferred, then generic id).
+		$id = '';
+		if ( ! empty( $raw['upid'] ) ) {
+			$id = $raw['upid'];
+		} elseif ( ! empty( $raw['id'] ) ) {
+			$id = $raw['id'];
+		}
+
+		// Resolve vendor from shop_name or vendor field.
+		$vendor = '';
+		if ( ! empty( $raw['shop_name'] ) ) {
+			$vendor = $raw['shop_name'];
+		} elseif ( ! empty( $raw['vendor'] ) ) {
+			$vendor = $raw['vendor'];
+		}
 
 		// Build a single variant matching the shape produced by normalize_product().
 		$variant = array(

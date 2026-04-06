@@ -7594,15 +7594,15 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
 			'.then(function(r){' .
 				'if(!r.ok){' .
-					'return r.json().then(function(errBody){' .
-						'console.error("[SEC] Tool "+slug+" HTTP "+r.status+":",errBody&&errBody.message?errBody.message:JSON.stringify(errBody));' .
-						'cb(new Error(errBody&&errBody.message?errBody.message:"HTTP "+r.status),null);' .
-					'}).catch(function(){cb(new Error("HTTP "+r.status),null);});' .
+					'return r.json().catch(function(){return {};}).then(function(errBody){' .
+						'var msg=errBody&&errBody.message?errBody.message:"HTTP "+r.status;' .
+						'console.error("[SEC] Tool "+slug+" HTTP "+r.status+":",msg);' .
+						'throw new Error(msg);' .
+					'});' .
 				'}' .
 				'return r.json();' .
 			'})' .
 			'.then(function(d){' .
-				'if(!d)return;' .
 				'if(d&&d.result&&!d.data){d.data=d.result;}' .
 				'cb(null,d);' .
 			'})' .
