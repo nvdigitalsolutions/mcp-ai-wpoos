@@ -789,11 +789,14 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		if ( ! empty( $store_url ) ) {
 			$host = wp_parse_url( $store_url, PHP_URL_HOST );
 			if ( $host ) {
-				// Strip ".myshopify.com" and other TLD suffixes.
+				// Strip ".myshopify.com" suffix — this covers the primary case.
 				$slug = preg_replace( '#\.myshopify\.com$#i', '', $host );
-				$slug = preg_replace( '#\.[a-z]{2,}$#i', '', $slug );
-				// Convert hyphens/dots to spaces for NLP search.
-				$slug = str_replace( array( '-', '.', '_' ), ' ', $slug );
+				// For custom domains, take only the first label (before the first dot).
+				if ( false !== strpos( $slug, '.' ) ) {
+					$slug = substr( $slug, 0, strpos( $slug, '.' ) );
+				}
+				// Convert hyphens/underscores to spaces for NLP search.
+				$slug = str_replace( array( '-', '_' ), ' ', $slug );
 				$slug = trim( $slug );
 				if ( '' !== $slug ) {
 					return $slug;
