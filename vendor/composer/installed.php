@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-2fc0b600-1775-4687-986b-1ddcbb663ed8',
-        'version' => 'dev-copilot/rebuild-all-zips-2fc0b600-1775-4687-986b-1ddcbb663ed8',
-        'reference' => 'bbb048ec5a6ed3db76c3290be66639c24454592b',
+        'pretty_version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
+        'version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
+        'reference' => '634ba62e4f7f7e34f4f0fc398baf389f401955b8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-2fc0b600-1775-4687-986b-1ddcbb663ed8',
-            'version' => 'dev-copilot/rebuild-all-zips-2fc0b600-1775-4687-986b-1ddcbb663ed8',
-            'reference' => 'bbb048ec5a6ed3db76c3290be66639c24454592b',
+            'pretty_version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
+            'version' => 'dev-copilot/create-alternative-ecommerce-store-tma-template',
+            'reference' => '634ba62e4f7f7e34f4f0fc398baf389f401955b8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

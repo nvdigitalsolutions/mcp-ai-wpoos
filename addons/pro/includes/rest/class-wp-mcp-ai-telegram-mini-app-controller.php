@@ -3713,10 +3713,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Resolve the Telegram connection and assistant so that tools such as
+		// shopify_products / shopify_orders can auto-resolve their connection_id
+		// from the assistant's enabled Remote Sites when no explicit connection_id
+		// is provided in the request arguments.
+		$connection   = $this->resolve_connection_from_request( $request );
+		$assistant_id = (int) $this->resolve_mini_app_assistant( $request, $connection );
+
 		// Build execution context.
 		$context = array(
-			'user_id' => get_current_user_id(),
-			'source'  => 'telegram_mini_app',
+			'user_id'      => get_current_user_id(),
+			'source'       => 'telegram_mini_app',
+			'assistant_id' => $assistant_id,
 		);
 
 		try {
@@ -3731,6 +3739,22 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		if ( is_wp_error( $result ) ) {
+			// Ensure tool errors carry an appropriate HTTP status so they are
+			// not returned as generic 500s.  Permission errors → 403, missing
+			// resources → 404, everything else → 400 (bad request).
+			$code          = $result->get_error_code();
+			$existing_data = $result->get_error_data( $code );
+			if ( ! is_array( $existing_data ) || ! isset( $existing_data['status'] ) ) {
+				$status = 400;
+				if ( false !== strpos( $code, 'forbidden' ) ) {
+					$status = 403;
+				} elseif ( false !== strpos( $code, 'not_found' ) ) {
+					$status = 404;
+				}
+				$merged = is_array( $existing_data ) ? $existing_data : array();
+				$merged['status'] = $status;
+				$result->add_data( $merged, $code );
+			}
 			return $result;
 		}
 

@@ -262,7 +262,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return $response;
 		}
 
-		$products = isset( $response['products'] ) ? $response['products'] : array();
+		// The Catalog API returns a sequential JSON array of product objects,
+		// NOT an object with a "products" key.  Extract accordingly.
+		$products = $this->extract_catalog_products( $response );
 
 		// --- Progressive relaxation: decompose when no results. ---
 		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
@@ -282,7 +284,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 						continue; // Skip failed sub-queries but keep trying.
 					}
 
-					$sub_products = isset( $sub_response['products'] ) ? $sub_response['products'] : array();
+					$sub_products = $this->extract_catalog_products( $sub_response );
 					if ( ! empty( $sub_products ) ) {
 						$result_sets[] = $sub_products;
 					}
@@ -428,5 +430,33 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			'vid'     => $vid,
 			'variant' => $response,
 		);
+	}
+
+	/**
+	 * Extract the product array from a Catalog API search response.
+	 *
+	 * The raw Catalog API can return results in several shapes:
+	 *   1. A sequential array of product objects (most common).
+	 *   2. An object with a "products" key.
+	 *   3. An object with a "results" key.
+	 *
+	 * @param array $response Decoded JSON response from catalog_search().
+	 * @return array Product objects array (may be empty).
+	 */
+	protected function extract_catalog_products( $response ) {
+		if ( ! is_array( $response ) ) {
+			return array();
+		}
+		if ( ! empty( $response['results'] ) && is_array( $response['results'] ) ) {
+			return $response['results'];
+		}
+		if ( ! empty( $response['products'] ) && is_array( $response['products'] ) ) {
+			return $response['products'];
+		}
+		// Sequential array — the response itself IS the product list.
+		if ( isset( $response[0] ) ) {
+			return $response;
+		}
+		return array();
 	}
 }
