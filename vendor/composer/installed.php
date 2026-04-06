@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-flowhub-ecommerce-template',
-        'version' => 'dev-copilot/add-flowhub-ecommerce-template',
-        'reference' => 'cec9124f86fb0f0c05f7c142c988655ecf3fcf5c',
+        'pretty_version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
+        'version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
+        'reference' => 'd051e829d0f74423a8f3c5b5ec64a2e4fdcf73c1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-flowhub-ecommerce-template',
-            'version' => 'dev-copilot/add-flowhub-ecommerce-template',
-            'reference' => 'cec9124f86fb0f0c05f7c142c988655ecf3fcf5c',
+            'pretty_version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
+            'version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
+            'reference' => 'd051e829d0f74423a8f3c5b5ec64a2e4fdcf73c1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
