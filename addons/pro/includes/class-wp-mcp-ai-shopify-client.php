@@ -1034,10 +1034,14 @@ query GetLocations($first: Int!) {
 			}
 
 			if ( $response_code < 200 || $response_code >= 300 ) {
+				$detail = '';
+				if ( ! empty( $response_body ) ) {
+					$detail = ' ' . esc_html( mb_substr( wp_strip_all_tags( $response_body ), 0, 200 ) );
+				}
 				return new WP_Error(
 					'wp_mcp_ai_shopify_catalog_http_error',
-					/* translators: %d: HTTP status code */
-					sprintf( __( 'Shopify Catalog API returned HTTP %d.', 'mcp-ai-wpoos-pro' ), $response_code )
+					/* translators: 1: HTTP status code, 2: optional response detail */
+					sprintf( __( 'Shopify Catalog API returned HTTP %1$d.%2$s', 'mcp-ai-wpoos-pro' ), $response_code, $detail )
 				);
 			}
 
@@ -1059,7 +1063,7 @@ query GetLocations($first: Int!) {
 		 * @since 1.0.0
 		 *
 		 * @param string $query   Search query string, e.g. 'wireless headphones'.
-		 * @param int    $limit   Maximum number of results to return (1–100). Default 20.
+		 * @param int    $limit   Maximum number of results to return (1–10). Default 10.
 		 * @param array  $filters Optional additional query parameters. Supported keys include:
 		 *                        - shop_ids: Shopify Shop GID (gid://shopify/Shop/12345) or bare numeric ID,
 		 *                          comma-separated for multiple stores. Filters results to specific merchants.
@@ -1069,11 +1073,11 @@ query GetLocations($first: Int!) {
 		 *                        - ships_from: ISO 3166-1 alpha-2 merchant location (ship-from country), e.g. 'US'.
 		 * @return array|WP_Error Decoded response array or WP_Error on failure.
 		 */
-		public function catalog_search( $query, $limit = 20, array $filters = array() ) {
+		public function catalog_search( $query, $limit = 10, array $filters = array() ) {
 			$query_args = array_merge(
 				array(
 					'query' => $query,
-					'limit' => max( 1, min( 100, absint( $limit ) ) ),
+					'limit' => max( 1, min( 10, absint( $limit ) ) ),
 				),
 				$filters
 			);
