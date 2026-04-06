@@ -103,6 +103,12 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 		}
 		$routes = $this->get_routes();
 
+		// Append JetEngine MCP tools when 3.8+ is available.
+		$mcp_routes = $this->get_mcp_tool_routes();
+		if ( ! empty( $mcp_routes ) ) {
+			$routes = array_merge( $routes, $mcp_routes );
+		}
+
 		if ( ! empty( $arguments['route'] ) ) {
 			$needle = sanitize_text_field( $arguments['route'] );
 			$routes = array_filter(
@@ -249,6 +255,66 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				),
 			),
 		);
+	}
+
+
+	/**
+	 * Get routes for JetEngine MCP tools when 3.8+ is available.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return array Array of MCP tool route definitions.
+	 */
+	private function get_mcp_tool_routes() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) || ! WP_MCP_AI_JetEngine_Compat::has_mcp_server() ) {
+			return array();
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) ) {
+			$client_file = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-mcp-client.php'
+				: '';
+			if ( empty( $client_file ) || ! file_exists( $client_file ) ) {
+				return array();
+			}
+			require_once $client_file;
+		}
+
+		$client = new WP_MCP_AI_JetEngine_MCP_Client();
+		$result = $client->tools_list();
+
+		if ( is_wp_error( $result ) ) {
+			return array();
+		}
+
+		$tools  = isset( $result['tools'] ) ? $result['tools'] : $result;
+		$routes = array();
+
+		if ( is_array( $tools ) ) {
+			foreach ( $tools as $tool ) {
+				$name        = isset( $tool['name'] ) ? $tool['name'] : '';
+				$description = isset( $tool['description'] ) ? $tool['description'] : '';
+
+				if ( empty( $name ) ) {
+					continue;
+				}
+
+				$routes[] = array(
+					'path'                    => '/mcp/tools/call [' . $name . ']',
+					'methods'                 => array( 'POST' ),
+					'callback'                => 'JetEngine MCP Server',
+					'permission_callback'     => 'MCP Authentication',
+					'description'             => $description,
+					'source'                  => 'mcp_server',
+					'additional_requirements' => array(
+						__( 'Requires JetEngine 3.8+ MCP Server.', 'mcp-ai-wpoos' ),
+						__( 'Uses JSON-RPC 2.0 protocol.', 'mcp-ai-wpoos' ),
+					),
+				);
+			}
+		}
+
+		return $routes;
 	}
 
 

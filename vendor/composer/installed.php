@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-plugin-tools-jetengine-3-8-0',
+        'version' => 'dev-copilot/enhance-plugin-tools-jetengine-3-8-0',
+        'reference' => '5e64553abcc622851f4edf4768f28cc6b1ff5ca3',
         'pretty_version' => 'dev-copilot/fix-white-screen-jewelry-shop',
         'version' => 'dev-copilot/fix-white-screen-jewelry-shop',
         'reference' => '716bab3c4abf1b86105a510d21b963d4f9e2b627',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-plugin-tools-jetengine-3-8-0',
+            'version' => 'dev-copilot/enhance-plugin-tools-jetengine-3-8-0',
+            'reference' => '5e64553abcc622851f4edf4768f28cc6b1ff5ca3',
             'pretty_version' => 'dev-copilot/fix-white-screen-jewelry-shop',
             'version' => 'dev-copilot/fix-white-screen-jewelry-shop',
             'reference' => '716bab3c4abf1b86105a510d21b963d4f9e2b627',

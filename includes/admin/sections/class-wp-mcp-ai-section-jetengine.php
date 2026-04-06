@@ -108,6 +108,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 					'default'        => true,
 				);
 
+				// MCP Server settings (JetEngine 3.8+).
+				$fields['jetengine_mcp_enabled'] = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable JetEngine MCP Integration', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Use JetEngine MCP Server (recommended for 3.8+)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, operations are routed through JetEngine\'s native MCP server instead of direct REST API calls. Requires JetEngine 3.8+.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				);
+
+				$fields['jetengine_mcp_cache_ttl'] = array(
+					'type'        => 'number',
+					'label'       => __( 'MCP Cache TTL', 'mcp-ai-wpoos' ),
+					'description' => __( 'Cache TTL for MCP tool/resource discovery in seconds (60-3600). Default: 300.', 'mcp-ai-wpoos' ),
+					'default'     => 300,
+					'min'         => 60,
+					'max'         => 3600,
+				);
+
+				$fields['jetengine_mcp_context_injection'] = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'MCP Context Injection', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Auto-inject site context into AI system prompts', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically includes JetEngine site structure (post types, taxonomies, relations) in AI assistant context for better grounding. Requires JetEngine 3.8+ MCP Server.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				);
+
 				// Add JetEngine CPT AI Integration field (requires Pro addon).
 				if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() ) {
 					$fields['enable_jetengine_cpt_ai'] = array(
@@ -184,6 +210,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 			$content .= '<li><strong>jetengine_create_cct_item</strong> - ' . esc_html__( 'Create CCT entries programmatically', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '<li><strong>jetengine_update_cct_item</strong> - ' . esc_html__( 'Update existing CCT items', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '</ul>';
+
+			// Show MCP tools when available.
+			$has_mcp = class_exists( 'WP_MCP_AI_JetEngine_Compat' ) && WP_MCP_AI_JetEngine_Compat::has_mcp_server();
+			if ( $has_mcp ) {
+				$content .= '<h4 style="margin-top: 1rem;">' . esc_html__( 'MCP Server Tools (JetEngine 3.8+)', 'mcp-ai-wpoos' ) . '</h4>';
+				$content .= '<ul style="margin-left: 1.5rem;">';
+				$content .= '<li><strong>jetengine_mcp</strong> - ' . esc_html__( 'MCP Bridge — discover and call native JetEngine MCP tools', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li><strong>jetengine_create_meta_field</strong> - ' . esc_html__( 'Create meta fields via MCP', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li><strong>jetengine_manage_relations</strong> - ' . esc_html__( 'List and manage JetEngine relations', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li><strong>jetengine_site_context</strong> - ' . esc_html__( 'Get site structure overview for AI grounding', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li><strong>jetengine_prompts</strong> - ' . esc_html__( 'Discover and render JetEngine prompt templates', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '</ul>';
+			}
+
 			$content .= '</div>';
 
 			return $content;

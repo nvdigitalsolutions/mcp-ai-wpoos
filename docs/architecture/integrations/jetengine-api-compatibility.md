@@ -161,6 +161,76 @@ When JetEngine is not available, the Performance Monitor CCT automatically falls
 
 This ensures the plugin remains functional even in Base Version mode (without JetEngine).
 
+## JetEngine 3.8+ MCP Server Integration
+
+### Overview
+
+JetEngine 3.8.0 introduces a native MCP Server at `/wp-json/jet-engine/v1/mcp/` using JSON-RPC 2.0 protocol. The plugin integrates with this server to provide AI-powered site structure management.
+
+### Architecture
+
+```
+NV oOS Plugin → WP_MCP_AI_JetEngine_MCP_Client → JetEngine MCP Server
+                   (JSON-RPC 2.0)                 (/wp-json/jet-engine/v1/mcp/)
+```
+
+### Supported MCP Methods
+
+| Method | Description |
+|--------|-------------|
+| `initialize` | Handshake to discover server capabilities |
+| `tools/list` | List available MCP tools with schemas |
+| `tools/call` | Execute a specific tool by name |
+| `resources/list` | List site resources (CPTs, taxonomies, etc.) |
+| `prompts/list` | List available prompt templates |
+| `prompts/get` | Render a prompt template with arguments |
+
+### New MCP Tools (Pro)
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `jetengine_mcp` | Bridge tool — discover and proxy JetEngine MCP tools |
+| `jetengine_create_post_type` | Create CPTs via MCP with validated parameters |
+| `jetengine_create_taxonomy` | Create taxonomies with hierarchy/attachment config |
+| `jetengine_create_meta_field` | Add meta fields to CPTs/taxonomies/users |
+| `jetengine_manage_relations` | List and create JetEngine relations |
+| `jetengine_site_context` | Get comprehensive site structure overview |
+| `jetengine_prompts` | Discover and render JetEngine prompt templates |
+
+### Fallback Strategy
+
+```
+JetEngine 3.8+ detected  →  MCP Server (JSON-RPC 2.0)
+JetEngine 3.7+           →  REST v2 API (legacy)
+JetEngine < 3.7          →  Graceful degradation
+No JetEngine             →  Features disabled
+```
+
+### Caching
+
+MCP discovery responses are cached in WordPress transients:
+- `wp_mcp_ai_je_mcp_init` — Server capabilities
+- `wp_mcp_ai_je_mcp_tools_list` — Available tools
+- `wp_mcp_ai_je_mcp_resources_list` — Site resources
+- `wp_mcp_ai_je_mcp_prompts_list` — Prompt templates
+
+Default TTL: 300 seconds (configurable via `jetengine_mcp_cache_ttl` setting).
+
+### Security
+
+- All MCP tools require `manage_options` capability
+- Internal requests use `rest_do_request()` with current user context
+- Remote requests support Basic Auth and Bearer token authentication
+- Risk level: `elevated` for structural tools, `standard` for read-only tools
+
+### Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `jetengine_mcp_enabled` | boolean | true | Enable/disable MCP integration |
+| `jetengine_mcp_cache_ttl` | number | 300 | Cache TTL in seconds (60-3600) |
+| `jetengine_mcp_context_injection` | boolean | false | Auto-inject site context into AI prompts |
+
 ## Migration Notes
 
 If you're upgrading from an older version of NV oOS:
