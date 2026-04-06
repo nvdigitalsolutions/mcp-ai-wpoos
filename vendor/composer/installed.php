@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-flowhub-ecommerce-template',
-        'version' => 'dev-copilot/add-flowhub-ecommerce-template',
-        'reference' => 'cec9124f86fb0f0c05f7c142c988655ecf3fcf5c',
+        'pretty_version' => 'dev-copilot/rebuild-assets-script',
+        'version' => 'dev-copilot/rebuild-assets-script',
+        'reference' => 'c6b53c5a5df3e1f55db8b166256c5328d8a96603',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-flowhub-ecommerce-template',
-            'version' => 'dev-copilot/add-flowhub-ecommerce-template',
-            'reference' => 'cec9124f86fb0f0c05f7c142c988655ecf3fcf5c',
+            'pretty_version' => 'dev-copilot/rebuild-assets-script',
+            'version' => 'dev-copilot/rebuild-assets-script',
+            'reference' => 'c6b53c5a5df3e1f55db8b166256c5328d8a96603',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
