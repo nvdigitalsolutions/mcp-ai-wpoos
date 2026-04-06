@@ -9461,11 +9461,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// in their completion responses instead of generating a new one.
 			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
 
+			// Determine guest status for tool permission bypass.
+			// Guest requests come via guest tokens (auth_context) or anonymous users on public assistants.
+			$auth_context  = $this->get_auth_context();
+			$is_guest      = ! empty( $auth_context['is_guest'] );
+			$required_cap  = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
+			if ( ! $is_guest && 0 === $user_id && 'public' === $required_cap ) {
+				$is_guest = true;
+			}
+
 			$context = array(
 				'user_id'               => $user_id,
 				'assistant_id'          => $assistant_id,
 				'request'               => $request,
 				'assistant_config'      => $assistant_config,
+				'guest_request'         => $is_guest,
 				'agentic_loop'          => true,
 				'iteration'             => $iteration,
 				'max_iterations'        => $max_iterations,
