@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
-        'version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
-        'reference' => 'd051e829d0f74423a8f3c5b5ec64a2e4fdcf73c1',
+        'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
+        'version' => 'dev-copilot/fix-chat-client-permissions',
+        'reference' => '3dc62f5031665ea839e8d7916b5af3cecdba5b7b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
-            'version' => 'dev-copilot/4613-add-shopify-ecommerce-template',
-            'reference' => 'd051e829d0f74423a8f3c5b5ec64a2e4fdcf73c1',
+            'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
+            'version' => 'dev-copilot/fix-chat-client-permissions',
+            'reference' => '3dc62f5031665ea839e8d7916b5af3cecdba5b7b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

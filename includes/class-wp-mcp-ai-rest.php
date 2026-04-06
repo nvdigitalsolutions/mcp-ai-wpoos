@@ -4666,12 +4666,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$auth_context = $this->get_auth_context();
 			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
+			$is_guest     = ! empty( $auth_context['is_guest'] );
 
 			$context = array(
 				'user_id'          => $user_id,
 				'assistant_id'     => $assistant_id,
 				'request'          => $request,
 				'assistant_config' => $assistant_config,
+				'guest_request'    => $is_guest,
 			);
 
 			if ( ! empty( $auth_context['token_authenticated'] ) ) {
@@ -4683,7 +4685,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) ) {
+			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) && ! $is_guest ) {
 				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 			}
 
@@ -9459,11 +9461,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// in their completion responses instead of generating a new one.
 			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
 
+			// Determine guest status for tool permission bypass.
+			// Guest requests come via guest tokens (auth_context) or anonymous users on public assistants.
+			$auth_context  = $this->get_auth_context();
+			$is_guest      = ! empty( $auth_context['is_guest'] );
+			$required_cap  = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
+			if ( ! $is_guest && 0 === $user_id && 'public' === $required_cap ) {
+				$is_guest = true;
+			}
+
 			$context = array(
 				'user_id'               => $user_id,
 				'assistant_id'          => $assistant_id,
 				'request'               => $request,
 				'assistant_config'      => $assistant_config,
+				'guest_request'         => $is_guest,
 				'agentic_loop'          => true,
 				'iteration'             => $iteration,
 				'max_iterations'        => $max_iterations,

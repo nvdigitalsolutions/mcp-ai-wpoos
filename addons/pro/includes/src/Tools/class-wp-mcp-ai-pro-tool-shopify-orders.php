@@ -107,8 +107,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+		$user_id  = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$is_guest = ! empty( $context['guest_request'] ) && ! empty( $context['assistant_id'] );
+		$action   = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
 
 		// Telegram Mini App storefront contexts create users with the
 		// subscriber role which lacks edit_posts.  Allow read-only order
@@ -122,7 +123,8 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 
 		$required_capability = apply_filters( 'wp_mcp_ai_shopify_orders_required_capability', $default_cap, $context );
 
-		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) {
+		// Allow guest users when the assistant is configured for public access.
+		if ( ! $is_guest && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to access Shopify orders.', 'mcp-ai-wpoos-pro' ) );
 		}
 
