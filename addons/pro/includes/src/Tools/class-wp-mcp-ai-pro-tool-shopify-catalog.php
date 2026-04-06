@@ -86,10 +86,10 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'limit'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of results to return for the search action (1–100). Default: 20.', 'mcp-ai-wpoos-pro' ),
-					'default'     => 20,
+					'description' => __( 'Maximum number of results to return for the search action (1–10). Default: 10.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 10,
 					'minimum'     => 1,
-					'maximum'     => 100,
+					'maximum'     => 10,
 				),
 				'upid'           => array(
 					'type'        => 'string',
@@ -250,7 +250,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_shopify_catalog_missing_query', __( 'query is required for the search action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$limit = isset( $arguments['limit'] ) ? max( 1, min( 100, absint( $arguments['limit'] ) ) ) : 20;
+		$limit = isset( $arguments['limit'] ) ? max( 1, min( 10, absint( $arguments['limit'] ) ) ) : 10;
 
 		$filters = $this->build_catalog_filters( $arguments );
 		if ( is_wp_error( $filters ) ) {
