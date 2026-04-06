@@ -73,15 +73,17 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools, A2A protocol for inter-agent communication, Agent Command Center dashboard
 
 **Chat Interface**
 * Modern, responsive chat UI
 * Shortcode: `[mcp_ai_chat assistant="123"]`
+* Floating chat bubble widget (Elementor + Gutenberg) — configurable position, size, animations
 * Elementor widget support
 * File attachments (images, PDFs, documents)
 * Real-time streaming responses (SSE)
 * Chat history persistence (24h localStorage)
+* Sub-agent panel with live workflow tracking
 
 **MCP Server (Model Context Protocol)**
 * Full JSON-RPC 2.0 implementation
@@ -268,6 +270,40 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.6 - April 2026 (Updated April 6) =
+
+**A2A Protocol, JetEngine MCP, Agent Command Center, Chat Bubble Widget**
+
+* JetEngine 3.8 MCP Server integration — 7 new Pro tools for CPT/taxonomy/meta field creation via JSON-RPC 2.0
+* Agent-to-Agent (A2A) protocol — `/.well-known/agent.json` discovery, task state machine, push notifications
+* Agent Command Center dashboard — 7 tabs with KPI cards, analytics, approvals, uptime monitoring
+* Floating chat bubble widget for Elementor and Gutenberg — 4 positions, dark mode, WCAG keyboard nav
+* Anthropic & Gemini subscription tier support with custom base URLs
+* ECA Pro Toolkit — 24 new tools across 8 categories plus 4 upgraded tools
+* Image validation tools for product actualization and vehicle estimates (A–F ratings)
+* 5 new agent workflow presets (supervisor, pipeline, swarm, hierarchical, review QA)
+* Chat UI sub-agent panel with agent cards, workflow tracker, delegation notices
+* Enterprise TMA templates — 5 inline templates upgraded to 5-tab architecture
+* New Shopify Shop TMA (React SPA) + critical Shopify Jewelry TMA fixes
+* Per-connection TMA URL routing for multi-bot Telegram setups
+* Schedule preset install overrides for `assistant_id` and `credentials`
+
+**Security**
+
+* SQL query hardening — `$wpdb->prepare()` replacing raw interpolation in 5 files
+* Guest token TTL wired to admin setting with absolute max (7 days) enforcement
+* Output escaping fix — shortcode content via `wp_kses_post()`
+* Removed unsafe `urldecode()` after `sanitize_text_field()`
+* Lodash security vulnerability fix in pro addon
+
+**Bug Fixes**
+
+* `execute()` signature compatibility fix for 7 JetEngine MCP tool classes
+* Analytics tab wired to actual hooks with real per-agent metrics
+* TMA React imports from `react` directly (not `@wordpress/element`)
+* Multiple TMA auth, session, and white screen fixes
+* Model pricing auto-update for missing CCT models
 
 = 1.1.6 - April 2026 =
 
