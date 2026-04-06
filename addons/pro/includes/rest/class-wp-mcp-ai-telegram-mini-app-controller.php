@@ -3713,10 +3713,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Resolve the Telegram connection and assistant so that tools such as
+		// shopify_products / shopify_orders can auto-resolve their connection_id
+		// from the assistant's enabled Remote Sites when no explicit connection_id
+		// is provided in the request arguments.
+		$connection   = $this->resolve_connection_from_request( $request );
+		$assistant_id = (int) $this->resolve_mini_app_assistant( $request, $connection );
+
 		// Build execution context.
 		$context = array(
-			'user_id' => get_current_user_id(),
-			'source'  => 'telegram_mini_app',
+			'user_id'      => get_current_user_id(),
+			'source'       => 'telegram_mini_app',
+			'assistant_id' => $assistant_id,
 		);
 
 		try {
