@@ -1054,6 +1054,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					'shopify_connection_id' => ( $connection && ! empty( $connection['mini_app_shopify_connection_id'] ) )
 						? sanitize_key( $connection['mini_app_shopify_connection_id'] )
 						: '',
+					// Flowhub data-source field (used by the flowhub_ecommerce template).
+					'flowhub_connection_id' => ( $connection && ! empty( $connection['mini_app_flowhub_connection_id'] ) )
+						? sanitize_key( $connection['mini_app_flowhub_connection_id'] )
+						: '',
 				);
 
 				// render_html() returns a <body>…</body> fragment.  All
