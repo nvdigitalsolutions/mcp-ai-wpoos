@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
         'version' => 'dev-copilot/fix-shopify-store-not-found-error',
-        'reference' => '23a2602bcca6d0453eaa2d103aeca8d2b68ea0d5',
+        'reference' => 'a07a0abd9e9d168e4d7f14886cd662916887e941',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
             'version' => 'dev-copilot/fix-shopify-store-not-found-error',
-            'reference' => '23a2602bcca6d0453eaa2d103aeca8d2b68ea0d5',
+            'reference' => 'a07a0abd9e9d168e4d7f14886cd662916887e941',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
