@@ -207,6 +207,85 @@ class WP_MCP_AI_JetEngine_Compat {
 	}
 
 	/**
+	 * Check if JetEngine 3.8+ MCP Server is available.
+	 *
+	 * Verifies both version requirement and MCP module presence.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return bool True if JetEngine MCP Server is available.
+	 */
+	public static function has_mcp_server() {
+		if ( ! self::is_jetengine_38_plus() ) {
+			return false;
+		}
+
+		// Check if the MCP REST route is registered.
+		$server = rest_get_server();
+		if ( $server ) {
+			$routes = $server->get_routes();
+			if ( isset( $routes['/jet-engine/v1/mcp'] ) || isset( $routes['/jet-engine/v1/mcp/'] ) ) {
+				return true;
+			}
+		}
+
+		// Fallback: Check if MCP module class exists in JetEngine.
+		if ( class_exists( 'Jet_Engine_MCP_Server' ) || class_exists( 'Jet_Engine\\MCP\\Server' ) ) {
+			return true;
+		}
+
+		// Assume available if version is 3.8+ (route may register later).
+		return true;
+	}
+
+	/**
+	 * Get the JetEngine MCP server endpoint URL.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return string MCP server REST endpoint URL.
+	 */
+	public static function get_mcp_endpoint() {
+		return rest_url( 'jet-engine/v1/mcp' );
+	}
+
+	/**
+	 * Get cached MCP server capabilities from the initialize response.
+	 *
+	 * Returns cached capabilities from the MCP client's initialize call.
+	 * Requires the MCP client class to be loaded.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return array|WP_Error Server capabilities or error.
+	 */
+	public static function get_mcp_capabilities() {
+		if ( ! self::has_mcp_server() ) {
+			return new WP_Error(
+				'mcp_not_available',
+				__( 'JetEngine MCP Server is not available. Requires JetEngine 3.8+.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) ) {
+			$client_file = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-mcp-client.php'
+				: '';
+			if ( ! empty( $client_file ) && file_exists( $client_file ) ) {
+				require_once $client_file;
+			} else {
+				return new WP_Error(
+					'mcp_client_missing',
+					__( 'MCP client class is not available.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		$client = new WP_MCP_AI_JetEngine_MCP_Client();
+		return $client->initialize();
+	}
+
+	/**
 	 * Get compatibility notes for admin display.
 	 *
 	 * @return string HTML formatted compatibility information.

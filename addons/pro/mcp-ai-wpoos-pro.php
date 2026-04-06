@@ -1086,6 +1086,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Pro_Tool_JetEngine' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			);
 			$pro_tools       = array_merge( $pro_tools, $jetengine_tools );
+
+			// JetEngine 3.8+ MCP Server tools.
+			$jetengine_mcp_tools = array(
+				'WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-post-type.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-taxonomy.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-meta-field.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-manage-relations.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Site_Context'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-site-context.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Prompts'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-prompts.php',
+			);
+			$pro_tools           = array_merge( $pro_tools, $jetengine_mcp_tools );
 		}
 
 		// Add Elementor tools if enabled.
@@ -1597,6 +1609,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
+			'jetengine_mcp'                   => 'wordpress-plugins',
+			'jetengine_create_post_type'      => 'wordpress-plugins',
+			'jetengine_create_taxonomy'       => 'wordpress-plugins',
+			'jetengine_create_meta_field'     => 'wordpress-plugins',
+			'jetengine_manage_relations'      => 'wordpress-plugins',
+			'jetengine_site_context'          => 'wordpress-plugins',
+			'jetengine_prompts'               => 'wordpress-plugins',
 			// Toolkit CPT - generic CRUD/search for pro toolkit Custom Post Types.
 			'toolkit_cpt'                     => 'wordpress-core',
 			// Elementor tools - Require Elementor plugin.
@@ -1934,6 +1953,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_customers';
 			$categories['medium_resource']['tools'][] = 'woo_coupons';
 			$categories['medium_resource']['tools'][] = 'jetengine';
+			$categories['medium_resource']['tools'][] = 'jetengine_mcp';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_post_type';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_taxonomy';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_meta_field';
+			$categories['medium_resource']['tools'][] = 'jetengine_manage_relations';
+			$categories['medium_resource']['tools'][] = 'jetengine_site_context';
+			$categories['medium_resource']['tools'][] = 'jetengine_prompts';
 			$categories['medium_resource']['tools'][] = 'elementor';
 		}
 
