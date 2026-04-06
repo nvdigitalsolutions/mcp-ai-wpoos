@@ -67,6 +67,55 @@ const tmaPlugins = ( defaultConfig.plugins || [] ).filter(
 );
 
 /**
+ * Override the babel-loader rule inherited from @wordpress/scripts so that JSX
+ * is compiled using the **automatic** runtime (`react/jsx-runtime`) instead of
+ * the classic `React.createElement` form.
+ *
+ * The classic transform assumes a global `React` variable in scope.  TMA files
+ * import hooks with named imports (`import { useState } from 'react'`) without
+ * a default `import React from 'react'`, so `React` is never defined at
+ * runtime inside the bundle.  The automatic transform emits calls to
+ * `_jsx()`/`_jsxs()` that are resolved by webpack to the bundled
+ * `react/jsx-runtime` module, eliminating the need for a `React` global.
+ *
+ * Setting `configFile: false` prevents babel-loader from inheriting the root
+ * `babel.config.js` (which is intended for Jest and may use the classic
+ * runtime), ensuring TMA builds are self-contained.
+ */
+const tmaBabelLoaderOptions = {
+	cacheDirectory: true,
+	configFile: false,
+	presets: [
+		[
+			require.resolve( '@babel/preset-env' ),
+			{
+				modules: false,
+			},
+		],
+		[
+			require.resolve( '@babel/preset-react' ),
+			{
+				runtime: 'automatic',
+			},
+		],
+	],
+};
+
+const tmaModuleRules = ( defaultConfig.module?.rules || [] ).map( ( rule ) => {
+	if (
+		rule.loader &&
+		typeof rule.loader === 'string' &&
+		rule.loader.includes( 'babel-loader' )
+	) {
+		return {
+			...rule,
+			options: tmaBabelLoaderOptions,
+		};
+	}
+	return rule;
+} );
+
+/**
  * TMA entry definitions.
  *
  * Each entry maps:
@@ -115,6 +164,10 @@ module.exports = entries.map( ( tma ) => ( {
 	output: {
 		...defaultConfig.output,
 		path: path.resolve( __dirname, tma.output ),
+	},
+	module: {
+		...defaultConfig.module,
+		rules: tmaModuleRules,
 	},
 	plugins: tmaPlugins,
 
