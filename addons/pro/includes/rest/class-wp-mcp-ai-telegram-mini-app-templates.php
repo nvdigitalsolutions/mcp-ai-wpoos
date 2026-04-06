@@ -7198,6 +7198,15 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_shopify_ecommerce_connection_id', '' ) );
 		}
 
+		// Determine API mode so the template can hide features unsupported by Catalog API (e.g. orders).
+		$shopify_api_mode = 'admin_api';
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$conn = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $conn && ! empty( $conn['shopify_api_mode'] ) ) {
+				$shopify_api_mode = sanitize_key( $conn['shopify_api_mode'] );
+			}
+		}
+
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-shopify-ec-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
@@ -7493,6 +7502,7 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
 		'var SHOPIFY_CONNECTION_ID=' . wp_json_encode( $connection_id ) . ';' .
+		'var SHOPIFY_API_MODE=' . wp_json_encode( $shopify_api_mode ) . ';' .
 		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
 
 		/* ── State ── */
@@ -7620,7 +7630,14 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'.catch(function(){ecBootstrap();});' .
 		'}' .
 
-		'function ecBootstrap(){ecLoadCollections();ecLoadProducts();ecLoadOrders(false);}' .
+		'function ecBootstrap(){' .
+			'ecLoadCollections();ecLoadProducts();' .
+			/* Catalog API has no order endpoints — hide the Orders tab and skip loading. */
+			'if(SHOPIFY_API_MODE==="catalog_api"){' .
+				'var oNav=document.getElementById("tma-nav-orders");if(oNav)oNav.style.display="none";' .
+				'var oPane=document.getElementById("tma-tab-orders");if(oPane)oPane.style.display="none";' .
+			'}else{ecLoadOrders(false);}' .
+		'}' .
 
 		/* ── Display settings ── */
 		'function ecApplyDisplaySettings(){' .

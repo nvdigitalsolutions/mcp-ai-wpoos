@@ -159,6 +159,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Orders implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		// Catalog API does not provide order endpoints — only the Admin API can access orders.
+		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+		if ( 'catalog_api' === $api_mode ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_catalog_unsupported',
+				__( 'Order data is not available for Catalog API connections. Switch the connection to Admin API mode or use the shopify_products tool instead.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
 		}
