@@ -447,10 +447,10 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! is_array( $response ) ) {
 			return array();
 		}
-		if ( isset( $response['results'] ) && is_array( $response['results'] ) ) {
+		if ( ! empty( $response['results'] ) && is_array( $response['results'] ) ) {
 			return $response['results'];
 		}
-		if ( isset( $response['products'] ) && is_array( $response['products'] ) ) {
+		if ( ! empty( $response['products'] ) && is_array( $response['products'] ) ) {
 			return $response['products'];
 		}
 		// Sequential array — the response itself IS the product list.

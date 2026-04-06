@@ -7576,6 +7576,8 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'function spCurrency(p){' .
 			'var v=spVariant(p);if(!v)return "";' .
 			'if(v.priceV2&&v.priceV2.currencyCode)return v.priceV2.currencyCode;' .
+			/* Catalog API normalized format stores currency at product level. */
+			'if(p.price_range&&p.price_range.minVariantPrice&&p.price_range.minVariantPrice.currencyCode)return p.price_range.minVariantPrice.currencyCode;' .
 			'return "";' .
 		'}' .
 

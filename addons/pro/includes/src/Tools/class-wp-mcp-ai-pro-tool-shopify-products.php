@@ -217,7 +217,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		// Route read-only actions through the Catalog API and normalize the
 		// response so the caller always receives the same structure.
 		if ( 'catalog_api' === $api_mode ) {
-			return $this->handle_catalog_mode( $client, $action, $arguments );
+			return $this->handle_catalog_mode( $client, $action, $arguments, $connection );
 		}
 
 		switch ( $action ) {
@@ -630,11 +630,11 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 * @param array                    $arguments Tool arguments.
 	 * @return array|WP_Error
 	 */
-	protected function handle_catalog_mode( $client, $action, array $arguments ) {
+	protected function handle_catalog_mode( $client, $action, array $arguments, $connection = array() ) {
 		switch ( $action ) {
 			case 'list':
 			case 'search':
-				return $this->handle_catalog_search( $client, $arguments );
+				return $this->handle_catalog_search( $client, $arguments, $connection );
 
 			case 'collections':
 				// Catalog API does not support collections.
@@ -660,20 +660,23 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 *
 	 * @since 1.1.7
 	 *
-	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
-	 * @param array                    $arguments Tool arguments.
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Optional connection data for default query.
 	 * @return array|WP_Error
 	 */
-	protected function handle_catalog_search( $client, array $arguments ) {
+	protected function handle_catalog_search( $client, array $arguments, $connection = array() ) {
 		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
 
 		// The Catalog API enforces a maximum limit of 10 results per request.
 		$limit = isset( $arguments['first'] ) ? max( 1, min( 10, absint( $arguments['first'] ) ) ) : 10;
 
-		// The Catalog API requires a non-empty query.  For "list" (browse)
-		// requests send a broad wildcard so the API returns results.
+		// The Catalog API uses NLP-based search and does NOT support wildcards
+		// like "*".  For "list" (browse) requests, build a meaningful default
+		// query from the connection name or store URL.  This gives the user a
+		// relevant initial product grid rather than an empty result.
 		if ( empty( $query ) ) {
-			$query = '*';
+			$query = $this->build_catalog_browse_query( $client, $connection );
 		}
 
 		$filters = array();
@@ -692,12 +695,15 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		//   1. { success: true, results: [ … ] }     — wrapper with "results"
 		//   2. { products: [ … ] }                    — wrapper with "products"
 		//   3. [ { upid, title, … }, … ]              — bare array
-		// Accept all three so this code works regardless of shape.
+		//   4. { products: [], raw: [ … ] }           — shopify_catalog wrapper (pre-normalized)
+		// Accept all shapes so this code works regardless of upstream format.
 		$raw_products = array();
-		if ( isset( $response['results'] ) && is_array( $response['results'] ) ) {
+		if ( isset( $response['results'] ) && is_array( $response['results'] ) && ! empty( $response['results'] ) ) {
 			$raw_products = $response['results'];
-		} elseif ( isset( $response['products'] ) && is_array( $response['products'] ) ) {
+		} elseif ( isset( $response['products'] ) && is_array( $response['products'] ) && ! empty( $response['products'] ) ) {
 			$raw_products = $response['products'];
+		} elseif ( isset( $response['raw'] ) && is_array( $response['raw'] ) && ! empty( $response['raw'] ) ) {
+			$raw_products = $response['raw'];
 		} elseif ( is_array( $response ) && isset( $response[0] ) ) {
 			$raw_products = $response;
 		}
@@ -750,6 +756,53 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			'success' => true,
 			'product' => $normalized,
 		);
+	}
+
+	/**
+	 * Build a meaningful default search query for Catalog API browse / list mode.
+	 *
+	 * The Shopify Catalog API uses NLP-based search and does NOT understand
+	 * wildcards like "*".  For "list all products" requests we need an actual
+	 * search term.  This method tries, in priority order:
+	 *
+	 * 1. The human-readable connection name (e.g. "Maharaja's Fine Jewelry").
+	 * 2. The store slug extracted from the store URL (e.g. "the diamond store").
+	 * 3. A generic broad term "popular products" as a last resort.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $connection Connection data array.
+	 * @return string Non-empty search query string.
+	 */
+	protected function build_catalog_browse_query( $client, array $connection ) {
+		// 1. Try the connection name — usually the store's human-readable name.
+		if ( ! empty( $connection['name'] ) ) {
+			$name = sanitize_text_field( $connection['name'] );
+			if ( '' !== $name ) {
+				return $name;
+			}
+		}
+
+		// 2. Try the store URL slug (e.g. "my-store.myshopify.com" → "my store").
+		$store_url = $client->get_store_url();
+		if ( ! empty( $store_url ) ) {
+			$host = wp_parse_url( $store_url, PHP_URL_HOST );
+			if ( $host ) {
+				// Strip ".myshopify.com" and other TLD suffixes.
+				$slug = preg_replace( '#\.myshopify\.com$#i', '', $host );
+				$slug = preg_replace( '#\.[a-z]{2,}$#i', '', $slug );
+				// Convert hyphens/dots to spaces for NLP search.
+				$slug = str_replace( array( '-', '.', '_' ), ' ', $slug );
+				$slug = trim( $slug );
+				if ( '' !== $slug ) {
+					return $slug;
+				}
+			}
+		}
+
+		// 3. Generic fallback — a broad NLP-friendly term.
+		return 'popular products';
 	}
 
 	/**
