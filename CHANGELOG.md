@@ -1,6 +1,56 @@
 # oOS – Changelog
 
 
+## [1.1.6] - 2026-04-06
+
+### April 2–6, 2026 — A2A Protocol, JetEngine MCP, Agent Command Center, Chat Bubble Widget
+
+Major feature additions including inter-agent communication, JetEngine MCP bridging, unified agent management, and multiple Telegram Mini App improvements.
+
+### Added
+- **JetEngine 3.8 MCP Server Integration (April 6, 2026)** (PR #4608): JSON-RPC 2.0 client bridging NV oOS into JetEngine's native MCP Server. 7 new Pro tools: `jetengine_mcp` (bridge), `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`. MCP-first dispatch with silent REST v2 fallback. Admin status panel with 3 new settings. 5 new test files.
+- **Agent-to-Agent (A2A) Protocol Integration (April 4, 2026)** (PR #4578): Full A2A protocol — Agent Card discovery via `/.well-known/agent.json`, JSON-RPC 2.0 server (`message/send`, `message/stream`, `tasks/get`, `tasks/list`, `tasks/cancel`), task state machine, A2A client for remote agents, `delegate_to_a2a_agent` tool, push notifications with exponential backoff. Admin settings for server/client enable. 60+ unit tests.
+- **Agent Command Center Dashboard (April 4, 2026)** (PR #4575): New Pro admin page with 7 tabs: Overview (KPI cards, live agent status), Activity Log, Active Tasks, Approvals (human-in-the-loop), Analytics (Chart.js 4.4.7 with 7 charts), Uptime & Health, Strategy (efficiency scoring). Event tracking via `wp_mcp_ai_after_tool_execution` and `wp_mcp_ai_after_chat_response` hooks. 90-day metric retention.
+- **Floating Chat Bubble Widget (April 3, 2026)** (PR #4566): Configurable floating chat bubble as Elementor widget and Gutenberg block. BEM CSS with 4 positions, 3 sizes, bounce/pulse animations, dark mode, full-screen mobile, `prefers-reduced-motion`, WCAG focus states. Vanilla JS with multi-instance registry, keyboard nav, sessionStorage persistence.
+- **ECA Pro Toolkit — 24 New Tools (April 3, 2026)** (PR #4568): Attendance (3), waitlist/enrollment (3), scheduling/conflicts (3), notifications (3), reporting/analytics (3), integration (3), workflow/lifecycle (3), plus 3 new iSAMS/SOCS sync tools. 4 existing tools upgraded with consistent fields and audit trails.
+- **Image Validation Tools (April 4, 2026)** (PR #4585): `validate_image_for_product` (9 product types, 10-category weighted rating) and `validate_image_for_vehicle` (cleaning/repair types with separate weight profiles). OpenAI Vision API–based, industry-standard weighted quality ratings (0–100, A–F). 29 tests.
+- **Agent Workflow Presets (April 4, 2026)** (PR #4580): 5 new multi-agent orchestration presets (`agent_supervisor`, `agent_pipeline`, `agent_swarm`, `agent_hierarchical`, `agent_review_qa`). Chat UI sub-agent panel with agent cards, workflow tracker, and delegation notices.
+- **Shopify Shop TMA (April 5, 2026)** (PR #4602): New general-purpose Shopify e-commerce mini app (24 files). Catalog with collection filters, product detail with variant selector, cart with `useReducer`, checkout via AI, orders with status badges, AI chat interface.
+- **Per-Connection TMA URL Routing (April 5, 2026)** (PR #4588): Per-connection endpoints at `/telegram-mini-app/{connection_id}` for multi-bot Telegram setups. All 11 sub-endpoints mirrored. Global endpoint preserved for backward compatibility.
+- **ECA Dashboard Page (April 3, 2026)** (PR #4570): Complete ECA tools list and dashboard page for the Pro admin.
+- **Shopify Data Source Picker (April 5, 2026)** (PR #4605): Shopify data source picker added to Telegram channel connection settings.
+
+### Changed
+- **Anthropic & Gemini Subscription Tier Support (April 3, 2026)** (PR #4567): Centralized `build_request_headers()` and `resolve_endpoint()` for both providers. New settings: `anthropic_api_key_type`/`gemini_api_key_type` (standard/team/business/enterprise), `anthropic_base_url`/`gemini_base_url`. Filter hooks: `wp_mcp_ai_anthropic_request_headers`, `wp_mcp_ai_gemini_request_headers`. 20 tests.
+- **Enterprise TMA Templates (April 4, 2026)** (PR #4586): 5 inline Telegram Mini App templates upgraded to enterprise quality with standardized 5-tab architecture (E-Commerce, CRM, Analytics, Booking, AI Chat). Unified `tmaToolHeaders()` auth, `slug`-based tool calls, localStorage helpers, Chart.js lazy loading.
+- **Schedule Preset Install Overrides (April 5, 2026)** (PR #4603): `install_preset()` now accepts optional `$overrides` array for `assistant_id` and `credentials`. Frontend prompts for assistant selection on `assistant_run` presets. 4 new tests.
+- **Analytics Tab Real Data (April 5, 2026)** (PR #4593): Hook names corrected to match actual `do_action()` calls. Per-agent metric tracking with `increment_agent_metric()`. Real data aggregation over selected time range.
+
+### Fixed
+- **`execute()` Signature Compatibility (April 6, 2026)** (PR #4609): All 7 JetEngine MCP tool classes now include `= array()` default parameter values matching `WP_MCP_AI_Tool_Interface`.
+- **Activity Log Timestamp Parsing (April 4, 2026)** (PR #4579): Fixed empty activity tab in Agent Command Center.
+- **Chart.js Height Bug (April 4, 2026)** (PR #4576): Fixed chart rendering in Command Center analytics.
+- **TMA React Imports (April 5, 2026)** (PRs #4596, #4598): React SPAs now import from `react` directly instead of `@wordpress/element` to prevent crashes in Telegram WebView.
+- **TMA E-Commerce Auth Race (April 5, 2026)** (PR #4590): Fixed woo-shop crash due to missing auth flow.
+- **TMA Session Auth & Param Routing (April 5, 2026)** (PR #4599): Fixed session authentication and remote connection parameter routing.
+- **TMA Haptic Feedback API (April 5, 2026)** (PRs #4592, #4595): Fixed haptic API misuse and tools/execute 500 errors.
+- **Shopify TMA Fixes (April 5, 2026)** (PR #4602): `executeTool()` corrected to send `slug` not `tool`, response extraction fixed for `raw?.result?.products`, `TMAContext.jsx` auth flow added with `authReady` gate.
+- **Shopify Data Source Config (April 5, 2026)** (PRs #4605, #4606): Toggle visibility and save persistence.
+- **Shopify TMA White Screen (April 6, 2026)** (PR #4607): Fixed white screen in Shopify TMA templates.
+- **TMA Subscriber Permissions (April 5, 2026)** (PR #4604): TMA subscriber users can now access remote WooCommerce products.
+- **Dashboard Default Page (April 5, 2026)** (PR #4591): Dashboard is now the default page for ECA section.
+- **Task Plans in Command Center (April 4, 2026)** (PR #4583): Fixed missing task plans from tasks tab.
+- **Model Pricing Auto-Update (April 3, 2026)** (PR #4565): Fixed for models missing from CCT database.
+- **JS Lint Fixes (April 5, 2026)** (PR #4600): Re-applied JS lint fixes with audit-informed unused var handling.
+
+### Security
+- **SQL Query Hardening (April 4, 2026)** (PR #4574): `$wpdb->dbname` interpolation replaced with `$wpdb->prepare('%s', DB_NAME)`. `esc_sql()` added to table name interpolations in 5 files. Pre-prepared `$where` fragment elimination in analytics engine.
+- **Guest Token TTL Fix (April 4, 2026)** (PR #4574): `guest_token_lifetime` setting now wired to actual token system with absolute max TTL (7 days) and min TTL (60s) enforcement.
+- **Output Escaping (April 4, 2026)** (PR #4574): Shortcode `echo $assistant_content` → `echo wp_kses_post($assistant_content)`. Removed unsafe `urldecode()` after `sanitize_text_field()`.
+- **Lodash Vulnerability (April 3, 2026)** (PR #4564): Fixed lodash security vulnerabilities in pro addon.
+
+---
+
 ## [1.1.6] - 2026-04-02
 
 ### WordPress.org Compliance — Final Pass Before Resubmission
