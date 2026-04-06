@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Remote_Shopify_Connection implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id  = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		$is_guest = ! empty( $context['guest_request'] );
+		$is_guest = ! empty( $context['guest_request'] ) && ! empty( $context['assistant_id'] );
 
 		// Allow guest users when the assistant is configured for public access.
 		if ( ! $is_guest && ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) ) {
