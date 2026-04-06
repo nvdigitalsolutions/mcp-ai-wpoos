@@ -439,6 +439,7 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Jewelry() );
 		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Shop() );
 		$this->register( new WP_MCP_AI_TMA_Template_Flowhub_Ecommerce() );
+		$this->register( new WP_MCP_AI_TMA_Template_Shopify_Ecommerce() );
 		$this->register( new WP_MCP_AI_TMA_Template_CRM() );
 		$this->register( new WP_MCP_AI_TMA_Template_Analytics() );
 		$this->register( new WP_MCP_AI_TMA_Template_Booking() );
@@ -7716,6 +7717,658 @@ class WP_MCP_AI_TMA_Template_Flowhub_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 		'if(productsCache.length)fecRenderProducts(productsCache);' .
 
 		'fecInitSession();' .
+
+		'})();</script></body>';
+		// phpcs:enable
+	}
+}
+
+/* ==========================================================================
+   TEMPLATE: Shopify E-Commerce Store (Inline)
+   ========================================================================== */
+
+/**
+ * Shopify E-Commerce Store Telegram Mini App template (inline HTML/CSS/JS).
+ *
+ * A Shopify-powered storefront using the `shopify_products` (and optionally
+ * `shopify_orders`) tools via the Remote Sites infrastructure.  Supports both
+ * Admin API and Catalog API modes.  Three-tab layout (Shop, AI, Settings)
+ * rendered entirely inline – no React build step required.
+ *
+ * Features:
+ *  - Product catalog with debounced search
+ *  - Collection filter chips (built dynamically from product types)
+ *  - Product cards with images, prices, and variants
+ *  - AI shopping assistant chat
+ *  - Settings: font size, compact mode, connection info, data management
+ *  - Catalog API mode: limits results to 10, prices in minor units normalised
+ *
+ * @since 1.2.0
+ */
+class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Template_Base {
+
+	/** @inheritdoc */
+	public function get_slug() {
+		return 'shopify_ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_name() {
+		return __( 'E-Commerce Store (Shopify)', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_description() {
+		return __( 'Shop assistant with product search, collection filters, and AI-powered recommendations. Designed for Shopify stores connected via Remote Sites. Supports both Admin API and Catalog API.', 'mcp-ai-wpoos-pro' );
+	}
+
+	/** @inheritdoc */
+	public function get_toolkit() {
+		return 'ecommerce';
+	}
+
+	/** @inheritdoc */
+	public function get_icon() {
+		return '🛍️';
+	}
+
+	/** @inheritdoc */
+	public function get_accent_color() {
+		return '#96bf48';
+	}
+
+	/** @inheritdoc */
+	public function render_html( array $ctx ) {
+		$site_name    = esc_html( $ctx['site_name'] );
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$validate_url = isset( $ctx['validate_url'] ) ? $ctx['validate_url'] : '';
+		$assistant_id = $ctx['assistant_id'];
+
+		// Resolve Shopify connection ID: per-context value → global option.
+		$connection_id = '';
+		if ( ! empty( $ctx['shopify_connection_id'] ) ) {
+			$connection_id = sanitize_key( $ctx['shopify_connection_id'] );
+		} else {
+			$connection_id = sanitize_key( get_option( 'wp_mcp_ai_shopify_ecommerce_connection_id', '' ) );
+		}
+
+		// Resolve the Shopify API mode from the connection.
+		$shopify_api_mode = 'admin_api';
+		if ( $connection_id && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$shopify_conn = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $shopify_conn && ! empty( $shopify_conn['shopify_api_mode'] ) ) {
+				$shopify_api_mode = in_array( $shopify_conn['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
+					? $shopify_conn['shopify_api_mode']
+					: 'admin_api';
+			}
+		}
+
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+		return '<body class="wp-mcp-ai-telegram-mini-app tma-shopify-ec-template">' .
+		'<style>' . wp_mcp_ai_tma_base_css() .
+
+		/* ── Theme variables (Shopify green) ── */
+		':root{--tma-btn:#96bf48;--tma-accent:#96bf48;--tma-secondary-bg:#f4f9ed;' .
+			'--sec-base:14px;--sec-label:12px;--sec-heading:16px;}' .
+
+		/* ── Font-size & compact mode ── */
+		'.sec-font-small{--sec-base:12px;--sec-label:10px;--sec-heading:14px}' .
+		'.sec-font-large{--sec-base:16px;--sec-label:14px;--sec-heading:18px}' .
+		'.sec-compact .tma-product-grid{gap:6px;padding:6px 8px}' .
+		'.sec-compact .tma-product-body{padding:4px 6px}' .
+
+		/* ── Search bar ── */
+		'.tma-search-bar{padding:10px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border)}' .
+		'.tma-search-wrap{display:flex;align-items:center;gap:8px;background:var(--tma-bg);border:1px solid var(--tma-border);border-radius:10px;padding:0 12px}' .
+		'.tma-search-wrap input{flex:1;border:none;outline:none;font-size:var(--sec-base);padding:10px 0;background:transparent;color:var(--tma-text)}' .
+
+		/* ── Collection filter chips ── */
+		'.sec-collection-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--tma-bg)}' .
+		'.sec-collection-bar::-webkit-scrollbar{display:none}' .
+		'.sec-chip{flex:0 0 auto;padding:6px 14px;border:1px solid var(--tma-border);border-radius:20px;' .
+			'font-size:var(--sec-label);cursor:pointer;background:var(--tma-bg);color:var(--tma-text);white-space:nowrap}' .
+		'.sec-chip.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.sec-chip:active{opacity:.7}' .
+
+		/* ── Product grid ── */
+		'.tma-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px 12px}' .
+		'.tma-product-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;position:relative}' .
+		'.tma-product-card:active{opacity:.8}' .
+		'.tma-product-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;font-size:32px}' .
+		'.tma-product-img img{width:100%;height:100%;object-fit:cover}' .
+		'.tma-product-body{padding:8px 10px}' .
+		'.tma-product-name{font-size:var(--sec-label);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.tma-product-price{font-size:var(--sec-base);color:var(--tma-btn);font-weight:700}' .
+		'.sec-product-meta{font-size:var(--sec-label);color:var(--tma-hint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' .
+		'.sec-vendor-badge{position:absolute;top:6px;right:6px;font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:#e8f5e9;color:#2e7d32}' .
+
+		/* ── AI Chat ── */
+		'.sec-chat-container{display:flex;flex-direction:column;height:100%}' .
+		'.sec-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}' .
+		'.sec-msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:var(--sec-base);line-height:1.5;word-wrap:break-word}' .
+		'.sec-msg.user{align-self:flex-end;background:var(--tma-btn);color:var(--tma-btn-text);border-bottom-right-radius:4px}' .
+		'.sec-msg.bot{align-self:flex-start;background:var(--tma-secondary-bg);color:var(--tma-text);border-bottom-left-radius:4px}' .
+		'.sec-msg.bot p{margin:0 0 6px}' .
+		'.sec-msg.bot p:last-child{margin-bottom:0}' .
+		'.sec-msg.bot ul,.sec-msg.bot ol{margin:4px 0;padding-left:18px}' .
+		'.sec-msg.bot code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px;font-size:90%}' .
+		'.sec-chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--tma-border);background:var(--tma-bg)}' .
+		'.sec-chat-input{flex:1;border:1px solid var(--tma-border);border-radius:20px;padding:10px 14px;font-size:var(--sec-base);' .
+			'background:var(--tma-bg);color:var(--tma-text);outline:none}' .
+		'.sec-send-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;border-radius:50%;width:40px;height:40px;min-width:40px;' .
+			'cursor:pointer;display:flex;align-items:center;justify-content:center}' .
+		'.sec-send-btn:active{opacity:.8}' .
+
+		/* ── Settings ── */
+		'.sec-settings-section{margin:0 12px 12px;padding:14px;background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius)}' .
+		'.sec-settings-title{font-size:var(--sec-label);font-weight:600;color:var(--tma-hint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' .
+		'.sec-settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--tma-border)}' .
+		'.sec-settings-row:last-child{border-bottom:none}' .
+		'.sec-settings-label{font-size:var(--sec-base);color:var(--tma-text)}' .
+		'.sec-settings-value{font-size:var(--sec-base);color:var(--tma-hint)}' .
+		'.sec-font-btns{display:flex;gap:4px}' .
+		'.sec-font-btns button{padding:6px 12px;border:1px solid var(--tma-border);border-radius:6px;background:var(--tma-bg);' .
+			'color:var(--tma-text);font-size:var(--sec-label);cursor:pointer}' .
+		'.sec-font-btns button.active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}' .
+		'.sec-toggle{position:relative;width:44px;height:24px;background:var(--tma-border);border-radius:12px;border:none;cursor:pointer;transition:background .2s}' .
+		'.sec-toggle.on{background:var(--tma-btn)}' .
+		'.sec-toggle::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s}' .
+		'.sec-toggle.on::after{transform:translateX(20px)}' .
+		'.sec-settings-btn{display:block;width:100%;padding:12px;border:1px solid var(--tma-border);border-radius:var(--tma-radius);' .
+			'background:var(--tma-bg);color:var(--tma-text);font-size:var(--sec-base);cursor:pointer;text-align:center;margin-top:6px}' .
+		'.sec-settings-btn:active{background:var(--tma-secondary-bg)}' .
+		'.sec-settings-btn.danger{color:#c62828;border-color:#ef9a9a}' .
+		'.sec-connection-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}' .
+		'.sec-connection-dot.online{background:#2e7d32}' .
+		'.sec-connection-dot.offline{background:#c62828}' .
+
+		'</style>' .
+
+		/* ═══ HTML Shell ═══ */
+		'<div class="tma-shell" id="tma-shell">' .
+
+			/* ── Header ── */
+			'<header class="tma-header">' .
+				'<div class="tma-avatar-wrap"><div class="tma-avatar-initials">🛍️</div></div>' .
+				'<div class="tma-header-info">' .
+					'<div class="tma-header-name">' . $site_name . '</div>' .
+					'<div class="tma-header-status" id="sec-header-status">' . esc_html__( 'Shopify Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
+			'</header>' .
+
+			/* ── Search bar (visible on Products tab) ── */
+			'<div class="tma-search-bar" id="sec-search-bar">' .
+				'<div class="tma-search-wrap">' .
+					'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' .
+					'<input type="search" id="sec-search-input" placeholder="' . esc_attr__( 'Search products…', 'mcp-ai-wpoos-pro' ) . '" />' .
+				'</div>' .
+			'</div>' .
+
+			/* ── Collection filter chips ── */
+			'<div class="sec-collection-bar" id="sec-collection-bar">' .
+				'<button class="sec-chip active" data-collection="" onclick="secFilterCollection(\'\')">' . esc_html__( 'All', 'mcp-ai-wpoos-pro' ) . '</button>' .
+			'</div>' .
+
+			/* ── Content panes ── */
+			'<div class="tma-content">' .
+
+				/* Tab 1: Products */
+				'<div class="tma-tab-pane tma-active" id="tma-tab-products">' .
+					'<div class="tma-section-title">' . esc_html__( 'Featured Products', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'<div class="tma-product-grid" id="sec-product-grid">' .
+						'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading products…', 'mcp-ai-wpoos-pro' ) . '</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 2: AI Assistant */
+				'<div class="tma-tab-pane" id="tma-tab-assistant">' .
+					'<div class="sec-chat-container">' .
+						'<div class="sec-chat-messages" id="sec-chat-messages"></div>' .
+						'<div class="sec-chat-input-row">' .
+							'<input type="text" id="sec-chat-input" class="sec-chat-input"' .
+								' placeholder="' . esc_attr__( 'Ask about products…', 'mcp-ai-wpoos-pro' ) . '" />' .
+							'<button class="sec-send-btn" id="sec-send-btn" onclick="secChatSend()">' .
+								'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' .
+							'</button>' .
+						'</div>' .
+					'</div>' .
+				'</div>' .
+
+				/* Tab 3: Settings */
+				'<div class="tma-tab-pane" id="tma-tab-settings">' .
+					'<div class="tma-section-title">' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+					/* Display section */
+					'<div class="sec-settings-section">' .
+						'<div class="sec-settings-title">' . esc_html__( 'Display', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="sec-settings-row">' .
+							'<span class="sec-settings-label">' . esc_html__( 'Font Size', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<div class="sec-font-btns" id="sec-font-btns">' .
+								'<button data-size="small" onclick="secSetFontSize(\'small\')">A-</button>' .
+								'<button data-size="medium" class="active" onclick="secSetFontSize(\'medium\')">A</button>' .
+								'<button data-size="large" onclick="secSetFontSize(\'large\')">A+</button>' .
+							'</div>' .
+						'</div>' .
+						'<div class="sec-settings-row">' .
+							'<span class="sec-settings-label">' . esc_html__( 'Compact Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<button class="sec-toggle" id="sec-compact-toggle" onclick="secToggleCompact()"></button>' .
+						'</div>' .
+					'</div>' .
+
+					/* Store section */
+					'<div class="sec-settings-section">' .
+						'<div class="sec-settings-title">' . esc_html__( 'Store', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="sec-settings-row">' .
+							'<span class="sec-settings-label">' . esc_html__( 'Connection', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="sec-settings-value" id="sec-connection-info"></span>' .
+						'</div>' .
+						'<div class="sec-settings-row">' .
+							'<span class="sec-settings-label">' . esc_html__( 'API Mode', 'mcp-ai-wpoos-pro' ) . '</span>' .
+							'<span class="sec-settings-value" id="sec-api-mode-info"></span>' .
+						'</div>' .
+					'</div>' .
+
+					/* Data section */
+					'<div class="sec-settings-section">' .
+						'<div class="sec-settings-title">' . esc_html__( 'Data', 'mcp-ai-wpoos-pro' ) . '</div>' .
+						'<div class="sec-settings-row">' .
+							'<span class="sec-settings-label" id="sec-data-summary"></span>' .
+						'</div>' .
+						'<button class="sec-settings-btn" onclick="secSyncFromServer()">' .
+							esc_html__( 'Sync from Server', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+						'<button class="sec-settings-btn danger" onclick="secClearData()">' .
+							esc_html__( 'Clear Local Data', 'mcp-ai-wpoos-pro' ) .
+						'</button>' .
+					'</div>' .
+				'</div>' .
+
+			'</div>' . /* end .tma-content */
+
+			/* ── Bottom navigation (3 tabs) ── */
+			'<nav class="tma-nav">' .
+				'<button class="tma-nav-btn tma-active" id="tma-nav-products" onclick="secSwitch(\'products\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' .
+					'<span>' . esc_html__( 'Shop', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-assistant" onclick="secSwitch(\'assistant\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' .
+					'<span>' . esc_html__( 'AI', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+				'<button class="tma-nav-btn" id="tma-nav-settings" onclick="secSwitch(\'settings\')">' .
+					'<svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' .
+					'<span>' . esc_html__( 'Settings', 'mcp-ai-wpoos-pro' ) . '</span>' .
+				'</button>' .
+			'</nav>' .
+		'</div>' . /* end .tma-shell */
+
+		/* ═══ JavaScript ═══ */
+		'<script>(function(){"use strict";' .
+		wp_mcp_ai_tma_base_js() .
+
+		/* ── Config variables ── */
+		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var TMA_TOKEN="";' .
+		'var VALIDATE_URL=' . wp_json_encode( $validate_url ) . ';' .
+		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var SHOPIFY_CONNECTION_ID=' . wp_json_encode( $connection_id ) . ';' .
+		'var SHOPIFY_API_MODE=' . wp_json_encode( $shopify_api_mode ) . ';' .
+		'var SITE_NAME=' . wp_json_encode( $ctx['site_name'] ) . ';' .
+
+		/* ── State ── */
+		'var activeTab="products";' .
+		'var chatHist=[];' .
+		'var productsCache=[];' .
+		'var activeCollection="";' .
+
+		/* ── Helpers ── */
+		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
+
+		/* Simple markdown-like renderer for bot messages */
+		'function secRenderMd(t){' .
+			'var lines=String(t).split("\\n");var out="";var inUl=false;var inOl=false;' .
+			'lines.forEach(function(ln){' .
+				'function escLn(s){return escH(s).replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>").replace(/\\*(.+?)\\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>");}' .
+				'if(/^- /.test(ln)){if(!inUl){if(inOl){out+="</ol>";inOl=false;}out+="<ul>";inUl=true;}out+="<li>"+escLn(ln.substring(2))+"</li>";}' .
+				'else if(/^\\d+\\. /.test(ln)){if(!inOl){if(inUl){out+="</ul>";inUl=false;}out+="<ol>";inOl=true;}out+="<li>"+escLn(ln.replace(/^\\d+\\.\\s*/,""))+"</li>";}' .
+				'else{if(inUl){out+="</ul>";inUl=false;}if(inOl){out+="</ol>";inOl=false;}' .
+					'if(ln===""){out+="<br>";}else{out+="<p>"+escLn(ln)+"</p>";}}' .
+			'});' .
+			'if(inUl)out+="</ul>";if(inOl)out+="</ol>";' .
+			'return out;' .
+		'}' .
+
+		/* ── localStorage helpers ── */
+		'function lsGet(k,fb){try{var v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch(e){return fb;}}' .
+		'function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Shopify data extraction helpers
+		   ══════════════════════════════════════════════════════════ */
+
+		/* Normalize tool response: controller returns {success,result} or {data} */
+		'function spExtract(raw,key){' .
+			'return (raw&&raw.result&&raw.result[key])||(raw&&raw.data&&raw.data[key])||(raw&&raw[key])||' .
+				'(raw&&raw.result)||(raw&&raw.data)||null;' .
+		'}' .
+
+		/* Currency formatting helper */
+		'function spCurrency(p){' .
+			'if(!p)return "$0.00";' .
+			/* Admin API normalized format */
+			'if(p.price_range&&p.price_range.minVariantPrice){' .
+				'var amt=parseFloat(p.price_range.minVariantPrice.amount||0);' .
+				'var cur=p.price_range.minVariantPrice.currencyCode||"USD";' .
+				'try{return new Intl.NumberFormat("en-US",{style:"currency",currency:cur}).format(amt);}catch(e){return "$"+amt.toFixed(2);}' .
+			'}' .
+			/* Catalog API normalized format (lowercase) */
+			'if(p.pricerange&&p.pricerange.minvariantprice){' .
+				'var raw=p.pricerange.minvariantprice;' .
+				'var cAmt=parseFloat(raw.amount||0);' .
+				'if(cAmt>1000)cAmt=cAmt/100;' . /* Catalog API prices are in cents */
+				'var cCur=raw.currencycode||raw.currencyCode||"USD";' .
+				'try{return new Intl.NumberFormat("en-US",{style:"currency",currency:cCur}).format(cAmt);}catch(e){return "$"+cAmt.toFixed(2);}' .
+			'}' .
+			/* Simple price field fallback */
+			'if(typeof p.price==="number"||typeof p.price==="string"){return "$"+parseFloat(p.price||0).toFixed(2);}' .
+			'return "$0.00";' .
+		'}' .
+
+		/* ── Shopify tool call wrapper ── */
+		'function secToolCall(slug,args,cb){' .
+			'if(SHOPIFY_CONNECTION_ID)args.connection_id=SHOPIFY_CONNECTION_ID;' .
+			'var body={slug:slug,arguments:args};' .
+			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){' .
+				'if(!r.ok){' .
+					'return r.json().catch(function(){return {};}).then(function(errBody){' .
+						'var msg=errBody&&errBody.message?errBody.message:"HTTP "+r.status;' .
+						'console.error("[SEC] Tool "+slug+" HTTP "+r.status+":",msg);' .
+						'throw new Error(msg);' .
+					'});' .
+				'}' .
+				'return r.json();' .
+			'})' .
+			'.then(function(d){' .
+				'if(d&&d.result&&!d.data){d.data=d.result;}' .
+				'cb(null,d);' .
+			'})' .
+			'.catch(function(e){console.error("[SEC] Tool "+slug+" error:",e);cb(e,null);});' .
+		'}' .
+
+		/* ── Session init ── */
+		'function secInitSession(){' .
+			'if(!VALIDATE_URL||!window.Telegram||!window.Telegram.WebApp){secBootstrap();return;}' .
+			'var initData=window.Telegram.WebApp.initData;' .
+			'if(!initData){secBootstrap();return;}' .
+			'fetch(VALIDATE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({init_data:initData})})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){if(!d){secBootstrap();return;}if(d.wp_nonce){NONCE=d.wp_nonce;}if(d.tma_token){TMA_TOKEN=d.tma_token;}secBootstrap();})' .
+			'.catch(function(){secBootstrap();});' .
+		'}' .
+
+		'function secBootstrap(){' .
+			'secLoadProducts();' .
+		'}' .
+
+		/* ── Display settings ── */
+		'function secApplyDisplaySettings(){' .
+			'var shell=document.getElementById("tma-shell");if(!shell)return;' .
+			'try{' .
+				'var size=lsGet("sec_font_size","medium");' .
+				'shell.classList.remove("sec-font-small","sec-font-large");' .
+				'if(size==="small")shell.classList.add("sec-font-small");' .
+				'else if(size==="large")shell.classList.add("sec-font-large");' .
+				'var compact=lsGet("sec_compact",false);' .
+				'if(compact)shell.classList.add("sec-compact");' .
+				'else shell.classList.remove("sec-compact");' .
+				'var btns=document.querySelectorAll("#sec-font-btns button");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-size")===size);});' .
+				'var tog=document.getElementById("sec-compact-toggle");' .
+				'if(tog)tog.classList.toggle("on",!!compact);' .
+			'}catch(e){}' .
+		'}' .
+		'window.secSetFontSize=function(s){lsSet("sec_font_size",s);tmaHaptic("selectionChanged");secApplyDisplaySettings();};' .
+		'window.secToggleCompact=function(){var c=!lsGet("sec_compact",false);lsSet("sec_compact",c);tmaHaptic("selectionChanged");secApplyDisplaySettings();};' .
+
+		/* ── Tab switching ── */
+		'window.secSwitch=function(tab){' .
+			'if(tab===activeTab)return;tmaHaptic("selectionChanged");' .
+			'document.querySelectorAll(".tma-tab-pane").forEach(function(el){el.classList.remove("tma-active");});' .
+			'document.querySelectorAll(".tma-nav-btn").forEach(function(el){el.classList.remove("tma-active");});' .
+			'var pane=document.getElementById("tma-tab-"+tab);var btn=document.getElementById("tma-nav-"+tab);' .
+			'if(pane)pane.classList.add("tma-active");if(btn)btn.classList.add("tma-active");' .
+			'var sb=document.getElementById("sec-search-bar");if(sb)sb.style.display=tab==="products"?"":"none";' .
+			'var cb=document.getElementById("sec-collection-bar");if(cb)cb.style.display=tab==="products"?"flex":"none";' .
+			'activeTab=tab;' .
+			'if(tab==="assistant"&&!chatHist.length)secChatInit();' .
+			'if(tab==="settings")secRenderSettings();' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Collection filtering
+		   ══════════════════════════════════════════════════════════ */
+		'window.secFilterCollection=function(col){' .
+			'activeCollection=col;tmaHaptic("selectionChanged");' .
+			'var btns=document.querySelectorAll("#sec-collection-bar .sec-chip");' .
+			'btns.forEach(function(b){' .
+				'var bCol=b.getAttribute("data-collection")||"";' .
+				'b.classList.toggle("active",bCol===col);' .
+			'});' .
+			'if(col){' .
+				/* Filter locally from cache */
+				'var filtered=productsCache.filter(function(p){' .
+					'var pType=(p.product_type||p.productType||p.producttype||"").toLowerCase();' .
+					'var pVendor=(p.vendor||"").toLowerCase();' .
+					'var tags=Array.isArray(p.tags)?p.tags.join(" ").toLowerCase():"";' .
+					'var q=col.toLowerCase();' .
+					'return pType.indexOf(q)!==-1||pVendor.indexOf(q)!==-1||tags.indexOf(q)!==-1;' .
+				'});' .
+				'secRenderProducts(filtered);' .
+			'}else{secRenderProducts(productsCache);}' .
+		'};' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 1 – Products
+		   ══════════════════════════════════════════════════════════ */
+		'function secLoadProducts(){' .
+			'var g=document.getElementById("sec-product-grid");if(!g)return;' .
+			'if(!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+			'else{secRenderProducts(productsCache);}' .
+			'var limit=SHOPIFY_API_MODE==="catalog_api"?10:20;' .
+			'secToolCall("shopify_products",{action:"list",first:limit},function(err,d){' .
+				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+				'var ps=spExtract(d,"products");' .
+				'if(!ps||!Array.isArray(ps)){' .
+					/* Catalog API wraps in raw key */
+					'if(d&&d.result&&d.result.raw&&Array.isArray(d.result.raw))ps=d.result.raw;' .
+					'else if(d&&d.data&&d.data.raw&&Array.isArray(d.data.raw))ps=d.data.raw;' .
+					'else if(d&&d.raw&&Array.isArray(d.raw))ps=d.raw;' .
+					'else ps=[];' .
+				'}' .
+				'productsCache=ps;lsSet("sec_products_cache",ps);' .
+				'secRenderProducts(ps);' .
+				'secBuildCollectionChips(ps);' .
+			'});' .
+		'}' .
+
+		/* Build collection chips from product types */
+		'function secBuildCollectionChips(ps){' .
+			'var bar=document.getElementById("sec-collection-bar");if(!bar)return;' .
+			'var types={};' .
+			'ps.forEach(function(p){' .
+				'var t=p.product_type||p.productType||p.producttype||"";' .
+				'if(t)types[t]=(types[t]||0)+1;' .
+			'});' .
+			'var html=\'<button class="sec-chip active" data-collection="" onclick="secFilterCollection(\\\'\\\')">' . esc_js( __( 'All', 'mcp-ai-wpoos-pro' ) ) . '</button>\';' .
+			'Object.keys(types).sort().forEach(function(t){' .
+				'html+=\'<button class="sec-chip" data-collection="\'+escH(t)+\'" onclick="secFilterCollection(\\\'\'+escH(t)+\'\\\')">\'+(escH(t))+\' (\'+types[t]+\')</button>\';' .
+			'});' .
+			'bar.innerHTML=html;' .
+		'}' .
+
+		'function secRenderProducts(ps){' .
+			'var g=document.getElementById("sec-product-grid");if(!g)return;' .
+			'if(!ps.length){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'No products found.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
+			'g.innerHTML=ps.map(function(p){' .
+				/* Title: Admin API uses title, Catalog API uses displayname */
+				'var name=p.title||p.displayname||p.name||"' . esc_js( __( 'Product', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'var priceStr=spCurrency(p);' .
+				'var vendor=p.vendor||"";' .
+
+				/* Vendor badge */
+				'var vendorBadge=vendor?"<span class=\\"sec-vendor-badge\\">"+escH(vendor)+"</span>":"";' .
+
+				/* Product image */
+				'var imgUrl="";' .
+				'if(p.images&&Array.isArray(p.images)&&p.images[0])imgUrl=p.images[0].url||p.images[0].src||p.images[0];' .
+				'else if(p.image)imgUrl=p.image.url||p.image.src||p.image;' .
+				'else if(p.image_url)imgUrl=p.image_url;' .
+				/* Catalog API uses media array */
+				'else if(p.media&&Array.isArray(p.media)&&p.media[0])imgUrl=p.media[0].url||p.media[0].src||p.media[0];' .
+				'var img=imgUrl?"<img src=\\""+escH(imgUrl)+"\\" alt=\\"\\"/>":"🛍️";' .
+
+				/* Meta line: product type and variant count */
+				'var metaParts=[];' .
+				'var pType=p.product_type||p.productType||p.producttype||"";' .
+				'if(pType)metaParts.push(escH(pType));' .
+				'if(p.variants&&Array.isArray(p.variants)&&p.variants.length>1)metaParts.push(p.variants.length+" variants");' .
+				'if(p.availableforsale===false)metaParts.push("Sold out");' .
+				'var metaHtml=metaParts.length?"<div class=\\"sec-product-meta\\">"+metaParts.join(" · ")+"</div>":"";' .
+
+				'return \'<div class="tma-product-card">' .
+					'\'+vendorBadge+\'' .
+					'<div class="tma-product-img">\'+img+\'</div>' .
+					'<div class="tma-product-body">' .
+						'<div class="tma-product-name">\'+escH(name)+\'</div>' .
+						'<div class="tma-product-price">\'+priceStr+\'</div>' .
+						'\'+metaHtml+\'' .
+					'</div></div>\';' .
+			'}).join("");' .
+		'}' .
+
+		/* Debounced search */
+		'var searchTimer=null;' .
+		'document.getElementById("sec-search-input").addEventListener("input",function(e){' .
+			'clearTimeout(searchTimer);var q=e.target.value.trim();' .
+			'searchTimer=setTimeout(function(){' .
+				'activeCollection="";' .
+				'var btns=document.querySelectorAll("#sec-collection-bar .sec-chip");' .
+				'btns.forEach(function(b){b.classList.toggle("active",b.getAttribute("data-collection")==="");});' .
+				'if(q){' .
+					/* Filter cached products locally by name match. */
+					'var filtered=productsCache.filter(function(p){' .
+						'var name=(p.title||p.displayname||p.name||"").toLowerCase();' .
+						'return name.indexOf(q.toLowerCase())!==-1;' .
+					'});' .
+					'secRenderProducts(filtered);' .
+				'}else{secRenderProducts(productsCache);}' .
+			'},400);' .
+		'});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 2 – AI Assistant
+		   ══════════════════════════════════════════════════════════ */
+		'function secChatInit(){' .
+			'chatHist=lsGet("sec_chat_hist",[]);' .
+			'var m=document.getElementById("sec-chat-messages");if(!m)return;m.innerHTML="";' .
+			'if(chatHist.length){' .
+				'chatHist.forEach(function(msg){secAppendMsg(msg.role==="user"?"user":"bot",msg.content,true);});' .
+			'}else{' .
+				'var ctx="[' . esc_js( __( 'Shopify store context', 'mcp-ai-wpoos-pro' ) ) . '] ' . esc_js( __( 'Site', 'mcp-ai-wpoos-pro' ) ) . ': "+SITE_NAME+", ' .
+					esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", API: "+SHOPIFY_API_MODE;' .
+				'chatHist.push({role:"system",content:ctx});' .
+				'secAppendMsg("bot","' . esc_js( __( 'Hi! I\'m your Shopify shopping assistant. I can help you find products and answer questions about our store.', 'mcp-ai-wpoos-pro' ) ) . '",false);' .
+			'}' .
+		'}' .
+
+		'function secAppendMsg(role,text,isRestore){' .
+			'var el=document.createElement("div");el.className="sec-msg "+role;' .
+			'if(role==="bot"){el.innerHTML=secRenderMd(text);}' .
+			'else{el.textContent=text;}' .
+			'var m=document.getElementById("sec-chat-messages");' .
+			'if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'return el;' .
+		'}' .
+
+		'window.secChatSend=function(){' .
+			'var inp=document.getElementById("sec-chat-input");if(!inp)return;' .
+			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			'chatHist.push({role:"user",content:txt});secAppendMsg("user",txt,false);' .
+			'lsSet("sec_chat_hist",chatHist.slice(-50));' .
+			'var el=secAppendMsg("bot","\\u2026",false);' .
+			'var body={messages:chatHist.filter(function(m){return m.role!=="system";}).slice(-12)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'var sys=chatHist.find(function(m){return m.role==="system";});' .
+			'if(sys)body.messages.unshift(sys);' .
+			'fetch(CHAT_URL,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
+			'.then(function(r){return r.json();})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'el.innerHTML=secRenderMd(rep);chatHist.push({role:"assistant",content:rep});' .
+				'lsSet("sec_chat_hist",chatHist.slice(-50));' .
+			'})' .
+			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
+		'};' .
+
+		/* Enter to send */
+		'document.getElementById("sec-chat-input").addEventListener("keydown",function(e){if(e.key==="Enter")secChatSend();});' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Tab 3 – Settings
+		   ══════════════════════════════════════════════════════════ */
+		'function secRenderSettings(){' .
+			'var ci=document.getElementById("sec-connection-info");' .
+			'if(ci){' .
+				'if(SHOPIFY_CONNECTION_ID){' .
+					'ci.innerHTML=\'<span class="sec-connection-dot online"></span>' . esc_js( __( 'Shopify Store', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}else{' .
+					'ci.innerHTML=\'<span class="sec-connection-dot offline"></span>' . esc_js( __( 'Not Connected', 'mcp-ai-wpoos-pro' ) ) . '\';' .
+				'}' .
+			'}' .
+			'var am=document.getElementById("sec-api-mode-info");' .
+			'if(am)am.textContent=SHOPIFY_API_MODE==="catalog_api"?"Catalog API":"Admin API";' .
+			'var ds=document.getElementById("sec-data-summary");' .
+			'if(ds)ds.textContent="' . esc_js( __( 'Cached products', 'mcp-ai-wpoos-pro' ) ) . ': "+productsCache.length+", ' .
+				esc_js( __( 'Chat messages', 'mcp-ai-wpoos-pro' ) ) . ': "+chatHist.length;' .
+		'}' .
+
+		'window.secSyncFromServer=function(){' .
+			'tmaHaptic("medium");secLoadProducts();' .
+		'};' .
+
+		'window.secClearData=function(){' .
+			'var msg="' . esc_js( __( 'Clear all local data? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(window.Telegram&&window.Telegram.WebApp){' .
+				'window.Telegram.WebApp.showConfirm(msg,function(ok){if(ok)secDoClear();});' .
+			'}else if(confirm(msg)){secDoClear();}' .
+		'};' .
+
+		'function secDoClear(){' .
+			'try{' .
+				'localStorage.removeItem("sec_products_cache");' .
+				'localStorage.removeItem("sec_chat_hist");' .
+				'localStorage.removeItem("sec_font_size");' .
+				'localStorage.removeItem("sec_compact");' .
+			'}catch(e){}' .
+			'productsCache=[];chatHist=[];activeCollection="";' .
+			'secRenderSettings();tmaHaptic("notificationSuccess");' .
+		'}' .
+
+		/* ══════════════════════════════════════════════════════════
+		   Init
+		   ══════════════════════════════════════════════════════════ */
+		'productsCache=lsGet("sec_products_cache",[]);' .
+		'secApplyDisplaySettings();' .
+
+		'if(productsCache.length)secRenderProducts(productsCache);' .
+
+		'secInitSession();' .
 
 		'})();</script></body>';
 		// phpcs:enable

@@ -3045,7 +3045,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var radioRemote = document.getElementById( 'tma-woo-source-remote' );
 
 					var wooTemplates     = [ 'woo_shop', 'ecommerce' ];
-					var shopifyTemplates = [ 'shopify_shop', 'jewelry_shop' ];
+					var shopifyTemplates = [ 'shopify_shop', 'jewelry_shop', 'shopify_ecommerce' ];
 					var flowhubTemplates = [ 'flowhub_ecommerce' ];
 
 					function toggleDataSourceRows() {
@@ -5811,7 +5811,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var _shopifyRow   = document.querySelector( '.tma-shopify-source-row' );
 					var _flowhubRow   = document.querySelector( '.tma-flowhub-source-row' );
 					var _wooTpls      = [ 'woo_shop', 'ecommerce' ];
-					var _shopifyTpls  = [ 'shopify_shop', 'jewelry_shop' ];
+					var _shopifyTpls  = [ 'shopify_shop', 'jewelry_shop', 'shopify_ecommerce' ];
 					var _flowhubTpls  = [ 'flowhub_ecommerce' ];
 					if ( _wooRow )     { _wooRow.style.display     = _wooTpls.indexOf( _val ) !== -1     ? 'table-row' : 'none'; }
 					if ( _shopifyRow ) { _shopifyRow.style.display = _shopifyTpls.indexOf( _val ) !== -1 ? 'table-row' : 'none'; }
