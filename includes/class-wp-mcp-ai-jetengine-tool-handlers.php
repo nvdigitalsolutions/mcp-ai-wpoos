@@ -476,7 +476,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			return null;
 		}
 
-		return self::normalise_success( $result, 'mcp' );
+		return self::normalise_success( $result, 200, array(), 'mcp' );
 	}
 
 	/**
