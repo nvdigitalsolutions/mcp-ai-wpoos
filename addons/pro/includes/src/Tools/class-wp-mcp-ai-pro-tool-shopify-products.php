@@ -687,8 +687,22 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			return $response;
 		}
 
-		$raw_products = isset( $response['products'] ) ? $response['products'] : array();
-		$products     = array();
+		// The Catalog API response can come in several shapes depending on the
+		// endpoint version and internal routing:
+		//   1. { success: true, results: [ … ] }     — wrapper with "results"
+		//   2. { products: [ … ] }                    — wrapper with "products"
+		//   3. [ { upid, title, … }, … ]              — bare array
+		// Accept all three so this code works regardless of shape.
+		$raw_products = array();
+		if ( isset( $response['results'] ) && is_array( $response['results'] ) ) {
+			$raw_products = $response['results'];
+		} elseif ( isset( $response['products'] ) && is_array( $response['products'] ) ) {
+			$raw_products = $response['products'];
+		} elseif ( is_array( $response ) && isset( $response[0] ) ) {
+			$raw_products = $response;
+		}
+
+		$products = array();
 
 		foreach ( $raw_products as $raw ) {
 			$products[] = $this->normalize_catalog_product( $raw );
@@ -741,10 +755,12 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Normalize a Catalog API product into the same structure as normalize_product().
 	 *
-	 * Catalog API responses have a flat structure with fields like title, image_url,
-	 * price, currency, in_stock.  This converts them into the nested format that
-	 * the Admin API normalizer produces, so callers (including TMA templates) can
-	 * use a single set of extractors.
+	 * The raw Catalog API (discover.shopifyapps.com) returns objects with
+	 * all-lowercase field names: pricerange, lookupurl, availableforsale, etc.
+	 * The plugin's shopify_catalog tool wrapper may additionally provide
+	 * camelCase or snake_case variants (priceRange, price_min, etc.).
+	 * This normalizer handles both conventions so the TMA template always
+	 * receives a consistent Admin-API-style product shape.
 	 *
 	 * @since 1.1.7
 	 *
@@ -752,15 +768,66 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Normalized product array matching normalize_product() output.
 	 */
 	protected function normalize_catalog_product( array $raw ) {
-		$title      = isset( $raw['title'] ) ? $raw['title'] : '';
-		$price      = isset( $raw['price'] ) ? (string) $raw['price'] : '0';
-		$currency   = isset( $raw['currency'] ) ? $raw['currency'] : '';
-		$image_url  = isset( $raw['image_url'] ) ? $raw['image_url'] : '';
-		$in_stock   = isset( $raw['in_stock'] ) ? (bool) $raw['in_stock'] : true;
-		$handle     = isset( $raw['handle'] ) ? $raw['handle'] : '';
-		$url        = isset( $raw['url'] ) ? $raw['url'] : '';
+		$title = isset( $raw['title'] ) ? $raw['title'] : '';
 
-		// Resolve the unique product identifier (UPID preferred, then generic id).
+		// ── Price ──
+		// Priority: price_min (plugin wrapper) → pricerange (raw API, lowercase,
+		// amount in minor units e.g. 25005 = $250.05) → priceRange (camelCase
+		// fallback) → flat price field.
+		$price    = '0';
+		$currency = '';
+		if ( isset( $raw['price_min'] ) ) {
+			$price = (string) $raw['price_min'];
+		} elseif ( ! empty( $raw['pricerange']['min']['amount'] ) ) {
+			$price = (string) round( absint( $raw['pricerange']['min']['amount'] ) / 100, 2 );
+		} elseif ( ! empty( $raw['priceRange']['min']['amount'] ) ) {
+			$price = (string) round( absint( $raw['priceRange']['min']['amount'] ) / 100, 2 );
+		} elseif ( isset( $raw['price'] ) ) {
+			$price = (string) $raw['price'];
+		}
+		if ( ! empty( $raw['currency'] ) ) {
+			$currency = $raw['currency'];
+		} elseif ( ! empty( $raw['pricerange']['min']['currency'] ) ) {
+			$currency = $raw['pricerange']['min']['currency'];
+		} elseif ( ! empty( $raw['priceRange']['min']['currency'] ) ) {
+			$currency = $raw['priceRange']['min']['currency'];
+		}
+
+		// ── Image ──
+		// Plugin wrapper: images is an array of URL strings.
+		// Raw API: media is an array of { url, alttext } objects (lowercase).
+		$image_url = '';
+		if ( ! empty( $raw['images'] ) && is_array( $raw['images'] ) ) {
+			$first = reset( $raw['images'] );
+			$image_url = is_string( $first ) ? $first : ( isset( $first['url'] ) ? $first['url'] : '' );
+		} elseif ( ! empty( $raw['media'] ) && is_array( $raw['media'] ) ) {
+			$first = reset( $raw['media'] );
+			$image_url = is_array( $first ) && isset( $first['url'] ) ? $first['url'] : '';
+		} elseif ( ! empty( $raw['image_url'] ) ) {
+			$image_url = $raw['image_url'];
+		}
+
+		// ── Availability ──
+		$in_stock = true;
+		if ( isset( $raw['available'] ) ) {
+			$in_stock = (bool) $raw['available'];
+		} elseif ( isset( $raw['in_stock'] ) ) {
+			$in_stock = (bool) $raw['in_stock'];
+		}
+
+		$handle = isset( $raw['handle'] ) ? $raw['handle'] : '';
+
+		// URL: prefer direct url, then lookupurl (raw API lowercase), then lookupUrl.
+		$url = '';
+		if ( ! empty( $raw['url'] ) ) {
+			$url = $raw['url'];
+		} elseif ( ! empty( $raw['lookupurl'] ) ) {
+			$url = $raw['lookupurl'];
+		} elseif ( ! empty( $raw['lookupUrl'] ) ) {
+			$url = $raw['lookupUrl'];
+		}
+
+		// ── ID ──
 		$id = '';
 		if ( ! empty( $raw['upid'] ) ) {
 			$id = $raw['upid'];
@@ -768,24 +835,86 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			$id = $raw['id'];
 		}
 
-		// Resolve vendor from shop_name or vendor field.
+		// ── Vendor ──
 		$vendor = '';
-		if ( ! empty( $raw['shop_name'] ) ) {
-			$vendor = $raw['shop_name'];
+		if ( ! empty( $raw['shop']['name'] ) ) {
+			$vendor = $raw['shop']['name'];
 		} elseif ( ! empty( $raw['vendor'] ) ) {
 			$vendor = $raw['vendor'];
+		} elseif ( ! empty( $raw['brand'] ) ) {
+			$vendor = $raw['brand'];
+		} elseif ( ! empty( $raw['shop_name'] ) ) {
+			$vendor = $raw['shop_name'];
+		}
+		// Raw API nests shop inside each variant; pull from first variant if needed.
+		if ( empty( $vendor ) && ! empty( $raw['variants'][0]['shop']['name'] ) ) {
+			$vendor = $raw['variants'][0]['shop']['name'];
 		}
 
-		// Build a single variant matching the shape produced by normalize_product().
-		$variant = array(
-			'id'             => isset( $raw['variant_id'] ) ? $raw['variant_id'] : '',
-			'title'          => 'Default',
-			'sku'            => isset( $raw['sku'] ) ? $raw['sku'] : '',
-			'price'          => $price,
-			'compareAtPrice' => isset( $raw['compare_at_price'] ) ? (string) $raw['compare_at_price'] : null,
-		);
+		// ── Variants ──
+		$normalized_variants = array();
+		if ( ! empty( $raw['variants'] ) && is_array( $raw['variants'] ) ) {
+			foreach ( $raw['variants'] as $v ) {
+				// Price: scalar (plugin wrapper) → price.amount minor units (raw API).
+				$v_price = $price;
+				if ( isset( $v['price'] ) && is_numeric( $v['price'] ) ) {
+					$v_price = (string) $v['price'];
+				} elseif ( isset( $v['price'] ) && is_array( $v['price'] ) && ! empty( $v['price']['amount'] ) ) {
+					$v_price = (string) round( absint( $v['price']['amount'] ) / 100, 2 );
+				}
 
-		$image = ! empty( $image_url ) ? array( 'url' => $image_url ) : array();
+				// ID: vid (plugin wrapper) → id (raw API GID).
+				$v_id = '';
+				if ( ! empty( $v['vid'] ) ) {
+					$v_id = $v['vid'];
+				} elseif ( ! empty( $v['id'] ) ) {
+					$v_id = $v['id'];
+				}
+
+				// Availability: available (wrapper) → availableforsale (raw lowercase)
+				// → availableForSale (camelCase fallback).
+				$v_available = true;
+				if ( isset( $v['available'] ) ) {
+					$v_available = (bool) $v['available'];
+				} elseif ( isset( $v['availableforsale'] ) ) {
+					$v_available = (bool) $v['availableforsale'];
+				} elseif ( isset( $v['availableForSale'] ) ) {
+					$v_available = (bool) $v['availableForSale'];
+				}
+
+				// Title: title (wrapper) → displayname (raw lowercase) → displayName.
+				$v_title = 'Default';
+				if ( ! empty( $v['title'] ) ) {
+					$v_title = $v['title'];
+				} elseif ( ! empty( $v['displayname'] ) ) {
+					$v_title = $v['displayname'];
+				} elseif ( ! empty( $v['displayName'] ) ) {
+					$v_title = $v['displayName'];
+				}
+
+				$normalized_variants[] = array(
+					'id'             => $v_id,
+					'title'          => $v_title,
+					'sku'            => isset( $v['sku'] ) ? $v['sku'] : '',
+					'price'          => $v_price,
+					'compareAtPrice' => null,
+					'available'      => $v_available,
+				);
+			}
+		}
+		// Ensure at least one variant exists.
+		if ( empty( $normalized_variants ) ) {
+			$normalized_variants[] = array(
+				'id'             => isset( $raw['variant_id'] ) ? $raw['variant_id'] : '',
+				'title'          => 'Default',
+				'sku'            => isset( $raw['sku'] ) ? $raw['sku'] : '',
+				'price'          => $price,
+				'compareAtPrice' => isset( $raw['compare_at_price'] ) ? (string) $raw['compare_at_price'] : null,
+				'available'      => $in_stock,
+			);
+		}
+
+		$image  = ! empty( $image_url ) ? array( 'url' => $image_url ) : array();
 		$images = ! empty( $image ) ? array( $image ) : array();
 
 		return array(
@@ -805,7 +934,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 				),
 			),
 			'total_inventory' => $in_stock ? 1 : 0,
-			'variants'        => array( $variant ),
+			'variants'        => $normalized_variants,
 			'images'          => $images,
 			'url'             => $url,
 		);
