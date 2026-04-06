@@ -9471,6 +9471,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
+			// Flag guest requests so tools can allow unauthenticated access for public assistants.
+			// A guest request is one where user_id is 0 and the assistant is configured with public capability.
+			if ( empty( $user_id ) && ! empty( $assistant_id ) ) {
+				$capability = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
+				if ( 'public' === $capability ) {
+					$context['guest_request'] = true;
+				}
+			}
+
 			// Add tool_call_id to context if available.
 			// This ensures async jobs can preserve the original tool_call_id for proper.
 			// correlation with the LLM's tool call requests.

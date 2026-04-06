@@ -3751,6 +3751,48 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
+			// Convert 'mixed' type to anyOf with all JSON Schema types.
+			// OpenAI rejects 'mixed' as it is not a valid JSON Schema type.
+			if ( isset( $schema['type'] ) && 'mixed' === $schema['type'] ) {
+				unset( $schema['type'] );
+				$schema['anyOf'] = array(
+					array( 'type' => 'string' ),
+					array( 'type' => 'number' ),
+					array( 'type' => 'boolean' ),
+					array( 'type' => 'object' ),
+					array(
+						'type'  => 'array',
+						'items' => array(),
+					),
+					array( 'type' => 'null' ),
+				);
+			}
+
+			// Convert multi-type array syntax to anyOf.
+			// OpenAI does not support type: ["string", "number", ...] (JSON Schema draft 2020-12).
+			if ( isset( $schema['type'] ) && is_array( $schema['type'] ) ) {
+				$types = $schema['type'];
+				unset( $schema['type'] );
+				$any_of = array();
+				foreach ( $types as $type_val ) {
+					if ( 'array' === $type_val ) {
+						$any_of[] = array(
+							'type'  => 'array',
+							'items' => isset( $schema['items'] ) ? $schema['items'] : array( 'type' => 'string' ),
+						);
+					} else {
+						$any_of[] = array( 'type' => $type_val );
+					}
+				}
+				$schema['anyOf'] = $any_of;
+				unset( $schema['items'] );
+			}
+
+			// Ensure array-typed schemas include 'items' to satisfy OpenAI validation.
+			if ( isset( $schema['type'] ) && 'array' === $schema['type'] && ! isset( $schema['items'] ) ) {
+				$schema['items'] = array();
+			}
+
 			// Recursively process the schema.
 			// When we recurse into nested structures (properties, items, etc.),
 			// the parent_key becomes non-empty, so composition keywords are preserved.
