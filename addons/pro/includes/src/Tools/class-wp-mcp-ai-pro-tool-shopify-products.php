@@ -211,8 +211,32 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
 		}
 
-		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
-		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+		$client   = new WP_MCP_AI_Shopify_Client( $connection_id );
+		$action   = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+		$api_mode = $client->get_api_mode();
+
+		// Catalog API mode — route read-only operations to the Catalog API
+		// and reject write operations that are not supported.
+		if ( 'catalog_api' === $api_mode ) {
+			switch ( $action ) {
+				case 'list':
+				case 'search':
+					return $this->handle_catalog_list( $client, $arguments, $connection );
+
+				case 'get':
+					return $this->handle_catalog_get( $client, $arguments );
+
+				case 'create':
+				case 'update':
+					return new WP_Error(
+						'wp_mcp_ai_shopify_catalog_read_only',
+						__( 'Product creation and updates are not supported in catalog_api mode. Switch to an admin_api connection for write operations.', 'mcp-ai-wpoos-pro' )
+					);
+
+				default:
+					return new WP_Error( 'wp_mcp_ai_shopify_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
+			}
+		}
 
 		switch ( $action ) {
 			case 'list':
@@ -559,6 +583,269 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			'total_inventory' => isset( $node['totalInventory'] ) ? $node['totalInventory'] : 0,
 			'variants'       => $variants,
 			'images'         => $images,
+		);
+	}
+
+	// ------------------------------------------------------------------ //
+	//  Catalog API helpers                                                  //
+	// ------------------------------------------------------------------ //
+
+	/**
+	 * Handle list/search for Catalog API mode connections.
+	 *
+	 * The Catalog API uses natural-language search (no GraphQL). Wildcard
+	 * queries like "*" return zero results, so when no explicit query is
+	 * provided we build a browse-friendly default from the connection name
+	 * or store URL.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client     Shopify client.
+	 * @param array                    $arguments  Tool arguments.
+	 * @param array                    $connection Connection data array.
+	 * @return array|WP_Error
+	 */
+	protected function handle_catalog_list( $client, array $arguments, array $connection ) {
+		$limit = isset( $arguments['first'] )
+			? max( 1, min( 10, absint( $arguments['first'] ) ) )
+			: 10;
+
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+
+		// Build a browse-friendly default query when none is provided.
+		if ( empty( $query ) || '*' === $query ) {
+			$query = $this->build_catalog_browse_query( $connection );
+		}
+
+		// --- Primary search. ---
+		$response = $client->catalog_search( $query, $limit );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		// The Catalog API returns a bare JSON array of product objects.
+		$raw_products = is_array( $response ) && ! isset( $response['products'] )
+			? $response
+			: ( isset( $response['products'] ) ? $response['products'] : array() );
+
+		$products = array_map( array( $this, 'normalize_catalog_product' ), $raw_products );
+
+		// --- Progressive relaxation: decompose when no results and query is present. ---
+		$smart_search = ! isset( $arguments['smart_search'] ) || ! empty( $arguments['smart_search'] );
+		$decomposed   = false;
+
+		if ( empty( $products ) && ! empty( $query ) && $smart_search && $this->should_decompose_query( $query ) ) {
+			$tokens      = $this->extract_search_tokens( $query );
+			$sub_queries = $this->generate_sub_queries( $tokens, $query );
+
+			if ( ! empty( $sub_queries ) ) {
+				$result_sets = array();
+
+				foreach ( $sub_queries as $sub_query ) {
+					$sub_response = $client->catalog_search( $sub_query, $limit );
+
+					if ( is_wp_error( $sub_response ) ) {
+						continue;
+					}
+
+					$sub_raw = is_array( $sub_response ) && ! isset( $sub_response['products'] )
+						? $sub_response
+						: ( isset( $sub_response['products'] ) ? $sub_response['products'] : array() );
+
+					$sub_products = array_map( array( $this, 'normalize_catalog_product' ), $sub_raw );
+					if ( ! empty( $sub_products ) ) {
+						$result_sets[] = $sub_products;
+					}
+				}
+
+				if ( ! empty( $result_sets ) ) {
+					$products   = $this->merge_and_rank_products(
+						$result_sets,
+						function ( $product ) {
+							return isset( $product['id'] ) ? $product['id'] : '';
+						},
+						$limit
+					);
+					$decomposed = true;
+				}
+			}
+		}
+
+		// Generate rich product cards for chat display.
+		$cards_message = $this->format_product_cards( $products, 'shopify' );
+
+		$result = array(
+			'success'  => true,
+			'message'  => ! empty( $cards_message ) ? $cards_message : sprintf(
+				/* translators: %d: number of products */
+				__( 'Retrieved %d product(s) from Shopify', 'mcp-ai-wpoos-pro' ),
+				count( $products )
+			),
+			'products' => $products,
+			'count'    => count( $products ),
+			'raw'      => $raw_products,
+		);
+
+		if ( $decomposed ) {
+			$result['smart_search'] = true;
+			$result['note']         = sprintf(
+				/* translators: %1$d: number of results, %2$s: original query */
+				__( 'The original query "%2$s" returned 0 results. Smart search decomposed the query into smaller keywords and found %1$d product(s).', 'mcp-ai-wpoos-pro' ),
+				count( $products ),
+				$query
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Handle single product lookup for Catalog API mode.
+	 *
+	 * Accepts a Universal Product ID (UPID) via product_id or upid arguments.
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_catalog_get( $client, array $arguments ) {
+		$upid = '';
+		if ( isset( $arguments['upid'] ) ) {
+			$upid = sanitize_text_field( $arguments['upid'] );
+		} elseif ( isset( $arguments['product_id'] ) ) {
+			$upid = sanitize_text_field( $arguments['product_id'] );
+		}
+
+		if ( empty( $upid ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_missing_product_id',
+				__( 'product_id (UPID) is required for the get action in catalog_api mode.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = $client->catalog_lookup( $upid );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$product = $this->normalize_catalog_product( is_array( $response ) ? $response : array() );
+
+		return array(
+			'success' => true,
+			'product' => $product,
+			'message' => __( 'Product retrieved successfully.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Build a browse-friendly default query for the Catalog API.
+	 *
+	 * The Catalog API uses NLP-based search and does not support wildcard
+	 * queries.  We derive a human-readable phrase from the connection name
+	 * or store URL so that a bare "list" action returns meaningful products.
+	 *
+	 * @param array $connection Connection data array.
+	 * @return string NLP-friendly browse query.
+	 */
+	protected function build_catalog_browse_query( array $connection ) {
+		// Try the connection name first (e.g. "My Awesome Store").
+		if ( ! empty( $connection['name'] ) ) {
+			$name = sanitize_text_field( $connection['name'] );
+			// Strip common suffixes that don't help search.
+			$name = preg_replace( '/\s*(connection|api|catalog|shopify)\s*/i', ' ', $name );
+			$name = trim( $name );
+			if ( strlen( $name ) >= 2 ) {
+				return $name;
+			}
+		}
+
+		// Derive from the store URL slug (e.g. "my-store" from https://my-store.myshopify.com).
+		if ( ! empty( $connection['url'] ) ) {
+			$host = wp_parse_url( $connection['url'], PHP_URL_HOST );
+			if ( $host ) {
+				$slug = explode( '.', $host )[0];
+				$slug = str_replace( array( '-', '_' ), ' ', $slug );
+				$slug = trim( $slug );
+				if ( strlen( $slug ) >= 2 ) {
+					return $slug;
+				}
+			}
+		}
+
+		// Final fallback — generic keyword.
+		return 'products';
+	}
+
+	/**
+	 * Normalize a product from the Catalog API response.
+	 *
+	 * Catalog API field names are all lowercase (displayname, pricerange,
+	 * lookupurl, availableforsale, etc.) and prices are in minor units
+	 * (cents).  This method maps them to a structure compatible with both
+	 * the Admin API normalizer output and the TMA template JS renderer.
+	 *
+	 * @param array $item Raw Catalog API product object.
+	 * @return array Normalized product array.
+	 */
+	protected function normalize_catalog_product( array $item ) {
+		$title = '';
+		if ( isset( $item['displayname'] ) ) {
+			$title = $item['displayname'];
+		} elseif ( isset( $item['title'] ) ) {
+			$title = $item['title'];
+		}
+
+		// Images / media — Catalog API uses a "media" array.
+		$images = array();
+		if ( isset( $item['media'] ) && is_array( $item['media'] ) ) {
+			foreach ( $item['media'] as $media ) {
+				$url = isset( $media['url'] ) ? $media['url'] : ( isset( $media['src'] ) ? $media['src'] : '' );
+				if ( $url ) {
+					$images[] = array( 'url' => $url );
+				}
+			}
+		}
+
+		// Price range — Catalog API uses lowercase keys; amounts in minor units (cents).
+		$price_range = array();
+		if ( isset( $item['pricerange'] ) && is_array( $item['pricerange'] ) ) {
+			$pr = $item['pricerange'];
+			if ( isset( $pr['minvariantprice'] ) && is_array( $pr['minvariantprice'] ) ) {
+				$min = $pr['minvariantprice'];
+				$price_range['minVariantPrice'] = array(
+					'amount'       => isset( $min['amount'] ) ? ( (float) $min['amount'] / 100 ) : 0,
+					'currencyCode' => isset( $min['currencycode'] ) ? $min['currencycode'] : 'USD',
+				);
+			}
+			if ( isset( $pr['maxvariantprice'] ) && is_array( $pr['maxvariantprice'] ) ) {
+				$max = $pr['maxvariantprice'];
+				$price_range['maxVariantPrice'] = array(
+					'amount'       => isset( $max['amount'] ) ? ( (float) $max['amount'] / 100 ) : 0,
+					'currencyCode' => isset( $max['currencycode'] ) ? $max['currencycode'] : 'USD',
+				);
+			}
+		}
+
+		return array(
+			'id'                => isset( $item['upid'] ) ? $item['upid'] : ( isset( $item['id'] ) ? $item['id'] : '' ),
+			'title'             => $title,
+			'handle'            => isset( $item['handle'] ) ? $item['handle'] : '',
+			'status'            => isset( $item['availableforsale'] ) && $item['availableforsale'] ? 'ACTIVE' : 'UNAVAILABLE',
+			'vendor'            => isset( $item['vendor'] ) ? $item['vendor'] : '',
+			'product_type'      => isset( $item['producttype'] ) ? $item['producttype'] : ( isset( $item['product_type'] ) ? $item['product_type'] : '' ),
+			'tags'              => isset( $item['tags'] ) ? $item['tags'] : array(),
+			'created_at'        => '',
+			'updated_at'        => '',
+			'price_range'       => $price_range,
+			'total_inventory'   => 0,
+			'variants'          => array(),
+			'images'            => $images,
+			'availableforsale'  => isset( $item['availableforsale'] ) ? $item['availableforsale'] : true,
+			'lookupurl'         => isset( $item['lookupurl'] ) ? $item['lookupurl'] : '',
+			'displayname'       => $title,
+			// Preserve the raw media/pricerange for the TMA JS renderer.
+			'media'             => isset( $item['media'] ) ? $item['media'] : array(),
+			'pricerange'        => isset( $item['pricerange'] ) ? $item['pricerange'] : array(),
 		);
 	}
 }
