@@ -7592,12 +7592,21 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'if(SHOPIFY_CONNECTION_ID)args.connection_id=SHOPIFY_CONNECTION_ID;' .
 			'var body={slug:slug,arguments:args};' .
 			'fetch(TOOLS_EXEC,{method:"POST",headers:tmaToolHeaders(),body:JSON.stringify(body)})' .
-			'.then(function(r){return r.json();})' .
+			'.then(function(r){' .
+				'if(!r.ok){' .
+					'return r.json().then(function(errBody){' .
+						'console.error("[SEC] Tool "+slug+" HTTP "+r.status+":",errBody&&errBody.message?errBody.message:JSON.stringify(errBody));' .
+						'cb(new Error(errBody&&errBody.message?errBody.message:"HTTP "+r.status),null);' .
+					'}).catch(function(){cb(new Error("HTTP "+r.status),null);});' .
+				'}' .
+				'return r.json();' .
+			'})' .
 			'.then(function(d){' .
+				'if(!d)return;' .
 				'if(d&&d.result&&!d.data){d.data=d.result;}' .
 				'cb(null,d);' .
 			'})' .
-			'.catch(function(e){cb(e,null);});' .
+			'.catch(function(e){console.error("[SEC] Tool "+slug+" error:",e);cb(e,null);});' .
 		'}' .
 
 		/* ── Session init ── */

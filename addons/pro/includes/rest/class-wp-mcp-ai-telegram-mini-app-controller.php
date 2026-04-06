@@ -3739,6 +3739,20 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		if ( is_wp_error( $result ) ) {
+			// Ensure tool errors carry an appropriate HTTP status so they are
+			// not returned as generic 500s.  Permission errors → 403, missing
+			// resources → 404, everything else → 400 (bad request).
+			$data = $result->get_error_data();
+			if ( ! is_array( $data ) || ! isset( $data['status'] ) ) {
+				$code   = $result->get_error_code();
+				$status = 400;
+				if ( false !== strpos( $code, 'forbidden' ) ) {
+					$status = 403;
+				} elseif ( false !== strpos( $code, 'not_found' ) ) {
+					$status = 404;
+				}
+				$result->add_data( array( 'status' => $status ), $code );
+			}
 			return $result;
 		}
 

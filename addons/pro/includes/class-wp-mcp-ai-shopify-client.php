@@ -518,6 +518,40 @@ query GetProducts($first: Int!, $after: String, $query: String) {
 		}
 
 		/**
+		 * List collections from the Shopify store.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @param int    $first Maximum number of collections to return (1–250).
+		 * @param string $after Cursor for pagination.
+		 * @return array|WP_Error GraphQL response or error.
+		 */
+		public function get_collections( $first = 25, $after = '' ) {
+			$first = max( 1, min( 250, absint( $first ) ) );
+
+			$gql_query = '
+query GetCollections($first: Int!, $after: String) {
+  collections(first: $first, after: $after) {
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    edges {
+      cursor
+      node {
+        id title handle description productsCount
+        image { url altText }
+      }
+    }
+  }
+}';
+
+			$variables = array( 'first' => $first );
+			if ( ! empty( $after ) ) {
+				$variables['after'] = $after;
+			}
+
+			return $this->graphql( $gql_query, $variables );
+		}
+
+		/**
 		 * Get a single product by its Shopify GID.
 		 *
 		 * @since 1.0.0

@@ -209,8 +209,16 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-shopify-client.php';
 		}
 
-		$client = new WP_MCP_AI_Shopify_Client( $connection_id );
-		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+		$client   = new WP_MCP_AI_Shopify_Client( $connection_id );
+		$action   = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
+		$api_mode = isset( $connection['shopify_api_mode'] ) ? $connection['shopify_api_mode'] : 'admin_api';
+
+		// Catalog API connections use different endpoints and response formats.
+		// Route read-only actions through the Catalog API and normalize the
+		// response so the caller always receives the same structure.
+		if ( 'catalog_api' === $api_mode ) {
+			return $this->handle_catalog_mode( $client, $action, $arguments );
+		}
 
 		switch ( $action ) {
 			case 'list':
@@ -219,6 +227,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 
 			case 'get':
 				return $this->handle_get( $client, $arguments );
+
+			case 'collections':
+				return $this->handle_collections( $client, $arguments );
 
 			case 'create':
 				return $this->handle_create( $client, $arguments );
@@ -557,6 +568,253 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 			'total_inventory' => isset( $node['totalInventory'] ) ? $node['totalInventory'] : 0,
 			'variants'       => $variants,
 			'images'         => $images,
+		);
+	}
+
+	/**
+	 * Handle the collections action (Admin GraphQL API).
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_collections( $client, array $arguments ) {
+		$first = isset( $arguments['first'] ) ? max( 1, min( 250, absint( $arguments['first'] ) ) ) : 25;
+
+		$response = $client->get_collections( $first );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		if ( isset( $response['errors'] ) && ! empty( $response['errors'] ) ) {
+			$msg = isset( $response['errors'][0]['message'] ) ? $response['errors'][0]['message'] : __( 'GraphQL error.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error( 'wp_mcp_ai_shopify_gql_error', $msg );
+		}
+
+		$collections = array();
+		$edges       = isset( $response['data']['collections']['edges'] ) ? $response['data']['collections']['edges'] : array();
+
+		foreach ( $edges as $edge ) {
+			$node = isset( $edge['node'] ) ? $edge['node'] : array();
+			$collections[] = array(
+				'id'             => isset( $node['id'] ) ? $node['id'] : '',
+				'title'          => isset( $node['title'] ) ? $node['title'] : '',
+				'handle'         => isset( $node['handle'] ) ? $node['handle'] : '',
+				'description'    => isset( $node['description'] ) ? $node['description'] : '',
+				'products_count' => isset( $node['productsCount'] ) ? $node['productsCount'] : 0,
+				'image'          => isset( $node['image'] ) ? $node['image'] : null,
+			);
+		}
+
+		return array(
+			'success'     => true,
+			'collections' => $collections,
+			'count'       => count( $collections ),
+		);
+	}
+
+	/**
+	 * Handle actions for Catalog API mode connections.
+	 *
+	 * Routes list/search through the Catalog API search endpoint and normalizes
+	 * responses to match the Admin API normalized format so callers (including
+	 * TMA templates) always receive a consistent product structure.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param string                   $action    Action to perform.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_catalog_mode( $client, $action, array $arguments ) {
+		switch ( $action ) {
+			case 'list':
+			case 'search':
+				return $this->handle_catalog_search( $client, $arguments );
+
+			case 'collections':
+				// Catalog API does not support collections.
+				return array(
+					'success'     => true,
+					'collections' => array(),
+					'count'       => 0,
+				);
+
+			case 'get':
+				return $this->handle_catalog_lookup( $client, $arguments );
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_shopify_catalog_unsupported',
+					__( 'This action is not supported for Catalog API connections. Only list, search, get, and collections are available.', 'mcp-ai-wpoos-pro' )
+				);
+		}
+	}
+
+	/**
+	 * Handle list/search via the Catalog API.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_catalog_search( $client, array $arguments ) {
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+		$limit = isset( $arguments['first'] ) ? max( 1, min( 100, absint( $arguments['first'] ) ) ) : 20;
+
+		// The Catalog API requires a non-empty query.  For "list" (browse)
+		// requests send a broad wildcard so the API returns results.
+		if ( empty( $query ) ) {
+			$query = '*';
+		}
+
+		$filters = array();
+		if ( ! empty( $arguments['shop_ids'] ) ) {
+			$filters['shop_ids'] = sanitize_text_field( $arguments['shop_ids'] );
+		}
+
+		$response = $client->catalog_search( $query, $limit, $filters );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$raw_products = isset( $response['products'] ) ? $response['products'] : array();
+		$products     = array();
+
+		foreach ( $raw_products as $raw ) {
+			$products[] = $this->normalize_catalog_product( $raw );
+		}
+
+		$count  = count( $products );
+		$result = array(
+			'success'  => true,
+			'products' => $products,
+			'count'    => $count,
+			'message'  => $this->build_product_summary( $products ),
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Handle single-product lookup via the Catalog API.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param WP_MCP_AI_Shopify_Client $client    Shopify client.
+	 * @param array                    $arguments Tool arguments.
+	 * @return array|WP_Error
+	 */
+	protected function handle_catalog_lookup( $client, array $arguments ) {
+		$product_id = isset( $arguments['product_id'] ) ? sanitize_text_field( $arguments['product_id'] ) : '';
+
+		if ( empty( $product_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shopify_missing_product_id',
+				__( 'product_id (UPID) is required for the get action on Catalog API connections.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = $client->catalog_lookup( $product_id );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$normalized = $this->normalize_catalog_product( $response );
+
+		return array(
+			'success' => true,
+			'product' => $normalized,
+		);
+	}
+
+	/**
+	 * Normalize a Catalog API product into the same structure as normalize_product().
+	 *
+	 * Catalog API responses have a flat structure with fields like title, image_url,
+	 * price, currency, in_stock.  This converts them into the nested format that
+	 * the Admin API normalizer produces, so callers (including TMA templates) can
+	 * use a single set of extractors.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param array $raw Raw Catalog API product object.
+	 * @return array Normalized product array matching normalize_product() output.
+	 */
+	protected function normalize_catalog_product( array $raw ) {
+		$title      = isset( $raw['title'] ) ? $raw['title'] : '';
+		$price      = isset( $raw['price'] ) ? (string) $raw['price'] : '0';
+		$currency   = isset( $raw['currency'] ) ? $raw['currency'] : '';
+		$image_url  = isset( $raw['image_url'] ) ? $raw['image_url'] : '';
+		$in_stock   = isset( $raw['in_stock'] ) ? (bool) $raw['in_stock'] : true;
+		$id         = isset( $raw['upid'] ) ? $raw['upid'] : ( isset( $raw['id'] ) ? $raw['id'] : '' );
+		$vendor     = isset( $raw['shop_name'] ) ? $raw['shop_name'] : ( isset( $raw['vendor'] ) ? $raw['vendor'] : '' );
+		$handle     = isset( $raw['handle'] ) ? $raw['handle'] : '';
+		$url        = isset( $raw['url'] ) ? $raw['url'] : '';
+
+		// Build a single variant matching the shape produced by normalize_product().
+		$variant = array(
+			'id'             => isset( $raw['variant_id'] ) ? $raw['variant_id'] : '',
+			'title'          => 'Default',
+			'sku'            => isset( $raw['sku'] ) ? $raw['sku'] : '',
+			'price'          => $price,
+			'compareAtPrice' => isset( $raw['compare_at_price'] ) ? (string) $raw['compare_at_price'] : null,
+		);
+
+		$image = ! empty( $image_url ) ? array( 'url' => $image_url ) : array();
+		$images = ! empty( $image ) ? array( $image ) : array();
+
+		return array(
+			'id'              => $id,
+			'title'           => $title,
+			'handle'          => $handle,
+			'status'          => 'ACTIVE',
+			'vendor'          => $vendor,
+			'product_type'    => isset( $raw['product_type'] ) ? $raw['product_type'] : '',
+			'tags'            => isset( $raw['tags'] ) ? (array) $raw['tags'] : array(),
+			'created_at'      => '',
+			'updated_at'      => '',
+			'price_range'     => array(
+				'minVariantPrice' => array(
+					'amount'       => $price,
+					'currencyCode' => $currency,
+				),
+			),
+			'total_inventory' => $in_stock ? 1 : 0,
+			'variants'        => array( $variant ),
+			'images'          => $images,
+			'url'             => $url,
+		);
+	}
+
+	/**
+	 * Build a brief human-readable summary of a product list.
+	 *
+	 * Reused by both Admin GraphQL and Catalog API paths to provide a
+	 * consistent message field in the tool response.
+	 *
+	 * @since 1.1.7
+	 *
+	 * @param array $products Array of normalized products.
+	 * @return string Summary message.
+	 */
+	protected function build_product_summary( array $products ) {
+		$count = count( $products );
+		if ( 0 === $count ) {
+			return __( 'No products found.', 'mcp-ai-wpoos-pro' );
+		}
+		return sprintf(
+			/* translators: %d: number of products */
+			_n( 'Found %d product.', 'Found %d products.', $count, 'mcp-ai-wpoos-pro' ),
+			$count
 		);
 	}
 }
