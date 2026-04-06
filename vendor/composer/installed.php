@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
         'version' => 'dev-copilot/fix-chat-client-permissions',
-        'reference' => '8021b79c9ea79125f0a21ff1735f035d9cec0985',
+        'reference' => '53eb0babe0734c5ecb521550723bde9f0e2bc827',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
             'version' => 'dev-copilot/fix-chat-client-permissions',
-            'reference' => '8021b79c9ea79125f0a21ff1735f035d9cec0985',
+            'reference' => '53eb0babe0734c5ecb521550723bde9f0e2bc827',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
