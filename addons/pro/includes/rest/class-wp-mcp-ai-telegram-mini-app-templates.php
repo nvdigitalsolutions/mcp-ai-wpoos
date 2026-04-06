@@ -7882,7 +7882,8 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 				'var totalStr=(cur?cur+" ":"")+parseFloat(amt).toFixed(2);' .
 				'var date=o.created_at||o.createdAt||"";' .
 				'if(date&&date.length>10)date=date.substring(0,10);' .
-				'var orderName=o.name||("#"+String(o.id||"").replace(/\\D/g,"").slice(-6));' .
+				'var oid=String(o.id||"").replace(/\\D/g,"").slice(-6);' .
+				'var orderName=o.name||(oid?"#"+oid:"' . esc_js( __( 'Order', 'mcp-ai-wpoos-pro' ) ) . '");' .
 				'return \'<div class="tma-order-item">' .
 					'<div class="tma-order-header">' .
 						'<span class="tma-order-id">\'+escH(orderName)+\'</span>' .
