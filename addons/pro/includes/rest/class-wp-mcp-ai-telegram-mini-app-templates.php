@@ -8178,7 +8178,7 @@ class WP_MCP_AI_TMA_Template_Shopify_Ecommerce extends WP_MCP_AI_Telegram_Mini_A
 			'var g=document.getElementById("sec-product-grid");if(!g)return;' .
 			'if(!productsCache.length)g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
 			'else{secRenderProducts(productsCache);}' .
-			'var limit=SHOPIFY_API_MODE==="catalog_api"?10:20;' .
+			'var limit=SHOPIFY_API_MODE==="catalog_api"?10:20;' . /* Catalog API max is 10 per request */
 			'secToolCall("shopify_products",{action:"list",first:limit},function(err,d){' .
 				'if(err){g.innerHTML=\'<div class="tma-empty" style="grid-column:span 2">' . esc_js( __( 'Could not load products.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
 				'var ps=spExtract(d,"products");' .
