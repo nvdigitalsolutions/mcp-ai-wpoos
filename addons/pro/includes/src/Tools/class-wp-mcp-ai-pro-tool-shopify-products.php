@@ -154,8 +154,19 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list';
 
-		$required_capability = apply_filters( 'wp_mcp_ai_shopify_products_required_capability', 'edit_posts', $context );
+		// Telegram Mini App storefront contexts create users with the
+		// subscriber role which lacks edit_posts.  Allow read-only product
+		// operations with just the "read" capability so the storefront
+		// works for all TMA visitors.
+		$is_tma                 = isset( $context['source'] ) && 'telegram_mini_app' === $context['source'];
+		$tma_storefront_actions = array( 'list', 'get', 'search', 'collections' );
+		$default_cap            = ( $is_tma && in_array( $action, $tma_storefront_actions, true ) )
+			? 'read'
+			: 'edit_posts';
+
+		$required_capability = apply_filters( 'wp_mcp_ai_shopify_products_required_capability', $default_cap, $context );
 
 		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to manage Shopify products.', 'mcp-ai-wpoos-pro' ) );
