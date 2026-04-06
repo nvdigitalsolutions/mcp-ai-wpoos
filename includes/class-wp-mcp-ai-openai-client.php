@@ -3771,21 +3771,25 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Convert multi-type array syntax to anyOf.
 			// OpenAI does not support type: ["string", "number", ...] (JSON Schema draft 2020-12).
 			if ( isset( $schema['type'] ) && is_array( $schema['type'] ) ) {
-				$types = $schema['type'];
+				$types     = $schema['type'];
+				$has_items = isset( $schema['items'] );
 				unset( $schema['type'] );
 				$any_of = array();
 				foreach ( $types as $type_val ) {
 					if ( 'array' === $type_val ) {
 						$any_of[] = array(
 							'type'  => 'array',
-							'items' => isset( $schema['items'] ) ? $schema['items'] : array( 'type' => 'string' ),
+							'items' => $has_items ? $schema['items'] : array(),
 						);
 					} else {
 						$any_of[] = array( 'type' => $type_val );
 					}
 				}
 				$schema['anyOf'] = $any_of;
-				unset( $schema['items'] );
+				// Remove items only when it was consumed into the anyOf array type entry.
+				if ( $has_items ) {
+					unset( $schema['items'] );
+				}
 			}
 
 			// Ensure array-typed schemas include 'items' to satisfy OpenAI validation.
