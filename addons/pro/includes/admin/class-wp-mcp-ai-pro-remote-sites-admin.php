@@ -1575,9 +1575,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="shopify_catalog_shop_id" id="shopify_catalog_shop_id" class="regular-text"
-							value="<?php echo $is_edit && $is_catalog_edit && ! empty( $connection['shopify_catalog_shop_id'] ) ? esc_attr( $connection['shopify_catalog_shop_id'] ) : ''; ?>"
+							value="<?php echo esc_attr( $is_edit && $is_catalog_edit && ! empty( $connection['shopify_catalog_shop_id'] ) ? $connection['shopify_catalog_shop_id'] : '' ); ?>"
 							autocomplete="off" placeholder="12345678901 or gid://shopify/Shop/12345678901">
-						<p class="description"><?php esc_html_e( 'Your Shopify numeric Shop ID or GID (e.g. 12345678901 or gid://shopify/Shop/12345678901). Limits Catalog API search results to only your store\'s products. Without this, the Catalog API returns results from all Shopify stores globally. Find your Shop ID in the Shopify admin URL or via the Admin API (shop { id }).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Your Shopify numeric Shop ID or GID (e.g. 12345678901 or gid://shopify/Shop/12345678901). Limits Catalog API search results to only your store products. Without this, the Catalog API returns results from all Shopify stores globally. Find your Shop ID in the Shopify admin URL or via the Admin API (shop { id }).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
