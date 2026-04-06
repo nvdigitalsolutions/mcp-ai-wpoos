@@ -1036,7 +1036,7 @@ query GetLocations($first: Int!) {
 			if ( $response_code < 200 || $response_code >= 300 ) {
 				$detail = '';
 				if ( ! empty( $response_body ) ) {
-					$detail = ' ' . mb_substr( wp_strip_all_tags( $response_body ), 0, 200 );
+					$detail = ' ' . esc_html( mb_substr( wp_strip_all_tags( $response_body ), 0, 200 ) );
 				}
 				return new WP_Error(
 					'wp_mcp_ai_shopify_catalog_http_error',
