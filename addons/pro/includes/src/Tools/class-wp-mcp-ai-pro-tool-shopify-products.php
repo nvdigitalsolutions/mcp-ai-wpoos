@@ -763,9 +763,9 @@ class WP_MCP_AI_Pro_Tool_Shopify_Products implements WP_MCP_AI_Tool_Interface, W
 		if ( ! empty( $connection['url'] ) ) {
 			$host = wp_parse_url( $connection['url'], PHP_URL_HOST );
 			if ( $host ) {
-				$slug = explode( '.', $host )[0];
-				$slug = str_replace( array( '-', '_' ), ' ', $slug );
-				$slug = trim( $slug );
+				$parts = explode( '.', $host );
+				$slug  = str_replace( array( '-', '_' ), ' ', $parts[0] );
+				$slug  = trim( $slug );
 				if ( strlen( $slug ) >= 2 ) {
 					return $slug;
 				}
