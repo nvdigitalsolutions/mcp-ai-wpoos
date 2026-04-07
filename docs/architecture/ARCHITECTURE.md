@@ -1,9 +1,9 @@
 # NV oOS Architecture Overview
 
-**Last Updated:** December 2025
-**Version:** 1.0.0
+**Last Updated:** April 2026  
+**Version:** 1.1.6
 
-This document provides a high-level architectural overview of the Open Operator System (NV oOS) plugin. For detailed technical documentation, see the main [docs](../) directory.
+This document provides a high-level architectural overview of the Open Operator System (NV oOS) plugin. For detailed technical documentation, see the main [docs](../) directory. For the end-to-end request flow trace, see [REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md).
 
 ## Table of Contents
 
@@ -16,54 +16,59 @@ This document provides a high-level architectural overview of the Open Operator 
 
 ## System Overview
 
-NV oOS is a WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Google Gemini, Ollama) and implementing the Model Context Protocol (MCP) for tool-based AI interactions.
+NV oOS is a WordPress plugin that provides an AI Assistant framework integrating with 9 AI providers (OpenAI, Google Gemini, Anthropic Claude, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare Workers AI, and Embedded/GGUF) and implementing the Model Context Protocol (MCP) for tool-based AI interactions.
 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend Layer                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Shortcode   │  │   Elementor  │  │  Chat Widget │      │
-│  │    [chat]    │  │    Widgets   │  │      UI      │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     REST API Layer                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Chat Endpoint│  │ MCP JSON-RPC │  │ SSE Streaming│      │
-│  │  /wp-json/   │  │   /mcp-v1    │  │    Events    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Orchestration Layer                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Agentic     │  │   Resource   │  │    Token     │      │
-│  │  Workflow    │  │   Manager    │  │   Budget     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Provider Layer                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   OpenAI     │  │    Gemini    │  │    Ollama    │      │
-│  │    Client    │  │    Client    │  │    Client    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Tool Layer                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Base Tools   │  │  Pro Tools   │  │    Custom    │      │
-│  │    (95)      │  │    (38)      │  │  (Extensible)│      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          Frontend Layer                                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │Shortcode │  │Elementor │  │Gutenberg │  │  Chat    │  │ Pro TMA  │   │
+│  │ [chat]   │  │ Widgets  │  │  Blocks  │  │ Widget   │  │Templates │   │
+│  │          │  │  (24)    │  │   (6+18) │  │   UI     │  │          │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                          REST API Layer                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
+│  │ Chat Endpoint│  │ MCP JSON-RPC │  │ SSE Streaming│  │ Tool / Slash│  │
+│  │/chat-client  │  │  /mcp-v1     │  │    Events    │  │  Commands   │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────┘  │
+│  5 base controllers + 17 Pro controllers = 22 REST controllers           │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                       Orchestration Layer                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
+│  │  Agentic     │  │   Resource   │  │    Token     │  │Multi-Agent  │  │
+│  │  Workflow    │  │   Manager    │  │   Budget     │  │Orchestrator │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────┘  │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         Provider Layer (9 providers)                      │
+│  ┌────────┐ ┌────────┐ ┌─────────┐ ┌───────┐ ┌────────┐ ┌───────────┐  │
+│  │ OpenAI │ │ Gemini │ │Anthropic│ │NVIDIA │ │ Ollama │ │ LM Studio │  │
+│  └────────┘ └────────┘ └─────────┘ └───────┘ └────────┘ └───────────┘  │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐                         │
+│  │Hugging Face│  │ Cloudflare │  │  Embedded  │                         │
+│  └────────────┘  └────────────┘  └────────────┘                         │
+└───────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           Tool Layer                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                    │
+│  │ Base Tools   │  │  Pro Tools   │  │    Custom    │                    │
+│  │    (226)     │  │    (127)     │  │  (Extensible)│                    │
+│  └──────────────┘  └──────────────┘  └──────────────┘                    │
+│  353 total tool class files + third-party via wp_mcp_ai_register_tools   │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Core Components
@@ -88,15 +93,20 @@ NV oOS is a WordPress plugin that provides an AI Assistant framework integrating
 **Key Classes:**
 - `WP_MCP_AI_Tool_Registry` - Singleton registry for all tools
 - `WP_MCP_AI_Tool_Interface` - Interface all tools must implement
-- 133+ tool implementations (95 base + 38 pro, with 24 validated variants)
+- `WP_MCP_AI_Tool_Capability_Flags_Interface` - Optional interface for async/background tools
+- 353 tool class files (226 base + 127 pro)
 
 **Tool Categories:**
-1. **WordPress Core** (45 tools) - Posts, pages, media, users, taxonomy, settings
-2. **Third-Party Plugins** (20 tools) - JetEngine, WooCommerce, Elementor, Rank Math, WPCode
-3. **External Services** (15 tools) - Email, SMS, webhooks, AI services, social media
-4. **Research & Content** (20 tools) - Web scraping, summarization, analysis, search
-5. **Advanced** (15 tools) - Cron jobs, cache management, diagnostics
-6. **Pro Addon** (38 tools) - Social media APIs, Google services, GitHub, exec-based tools
+1. **WordPress Core** — Posts, pages, media, users, taxonomy, settings, cron, cache
+2. **Third-Party Plugins** — JetEngine, WooCommerce, Elementor, Rank Math, WPCode
+3. **External Services** — Email (Mailjet, Brevo, Mailgun), SMS, social media, webhooks
+4. **Research & Content** — Web search, Crawl4AI, summarization, analysis
+5. **Media Generation** — Image (OpenAI, Gemini, Cloudflare), speech, music, video, vector
+6. **Commerce & Finance** — WooCommerce, Shopify, QuickBooks Online/Desktop
+7. **Chat Channels** (Pro) — 47 tools across 11 platforms (Telegram, WhatsApp, Slack, Discord, Teams, Messenger, Apple Messages, Google Chat, Twitter/X, Outlook, iCloud)
+8. **Healthcare** (Pro) — DICOM imaging, vitals, wellness documents
+9. **Vehicle Estimation** (Pro) — VIN decode, repair estimates, cleaning estimates
+10. **Project Management** (Pro) — Task tracking, document generation, regulatory compliance
 
 **Tool Counting Note:** Some tools have "-validated" variants using Symfony Validator for enhanced input validation. These variants are counted as the same tool (e.g., `create-post` and `create-post-validated` = 1 tool).
 
@@ -136,35 +146,71 @@ if ( is_wp_error( $result ) ) {
 **Purpose:** Abstract and normalize AI provider APIs.
 
 **Key Classes:**
-- `WP_MCP_AI_Language_Model_Router` - Routes requests to appropriate provider
-- `WP_MCP_AI_OpenAI_Client` - OpenAI API integration
-- `WP_MCP_AI_Gemini_Client` - Google Gemini API integration
+- `WP_MCP_AI_Language_Model_Router` - Routes requests to appropriate provider with priority fallback
+- `WP_MCP_AI_OpenAI_Client` - OpenAI API integration (GPT-4.1, GPT-5.2, o1, image/speech/transcription)
+- `WP_MCP_AI_Enhanced_OpenAI_Client` - Extended OpenAI client with additional capabilities
+- `WP_MCP_AI_Gemini_Client` - Google Gemini API integration (embeddings, video, music)
+- `WP_MCP_AI_Anthropic_Client` - Anthropic Claude API integration
+- `WP_MCP_AI_Nvidia_Client` - NVIDIA NIM API integration
 - `WP_MCP_AI_Ollama_Client` - Ollama local AI integration
 - `WP_MCP_AI_LM_Studio_Client` - LM Studio local AI integration
+- `WP_MCP_AI_Huggingface_Client` - Hugging Face Inference API integration
+- `WP_MCP_AI_Cloudflare_Client` - Cloudflare Workers AI integration
+- `WP_MCP_AI_Embedded_Client` - Server-side GGUF inference via llama.cpp (Pro-only)
+
+**Provider Infrastructure** (`includes/infrastructure/providers/`):
+- `WP_MCP_AI_OpenAI_Provider_Client` - OpenAI provider abstraction
+- `WP_MCP_AI_Gemini_Provider_Client` - Gemini provider abstraction
+- `WP_MCP_AI_Anthropic_Provider_Client` - Anthropic provider abstraction
+- `WP_MCP_AI_Ollama_Provider_Client` - Ollama provider abstraction
 
 **Features:**
-- Unified interface across providers
-- Automatic model selection and fallback
-- Token counting and budget management
-- Streaming support (SSE)
-- Function calling / tool use
+- Unified interface across all 9 providers
+- Automatic provider fallback via configurable priority list
+- Token counting and budget management per model
+- SSE streaming support
+- Function calling / tool use (OpenAI-compatible schema)
+- Model-specific context window and output limit awareness
 
 ### 5. REST API (`includes/rest/`, `includes/class-wp-mcp-ai-rest.php`)
 
 **Purpose:** Expose AI functionality via REST endpoints.
 
+**Base Controllers** (15 files in `includes/rest/`):
+- `WP_MCP_AI_REST_Chat_Controller` - Chat completions with streaming
+- `WP_MCP_AI_REST_MCP_Controller` - MCP JSON-RPC 2.0 endpoint
+- `WP_MCP_AI_REST_Tools_Controller` - Direct tool execution
+- `WP_MCP_AI_REST_Teams_Controller` - Multi-agent team management
+- `WP_MCP_AI_REST_Slash_Command_Controller` - Slash command execution
+- `WP_MCP_AI_REST_Analytics_Manager` - Usage analytics
+- `WP_MCP_AI_REST_Cost_Manager` - Cost tracking
+- `WP_MCP_AI_REST_Token_Manager` - Token/credential management
+- Plus: authenticator, validator, SSE handler, controller base, security REST controllers
+
+**Pro Controllers** (17 files in `addons/pro/includes/rest/`):
+- Webhook controllers for 9 messaging platforms (Telegram, WhatsApp, Slack, Discord, Teams, Messenger, Google Chat, Apple Messages, Twitter/X)
+- Telegram Mini App controller (TMA)
+- Chat channels REST controller
+- WebChat signaling REST controller
+- Outlook webhook controller
+- iCloud webhook controller
+- Skill manager REST controller
+- ECA (External Capability API) REST controller
+
 **Key Endpoints:**
-- `POST /wp-json/mcp-ai/v1/chat` - Chat completions with streaming
+- `POST /wp-json/mcp-ai/v1/chat` - MCP remote client chat (5 agentic iterations)
+- `POST /wp-json/mcp-ai/v1/chat-client` - Browser UI chat (15 agentic iterations)
 - `POST /wp-json/mcp-ai/v1/mcp-v1` - MCP JSON-RPC 2.0 endpoint
-- `GET /wp-json/mcp-ai/v1/assistants` - List assistants
+- `GET /wp-json/mcp-ai/v1/assistants` - List assistants (with SSE negotiation)
 - `GET /wp-json/mcp-ai/v1/sse` - Server-Sent Events endpoint
 - `POST /wp-json/mcp-ai/v1/tools` - Direct tool execution
 
 **Authentication Methods:**
-1. WordPress Nonce (same-origin)
-2. Assistant Credentials (bearer tokens)
-3. Auth0 Tokens (enterprise)
-4. Guest Tokens (temporary public access)
+1. WordPress Nonce (`X-WP-Nonce` header) — same-origin browser requests
+2. Assistant Credentials (`Authorization: Bearer cred_xxxxx.SECRET`) — plugin-issued tokens
+3. Mesh API Keys — federation network requests
+4. Auth0 Tokens — enterprise SSO integration
+5. Guest Tokens (`X-WP-MCP-AI-Guest` header) — temporary public access
 
 ### 6. Orchestration Layer (`includes/services/`)
 
@@ -198,28 +244,57 @@ See [orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRAT
 
 ### Chat Request Flow
 
+For a detailed, line-by-line trace of the complete request flow, see [REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md).
+
 ```
-1. User sends message via frontend
-   ↓
-2. JavaScript validates and bundles message
-   ↓
-3. POST to /wp-json/mcp-ai/v1/chat
-   ↓
-4. Authentication & capability checks
-   ↓
-5. Load assistant configuration
-   ↓
-6. Initialize AI provider client
-   ↓
-7. Tool selection based on assistant config
-   ↓
-8. Stream response via SSE
-   ↓
-9. Agentic loop: tool calls → execution → response
-   ↓
-10. Return final response to client
-   ↓
-11. (Optional) Save transcript to database/CCT
+Browser (assets/js/chat.js → sendChat())
+  │
+  ├─ POST /wp-json/mcp-ai/v1/chat-client
+  │   Accept: text/event-stream
+  │
+  ▼
+REST_Chat_Controller::handle_chat_client_request()
+  │  (sets max_iterations=15, delegates to main controller)
+  ▼
+WP_MCP_AI_REST::handle_chat_request()
+  │  ├─ resolve assistant config (team/profession/regular)
+  │  ├─ sanitize messages & extract attachments
+  │  ├─ enforce rate/token limits
+  │  ├─ build tools payload from Tool_Registry
+  │  └─ streaming? → handle_chat_request_with_streaming()
+  │
+  ▼
+SSE_Handler::send_sse_headers()  ←── starts SSE stream
+  │
+  ▼
+Language_Model_Router::create_chat_completion()
+  │  └─ route_to_provider() → OpenAI/Gemini/Anthropic/...
+  │
+  ▼
+┌─── AGENTIC LOOP (up to 15 iterations) ──────────┐
+│                                                   │
+│  extract_tool_calls_from_response()               │
+│    └─ no tools? → BREAK                          │
+│                                                   │
+│  for each tool_call:                              │
+│    SSE: tool_start                                │
+│    execute_tool_call_internal()                    │
+│      └─ Tool_Registry::get_tool()                │
+│      └─ $tool->execute($args, $context)          │
+│    SSE: tool_result                               │
+│                                                   │
+│  validate token budget (may switch model)         │
+│  Language_Model_Router::create_chat_completion()  │
+│    (with tool results appended to messages)       │
+│                                                   │
+└──────────────────────────────────────────────────┘
+  │
+  ▼
+SSE: response (final text + usage metadata)
+SSE: [DONE]
+  │
+  ▼
+Browser: render message, save to localStorage/CCT
 ```
 
 ### Tool Execution Flow
@@ -477,37 +552,65 @@ See [../../CONTRIBUTING.md](../../CONTRIBUTING.md) for testing guidelines.
 
 ```
 mcp-ai-wpoos/
-├── includes/                 # Core plugin code (213 PHP files)
-│   ├── admin/               # Admin UI classes
-│   ├── assistants/          # Assistant management
-│   ├── tools/               # Tool implementations (104 tools)
-│   ├── elementor/           # Elementor widgets
-│   ├── integrations/        # Third-party integrations
-│   ├── repositories/        # Data access layer
-│   ├── services/            # Business logic services
-│   ├── rest/                # REST API controllers
-│   └── class-*.php          # Core classes
+├── includes/                 # Core plugin code
+│   ├── admin/               # Admin UI classes (102 files)
+│   ├── assistants/          # Assistant CPT/CCT management (10 files)
+│   ├── tools/               # Base tool implementations (226 tool classes)
+│   ├── elementor/           # Elementor widgets (24 widgets + 1 trait)
+│   ├── integrations/        # Third-party integrations (23 files)
+│   ├── services/            # Business logic services (53 files)
+│   ├── rest/                # REST API controllers (15 files)
+│   ├── blocks/              # Gutenberg blocks (6 blocks + 2 registrars)
+│   ├── cli/                 # WP-CLI commands (8 command classes)
+│   ├── slash-commands/      # Slash commands (7 commands + core framework)
+│   ├── validators/          # Input/output validators (31 files)
+│   ├── infrastructure/      # Provider infrastructure (10 files)
+│   ├── knowledge-base/      # Knowledge base data (503 files)
+│   ├── bundled-skills/      # Pre-bundled AI skills (23 files)
+│   ├── professions/         # Professional role definitions (17 files)
+│   └── class-*.php          # Core classes (router, shortcode, registry, etc.)
+├── addons/                  # Plugin addons
+│   ├── pro/                 # Pro addon (PHP 8.1+, 127 tools, 17 REST controllers)
+│   └── canvas/              # Canvas native binaries (PDF OCR via Tesseract)
 ├── assets/                  # Frontend assets
-│   ├── js/                  # JavaScript files
-│   └── css/                 # Stylesheets
-├── tests/                   # Test suite (60+ test files)
-├── docs/                    # Documentation (69 files)
-├── bin/                     # Development scripts
+│   ├── js/                  # JavaScript files (201 files)
+│   └── css/                 # Stylesheets (111 files)
+├── packages/                # 9 standalone NPM packages (@nvdigitalsolutions scope)
+├── core/                    # Core framework components
+├── shared/                  # Shared code between components
+├── src/                     # React/webpack source (TMA, workflow builder)
+├── tests/                   # Test suite (861+ test files)
+├── docs/                    # Documentation (570+ files)
+├── bin/                     # Build and development scripts (69 scripts)
 ├── languages/               # Translation files
+├── examples/                # Example files
+├── patches/                 # Dependency patches
 └── vendor/                  # Composer dependencies
 ```
 
 ## Further Reading
 
+- **[REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md)** - Detailed chat request → LLM → tool → SSE response trace
 - **[QUICK_REFERENCE.md](../QUICK_REFERENCE.md)** - Fast reference guide
 - **[DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)** - Complete documentation map
 - **[CODE-REVIEW-MASTER.md](../guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Code quality assessment
 - **[ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Detailed orchestration layer analysis
 - **[tool-reference.md](../reference/tools/tool-reference.md)** - Complete tool catalog
 - **[rest-api.md](../reference/api/rest-api.md)** - REST API reference
+- **[CURRENT-STATE-AGENTIC-WORKFLOW.md](core/CURRENT-STATE-AGENTIC-WORKFLOW.md)** - Agentic workflow deep dive
 
 ## Version History
 
+- **1.1.6** (2026-04) - Vehicle estimation, Shopify auto-resolve, QuickBooks Desktop, NVIDIA NIM onboarding
+  - 353 tool class files (226 base + 127 pro)
+  - 9 AI providers including NVIDIA NIM and Embedded/GGUF
+  - 22 REST controllers (5 base + 17 pro)
+  - 24 Elementor widgets, 24 Gutenberg blocks
+  - 7 slash commands + 21 Pro toolkit commands
+  - 20 shortcodes, 9 NPM packages
+  - 8 WP-CLI command classes
+  - 570+ documentation files
+  - 861+ test files
 - **1.0.0** (2025-11) - Initial release
   - 104+ tools
   - OpenAI, Gemini, Ollama support
@@ -519,6 +622,6 @@ mcp-ai-wpoos/
 
 ---
 
-**Last Updated:** December 2025
+**Last Updated:** April 2026
 **Maintainer:** NV Digital Solutions
 **License:** GPLv3 or later

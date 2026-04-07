@@ -152,9 +152,10 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 ## 🏗 System Architecture
 
-NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
+NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system supports **9 AI providers** (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare Workers AI, Embedded GGUF), **353 tool classes** (226 base + 127 Pro), **22 REST controllers**, and **24 Elementor widgets**. The system architecture comprises:
 
-> **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
+> **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**  
+> **📖 For the end-to-end request flow from browser to AI to tool execution and back, see [REQUEST-FLOW-WALKTHROUGH.md](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)**
 
 ### Core Orchestration Layer: Overcoming PHP's Limitations
 
@@ -1770,11 +1771,13 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 550+ documentation files
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 570+ documentation files
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 398 tools documented (141 base + 257 Pro)
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - High-level system architecture with all 9 providers, 353 tools, 22 REST controllers
+- **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** ⭐ **NEW** - End-to-end trace of a chat message: browser → REST → authentication → LLM → agentic tool loop → SSE → frontend
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All tools documented (226 base + 127 Pro tool classes)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 

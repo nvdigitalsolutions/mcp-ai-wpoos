@@ -1,12 +1,18 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 1, 2026  
+**Last Updated:** April 7, 2026  
 **Plugin Version:** 1.1.6  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 APRIL 7, 2026 UPDATE:** 📐 **ARCHITECTURE DOCUMENTATION REFRESH**
+> - **Architecture Overview Updated** – `docs/architecture/ARCHITECTURE.md` refreshed from Dec 2025 → Apr 2026 with current counts: 9 AI providers, 353 tool classes (226 base + 127 pro), 22 REST controllers, 24 Elementor widgets, 24 Gutenberg blocks, 9 NPM packages
+> - **New: Request Flow Walkthrough** – `docs/architecture/REQUEST-FLOW-WALKTHROUGH.md` — end-to-end trace of chat message lifecycle: browser `sendChat()` → REST routing → authentication → assistant resolution → SSE setup → LLM call → agentic tool loop → final response streaming → frontend rendering
+> - **README.md Updated** – Architecture diagram now shows all 9 providers; repository statistics section corrected; docs section links to new walkthrough
+> - **See**: [Architecture Overview](architecture/ARCHITECTURE.md) | [Request Flow Walkthrough](architecture/REQUEST-FLOW-WALKTHROUGH.md)
 
 > **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
 > - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
@@ -1032,8 +1038,10 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
-| [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
+| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview with 9 providers, 353 tools, 22 REST controllers | Everyone |
+| [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request flow trace — browser → REST → LLM → agentic tool loop → SSE → frontend | Developers |
+| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
+| [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
 | [dead-letter-queue.md](architecture/dead-letter-queue.md) | **NEW (Jan 2026):** Dead Letter Queue for persistent failure handling (12KB) | Developers/Admins |
