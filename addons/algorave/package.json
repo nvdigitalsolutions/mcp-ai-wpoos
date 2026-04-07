@@ -1,0 +1,35 @@
+{
+	"name": "nvoos-algorave",
+	"version": "1.0.0",
+	"description": "Algorave live coding music extension for NV oOS — browser-based audio synthesis, AI pattern generation, and MIDI export",
+	"private": true,
+	"scripts": {
+		"build": "echo 'No build step required — vendor libs loaded via CDN or enqueued directly.'",
+		"lint": "eslint assets/js/"
+	},
+	"dependencies": {
+		"tone": "^15.0.4",
+		"@tonejs/midi": "^2.0.28",
+		"tonal": "^6.3.0",
+		"webmidi": "^3.1.11"
+	},
+	"optionalDependencies": {
+		"@strudel/web": "^1.2.5"
+	},
+	"keywords": [
+		"wordpress",
+		"algorave",
+		"live-coding",
+		"music",
+		"tone-js",
+		"strudel",
+		"web-audio",
+		"midi",
+		"ai-music"
+	],
+	"author": "NV Digital Solutions",
+	"license": "GPL-3.0-or-later",
+	"engines": {
+		"node": ">=18.17.0"
+	}
+}
