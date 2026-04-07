@@ -144,7 +144,7 @@ class WP_MCP_AI_Slash_Command_Compact {
 			$content = isset( $msg['content'] ) ? $msg['content'] : '';
 
 			if ( 'tool' === $role ) {
-				$tool_name = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
+				$tool_name      = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
 				$tool_results[] = $tool_name;
 			} elseif ( 'user' === $role && ! empty( $content ) ) {
 				$topics[] = $this->extract_topic( $content );
@@ -197,9 +197,9 @@ class WP_MCP_AI_Slash_Command_Compact {
 			count( $older_messages )
 		);
 
-		$chars_before  = $this->estimate_chars( $older_messages );
-		$chars_after   = strlen( $summary );
-		$tokens_saved  = max( 0, intval( ( $chars_before - $chars_after ) / self::CHARS_PER_TOKEN ) );
+		$chars_before = $this->estimate_chars( $older_messages );
+		$chars_after  = strlen( $summary );
+		$tokens_saved = max( 0, intval( ( $chars_before - $chars_after ) / self::CHARS_PER_TOKEN ) );
 
 		// Build compacted message array.
 		$compacted = array_merge(
@@ -213,21 +213,21 @@ class WP_MCP_AI_Slash_Command_Compact {
 		);
 
 		return array(
-			'success'  => true,
-			'message'  => sprintf(
+			'success' => true,
+			'message' => sprintf(
 				/* translators: 1: messages before, 2: messages after, 3: tokens saved */
 				__( 'Compacted: %1$d → %2$d messages (~%3$s tokens saved). Strategy: summarize.', 'mcp-ai-wpoos' ),
 				$message_count,
 				count( $compacted ),
 				number_format_i18n( $tokens_saved )
 			),
-			'data'     => array(
-				'messages_before'     => $message_count,
-				'messages_after'      => count( $compacted ),
-				'strategy'            => 'summarize',
-				'tokens_saved'        => $tokens_saved,
-				'compacted_messages'  => $compacted,
-				'summary'             => $summary,
+			'data'    => array(
+				'messages_before'    => $message_count,
+				'messages_after'     => count( $compacted ),
+				'strategy'           => 'summarize',
+				'tokens_saved'       => $tokens_saved,
+				'compacted_messages' => $compacted,
+				'summary'            => $summary,
 			),
 		);
 	}
@@ -349,7 +349,7 @@ class WP_MCP_AI_Slash_Command_Compact {
 				$topics[]      = $this->extract_topic( $content );
 				$last_user_msg = $content;
 			} elseif ( 'tool' === $role ) {
-				$tool_name = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
+				$tool_name    = isset( $msg['name'] ) ? $msg['name'] : 'unknown';
 				$tools_used[] = $tool_name;
 			} elseif ( 'assistant' === $role && ! empty( $content ) ) {
 				$fact = $this->extract_decision( $content );

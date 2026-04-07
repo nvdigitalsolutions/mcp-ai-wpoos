@@ -108,9 +108,9 @@ class WP_MCP_AI_Slash_Command_Context {
 			}
 
 			if ( isset( $msg['tool_calls'] ) ) {
-				$tc_len       = strlen( wp_json_encode( $msg['tool_calls'] ) );
-				$total_chars += $tc_len;
-				$tool_chars  += $tc_len;
+				$tc_len           = strlen( wp_json_encode( $msg['tool_calls'] ) );
+				$total_chars     += $tc_len;
+				$tool_chars      += $tc_len;
 				$tool_call_count += count( $msg['tool_calls'] );
 			}
 		}
@@ -274,18 +274,18 @@ class WP_MCP_AI_Slash_Command_Context {
 
 		// Fallback known limits.
 		$known_limits = array(
-			'gpt-4o'              => 128000,
-			'gpt-4o-mini'         => 128000,
-			'gpt-4.1'             => 1000000,
-			'gpt-4.1-mini'        => 1000000,
-			'gpt-4.1-nano'        => 1000000,
-			'gpt-4-turbo'         => 128000,
-			'gpt-3.5-turbo'       => 16385,
-			'gemini-2.5-flash'    => 1048576,
-			'gemini-2.0-flash'    => 1048576,
-			'gemini-1.5-pro'      => 2097152,
-			'claude-3.5-sonnet'   => 200000,
-			'claude-3-opus'       => 200000,
+			'gpt-4o'            => 128000,
+			'gpt-4o-mini'       => 128000,
+			'gpt-4.1'           => 1000000,
+			'gpt-4.1-mini'      => 1000000,
+			'gpt-4.1-nano'      => 1000000,
+			'gpt-4-turbo'       => 128000,
+			'gpt-3.5-turbo'     => 16385,
+			'gemini-2.5-flash'  => 1048576,
+			'gemini-2.0-flash'  => 1048576,
+			'gemini-1.5-pro'    => 2097152,
+			'claude-3.5-sonnet' => 200000,
+			'claude-3-opus'     => 200000,
 		);
 
 		if ( ! empty( $model ) ) {
