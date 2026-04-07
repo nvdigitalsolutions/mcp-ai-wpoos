@@ -102,7 +102,14 @@ class NV_oOS_Cornerstone3D {
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		$json = file_get_contents( $meta_file );
-		return json_decode( $json, true );
+		if ( false === $json ) {
+			return null;
+		}
+		$meta = json_decode( $json, true );
+		if ( null === $meta || JSON_ERROR_NONE !== json_last_error() ) {
+			return null;
+		}
+		return $meta;
 	}
 
 	/**
