@@ -95,16 +95,16 @@ class NV_oOS_Algorave_Tool_Modify_Pattern implements WP_MCP_AI_Tool_Interface, W
 		// The AI assistant should perform the actual code modification.
 		// This tool provides the structured response format.
 		$result = array(
-			'success'      => true,
+			'success'       => true,
 			'original_code' => $code,
-			'modification' => $modification,
-			'engine'       => $engine,
-			'message'      => sprintf(
+			'modification'  => $modification,
+			'engine'        => $engine,
+			'message'       => sprintf(
 				/* translators: %s: modification description */
 				__( 'Please modify the pattern code according to: "%s". Return the complete modified code that can be pasted into the live coder.', 'nvoos-algorave' ),
 				$modification
 			),
-			'instructions' => __( 'The AI assistant should now produce the modified code based on the original pattern and the requested modification. The modified code should be complete and immediately playable.', 'nvoos-algorave' ),
+			'instructions'  => __( 'The AI assistant should now produce the modified code based on the original pattern and the requested modification. The modified code should be complete and immediately playable.', 'nvoos-algorave' ),
 		);
 
 		// If a pattern_id is provided, load metadata.

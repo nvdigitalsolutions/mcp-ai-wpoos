@@ -144,13 +144,13 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 	 */
 	private function generate_with_lyria( $prompt, $duration, $api_key ) {
 		$response = wp_remote_post(
-			'https://generativelanguage.googleapis.com/v1beta/models/lyria-realtime:generateContent?key=' . urlencode( $api_key ),
+			'https://generativelanguage.googleapis.com/v1beta/models/lyria-realtime:generateContent?key=' . rawurlencode( $api_key ),
 			array(
 				'timeout' => 120,
 				'headers' => array( 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode(
 					array(
-						'contents' => array(
+						'contents'         => array(
 							array(
 								'parts' => array(
 									array( 'text' => $prompt ),
@@ -225,9 +225,9 @@ class NV_oOS_Algorave_Tool_Generate_Music_AI implements WP_MCP_AI_Tool_Interface
 					array(
 						'version' => 'b05b1dff1d8c386be1d05e7e70d0bf76102c36cc1c5f14c56c7523eecfb7c647',
 						'input'   => array(
-							'prompt'          => $prompt,
-							'duration'        => $duration,
-							'output_format'   => 'wav',
+							'prompt'                 => $prompt,
+							'duration'               => $duration,
+							'output_format'          => 'wav',
 							'normalization_strategy' => 'peak',
 						),
 					)

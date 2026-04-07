@@ -15,17 +15,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bpm           = absint( $atts['bpm'] ?? 120 );
-$scale         = sanitize_text_field( $atts['scale'] ?? 'C minor' );
-$show_viz      = 'true' === ( $atts['visualizer'] ?? 'true' );
-$default_code  = sprintf(
+$bpm          = absint( $atts['bpm'] ?? 120 );
+$scale        = sanitize_text_field( $atts['scale'] ?? 'C minor' );
+$show_viz     = 'true' === ( $atts['visualizer'] ?? 'true' );
+$default_code = sprintf(
 	"// Algorave Live Coder — %s @ %d BPM\n"
 	. "// Press Ctrl+Enter to play, Ctrl+. to stop\n\n"
 	. "stack(\n"
 	. "  s(\"bd*4\").gain(0.8),\n"
 	. "  s(\"~ hh ~ hh\").gain(0.5),\n"
 	. "  s(\"~ sd ~ sd\").gain(0.7)\n"
-	. ")",
+	. ')',
 	esc_attr( $scale ),
 	$bpm
 );

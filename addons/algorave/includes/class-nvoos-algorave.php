@@ -323,12 +323,12 @@ class NV_oOS_Algorave {
 			'nvoos-algorave-live-coder',
 			'nvoosAlgoraveConfig',
 			array(
-				'restUrl'       => esc_url_raw( rest_url( 'nvoos-algorave/v1/' ) ),
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'defaultBpm'    => absint( $settings['default_bpm'] ),
-				'defaultScale'  => sanitize_text_field( $settings['default_scale'] ),
+				'restUrl'        => esc_url_raw( rest_url( 'nvoos-algorave/v1/' ) ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'defaultBpm'     => absint( $settings['default_bpm'] ),
+				'defaultScale'   => sanitize_text_field( $settings['default_scale'] ),
 				'strudelEnabled' => ! empty( $settings['strudel_cdn'] ),
-				'visualizer'    => ! empty( $settings['visualizer_enabled'] ),
+				'visualizer'     => ! empty( $settings['visualizer_enabled'] ),
 			)
 		);
 	}

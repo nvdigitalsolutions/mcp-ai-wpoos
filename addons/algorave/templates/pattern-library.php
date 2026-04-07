@@ -15,25 +15,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$per_page = absint( $atts['per_page'] ?? 12 );
-$genre    = sanitize_text_field( $atts['genre'] ?? '' );
-$paged    = max( 1, absint( get_query_var( 'paged', 1 ) ) );
+$algorave_per_page = absint( $atts['per_page'] ?? 12 );
+$algorave_genre    = sanitize_text_field( $atts['genre'] ?? '' );
+$algorave_paged    = max( 1, absint( get_query_var( 'paged', 1 ) ) );
 
 $query_args = array(
 	'post_type'      => NV_oOS_Algorave_Pattern_CPT::POST_TYPE,
 	'post_status'    => 'publish',
-	'posts_per_page' => $per_page,
-	'paged'          => $paged,
+	'posts_per_page' => $algorave_per_page,
+	'paged'          => $algorave_paged,
 	'orderby'        => 'date',
 	'order'          => 'DESC',
 );
 
-if ( ! empty( $genre ) ) {
+if ( ! empty( $algorave_genre ) ) {
 	$query_args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 		array(
 			'taxonomy' => 'algorave_genre',
 			'field'    => 'slug',
-			'terms'    => $genre,
+			'terms'    => $algorave_genre,
 		),
 	);
 }
@@ -90,7 +90,7 @@ $patterns = new WP_Query( $query_args );
 					paginate_links(
 						array(
 							'total'   => $total_pages,
-							'current' => $paged,
+							'current' => $algorave_paged,
 						)
 					)
 				);

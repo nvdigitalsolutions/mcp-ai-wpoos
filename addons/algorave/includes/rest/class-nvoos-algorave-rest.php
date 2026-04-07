@@ -155,7 +155,7 @@ class NV_oOS_Algorave_REST {
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool
 	 */
-	public static function check_read_permission( $request ) {
+	public static function check_read_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress REST API.
 		$settings = NV_oOS_Algorave::get_settings();
 		if ( ! empty( $settings['guest_access'] ) ) {
 			return true;
@@ -169,7 +169,7 @@ class NV_oOS_Algorave_REST {
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool
 	 */
-	public static function check_write_permission( $request ) {
+	public static function check_write_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress REST API.
 		return current_user_can( 'edit_posts' );
 	}
 

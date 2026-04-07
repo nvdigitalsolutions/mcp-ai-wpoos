@@ -116,14 +116,14 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 		$code = $this->generate_scaffold( $engine, $description, $bpm, $scale, $genre );
 
 		$result = array(
-			'success'     => true,
-			'code'        => $code,
-			'engine'      => $engine,
-			'bpm'         => $bpm,
-			'scale'       => $scale,
-			'genre'       => $genre,
-			'description' => $description,
-			'message'     => sprintf(
+			'success'      => true,
+			'code'         => $code,
+			'engine'       => $engine,
+			'bpm'          => $bpm,
+			'scale'        => $scale,
+			'genre'        => $genre,
+			'description'  => $description,
+			'message'      => sprintf(
 				/* translators: 1: engine name, 2: BPM, 3: scale */
 				__( 'Generated a %1$s pattern at %2$d BPM in %3$s. Copy the code into the live coder to play it, or ask me to modify it.', 'nvoos-algorave' ),
 				$engine,
@@ -195,7 +195,7 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 			. "  s(\"~ sd ~ sd\").gain(0.7),\n"
 			. "  // Melodic element\n"
 			. "  note(\"%s\").s(\"sawtooth\").cutoff(800).gain(0.4)\n"
-			. ")",
+			. ')',
 			$bpm,
 			$scale,
 			number_format( $bpm / 60 / 4, 4 ),
@@ -225,7 +225,7 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 			. "const seq = new Tone.Sequence((time, note) => {\n"
 			. "  synth.triggerAttackRelease(note, '8n', time);\n"
 			. "}, ['C3', 'Eb3', 'G3', 'Bb3'], '8n').start(0);\n\n"
-			. "Tone.Transport.start();",
+			. 'Tone.Transport.start();',
 			$bpm,
 			$scale,
 			$bpm

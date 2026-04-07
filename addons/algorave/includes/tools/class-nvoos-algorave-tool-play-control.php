@@ -87,8 +87,8 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$result = array(
-			'success'  => true,
-			'action'   => $action,
+			'success'          => true,
+			'action'           => $action,
 			'_browser_command' => true,
 		);
 
@@ -111,7 +111,7 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 				break;
 
 			case 'set_bpm':
-				$bpm = isset( $arguments['bpm'] ) ? max( 20, min( 300, absint( $arguments['bpm'] ) ) ) : 120;
+				$bpm               = isset( $arguments['bpm'] ) ? max( 20, min( 300, absint( $arguments['bpm'] ) ) ) : 120;
 				$result['bpm']     = $bpm;
 				$result['message'] = sprintf(
 					/* translators: %d: BPM value */

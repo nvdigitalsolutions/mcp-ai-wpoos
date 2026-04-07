@@ -48,17 +48,17 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'          => array(
+				'action'           => array(
 					'type'        => 'string',
 					'description' => __( 'Visualizer action to perform.', 'nvoos-algorave' ),
 					'enum'        => array( 'set_mode', 'set_color', 'toggle', 'fullscreen' ),
 				),
-				'mode'            => array(
+				'mode'             => array(
 					'type'        => 'string',
 					'description' => __( 'Visualization mode (used with "set_mode" action).', 'nvoos-algorave' ),
 					'enum'        => array( 'waveform', 'spectrum', 'bars', 'circular', 'particles' ),
 				),
-				'color'           => array(
+				'color'            => array(
 					'type'        => 'string',
 					'description' => __( 'Primary color for the visualization (hex code or CSS color name, used with "set_color" action).', 'nvoos-algorave' ),
 					'maxLength'   => 50,
@@ -68,7 +68,7 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 					'description' => __( 'Background color (hex code or CSS color name).', 'nvoos-algorave' ),
 					'maxLength'   => 50,
 				),
-				'enabled'         => array(
+				'enabled'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Turn visualizer on or off (used with "toggle" action).', 'nvoos-algorave' ),
 				),
@@ -103,7 +103,7 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		switch ( $action ) {
 			case 'set_mode':
-				$mode = sanitize_text_field( $arguments['mode'] ?? 'waveform' );
+				$mode        = sanitize_text_field( $arguments['mode'] ?? 'waveform' );
 				$valid_modes = array( 'waveform', 'spectrum', 'bars', 'circular', 'particles' );
 				if ( ! in_array( $mode, $valid_modes, true ) ) {
 					return array(
@@ -120,8 +120,8 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 				break;
 
 			case 'set_color':
-				$color      = sanitize_text_field( $arguments['color'] ?? '#00ff88' );
-				$bg_color   = sanitize_text_field( $arguments['background_color'] ?? '#000000' );
+				$color                      = sanitize_text_field( $arguments['color'] ?? '#00ff88' );
+				$bg_color                   = sanitize_text_field( $arguments['background_color'] ?? '#000000' );
 				$result['color']            = $color;
 				$result['background_color'] = $bg_color;
 				$result['message']          = sprintf(
@@ -133,9 +133,9 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 				break;
 
 			case 'toggle':
-				$enabled            = ! empty( $arguments['enabled'] );
-				$result['enabled']  = $enabled;
-				$result['message']  = $enabled
+				$enabled           = ! empty( $arguments['enabled'] );
+				$result['enabled'] = $enabled;
+				$result['message'] = $enabled
 					? __( 'Visualizer enabled.', 'nvoos-algorave' )
 					: __( 'Visualizer disabled.', 'nvoos-algorave' );
 				break;

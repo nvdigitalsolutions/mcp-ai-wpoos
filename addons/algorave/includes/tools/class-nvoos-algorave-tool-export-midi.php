@@ -48,20 +48,20 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'     => array(
+				'name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Filename for the MIDI export (without extension).', 'nvoos-algorave' ),
 					'default'     => 'algorave-pattern',
 					'maxLength'   => 200,
 				),
-				'bpm'      => array(
+				'bpm'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Tempo in BPM.', 'nvoos-algorave' ),
 					'default'     => 120,
 					'minimum'     => 20,
 					'maximum'     => 300,
 				),
-				'notes'    => array(
+				'notes'      => array(
 					'type'        => 'array',
 					'description' => __( 'Array of note objects to include in the MIDI file.', 'nvoos-algorave' ),
 					'items'       => array(
@@ -195,9 +195,9 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Tempo meta event.
 		$microseconds_per_beat = intval( 60000000 / $bpm );
-		$events[] = array(
-			'time'  => 0,
-			'data'  => pack( 'C', 0x00 ) . "\xFF\x51\x03" . $this->pack_24bit( $microseconds_per_beat ),
+		$events[]              = array(
+			'time' => 0,
+			'data' => pack( 'C', 0x00 ) . "\xFF\x51\x03" . $this->pack_24bit( $microseconds_per_beat ),
 		);
 
 		// Note events.
@@ -233,8 +233,8 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 
 		// Build track data with delta times.
-		$track_data  = '';
-		$last_tick   = 0;
+		$track_data = '';
+		$last_tick  = 0;
 
 		foreach ( $events as $event ) {
 			$delta       = max( 0, $event['time'] - $last_tick );
@@ -269,8 +269,13 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		$note_map = array(
-			'C' => 0, 'D' => 2, 'E' => 4, 'F' => 5,
-			'G' => 7, 'A' => 9, 'B' => 11,
+			'C' => 0,
+			'D' => 2,
+			'E' => 4,
+			'F' => 5,
+			'G' => 7,
+			'A' => 9,
+			'B' => 11,
 		);
 
 		$note = strtoupper( trim( $note ) );
@@ -301,8 +306,10 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		$value  = max( 0, intval( $value ) );
 		$result = chr( $value & 0x7F );
 
-		while ( ( $value >>= 7 ) > 0 ) {
-			$result = chr( ( $value & 0x7F ) | 0x80 ) . $result;
+		$value >>= 7;
+		while ( $value > 0 ) {
+			$result  = chr( ( $value & 0x7F ) | 0x80 ) . $result;
+			$value >>= 7;
 		}
 
 		return $result;

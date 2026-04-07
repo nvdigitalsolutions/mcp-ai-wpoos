@@ -120,7 +120,12 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 		$tool = new NV_oOS_Algorave_Tool_Play_Control();
 
 		// Test play action.
-		$result = $tool->execute( array( 'action' => 'play', 'code' => 'test code' ) );
+		$result = $tool->execute(
+			array(
+				'action' => 'play',
+				'code'   => 'test code',
+			)
+		);
 		$this->assertTrue( $result['success'] );
 		$this->assertEquals( 'play', $result['action'] );
 		$this->assertTrue( $result['_browser_command'] );
@@ -140,7 +145,12 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 	 */
 	public function test_set_bpm() {
 		$tool   = new NV_oOS_Algorave_Tool_Play_Control();
-		$result = $tool->execute( array( 'action' => 'set_bpm', 'bpm' => 140 ) );
+		$result = $tool->execute(
+			array(
+				'action' => 'set_bpm',
+				'bpm'    => 140,
+			)
+		);
 
 		$this->assertTrue( $result['success'] );
 		$this->assertEquals( 140, $result['bpm'] );
@@ -201,22 +211,42 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 		$tool = new NV_oOS_Algorave_Tool_Visualizer();
 
 		// Test set mode.
-		$result = $tool->execute( array( 'action' => 'set_mode', 'mode' => 'spectrum' ) );
+		$result = $tool->execute(
+			array(
+				'action' => 'set_mode',
+				'mode'   => 'spectrum',
+			)
+		);
 		$this->assertTrue( $result['success'] );
 		$this->assertEquals( 'spectrum', $result['mode'] );
 
 		// Test set color.
-		$result = $tool->execute( array( 'action' => 'set_color', 'color' => '#ff0000' ) );
+		$result = $tool->execute(
+			array(
+				'action' => 'set_color',
+				'color'  => '#ff0000',
+			)
+		);
 		$this->assertTrue( $result['success'] );
 		$this->assertEquals( '#ff0000', $result['color'] );
 
 		// Test toggle.
-		$result = $tool->execute( array( 'action' => 'toggle', 'enabled' => true ) );
+		$result = $tool->execute(
+			array(
+				'action'  => 'toggle',
+				'enabled' => true,
+			)
+		);
 		$this->assertTrue( $result['success'] );
 		$this->assertTrue( $result['enabled'] );
 
 		// Test invalid mode.
-		$result = $tool->execute( array( 'action' => 'set_mode', 'mode' => 'invalid' ) );
+		$result = $tool->execute(
+			array(
+				'action' => 'set_mode',
+				'mode'   => 'invalid',
+			)
+		);
 		$this->assertFalse( $result['success'] );
 	}
 
