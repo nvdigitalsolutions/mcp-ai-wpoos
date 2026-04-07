@@ -6,6 +6,7 @@
 #   build/nvoos-canvas-linux-x64-vX.Y.Z.zip
 #   build/nvoos-algorave-linux-x64-vX.Y.Z.zip
 #   build/nvoos-fantasy-football-vX.Y.Z.zip
+#   build/nvoos-cornerstone3d-vX.Y.Z.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -61,8 +62,8 @@ echo "   This matches PR #4441 build approach (node:20-bookworm container)."
 exit 1
 fi
 
-if [ ! -d "addons/canvas" ] || [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ]; then
-echo "❌ Error: addons/canvas, addons/algorave, and addons/fantasy-football must exist."
+if [ ! -d "addons/canvas" ] || [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ]; then
+echo "❌ Error: addons/canvas, addons/algorave, addons/fantasy-football, and addons/cornerstone3d must exist."
 exit 1
 fi
 
@@ -75,15 +76,16 @@ mkdir -p "$TMP_DIR"
 CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${VERSION}.zip"
 ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
 FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
+CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
 
-rm -f "$CANVAS_ZIP" "$ALGORAVE_ZIP" "$FF_ZIP"
+rm -f "$CANVAS_ZIP" "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP"
 
 echo "=========================================="
 echo "Building Standalone Addon ZIPs v${VERSION}"
 echo "=========================================="
 echo ""
 
-echo "[1/3] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
+echo "[1/4] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/algorave-stage/nvoos-algorave"
 rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
@@ -98,7 +100,7 @@ ALGORAVE_SIZE=$(du -h "$ALGORAVE_ZIP" | cut -f1)
 echo "✅ ${ALGORAVE_ZIP} (${ALGORAVE_SIZE})"
 echo ""
 
-echo "[2/3] Building nvoos-fantasy-football-v${VERSION}.zip"
+echo "[2/4] Building nvoos-fantasy-football-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/ff-stage/nvoos-fantasy-football"
 rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/" \
 --exclude 'node_modules/' \
@@ -113,7 +115,43 @@ FF_SIZE=$(du -h "$FF_ZIP" | cut -f1)
 echo "✅ ${FF_ZIP} (${FF_SIZE})"
 echo ""
 
-echo "[3/3] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[3/4] Building nvoos-cornerstone3d-v${VERSION}.zip"
+# Build ESM bundles if they don't exist yet.
+VENDOR_CORNERSTONE_DIR="addons/pro/assets/vendor/cornerstone"
+if [ ! -f "${VENDOR_CORNERSTONE_DIR}/cornerstone-core.esm.js" ]; then
+echo "  ℹ️  ESM bundles not found — running bin/vendor-cornerstone.js..."
+node bin/vendor-cornerstone.js
+fi
+
+mkdir -p "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone"
+# Copy addon PHP files.
+rsync -a "addons/cornerstone3d/" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude '.gitignore' \
+--exclude '.gitkeep' \
+--exclude 'tests/'
+
+# Copy the vendored ESM bundles into the addon package.
+cp "${VENDOR_CORNERSTONE_DIR}/cornerstone-core.esm.js" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+cp "${VENDOR_CORNERSTONE_DIR}/cornerstone-tools.esm.js" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+cp "${VENDOR_CORNERSTONE_DIR}/cornerstone-dicom-loader.esm.js" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+cp "${VENDOR_CORNERSTONE_DIR}/dicom-parser.esm.js" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+cp "${VENDOR_CORNERSTONE_DIR}/xmlbuilder2.esm.js" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+if [ -f "${VENDOR_CORNERSTONE_DIR}/vendor-meta.json" ]; then
+cp "${VENDOR_CORNERSTONE_DIR}/vendor-meta.json" "${TMP_DIR}/cs3d-stage/nvoos-cornerstone3d/assets/cornerstone/"
+fi
+
+(
+cd "${TMP_DIR}/cs3d-stage"
+zip -r -q "${ROOT_DIR}/${CS3D_ZIP}" nvoos-cornerstone3d/
+)
+CS3D_SIZE=$(du -h "$CS3D_ZIP" | cut -f1)
+echo "✅ ${CS3D_ZIP} (${CS3D_SIZE})"
+echo ""
+
+echo "[4/4] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/canvas-work"
 rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude 'node_modules/' \
@@ -166,6 +204,7 @@ echo "Addon ZIP build complete"
 echo "=========================================="
 echo "  - ${ALGORAVE_ZIP}"
 echo "  - ${FF_ZIP}"
+echo "  - ${CS3D_ZIP}"
 echo "  - ${CANVAS_ZIP}"
 
 rm -rf "$TMP_DIR"

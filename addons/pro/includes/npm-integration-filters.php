@@ -59,6 +59,9 @@ function wp_mcp_ai_cornerstone_package_names() {
  * `assets/vendor/cornerstone/`.  When present, the imaging viewer loads
  * Cornerstone3D entirely from local files with no CDN dependency.
  *
+ * Also checks the standalone nvoos-cornerstone3d addon which provides
+ * the same bundles as a separate WordPress plugin.
+ *
  * Delegates to the admin page class when loaded; otherwise performs a
  * standalone filesystem check.
  *
@@ -66,6 +69,11 @@ function wp_mcp_ai_cornerstone_package_names() {
  * @return bool
  */
 function wp_mcp_ai_has_vendored_cornerstone() {
+	// Check standalone addon first (installed as a separate plugin).
+	if ( function_exists( 'nvoos_cornerstone3d_is_available' ) && nvoos_cornerstone3d_is_available() ) {
+		return true;
+	}
+
 	if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 		return false;
 	}

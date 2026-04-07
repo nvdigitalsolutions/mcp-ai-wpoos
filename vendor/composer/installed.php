@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/create-algorave-addon',
         'version' => 'dev-copilot/create-algorave-addon',
-        'reference' => '463a64c490db3835f4ef1e61cc1510bd5f5e3f9a',
+        'reference' => '2b7c26bc1c0002ffdba6a6441735a164d8b99e27',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/create-algorave-addon',
             'version' => 'dev-copilot/create-algorave-addon',
-            'reference' => '463a64c490db3835f4ef1e61cc1510bd5f5e3f9a',
+            'reference' => '2b7c26bc1c0002ffdba6a6441735a164d8b99e27',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

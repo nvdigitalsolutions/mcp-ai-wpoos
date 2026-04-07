@@ -134,15 +134,22 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	/**
 	 * Check whether locally vendored Cornerstone3D ESM bundles are available.
 	 *
-	 * Returns true when all five ESM bundles exist on disk.  When true, the
-	 * viewer loads from local files instead of the esm.sh CDN, eliminating
-	 * the runtime external dependency.
+	 * Returns true when all five ESM bundles exist on disk — either from the
+	 * standalone Cornerstone3D addon (preferred) or from the Pro addon's own
+	 * vendor directory.  When true, the viewer loads from local files instead
+	 * of the esm.sh CDN, eliminating the runtime external dependency.
 	 *
-	 * Built by `bin/vendor-cornerstone.js`.
+	 * Built by `bin/vendor-cornerstone.js` or provided by the nvoos-cornerstone3d addon.
 	 *
 	 * @return bool
 	 */
 	public static function has_vendored_cornerstone() {
+		// Check standalone addon first (installed as a separate plugin).
+		if ( function_exists( 'nvoos_cornerstone3d_is_available' ) && nvoos_cornerstone3d_is_available() ) {
+			return true;
+		}
+
+		// Fall back to pro addon's own vendor directory.
 		$base = WP_MCP_AI_PRO_PATH . self::VENDOR_CORNERSTONE_DIR . '/';
 		return file_exists( $base . 'cornerstone-core.esm.js' )
 			&& file_exists( $base . 'cornerstone-tools.esm.js' )
@@ -167,7 +174,29 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	 * @return array
 	 */
 	private static function resolve_cornerstone_urls() {
-		if ( self::has_vendored_cornerstone() ) {
+		// Check standalone addon first (installed as a separate plugin).
+		if ( function_exists( 'nvoos_cornerstone3d_is_available' ) && nvoos_cornerstone3d_is_available() ) {
+			$base = nvoos_cornerstone3d_get_url();
+			return array(
+				'core'                  => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'tools'                 => esc_url( $base . 'cornerstone-tools.esm.js' ),
+				'dicomLoader'           => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
+				'importCornerstone'     => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'importDicomParser'     => esc_url( $base . 'dicom-parser.esm.js' ),
+				'importXmlbuilder2'     => esc_url( $base . 'xmlbuilder2.esm.js' ),
+				'source'                => 'addon',
+			);
+		}
+
+		// Check pro addon's own vendor directory.
+		$pro_base = WP_MCP_AI_PRO_PATH . self::VENDOR_CORNERSTONE_DIR . '/';
+		$has_pro_vendor = file_exists( $pro_base . 'cornerstone-core.esm.js' )
+			&& file_exists( $pro_base . 'cornerstone-tools.esm.js' )
+			&& file_exists( $pro_base . 'cornerstone-dicom-loader.esm.js' )
+			&& file_exists( $pro_base . 'dicom-parser.esm.js' )
+			&& file_exists( $pro_base . 'xmlbuilder2.esm.js' );
+
+		if ( $has_pro_vendor ) {
 			$base = WP_MCP_AI_PRO_URL . self::VENDOR_CORNERSTONE_DIR . '/';
 			return array(
 				'core'                  => esc_url( $base . 'cornerstone-core.esm.js' ),
