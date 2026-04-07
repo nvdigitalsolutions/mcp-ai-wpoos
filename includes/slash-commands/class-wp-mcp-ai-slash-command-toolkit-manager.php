@@ -141,7 +141,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'dj_management'           => $this->get_dj_management_commands(),
 				'document_generation'     => $this->get_document_generation_commands(),
 				'ecommerce_pro'           => $this->get_ecommerce_pro_commands(),
-				'fantasy_football'        => $this->get_fantasy_football_commands(),
 				'financial_planner'       => $this->get_financial_planner_commands(),
 				'image_production'        => $this->get_image_production_commands(),
 				'media_pro'               => $this->get_media_pro_commands(),
@@ -4310,30 +4309,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
-		return $commands;
-	}
-
-	/**
-	 * Get Fantasy Football toolkit commands.
-	 *
-	 * @since 1.3.0
-	 * @return array Command definitions.
-	 */
-	protected function get_fantasy_football_commands() {
-		$commands      = array();
-		$command_names = array( 'player-analyze', 'draft-strategy', 'draft-mock', 'waiver-recommend', 'trade-analyze', 'lineup-optimize', 'matchup-preview', 'injury-track', 'projection-update', 'league-standings', 'stats-compare', 'sleeper-identify' );
-		foreach ( $command_names as $name ) {
-			$commands[] = array(
-				'name'   => $name,
-				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
-					// translators: %s is the slash command name.
-					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
-					'capability'  => 'edit_posts',
-					'toolkit'     => 'fantasy_football',
-				),
-			);
-		}
 		return $commands;
 	}
 

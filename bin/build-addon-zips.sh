@@ -5,6 +5,7 @@
 # Outputs:
 #   build/nvoos-canvas-linux-x64-vX.Y.Z.zip
 #   build/nvoos-algorave-linux-x64-vX.Y.Z.zip
+#   build/nvoos-fantasy-football-vX.Y.Z.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -60,8 +61,8 @@ echo "   This matches PR #4441 build approach (node:20-bookworm container)."
 exit 1
 fi
 
-if [ ! -d "addons/canvas" ] || [ ! -d "addons/algorave" ]; then
-echo "❌ Error: addons/canvas and addons/algorave must exist."
+if [ ! -d "addons/canvas" ] || [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ]; then
+echo "❌ Error: addons/canvas, addons/algorave, and addons/fantasy-football must exist."
 exit 1
 fi
 
@@ -73,15 +74,16 @@ mkdir -p "$TMP_DIR"
 
 CANVAS_ZIP="${OUTPUT_DIR}/nvoos-canvas-linux-x64-v${VERSION}.zip"
 ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
+FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
 
-rm -f "$CANVAS_ZIP" "$ALGORAVE_ZIP"
+rm -f "$CANVAS_ZIP" "$ALGORAVE_ZIP" "$FF_ZIP"
 
 echo "=========================================="
 echo "Building Standalone Addon ZIPs v${VERSION}"
 echo "=========================================="
 echo ""
 
-echo "[1/2] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
+echo "[1/3] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/algorave-stage/nvoos-algorave"
 rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
@@ -96,7 +98,22 @@ ALGORAVE_SIZE=$(du -h "$ALGORAVE_ZIP" | cut -f1)
 echo "✅ ${ALGORAVE_ZIP} (${ALGORAVE_SIZE})"
 echo ""
 
-echo "[2/2] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[2/3] Building nvoos-fantasy-football-v${VERSION}.zip"
+mkdir -p "${TMP_DIR}/ff-stage/nvoos-fantasy-football"
+rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/'
+(
+cd "${TMP_DIR}/ff-stage"
+zip -r -q "${ROOT_DIR}/${FF_ZIP}" nvoos-fantasy-football/
+)
+FF_SIZE=$(du -h "$FF_ZIP" | cut -f1)
+echo "✅ ${FF_ZIP} (${FF_SIZE})"
+echo ""
+
+echo "[3/3] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/canvas-work"
 rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude 'node_modules/' \
@@ -148,6 +165,7 @@ echo "=========================================="
 echo "Addon ZIP build complete"
 echo "=========================================="
 echo "  - ${ALGORAVE_ZIP}"
+echo "  - ${FF_ZIP}"
 echo "  - ${CANVAS_ZIP}"
 
 rm -rf "$TMP_DIR"

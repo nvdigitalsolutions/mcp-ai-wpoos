@@ -3283,23 +3283,23 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'fantasy_sports'            => array(
 				'name'        => __( '🏆 Fantasy Sports & Analytics', 'mcp-ai-wpoos' ),
-				'description' => __( 'Fantasy sports management, player research, league analytics, and trade analysis for ESPN, Yahoo, and more', 'mcp-ai-wpoos' ),
+				'description' => __( 'Fantasy sports management, player research, league analytics, and trade analysis for ESPN, Yahoo, and more. Requires the Fantasy Football addon.', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// ESPN Fantasy Sports (Pro).
+					// ESPN Fantasy Sports (Fantasy Football Addon).
 					'espn_fantasy_get_league',
 					'espn_fantasy_get_teams',
 					'espn_fantasy_get_roster',
 					'espn_fantasy_get_standings',
 					'espn_fantasy_analyze_lineup',
 					'espn_fantasy_sync_league',
-					// Yahoo Fantasy Football (Pro).
+					// Yahoo Fantasy Football (Fantasy Football Addon).
 					'yahoo_ff_auth',
 					'yahoo_ff_get_leagues',
 					'yahoo_ff_get_roster',
 					'yahoo_ff_get_player_stats',
 					'yahoo_ff_league_standings',
 					'yahoo_ff_trade_analyzer',
-					// Fantasy Football Tools (Pro).
+					// Fantasy Football Tools (Fantasy Football Addon).
 					'ff_player_research',
 					'ff_create_league_report',
 					'ff_generate_team_logo',

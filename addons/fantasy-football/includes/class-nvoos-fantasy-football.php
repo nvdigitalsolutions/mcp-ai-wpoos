@@ -95,11 +95,7 @@ class NV_oOS_Fantasy_Football {
 		return wp_parse_args(
 			get_option( self::OPTION_KEY, array() ),
 			array(
-				'enabled'               => true,
-				'yahoo_client_id'       => '',
-				'yahoo_client_secret'   => '',
-				'espn_fantasy_espn_s2'  => '',
-				'espn_fantasy_swid'     => '',
+				'enabled' => true,
 			)
 		);
 	}
