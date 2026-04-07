@@ -3718,10 +3718,23 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Build execution context.
-		$context = array(
-			'user_id' => get_current_user_id(),
-			'source'  => 'telegram_mini_app',
+		$user_id  = get_current_user_id();
+		$is_guest = 0 === $user_id;
+		$context  = array(
+			'user_id'       => $user_id,
+			'source'        => 'telegram_mini_app',
+			'guest_request' => $is_guest,
 		);
+
+		// Resolve assistant ID from the Telegram connection so tools that
+		// depend on assistant-scoped Remote Site connections can auto-resolve.
+		$tg_connection = $this->resolve_connection_from_request( $request );
+		if ( $tg_connection ) {
+			$assistant_id = $this->resolve_mini_app_assistant( $request, $tg_connection );
+			if ( $assistant_id ) {
+				$context['assistant_id'] = absint( $assistant_id );
+			}
+		}
 
 		try {
 			$result = $tool->execute( $arguments, $context );
@@ -3735,6 +3748,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		if ( is_wp_error( $result ) ) {
+			$error_data = $result->get_error_data();
+			if ( ! is_array( $error_data ) || ! isset( $error_data['status'] ) ) {
+				// Map common error codes to appropriate HTTP statuses.
+				$code   = $result->get_error_code();
+				$status = 400;
+				if ( false !== strpos( $code, 'forbidden' ) || false !== strpos( $code, 'unauthorized' ) ) {
+					$status = 403;
+				} elseif ( false !== strpos( $code, 'not_found' ) ) {
+					$status = 404;
+				}
+				$result->add_data( array( 'status' => $status ) );
+			}
 			return $result;
 		}
 

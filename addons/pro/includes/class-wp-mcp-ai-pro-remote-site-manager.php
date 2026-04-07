@@ -549,6 +549,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
+			'shopify_catalog_shop_id' => isset( $connection_data['shopify_catalog_shop_id'] )
+				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
+				: '',
 			// ShipEngine-specific fields.
 			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
 				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )

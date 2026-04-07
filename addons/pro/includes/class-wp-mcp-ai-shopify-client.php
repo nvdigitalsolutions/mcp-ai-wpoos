@@ -209,6 +209,24 @@ if ( ! class_exists( 'WP_MCP_AI_Shopify_Client' ) ) {
 		}
 
 		/**
+		 * Get the Catalog API Shop ID configured on the connection.
+		 *
+		 * Used to scope Catalog API search results to a single store via the
+		 * `shop_ids` query parameter. Accepts a bare numeric ID or a full GID
+		 * (gid://shopify/Shop/12345).
+		 *
+		 * @since 1.1.6
+		 *
+		 * @return string Shop ID string or empty string when not configured.
+		 */
+		public function get_catalog_shop_id() {
+			$connection = $this->get_connection();
+			return $connection && ! empty( $connection['shopify_catalog_shop_id'] )
+				? sanitize_text_field( $connection['shopify_catalog_shop_id'] )
+				: '';
+		}
+
+		/**
 		 * Get the Catalog API client ID (Dev Dashboard credential).
 		 *
 		 * In catalog_api mode the connection stores client_id in api_key (plain-text).
