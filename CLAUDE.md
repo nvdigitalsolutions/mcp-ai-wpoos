@@ -14,7 +14,7 @@ NV oOS is a **WordPress plugin** providing an AI Assistant framework with 519+ t
 | **Base plugin** (`includes/`, root `*.php`) | **PHP 7.4+** | WordPress.org compatible |
 | **Pro addon** (`addons/pro/`) | **PHP 8.1+** | Enums, fibers, readonly, named args OK |
 
-**Base code:** No enums, no `readonly`, no union types, no named arguments, no match expressions.
+**Base plugin:** No enums, no `readonly`, no union types, no named arguments, no match expressions.
 
 ## Naming Conventions
 

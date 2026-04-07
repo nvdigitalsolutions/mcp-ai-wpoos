@@ -412,7 +412,7 @@ class WP_MCP_AI_Slash_Command_Compact {
 			);
 		}
 
-		$tokens_saved = max( 0, intval( $this->estimate_chars( $messages ) / self::CHARS_PER_TOKEN ) );
+		$tokens_saved = max( 0, intval( ( $this->estimate_chars( $messages ) - $this->estimate_chars( $compacted ) ) / self::CHARS_PER_TOKEN ) );
 
 		return array(
 			'success' => true,
