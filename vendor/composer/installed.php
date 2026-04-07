@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
-        'version' => 'dev-copilot/fix-chat-client-permissions',
-        'reference' => '3dc62f5031665ea839e8d7916b5af3cecdba5b7b',
+        'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
+        'version' => 'dev-copilot/fix-shopify-store-not-found-error',
+        'reference' => '6f41d0a90501687af7c53fbae2adcd28f164f272',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-client-permissions',
-            'version' => 'dev-copilot/fix-chat-client-permissions',
-            'reference' => '3dc62f5031665ea839e8d7916b5af3cecdba5b7b',
+            'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
+            'version' => 'dev-copilot/fix-shopify-store-not-found-error',
+            'reference' => '6f41d0a90501687af7c53fbae2adcd28f164f272',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

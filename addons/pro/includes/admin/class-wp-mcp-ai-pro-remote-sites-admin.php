@@ -720,6 +720,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
 					? $shopify_api_mode
 					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
+				'shopify_catalog_shop_id' => 'shopify' === $connection_type && isset( $_POST['shopify_catalog_shop_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_shop_id'] ) )
+					: '',
 				// ShipEngine-specific fields.
 				'shipengine_carrier_id' => 'shipengine' === $connection_type && isset( $_POST['shipengine_carrier_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shipengine_carrier_id'] ) )
@@ -1566,6 +1569,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="shopify-only-field shopify-catalog-api-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_catalog_shop_id"><?php esc_html_e( 'Shop ID (recommended)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="shopify_catalog_shop_id" id="shopify_catalog_shop_id" class="regular-text"
+							value="<?php echo esc_attr( $is_edit && $is_catalog_edit && ! empty( $connection['shopify_catalog_shop_id'] ) ? $connection['shopify_catalog_shop_id'] : '' ); ?>"
+							autocomplete="off" placeholder="12345678901 or gid://shopify/Shop/12345678901">
+						<p class="description"><?php esc_html_e( 'Your Shopify numeric Shop ID or GID (e.g. 12345678901 or gid://shopify/Shop/12345678901). Limits Catalog API search results to only your store products. Without this, the Catalog API returns results from all Shopify stores globally. Find your Shop ID in the Shopify admin URL or via the Admin API (shop { id }).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<tr class="shopify-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Shopify Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -1588,7 +1603,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<li><?php esc_html_e( 'Go to the Shopify Dev Dashboard at dev.shopify.com and sign in.', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Create a new API key (app) and copy the Client ID and Client Secret (shpss_…).', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Paste the Client ID and Client Secret above. A JWT bearer token is obtained automatically on each request (tokens expire in ~60 minutes and are cached).', 'mcp-ai-wpoos-pro' ); ?></li>
-									<li><?php esc_html_e( 'The Catalog API enables product search and lookup across the global Shopify catalog — no store domain is required.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'To limit results to your store only, enter your numeric Shop ID above. Find it in your Shopify admin URL (the number after /store/) or via the Admin GraphQL API query: { shop { id } }.', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ol>
 							</div>
 						</div>
