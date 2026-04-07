@@ -905,6 +905,12 @@
 		// class-wp-mcp-ai-imaging-admin-page.php.  Both the PHP constants and
 		// the resolve_cornerstone_urls() method must be updated together when
 		// upgrading Cornerstone3D.
+		// Resolve Cornerstone3D module URLs from the PHP config.
+		// The URLs are provided by resolve_cornerstone_urls() which prefers local
+		// vendor bundles when available.  The inline fallback values below are a
+		// defensive safety net for edge cases where wp_localize_script data is
+		// missing or malformed — they mirror the CDN constants in the PHP class
+		// and must be updated together when upgrading Cornerstone3D.
 		var csCfg = cfg.cornerstone || {};
 		var coreUrl = csCfg.coreUrl || 'https://esm.sh/@cornerstonejs/core@1.86.1';
 		var toolsUrl = csCfg.toolsUrl || 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core';

@@ -59,6 +59,9 @@ function wp_mcp_ai_cornerstone_package_names() {
  * `assets/vendor/cornerstone/`.  When present, the imaging viewer loads
  * Cornerstone3D entirely from local files with no CDN dependency.
  *
+ * Delegates to the admin page class when loaded; otherwise performs a
+ * standalone filesystem check.
+ *
  * @since 2.1.0
  * @return bool
  */
@@ -66,6 +69,11 @@ function wp_mcp_ai_has_vendored_cornerstone() {
 	if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 		return false;
 	}
+	// Delegate to the admin class when it is loaded (single source of truth).
+	if ( class_exists( 'WP_MCP_AI_Imaging_Admin_Page' ) && method_exists( 'WP_MCP_AI_Imaging_Admin_Page', 'has_vendored_cornerstone' ) ) {
+		return WP_MCP_AI_Imaging_Admin_Page::has_vendored_cornerstone();
+	}
+	// Standalone fallback — the admin class may not be loaded in REST/CLI contexts.
 	$base = WP_MCP_AI_PRO_PATH . 'assets/vendor/cornerstone/';
 	return file_exists( $base . 'cornerstone-core.esm.js' )
 		&& file_exists( $base . 'cornerstone-tools.esm.js' )

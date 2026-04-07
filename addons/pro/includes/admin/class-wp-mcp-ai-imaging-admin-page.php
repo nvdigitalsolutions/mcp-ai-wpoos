@@ -168,14 +168,14 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	 */
 	private static function resolve_cornerstone_urls() {
 		if ( self::has_vendored_cornerstone() ) {
-			$base = esc_url( WP_MCP_AI_PRO_URL . self::VENDOR_CORNERSTONE_DIR . '/' );
+			$base = WP_MCP_AI_PRO_URL . self::VENDOR_CORNERSTONE_DIR . '/';
 			return array(
-				'core'                  => $base . 'cornerstone-core.esm.js',
-				'tools'                 => $base . 'cornerstone-tools.esm.js',
-				'dicomLoader'           => $base . 'cornerstone-dicom-loader.esm.js',
-				'importCornerstone'     => $base . 'cornerstone-core.esm.js',
-				'importDicomParser'     => $base . 'dicom-parser.esm.js',
-				'importXmlbuilder2'     => $base . 'xmlbuilder2.esm.js',
+				'core'                  => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'tools'                 => esc_url( $base . 'cornerstone-tools.esm.js' ),
+				'dicomLoader'           => esc_url( $base . 'cornerstone-dicom-loader.esm.js' ),
+				'importCornerstone'     => esc_url( $base . 'cornerstone-core.esm.js' ),
+				'importDicomParser'     => esc_url( $base . 'dicom-parser.esm.js' ),
+				'importXmlbuilder2'     => esc_url( $base . 'xmlbuilder2.esm.js' ),
 				'source'                => 'vendor',
 			);
 		}
