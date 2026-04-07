@@ -54,13 +54,9 @@ echo "❌ Error: rsync is required but not installed."
 exit 1
 fi
 
-if ! command -v node >/dev/null 2>&1; then
-echo "❌ Error: node is required to build canvas native binaries."
-exit 1
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-echo "❌ Error: npm is required to build canvas native binaries."
+if ! command -v docker >/dev/null 2>&1; then
+echo "❌ Error: docker is required for reproducible canvas linux-x64 build."
+echo "   This matches PR #4441 build approach (node:20-bookworm container)."
 exit 1
 fi
 
@@ -107,11 +103,22 @@ rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude '.git/' \
 --exclude '.DS_Store'
 
-(
-cd "${TMP_DIR}/canvas-work"
-npm install --silent canvas@2
-node scripts/copy-canvas.js
-)
+# Build canvas exactly like PR #4441 workflow: Node 20 Bookworm container.
+docker run --rm --platform linux/amd64 \
+	-v "${ROOT_DIR}/${TMP_DIR}/canvas-work:/work" \
+	-w /work \
+	node:20-bookworm \
+	bash -lc "apt-get update -qq && \
+		apt-get install -y --no-install-recommends \
+			build-essential \
+			libcairo2-dev \
+			libpango1.0-dev \
+			libjpeg-dev \
+			libgif-dev \
+			librsvg2-dev \
+			pkg-config >/dev/null && \
+		npm install --silent canvas@2 && \
+		node scripts/copy-canvas.js"
 
 CANVAS_BINARY="${TMP_DIR}/canvas-work/assets/canvas/build/Release/canvas.node"
 if [ ! -f "$CANVAS_BINARY" ]; then
@@ -119,7 +126,6 @@ echo "❌ Error: canvas.node binary not found after build: ${CANVAS_BINARY}"
 exit 1
 fi
 
-NODE_VERSION=$(node -v 2>/dev/null | sed 's/^v//')
 mkdir -p "${TMP_DIR}/canvas-work/dist/nvoos-canvas"
 rsync -a "${TMP_DIR}/canvas-work/" "${TMP_DIR}/canvas-work/dist/nvoos-canvas/" \
 --exclude 'node_modules/' \
@@ -129,13 +135,6 @@ rsync -a "${TMP_DIR}/canvas-work/" "${TMP_DIR}/canvas-work/dist/nvoos-canvas/" \
 --exclude 'dist/'
 
 rm -f "${TMP_DIR}/canvas-work/dist/nvoos-canvas/assets/canvas/build/Release/.gitkeep"
-cat > "${TMP_DIR}/canvas-work/dist/nvoos-canvas/platform.json" <<JSON
-{
-  "platform": "linux",
-  "arch": "x64",
-  "node_version": "${NODE_VERSION}"
-}
-JSON
 
 (
 cd "${TMP_DIR}/canvas-work/dist"
