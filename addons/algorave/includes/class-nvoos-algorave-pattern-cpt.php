@@ -160,14 +160,18 @@ class NV_oOS_Algorave_Pattern_CPT {
 
 		$genres = wp_get_object_terms( $post->ID, 'algorave_genre', array( 'fields' => 'names' ) );
 
+		$engine  = get_post_meta( $post->ID, '_algorave_engine', true );
+		$bpm_raw = (int) get_post_meta( $post->ID, '_algorave_bpm', true );
+		$scale   = get_post_meta( $post->ID, '_algorave_scale', true );
+
 		return array(
 			'id'          => $post->ID,
 			'name'        => $post->post_title,
 			'description' => $post->post_content,
 			'code'        => get_post_meta( $post->ID, '_algorave_code', true ),
-			'engine'      => get_post_meta( $post->ID, '_algorave_engine', true ) ? get_post_meta( $post->ID, '_algorave_engine', true ) : 'strudel',
-			'bpm'         => (int) get_post_meta( $post->ID, '_algorave_bpm', true ) ? (int) get_post_meta( $post->ID, '_algorave_bpm', true ) : 120,
-			'scale'       => get_post_meta( $post->ID, '_algorave_scale', true ) ? get_post_meta( $post->ID, '_algorave_scale', true ) : 'C minor',
+			'engine'      => $engine ? $engine : 'strudel',
+			'bpm'         => $bpm_raw ? $bpm_raw : 120,
+			'scale'       => $scale ? $scale : 'C minor',
 			'genre'       => is_array( $genres ) ? implode( ', ', $genres ) : '',
 			'author'      => get_the_author_meta( 'display_name', $post->post_author ),
 			'created'     => $post->post_date,

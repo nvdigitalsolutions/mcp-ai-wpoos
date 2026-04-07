@@ -278,18 +278,19 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 			'B' => 11,
 		);
 
-		$note = strtoupper( trim( $note ) );
+		$note = trim( $note );
 
-		if ( ! preg_match( '/^([A-G])(#|b)?(\d+)$/', $note, $matches ) ) {
+		if ( ! preg_match( '/^([A-Ga-g])(#|b)?(\d+)$/i', $note, $matches ) ) {
 			return 60; // Default to middle C.
 		}
 
-		$base   = $note_map[ $matches[1] ] ?? 0;
+		$letter = strtoupper( $matches[1] );
+		$base   = $note_map[ $letter ] ?? 0;
 		$octave = intval( $matches[3] );
 
 		if ( '#' === ( $matches[2] ?? '' ) ) {
 			++$base;
-		} elseif ( 'b' === ( $matches[2] ?? '' ) || 'B' === ( $matches[2] ?? '' ) ) {
+		} elseif ( 'b' === ( $matches[2] ?? '' ) ) {
 			--$base;
 		}
 

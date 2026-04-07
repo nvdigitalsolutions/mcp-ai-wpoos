@@ -143,7 +143,7 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 	/**
 	 * Test set BPM via play control.
 	 */
-	public function test_set_bpm() {
+	public function test_play_control_set_bpm() {
 		$tool   = new NV_oOS_Algorave_Tool_Play_Control();
 		$result = $tool->execute(
 			array(
