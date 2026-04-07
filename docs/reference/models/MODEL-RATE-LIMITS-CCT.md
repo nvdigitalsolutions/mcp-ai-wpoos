@@ -90,7 +90,7 @@ The CCT automatically populates with 37 models on first load:
 - **phi3**: 4K context, efficient small model
 - **deepseek-coder**: 16K context, specialized for coding
 - **qwen2**: 32K context, large context window
-- **gemma4**: 256K context, Google's latest multimodal open model (vision, Apache 2.0)
+- **gemma4**: 256K context, Google's latest multimodal open model (text, image, video; Apache 2.0)
 - **gemma2**: 8K context, Google's open model
 
 ## Usage
