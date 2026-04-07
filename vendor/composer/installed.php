@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-tool-execution-errors',
+        'version' => 'dev-copilot/fix-tool-execution-errors',
+        'reference' => '2dca19b302d08416beeba23ef19c0b3b89783167',
         'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
         'version' => 'dev-copilot/fix-shopify-store-not-found-error',
         'reference' => '6f41d0a90501687af7c53fbae2adcd28f164f272',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-tool-execution-errors',
+            'version' => 'dev-copilot/fix-tool-execution-errors',
+            'reference' => '2dca19b302d08416beeba23ef19c0b3b89783167',
             'pretty_version' => 'dev-copilot/fix-shopify-store-not-found-error',
             'version' => 'dev-copilot/fix-shopify-store-not-found-error',
             'reference' => '6f41d0a90501687af7c53fbae2adcd28f164f272',

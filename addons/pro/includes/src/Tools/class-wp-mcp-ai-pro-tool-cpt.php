@@ -167,7 +167,18 @@ class WP_MCP_AI_Pro_Tool_CPT implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 						'type'       => 'object',
 						'properties' => array(
 							'key'     => array( 'type' => 'string' ),
-							'value'   => array( 'type' => array( 'string', 'number', 'boolean', 'array', 'null' ) ),
+							'value'   => array(
+								'anyOf' => array(
+									array( 'type' => 'string' ),
+									array( 'type' => 'number' ),
+									array( 'type' => 'boolean' ),
+									array(
+										'type'  => 'array',
+										'items' => array( 'type' => 'string' ),
+									),
+									array( 'type' => 'null' ),
+								),
+							),
 							'compare' => array( 'type' => 'string' ),
 							'type'    => array( 'type' => 'string' ),
 						),
