@@ -82,7 +82,7 @@ The CCT automatically populates with 37 models on first load:
 - **gpt-5**: 500,000 TPM (Tier 1), 128K context - up to 40M TPM in Tier 5
 - **gpt-5-mini**: 500,000 TPM (Tier 1), 128K context - up to 180M TPM in Tier 5
 
-### Ollama / LM Studio Models (8 models - local deployment)
+### Ollama / LM Studio Models (9 models - local deployment)
 - **llama3**: 8K context, no rate limits (local)
 - **llama3:70b**: 8K context, no rate limits (local)
 - **mistral**: 8K context, no rate limits (local)
@@ -90,6 +90,7 @@ The CCT automatically populates with 37 models on first load:
 - **phi3**: 4K context, efficient small model
 - **deepseek-coder**: 16K context, specialized for coding
 - **qwen2**: 32K context, large context window
+- **gemma4**: 256K context, Google's latest multimodal open model (vision, Apache 2.0)
 - **gemma2**: 8K context, Google's open model
 
 ## Usage

@@ -840,12 +840,12 @@ Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
   - API key generation via build.nvidia.com
   - Getting Started wizard and Settings page configuration
   - Self-hosted NIM container support
-  - Available models catalog (Llama, Mistral, Nemotron, Gemma, Qwen, DeepSeek)
+  - Available models catalog (Llama, Mistral, Nemotron, Gemma 4/3/2, Qwen, DeepSeek)
   - Troubleshooting common issues
 
 **Key Features:**
 - OpenAI-compatible API interface
-- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma, Qwen, DeepSeek R1)
+- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma 4/3/2, Qwen, DeepSeek R1)
 - Cloud inference via `integrate.api.nvidia.com` or self-hosted NIM containers
 - Integrated with provider priority and fallback system
 - Getting Started wizard support for first-time setup

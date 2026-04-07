@@ -37,6 +37,8 @@ Successfully integrated Hugging Face Inference API as a full-featured AI provide
 |--------------|-------------------|----------------------|------------|
 | **Llama 3.3 70B** | `meta-llama/llama-3.3-70b-instruct` | `meta-llama/Llama-3.3-70B-Instruct` | ✅ Same (case differs) |
 | **Qwen 2.5 7B** | `qwen/qwen2.5-7b` | `Qwen/Qwen2.5-7B-Instruct` | ✅ Same (instruct suffix) |
+| **Gemma 4 31B** | `google/gemma-4-31b-it` | `google/gemma-4-31b-it` | ✅ Same (multimodal, 256K) |
+| **Gemma 4 26B MoE** | `google/gemma-4-26b-it` | `google/gemma-4-26b-it` | ✅ Same (multimodal, 256K) |
 | **Gemma 2 9B** | `google/gemma-2-9b-it` | `google/gemma-2-9b-it-hf` | ✅ Same (-hf suffix) |
 | **Mistral 7B** | `mistralai/mistral-7b-instruct-v0.3` | `mistralai/Mistral-7B-Instruct-v0.3` | ✅ Same (case differs) |
 | **Phi-3 Mini** | `microsoft/phi-3-mini-4k-instruct` | `microsoft/Phi-3-mini-4k-instruct` | ✅ Same (case differs) |
