@@ -125,6 +125,74 @@ class WP_MCP_AI_Imaging_Admin_Page {
 	const XMLBUILDER2_CDN = 'https://esm.sh/xmlbuilder2@3.0.2?cjs-exports=create';
 
 	/**
+	 * Relative path from the pro addon root to vendored Cornerstone3D bundles.
+	 *
+	 * @var string
+	 */
+	const VENDOR_CORNERSTONE_DIR = 'assets/vendor/cornerstone';
+
+	/**
+	 * Check whether locally vendored Cornerstone3D ESM bundles are available.
+	 *
+	 * Returns true when all five ESM bundles exist on disk.  When true, the
+	 * viewer loads from local files instead of the esm.sh CDN, eliminating
+	 * the runtime external dependency.
+	 *
+	 * Built by `bin/vendor-cornerstone.js`.
+	 *
+	 * @return bool
+	 */
+	public static function has_vendored_cornerstone() {
+		$base = WP_MCP_AI_PRO_PATH . self::VENDOR_CORNERSTONE_DIR . '/';
+		return file_exists( $base . 'cornerstone-core.esm.js' )
+			&& file_exists( $base . 'cornerstone-tools.esm.js' )
+			&& file_exists( $base . 'cornerstone-dicom-loader.esm.js' )
+			&& file_exists( $base . 'dicom-parser.esm.js' )
+			&& file_exists( $base . 'xmlbuilder2.esm.js' );
+	}
+
+	/**
+	 * Resolve Cornerstone3D module URLs — local vendor if available, CDN fallback.
+	 *
+	 * Returns an associative array with keys:
+	 *   - core, tools, dicomLoader           (direct import URLs)
+	 *   - importCornerstone, importDicomParser, importXmlbuilder2  (importmap entries)
+	 *   - source  ('vendor' or 'cdn')
+	 *
+	 * When vendored bundles are present the tools and dicom-loader bundles were
+	 * built with `@cornerstonejs/core`, `dicom-parser`, and `xmlbuilder2` as
+	 * esbuild externals, so the importmap still resolves them — but now from
+	 * local URLs instead of esm.sh.
+	 *
+	 * @return array
+	 */
+	private static function resolve_cornerstone_urls() {
+		if ( self::has_vendored_cornerstone() ) {
+			$base = esc_url( WP_MCP_AI_PRO_URL . self::VENDOR_CORNERSTONE_DIR . '/' );
+			return array(
+				'core'                  => $base . 'cornerstone-core.esm.js',
+				'tools'                 => $base . 'cornerstone-tools.esm.js',
+				'dicomLoader'           => $base . 'cornerstone-dicom-loader.esm.js',
+				'importCornerstone'     => $base . 'cornerstone-core.esm.js',
+				'importDicomParser'     => $base . 'dicom-parser.esm.js',
+				'importXmlbuilder2'     => $base . 'xmlbuilder2.esm.js',
+				'source'                => 'vendor',
+			);
+		}
+
+		// CDN fallback — same URLs that were hard-coded before vendoring support.
+		return array(
+			'core'                  => self::CORNERSTONE_CORE_CDN,
+			'tools'                 => self::CORNERSTONE_TOOLS_CDN . '?external=@cornerstonejs/core',
+			'dicomLoader'           => self::CORNERSTONE_DICOM_LOADER_CDN . '?external=@cornerstonejs/core,dicom-parser,xmlbuilder2',
+			'importCornerstone'     => self::CORNERSTONE_CORE_CDN,
+			'importDicomParser'     => self::DICOM_PARSER_CDN,
+			'importXmlbuilder2'     => self::XMLBUILDER2_CDN,
+			'source'                => 'cdn',
+		);
+	}
+
+	/**
 	 * Enqueue viewer assets when we are on the imaging page.
 	 *
 	 * @param string $hook Current admin page hook suffix.
@@ -134,26 +202,23 @@ class WP_MCP_AI_Imaging_Admin_Page {
 			return;
 		}
 
+		$cs_urls = self::resolve_cornerstone_urls();
+
 		// Inject an ES module importmap.
-		// The imaging-viewer.js CDN imports use `?external=@cornerstonejs/core`
-		// and `?external=…,dicom-parser` so that esm.sh emits those packages as
-		// bare specifiers rather than bundling them.  The importmap resolves those
-		// bare specifiers back to the same pinned URLs our direct import() calls
-		// use, guaranteeing all three packages share a SINGLE module instance.
-		// Without this, the wadouri image-loader is registered on a private
-		// internal copy of the core and the canvas stays solid black.
+		// When vendored bundles are present the tools and dicom-loader bundles
+		// were built with core/dicom-parser/xmlbuilder2 as esbuild externals,
+		// so the importmap resolves bare specifiers to local files.
+		// When using the CDN, the `?external=` query parameters on the import()
+		// URLs cause esm.sh to emit bare specifiers, and the importmap resolves
+		// them back to the pinned CDN URLs — ensuring a single shared instance.
 		add_action(
 			'admin_head',
-			function () {
+			function () use ( $cs_urls ) {
 				$importmap = array(
 					'imports' => array(
-						'@cornerstonejs/core' => esc_url_raw( self::CORNERSTONE_CORE_CDN ),
-						'dicom-parser'        => esc_url_raw( self::DICOM_PARSER_CDN ),
-						// xmlbuilder2 is a transitive dep via dcmjs.  Listed as
-						// ?external= on the dicom-image-loader CDN import; the importmap
-						// resolves the bare specifier to a CJS-interop URL that correctly
-						// exports the `create` named function.
-						'xmlbuilder2'         => esc_url_raw( self::XMLBUILDER2_CDN ),
+						'@cornerstonejs/core' => esc_url_raw( $cs_urls['importCornerstone'] ),
+						'dicom-parser'        => esc_url_raw( $cs_urls['importDicomParser'] ),
+						'xmlbuilder2'         => esc_url_raw( $cs_urls['importXmlbuilder2'] ),
 					),
 				);
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -170,10 +235,8 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		);
 
 		// Load the viewer as a module script so that the importmap above applies
-		// correctly to all bare specifiers inside the CDN-fetched Cornerstone3D
-		// packages.  Without type="module", the importmap is not guaranteed to
-		// be consulted for dynamic import() calls in classic scripts across all
-		// supported browser versions.
+		// correctly to all bare specifiers inside the Cornerstone3D packages
+		// (whether loaded from local vendor or CDN).
 		add_filter(
 			'script_loader_tag',
 			static function ( $tag, $handle ) {
@@ -205,6 +268,12 @@ class WP_MCP_AI_Imaging_Admin_Page {
 				'statsUrl'     => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/stats' ) ),
 				'interpretUrl' => esc_url_raw( rest_url( 'mcp-ai/v1/imaging/interpret' ) ),
 				'activeTab'    => $active_tab_for_js,
+				'cornerstone'  => array(
+					'coreUrl'       => esc_url_raw( $cs_urls['core'] ),
+					'toolsUrl'      => esc_url_raw( $cs_urls['tools'] ),
+					'dicomLoaderUrl' => esc_url_raw( $cs_urls['dicomLoader'] ),
+					'source'        => $cs_urls['source'],
+				),
 				'i18n'         => array(
 					'loadingStudy'         => __( 'Loading study…', 'mcp-ai-wpoos-pro' ),
 					'noStudies'            => __( 'No imaging studies found. Upload a DICOM study to get started.', 'mcp-ai-wpoos-pro' ),
