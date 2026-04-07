@@ -1691,9 +1691,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'gemma2',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
-				'rpm_limit'                 => 0,
-				'context_window'            => 8192,
 				'max_output_tokens'         => 4096,
 				'tier'                      => 'free',
 				'supports_streaming'        => true,

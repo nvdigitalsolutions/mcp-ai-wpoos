@@ -2227,6 +2227,8 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			'gemma2'                                       => array(
+				'name'           => 'Gemma 2',
+				'provider'       => 'ollama',
 				'tpm'            => 1000000,
 				'rpm'            => 10000,
 				'tpd'            => 100000000,
@@ -2325,6 +2327,8 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
+				'name'           => 'Gemma SEA Lion V4 27B IT',
+				'provider'       => 'cloudflare',
 				'tpm'            => 60000,
 				'rpm'            => 300,
 				'tpd'            => 3000000,
