@@ -328,7 +328,13 @@ class WP_MCP_AI_Model_Service {
 		$models['gemini-1.5-pro']   = 'Gemini 1.5 Pro (Legacy)';
 		$models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
 
-		// Gemma models (Google's open models - text-only).
+		// Gemma 4 models (Google's latest open models - multimodal).
+		$models['gemma-4-31b-it']  = 'Gemma 4 31B Dense (Multimodal, 256K)';
+		$models['gemma-4-26b-it']  = 'Gemma 4 26B MoE (Multimodal, 256K)';
+		$models['gemma-4-e4b-it']  = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
+		$models['gemma-4-e2b-it']  = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
+
+		// Gemma 2 models (Google's open models - text-only, legacy).
 		if ( ! $requires_vision && ! $requires_multimodal ) {
 			$models['gemma-2-27b-it'] = 'Gemma 2 27B (Instruct)';
 			$models['gemma-2-9b-it']  = 'Gemma 2 9B (Instruct)';
@@ -427,6 +433,8 @@ class WP_MCP_AI_Model_Service {
 				'mistralai/Mistral-7B-Instruct-v0.3'     => 'Mistral 7B Instruct v0.3',
 				'mistralai/Mixtral-8x7B-Instruct-v0.1'   => 'Mixtral 8x7B Instruct',
 				// Google Gemma.
+				'google/gemma-4-31b-it'                  => 'Gemma 4 31B Dense (Multimodal)',
+				'google/gemma-4-26b-it'                  => 'Gemma 4 26B MoE (Multimodal)',
 				'google/gemma-2-27b-it'                  => 'Gemma 2 27B Instruct',
 				'google/gemma-2-9b-it'                   => 'Gemma 2 9B Instruct',
 				// Microsoft Phi.
@@ -475,6 +483,7 @@ class WP_MCP_AI_Model_Service {
 			'mistral'       => 'Mistral',
 			'mistral-large' => 'Mistral Large',
 			'mixtral'       => 'Mixtral',
+			'gemma4'        => 'Gemma 4',
 			'gemma3'        => 'Gemma 3',
 			'gemma2'        => 'Gemma 2',
 			'phi4'          => 'Phi-4',
@@ -551,6 +560,8 @@ class WP_MCP_AI_Model_Service {
 			'microsoft/phi-4-mini-instruct'             => 'Phi-4 Mini Instruct',
 			'microsoft/phi-3.5-mini-instruct'           => 'Phi-3.5 Mini Instruct',
 			// Google Gemma.
+			'google/gemma-4-31b-it'                     => 'Gemma 4 31B Dense (Multimodal)',
+			'google/gemma-4-26b-it'                     => 'Gemma 4 26B MoE (Multimodal)',
 			'google/gemma-3-12b-it'                     => 'Gemma 3 12B Instruct',
 			'google/gemma-2-27b-it'                     => 'Gemma 2 27B Instruct',
 			'google/gemma-2-9b-it'                      => 'Gemma 2 9B Instruct',
@@ -594,6 +605,7 @@ class WP_MCP_AI_Model_Service {
 		$models['@hf/nousresearch/hermes-2-pro-mistral-7b']     = 'Hermes 2 Pro Mistral 7B';
 
 		// Text Generation Models.
+		$models['@cf/google/gemma-4-26b-it']                    = 'Gemma 4 26B MoE (Multimodal)';
 		$models['@cf/aisingapore/gemma-sea-lion-v4-27b-it']     = 'Gemma SEA Lion V4 27B IT';
 		$models['@cf/openai/gpt-oss-20b']                       = 'GPT OSS 20B';
 		$models['@cf/openai/gpt-oss-120b']                      = 'GPT OSS 120B';
@@ -658,6 +670,12 @@ class WP_MCP_AI_Model_Service {
 		$models['microsoft/phi-3-small-128k-instruct']  = 'Phi-3 Small 128K Instruct (Free)';
 		$models['microsoft/phi-3-small-8k-instruct']    = 'Phi-3 Small 8K Instruct (Free)';
 
+		// Google Gemma 4 Models (Multimodal, Apache 2.0).
+		$models['google/gemma-4-31b-it']  = 'Gemma 4 31B Dense (Multimodal, 256K)';
+		$models['google/gemma-4-26b-it']  = 'Gemma 4 26B MoE (Multimodal, 256K)';
+		$models['google/gemma-4-e4b-it']  = 'Gemma 4 E4B (Multimodal, 128K, Edge)';
+		$models['google/gemma-4-e2b-it']  = 'Gemma 4 E2B (Multimodal, 128K, Edge)';
+
 		// Google Gemma 2 Models.
 		$models['google/gemma-2-27b-it'] = 'Gemma 2 27B IT (Free)';
 		$models['google/gemma-2-9b-it']  = 'Gemma 2 9B IT (Free)';
@@ -717,6 +735,10 @@ class WP_MCP_AI_Model_Service {
 				'meta/llama-4-scout-17b-16e-instruct',
 				'meta/llama-3.2-90b-vision-instruct',
 				'meta/llama-3.2-11b-vision-instruct',
+				'google/gemma-4-31b-it',
+				'google/gemma-4-26b-it',
+				'google/gemma-4-e4b-it',
+				'google/gemma-4-e2b-it',
 				'google/gemma-3-27b-it',
 				'google/gemma-3-12b-it',
 				'google/gemma-3-4b-it',
