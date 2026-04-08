@@ -39,7 +39,7 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Get Strudel live coding reference documentation. Use this tool when you need to look up Strudel mini-notation syntax, available effects, pattern transformations, sample banks, synthesizer types, or MIDI output syntax before generating or modifying a pattern. Returns detailed reference for the requested topic. Always consult this before writing complex Strudel code.', 'nvoos-algorave' );
+		return __( 'Get Strudel live coding reference documentation. Use this tool when you need to look up Strudel mini-notation syntax, available effects, pattern transformations, sample banks, synthesizer types, MIDI output syntax, or visual feedback features before generating or modifying a pattern. Returns detailed reference for the requested topic. Always consult this before writing complex Strudel code.', 'nvoos-algorave' );
 	}
 
 	/**
@@ -52,7 +52,7 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 				'topic' => array(
 					'type'        => 'string',
 					'description' => __( 'Reference topic to look up.', 'nvoos-algorave' ),
-					'enum'        => array( 'mini_notation', 'effects', 'transformations', 'sample_banks', 'synthesizers', 'tempo', 'midi', 'all' ),
+					'enum'        => array( 'mini_notation', 'effects', 'transformations', 'sample_banks', 'synthesizers', 'tempo', 'midi', 'visual_feedback', 'all' ),
 					'default'     => 'all',
 				),
 			),
@@ -98,6 +98,10 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 
 		if ( 'all' === $topic || 'midi' === $topic ) {
 			$reference['midi'] = $this->get_midi_reference();
+		}
+
+		if ( 'all' === $topic || 'visual_feedback' === $topic ) {
+			$reference['visual_feedback'] = $this->get_visual_feedback_reference();
 		}
 
 		return array(
@@ -338,47 +342,179 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 	 */
 	private function get_sample_banks_reference() {
 		return array(
-			'description' => 'Sample banks change the character of drum sounds. Use .bank("name") to switch.',
+			'description' => 'Sample banks change the character of drum sounds. Use .bank("name") to switch. 65+ drum machines are available from the tidal-drum-machines collection. Short aliases are also supported (e.g. TR808 for RolandTR808).',
 			'banks'       => array(
 				array(
 					'name'    => 'RolandTR808',
+					'alias'   => 'TR808',
 					'desc'    => 'Classic analog drum machine. Warm, punchy sounds.',
 					'sounds'  => 'bd, sd, hh, oh, cp, lt, mt, ht, rs, cb, cl',
 					'example' => 's("bd sd hh cp").bank("RolandTR808")',
 				),
 				array(
 					'name'    => 'RolandTR909',
+					'alias'   => 'TR909',
 					'desc'    => 'Iconic house/techno drum machine. Crisp, powerful hits.',
 					'sounds'  => 'bd, sd, hh, oh, cp, lt, mt, ht, rs, rd, cr',
 					'example' => 's("bd*4").bank("RolandTR909")',
 				),
 				array(
+					'name'    => 'RolandTR707',
+					'alias'   => 'TR707',
+					'desc'    => 'Digital rhythm composer. Clean, punchy PCM samples.',
+					'sounds'  => 'bd, sd, hh, oh, cp, lt, mt, ht, rs, cb, cr, rd, tb',
+					'example' => 's("bd sd hh cp").bank("RolandTR707")',
+				),
+				array(
+					'name'    => 'RolandTR606',
+					'alias'   => 'TR606',
+					'desc'    => 'Compact analog drum machine. Thin, characterful lo-fi tones.',
+					'sounds'  => 'bd, sd, hh, oh, lt, ht',
+					'example' => 's("bd*4 sd").bank("RolandTR606")',
+				),
+				array(
 					'name'    => 'RolandCR78',
+					'alias'   => 'Compurhythm78',
 					'desc'    => 'Vintage rhythm machine. Thin, distinctive character.',
 					'sounds'  => 'bd, sd, hh, oh, rs, cb',
 					'example' => 's("bd sd hh hh").bank("RolandCR78")',
 				),
 				array(
 					'name'    => 'AkaiLinn',
-					'desc'    => 'Digital drum machine. Clean, precise samples.',
-					'sounds'  => 'bd, sd, hh, oh, cp, tm',
+					'alias'   => 'Linn',
+					'desc'    => 'Digital drum machine (LinnDrum). Clean, precise samples.',
+					'sounds'  => 'bd, sd, hh, oh, cp, tm, cb, rd, cr',
 					'example' => 's("bd cp sd cp").bank("AkaiLinn")',
 				),
 				array(
+					'name'    => 'OberheimDMX',
+					'alias'   => 'DMX',
+					'desc'    => 'Classic hip-hop drum machine. Thick, punchy digital sounds.',
+					'sounds'  => 'bd, sd, hh, oh, cp, tm, cr',
+					'example' => 's("bd sd hh hh").bank("OberheimDMX")',
+				),
+				array(
+					'name'    => 'EmuSP12',
+					'alias'   => 'SP12',
+					'desc'    => 'Sampling drum machine. Crunchy 12-bit character.',
+					'sounds'  => 'bd, sd, hh, oh, cp, cr',
+					'example' => 's("bd*4").bank("EmuSP12")',
+				),
+				array(
 					'name'    => 'RhythmAce',
+					'alias'   => 'Ace',
 					'desc'    => 'Vintage rhythm unit. Lo-fi, characterful sounds.',
 					'sounds'  => 'bd, sd, hh, rs',
 					'example' => 's("bd*4").bank("RhythmAce")',
 				),
 				array(
 					'name'    => 'KorgMinipops',
+					'alias'   => 'Minipops',
 					'desc'    => 'Classic rhythm machine. Delicate, acoustic-like tones.',
 					'sounds'  => 'bd, sd, hh, oh, cb',
 					'example' => 's("bd sd hh oh").bank("KorgMinipops")',
 				),
+				array(
+					'name'    => 'KorgM1',
+					'alias'   => 'M1',
+					'desc'    => 'Iconic 80s workstation. Clean, polished drum sounds.',
+					'sounds'  => 'bd, sd, hh, oh, cp',
+					'example' => 's("bd sd hh cp").bank("KorgM1")',
+				),
+				array(
+					'name'    => 'LinnLM1',
+					'alias'   => 'LM1',
+					'desc'    => 'First digital drum machine. Distinctive, natural samples.',
+					'sounds'  => 'bd, sd, hh, oh, cp, cb, tm',
+					'example' => 's("bd sd cp sd").bank("LinnLM1")',
+				),
+				array(
+					'name'    => 'ViscoSpaceDrum',
+					'alias'   => 'SpaceDrum',
+					'desc'    => 'Analog space drums. Unique, otherworldly tones.',
+					'sounds'  => 'bd, sd, tm',
+					'example' => 's("bd sd tm sd").bank("ViscoSpaceDrum")',
+				),
 			),
-			'patternable' => 'Banks can be patterned: .bank("<RolandTR808 RolandTR909>")',
-			'usage'       => 'Default samples (without .bank()) use the dirt-samples library: bd, sd, hh, oh, cp, mt, lt, ht, cr, rd, rim, cb, cl.',
+			'all_machines' => implode(
+				', ',
+				array(
+					'AJKPercusyn',
+					'AkaiLinn',
+					'AkaiMPC60',
+					'AkaiXR10',
+					'AlesisHR16',
+					'AlesisSR16',
+					'BossDR110',
+					'BossDR220',
+					'BossDR55',
+					'BossDR550',
+					'CasioRZ1',
+					'CasioSK1',
+					'CasioVL1',
+					'DoepferMS404',
+					'EmuDrumulator',
+					'EmuSP12',
+					'KorgDDM110',
+					'KorgKPR77',
+					'KorgKR55',
+					'KorgKRZ',
+					'KorgM1',
+					'KorgMinipops',
+					'KorgPoly800',
+					'KorgT3',
+					'Linn9000',
+					'LinnLM1',
+					'LinnLM2',
+					'MoogConcertMateMG1',
+					'OberheimDMX',
+					'RhodesPolaris',
+					'RhythmAce',
+					'RolandCompurhythm78',
+					'RolandCompurhythm1000',
+					'RolandCompurhythm8000',
+					'RolandD110',
+					'RolandD70',
+					'RolandDDR30',
+					'RolandJD990',
+					'RolandMC202',
+					'RolandMC303',
+					'RolandMT32',
+					'RolandR8',
+					'RolandS50',
+					'RolandSH09',
+					'RolandSystem100',
+					'RolandTR505',
+					'RolandTR606',
+					'RolandTR626',
+					'RolandTR707',
+					'RolandTR727',
+					'RolandTR808',
+					'RolandTR909',
+					'SakataDPM48',
+					'SequentialCircuitsDrumtracks',
+					'SequentialCircuitsTom',
+					'SimmonsSDS400',
+					'SimmonsSDS5',
+					'SoundmastersR88',
+					'UnivoxMicroRhythmer12',
+					'ViscoSpaceDrum',
+					'XdrumLM8953',
+					'YamahaRM50',
+					'YamahaRX21',
+					'YamahaRX5',
+					'YamahaRY30',
+					'YamahaTG33',
+				)
+			),
+			'other_sounds' => array(
+				'piano'     => 'Salamander Grand Piano. Use: note("c4 e4 g4").s("piano"). 29 velocity-sampled notes.',
+				'vcsl'      => 'VCSL orchestral samples (CC0). Includes brass, woodwinds, strings, percussion.',
+				'mridangam' => 'Indian mridangam percussion. Sounds: gumki, ka, nam, ta, ki, dhin, na, chaapu, dhum, ardha, thom, dhi, tha.',
+				'wavetables' => 'Wavetable synthesis: wt_digital, wt_vgame collections for synth textures.',
+			),
+			'patternable'  => 'Banks can be patterned: .bank("<RolandTR808 RolandTR909>"). Aliases work too: .bank("<TR808 TR909>").',
+			'usage'        => 'Default samples (without .bank()) use the dirt-samples library: bd, sd, hh, oh, cp, mt, lt, ht, cr, rd, rim, cb, cl.',
 		);
 	}
 
@@ -481,6 +617,114 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 			),
 			'setup'       => 'WebMIDI requires HTTPS or localhost. The browser will prompt for MIDI access permission. Connect hardware via USB-MIDI or use a virtual MIDI port (IAC Driver on macOS, MIDI Through on Linux) to route to DAWs.',
 			'channels'    => 'MIDI channels can be patterned: .midichan("<0 1 2 3>").',
+		);
+	}
+
+	/**
+	 * Visual feedback reference.
+	 *
+	 * @return array
+	 */
+	private function get_visual_feedback_reference() {
+		return array(
+			'description'    => 'Strudel provides built-in visual feedback to help understand patterns. Visualizations render directly in the code editor or as background displays.',
+			'highlighting'   => array(
+				'description' => 'Mini-notation inside quotes is automatically highlighted in real-time, showing which part of the pattern is currently playing.',
+				'color'       => array(
+					'name'    => '.color("value")',
+					'desc'    => 'Set the highlight color for pattern events. Can be patterned.',
+					'example' => 'note("c a f e").color("cyan")',
+				),
+			),
+			'visualizations' => array(
+				array(
+					'name'    => '.pianoroll()',
+					'desc'    => 'Render a piano-roll visualization in the background. Shows note pitch vs. time.',
+					'example' => 'note("c a f e").color("white").pianoroll()',
+				),
+				array(
+					'name'    => '._pianoroll()',
+					'desc'    => 'Render a piano-roll visualization inline below the pattern in the editor.',
+					'example' => 'note("c a f e").color("cyan")._pianoroll()',
+				),
+				array(
+					'name'    => '.punchcard()',
+					'desc'    => 'Render a punchcard visualization in the background. Like pianoroll but considers post-call transformations.',
+					'example' => 'note("c a f e").punchcard()',
+				),
+				array(
+					'name'    => '._punchcard()',
+					'desc'    => 'Render a punchcard visualization inline below the pattern in the editor.',
+					'example' => 'note("c a f e")._punchcard()',
+				),
+			),
+			'options'        => array(
+				'description' => 'Both pianoroll() and punchcard() accept an options object.',
+				'parameters'  => array(
+					array(
+						'name'    => 'cycles',
+						'type'    => 'number',
+						'default' => '4',
+						'desc'    => 'Number of cycles to display in the visualization.',
+					),
+					array(
+						'name'    => 'playhead',
+						'type'    => 'number',
+						'default' => '0.5',
+						'desc'    => 'Position of the playhead (0 to 1). Controls where active notes appear.',
+					),
+					array(
+						'name'    => 'vertical',
+						'type'    => 'boolean',
+						'default' => 'false',
+						'desc'    => 'Display the visualization vertically instead of horizontally.',
+					),
+					array(
+						'name'    => 'labels',
+						'type'    => 'boolean',
+						'default' => 'false',
+						'desc'    => 'Show note labels on the visualization.',
+					),
+					array(
+						'name'    => 'active',
+						'type'    => 'string',
+						'default' => 'inherited',
+						'desc'    => 'CSS color for currently playing/active notes.',
+					),
+					array(
+						'name'    => 'flipTime',
+						'type'    => 'boolean',
+						'default' => 'false',
+						'desc'    => 'Reverse the time axis direction.',
+					),
+					array(
+						'name'    => 'flipValues',
+						'type'    => 'boolean',
+						'default' => 'false',
+						'desc'    => 'Reverse the value (pitch) axis direction.',
+					),
+					array(
+						'name'    => 'smear',
+						'type'    => 'number',
+						'default' => '0',
+						'desc'    => 'Trail/smear amount for notes. Creates a motion blur effect.',
+					),
+					array(
+						'name'    => 'fold',
+						'type'    => 'boolean',
+						'default' => 'false',
+						'desc'    => 'Fold (wrap) notes that extend beyond the visible range.',
+					),
+				),
+				'example'     => 'note("c a f e")._pianoroll({ cycles: 8, playhead: 0.5, labels: true, active: "#ff0" })',
+			),
+			'tips'           => array(
+				'Inline methods (prefixed with _) show visualizations below the current line in the editor.',
+				'Background methods (without _) overlay on the main canvas, allowing multiple visualizations.',
+				'Use .color() to customize the visual appearance of individual patterns in stacked views.',
+				'Pianoroll is best for melodic patterns, punchcard for rhythmic/drum patterns.',
+				'The active option colors currently playing notes differently for real-time feedback.',
+			),
 		);
 	}
 

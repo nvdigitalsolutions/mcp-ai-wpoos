@@ -329,6 +329,7 @@ class NV_oOS_Algorave {
 		// Pass configuration to frontend.
 		// Localized on the pattern-engine handle so the data is available
 		// when algorave-pattern-engine.js runs (before the live-coder script).
+		$samples_base = NVOOS_ALGORAVE_URL . 'assets/samples/';
 		wp_localize_script(
 			'nvoos-algorave-pattern-engine',
 			'nvoosAlgoraveConfig',
@@ -339,6 +340,16 @@ class NV_oOS_Algorave {
 				'defaultScale'   => sanitize_text_field( $settings['default_scale'] ),
 				'strudelEnabled' => ! empty( $settings['strudel_cdn'] ),
 				'visualizer'     => ! empty( $settings['visualizer_enabled'] ),
+				'samplesUrl'     => esc_url_raw( $samples_base ),
+				'sampleMaps'     => array(
+					'drumMachines'      => esc_url_raw( $samples_base . 'tidal-drum-machines.json' ),
+					'drumMachinesAlias' => esc_url_raw( $samples_base . 'tidal-drum-machines-alias.json' ),
+					'piano'             => esc_url_raw( $samples_base . 'piano.json' ),
+					'vcsl'              => esc_url_raw( $samples_base . 'vcsl.json' ),
+					'mridangam'         => esc_url_raw( $samples_base . 'mridangam.json' ),
+					'uzuDrumkit'        => esc_url_raw( $samples_base . 'uzu-drumkit.json' ),
+					'uzuWavetables'     => esc_url_raw( $samples_base . 'uzu-wavetables.json' ),
+				),
 			)
 		);
 	}
