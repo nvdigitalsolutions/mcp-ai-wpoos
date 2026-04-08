@@ -329,9 +329,11 @@
 				// after audio starts (some Strudel builds lazy-init superdough).
 				const self = this;
 				let pollCount = 0;
+				// 20 attempts × 500 ms = 10 seconds maximum polling window.
+				const maxPollAttempts = 20;
 				const pollInterval = setInterval( function () {
 					pollCount++;
-					if ( pollCount > 20 ) {
+					if ( pollCount > maxPollAttempts ) {
 						clearInterval( pollInterval );
 						return;
 					}

@@ -270,7 +270,8 @@
 			} else {
 				// Semi-transparent overlay for trails.
 				const rgb = hexToRgb( this.backgroundColor );
-				this.ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
+				const rgbStr = rgb.r + ',' + rgb.g + ',' + rgb.b;
+				this.ctx.fillStyle = 'rgba(' + rgbStr + ',' + alpha + ')';
 				this.ctx.fillRect( 0, 0, w, h );
 			}
 		},
@@ -380,7 +381,7 @@
 			const h = this.cssHeight;
 			const isFreq = data instanceof Uint8Array;
 
-			// Use only the lower half of frequency bins (most musically relevant).
+			// Use the lower three-quarters of frequency bins (most musically relevant).
 			const usableBins = Math.floor( data.length * 0.75 );
 			const barWidth = w / usableBins;
 
@@ -444,6 +445,7 @@
 			}
 
 			const rgb = hexToRgb( this.color );
+			const rgbStr = rgb.r + ',' + rgb.g + ',' + rgb.b;
 			const decay = 0.92;
 			const peakDecay = 0.98;
 
@@ -480,9 +482,9 @@
 				// Gradient bar.
 				const xPos = i * ( barWidth + gap );
 				const grad = this.ctx.createLinearGradient( 0, h, 0, h - barH );
-				grad.addColorStop( 0, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',1)' );
-				grad.addColorStop( 0.6, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.7)' );
-				grad.addColorStop( 1, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.3)' );
+				grad.addColorStop( 0, 'rgba(' + rgbStr + ',1)' );
+				grad.addColorStop( 0.6, 'rgba(' + rgbStr + ',0.7)' );
+				grad.addColorStop( 1, 'rgba(' + rgbStr + ',0.3)' );
 				this.ctx.fillStyle = grad;
 				this.ctx.fillRect( xPos, h - barH, barWidth, barH );
 
@@ -539,9 +541,10 @@
 			// Radial gradient fill.
 			const grad = this.ctx.createRadialGradient( cx, cy, baseRadius * 0.5, cx, cy, baseRadius + maxExtend );
 			const rgb = hexToRgb( this.color );
-			grad.addColorStop( 0, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.05)' );
-			grad.addColorStop( 0.7, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.15)' );
-			grad.addColorStop( 1, 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',0.3)' );
+			const rgbStr = rgb.r + ',' + rgb.g + ',' + rgb.b;
+			grad.addColorStop( 0, 'rgba(' + rgbStr + ',0.05)' );
+			grad.addColorStop( 0.7, 'rgba(' + rgbStr + ',0.15)' );
+			grad.addColorStop( 1, 'rgba(' + rgbStr + ',0.3)' );
 			this.ctx.fillStyle = grad;
 			this.ctx.fill();
 
@@ -576,6 +579,7 @@
 			const midY = h / 2;
 			const step = Math.max( 1, Math.floor( data.length / 80 ) );
 			const rgb = hexToRgb( this.color );
+			const rgbStr = rgb.r + ',' + rgb.g + ',' + rgb.b;
 
 			for ( let i = 0; i < data.length; i += step ) {
 				const value = Math.abs( data[ i ] );
@@ -589,7 +593,7 @@
 				this.ctx.shadowColor = this.color;
 				this.ctx.shadowBlur = size * 2;
 
-				this.ctx.fillStyle = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha.toFixed( 2 ) + ')';
+				this.ctx.fillStyle = 'rgba(' + rgbStr + ',' + alpha + ')';
 				this.ctx.beginPath();
 				this.ctx.arc( x, y, size, 0, Math.PI * 2 );
 				this.ctx.fill();
