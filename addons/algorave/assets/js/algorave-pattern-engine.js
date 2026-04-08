@@ -58,19 +58,15 @@
 			// gesture on modern browsers. Deferred to ensureStrudel().
 			this.strudelAvailable = ( typeof window.initStrudel === 'function' );
 
-			// Check for Tone.js availability.
-			if ( typeof Tone === 'undefined' ) {
-				// eslint-disable-next-line no-console
-				console.warn( '[Algorave] Tone.js not loaded. Pattern engine requires Tone.js.' );
-				return;
+			// Set up Tone.js if available (optional — Strudel has its own audio engine).
+			if ( typeof Tone !== 'undefined' ) {
+				this.transport = Tone.getTransport();
+				this.transport.bpm.value = this.bpm;
+
+				// Create analyser for visualizations.
+				this.analyser = new Tone.Analyser( 'waveform', 1024 );
+				Tone.getDestination().connect( this.analyser );
 			}
-
-			this.transport = Tone.getTransport();
-			this.transport.bpm.value = this.bpm;
-
-			// Create analyser for visualizations.
-			this.analyser = new Tone.Analyser( 'waveform', 1024 );
-			Tone.getDestination().connect( this.analyser );
 		},
 
 		/**
@@ -146,14 +142,26 @@
 					if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
 						await strudel.evaluate( code );
 					} else {
+						const msg = 'strudel.evaluate() not available. Enable Strudel CDN in settings.';
 						// eslint-disable-next-line no-console
-						console.warn( '[Algorave] strudel.evaluate() not available. Enable Strudel CDN in settings.' );
+						console.warn( '[Algorave] ' + msg );
+						document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
+						return;
 					}
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.error( '[Algorave] Strudel evaluation error:', e );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: e.message || String( e ) } } ) );
+					return;
 				}
-			} else if ( typeof Tone !== 'undefined' ) {
+			} else if ( 'tonejs' === engine ) {
+				if ( typeof Tone === 'undefined' ) {
+					const msg = 'Tone.js is not loaded. Select the Strudel engine or load Tone.js.';
+					// eslint-disable-next-line no-console
+					console.warn( '[Algorave] ' + msg );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
+					return;
+				}
 				// Tone.js evaluation.
 				try {
 					// eslint-disable-next-line no-eval
@@ -165,6 +173,8 @@
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.error( '[Algorave] Tone.js evaluation error:', e );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: e.message || String( e ) } } ) );
+					return;
 				}
 			}
 
