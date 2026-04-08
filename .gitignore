@@ -27,6 +27,7 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-pro/
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
+/build/.tmp-addon-zips/
 # Ignore all generated files in build/ (ZIPs, docs, etc.)
 /build/WORDPRESS_ORG_SUBMISSION_README.md
 
