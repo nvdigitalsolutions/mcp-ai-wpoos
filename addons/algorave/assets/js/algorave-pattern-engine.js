@@ -13,6 +13,7 @@
  * - Tempo: setcps(), setcpm()
  * - MIDI output: .midi() via WebMIDI API
  * - Custom samples: samples() for loading sample maps
+ * - Visual feedback: .pianoroll(), ._pianoroll(), .punchcard(), ._punchcard(), .color()
  *
  * @package NV_oOS_Algorave
  * @since   1.0.0
@@ -125,19 +126,88 @@
 				return;
 			}
 
-			// First call — kick off initStrudel() with default samples.
-			// The prebake function loads the standard dirt-samples library
-			// (bd, sd, hh, cp, etc.) from the tidalcycles GitHub CDN.
+			// First call — kick off initStrudel() with all sample collections.
+			// The prebake function loads:
+			//   1. dirt-samples (bd, sd, hh, cp, etc.) from tidalcycles GitHub CDN
+			//   2. tidal-drum-machines (RolandTR808, TR909, AkaiLinn, etc.)
+			//   3. tidal-drum-machines-alias (short names: TR808, TR909, Linn, etc.)
+			//   4. piano (Salamander Grand Piano samples)
+			//   5. vcsl (VCSL orchestral sample library — CC0)
+			//   6. mridangam (Indian percussion samples)
+			//   7. uzu-drumkit (community drum kit samples)
+			//   8. uzu-wavetables (wavetable synthesis sounds)
 			// Without this, initStrudel() creates a REPL with no samples.
 			if ( ! this.strudelReady ) {
 				try {
+					var sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
 					this.strudelReady = window.initStrudel( {
 						prebake: function () {
-							if ( typeof strudel !== 'undefined' && typeof strudel.samples === 'function' ) {
-								return strudel.samples( 'github:tidalcycles/dirt-samples' );
+							if ( typeof strudel === 'undefined' || typeof strudel.samples !== 'function' ) {
+								// eslint-disable-next-line no-console
+								console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
+								return;
 							}
-							// eslint-disable-next-line no-console
-							console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
+
+							var loads = [];
+
+							// 1. Standard dirt-samples (basic bd, sd, hh, cp sounds).
+							loads.push( strudel.samples( 'github:tidalcycles/dirt-samples' ) );
+
+							// 2. Tidal drum machines (RolandTR808, TR909, AkaiLinn, etc.).
+							// These provide .bank("RolandTR808") support.
+							if ( sampleMaps.drumMachines ) {
+								loads.push(
+									strudel.samples(
+										sampleMaps.drumMachines,
+										'github:ritchse/tidal-drum-machines/main/machines/',
+										{ tag: 'drum-machines' }
+									)
+								);
+							}
+
+							// 3. Piano (Salamander Grand Piano — CC-BY).
+							if ( sampleMaps.piano ) {
+								loads.push( strudel.samples( sampleMaps.piano ) );
+							}
+
+							// 4. VCSL orchestral samples (CC0).
+							if ( sampleMaps.vcsl ) {
+								loads.push(
+									strudel.samples(
+										sampleMaps.vcsl,
+										'github:sgossner/VCSL/master/'
+									)
+								);
+							}
+
+							// 5. Mridangam (Indian percussion).
+							if ( sampleMaps.mridangam ) {
+								loads.push(
+									strudel.samples(
+										sampleMaps.mridangam,
+										undefined,
+										{ tag: 'drum-machines' }
+									)
+								);
+							}
+
+							// 6. Uzu community drum kit.
+							if ( sampleMaps.uzuDrumkit ) {
+								loads.push(
+									strudel.samples(
+										sampleMaps.uzuDrumkit,
+										undefined,
+										{ tag: 'drum-machines' }
+									)
+								);
+							}
+
+							// 7. Uzu wavetable synthesis sounds.
+							if ( sampleMaps.uzuWavetables ) {
+								loads.push( strudel.samples( sampleMaps.uzuWavetables ) );
+							}
+
+							return Promise.all( loads );
 						},
 					} );
 				} catch ( e ) {
@@ -152,12 +222,37 @@
 				await this.strudelReady;
 				this.strudelInitialized = true;
 
+				// Register drum machine bank aliases (short names like TR808 for RolandTR808).
+				this.loadDrumMachineAliases();
+
 				// Connect to Strudel's internal AudioContext for visualization.
 				this.connectStrudelAnalyser();
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Strudel initialization failed:', e );
 				this.strudelAvailable = false;
+			}
+		},
+
+		/**
+		 * Load drum machine bank aliases (e.g. TR808 → RolandTR808).
+		 *
+		 * Uses the tidal-drum-machines-alias.json file to register
+		 * short names via Strudel's aliasBank() function.
+		 */
+		loadDrumMachineAliases: function () {
+			if ( typeof strudel === 'undefined' || typeof strudel.aliasBank !== 'function' ) {
+				return;
+			}
+
+			var sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
+			if ( sampleMaps.drumMachinesAlias ) {
+				try {
+					strudel.aliasBank( sampleMaps.drumMachinesAlias );
+				} catch ( e ) {
+					// eslint-disable-next-line no-console
+					console.warn( '[Algorave] Could not load drum machine aliases:', e );
+				}
 			}
 		},
 
@@ -446,14 +541,71 @@
 			return [
 				'RolandTR808',
 				'RolandTR909',
+				'RolandTR707',
+				'RolandTR606',
+				'RolandTR505',
+				'RolandTR626',
+				'RolandTR727',
 				'RolandCR78',
+				'RolandCompurhythm78',
+				'RolandCompurhythm1000',
+				'RolandCompurhythm8000',
+				'RolandMC202',
+				'RolandMC303',
+				'RolandD110',
+				'RolandD70',
+				'RolandDDR30',
+				'RolandJD990',
+				'RolandMT32',
+				'RolandR8',
+				'RolandS50',
+				'RolandSH09',
+				'RolandSystem100',
 				'AkaiLinn',
-				'AkaiMPC',
-				'RhythmAce',
-				'ViscoSpaceDrum',
-				'KorgMinipops',
+				'AkaiMPC60',
+				'AkaiXR10',
+				'AlesisHR16',
+				'AlesisSR16',
+				'BossDR110',
+				'BossDR220',
+				'BossDR55',
+				'BossDR550',
+				'CasioRZ1',
+				'CasioSK1',
+				'CasioVL1',
+				'DoepferMS404',
+				'EmuDrumulator',
+				'EmuSP12',
+				'KorgDDM110',
+				'KorgKPR77',
+				'KorgKR55',
+				'KorgKRZ',
 				'KorgM1',
-				'RolandCompurhythm',
+				'KorgMinipops',
+				'KorgPoly800',
+				'KorgT3',
+				'Linn9000',
+				'LinnLM1',
+				'LinnLM2',
+				'MoogConcertMateMG1',
+				'OberheimDMX',
+				'RhodesPolaris',
+				'RhythmAce',
+				'SakataDPM48',
+				'SequentialCircuitsDrumtracks',
+				'SequentialCircuitsTom',
+				'SimmonsSDS400',
+				'SimmonsSDS5',
+				'SoundmastersR88',
+				'UnivoxMicroRhythmer12',
+				'ViscoSpaceDrum',
+				'XdrumLM8953',
+				'YamahaRM50',
+				'YamahaRX21',
+				'YamahaRX5',
+				'YamahaRY30',
+				'YamahaTG33',
+				'AJKPercusyn',
 			];
 		},
 	};
