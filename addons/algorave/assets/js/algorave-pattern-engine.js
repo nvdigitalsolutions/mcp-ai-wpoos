@@ -148,7 +148,7 @@
 							if ( typeof strudel === 'undefined' || typeof strudel.samples !== 'function' ) {
 								// eslint-disable-next-line no-console
 								console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
-								return;
+								return Promise.resolve();
 							}
 
 							const loads = [];
@@ -157,7 +157,9 @@
 							// so one failed collection doesn't break the entire init.
 							const loadSafe = function ( label, ...args ) {
 								loads.push(
-									strudel.samples( ...args ).catch( function ( err ) {
+									Promise.resolve().then( function () {
+										return strudel.samples( ...args );
+									} ).catch( function ( err ) {
 										// eslint-disable-next-line no-console
 										console.warn( '[Algorave] Failed to load ' + label + ':', err );
 									} )
@@ -233,7 +235,8 @@
 				this.strudelInitialized = true;
 
 				// Register drum machine bank aliases (short names like TR808 for RolandTR808).
-				this.loadDrumMachineAliases();
+				// Await the async alias loading so aliases are ready before evaluation.
+				await this.loadDrumMachineAliases();
 
 				// Connect to Strudel's internal AudioContext for visualization.
 				this.connectStrudelAnalyser();
@@ -249,16 +252,18 @@
 		 *
 		 * Uses the tidal-drum-machines-alias.json file to register
 		 * short names via Strudel's aliasBank() function.
+		 *
+		 * @return {Promise} Resolves when aliases are registered.
 		 */
-		loadDrumMachineAliases: function () {
+		loadDrumMachineAliases: async function () {
 			if ( typeof strudel === 'undefined' || typeof strudel.aliasBank !== 'function' ) {
-				return;
+				return Promise.resolve();
 			}
 
 			const sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
 			if ( sampleMaps.drumMachinesAlias ) {
 				try {
-					strudel.aliasBank( sampleMaps.drumMachinesAlias );
+					await strudel.aliasBank( sampleMaps.drumMachinesAlias );
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.warn( '[Algorave] Could not load drum machine aliases:', e );

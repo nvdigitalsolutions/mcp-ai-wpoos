@@ -37,7 +37,7 @@ define( 'NVOOS_ALGORAVE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_ALGORAVE_URL', plugin_dir_url( __FILE__ ) );
 
 /** Strudel CDN base URL — loaded at runtime to respect AGPL-3.0. */
-define( 'NVOOS_ALGORAVE_STRUDEL_CDN', 'https://unpkg.com/@strudel/web@1.2.5' );
+define( 'NVOOS_ALGORAVE_STRUDEL_CDN', 'https://unpkg.com/@strudel/web@1.2.5/dist/index.js' );
 
 // Load core classes.
 require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave.php';
