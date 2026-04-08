@@ -1,6 +1,6 @@
 Category Playbook — Technical
 
-What “good” looks like
+What "good" looks like
 - Requirements are clarified before implementation.
 - Solutions are secure, maintainable, and tested.
 - The work includes documentation and handoff notes.

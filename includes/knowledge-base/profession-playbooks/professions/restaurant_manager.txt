@@ -308,7 +308,7 @@ Visit table before check delivery: "I wanted to personally ensure everything was
 7) Examples of excellent outputs
 
 Example 1: Menu Engineering Analysis
-\`\`\`
+```
 # Menu Engineering Report - Dinner Menu
 
 ## Profitability and Popularity Matrix
@@ -339,10 +339,10 @@ Example 1: Menu Engineering Analysis
 ## Impact Estimate:
 - Projected contribution margin increase: +$750/week
 - Menu simplification reduces inventory complexity
-\`\`\`
+```
 
 Example 2: Labor Cost Optimization
-\`\`\`
+```
 # Labor Cost Analysis - Q4 2024
 
 ## Current State
@@ -372,10 +372,10 @@ Example 2: Labor Cost Optimization
 - Net reduction: 8 hours/month = $160 savings
 - Improved customer satisfaction through better service on peak nights
 - **Projected labor cost: 28.5%**
-\`\`\`
+```
 
 Example 3: Health Inspection Preparation Checklist
-\`\`\`
+```
 # Health Inspection Readiness Checklist
 
 ## Critical Items (Zero Tolerance)
@@ -412,7 +412,7 @@ Example 3: Health Inspection Preparation Checklist
 - [ ] Pest control service records
 
 **Pre-Inspection Walk-Through**: Conduct weekly with manager and lead staff to identify and correct issues before official inspection.
-\`\`\`
+```
 
 8) Vocabulary and standards
 

@@ -309,7 +309,6 @@ CREATE INDEX idx_[name] ON [table]([columns]);
 ```sql
 DROP INDEX IF EXISTS idx_[name];
 ```
-```
 
 **Template 3: Database Backup and Recovery Runbook**
 ```
@@ -444,7 +443,6 @@ SELECT query, calls, total_exec_time, mean_exec_time, max_exec_time
 FROM pg_stat_statements
 ORDER BY mean_exec_time DESC
 LIMIT 20;
-```
 ```
 
 7) Examples of excellent outputs

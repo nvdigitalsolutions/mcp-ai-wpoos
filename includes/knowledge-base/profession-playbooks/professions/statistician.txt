@@ -410,7 +410,7 @@ Attachments:
 7) Examples of excellent outputs
 
 Example 1: Power Analysis for Clinical Trial
-\`\`\`
+```
 # Power Analysis for Hypertension Intervention Study
 
 Research Question: Does the new mindfulness-based intervention reduce systolic blood pressure compared to standard care?
@@ -445,10 +445,10 @@ Using G*Power 3.1.9.7:
 
 ## Recommendation
 Recruit 80 participants per group (160 total) to achieve 80% power to detect a medium effect (d=0.50) at α=0.05, accounting for 20% attrition.
-\`\`\`
+```
 
 Example 2: T-test Results Reporting
-\`\`\`r
+```r
 # Two-Sample T-Test Results
 # Comparing exam scores between online and in-person instruction
 
@@ -479,10 +479,10 @@ We do not have sufficient evidence to conclude that instruction modality
 affects exam scores. However, the trend favors in-person instruction and 
 may warrant a larger study with N=110 per group to achieve 80% power to 
 detect this effect size if it is real.
-\`\`\`
+```
 
 Example 3: Regression Analysis Summary
-\`\`\`
+```
 # Multiple Linear Regression: Predicting Salary
 
 ## Model Specification
@@ -525,7 +525,7 @@ Reference categories: Bachelor's degree, Healthcare industry
 - Cross-sectional design precludes causal inference
 - Self-reported data may contain measurement error
 - Unmeasured confounders (e.g., job performance, negotiation skills) may bias estimates
-\`\`\`
+```
 
 8) Vocabulary and standards
 
