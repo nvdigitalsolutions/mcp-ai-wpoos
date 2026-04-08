@@ -119,6 +119,8 @@ class NV_oOS_Algorave {
 			'NV_oOS_Algorave_Tool_Sample_Manager',
 			'NV_oOS_Algorave_Tool_Generate_Music_AI',
 			'NV_oOS_Algorave_Tool_Visualizer',
+			'NV_oOS_Algorave_Tool_Strudel_Reference',
+			'NV_oOS_Algorave_Tool_MIDI_Output',
 		);
 
 		foreach ( $tools as $class ) {
@@ -158,6 +160,8 @@ class NV_oOS_Algorave {
 			'NV_oOS_Algorave_Tool_Sample_Manager',
 			'NV_oOS_Algorave_Tool_Generate_Music_AI',
 			'NV_oOS_Algorave_Tool_Visualizer',
+			'NV_oOS_Algorave_Tool_Strudel_Reference',
+			'NV_oOS_Algorave_Tool_MIDI_Output',
 		);
 
 		foreach ( $tools as $class ) {
@@ -190,6 +194,8 @@ class NV_oOS_Algorave {
 		require_once $dir . 'class-nvoos-algorave-tool-sample-manager.php';
 		require_once $dir . 'class-nvoos-algorave-tool-generate-music-ai.php';
 		require_once $dir . 'class-nvoos-algorave-tool-visualizer.php';
+		require_once $dir . 'class-nvoos-algorave-tool-strudel-reference.php';
+		require_once $dir . 'class-nvoos-algorave-tool-midi-output.php';
 	}
 
 	/**

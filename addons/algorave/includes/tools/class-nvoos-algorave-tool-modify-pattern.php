@@ -37,7 +37,7 @@ class NV_oOS_Algorave_Tool_Modify_Pattern implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Modify an existing live coding pattern. Use this tool when the user asks to change the tempo, key, scale, add effects (reverb, delay, distortion), add or remove instruments, change the rhythm, or make any other modification to a pattern that was previously generated. Provide the original code and the modification instruction.', 'nvoos-algorave' );
+		return __( 'Modify an existing live coding pattern. Use this when the user asks to change tempo, key, scale, add or adjust effects, add or remove instruments, change rhythm, or any other modification. Strudel effects: .room(0-1) reverb, .delay(0-1), .lpf(freq) lowpass, .hpf(freq) highpass, .crush(bits) bitcrusher, .distort(0-1), .pan(-1 to 1), .phaser(speed), .shape(0-1) distortion, .speed(rate), .gain(0-1). Strudel transformations: .every(n, fn) apply every n cycles, .sometimes(fn) random apply, .sometimesBy(prob, fn), .slow(n) stretch, .fast(n) compress, .rev() reverse, .jux(fn) split stereo. Sample banks: .bank("RolandTR808"), .bank("RolandTR909"), .bank("AkaiLinn"), .bank("RhythmAce"). Mini-notation: * speed, / slow, ~ rest, [] sub-sequence, <> alternate, "," parallel, ? random, ! repeat, (k,n) Euclidean, :n sample variation. Tempo: setcps(cycles_per_sec), setcpm(cycles_per_min). MIDI: .midi("device name"). Provide the original code and modification instruction.', 'nvoos-algorave' );
 	}
 
 	/**
