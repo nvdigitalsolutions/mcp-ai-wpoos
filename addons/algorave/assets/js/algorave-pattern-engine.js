@@ -35,6 +35,9 @@
 		/** @type {object|null} Main audio analyser node for visualizations. */
 		analyser: null,
 
+		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
+		strudelReady: null,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -43,6 +46,18 @@
 		init: function ( config ) {
 			this.bpm = config.defaultBpm || 120;
 			this.scale = config.defaultScale || 'C minor';
+
+			// Initialize Strudel REPL if loaded from CDN.
+			// initStrudel() exposes evaluate() and hush() as globals.
+			if ( typeof window.initStrudel === 'function' ) {
+				var result = window.initStrudel();
+				if ( result && typeof result.then === 'function' ) {
+					this.strudelReady = result;
+					this.strudelReady.catch( function () {
+						// Handled when play() is called.
+					} );
+				}
+			}
 
 			// Check for Tone.js availability.
 			if ( typeof Tone === 'undefined' ) {
@@ -84,13 +99,21 @@
 			await this.ensureStarted();
 			this.stop();
 
-			if ( 'strudel' === engine && typeof window.initStrudel !== 'undefined' ) {
-				// Use Strudel's built-in evaluation.
+			if ( 'strudel' === engine ) {
+				// Use Strudel's evaluate() which provides the DSL context
+				// (stack, note, s, sound, setcps, etc.).
 				try {
-					// Strudel's eval handles its own transport.
-					// eslint-disable-next-line no-eval
-					const fn = new Function( code );
-					fn();
+					// Wait for Strudel init if it was async.
+					if ( this.strudelReady ) {
+						await this.strudelReady;
+					}
+
+					if ( typeof window.evaluate === 'function' ) {
+						await window.evaluate( code );
+					} else {
+						// eslint-disable-next-line no-console
+						console.warn( '[Algorave] Strudel evaluate() not available. Enable Strudel CDN in settings.' );
+					}
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.error( '[Algorave] Strudel evaluation error:', e );
