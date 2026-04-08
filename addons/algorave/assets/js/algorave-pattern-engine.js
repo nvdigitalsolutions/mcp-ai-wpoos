@@ -50,11 +50,13 @@
 			// Initialize Strudel REPL if loaded from CDN.
 			// initStrudel() exposes evaluate() and hush() as globals.
 			if ( typeof window.initStrudel === 'function' ) {
-				var result = window.initStrudel();
-				if ( result && typeof result.then === 'function' ) {
-					this.strudelReady = result;
-					this.strudelReady.catch( function () {
-						// Handled when play() is called.
+				var initPromise = window.initStrudel();
+				// Handle async init (thenable check supports Promise polyfills).
+				if ( initPromise && typeof initPromise.then === 'function' ) {
+					this.strudelReady = initPromise;
+					this.strudelReady.catch( function ( e ) {
+						// eslint-disable-next-line no-console
+						console.warn( '[Algorave] Strudel initialization failed:', e );
 					} );
 				}
 			}
