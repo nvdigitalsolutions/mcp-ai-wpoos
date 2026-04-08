@@ -100,10 +100,21 @@
 				return;
 			}
 
-			// First call — kick off initStrudel().
+			// First call — kick off initStrudel() with default samples.
+			// The prebake function loads the standard dirt-samples library
+			// (bd, sd, hh, cp, etc.) from the tidalcycles GitHub CDN.
+			// Without this, initStrudel() creates a REPL with no samples.
 			if ( ! this.strudelReady ) {
 				try {
-					this.strudelReady = window.initStrudel();
+					this.strudelReady = window.initStrudel( {
+						prebake: function () {
+							if ( typeof strudel !== 'undefined' && typeof strudel.samples === 'function' ) {
+								return strudel.samples( 'github:tidalcycles/dirt-samples' );
+							}
+							// eslint-disable-next-line no-console
+							console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
+						},
+					} );
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.warn( '[Algorave] Strudel initialization failed:', e );

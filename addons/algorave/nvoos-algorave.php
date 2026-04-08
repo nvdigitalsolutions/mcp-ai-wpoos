@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Algorave Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Algorave live coding music extension for NV oOS. Enables AI-powered music pattern generation, browser-based audio synthesis via Tone.js/Strudel, MIDI export, and real-time audio visualization through the oOS chat interface. Requires NV oOS base plugin.
- * Version:     1.0.3
+ * Version:     1.0.4
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_ALGORAVE_VERSION', '1.0.3' );
+define( 'NVOOS_ALGORAVE_VERSION', '1.0.4' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_ALGORAVE_FILE', __FILE__ );
