@@ -321,8 +321,10 @@ class NV_oOS_Algorave {
 		);
 
 		// Pass configuration to frontend.
+		// Localized on the pattern-engine handle so the data is available
+		// when algorave-pattern-engine.js runs (before the live-coder script).
 		wp_localize_script(
-			'nvoos-algorave-live-coder',
+			'nvoos-algorave-pattern-engine',
 			'nvoosAlgoraveConfig',
 			array(
 				'restUrl'        => esc_url_raw( rest_url( 'nvoos-algorave/v1/' ) ),
