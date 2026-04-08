@@ -38,7 +38,7 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Control audio playback in the browser. Use this when the user says "play", "stop", "pause", "record", or wants to change the BPM of the current playback. The control command is sent to the browser-side audio engine.', 'nvoos-algorave' );
+		return __( 'Control audio playback in the browser. Use this when the user says "play", "stop", "pause", "record", or wants to change the BPM/CPS of the current playback or switch sample banks. Supports Strudel-native tempo via CPS (cycles per second) as well as BPM. Can switch between sample banks (RolandTR808, RolandTR909, AkaiLinn, RhythmAce, etc.).', 'nvoos-algorave' );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 				'action' => array(
 					'type'        => 'string',
 					'description' => __( 'Playback action to perform.', 'nvoos-algorave' ),
-					'enum'        => array( 'play', 'stop', 'pause', 'record', 'set_bpm' ),
+					'enum'        => array( 'play', 'stop', 'pause', 'record', 'set_bpm', 'set_cps', 'set_bank' ),
 				),
 				'code'   => array(
 					'type'        => 'string',
@@ -59,9 +59,20 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'bpm'    => array(
 					'type'        => 'integer',
-					'description' => __( 'BPM value (required for "set_bpm" action).', 'nvoos-algorave' ),
+					'description' => __( 'BPM value (required for "set_bpm" action, 20-300).', 'nvoos-algorave' ),
 					'minimum'     => 20,
 					'maximum'     => 300,
+				),
+				'cps'    => array(
+					'type'        => 'number',
+					'description' => __( 'Cycles per second for Strudel-native tempo (required for "set_cps" action, 0.01-10). Example: 0.5 = 120 BPM with 4-beat cycle.', 'nvoos-algorave' ),
+					'minimum'     => 0.01,
+					'maximum'     => 10,
+				),
+				'bank'   => array(
+					'type'        => 'string',
+					'description' => __( 'Sample bank name (required for "set_bank" action). Options: RolandTR808, RolandTR909, RolandCR78, AkaiLinn, AkaiMPC, RhythmAce, KorgMinipops, KorgM1.', 'nvoos-algorave' ),
+					'maxLength'   => 100,
 				),
 			),
 			'required'             => array( 'action' ),
@@ -78,11 +89,11 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$action = sanitize_text_field( $arguments['action'] ?? '' );
 
-		$valid_actions = array( 'play', 'stop', 'pause', 'record', 'set_bpm' );
+		$valid_actions = array( 'play', 'stop', 'pause', 'record', 'set_bpm', 'set_cps', 'set_bank' );
 		if ( ! in_array( $action, $valid_actions, true ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Invalid action. Use: play, stop, pause, record, or set_bpm.', 'nvoos-algorave' ),
+				'error'   => __( 'Invalid action. Use: play, stop, pause, record, set_bpm, set_cps, or set_bank.', 'nvoos-algorave' ),
 			);
 		}
 
@@ -113,10 +124,35 @@ class NV_oOS_Algorave_Tool_Play_Control implements WP_MCP_AI_Tool_Interface, WP_
 			case 'set_bpm':
 				$bpm               = isset( $arguments['bpm'] ) ? max( 20, min( 300, absint( $arguments['bpm'] ) ) ) : 120;
 				$result['bpm']     = $bpm;
+				$result['cps']     = round( $bpm / 60 / 4, 4 );
 				$result['message'] = sprintf(
-					/* translators: %d: BPM value */
-					__( 'BPM set to %d.', 'nvoos-algorave' ),
+					/* translators: 1: BPM value, 2: CPS value */
+					__( 'BPM set to %1$d (CPS: %2$s).', 'nvoos-algorave' ),
+					$bpm,
+					number_format( $bpm / 60 / 4, 4 )
+				);
+				break;
+
+			case 'set_cps':
+				$cps               = isset( $arguments['cps'] ) ? max( 0.01, min( 10, floatval( $arguments['cps'] ) ) ) : 0.5;
+				$bpm               = intval( round( $cps * 60 * 4 ) );
+				$result['cps']     = round( $cps, 4 );
+				$result['bpm']     = $bpm;
+				$result['message'] = sprintf(
+					/* translators: 1: CPS value, 2: BPM value */
+					__( 'CPS set to %1$s (equivalent to %2$d BPM).', 'nvoos-algorave' ),
+					number_format( $cps, 4 ),
 					$bpm
+				);
+				break;
+
+			case 'set_bank':
+				$bank              = sanitize_text_field( $arguments['bank'] ?? 'RolandTR808' );
+				$result['bank']    = $bank;
+				$result['message'] = sprintf(
+					/* translators: %s: bank name */
+					__( 'Sample bank set to "%s". New drum patterns will use this bank.', 'nvoos-algorave' ),
+					$bank
 				);
 				break;
 		}

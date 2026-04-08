@@ -39,7 +39,7 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generate a live coding music pattern from a natural language description. Returns executable Strudel mini-notation or Tone.js code that produces sound in the browser. Use this when the user asks to create a beat, melody, rhythm, bassline, or any musical pattern. Supports specifying BPM, scale, genre, and synthesis engine.', 'nvoos-algorave' );
+		return __( 'Generate a live coding music pattern from a natural language description. Returns executable Strudel or Tone.js code that produces sound in the browser. Use this when the user asks to create a beat, melody, rhythm, bassline, or any musical pattern. Strudel supports: mini-notation (*, /, ~, [], <>, ",", ?, !, (k,n), :n), effects chain (.room(), .delay(), .lpf(), .hpf(), .crush(), .distort(), .pan(), .phaser(), .shape(), .speed(), .gain()), sample banks (.bank("RolandTR808"), .bank("RolandTR909"), .bank("AkaiLinn")), pattern transformations (.every(), .sometimes(), .sometimesBy(), .slow(), .fast(), .rev(), .jux()), synthesizers (sawtooth, triangle, square, sine, fm), tempo control (setcps(), setcpm()), and MIDI output (.midi()). When generating Strudel code, prefer idiomatic mini-notation with effects and transformations for rich, dynamic patterns.', 'nvoos-algorave' );
 	}
 
 	/**
@@ -171,11 +171,26 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 			return $this->scaffold_tonejs( $bpm, $scale );
 		}
 
+		// Choose genre-specific scaffold for richer patterns.
+		$genre_lower = strtolower( $genre );
+		if ( false !== strpos( $genre_lower, 'ambient' ) ) {
+			return $this->scaffold_strudel_ambient( $bpm, $scale );
+		}
+		if ( false !== strpos( $genre_lower, 'drum' ) && false !== strpos( $genre_lower, 'bass' ) ) {
+			return $this->scaffold_strudel_dnb( $bpm, $scale );
+		}
+		if ( false !== strpos( $genre_lower, 'house' ) ) {
+			return $this->scaffold_strudel_house( $bpm, $scale );
+		}
+		if ( false !== strpos( $genre_lower, 'techno' ) ) {
+			return $this->scaffold_strudel_techno( $bpm, $scale );
+		}
+
 		return $this->scaffold_strudel( $bpm, $scale );
 	}
 
 	/**
-	 * Strudel mini-notation scaffold.
+	 * Default Strudel scaffold with effects and transformations.
 	 *
 	 * @param int    $bpm   BPM.
 	 * @param string $scale Scale.
@@ -183,23 +198,182 @@ class NV_oOS_Algorave_Tool_Generate_Pattern implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function scaffold_strudel( $bpm, $scale ) {
 		return sprintf(
-			"// Algorave Pattern — Strudel mini-notation\n"
+			"// Algorave Pattern — Strudel\n"
 			. "// BPM: %d | Scale: %s\n"
 			. "setcps(%s)\n\n"
 			. "stack(\n"
-			. "  // Kick drum pattern\n"
-			. "  s(\"bd*4\").gain(0.8),\n"
-			. "  // Hi-hat pattern\n"
-			. "  s(\"~ hh ~ hh\").gain(0.5),\n"
-			. "  // Snare on beats 2 and 4\n"
-			. "  s(\"~ sd ~ sd\").gain(0.7),\n"
-			. "  // Melodic element\n"
-			. "  note(\"%s\").s(\"sawtooth\").cutoff(800).gain(0.4)\n"
+			. "  // Kick — four-on-the-floor\n"
+			. "  s(\"bd*4\").bank(\"RolandTR808\").gain(0.8),\n"
+			. "  // Hi-hats with variation\n"
+			. "  s(\"hh*8\").bank(\"RolandTR808\").gain(\"[.4 .7]*4\")\n"
+			. "    .pan(\"<-0.3 0.3>\"),\n"
+			. "  // Snare on 2 and 4\n"
+			. "  s(\"~ sd ~ sd\").bank(\"RolandTR808\").gain(0.7)\n"
+			. "    .room(0.2),\n"
+			. "  // Melodic element with effects\n"
+			. "  note(\"c3 eb3 g3 bb3\").s(\"sawtooth\")\n"
+			. "    .lpf(800).gain(0.4)\n"
+			. "    .room(0.3).delay(0.15)\n"
+			. "    .every(4, x => x.rev())\n"
 			. ')',
 			$bpm,
 			$scale,
-			number_format( $bpm / 60 / 4, 4 ),
-			'c3 e3 g3 b3'
+			number_format( $bpm / 60 / 4, 4 )
+		);
+	}
+
+	/**
+	 * Techno Strudel scaffold.
+	 *
+	 * @param int    $bpm   BPM.
+	 * @param string $scale Scale.
+	 * @return string
+	 */
+	private function scaffold_strudel_techno( $bpm, $scale ) {
+		return sprintf(
+			"// Algorave Pattern — Techno\n"
+			. "// BPM: %d | Scale: %s\n"
+			. "setcps(%s)\n\n"
+			. "stack(\n"
+			. "  // Driving kick\n"
+			. "  s(\"bd*4\").bank(\"RolandTR909\").gain(0.9)\n"
+			. "    .shape(0.3),\n"
+			. "  // Pulsing hi-hats\n"
+			. "  s(\"hh*16\").bank(\"RolandTR909\")\n"
+			. "    .gain(\"[.2 .5 .3 .7]*4\")\n"
+			. "    .pan(sine.slow(4)),\n"
+			. "  // Clap on 2 and 4\n"
+			. "  s(\"~ cp ~ cp\").bank(\"RolandTR909\").gain(0.6)\n"
+			. "    .room(0.3).delay(0.1),\n"
+			. "  // Acid bassline\n"
+			. "  note(\"c2 c2 eb2 c2 f2 c2 eb2 g2\")\n"
+			. "    .s(\"sawtooth\").lpf(sine.range(200,2000).slow(8))\n"
+			. "    .gain(0.5).distort(0.2)\n"
+			. "    .sometimes(x => x.lpf(400)),\n"
+			. "  // Atmospheric pad\n"
+			. "  note(\"<c4 eb4 g4>\").s(\"triangle\")\n"
+			. "    .gain(0.15).room(0.6).delay(0.25)\n"
+			. "    .lpf(1200).slow(2)\n"
+			. ')',
+			$bpm,
+			$scale,
+			number_format( $bpm / 60 / 4, 4 )
+		);
+	}
+
+	/**
+	 * Ambient Strudel scaffold.
+	 *
+	 * @param int    $bpm   BPM.
+	 * @param string $scale Scale.
+	 * @return string
+	 */
+	private function scaffold_strudel_ambient( $bpm, $scale ) {
+		return sprintf(
+			"// Algorave Pattern — Ambient\n"
+			. "// BPM: %d | Scale: %s\n"
+			. "setcps(%s)\n\n"
+			. "stack(\n"
+			. "  // Evolving pad\n"
+			. "  note(\"<c4 eb4 g4 bb4>\").s(\"sine\")\n"
+			. "    .gain(0.3).room(0.8).delay(0.4)\n"
+			. "    .lpf(sine.range(400,2000).slow(16))\n"
+			. "    .slow(2),\n"
+			. "  // Sparse melodic fragments\n"
+			. "  note(\"c5 ~ ~ eb5 ~ g5 ~ ~\").s(\"triangle\")\n"
+			. "    .gain(0.2).room(0.7).delay(0.5)\n"
+			. "    .pan(sine.slow(6))\n"
+			. "    .sometimes(x => x.speed(0.5)),\n"
+			. "  // Sub bass drone\n"
+			. "  note(\"c2\").s(\"sine\").gain(0.25)\n"
+			. "    .lpf(200).slow(4),\n"
+			. "  // Texture — gentle noise\n"
+			. "  s(\"hh:3 ~ ~ hh:5 ~ ~ ~ ~\").gain(0.08)\n"
+			. "    .room(0.9).delay(0.6).lpf(3000)\n"
+			. "    .pan(\"<-0.5 0.5>\")\n"
+			. ')',
+			$bpm,
+			$scale,
+			number_format( $bpm / 60 / 4, 4 )
+		);
+	}
+
+	/**
+	 * House Strudel scaffold.
+	 *
+	 * @param int    $bpm   BPM.
+	 * @param string $scale Scale.
+	 * @return string
+	 */
+	private function scaffold_strudel_house( $bpm, $scale ) {
+		return sprintf(
+			"// Algorave Pattern — House\n"
+			. "// BPM: %d | Scale: %s\n"
+			. "setcps(%s)\n\n"
+			. "stack(\n"
+			. "  // Classic house kick\n"
+			. "  s(\"bd*4\").bank(\"RolandTR909\").gain(0.85),\n"
+			. "  // Open hi-hat offbeat\n"
+			. "  s(\"~ oh ~ oh\").bank(\"RolandTR909\").gain(0.4)\n"
+			. "    .room(0.15),\n"
+			. "  // Closed hi-hats with shuffle\n"
+			. "  s(\"hh*8\").bank(\"RolandTR909\")\n"
+			. "    .gain(\"[.3 .6]*4\"),\n"
+			. "  // Clap on 2 and 4\n"
+			. "  s(\"~ cp ~ cp\").bank(\"RolandTR909\").gain(0.65)\n"
+			. "    .room(0.25),\n"
+			. "  // Funky bassline\n"
+			. "  note(\"c2 ~ c2 eb2 ~ c2 f2 ~\")\n"
+			. "    .s(\"square\").lpf(600).gain(0.5)\n"
+			. "    .every(8, x => x.rev()),\n"
+			. "  // Chord stabs\n"
+			. "  note(\"<[c4,eb4,g4] ~ ~ [f4,ab4,c5]>\")\n"
+			. "    .s(\"sawtooth\").lpf(1500).gain(0.25)\n"
+			. "    .room(0.3).delay(0.2).slow(2)\n"
+			. ')',
+			$bpm,
+			$scale,
+			number_format( $bpm / 60 / 4, 4 )
+		);
+	}
+
+	/**
+	 * Drum and Bass Strudel scaffold.
+	 *
+	 * @param int    $bpm   BPM.
+	 * @param string $scale Scale.
+	 * @return string
+	 */
+	private function scaffold_strudel_dnb( $bpm, $scale ) {
+		return sprintf(
+			"// Algorave Pattern — Drum and Bass\n"
+			. "// BPM: %d | Scale: %s\n"
+			. "setcps(%s)\n\n"
+			. "stack(\n"
+			. "  // Breakbeat kick pattern\n"
+			. "  s(\"bd ~ ~ ~ bd ~ ~ bd ~ ~ bd ~ ~ ~ ~ ~\")\n"
+			. "    .bank(\"RolandTR808\").gain(0.9).shape(0.2),\n"
+			. "  // Snare hits — syncopated\n"
+			. "  s(\"~ ~ ~ ~ sd ~ ~ ~ ~ ~ sd ~ ~ ~ sd ~\")\n"
+			. "    .bank(\"RolandTR808\").gain(0.7)\n"
+			. "    .room(0.2),\n"
+			. "  // Fast hi-hats\n"
+			. "  s(\"hh*16\").bank(\"RolandTR808\")\n"
+			. "    .gain(\"[.2 .4 .3 .5]*4\")\n"
+			. "    .sometimes(x => x.speed(1.5)),\n"
+			. "  // Rolling sub bass\n"
+			. "  note(\"c1 ~ c1 ~ ~ c1 eb1 ~\")\n"
+			. "    .s(\"sine\").gain(0.6).lpf(150)\n"
+			. "    .distort(0.1),\n"
+			. "  // Reese bass mid layer\n"
+			. "  note(\"c2 ~ ~ eb2 ~ ~ c2 ~\")\n"
+			. "    .s(\"sawtooth\").lpf(sine.range(200,1200).slow(4))\n"
+			. "    .gain(0.3).distort(0.3)\n"
+			. "    .every(4, x => x.rev())\n"
+			. ')',
+			$bpm,
+			$scale,
+			number_format( $bpm / 60 / 4, 4 )
 		);
 	}
 

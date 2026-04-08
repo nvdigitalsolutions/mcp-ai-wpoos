@@ -2,7 +2,8 @@
  * Algorave Live Coder Interface
  *
  * Provides the interactive code editor UI for writing and executing
- * live coding patterns in the browser.
+ * live coding patterns in the browser. Supports Strudel and Tone.js engines,
+ * sample bank selection, pattern presets, and effects quick-reference.
  *
  * @package NV_oOS_Algorave
  * @since   1.0.0
@@ -12,6 +13,84 @@
 
 ( function () {
 	'use strict';
+
+	/**
+	 * Pattern presets for quick-start coding.
+	 *
+	 * @type {Object.<string, {code: string, bpm: number}>}
+	 */
+	const PRESETS = {
+		techno: {
+			bpm: 135,
+			code: '// Techno — 135 BPM\n'
+				+ 'setcps(0.5625)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd*4").bank("RolandTR909").gain(0.9).shape(0.3),\n'
+				+ '  s("hh*16").bank("RolandTR909")\n'
+				+ '    .gain("[.2 .5 .3 .7]*4").pan(sine.slow(4)),\n'
+				+ '  s("~ cp ~ cp").bank("RolandTR909").gain(0.6)\n'
+				+ '    .room(0.3).delay(0.1),\n'
+				+ '  note("c2 c2 eb2 c2 f2 c2 eb2 g2")\n'
+				+ '    .s("sawtooth").lpf(sine.range(200,2000).slow(8))\n'
+				+ '    .gain(0.5).distort(0.2)\n'
+				+ ')',
+		},
+		house: {
+			bpm: 124,
+			code: '// House — 124 BPM\n'
+				+ 'setcps(0.5167)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd*4").bank("RolandTR909").gain(0.85),\n'
+				+ '  s("~ oh ~ oh").bank("RolandTR909").gain(0.4).room(0.15),\n'
+				+ '  s("hh*8").bank("RolandTR909").gain("[.3 .6]*4"),\n'
+				+ '  s("~ cp ~ cp").bank("RolandTR909").gain(0.65).room(0.25),\n'
+				+ '  note("c2 ~ c2 eb2 ~ c2 f2 ~")\n'
+				+ '    .s("square").lpf(600).gain(0.5)\n'
+				+ '    .every(8, x => x.rev())\n'
+				+ ')',
+		},
+		ambient: {
+			bpm: 70,
+			code: '// Ambient — 70 BPM\n'
+				+ 'setcps(0.2917)\n\n'
+				+ 'stack(\n'
+				+ '  note("<c4 eb4 g4 bb4>").s("sine")\n'
+				+ '    .gain(0.3).room(0.8).delay(0.4)\n'
+				+ '    .lpf(sine.range(400,2000).slow(16)).slow(2),\n'
+				+ '  note("c5 ~ ~ eb5 ~ g5 ~ ~").s("triangle")\n'
+				+ '    .gain(0.2).room(0.7).delay(0.5)\n'
+				+ '    .pan(sine.slow(6))\n'
+				+ '    .sometimes(x => x.speed(0.5)),\n'
+				+ '  note("c2").s("sine").gain(0.25).lpf(200).slow(4)\n'
+				+ ')',
+		},
+		dnb: {
+			bpm: 174,
+			code: '// Drum & Bass — 174 BPM\n'
+				+ 'setcps(0.725)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd ~ ~ ~ bd ~ ~ bd ~ ~ bd ~ ~ ~ ~ ~")\n'
+				+ '    .bank("RolandTR808").gain(0.9).shape(0.2),\n'
+				+ '  s("~ ~ ~ ~ sd ~ ~ ~ ~ ~ sd ~ ~ ~ sd ~")\n'
+				+ '    .bank("RolandTR808").gain(0.7).room(0.2),\n'
+				+ '  s("hh*16").bank("RolandTR808")\n'
+				+ '    .gain("[.2 .4 .3 .5]*4")\n'
+				+ '    .sometimes(x => x.speed(1.5)),\n'
+				+ '  note("c1 ~ c1 ~ ~ c1 eb1 ~")\n'
+				+ '    .s("sine").gain(0.6).lpf(150).distort(0.1)\n'
+				+ ')',
+		},
+		minimal: {
+			bpm: 120,
+			code: '// Minimal — 120 BPM\n'
+				+ 'setcps(0.5)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd*4").gain(0.7),\n'
+				+ '  s("~ hh ~ hh").gain(0.4),\n'
+				+ '  s("~ ~ sd ~").gain(0.6).room(0.2)\n'
+				+ ')',
+		},
+	};
 
 	/**
 	 * AlgoraveLiveCoder — manages the code editor UI.
@@ -99,6 +178,17 @@
 				} );
 			}
 
+			// Bank selector.
+			const bankSelect = this.container.querySelector( '.algorave-bank-select' );
+			if ( bankSelect ) {
+				bankSelect.addEventListener( 'change', ( e ) => {
+					const bank = e.target.value;
+					if ( bank && window.AlgoraveEngine ) {
+						window.AlgoraveEngine.loadBank( bank );
+					}
+				} );
+			}
+
 			// BPM input.
 			const bpmInput = this.container.querySelector( '.algorave-bpm-input' );
 			if ( bpmInput ) {
@@ -109,6 +199,15 @@
 					}
 				} );
 			}
+
+			// Pattern preset buttons.
+			const presetBtns = this.container.querySelectorAll( '.algorave-preset-btn' );
+			presetBtns.forEach( ( btn ) => {
+				btn.addEventListener( 'click', ( e ) => {
+					const presetName = e.target.getAttribute( 'data-preset' );
+					this.loadPreset( presetName );
+				} );
+			} );
 
 			// Auto-save code on change.
 			this.editor.addEventListener( 'input', () => {
@@ -121,10 +220,39 @@
 				this.updatePlayState( e.detail.playing );
 			} );
 
+			// Update BPM display when changed via engine.
+			document.addEventListener( 'algorave:bpm', ( e ) => {
+				if ( bpmInput && e.detail.bpm ) {
+					bpmInput.value = e.detail.bpm;
+				}
+			} );
+
 			// Show evaluation errors to the user.
 			document.addEventListener( 'algorave:error', ( e ) => {
 				this.showError( e.detail.message );
 			} );
+		},
+
+		/**
+		 * Load a pattern preset into the editor.
+		 *
+		 * @param {string} presetName Preset name key.
+		 */
+		loadPreset: function ( presetName ) {
+			const preset = PRESETS[ presetName ];
+			if ( ! preset ) {
+				return;
+			}
+
+			this.editor.value = preset.code;
+			this.saveCode();
+			this.clearError();
+
+			// Update BPM input.
+			const bpmInput = this.container.querySelector( '.algorave-bpm-input' );
+			if ( bpmInput ) {
+				bpmInput.value = preset.bpm;
+			}
 		},
 
 		/**

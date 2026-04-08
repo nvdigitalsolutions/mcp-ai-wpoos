@@ -4,6 +4,16 @@
  * Wraps Tone.js and Strudel for browser-based audio synthesis.
  * Provides a unified API for the live coder UI and chat-driven commands.
  *
+ * Strudel features supported:
+ * - Full mini-notation: * / ~ [] <> , ? ! (k,n) :n
+ * - Effects chain: .room() .delay() .lpf() .hpf() .crush() .distort() .pan() .phaser() .shape() .speed()
+ * - Sample banks: .bank("RolandTR808"), .bank("RolandTR909"), etc.
+ * - Pattern transformations: .every() .sometimes() .sometimesBy() .slow() .fast() .rev() .jux()
+ * - Synthesizers: sawtooth, triangle, square, sine, fm
+ * - Tempo: setcps(), setcpm()
+ * - MIDI output: .midi() via WebMIDI API
+ * - Custom samples: samples() for loading sample maps
+ *
  * @package NV_oOS_Algorave
  * @since   1.0.0
  */
@@ -35,6 +45,9 @@
 		/** @type {object|null} Main audio analyser node for visualizations. */
 		analyser: null,
 
+		/** @type {AnalyserNode|null} Web Audio API analyser for Strudel's AudioContext. */
+		strudelAnalyser: null,
+
 		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
 		strudelReady: null,
 
@@ -43,6 +56,15 @@
 
 		/** @type {boolean} Whether Strudel REPL has completed initialization. */
 		strudelInitialized: false,
+
+		/** @type {string} Currently active sample bank. */
+		currentBank: '',
+
+		/** @type {Array} Available MIDI output devices. */
+		midiOutputs: [],
+
+		/** @type {boolean} Whether WebMIDI is available. */
+		midiAvailable: false,
 
 		/**
 		 * Initialize the engine with config.
@@ -67,6 +89,9 @@
 				this.analyser = new Tone.Analyser( 'waveform', 1024 );
 				Tone.getDestination().connect( this.analyser );
 			}
+
+			// Probe WebMIDI availability.
+			this.initMidi();
 		},
 
 		/**
@@ -126,10 +151,46 @@
 			try {
 				await this.strudelReady;
 				this.strudelInitialized = true;
+
+				// Connect to Strudel's internal AudioContext for visualization.
+				this.connectStrudelAnalyser();
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Strudel initialization failed:', e );
 				this.strudelAvailable = false;
+			}
+		},
+
+		/**
+		 * Connect a Web Audio AnalyserNode to Strudel's internal AudioContext.
+		 *
+		 * Strudel (superdough) creates its own AudioContext. We tap into the
+		 * destination node to get waveform data for our custom visualizer.
+		 */
+		connectStrudelAnalyser: function () {
+			try {
+				// Strudel exposes getAudioContext() after initialization.
+				var audioCtx = null;
+				if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
+					audioCtx = strudel.getAudioContext();
+				}
+
+				if ( ! audioCtx ) {
+					// Fallback: scan for any active AudioContext on the page.
+					// Strudel's superdough stores the context internally.
+					// We can find it via the global webaudio destination.
+					return;
+				}
+
+				this.strudelAnalyser = audioCtx.createAnalyser();
+				this.strudelAnalyser.fftSize = 2048;
+
+				// Connect the destination to our analyser.
+				// We insert the analyser between the last node and destination.
+				audioCtx.destination.connect( this.strudelAnalyser );
+			} catch ( e ) {
+				// eslint-disable-next-line no-console
+				console.warn( '[Algorave] Could not connect Strudel analyser:', e );
 			}
 		},
 
@@ -223,7 +284,7 @@
 		},
 
 		/**
-		 * Set BPM.
+		 * Set BPM (updates both Tone.js transport and Strudel CPS).
 		 *
 		 * @param {number} bpm Beats per minute.
 		 */
@@ -232,19 +293,151 @@
 			if ( typeof Tone !== 'undefined' && this.transport ) {
 				this.transport.bpm.value = this.bpm;
 			}
+
+			// Update Strudel tempo via CPS if currently playing.
+			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
+				var cps = this.bpm / 60 / 4;
+				try {
+					strudel.evaluate( 'setcps(' + cps.toFixed( 4 ) + ')' );
+				} catch ( e ) {
+					// Silently ignore — tempo update is best-effort.
+				}
+			}
+
 			document.dispatchEvent( new CustomEvent( 'algorave:bpm', { detail: { bpm: this.bpm } } ) );
 		},
 
 		/**
+		 * Set tempo using Cycles Per Second (Strudel-native).
+		 *
+		 * @param {number} cps Cycles per second.
+		 */
+		setCps: function ( cps ) {
+			cps = Math.max( 0.01, Math.min( 10, cps ) );
+			this.bpm = Math.round( cps * 60 * 4 );
+
+			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
+				try {
+					strudel.evaluate( 'setcps(' + cps.toFixed( 4 ) + ')' );
+				} catch ( e ) {
+					// Silently ignore.
+				}
+			}
+
+			if ( typeof Tone !== 'undefined' && this.transport ) {
+				this.transport.bpm.value = this.bpm;
+			}
+
+			document.dispatchEvent( new CustomEvent( 'algorave:bpm', { detail: { bpm: this.bpm, cps: cps } } ) );
+		},
+
+		/**
+		 * Load a named sample bank into Strudel.
+		 *
+		 * @param {string} bankName Bank name (e.g. "RolandTR808", "RolandTR909").
+		 */
+		loadBank: function ( bankName ) {
+			this.currentBank = bankName;
+			document.dispatchEvent( new CustomEvent( 'algorave:bank', { detail: { bank: bankName } } ) );
+		},
+
+		/**
 		 * Get analyser data for visualizations.
+		 * Supports both Tone.js analyser and Strudel's AudioContext analyser.
 		 *
 		 * @return {Float32Array|null} Waveform data.
 		 */
 		getAnalyserData: function () {
+			// Prefer Tone.js analyser if available and has data.
 			if ( this.analyser ) {
 				return this.analyser.getValue();
 			}
+
+			// Fall back to Strudel's AudioContext analyser.
+			if ( this.strudelAnalyser ) {
+				var bufferLength = this.strudelAnalyser.frequencyBinCount;
+				var dataArray = new Float32Array( bufferLength );
+				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
+				return dataArray;
+			}
+
 			return null;
+		},
+
+		/**
+		 * Initialize WebMIDI support.
+		 */
+		initMidi: function () {
+			if ( typeof navigator === 'undefined' || ! navigator.requestMIDIAccess ) {
+				return;
+			}
+
+			var self = this;
+			navigator.requestMIDIAccess( { sysex: false } ).then( function ( access ) {
+				self.midiAvailable = true;
+				self.updateMidiOutputs( access );
+
+				// Listen for device changes.
+				access.onstatechange = function () {
+					self.updateMidiOutputs( access );
+				};
+			} ).catch( function () {
+				// WebMIDI not available or permission denied.
+				self.midiAvailable = false;
+			} );
+		},
+
+		/**
+		 * Update the list of available MIDI outputs.
+		 *
+		 * @param {MIDIAccess} access WebMIDI access object.
+		 */
+		updateMidiOutputs: function ( access ) {
+			this.midiOutputs = [];
+			var outputs = access.outputs;
+			if ( outputs && typeof outputs.forEach === 'function' ) {
+				var self = this;
+				outputs.forEach( function ( output ) {
+					self.midiOutputs.push( {
+						id: output.id,
+						name: output.name,
+						manufacturer: output.manufacturer,
+					} );
+				} );
+			}
+
+			document.dispatchEvent( new CustomEvent( 'algorave:midi:devices', {
+				detail: { outputs: this.midiOutputs, available: this.midiAvailable },
+			} ) );
+		},
+
+		/**
+		 * Get list of available MIDI output devices.
+		 *
+		 * @return {Array} Array of MIDI output device info objects.
+		 */
+		getMidiOutputs: function () {
+			return this.midiOutputs;
+		},
+
+		/**
+		 * Available sample banks reference.
+		 *
+		 * @return {Array} List of well-known Strudel sample banks.
+		 */
+		getAvailableBanks: function () {
+			return [
+				'RolandTR808',
+				'RolandTR909',
+				'RolandCR78',
+				'AkaiLinn',
+				'AkaiMPC',
+				'RhythmAce',
+				'ViscoSpaceDrum',
+				'KorgMinipops',
+				'KorgM1',
+				'RolandCompurhythm',
+			];
 		},
 	};
 

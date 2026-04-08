@@ -174,3 +174,122 @@
 	white-space: pre-wrap;
 	word-break: break-word;
 }
+
+/* Bank select */
+.algorave-bank-select {
+	background: #1a1a1a;
+	border: 1px solid #333;
+	border-radius: 4px;
+	color: #e0e0e0;
+	padding: 4px 8px;
+	font-family: inherit;
+	font-size: 13px;
+}
+
+/* Pattern presets bar */
+.algorave-presets {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	background: #0f0f0f;
+	border-bottom: 1px solid #1a1a1a;
+}
+
+.algorave-presets-label {
+	color: #555;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-right: 4px;
+}
+
+.algorave-preset-btn {
+	padding: 2px 10px;
+	border: 1px solid #222;
+	border-radius: 3px;
+	background: #151515;
+	color: #777;
+	font-family: inherit;
+	font-size: 11px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.algorave-preset-btn:hover {
+	background: #1f1f1f;
+	color: #00ff88;
+	border-color: #00ff8844;
+}
+
+/* Effects quick reference (collapsible) */
+.algorave-effects-ref {
+	border-top: 1px solid #1a1a1a;
+	background: #0d0d0d;
+}
+
+.algorave-effects-ref-toggle {
+	padding: 6px 12px;
+	color: #555;
+	font-size: 11px;
+	cursor: pointer;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	list-style: none;
+	user-select: none;
+}
+
+.algorave-effects-ref-toggle::-webkit-details-marker {
+	display: none;
+}
+
+.algorave-effects-ref-toggle::before {
+	content: "▸ ";
+}
+
+.algorave-effects-ref[open] > .algorave-effects-ref-toggle::before {
+	content: "▾ ";
+}
+
+.algorave-effects-ref-toggle:hover {
+	color: #00ff88;
+}
+
+.algorave-effects-ref-content {
+	display: flex;
+	gap: 24px;
+	padding: 8px 16px 12px;
+	flex-wrap: wrap;
+}
+
+.algorave-ref-column {
+	min-width: 160px;
+	flex: 1;
+}
+
+.algorave-ref-column h4 {
+	color: #888;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin: 0 0 6px;
+	padding: 0;
+}
+
+.algorave-ref-column code {
+	color: #00ff88;
+	font-size: 11px;
+	background: none;
+	padding: 0;
+}
+
+.algorave-ref-column br + code {
+	margin-top: 2px;
+}
+
+.algorave-effects-ref-content,
+.algorave-ref-column {
+	color: #555;
+	font-size: 11px;
+	line-height: 1.8;
+}

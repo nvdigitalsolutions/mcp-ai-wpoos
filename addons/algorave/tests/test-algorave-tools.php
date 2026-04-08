@@ -41,6 +41,8 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 		require_once $tools_dir . 'class-nvoos-algorave-tool-sample-manager.php';
 		require_once $tools_dir . 'class-nvoos-algorave-tool-generate-music-ai.php';
 		require_once $tools_dir . 'class-nvoos-algorave-tool-visualizer.php';
+		require_once $tools_dir . 'class-nvoos-algorave-tool-strudel-reference.php';
+		require_once $tools_dir . 'class-nvoos-algorave-tool-midi-output.php';
 	}
 
 	/**
@@ -55,6 +57,8 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 			new NV_oOS_Algorave_Tool_Sample_Manager(),
 			new NV_oOS_Algorave_Tool_Generate_Music_AI(),
 			new NV_oOS_Algorave_Tool_Visualizer(),
+			new NV_oOS_Algorave_Tool_Strudel_Reference(),
+			new NV_oOS_Algorave_Tool_MIDI_Output(),
 		);
 
 		foreach ( $tools as $tool ) {
@@ -318,6 +322,8 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 			new NV_oOS_Algorave_Tool_Sample_Manager(),
 			new NV_oOS_Algorave_Tool_Generate_Music_AI(),
 			new NV_oOS_Algorave_Tool_Visualizer(),
+			new NV_oOS_Algorave_Tool_Strudel_Reference(),
+			new NV_oOS_Algorave_Tool_MIDI_Output(),
 		);
 
 		$slugs = array_map(
@@ -342,6 +348,8 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 			new NV_oOS_Algorave_Tool_Sample_Manager(),
 			new NV_oOS_Algorave_Tool_Generate_Music_AI(),
 			new NV_oOS_Algorave_Tool_Visualizer(),
+			new NV_oOS_Algorave_Tool_Strudel_Reference(),
+			new NV_oOS_Algorave_Tool_MIDI_Output(),
 		);
 
 		foreach ( $tools as $tool ) {
@@ -363,6 +371,8 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 			new NV_oOS_Algorave_Tool_Sample_Manager(),
 			new NV_oOS_Algorave_Tool_Generate_Music_AI(),
 			new NV_oOS_Algorave_Tool_Visualizer(),
+			new NV_oOS_Algorave_Tool_Strudel_Reference(),
+			new NV_oOS_Algorave_Tool_MIDI_Output(),
 		);
 
 		foreach ( $tools as $tool ) {
@@ -370,5 +380,135 @@ class Test_Algorave_Tools extends WP_UnitTestCase {
 			$this->assertIsArray( $flags, $tool->get_slug() . ' capability flags must be an array.' );
 			$this->assertNotEmpty( $flags, $tool->get_slug() . ' must have at least one capability flag.' );
 		}
+	}
+
+	/**
+	 * Test Strudel reference tool returns mini-notation reference.
+	 */
+	public function test_strudel_reference_mini_notation() {
+		$tool   = new NV_oOS_Algorave_Tool_Strudel_Reference();
+		$result = $tool->execute( array( 'topic' => 'mini_notation' ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'mini_notation', $result['topic'] );
+		$this->assertArrayHasKey( 'mini_notation', $result['reference'] );
+		$this->assertArrayHasKey( 'syntax', $result['reference']['mini_notation'] );
+		$this->assertNotEmpty( $result['reference']['mini_notation']['syntax'] );
+	}
+
+	/**
+	 * Test Strudel reference tool returns effects reference.
+	 */
+	public function test_strudel_reference_effects() {
+		$tool   = new NV_oOS_Algorave_Tool_Strudel_Reference();
+		$result = $tool->execute( array( 'topic' => 'effects' ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'effects', $result['reference'] );
+		$this->assertArrayHasKey( 'effects', $result['reference']['effects'] );
+	}
+
+	/**
+	 * Test Strudel reference tool returns all topics by default.
+	 */
+	public function test_strudel_reference_all() {
+		$tool   = new NV_oOS_Algorave_Tool_Strudel_Reference();
+		$result = $tool->execute( array() );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'all', $result['topic'] );
+		$this->assertArrayHasKey( 'mini_notation', $result['reference'] );
+		$this->assertArrayHasKey( 'effects', $result['reference'] );
+		$this->assertArrayHasKey( 'transformations', $result['reference'] );
+		$this->assertArrayHasKey( 'sample_banks', $result['reference'] );
+		$this->assertArrayHasKey( 'synthesizers', $result['reference'] );
+		$this->assertArrayHasKey( 'tempo', $result['reference'] );
+		$this->assertArrayHasKey( 'midi', $result['reference'] );
+	}
+
+	/**
+	 * Test MIDI output tool help action.
+	 */
+	public function test_midi_output_help() {
+		$tool   = new NV_oOS_Algorave_Tool_MIDI_Output();
+		$result = $tool->execute( array( 'action' => 'help' ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'help', $result['action'] );
+		$this->assertArrayHasKey( 'reference', $result );
+		$this->assertArrayHasKey( 'functions', $result['reference'] );
+	}
+
+	/**
+	 * Test MIDI output tool code generation.
+	 */
+	public function test_midi_output_generate_code() {
+		$tool   = new NV_oOS_Algorave_Tool_MIDI_Output();
+		$result = $tool->execute(
+			array(
+				'action'      => 'generate_code',
+				'device_name' => 'IAC Driver',
+				'channel'     => 1,
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'generate_code', $result['action'] );
+		$this->assertArrayHasKey( 'code', $result );
+		$this->assertStringContainsString( 'IAC Driver', $result['code'] );
+		$this->assertStringContainsString( '.midi(', $result['code'] );
+	}
+
+	/**
+	 * Test play control set_cps action.
+	 */
+	public function test_play_control_set_cps() {
+		$tool   = new NV_oOS_Algorave_Tool_Play_Control();
+		$result = $tool->execute(
+			array(
+				'action' => 'set_cps',
+				'cps'    => 0.5,
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 0.5, $result['cps'] );
+		$this->assertEquals( 120, $result['bpm'] );
+	}
+
+	/**
+	 * Test play control set_bank action.
+	 */
+	public function test_play_control_set_bank() {
+		$tool   = new NV_oOS_Algorave_Tool_Play_Control();
+		$result = $tool->execute(
+			array(
+				'action' => 'set_bank',
+				'bank'   => 'RolandTR909',
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( 'RolandTR909', $result['bank'] );
+	}
+
+	/**
+	 * Test generate pattern with techno genre creates richer scaffold.
+	 */
+	public function test_generate_pattern_techno_scaffold() {
+		$tool   = new NV_oOS_Algorave_Tool_Generate_Pattern();
+		$result = $tool->execute(
+			array(
+				'description' => 'A driving techno beat',
+				'engine'      => 'strudel',
+				'bpm'         => 140,
+				'genre'       => 'techno',
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertStringContainsString( 'Techno', $result['code'] );
+		$this->assertStringContainsString( '.bank(', $result['code'] );
+		$this->assertStringContainsString( '.room(', $result['code'] );
 	}
 }
