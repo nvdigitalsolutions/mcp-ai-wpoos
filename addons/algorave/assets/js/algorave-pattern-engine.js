@@ -164,8 +164,9 @@
 		/**
 		 * Connect a Web Audio AnalyserNode to Strudel's internal AudioContext.
 		 *
-		 * Strudel (superdough) creates its own AudioContext. We tap into the
-		 * destination node to get waveform data for our custom visualizer.
+		 * Strudel (superdough) routes audio through a master gain node
+		 * before the final AudioContext.destination. We tap that gain
+		 * node to get waveform data for our custom visualizer.
 		 */
 		connectStrudelAnalyser: function () {
 			try {
@@ -176,18 +177,34 @@
 				}
 
 				if ( ! audioCtx ) {
-					// Fallback: scan for any active AudioContext on the page.
-					// Strudel's superdough stores the context internally.
-					// We can find it via the global webaudio destination.
 					return;
 				}
 
 				this.strudelAnalyser = audioCtx.createAnalyser();
 				this.strudelAnalyser.fftSize = 2048;
 
-				// Connect the destination to our analyser.
-				// We insert the analyser between the last node and destination.
-				audioCtx.destination.connect( this.strudelAnalyser );
+				// Strudel exposes its master destination gain node via
+				// getDestination(). If available, connect the analyser
+				// in parallel so audio still reaches the speakers.
+				if ( typeof strudel.getDestination === 'function' ) {
+					var dest = strudel.getDestination();
+					if ( dest && typeof dest.connect === 'function' ) {
+						dest.connect( this.strudelAnalyser );
+						return;
+					}
+				}
+
+				// Fallback: create a splitter GainNode, connect the
+				// analyser in parallel to the real destination.
+				// This works if called BEFORE audio sources are connected.
+				var splitter = audioCtx.createGain();
+				splitter.gain.value = 1;
+				splitter.connect( audioCtx.destination );
+				splitter.connect( this.strudelAnalyser );
+
+				// Store the splitter so audio routed through it
+				// reaches both the speakers and the analyser.
+				this._strudelSplitter = splitter;
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Could not connect Strudel analyser:', e );
