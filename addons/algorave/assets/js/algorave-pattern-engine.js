@@ -145,7 +145,7 @@
 							if ( typeof strudel === 'undefined' || typeof strudel.samples !== 'function' ) {
 								// eslint-disable-next-line no-console
 								console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
-								return;
+								return Promise.resolve();
 							}
 
 							const loads = [];
@@ -154,7 +154,9 @@
 							// so one failed collection doesn't break the entire init.
 							const loadSafe = function ( label, ...args ) {
 								loads.push(
-									strudel.samples( ...args ).catch( function ( err ) {
+									Promise.resolve().then( function () {
+										return strudel.samples( ...args );
+									} ).catch( function ( err ) {
 										// eslint-disable-next-line no-console
 										console.warn( '[Algorave] Failed to load ' + label + ':', err );
 									} )
@@ -230,7 +232,8 @@
 				this.strudelInitialized = true;
 
 				// Register drum machine bank aliases (short names like TR808 for RolandTR808).
-				this.loadDrumMachineAliases();
+				// Await the async alias loading so aliases are ready before evaluation.
+				await this.loadDrumMachineAliases();
 
 				// Connect to Strudel's internal AudioContext for visualization.
 				this.connectStrudelAnalyser();
@@ -246,8 +249,10 @@
 		 *
 		 * Uses the tidal-drum-machines-alias.json file to register
 		 * short names via Strudel's aliasBank() function.
+		 *
+		 * @return {Promise} Resolves when aliases are registered.
 		 */
-		loadDrumMachineAliases: function () {
+		loadDrumMachineAliases: async function () {
 			if ( typeof strudel === 'undefined' || typeof strudel.aliasBank !== 'function' ) {
 				return;
 			}
@@ -255,7 +260,7 @@
 			const sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
 			if ( sampleMaps.drumMachinesAlias ) {
 				try {
-					strudel.aliasBank( sampleMaps.drumMachinesAlias );
+					await strudel.aliasBank( sampleMaps.drumMachinesAlias );
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.warn( '[Algorave] Could not load drum machine aliases:', e );
@@ -273,7 +278,7 @@
 		connectStrudelAnalyser: function () {
 			try {
 				// Strudel exposes getAudioContext() after initialization.
-				var audioCtx = null;
+				let audioCtx = null;
 				if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
 					audioCtx = strudel.getAudioContext();
 				}
@@ -289,7 +294,7 @@
 				// getDestination(). If available, connect the analyser
 				// in parallel so audio still reaches the speakers.
 				if ( typeof strudel.getDestination === 'function' ) {
-					var dest = strudel.getDestination();
+					const dest = strudel.getDestination();
 					if ( dest && typeof dest.connect === 'function' ) {
 						dest.connect( this.strudelAnalyser );
 						return;
@@ -299,7 +304,7 @@
 				// Fallback: create a splitter GainNode, connect the
 				// analyser in parallel to the real destination.
 				// This works if called BEFORE audio sources are connected.
-				var splitter = audioCtx.createGain();
+				const splitter = audioCtx.createGain();
 				splitter.gain.value = 1;
 				splitter.connect( audioCtx.destination );
 				splitter.connect( this.strudelAnalyser );
@@ -415,7 +420,7 @@
 
 			// Update Strudel tempo via CPS if currently playing.
 			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
-				var cps = this.bpm / 60 / 4;
+				const cps = this.bpm / 60 / 4;
 				try {
 					strudel.evaluate( 'setcps(' + cps.toFixed( 4 ) + ')' );
 				} catch ( e ) {
@@ -474,8 +479,8 @@
 
 			// Fall back to Strudel's AudioContext analyser.
 			if ( this.strudelAnalyser ) {
-				var bufferLength = this.strudelAnalyser.frequencyBinCount;
-				var dataArray = new Float32Array( bufferLength );
+				const bufferLength = this.strudelAnalyser.frequencyBinCount;
+				const dataArray = new Float32Array( bufferLength );
 				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
 				return dataArray;
 			}
@@ -491,7 +496,7 @@
 				return;
 			}
 
-			var self = this;
+			const self = this;
 			navigator.requestMIDIAccess( { sysex: false } ).then( function ( access ) {
 				self.midiAvailable = true;
 				self.updateMidiOutputs( access );
@@ -513,9 +518,9 @@
 		 */
 		updateMidiOutputs: function ( access ) {
 			this.midiOutputs = [];
-			var outputs = access.outputs;
+			const outputs = access.outputs;
 			if ( outputs && typeof outputs.forEach === 'function' ) {
-				var self = this;
+				const self = this;
 				outputs.forEach( function ( output ) {
 					self.midiOutputs.push( {
 						id: output.id,
