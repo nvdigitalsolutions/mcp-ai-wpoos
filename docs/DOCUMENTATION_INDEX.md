@@ -1,12 +1,18 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 6, 2026  
+**Last Updated:** April 8, 2026  
 **Plugin Version:** 1.1.6  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 570+ files across docs/, root, and archive directories
+**Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 8, 2026 UPDATE:** 📐 **ARCHITECTURE REFRESH & REQUEST FLOW WALKTHROUGH**
+> - **Architecture Overview Refreshed** – Updated from Dec 2025 (3 providers, 133 tools) to current state: **9 providers**, **837 tool classes** (227 base + 610 pro), **34 REST controllers** (16 base + 18 pro), **64 service classes**, accurate directory structure with file counts, v1.1.6 version history entry.
+> - **Request Flow Walkthrough** (NEW) – End-to-end trace of a chat message through every layer: `sendChat()` → `POST /chat-client` → Authentication (5 methods) → Assistant resolution → SSE setup → Language Model Router (9 providers) → Agentic loop (up to 15 iterations) → Token budget validation (auto-model switch) → SSE events → Frontend render. Covers provider routing table, agentic loop mechanics, tool execution internals, SSE event types, key source file reference, and hooks in the request path.
+> - **README.md** – Architecture section updated with current statistics; documentation section fixed stale tool/doc counts, added walkthrough link.
+> - **See**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md)
 
 > **📌 APRIL 2–6, 2026 UPDATE:** 🤝 **A2A PROTOCOL, JETENGINE MCP, AGENT COMMAND CENTER, CHAT BUBBLE, IMAGE VALIDATION**
 > - **JetEngine 3.8 MCP Server Integration** (PR #4608) – JSON-RPC 2.0 client bridging into JetEngine's native MCP Server. 7 new Pro tools: `jetengine_mcp`, `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`. MCP-first dispatch with REST v2 fallback.
@@ -1049,6 +1055,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 9 providers, 837 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
+| [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request lifecycle trace — authentication → assistant → SSE → provider routing → agentic loop → tool execution → token budget → response | Everyone |
 | [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
