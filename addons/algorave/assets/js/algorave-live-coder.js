@@ -113,11 +113,17 @@
 			// Auto-save code on change.
 			this.editor.addEventListener( 'input', () => {
 				this.saveCode();
+				this.clearError();
 			} );
 
 			// Update play state display.
 			document.addEventListener( 'algorave:playing', ( e ) => {
 				this.updatePlayState( e.detail.playing );
+			} );
+
+			// Show evaluation errors to the user.
+			document.addEventListener( 'algorave:error', ( e ) => {
+				this.showError( e.detail.message );
 			} );
 		},
 
@@ -130,6 +136,7 @@
 				return;
 			}
 			this.currentCode = code;
+			this.clearError();
 
 			if ( window.AlgoraveEngine ) {
 				window.AlgoraveEngine.play( code, this.engine );
@@ -204,6 +211,40 @@
 				}
 			} catch ( e ) {
 				// Storage may be unavailable.
+			}
+		},
+
+		/**
+		 * Show an error message below the editor.
+		 *
+		 * @param {string} message Error message text.
+		 */
+		showError: function ( message ) {
+			if ( ! this.container ) {
+				return;
+			}
+			this.clearError();
+
+			const el = document.createElement( 'div' );
+			el.className = 'algorave-error-message';
+			el.textContent = message;
+
+			// Insert after the editor textarea.
+			if ( this.editor && this.editor.parentNode ) {
+				this.editor.parentNode.insertBefore( el, this.editor.nextSibling );
+			}
+		},
+
+		/**
+		 * Clear any visible error message.
+		 */
+		clearError: function () {
+			if ( ! this.container ) {
+				return;
+			}
+			const existing = this.container.querySelector( '.algorave-error-message' );
+			if ( existing ) {
+				existing.remove();
 			}
 		},
 

@@ -162,3 +162,15 @@
 	font-family: inherit;
 	font-size: 11px;
 }
+
+/* Error message */
+.algorave-error-message {
+	padding: 8px 16px;
+	background: #331111;
+	border-top: 1px solid #ff4444;
+	color: #ff8888;
+	font-size: 12px;
+	font-family: "JetBrains Mono", "Fira Code", "Source Code Pro", "Consolas", monospace;
+	white-space: pre-wrap;
+	word-break: break-word;
+}

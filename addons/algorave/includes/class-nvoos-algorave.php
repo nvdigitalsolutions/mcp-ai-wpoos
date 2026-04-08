@@ -265,7 +265,8 @@ class NV_oOS_Algorave {
 		$settings = self::get_settings();
 
 		// Strudel via CDN (AGPL-3.0 — loaded at runtime, not bundled).
-		if ( ! empty( $settings['strudel_cdn'] ) ) {
+		$strudel_loaded = ! empty( $settings['strudel_cdn'] );
+		if ( $strudel_loaded ) {
 			wp_enqueue_script(
 				'strudel-web',
 				esc_url( NVOOS_ALGORAVE_STRUDEL_CDN ),
@@ -276,10 +277,11 @@ class NV_oOS_Algorave {
 		}
 
 		// Pattern engine (Tone.js wrapper).
+		// Depends on strudel-web when Strudel CDN is enabled so initStrudel() is available.
 		wp_enqueue_script(
 			'nvoos-algorave-pattern-engine',
 			NVOOS_ALGORAVE_URL . 'assets/js/algorave-pattern-engine.js',
-			array(),
+			$strudel_loaded ? array( 'strudel-web' ) : array(),
 			NVOOS_ALGORAVE_VERSION,
 			true
 		);
@@ -319,8 +321,10 @@ class NV_oOS_Algorave {
 		);
 
 		// Pass configuration to frontend.
+		// Localized on the pattern-engine handle so the data is available
+		// when algorave-pattern-engine.js runs (before the live-coder script).
 		wp_localize_script(
-			'nvoos-algorave-live-coder',
+			'nvoos-algorave-pattern-engine',
 			'nvoosAlgoraveConfig',
 			array(
 				'restUrl'        => esc_url_raw( rest_url( 'nvoos-algorave/v1/' ) ),

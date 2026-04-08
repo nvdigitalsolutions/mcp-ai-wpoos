@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-algorave-addon',
-        'version' => 'dev-copilot/create-algorave-addon',
-        'reference' => 'a3f23e9329fd3f9170dc1c34df67da908c895f56',
+        'pretty_version' => 'dev-copilot/fix-algorave-loading-error',
+        'version' => 'dev-copilot/fix-algorave-loading-error',
+        'reference' => 'f66dd51a98ee4f00fb78da18351ed07375f9fc19',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-algorave-addon',
-            'version' => 'dev-copilot/create-algorave-addon',
-            'reference' => 'a3f23e9329fd3f9170dc1c34df67da908c895f56',
+            'pretty_version' => 'dev-copilot/fix-algorave-loading-error',
+            'version' => 'dev-copilot/fix-algorave-loading-error',
+            'reference' => 'f66dd51a98ee4f00fb78da18351ed07375f9fc19',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

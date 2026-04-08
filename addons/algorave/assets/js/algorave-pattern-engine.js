@@ -8,7 +8,7 @@
  * @since   1.0.0
  */
 
-/* global Tone, nvoosAlgoraveConfig */
+/* global Tone, strudel, nvoosAlgoraveConfig */
 
 ( function () {
 	'use strict';
@@ -35,6 +35,15 @@
 		/** @type {object|null} Main audio analyser node for visualizations. */
 		analyser: null,
 
+		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
+		strudelReady: null,
+
+		/** @type {boolean} Whether initStrudel() has been called. */
+		strudelAvailable: false,
+
+		/** @type {boolean} Whether Strudel REPL has completed initialization. */
+		strudelInitialized: false,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -44,19 +53,20 @@
 			this.bpm = config.defaultBpm || 120;
 			this.scale = config.defaultScale || 'C minor';
 
-			// Check for Tone.js availability.
-			if ( typeof Tone === 'undefined' ) {
-				// eslint-disable-next-line no-console
-				console.warn( '[Algorave] Tone.js not loaded. Pattern engine requires Tone.js.' );
-				return;
+			// Record Strudel CDN availability but do NOT call initStrudel() yet.
+			// Strudel creates an AudioContext internally, which requires a user
+			// gesture on modern browsers. Deferred to ensureStrudel().
+			this.strudelAvailable = ( typeof window.initStrudel === 'function' );
+
+			// Set up Tone.js if available (optional — Strudel has its own audio engine).
+			if ( typeof Tone !== 'undefined' ) {
+				this.transport = Tone.getTransport();
+				this.transport.bpm.value = this.bpm;
+
+				// Create analyser for visualizations.
+				this.analyser = new Tone.Analyser( 'waveform', 1024 );
+				Tone.getDestination().connect( this.analyser );
 			}
-
-			this.transport = Tone.getTransport();
-			this.transport.bpm.value = this.bpm;
-
-			// Create analyser for visualizations.
-			this.analyser = new Tone.Analyser( 'waveform', 1024 );
-			Tone.getDestination().connect( this.analyser );
 		},
 
 		/**
@@ -75,6 +85,55 @@
 		},
 
 		/**
+		 * Lazily initialize the Strudel REPL on first use.
+		 *
+		 * Must be called inside a user-gesture handler so the internal
+		 * AudioContext is allowed by the browser.
+		 *
+		 * @return {Promise} Resolves when Strudel REPL is ready.
+		 */
+		ensureStrudel: async function () {
+			if ( this.strudelInitialized ) {
+				return;
+			}
+			if ( ! this.strudelAvailable ) {
+				return;
+			}
+
+			// First call — kick off initStrudel() with default samples.
+			// The prebake function loads the standard dirt-samples library
+			// (bd, sd, hh, cp, etc.) from the tidalcycles GitHub CDN.
+			// Without this, initStrudel() creates a REPL with no samples.
+			if ( ! this.strudelReady ) {
+				try {
+					this.strudelReady = window.initStrudel( {
+						prebake: function () {
+							if ( typeof strudel !== 'undefined' && typeof strudel.samples === 'function' ) {
+								return strudel.samples( 'github:tidalcycles/dirt-samples' );
+							}
+							// eslint-disable-next-line no-console
+							console.warn( '[Algorave] strudel.samples() not available — no default samples loaded.' );
+						},
+					} );
+				} catch ( e ) {
+					// eslint-disable-next-line no-console
+					console.warn( '[Algorave] Strudel initialization failed:', e );
+					this.strudelAvailable = false;
+					return;
+				}
+			}
+
+			try {
+				await this.strudelReady;
+				this.strudelInitialized = true;
+			} catch ( e ) {
+				// eslint-disable-next-line no-console
+				console.warn( '[Algorave] Strudel initialization failed:', e );
+				this.strudelAvailable = false;
+			}
+		},
+
+		/**
 		 * Play a pattern.
 		 *
 		 * @param {string} code   Pattern code to evaluate.
@@ -84,27 +143,49 @@
 			await this.ensureStarted();
 			this.stop();
 
-			if ( 'strudel' === engine && typeof window.initStrudel !== 'undefined' ) {
-				// Use Strudel's built-in evaluation.
+			if ( 'strudel' === engine ) {
+				// Initialize Strudel lazily (needs user gesture for AudioContext).
+				await this.ensureStrudel();
+
+				// Use strudel.evaluate() from the @strudel/web IIFE namespace.
+				// This provides the full DSL context (stack, note, s, sound, setcps, etc.).
 				try {
-					// Strudel's eval handles its own transport.
-					// eslint-disable-next-line no-eval
-					const fn = new Function( code );
-					fn();
+					if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
+						await strudel.evaluate( code );
+					} else {
+						const msg = 'strudel.evaluate() not available. Enable Strudel CDN in settings.';
+						// eslint-disable-next-line no-console
+						console.warn( '[Algorave] ' + msg );
+						document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
+						return;
+					}
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.error( '[Algorave] Strudel evaluation error:', e );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: e.message || String( e ) } } ) );
+					return;
 				}
-			} else if ( typeof Tone !== 'undefined' ) {
+			} else if ( 'tonejs' === engine ) {
+				if ( typeof Tone === 'undefined' ) {
+					const msg = 'Tone.js is not loaded. Select the Strudel engine or load Tone.js.';
+					// eslint-disable-next-line no-console
+					console.warn( '[Algorave] ' + msg );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
+					return;
+				}
 				// Tone.js evaluation.
 				try {
 					// eslint-disable-next-line no-eval
 					const fn = new Function( 'Tone', code );
 					fn( Tone );
-					this.transport.start();
+					if ( this.transport ) {
+						this.transport.start();
+					}
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
 					console.error( '[Algorave] Tone.js evaluation error:', e );
+					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: e.message || String( e ) } } ) );
+					return;
 				}
 			}
 
@@ -116,14 +197,14 @@
 		 * Stop all playback.
 		 */
 		stop: function () {
-			if ( typeof Tone !== 'undefined' ) {
+			if ( typeof Tone !== 'undefined' && this.transport ) {
 				this.transport.stop();
 				this.transport.cancel();
 			}
 
-			// Stop Strudel if running.
-			if ( typeof window.hush === 'function' ) {
-				window.hush();
+			// Only hush Strudel if the REPL has been fully initialized.
+			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.hush === 'function' ) {
+				strudel.hush();
 			}
 
 			this.playing = false;
@@ -134,7 +215,7 @@
 		 * Pause playback.
 		 */
 		pause: function () {
-			if ( typeof Tone !== 'undefined' ) {
+			if ( typeof Tone !== 'undefined' && this.transport ) {
 				this.transport.pause();
 			}
 			this.playing = false;
@@ -148,7 +229,7 @@
 		 */
 		setBpm: function ( bpm ) {
 			this.bpm = Math.max( 20, Math.min( 300, bpm ) );
-			if ( typeof Tone !== 'undefined' ) {
+			if ( typeof Tone !== 'undefined' && this.transport ) {
 				this.transport.bpm.value = this.bpm;
 			}
 			document.dispatchEvent( new CustomEvent( 'algorave:bpm', { detail: { bpm: this.bpm } } ) );
