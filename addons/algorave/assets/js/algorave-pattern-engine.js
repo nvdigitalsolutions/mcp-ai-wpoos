@@ -8,7 +8,7 @@
  * @since   1.0.0
  */
 
-/* global Tone, nvoosAlgoraveConfig */
+/* global Tone, strudel, nvoosAlgoraveConfig */
 
 ( function () {
 	'use strict';
@@ -48,9 +48,10 @@
 			this.scale = config.defaultScale || 'C minor';
 
 			// Initialize Strudel REPL if loaded from CDN.
-			// initStrudel() exposes evaluate() and hush() as globals.
+			// @strudel/web IIFE exposes window.initStrudel and the strudel.* namespace.
+			// After initStrudel(), use strudel.evaluate(code) and strudel.hush().
 			if ( typeof window.initStrudel === 'function' ) {
-				var initPromise = window.initStrudel();
+				const initPromise = window.initStrudel();
 				// Handle async init (thenable check supports Promise polyfills).
 				if ( initPromise && typeof initPromise.then === 'function' ) {
 					this.strudelReady = initPromise;
@@ -102,19 +103,19 @@
 			this.stop();
 
 			if ( 'strudel' === engine ) {
-				// Use Strudel's evaluate() which provides the DSL context
-				// (stack, note, s, sound, setcps, etc.).
+				// Use strudel.evaluate() from the @strudel/web IIFE namespace.
+				// This provides the full DSL context (stack, note, s, sound, setcps, etc.).
 				try {
 					// Wait for Strudel init if it was async.
 					if ( this.strudelReady ) {
 						await this.strudelReady;
 					}
 
-					if ( typeof window.evaluate === 'function' ) {
-						await window.evaluate( code );
+					if ( typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
+						await strudel.evaluate( code );
 					} else {
 						// eslint-disable-next-line no-console
-						console.warn( '[Algorave] Strudel evaluate() not available. Enable Strudel CDN in settings.' );
+						console.warn( '[Algorave] strudel.evaluate() not available. Enable Strudel CDN in settings.' );
 					}
 				} catch ( e ) {
 					// eslint-disable-next-line no-console
@@ -147,8 +148,8 @@
 			}
 
 			// Stop Strudel if running.
-			if ( typeof window.hush === 'function' ) {
-				window.hush();
+			if ( typeof strudel !== 'undefined' && typeof strudel.hush === 'function' ) {
+				strudel.hush();
 			}
 
 			this.playing = false;
