@@ -254,7 +254,7 @@
 		 */
 		loadDrumMachineAliases: async function () {
 			if ( typeof strudel === 'undefined' || typeof strudel.aliasBank !== 'function' ) {
-				return;
+				return Promise.resolve();
 			}
 
 			const sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
