@@ -139,7 +139,7 @@
 			// Without this, initStrudel() creates a REPL with no samples.
 			if ( ! this.strudelReady ) {
 				try {
-					var sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
+					const sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
 					this.strudelReady = window.initStrudel( {
 						prebake: function () {
 							if ( typeof strudel === 'undefined' || typeof strudel.samples !== 'function' ) {
@@ -148,63 +148,70 @@
 								return;
 							}
 
-							var loads = [];
+							const loads = [];
+
+							// Helper: load a sample map, catching errors individually
+							// so one failed collection doesn't break the entire init.
+							const loadSafe = function ( label, ...args ) {
+								loads.push(
+									strudel.samples( ...args ).catch( function ( err ) {
+										// eslint-disable-next-line no-console
+										console.warn( '[Algorave] Failed to load ' + label + ':', err );
+									} )
+								);
+							};
 
 							// 1. Standard dirt-samples (basic bd, sd, hh, cp sounds).
-							loads.push( strudel.samples( 'github:tidalcycles/dirt-samples' ) );
+							loadSafe( 'dirt-samples', 'github:tidalcycles/dirt-samples' );
 
 							// 2. Tidal drum machines (RolandTR808, TR909, AkaiLinn, etc.).
 							// These provide .bank("RolandTR808") support.
 							if ( sampleMaps.drumMachines ) {
-								loads.push(
-									strudel.samples(
-										sampleMaps.drumMachines,
-										'github:ritchse/tidal-drum-machines/main/machines/',
-										{ tag: 'drum-machines' }
-									)
+								loadSafe(
+									'tidal-drum-machines',
+									sampleMaps.drumMachines,
+									'github:ritchse/tidal-drum-machines/main/machines/',
+									{ tag: 'drum-machines' }
 								);
 							}
 
 							// 3. Piano (Salamander Grand Piano — CC-BY).
 							if ( sampleMaps.piano ) {
-								loads.push( strudel.samples( sampleMaps.piano ) );
+								loadSafe( 'piano', sampleMaps.piano );
 							}
 
 							// 4. VCSL orchestral samples (CC0).
 							if ( sampleMaps.vcsl ) {
-								loads.push(
-									strudel.samples(
-										sampleMaps.vcsl,
-										'github:sgossner/VCSL/master/'
-									)
+								loadSafe(
+									'vcsl',
+									sampleMaps.vcsl,
+									'github:sgossner/VCSL/master/'
 								);
 							}
 
 							// 5. Mridangam (Indian percussion).
 							if ( sampleMaps.mridangam ) {
-								loads.push(
-									strudel.samples(
-										sampleMaps.mridangam,
-										undefined,
-										{ tag: 'drum-machines' }
-									)
+								loadSafe(
+									'mridangam',
+									sampleMaps.mridangam,
+									undefined,
+									{ tag: 'drum-machines' }
 								);
 							}
 
 							// 6. Uzu community drum kit.
 							if ( sampleMaps.uzuDrumkit ) {
-								loads.push(
-									strudel.samples(
-										sampleMaps.uzuDrumkit,
-										undefined,
-										{ tag: 'drum-machines' }
-									)
+								loadSafe(
+									'uzu-drumkit',
+									sampleMaps.uzuDrumkit,
+									undefined,
+									{ tag: 'drum-machines' }
 								);
 							}
 
 							// 7. Uzu wavetable synthesis sounds.
 							if ( sampleMaps.uzuWavetables ) {
-								loads.push( strudel.samples( sampleMaps.uzuWavetables ) );
+								loadSafe( 'uzu-wavetables', sampleMaps.uzuWavetables );
 							}
 
 							return Promise.all( loads );
@@ -245,7 +252,7 @@
 				return;
 			}
 
-			var sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
+			const sampleMaps = ( typeof nvoosAlgoraveConfig !== 'undefined' && nvoosAlgoraveConfig.sampleMaps ) || {};
 			if ( sampleMaps.drumMachinesAlias ) {
 				try {
 					strudel.aliasBank( sampleMaps.drumMachinesAlias );
