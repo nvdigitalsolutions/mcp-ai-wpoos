@@ -154,6 +154,12 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
+- **9 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Embedded
+- **837 tool classes** (227 base + 610 pro) registered through a singleton Tool Registry
+- **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
+- **64 service classes** powering orchestration, budgets, and workflows
+- **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
+
 > **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
 ### Core Orchestration Layer: Overcoming PHP's Limitations
@@ -1915,11 +1921,13 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 550+ documentation files
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (9 providers, 837 tool classes, 34 REST controllers)
+- **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 398 tools documented (141 base + 257 Pro)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 568 tools documented (166 base + 402 Pro)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
@@ -3559,7 +3567,7 @@ Each hook receives sanitized data and respects the current user's permissions an
 Start with the comprehensive documentation before seeking additional support:
 
 1. **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast answers to common questions and tasks
-2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 32 documentation files
+2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 1,600+ documentation files
 3. **[Troubleshooting Guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)** - Solutions to common issues
 4. **[REST API Reference](docs/reference/api/rest-api.md)** - Complete API documentation
 
