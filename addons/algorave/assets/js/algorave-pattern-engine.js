@@ -49,6 +49,9 @@
 		/** @type {AnalyserNode|null} Web Audio API analyser for Strudel's AudioContext. */
 		strudelAnalyser: null,
 
+		/** @type {AnalyserNode|null} Frequency-domain analyser for spectrum modes. */
+		strudelFreqAnalyser: null,
+
 		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
 		strudelReady: null,
 
@@ -269,11 +272,16 @@
 		 * Strudel (superdough) routes audio through a master gain node
 		 * before the final AudioContext.destination. We tap that gain
 		 * node to get waveform data for our custom visualizer.
+		 *
+		 * Because Strudel may not expose getDestination() in all builds,
+		 * we also try tapping the AudioContext destination directly by
+		 * inserting a pass-through gain node as a proxy. If all else
+		 * fails we poll for the destination node to become available.
 		 */
 		connectStrudelAnalyser: function () {
 			try {
 				// Strudel exposes getAudioContext() after initialization.
-				var audioCtx = null;
+				let audioCtx = null;
 				if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
 					audioCtx = strudel.getAudioContext();
 				}
@@ -284,29 +292,62 @@
 
 				this.strudelAnalyser = audioCtx.createAnalyser();
 				this.strudelAnalyser.fftSize = 2048;
+				this.strudelAnalyser.smoothingTimeConstant = 0.8;
+				this.strudelAnalyser.minDecibels = -90;
+				this.strudelAnalyser.maxDecibels = -10;
 
-				// Strudel exposes its master destination gain node via
-				// getDestination(). If available, connect the analyser
-				// in parallel so audio still reaches the speakers.
+				// Also create a frequency analyser for spectrum/bars modes.
+				this.strudelFreqAnalyser = audioCtx.createAnalyser();
+				this.strudelFreqAnalyser.fftSize = 2048;
+				this.strudelFreqAnalyser.smoothingTimeConstant = 0.85;
+				this.strudelFreqAnalyser.minDecibels = -90;
+				this.strudelFreqAnalyser.maxDecibels = -10;
+
+				// Strategy 1: Strudel exposes its master destination gain node
+				// via getDestination(). Connect the analysers in parallel.
 				if ( typeof strudel.getDestination === 'function' ) {
-					var dest = strudel.getDestination();
+					const dest = strudel.getDestination();
 					if ( dest && typeof dest.connect === 'function' ) {
 						dest.connect( this.strudelAnalyser );
+						dest.connect( this.strudelFreqAnalyser );
 						return;
 					}
 				}
 
-				// Fallback: create a splitter GainNode, connect the
-				// analyser in parallel to the real destination.
-				// This works if called BEFORE audio sources are connected.
-				var splitter = audioCtx.createGain();
-				splitter.gain.value = 1;
-				splitter.connect( audioCtx.destination );
-				splitter.connect( this.strudelAnalyser );
+				// Strategy 2: Insert a pass-through GainNode between the
+				// AudioContext destination and whatever is connected to it.
+				// We replace audioCtx.destination with a gain proxy so all
+				// future audio routed to destination flows through us.
+				const proxyGain = audioCtx.createGain();
+				proxyGain.gain.value = 1;
+				proxyGain.connect( audioCtx.destination );
+				proxyGain.connect( this.strudelAnalyser );
+				proxyGain.connect( this.strudelFreqAnalyser );
+				this._strudelSplitter = proxyGain;
 
-				// Store the splitter so audio routed through it
-				// reaches both the speakers and the analyser.
-				this._strudelSplitter = splitter;
+				// Strategy 3: Poll for getDestination() to become available
+				// after audio starts (some Strudel builds lazy-init superdough).
+				const self = this;
+				let pollCount = 0;
+				const pollInterval = setInterval( function () {
+					pollCount++;
+					if ( pollCount > 20 ) {
+						clearInterval( pollInterval );
+						return;
+					}
+					if ( typeof strudel !== 'undefined' && typeof strudel.getDestination === 'function' ) {
+						const dest = strudel.getDestination();
+						if ( dest && typeof dest.connect === 'function' ) {
+							try {
+								dest.connect( self.strudelAnalyser );
+								dest.connect( self.strudelFreqAnalyser );
+							} catch ( err ) {
+								// Already connected or node mismatch — ignore.
+							}
+							clearInterval( pollInterval );
+						}
+					}
+				}, 500 );
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Could not connect Strudel analyser:', e );
@@ -415,7 +456,7 @@
 
 			// Update Strudel tempo via CPS if currently playing.
 			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
-				var cps = this.bpm / 60 / 4;
+				const cps = this.bpm / 60 / 4;
 				try {
 					strudel.evaluate( 'setcps(' + cps.toFixed( 4 ) + ')' );
 				} catch ( e ) {
@@ -461,10 +502,10 @@
 		},
 
 		/**
-		 * Get analyser data for visualizations.
+		 * Get waveform (time-domain) analyser data for visualizations.
 		 * Supports both Tone.js analyser and Strudel's AudioContext analyser.
 		 *
-		 * @return {Float32Array|null} Waveform data.
+		 * @return {Float32Array|null} Waveform data (-1 to +1).
 		 */
 		getAnalyserData: function () {
 			// Prefer Tone.js analyser if available and has data.
@@ -474,9 +515,29 @@
 
 			// Fall back to Strudel's AudioContext analyser.
 			if ( this.strudelAnalyser ) {
-				var bufferLength = this.strudelAnalyser.frequencyBinCount;
-				var dataArray = new Float32Array( bufferLength );
+				const bufferLength = this.strudelAnalyser.frequencyBinCount;
+				const dataArray = new Float32Array( bufferLength );
 				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
+				return dataArray;
+			}
+
+			return null;
+		},
+
+		/**
+		 * Get frequency-domain analyser data for spectrum visualizations.
+		 *
+		 * Returns unsigned byte data (0–255) suitable for bar/spectrum rendering.
+		 *
+		 * @return {Uint8Array|null} Frequency data (0–255 per bin).
+		 */
+		getFrequencyData: function () {
+			// Prefer the dedicated frequency analyser when connected to Strudel.
+			const analyser = this.strudelFreqAnalyser || this.strudelAnalyser;
+			if ( analyser ) {
+				const bufferLength = analyser.frequencyBinCount;
+				const dataArray = new Uint8Array( bufferLength );
+				analyser.getByteFrequencyData( dataArray );
 				return dataArray;
 			}
 
@@ -491,7 +552,7 @@
 				return;
 			}
 
-			var self = this;
+			const self = this;
 			navigator.requestMIDIAccess( { sysex: false } ).then( function ( access ) {
 				self.midiAvailable = true;
 				self.updateMidiOutputs( access );
@@ -513,9 +574,9 @@
 		 */
 		updateMidiOutputs: function ( access ) {
 			this.midiOutputs = [];
-			var outputs = access.outputs;
+			const outputs = access.outputs;
 			if ( outputs && typeof outputs.forEach === 'function' ) {
-				var self = this;
+				const self = this;
 				outputs.forEach( function ( output ) {
 					self.midiOutputs.push( {
 						id: output.id,

@@ -132,10 +132,12 @@ $default_code = sprintf(
 	<div class="algorave-visualizer">
 		<canvas id="algorave-visualizer-canvas"></canvas>
 		<div class="algorave-visualizer-controls">
-			<button type="button" data-mode="waveform" title="<?php esc_attr_e( 'Waveform', 'nvoos-algorave' ); ?>">〰</button>
+			<button type="button" class="is-active" data-mode="waveform" title="<?php esc_attr_e( 'Waveform', 'nvoos-algorave' ); ?>">〰</button>
 			<button type="button" data-mode="spectrum" title="<?php esc_attr_e( 'Spectrum', 'nvoos-algorave' ); ?>">📊</button>
 			<button type="button" data-mode="bars" title="<?php esc_attr_e( 'Bars', 'nvoos-algorave' ); ?>">▮▮▮</button>
 			<button type="button" data-mode="circular" title="<?php esc_attr_e( 'Circular', 'nvoos-algorave' ); ?>">◎</button>
+			<button type="button" data-mode="particles" title="<?php esc_attr_e( 'Particles', 'nvoos-algorave' ); ?>">✦</button>
+			<button type="button" data-mode="scope" title="<?php esc_attr_e( 'Scope', 'nvoos-algorave' ); ?>">⏛</button>
 		</div>
 	</div>
 	<?php endif; ?>
