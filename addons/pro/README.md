@@ -302,27 +302,9 @@ Educational assessment with math support:
 
 ---
 
-### ⚽ Sports & Entertainment
-
-#### 22. Fantasy Football Toolkit ✅
-**9 Tools** - Yahoo Fantasy Sports Integration
-
-Complete fantasy football management and analysis:
-- **OAuth Authentication**: Secure Yahoo Fantasy Sports API integration
-- **League Management**: Retrieve leagues, standings, and rosters
-- **Player Analysis**: Real-time statistics and performance tracking
-- **Trade Analyzer**: AI-powered trade evaluation and recommendations
-- **Player Research**: Comprehensive player insights with AI analysis
-- **League Reports**: Generate detailed league performance reports
-- **Team Branding**: AI-powered team logo generation
-
-**Use Cases**: Fantasy football enthusiasts, sports analysts, league commissioners
-
----
-
 ### 🔐 Security & Utilities
 
-#### 23. Password Vault Manager ✅
+#### 22. Password Vault Manager ✅
 **Phase 2.11 Complete**
 
 Secure credential management:
@@ -528,9 +510,6 @@ Toolkits are enabled through WordPress admin settings:
 
 **Education:**
 - `enable_quiz_system` - Quiz management with math support
-
-**Sports & Entertainment:**
-- `enable_fantasy_football` - Fantasy football management and analysis
 
 **Additional Features:**
 - `enable_ai_cpt_management` - AI-enhanced post types

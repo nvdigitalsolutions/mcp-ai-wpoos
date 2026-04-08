@@ -1,0 +1,79 @@
+<?php
+/**
+ * Plugin Name: NV oOS Algorave Addon
+ * Plugin URI:  https://nvdigitalsolutions.com/wpoos
+ * Description: Algorave live coding music extension for NV oOS. Enables AI-powered music pattern generation, browser-based audio synthesis via Tone.js/Strudel, MIDI export, and real-time audio visualization through the oOS chat interface. Requires NV oOS base plugin.
+ * Version:     1.0.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Tested up to: 6.9
+ * Author: NV Digital Solutions
+ * Author URI:  https://nvdigitalsolutions.com
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: nvoos-algorave
+ * Domain Path: /languages
+ *
+ * @package NV_oOS_Algorave
+ *
+ * Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
+ * This plugin is licensed under the GNU General Public License v3 or later.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/** Plugin version. */
+define( 'NVOOS_ALGORAVE_VERSION', '1.0.0' );
+
+/** Absolute path to this plugin file. */
+define( 'NVOOS_ALGORAVE_FILE', __FILE__ );
+
+/** Absolute path to this plugin directory (trailing slash). */
+define( 'NVOOS_ALGORAVE_PATH', plugin_dir_path( __FILE__ ) );
+
+/** URL to this plugin directory (trailing slash). */
+define( 'NVOOS_ALGORAVE_URL', plugin_dir_url( __FILE__ ) );
+
+/** Strudel CDN base URL — loaded at runtime to respect AGPL-3.0. */
+define( 'NVOOS_ALGORAVE_STRUDEL_CDN', 'https://unpkg.com/@strudel/web@1.2.5' );
+
+// Load core classes.
+require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave.php';
+require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-pattern-cpt.php';
+require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-session-cpt.php';
+require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-sample-library.php';
+
+// Load admin classes.
+if ( is_admin() ) {
+	require_once NVOOS_ALGORAVE_PATH . 'includes/admin/class-nvoos-algorave-settings.php';
+}
+
+// Load REST controller.
+require_once NVOOS_ALGORAVE_PATH . 'includes/rest/class-nvoos-algorave-rest.php';
+
+/**
+ * Check whether the NV oOS base plugin is active.
+ *
+ * @since 1.0.0
+ *
+ * @return bool True when the base plugin is available.
+ */
+function nvoos_algorave_is_base_active() {
+	return defined( 'WP_MCP_AI_VERSION' );
+}
+
+/**
+ * Check whether the algorave addon is fully ready.
+ *
+ * @since 1.0.0
+ *
+ * @return bool True when the addon is operational.
+ */
+function nvoos_algorave_is_ready() {
+	return nvoos_algorave_is_base_active() && NV_oOS_Algorave::is_enabled();
+}
+
+// Boot the plugin.
+NV_oOS_Algorave::init();

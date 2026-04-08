@@ -198,8 +198,11 @@ class WP_MCP_AI_Pro_Settings_Doc_Cornerstone_Packages_Test extends WP_UnitTestCa
 
 	/**
 	 * Test wp_mcp_ai_get_npm_package_status() returns correct source for Cornerstone3D.
+	 *
+	 * When vendored ESM bundles are present, source should be 'vendor'.
+	 * When only the CDN-loading viewer JS is present, source should be 'cdn'.
 	 */
-	public function test_npm_package_status_cornerstone_source_is_cdn() {
+	public function test_npm_package_status_cornerstone_source() {
 		if ( ! function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
 			$this->markTestSkipped( 'wp_mcp_ai_get_npm_package_status() not available' );
 		}
@@ -213,11 +216,19 @@ class WP_MCP_AI_Pro_Settings_Doc_Cornerstone_Packages_Test extends WP_UnitTestCa
 			$this->markTestSkipped( 'imaging-viewer.js not present' );
 		}
 
+		$has_vendor = function_exists( 'wp_mcp_ai_has_vendored_cornerstone' )
+			&& wp_mcp_ai_has_vendored_cornerstone();
+		$expected_source = $has_vendor ? 'vendor' : 'cdn';
+
 		foreach ( $this->cornerstone_packages as $package ) {
 			$status = wp_mcp_ai_get_npm_package_status( $package );
 			$this->assertIsArray( $status, "Status for '{$package}' should be array" );
 			$this->assertTrue( $status['available'], "Status for '{$package}' should be available" );
-			$this->assertEquals( 'cdn', $status['source'], "Source for '{$package}' should be 'cdn'" );
+			$this->assertEquals(
+				$expected_source,
+				$status['source'],
+				"Source for '{$package}' should be '{$expected_source}'"
+			);
 		}
 	}
 }

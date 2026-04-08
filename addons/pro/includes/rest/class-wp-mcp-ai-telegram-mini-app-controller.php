@@ -5135,13 +5135,6 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 					'add_telegram_message_reaction',
 				),
 			),
-			'enable_fantasy_football'               => array(
-				'label'      => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos-pro' ),
-				'setting'    => 'enable_fantasy_football',
-				'always'     => false,
-				'post_types' => array(),
-				'tool_slugs' => array( 'get_espn_fantasy_league', 'get_espn_fantasy_roster', 'get_espn_fantasy_scoreboard' ),
-			),
 			'enable_health_wellness_management'     => array(
 				'label'      => __( 'Health & Wellness Management', 'mcp-ai-wpoos-pro' ),
 				'setting'    => 'enable_health_wellness_management',

@@ -1,0 +1,22 @@
+{
+	"name": "nvoos-fantasy-football",
+	"version": "1.0.0",
+	"description": "Fantasy Football extension for NV oOS — ESPN and Yahoo Fantasy Sports API integration",
+	"private": true,
+	"scripts": {
+		"build": "echo 'No build step required.'"
+	},
+	"keywords": [
+		"wordpress",
+		"fantasy-football",
+		"espn",
+		"yahoo",
+		"sports",
+		"ai"
+	],
+	"author": "NV Digital Solutions",
+	"license": "GPL-3.0-or-later",
+	"engines": {
+		"node": ">=18.17.0"
+	}
+}

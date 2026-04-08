@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-claude-md-usage',
-        'version' => 'dev-copilot/update-claude-md-usage',
-        'reference' => 'a5042e83dbd76021bdeffb3c5e67fdbc1db6497f',
+        'pretty_version' => 'dev-copilot/create-algorave-addon',
+        'version' => 'dev-copilot/create-algorave-addon',
+        'reference' => 'a3f23e9329fd3f9170dc1c34df67da908c895f56',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-claude-md-usage',
-            'version' => 'dev-copilot/update-claude-md-usage',
-            'reference' => 'a5042e83dbd76021bdeffb3c5e67fdbc1db6497f',
+            'pretty_version' => 'dev-copilot/create-algorave-addon',
+            'version' => 'dev-copilot/create-algorave-addon',
+            'reference' => 'a3f23e9329fd3f9170dc1c34df67da908c895f56',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
