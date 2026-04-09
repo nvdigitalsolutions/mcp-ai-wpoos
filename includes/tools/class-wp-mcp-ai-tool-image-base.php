@@ -997,7 +997,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'requires-capability',  // Requires user capabilities.
 			'write',                // Creates/modifies media files.
-			'local-only',           // Works locally without external APIs.
+			'external-api',         // May download images from external URLs.
 		);
 	}
 

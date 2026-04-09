@@ -781,7 +781,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 	public function get_capability_flags() {
 		return array(
 			'safe'              => true,  // Only stores data.
-			'local-only'        => true,  // No external API calls.
+			'external-api'      => true,  // May fetch user-provided URLs via wp_remote_get.
 			'read-only'         => false, // Writes context data.
 			'idempotent'        => false, // Creates new context each time.
 			'cacheable'         => false, // Storage operation, not cacheable.

@@ -260,7 +260,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			'state-changing',      // Modifies JetEngine CCT data.
 			'requires-plugin',     // Requires JetEngine plugin.
 			'requires-capability', // Requires appropriate user capabilities.
-			'local-only',          // No external API calls.
+			'local-only',          // Dispatches to local site REST API; no external API calls.
 		);
 	}
 }

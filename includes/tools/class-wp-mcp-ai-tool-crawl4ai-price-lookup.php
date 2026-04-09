@@ -708,7 +708,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes external API calls to Crawl4AI endpoint.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

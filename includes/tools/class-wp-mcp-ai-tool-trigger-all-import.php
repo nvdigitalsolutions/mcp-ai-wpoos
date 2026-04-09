@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Trigger_All_Import implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'requires-plugin',     // Requires WP All Import plugin.
 			'state-changing',      // Modifies state by importing data.
-			'local-only',          // No external API calls (uses internal HTTP).
+			'local-only',          // Triggers local site import via home_url(); no external API calls.
 			'requires-capability', // Requires 'manage_options' capability.
 		);
 	}

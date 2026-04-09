@@ -358,15 +358,17 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 	 * <id>
 	 * : The assistant post ID.
 	 *
-	 * [--file=<path>]
-	 * : Write the export to a file instead of stdout.
+	 * [--file=<filename>]
+	 * : Write the export to a file inside the plugin-specific uploads directory
+	 * (wp-content/uploads/mcp-ai/exports/) instead of stdout. Only a filename
+	 * is accepted; path separators are stripped for security.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Print assistant config to stdout.
 	 *     $ wp mcp-ai assistant export 42
 	 *
-	 *     # Write config to a file.
+	 *     # Write config to a file in uploads/mcp-ai/exports/.
 	 *     $ wp mcp-ai assistant export 42 --file=assistant-42.json
 	 *
 	 * @param array $args       Positional arguments.
@@ -414,30 +416,23 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$json = wp_json_encode( $export, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 
 		if ( $file ) {
-			$file = wp_normalize_path( $file );
+			// WordPress.org compliance: restrict file writes to a plugin-specific uploads subdirectory.
+			$upload_dir = wp_upload_dir();
+			$export_dir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) ) . 'mcp-ai/exports/';
 
-			// WordPress.org compliance: restrict file writes to the uploads directory.
-			$upload_dir      = wp_upload_dir();
-			$uploads_basedir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) );
+			// Strip any path separators from the user-supplied filename for security.
+			$safe_filename = sanitize_file_name( basename( $file ) );
 
-			// Ensure the parent directory exists within uploads (create if needed).
-			$parent_dir = dirname( $file );
-			if ( ! is_dir( $parent_dir ) ) {
-				// Only create the directory if it's inside uploads.
-				$normalized_parent = wp_normalize_path( $parent_dir ) . '/';
-				if ( 0 !== strpos( $normalized_parent, $uploads_basedir ) ) {
-					/* translators: %s: uploads directory path */
-					WP_CLI::error( sprintf( __( 'For security, export files must be saved inside the uploads directory (%s).', 'mcp-ai-wpoos' ), $uploads_basedir ) );
-				}
-				wp_mkdir_p( $parent_dir );
+			if ( empty( $safe_filename ) ) {
+				WP_CLI::error( __( 'Invalid filename provided.', 'mcp-ai-wpoos' ) );
 			}
 
-			// Resolve the real path now that the directory exists and verify it's within uploads.
-			$real_parent = realpath( $parent_dir );
-			if ( false === $real_parent || 0 !== strpos( wp_normalize_path( $real_parent ) . '/', $uploads_basedir ) ) {
-				/* translators: %s: uploads directory path */
-				WP_CLI::error( sprintf( __( 'For security, export files must be saved inside the uploads directory (%s).', 'mcp-ai-wpoos' ), $uploads_basedir ) );
+			// Create the export directory if it doesn't exist.
+			if ( ! is_dir( $export_dir ) ) {
+				wp_mkdir_p( $export_dir );
 			}
+
+			$file = $export_dir . $safe_filename;
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI command writing to restricted uploads path.
 			if ( false === file_put_contents( $file, $json ) ) {
