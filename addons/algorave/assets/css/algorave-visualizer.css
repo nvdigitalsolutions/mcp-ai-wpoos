@@ -54,9 +54,16 @@
 	color: #888;
 	font-size: 11px;
 	cursor: pointer;
+	transition: all 0.15s ease;
 }
 
 .algorave-visualizer-controls button:hover {
 	color: #fff;
 	border-color: #555;
+}
+
+.algorave-visualizer-controls button.is-active {
+	color: #00ff88;
+	border-color: #00ff8866;
+	background: rgba(0, 255, 136, 0.1);
 }

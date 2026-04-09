@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-algorave-visualizer',
+        'version' => 'dev-copilot/fix-algorave-visualizer',
+        'reference' => '06e03e5cc899ba04a700365eab87503ea952d426',
         'pretty_version' => 'dev-copilot/fix-algorave-plugin-error',
         'version' => 'dev-copilot/fix-algorave-plugin-error',
         'reference' => 'acf6df6d5523bfe50921ea42195eb46646d593fa',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-algorave-visualizer',
+            'version' => 'dev-copilot/fix-algorave-visualizer',
+            'reference' => '06e03e5cc899ba04a700365eab87503ea952d426',
             'pretty_version' => 'dev-copilot/fix-algorave-plugin-error',
             'version' => 'dev-copilot/fix-algorave-plugin-error',
             'reference' => 'acf6df6d5523bfe50921ea42195eb46646d593fa',
