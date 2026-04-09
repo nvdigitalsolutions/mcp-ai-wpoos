@@ -741,8 +741,8 @@
 	 * play-control, and MIDI output components can react.
 	 */
 	document.addEventListener( 'algorave:browser-command', function ( e ) {
-		var detail = e.detail || {};
-		var action = detail.action || '';
+		const detail = e.detail || {};
+		const action = detail.action || '';
 
 		// Visualizer commands.
 		if ( action === 'set_mode' || action === 'set_color' || action === 'toggle' || action === 'fullscreen' ) {
