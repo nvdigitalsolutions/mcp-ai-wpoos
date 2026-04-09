@@ -8,9 +8,9 @@
 		"lint": "eslint assets/js/"
 	},
 	"dependencies": {
-		"tone": "^15.0.4",
 		"@tonejs/midi": "^2.0.28",
 		"tonal": "^6.3.0",
+		"tone": "^15.0.4",
 		"webmidi": "^3.1.11"
 	},
 	"optionalDependencies": {
