@@ -375,20 +375,27 @@
 		 * @return {boolean} True if connection succeeded.
 		 */
 		tryConnectAnalyser: function () {
-			if ( this.strudelAnalyserConnected ) {
-				return true;
-			}
 			try {
 				// Strategy 1: tap Strudel's master destination gain node directly.
+				// This is the preferred method — it connects to the actual gain
+				// node that superdough routes audio through. Web Audio connect()
+				// is idempotent for the same src→dest pair, so safe to retry.
 				if ( typeof strudel !== 'undefined' && typeof strudel.getDestination === 'function' ) {
 					const dest = strudel.getDestination();
 					if ( dest && typeof dest.connect === 'function' ) {
 						dest.connect( this.strudelAnalyser );
 						dest.connect( this.strudelFreqAnalyser );
-						this.strudelAnalyserConnected = true;
-						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+						if ( ! this.strudelAnalyserConnected ) {
+							this.strudelAnalyserConnected = true;
+							document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+						}
 						return true;
 					}
+				}
+
+				// Already connected — skip Strategy 2 (proxy install).
+				if ( this.strudelAnalyserConnected ) {
+					return true;
 				}
 
 				// Strategy 2: proxy AudioContext.destination so future connections
@@ -396,6 +403,9 @@
 				// This mutates AudioContext.destination which is safe here because
 				// the context belongs to Strudel's internal audio graph and we are
 				// the sole consumer needing to intercept its output.
+				// Note: this may fail when superdough caches a reference to the
+				// real destination before the proxy is installed. Strategy 1
+				// (retried after evaluate()) handles that case.
 				if ( ! this.strudelDestProxy && this.strudelAnalyser && this.strudelFreqAnalyser ) {
 					let audioCtx = null;
 					if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
@@ -456,9 +466,11 @@
 						// Retry analyser connection now that superdough is active.
 						// evaluate() triggers superdough initialization, making
 						// getDestination() available in builds that lazy-init it.
-						if ( ! this.strudelAnalyserConnected ) {
-							this.tryConnectAnalyser();
-						}
+						// Always retry — the proxy strategy (Strategy 2) may have
+						// set strudelAnalyserConnected without actually capturing
+						// audio if superdough cached the real destination before
+						// the proxy was installed.
+						this.tryConnectAnalyser();
 					} else {
 						const msg = 'strudel.evaluate() not available. Enable Strudel CDN in settings.';
 						// eslint-disable-next-line no-console
@@ -601,7 +613,20 @@
 				const bufferLength = this.strudelAnalyser.frequencyBinCount;
 				const dataArray = new Float32Array( bufferLength );
 				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
-				return dataArray;
+
+				// Check for actual signal — if all values are exactly 0.0,
+				// the analyser may not be receiving audio despite being
+				// "connected" (e.g. the proxy strategy failed silently).
+				// Return null so the visualizer shows the idle animation
+				// instead of a misleading flat line.
+				let hasSignal = false;
+				for ( let i = 0; i < bufferLength; i++ ) {
+					if ( dataArray[ i ] !== 0 ) {
+						hasSignal = true;
+						break;
+					}
+				}
+				return hasSignal ? dataArray : null;
 			}
 
 			// Fall back to Tone.js analyser when using tonejs engine.
@@ -634,7 +659,17 @@
 				const bufferLength = analyser.frequencyBinCount;
 				const dataArray = new Uint8Array( bufferLength );
 				analyser.getByteFrequencyData( dataArray );
-				return dataArray;
+
+				// Check for actual signal — all-zero frequency data means
+				// the analyser is not receiving audio (e.g. proxy bypass).
+				let hasSignal = false;
+				for ( let i = 0; i < bufferLength; i++ ) {
+					if ( dataArray[ i ] !== 0 ) {
+						hasSignal = true;
+						break;
+					}
+				}
+				return hasSignal ? dataArray : null;
 			}
 
 			return null;
