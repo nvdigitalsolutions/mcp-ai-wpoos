@@ -1,15 +1,174 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T14 24Mar26/3.9A7 (P0TDX269399HGN)  
-**Document version:** 1.0 — 2026-03-24  
-**Plugin version:** 1.1.6
+**Document version:** 2.0 — 2026-04-09  
+**Plugin version:** 1.1.6 (3.9.1RC1)
 
-This document records every issue raised by the WordPress.org plugin directory review and
-the exact code change made to resolve it.
+This document records every issue raised by the WordPress.org plugin directory automated
+reviews and the exact code changes made to resolve each one.
 
 ---
 
-## 1. Phoning Home / Collecting User Data Without Opt-In Consent
+# Review 2 — April 2026
+
+**Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T17 9Apr26/3.9.1RC1 (P0TDX269399HGN)  
+**Date received:** 2026-04-09  
+
+---
+
+## R2-1. Invalid / 404 URLs in readme.txt
+
+**Issue:** Two URLs in the External Services section returned HTTP 404:
+- `https://www.trade.gov/privacy` (ITA Tariff Rates API — Privacy Policy)
+- `https://www.mailjet.com/legal/terms-of-use/` (Mailjet API — Terms of Service)
+
+### Changes made
+
+| File | Old (404) | New (working) |
+|------|-----------|---------------|
+| `readme.txt` (line 810) | `https://www.trade.gov/privacy` | `https://www.trade.gov/privacy-program` |
+| `readme.txt` (line 880) | `https://www.mailjet.com/legal/terms-of-use/` | `https://www.mailjet.com/legal/terms/` |
+
+### Verification
+
+- Both replacement URLs were confirmed to return HTTP 200 at the time of this change.
+- A full audit of all Terms/Privacy URLs in readme.txt was performed — no other 404s found.
+
+---
+
+## R2-2. Undocumented Use of a Third-Party / External Service
+
+**Issue:** The reviewer's automated tools flagged two instances:
+
+1. **Auth0 API** — `includes/integrations/class-wp-mcp-ai-integration-auth0-github.php:321`
+   makes requests to `https://{domain}/api/v2/users/{subject}`.
+2. **GDACS API** — `includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php:114-120`
+   makes requests to `https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP`.
+
+### Resolution
+
+Both services were **already documented** in the `== External Services ==` section of
+`readme.txt`:
+
+- **Auth0** → Service #21 (lines 780–786): includes service URL, data sent, when, terms
+  of service, and privacy policy links.
+- **GDACS** → Service #23 (lines 796–802): includes service URL, data sent, when, terms
+  of service, and privacy policy links.
+
+No readme changes were required for this item. The automated tools did not cross-reference
+the existing documentation.
+
+### Additional fix — GDACS capability flag
+
+The GDACS tool's `get_capability_flags()` method incorrectly declared `'local-only'` despite
+making external HTTP calls. This was corrected:
+
+| File | Change |
+|------|--------|
+| `includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php` | `'local-only'` → `'external-api'` in `get_capability_flags()` |
+
+### Additional fix — Comprehensive capability flag audit
+
+A full audit revealed **12 additional base tools** that declared `'local-only'` but actually
+make external HTTP requests via `wp_remote_get()` / `wp_remote_post()`. All were corrected:
+
+| Tool file | External service | Flag change |
+|-----------|-----------------|-------------|
+| `class-wp-mcp-ai-tool-get-nhc-active-storms.php` | NOAA NHC API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-get-site-health.php` | WordPress.org API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-generate-auth0-token.php` | Auth0 OAuth API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-crawl4ai-price-lookup.php` | Crawl4AI endpoint | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-run-openai-external-action.php` | OpenAI API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-purge-cloudflare-cache.php` | Cloudflare API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-purge-varnish-cache.php` | Varnish server | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-reliefweb-reports.php` | ReliefWeb API | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-query-remote-site.php` | Remote WordPress sites | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-store-agent-context.php` | User-provided URLs | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-create-woo-product.php` | External brand lookup URLs | `'local-only'` → `'external-api'` |
+| `class-wp-mcp-ai-tool-image-base.php` | External image URLs | `'local-only'` → `'external-api'` |
+
+Two tools that use `wp_remote_*` for **loopback / internal** HTTP were verified correct and
+kept as `'local-only'` with clarified comments:
+- `class-wp-mcp-ai-tool-invoke-jetengine-route.php` — calls local REST API via wp_remote_request
+- `class-wp-mcp-ai-tool-trigger-all-import.php` — calls home_url() trigger endpoint
+
+All 12 corrected tools were already documented in the readme.txt `== External Services ==`
+section; no new service disclosures were needed.
+
+---
+
+## R2-3. Saving Data in the Plugin Folder
+
+**Issue:** The reviewer flagged:
+`includes/cli/class-wp-mcp-ai-cli-assistant-command.php:443 file_put_contents($file, $json);`
+
+The concern was that the CLI export command accepted a user-supplied file path that could
+potentially write anywhere within the uploads directory.
+
+### Changes made
+
+| File | Change |
+|------|--------|
+| `includes/cli/class-wp-mcp-ai-cli-assistant-command.php` | **`--file` parameter** changed from accepting full paths to accepting only a bare filename. All exports are written to a plugin-specific uploads subdirectory: `wp-content/uploads/mcp-ai/exports/` |
+| `includes/cli/class-wp-mcp-ai-cli-assistant-command.php` | Path separators are stripped via `sanitize_file_name( basename( $file ) )` |
+| `includes/cli/class-wp-mcp-ai-cli-assistant-command.php` | The export directory is created via `wp_mkdir_p()` if it doesn't exist |
+| `includes/cli/class-wp-mcp-ai-cli-assistant-command.php` | Updated PHPDoc: `[--file=<path>]` → `[--file=<filename>]` with docs explaining the restriction |
+
+### Additional fix — sync-docs auto-fix
+
+`includes/slash-commands/commands/class-wp-mcp-ai-slash-command-sync-docs.php` contained an
+`elseif` branch that wrote auto-fixed content back to README files in plugin/theme directories
+using `file_put_contents()`. Plugin directories are deleted on upgrade; writing to them violates
+WordPress.org directory guidelines.
+
+| File | Change |
+|------|--------|
+| `class-wp-mcp-ai-slash-command-sync-docs.php` | Removed the `elseif ('file' === $doc['type'])` branch. Auto-fix only applies to post-type docs (saved via `wp_update_post()`). Added explanatory comment. |
+
+### Full audit of file write operations
+
+All `file_put_contents()`, `fopen()`, and `fwrite()` calls in the base plugin (`includes/`)
+were audited. Results:
+
+| Location | Writes to | Status |
+|----------|-----------|--------|
+| Tools (image generation, charts, etc.) | `wp_upload_dir()['path']` | ✅ OK |
+| Report generator | `wp_upload_dir()['basedir']/mcp-ai-reports/` | ✅ OK |
+| Workflow commands | `wp_upload_dir()['basedir']/mcp-ai/workflows/` | ✅ OK |
+| Skill registry | `wp_upload_dir()['basedir']/wp-mcp-ai-skills/` | ✅ OK |
+| Custom tool loader | `wp_upload_dir()['basedir']/wp-mcp-ai-custom-tools/` | ✅ OK |
+| Profession playbook seeder | `wp_upload_dir()['basedir']/wp-mcp-ai/profession-playbooks/` | ✅ OK |
+| Temp file operations | `wp_tempnam()` / `sys_get_temp_dir()` | ✅ OK |
+| CLI transport | `STDOUT` / `STDERR` | ✅ OK |
+| Logger (error log truncation) | `ini_get('error_log')` (PHP error log path) | ✅ OK |
+| CLI assistant export | `wp_upload_dir()['basedir']/mcp-ai/exports/` | ✅ Fixed |
+| Sync-docs auto-fix | Plugin/theme directories | ✅ Removed |
+
+**No file writes to the plugin directory were found.** All writes target the WordPress uploads
+directory, temp directories, or standard output streams.
+
+---
+
+## R2 — Summary checklist
+
+- [x] Two broken URLs in readme.txt corrected (Trade.gov, Mailjet)
+- [x] All external services verified as documented in readme.txt (Auth0, GDACS)
+- [x] GDACS tool capability flag corrected (`'local-only'` → `'external-api'`)
+- [x] 12 additional tools had `'local-only'` capability flags corrected to `'external-api'`
+- [x] CLI assistant export restricted to plugin-specific uploads subdirectory
+- [x] sync-docs file write to plugin directories removed
+- [x] Full audit of all file write operations — all write to uploads/temp/stdout
+
+---
+---
+
+# Review 1 — March 2026
+
+**Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T14 24Mar26/3.9A7 (P0TDX269399HGN)  
+**Date received:** 2026-03-24  
+
+---
+
+## R1-1. Phoning Home / Collecting User Data Without Opt-In Consent
 
 **Issue:** Activation/deactivation telemetry was sent to `nvdigitalsolutions.com` by default
 (opt-out model). WordPress.org guideline 7 & 9 require tracking to be disabled by default
@@ -35,7 +194,7 @@ with explicit opt-in.
 
 ---
 
-## 2. Invalid / 404 URLs in readme.txt
+## R1-2. Invalid / 404 URLs in readme.txt
 
 **Issue:** 15 URLs in readme.txt returned HTTP 404. WordPress.org requires all documented
 links to be accessible.
@@ -62,7 +221,7 @@ links to be accessible.
 
 ---
 
-## 3. Out-of-Date Libraries
+## R1-3. Out-of-Date Libraries
 
 **Issue:** `symfony/cache` and `symfony/validator` pinned to 6.4.34; 6.4.35 was available.
 
@@ -81,7 +240,7 @@ enforce the minimum of 6.4.35.
 
 ---
 
-## 4. Undocumented Use of Third-Party / External Services
+## R1-4. Undocumented Use of Third-Party / External Services
 
 **Issue:** QuickBooks, Cloudways, and the NV Digital Solutions license server were not clearly
 documented in readme.txt.
@@ -100,7 +259,7 @@ No new code changes were required for this item beyond the URL fixes in item 2.
 
 ---
 
-## 5. Sanitization for `register_setting()`
+## R1-5. Sanitization for `register_setting()`
 
 **Issue:** `sanitize_settings_callback()` returned the input array unchanged, providing no
 sanitization at the `register_setting()` level.
@@ -139,7 +298,7 @@ sanitization at the `register_setting()` level.
 
 ---
 
-## 6. Base Version vs Pro Addon — "Pro Only Adds New Functionality"
+## R1-6. Base Version vs Pro Addon — "Pro Only Adds New Functionality"
 
 **Issue (WP.org):** The plugin marketed already-present capabilities as a Pro upgrade.  
 **User requirement:** Make it clear and enforce in code that the Pro addon only adds
@@ -202,7 +361,7 @@ WordPress.org build artefact.
 
 ---
 
-## Summary checklist
+## R1 — Summary checklist
 
 - [x] Telemetry changed from opt-out to **opt-in** (disabled by default)
 - [x] 15 broken URLs in readme.txt corrected
