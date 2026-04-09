@@ -77,6 +77,11 @@ $default_code = sprintf(
 	<!-- Code Editor -->
 	<textarea class="algorave-code-editor" placeholder="<?php esc_attr_e( 'Type your pattern code here...', 'nvoos-algorave' ); ?>" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"><?php echo esc_textarea( $default_code ); ?></textarea>
 
+	<!-- Pattern Visualization (pianoroll / punchcard) -->
+	<div class="algorave-pattern-viz" style="display:none;">
+		<canvas id="algorave-pattern-viz-canvas"></canvas>
+	</div>
+
 	<!-- Effects Quick Reference (collapsible) -->
 	<details class="algorave-effects-ref">
 		<summary class="algorave-effects-ref-toggle"><?php esc_html_e( 'Strudel Quick Reference', 'nvoos-algorave' ); ?></summary>

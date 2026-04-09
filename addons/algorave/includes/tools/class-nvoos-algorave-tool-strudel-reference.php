@@ -719,10 +719,10 @@ class NV_oOS_Algorave_Tool_Strudel_Reference implements WP_MCP_AI_Tool_Interface
 				'example'     => 'note("c a f e")._pianoroll({ cycles: 8, playhead: 0.5, labels: true, active: "#ff0" })',
 			),
 			'tips'           => array(
-				'Inline methods (prefixed with _) show visualizations below the current line in the editor.',
-				'Background methods (without _) overlay on the main canvas, allowing multiple visualizations.',
+				'Both inline (prefixed with _) and background methods render to a dedicated canvas below the editor.',
 				'Use .color() to customize the visual appearance of individual patterns in stacked views.',
 				'Pianoroll is best for melodic patterns, punchcard for rhythmic/drum patterns.',
+				'Punchcard uses fold mode by default (unique values fill the axis), pianoroll uses absolute pitch.',
 				'The active option colors currently playing notes differently for real-time feedback.',
 			),
 		);
