@@ -78,6 +78,9 @@
 		/** @type {number} Idle animation phase counter. */
 		idlePhase: 0,
 
+		/** @type {string} Status message shown while waiting for audio. */
+		statusMessage: 'WAITING FOR AUDIO',
+
 		/**
 		 * Initialize the visualizer.
 		 *
@@ -97,6 +100,16 @@
 			// Listen for browser commands from the chat interface.
 			document.addEventListener( 'algorave:visualizer', ( e ) => {
 				this.handleCommand( e.detail );
+			} );
+
+			// Update status message based on engine lifecycle events.
+			document.addEventListener( 'algorave:strudel-ready', () => {
+				if ( this.statusMessage === 'INITIALIZING AUDIO...' ) {
+					this.statusMessage = 'WAITING FOR AUDIO';
+				}
+			} );
+			document.addEventListener( 'algorave:analyser-connected', () => {
+				this.statusMessage = 'ANALYSER CONNECTED';
 			} );
 
 			// Wire up the mode-switch overlay buttons.
@@ -223,6 +236,12 @@
 				}
 
 				if ( ! waveData && ! freqData ) {
+					// Update status message based on engine state.
+					if ( window.AlgoraveEngine && window.AlgoraveEngine.strudelInitializing ) {
+						this.statusMessage = 'INITIALIZING AUDIO...';
+					} else if ( window.AlgoraveEngine && window.AlgoraveEngine.playing && ! window.AlgoraveEngine.strudelAnalyserConnected ) {
+						this.statusMessage = 'CONNECTING ANALYSER...';
+					}
 					this.drawIdleState();
 					return;
 				}
@@ -304,7 +323,7 @@
 			this.ctx.fillStyle = this.color + '20';
 			this.ctx.font = '12px monospace';
 			this.ctx.textAlign = 'center';
-			this.ctx.fillText( 'WAITING FOR AUDIO', w / 2, midY + 30 );
+			this.ctx.fillText( this.statusMessage, w / 2, midY + 30 );
 		},
 
 		// ── Waveform ──────────────────────────────────────────────

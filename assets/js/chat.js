@@ -12836,6 +12836,17 @@
             // Generic success
             appendMessage(state, 'system', 'Tool "' + toolName + '" completed', { toolName: toolName });
         }
+
+        // Dispatch browser commands from addon tools (algorave, etc.).
+        if (result && result._browser_command) {
+            try {
+                document.dispatchEvent(new CustomEvent('algorave:browser-command', {
+                    detail: result
+                }));
+            } catch (bcErr) {
+                // Ignore dispatch errors.
+            }
+        }
     }
 
     /**
@@ -16002,6 +16013,25 @@
                     // Update agent panel if this is an agent-related tool result
                     handleAgentToolResult(state.container, toolResult.name || '', parsedForDisplay);
                     
+                    // Dispatch browser commands from addon tools (algorave, etc.).
+                    // Tools that set _browser_command: true need their results
+                    // forwarded to the frontend via DOM CustomEvents.
+                    if (parsedForDisplay && parsedForDisplay._browser_command) {
+                        try {
+                            var toolSlug = (toolResult.name || '').replace(/^algorave_/, '');
+                            document.dispatchEvent(new CustomEvent('algorave:browser-command', {
+                                detail: parsedForDisplay
+                            }));
+                            if (window.console && console.log) {
+                                console.log('[NV oOS] Dispatched browser command for tool:', toolResult.name, toolSlug);
+                            }
+                        } catch (bcErr) {
+                            if (window.console && console.warn) {
+                                console.warn('[NV oOS] Browser command dispatch failed:', bcErr);
+                            }
+                        }
+                    }
+
                     state.conversation.push(toolResult);
                 }
             });
