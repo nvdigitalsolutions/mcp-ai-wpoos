@@ -1,6 +1,27 @@
 # oOS – Changelog
 
 
+## [1.1.7] - 2026-04-09
+
+### WordPress.org Plugin Directory Compliance — April 9, 2026
+
+Addresses all issues from the WordPress.org automated review (Review ID: P0TDX269399HGN) plus a proactive audit of similar issues across the entire base plugin.
+
+### Fixed
+- **404 URLs in readme.txt** — Trade.gov privacy URL and Mailjet terms URL corrected to working endpoints
+- **Capability flag mismatches** — 13 base tools incorrectly declaring `'local-only'` while making external HTTP requests corrected to `'external-api'` (GDACS, NHC, Auth0, Crawl4AI, OpenAI, Cloudflare, Varnish, ReliefWeb, Query Remote Site, Store Agent Context, WooCommerce Product, Image Base)
+- **CLI assistant export path** — `--file` parameter restricted to bare filename; all exports write exclusively to `uploads/mcp-ai/exports/` with `sanitize_file_name( basename() )`
+- **sync-docs file write** — Removed `file_put_contents()` branch that wrote auto-fixed content to plugin/theme directories; auto-fix now only applies to post-type docs via `wp_update_post()`
+- **Capability flag comments clarified** — 2 URL-returning tools (`open-openai-logs`, `open-openai-usage`) and 2 loopback tools (`invoke-jetengine-route`, `trigger-all-import`) kept `'local-only'` with accurate comments
+
+### Added
+- **Compliance document** — `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_09.md` with full remediation details for all 3 reviewer-flagged issues plus proactive audit results
+
+### Changed
+- **Production classmap** — `composer install --no-dev --classmap-authoritative` for optimized autoloading
+- **Compliance docs updated** — `WORDPRESS_ORG_COMPLIANCE_COMPLETE.md`, `README.md`, `03-wp-org-compliance.md` updated with v1.1.7 release history and combined results
+
+
 ## [1.1.6] - 2026-04-06
 
 ### April 2–6, 2026 — A2A Protocol, JetEngine MCP, Agent Command Center, Chat Bubble Widget

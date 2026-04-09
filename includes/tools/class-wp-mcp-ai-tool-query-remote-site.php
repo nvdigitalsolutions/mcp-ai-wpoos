@@ -291,7 +291,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes HTTP requests to remote WordPress sites.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

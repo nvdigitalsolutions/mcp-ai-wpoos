@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -270,6 +270,18 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.7 - April 9, 2026 =
+
+**WordPress.org Plugin Directory Compliance — April 9, 2026**
+
+* Fixed 2 broken URLs in readme.txt External Services section (Trade.gov, Mailjet)
+* Corrected 13 base tool capability flags from `local-only` to `external-api` (tools making external HTTP calls)
+* Restricted CLI assistant export to dedicated uploads subdirectory (`uploads/mcp-ai/exports/`)
+* Removed sync-docs file write to plugin/theme directories
+* Clarified capability flag comments on 4 tools (2 URL-returning, 2 loopback)
+* Full proactive audit passed — ABSPATH guards, text domain, CDN scripts, obfuscation, redirects, nonces, SQL, sanitization
+* Production classmap regenerated via `composer install --no-dev --classmap-authoritative`
 
 = 1.1.6 - April 2026 (Updated April 6) =
 
@@ -807,7 +819,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the import duty lookup tool is used (requires ITA API key configuration)
 * **Service URL:** https://api.trade.gov/v1/tariff_rates/search
 * **Terms of Service:** https://developer.trade.gov/
-* **Privacy Policy:** https://www.trade.gov/privacy
+* **Privacy Policy:** https://www.trade.gov/privacy-program
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -877,7 +889,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
 * **Service URL:** https://app.mailjet.com/oauth/authorize (OAuth authorize), https://api.mailjet.com/v3/REST (email campaign API)
-* **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
+* **Terms of Service:** https://www.mailjet.com/legal/terms/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
 **32. Tavily Search API**

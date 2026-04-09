@@ -751,7 +751,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Calls WordPress.org API for PHP version check.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
