@@ -544,10 +544,10 @@
 		 * @return {Float32Array|null} Waveform data (-1 to +1).
 		 */
 		getAnalyserData: function () {
-			// When Strudel is the active engine, prefer its analyser.
-			// Tone.js analyser is disconnected from Strudel's AudioContext
-			// and would return silence.
-			if ( this.strudelAnalyser && ( this.activeEngine === 'strudel' || ! this.analyser ) ) {
+			// When Strudel is the active engine and the analyser is connected
+			// to live audio, prefer it. Tone.js analyser is disconnected from
+			// Strudel's AudioContext and would return silence.
+			if ( this.strudelAnalyser && this.strudelAnalyserConnected && ( this.activeEngine === 'strudel' || ! this.analyser ) ) {
 				const bufferLength = this.strudelAnalyser.frequencyBinCount;
 				const dataArray = new Float32Array( bufferLength );
 				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
@@ -741,8 +741,13 @@
 	 * play-control, and MIDI output components can react.
 	 */
 	document.addEventListener( 'algorave:browser-command', function ( e ) {
+		if ( ! window.AlgoraveEngine ) {
+			return;
+		}
+
 		const detail = e.detail || {};
 		const action = detail.action || '';
+		const engine = window.AlgoraveEngine;
 
 		// Visualizer commands.
 		if ( action === 'set_mode' || action === 'set_color' || action === 'toggle' || action === 'fullscreen' ) {
@@ -750,18 +755,18 @@
 		}
 
 		// Play control commands.
-		if ( action === 'play' && detail.code && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.play( detail.code, detail.engine || 'strudel' );
-		} else if ( action === 'stop' && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.stop();
-		} else if ( action === 'pause' && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.pause();
-		} else if ( action === 'set_bpm' && detail.bpm && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.setBpm( detail.bpm );
-		} else if ( action === 'set_cps' && detail.cps && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.setCps( detail.cps );
-		} else if ( action === 'set_bank' && detail.bank && window.AlgoraveEngine ) {
-			window.AlgoraveEngine.loadBank( detail.bank );
+		if ( action === 'play' && detail.code ) {
+			engine.play( detail.code, detail.engine || 'strudel' );
+		} else if ( action === 'stop' ) {
+			engine.stop();
+		} else if ( action === 'pause' ) {
+			engine.pause();
+		} else if ( action === 'set_bpm' && detail.bpm ) {
+			engine.setBpm( detail.bpm );
+		} else if ( action === 'set_cps' && detail.cps ) {
+			engine.setCps( detail.cps );
+		} else if ( action === 'set_bank' && detail.bank ) {
+			engine.loadBank( detail.bank );
 		}
 	} );
 } )();

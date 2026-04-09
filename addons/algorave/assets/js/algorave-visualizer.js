@@ -111,6 +111,13 @@
 			document.addEventListener( 'algorave:analyser-connected', () => {
 				this.statusMessage = 'ANALYSER CONNECTED';
 			} );
+			document.addEventListener( 'algorave:playing', ( e ) => {
+				if ( e.detail && e.detail.playing ) {
+					this.statusMessage = 'PLAYING';
+				} else {
+					this.statusMessage = 'WAITING FOR AUDIO';
+				}
+			} );
 
 			// Wire up the mode-switch overlay buttons.
 			this.bindModeButtons();
@@ -236,12 +243,6 @@
 				}
 
 				if ( ! waveData && ! freqData ) {
-					// Update status message based on engine state.
-					if ( window.AlgoraveEngine && window.AlgoraveEngine.strudelInitializing ) {
-						this.statusMessage = 'INITIALIZING AUDIO...';
-					} else if ( window.AlgoraveEngine && window.AlgoraveEngine.playing && ! window.AlgoraveEngine.strudelAnalyserConnected ) {
-						this.statusMessage = 'CONNECTING ANALYSER...';
-					}
 					this.drawIdleState();
 					return;
 				}
