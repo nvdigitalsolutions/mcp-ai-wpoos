@@ -228,7 +228,7 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes external API calls to NOAA NHC.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
