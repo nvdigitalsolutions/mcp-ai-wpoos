@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-punchcard-algorave-plugin',
         'version' => 'dev-copilot/fix-punchcard-algorave-plugin',
-        'reference' => 'b9bdb65de2b00798bf77bd2d4c0670da86085a64',
+        'reference' => '047797729c8fa029f7405c2d5cee7421fc478d13',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-punchcard-algorave-plugin',
             'version' => 'dev-copilot/fix-punchcard-algorave-plugin',
-            'reference' => 'b9bdb65de2b00798bf77bd2d4c0670da86085a64',
+            'reference' => '047797729c8fa029f7405c2d5cee7421fc478d13',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

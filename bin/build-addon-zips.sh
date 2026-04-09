@@ -238,4 +238,14 @@ else
 echo "  - (canvas skipped — use Build Canvas Addon workflow)"
 fi
 
+# Docker runs as root inside the container, so files created in the mounted
+# canvas-work volume are owned by root. Fix ownership before removing so the
+# host user can delete them without requiring sudo.
+if [ "$SKIP_CANVAS" = false ] && command -v docker >/dev/null 2>&1 && [ -d "${TMP_DIR}/canvas-work" ]; then
+docker run --rm \
+	-v "${ROOT_DIR}/${TMP_DIR}/canvas-work:/work" \
+	node:20-bookworm \
+	chown -R "$(id -u):$(id -g)" /work
+fi
+
 rm -rf "$TMP_DIR"
