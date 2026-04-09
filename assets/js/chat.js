@@ -16018,7 +16018,7 @@
                     // forwarded to the frontend via DOM CustomEvents.
                     if (parsedForDisplay && parsedForDisplay._browser_command) {
                         try {
-                            var toolSlug = (toolResult.name || '').replace(/^algorave_/, '');
+                            const toolSlug = (toolResult.name || '').replace(/^algorave_/, '');
                             document.dispatchEvent(new CustomEvent('algorave:browser-command', {
                                 detail: parsedForDisplay
                             }));
