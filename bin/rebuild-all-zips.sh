@@ -79,7 +79,18 @@ echo "=========================================="
 echo "Building Standalone Add-on Packages"
 echo "=========================================="
 echo ""
-"$SCRIPT_DIR/build-addon-zips.sh" --version "$VERSION"
+
+# Auto-detect Docker availability: canvas addon requires Docker for native binary
+# compilation. When Docker is unavailable (CI runners, lightweight environments),
+# skip the canvas build — it has its own dedicated workflow (build-canvas-addon.yml).
+ADDON_SKIP_CANVAS=""
+if ! command -v docker >/dev/null 2>&1; then
+echo "ℹ️  Docker not available — skipping canvas addon build."
+echo "   Canvas ZIPs are built by the dedicated 'Build Canvas Addon' workflow."
+echo ""
+ADDON_SKIP_CANVAS="--skip-canvas"
+fi
+"$SCRIPT_DIR/build-addon-zips.sh" --version "$VERSION" $ADDON_SKIP_CANVAS
 
 echo ""
 echo "=========================================="

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-punchcard-algorave-plugin',
+        'version' => 'dev-copilot/fix-punchcard-algorave-plugin',
+        'reference' => '047797729c8fa029f7405c2d5cee7421fc478d13',
         'pretty_version' => 'dev-copilot/fix-plugin-issues-and-review',
         'version' => 'dev-copilot/fix-plugin-issues-and-review',
         'reference' => '7dad5aeba310534cd1760d7bb9cbff31e7044c52',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-punchcard-algorave-plugin',
+            'version' => 'dev-copilot/fix-punchcard-algorave-plugin',
+            'reference' => '047797729c8fa029f7405c2d5cee7421fc478d13',
             'pretty_version' => 'dev-copilot/fix-plugin-issues-and-review',
             'version' => 'dev-copilot/fix-plugin-issues-and-review',
             'reference' => '7dad5aeba310534cd1760d7bb9cbff31e7044c52',

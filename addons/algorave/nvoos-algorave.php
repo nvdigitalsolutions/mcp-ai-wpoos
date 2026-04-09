@@ -3,7 +3,7 @@
  * Plugin Name: NV oOS Algorave Addon
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Algorave live coding music extension for NV oOS. Enables AI-powered music pattern generation, browser-based audio synthesis via Tone.js/Strudel, MIDI export, and real-time audio visualization through the oOS chat interface. Requires NV oOS base plugin.
- * Version:     1.0.6
+ * Version:     1.0.7
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_ALGORAVE_VERSION', '1.0.6' );
+define( 'NVOOS_ALGORAVE_VERSION', '1.0.7' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_ALGORAVE_FILE', __FILE__ );
@@ -36,14 +36,15 @@ define( 'NVOOS_ALGORAVE_PATH', plugin_dir_path( __FILE__ ) );
 /** URL to this plugin directory (trailing slash). */
 define( 'NVOOS_ALGORAVE_URL', plugin_dir_url( __FILE__ ) );
 
-/** Strudel CDN base URL — loaded at runtime to respect AGPL-3.0. */
-define( 'NVOOS_ALGORAVE_STRUDEL_CDN', 'https://unpkg.com/@strudel/web@1.2.5/dist/index.js' );
+/** Strudel version bundled with the addon. */
+define( 'NVOOS_ALGORAVE_STRUDEL_VERSION', '1.2.5' );
 
 // Load core classes.
 require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave.php';
 require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-pattern-cpt.php';
 require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-session-cpt.php';
 require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-sample-library.php';
+require_once NVOOS_ALGORAVE_PATH . 'includes/class-nvoos-algorave-seeder.php';
 
 // Load admin classes.
 if ( is_admin() ) {

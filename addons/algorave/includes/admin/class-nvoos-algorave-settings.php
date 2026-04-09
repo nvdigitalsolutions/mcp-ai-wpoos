@@ -82,13 +82,13 @@ class NV_oOS_Algorave_Settings {
 
 		add_settings_field(
 			'strudel_cdn',
-			__( 'Load Strudel via CDN', 'nvoos-algorave' ),
+			__( 'Enable Strudel Engine', 'nvoos-algorave' ),
 			array( __CLASS__, 'render_checkbox' ),
 			'algorave-settings',
 			'nvoos_algorave_general',
 			array(
 				'id'          => 'strudel_cdn',
-				'description' => __( 'Load the Strudel live coding library from CDN for TidalCycles mini-notation support.', 'nvoos-algorave' ),
+				'description' => __( 'Load the bundled Strudel live coding library for TidalCycles mini-notation support.', 'nvoos-algorave' ),
 			)
 		);
 

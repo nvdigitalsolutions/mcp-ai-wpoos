@@ -90,6 +90,108 @@
 				+ '  s("~ ~ sd ~").gain(0.6).room(0.2)\n'
 				+ ')',
 		},
+		trap: {
+			bpm: 140,
+			code: '// Trap — 140 BPM\n'
+				+ 'setcps(0.5833)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd ~ ~ ~ ~ ~ bd ~").bank("RolandTR808")\n'
+				+ '    .gain(0.95).shape(0.4),\n'
+				+ '  s("~ ~ ~ ~ sd ~ ~ ~").bank("RolandTR808")\n'
+				+ '    .gain(0.8).room(0.15),\n'
+				+ '  s("hh*16").bank("RolandTR808")\n'
+				+ '    .gain("[.3 .2 .4 .2 .5 .2 .3 .2]*2")\n'
+				+ '    .sometimes(x => x.speed(2)),\n'
+				+ '  note("c1 ~ ~ ~ ~ ~ c1 ~").s("sine")\n'
+				+ '    .gain(0.7).lpf(80).distort(0.05)\n'
+				+ ')',
+		},
+		lofi: {
+			bpm: 85,
+			code: '// Lo-Fi — 85 BPM\n'
+				+ 'setcps(0.3542)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd ~ ~ bd ~ ~ bd ~").gain(0.7)\n'
+				+ '    .lpf(400).shape(0.1),\n'
+				+ '  s("~ ~ sd ~ ~ ~ sd ~").gain(0.5)\n'
+				+ '    .room(0.4).lpf(2000),\n'
+				+ '  s("hh*8").gain("[.2 .3]*4")\n'
+				+ '    .lpf(3000).pan(sine.slow(3)),\n'
+				+ '  note("<[d4,f4,a4] [c4,e4,g4] [bb3,d4,f4] [a3,c4,e4]>")\n'
+				+ '    .s("triangle").gain(0.25).lpf(1200)\n'
+				+ '    .room(0.5).delay(0.3).slow(2)\n'
+				+ ')',
+		},
+		dub: {
+			bpm: 72,
+			code: '// Dub — 72 BPM\n'
+				+ 'setcps(0.3)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd ~ ~ ~ bd ~ ~ ~").gain(0.85)\n'
+				+ '    .shape(0.2),\n'
+				+ '  s("~ ~ ~ sd ~ ~ ~ ~").gain(0.6)\n'
+				+ '    .room(0.6).delay(0.45),\n'
+				+ '  s("hh ~ hh ~ hh ~ hh ~").gain(0.3)\n'
+				+ '    .room(0.3).pan(sine.slow(2)),\n'
+				+ '  note("c1 ~ c1 ~ ~ c1 ~ ~").s("sine")\n'
+				+ '    .gain(0.7).lpf(120).distort(0.05),\n'
+				+ '  note("c3 ~ ~ eb3 ~ ~ g3 ~").s("sine")\n'
+				+ '    .gain(0.2).room(0.8).delay(0.6)\n'
+				+ '    .lpf(800).pan("<-0.6 0.6>")\n'
+				+ ')',
+		},
+		dubstep: {
+			bpm: 140,
+			code: '// Dubstep — 140 BPM (half-time)\n'
+				+ 'setcps(0.5833)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd ~ ~ ~ ~ ~ ~ ~ bd ~ ~ ~ ~ ~ ~ ~")\n'
+				+ '    .bank("RolandTR808").gain(0.9).shape(0.3),\n'
+				+ '  s("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ sd ~ ~ ~")\n'
+				+ '    .bank("RolandTR808").gain(0.85).room(0.2),\n'
+				+ '  s("hh*8").bank("RolandTR808")\n'
+				+ '    .gain("[.2 .3]*4"),\n'
+				+ '  note("c1 c1 c1 c1").s("sawtooth")\n'
+				+ '    .lpf(sine.range(80,1500).slow(0.5))\n'
+				+ '    .gain(0.6).distort(0.4)\n'
+				+ ')',
+		},
+		trance: {
+			bpm: 138,
+			code: '// Trance — 138 BPM\n'
+				+ 'setcps(0.575)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd*4").bank("RolandTR909").gain(0.9).shape(0.2),\n'
+				+ '  s("~ cp ~ cp").bank("RolandTR909").gain(0.55)\n'
+				+ '    .room(0.35),\n'
+				+ '  s("hh*16").bank("RolandTR909")\n'
+				+ '    .gain("[.2 .4 .3 .5]*4"),\n'
+				+ '  note("a4 c5 e5 a5 e5 c5 a4 e4")\n'
+				+ '    .s("sawtooth").lpf(sine.range(800,4000).slow(8))\n'
+				+ '    .gain(0.35).room(0.4).delay(0.2),\n'
+				+ '  note("<[a3,c4,e4] [f3,a3,c4] [d3,f3,a3] [e3,g3,b3]>")\n'
+				+ '    .s("sawtooth").lpf(2000).gain(0.2)\n'
+				+ '    .room(0.5).slow(2)\n'
+				+ ')',
+		},
+		synthwave: {
+			bpm: 118,
+			code: '// Synthwave — 118 BPM\n'
+				+ 'setcps(0.4917)\n\n'
+				+ 'stack(\n'
+				+ '  s("bd*4").gain(0.8).shape(0.15),\n'
+				+ '  s("~ sd ~ sd").gain(0.7)\n'
+				+ '    .room(0.5).delay(0.1),\n'
+				+ '  s("hh*8").gain("[.3 .5]*4")\n'
+				+ '    .lpf(4000),\n'
+				+ '  note("a2 a2 e2 e2 f2 f2 d2 d2")\n'
+				+ '    .s("square").lpf(sine.range(300,1500).slow(8))\n'
+				+ '    .gain(0.45),\n'
+				+ '  note("<[a3,c4,e4] [f3,a3,c4]>")\n'
+				+ '    .s("sawtooth").lpf(3000).gain(0.2)\n'
+				+ '    .room(0.6).delay(0.25).slow(2)\n'
+				+ ')',
+		},
 	};
 
 	/**

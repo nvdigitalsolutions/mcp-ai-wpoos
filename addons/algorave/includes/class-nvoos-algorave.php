@@ -270,20 +270,20 @@ class NV_oOS_Algorave {
 	public static function enqueue_algorave_assets() {
 		$settings = self::get_settings();
 
-		// Strudel via CDN (AGPL-3.0 — loaded at runtime, not bundled).
+		// Strudel — bundled locally (AGPL-3.0 source included in vendor dir).
 		$strudel_loaded = ! empty( $settings['strudel_cdn'] );
 		if ( $strudel_loaded ) {
 			wp_enqueue_script(
 				'strudel-web',
-				esc_url( NVOOS_ALGORAVE_STRUDEL_CDN ),
+				NVOOS_ALGORAVE_URL . 'assets/js/vendor/strudel/strudel-web-' . NVOOS_ALGORAVE_STRUDEL_VERSION . '.js',
 				array(),
-				'1.2.5',
+				NVOOS_ALGORAVE_STRUDEL_VERSION,
 				true
 			);
 		}
 
 		// Pattern engine (Tone.js wrapper).
-		// Depends on strudel-web when Strudel CDN is enabled so initStrudel() is available.
+		// Depends on strudel-web when Strudel engine is enabled so initStrudel() is available.
 		wp_enqueue_script(
 			'nvoos-algorave-pattern-engine',
 			NVOOS_ALGORAVE_URL . 'assets/js/algorave-pattern-engine.js',
@@ -410,5 +410,17 @@ register_activation_hook(
 	NVOOS_ALGORAVE_FILE,
 	function () {
 		set_transient( 'nvoos_algorave_activated', true, 30 );
+		NV_oOS_Algorave_Seeder::maybe_seed();
 	}
+);
+
+/**
+ * Seed patterns on init for upgrade paths where the activation hook doesn't fire.
+ */
+add_action(
+	'init',
+	function () {
+		NV_oOS_Algorave_Seeder::maybe_seed();
+	},
+	99
 );

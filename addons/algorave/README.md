@@ -89,7 +89,7 @@ All endpoints under `wp-json/nvoos-algorave/v1/`:
 |---------|---------|---------|---------|
 | `@strudel/web` | 1.2.5 | AGPL-3.0 | TidalCycles live coding engine |
 
-> **Note:** Strudel is loaded via CDN (unpkg) at runtime to respect AGPL-3.0 licensing. It is NOT bundled in the distribution.
+> **Note:** Strudel is bundled locally in `assets/js/vendor/strudel/` for reliability. The unmodified AGPL-3.0 source is included in the distribution.
 
 ## License
 

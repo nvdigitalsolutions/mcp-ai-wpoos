@@ -82,6 +82,12 @@
 		/** @type {boolean} Whether WebMIDI is available. */
 		midiAvailable: false,
 
+		/** @type {number|null} Animation frame ID for pattern visualization. */
+		patternVizAnimFrame: null,
+
+		/** @type {boolean} Whether Pattern.prototype visualization methods have been registered. */
+		patternVizRegistered: false,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -265,6 +271,10 @@
 				// Connect to Strudel's internal AudioContext for visualization.
 				this.connectStrudelAnalyser();
 
+				// Register pianoroll/punchcard methods on Pattern.prototype
+				// so users can call ._punchcard(), .pianoroll(), etc.
+				this.registerPatternVisualization();
+
 				// Notify other components that Strudel is ready.
 				document.dispatchEvent( new CustomEvent( 'algorave:strudel-ready' ) );
 			} catch ( e ) {
@@ -414,6 +424,28 @@
 					if ( audioCtx && audioCtx.destination ) {
 						const realDest = audioCtx.destination;
 						const proxy = audioCtx.createGain();
+
+						// Superdough reads destination.maxChannelCount and sets
+						// destination.channelCount to match. A plain GainNode
+						// does not expose maxChannelCount, so superdough would
+						// read undefined → 0, causing "channelCount outside
+						// range [1,32]". Mirror the real destination's channel
+						// properties onto the proxy to prevent this.
+						try {
+							const maxCh = realDest.maxChannelCount || 2;
+							proxy.channelCount = realDest.channelCount || maxCh;
+							proxy.channelCountMode = realDest.channelCountMode || 'explicit';
+							proxy.channelInterpretation = realDest.channelInterpretation || 'speakers';
+							Object.defineProperty( proxy, 'maxChannelCount', {
+								get: function () {
+									return maxCh;
+								},
+								configurable: true,
+							} );
+						} catch ( _chErr ) {
+							// Non-critical — proceed without channel mirroring.
+						}
+
 						proxy.connect( realDest );
 						proxy.connect( this.strudelAnalyser );
 						proxy.connect( this.strudelFreqAnalyser );
@@ -525,6 +557,9 @@
 			if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.hush === 'function' ) {
 				strudel.hush();
 			}
+
+			// Stop pattern visualization animation frame.
+			this.stopPatternViz();
 
 			this.playing = false;
 			document.dispatchEvent( new CustomEvent( 'algorave:playing', { detail: { playing: false } } ) );
@@ -729,6 +764,371 @@
 		 */
 		getMidiOutputs: function () {
 			return this.midiOutputs;
+		},
+
+		/**
+		 * Stop any active pattern visualization (pianoroll / punchcard).
+		 *
+		 * Called when playback stops so the animation frame loop is cancelled
+		 * and the visualization container is hidden.
+		 */
+		stopPatternViz: function () {
+			if ( this.patternVizAnimFrame ) {
+				cancelAnimationFrame( this.patternVizAnimFrame );
+				this.patternVizAnimFrame = null;
+			}
+			const container = document.querySelector( '.algorave-pattern-viz' );
+			if ( container ) {
+				container.style.display = 'none';
+			}
+		},
+
+		/**
+		 * Register pianoroll / punchcard methods on Strudel's Pattern.prototype.
+		 *
+		 * `@strudel/draw` is NOT bundled in `@strudel/web`, so the standard
+		 * `.pianoroll()`, `._pianoroll()`, `.punchcard()`, `._punchcard()` methods
+		 * are missing.  We polyfill them here after `initStrudel()` resolves,
+		 * rendering to the dedicated `.algorave-pattern-viz` canvas inside the
+		 * live-coder template.
+		 *
+		 * Both the underscore (inline) and non-underscore (background) variants
+		 * render to the same canvas since the plugin does not use CodeMirror.
+		 */
+		registerPatternVisualization: function () {
+			if ( this.patternVizRegistered ) {
+				return;
+			}
+			if ( typeof strudel === 'undefined' || ! strudel.Pattern ) {
+				return;
+			}
+
+			const engine = this;
+			const PatternProto = strudel.Pattern.prototype;
+
+			/**
+			 * Shared pianoroll / punchcard renderer.
+			 *
+			 * @param {object} pat     The Pattern instance.
+			 * @param {object} options Visualisation options.
+			 * @param {boolean} fold   If true, fold unique values (punchcard style).
+			 */
+			function startViz( pat, options, fold ) {
+				const container = document.querySelector( '.algorave-pattern-viz' );
+				const canvas = document.getElementById( 'algorave-pattern-viz-canvas' );
+				if ( ! container || ! canvas ) {
+					return;
+				}
+
+				// Show the container.
+				container.style.display = 'block';
+
+				// DPI-aware sizing.
+				const dpr = window.devicePixelRatio || 1;
+				let rect = container.getBoundingClientRect();
+				canvas.width = rect.width * dpr;
+				canvas.height = rect.height * dpr;
+				const ctx = canvas.getContext( '2d' );
+				ctx.scale( dpr, dpr );
+
+				// Re-size canvas when container dimensions change.
+				if ( typeof ResizeObserver !== 'undefined' ) {
+					const resizeObs = new ResizeObserver( function () {
+						rect = container.getBoundingClientRect();
+						canvas.width = rect.width * dpr;
+						canvas.height = rect.height * dpr;
+						ctx.setTransform( dpr, 0, 0, dpr, 0, 0 );
+					} );
+					resizeObs.observe( container );
+				}
+
+				const cycles = options.cycles || 4;
+				const playheadPos = options.playhead != null ? options.playhead : 0.5;
+				const activeColor = options.active || '#FFCA28';
+				const inactiveColor = options.inactive || '#7491D2';
+				const playheadColor = options.playheadColor || '#ffffff';
+				const vertical = !! options.vertical;
+				const labels = !! options.labels;
+				const flipTime = !! options.flipTime;
+				const flipValues = !! options.flipValues;
+				const smear = options.smear || 0;
+				const hideNegative = !! options.hideNegative;
+
+				const lookbehind = cycles * playheadPos;
+				const lookahead = cycles * ( 1 - playheadPos );
+				const overscan = options.overscan || 1;
+
+				// Hap memory (persists between frames to show notes scrolling past).
+				let memory = [];
+				let lastPhase = null;
+
+				// Cancel any existing animation frame.
+				if ( engine.patternVizAnimFrame ) {
+					cancelAnimationFrame( engine.patternVizAnimFrame );
+				}
+
+				function render() {
+					if ( typeof strudel === 'undefined' || typeof strudel.getTime !== 'function' ) {
+						engine.patternVizAnimFrame = requestAnimationFrame( render );
+						return;
+					}
+
+					const w = rect.width;
+					const h = rect.height;
+					const now = Math.max( strudel.getTime(), 0 );
+					const from = now - lookbehind;
+					const to = now + lookahead;
+
+					// Query new haps since last frame.
+					const begin = lastPhase != null ? Math.max( lastPhase, to - 0.1 ) : from - overscan;
+					try {
+						const newHaps = pat.queryArc( begin, to + overscan )
+							.filter( function ( hap ) {
+								return hap.hasOnset();
+							} );
+						memory = memory.concat( newHaps );
+					} catch ( _e ) {
+						// Pattern query can fail during transitions — ignore.
+					}
+					lastPhase = to;
+
+					// Remove haps that are too far in the past.
+					memory = memory.filter( function ( hap ) {
+						return hap.whole && hap.whole.end >= from - overscan;
+					} );
+
+					// Filter visible haps.
+					const visible = memory.filter( function ( hap ) {
+						if ( hideNegative && hap.whole.begin < 0 ) {
+							return false;
+						}
+						return hap.whole.end >= from && hap.whole.begin <= to;
+					} );
+
+					// Derive value range.
+					let minVal = Infinity;
+					let maxVal = -Infinity;
+					const uniqueVals = [];
+					visible.forEach( function ( hap ) {
+						const v = hapValue( hap );
+						if ( v < minVal ) {
+							minVal = v;
+						}
+						if ( v > maxVal ) {
+							maxVal = v;
+						}
+						if ( uniqueVals.indexOf( v ) === -1 ) {
+							uniqueVals.push( v );
+						}
+					} );
+					if ( minVal === Infinity ) {
+						minVal = 0;
+						maxVal = 127;
+					}
+					uniqueVals.sort( function ( a, b ) {
+						return a - b;
+					} );
+
+					let valueExtent, barThickness;
+					if ( fold ) {
+						valueExtent = uniqueVals.length || 1;
+						barThickness = ( vertical ? w : h ) / valueExtent;
+					} else {
+						valueExtent = ( maxVal - minVal + 1 ) || 1;
+						barThickness = ( vertical ? w : h ) / valueExtent;
+					}
+
+					// Clear.
+					ctx.save();
+					ctx.setTransform( dpr, 0, 0, dpr, 0, 0 );
+					if ( ! smear ) {
+						ctx.clearRect( 0, 0, w, h );
+					}
+
+					const timeAxis = vertical ? h : w;
+					const timeExtent = to - from;
+
+					// Draw haps.
+					visible.forEach( function ( hap ) {
+						const isActive = hap.whole.begin <= now && hap.endClipped > now;
+						const color = isActive ? activeColor : inactiveColor;
+						const value = hapValue( hap );
+
+						// Time position → pixels.
+						const tNorm = ( hap.whole.begin - from ) / timeExtent;
+						let tPx = tNorm * timeAxis;
+						const durPx = ( hap.duration / timeExtent ) * timeAxis;
+						if ( flipTime ) {
+							tPx = timeAxis - tPx - durPx;
+						}
+
+						// Value position → pixels.
+						let vNorm;
+						if ( fold ) {
+							vNorm = uniqueVals.indexOf( value ) / valueExtent;
+						} else {
+							vNorm = ( value - minVal ) / valueExtent;
+						}
+						let vPx;
+						if ( vertical ) {
+							vPx = vNorm * w;
+						} else {
+							vPx = ( 1 - vNorm ) * h - barThickness;
+							if ( flipValues ) {
+								vPx = vNorm * h;
+							}
+						}
+
+						ctx.globalAlpha = ( hap.value && typeof hap.value.velocity === 'number' ) ? hap.value.velocity : 1;
+						ctx.fillStyle = color;
+						if ( vertical ) {
+							ctx.fillRect( vPx, tPx, barThickness - 1, durPx - 1 );
+						} else {
+							ctx.fillRect( tPx, vPx, durPx - 1, barThickness - 1 );
+						}
+
+						// Optional labels.
+						if ( labels && hap.value ) {
+							const label = hap.value.note || hap.value.s || '';
+							if ( label ) {
+								ctx.fillStyle = isActive ? '#000' : color;
+								ctx.font = Math.max( 8, barThickness * 0.6 ) + 'px monospace';
+								ctx.textBaseline = 'top';
+								if ( vertical ) {
+									ctx.fillText( label, vPx + 2, tPx + 2 );
+								} else {
+									ctx.fillText( label, tPx + 2, vPx + 2 );
+								}
+							}
+						}
+					} );
+
+					// Draw playhead line.
+					ctx.globalAlpha = 0.7;
+					ctx.strokeStyle = playheadColor;
+					ctx.lineWidth = 1.5;
+					ctx.beginPath();
+					if ( vertical ) {
+						const phY = playheadPos * h;
+						ctx.moveTo( 0, phY );
+						ctx.lineTo( w, phY );
+					} else {
+						const phX = playheadPos * w;
+						ctx.moveTo( phX, 0 );
+						ctx.lineTo( phX, h );
+					}
+					ctx.stroke();
+
+					ctx.globalAlpha = 1;
+					ctx.restore();
+
+					engine.patternVizAnimFrame = requestAnimationFrame( render );
+				}
+
+				engine.patternVizAnimFrame = requestAnimationFrame( render );
+			}
+
+			/**
+			 * Extract a numeric value from a hap for the value axis.
+			 *
+			 * @param {object} hap Strudel hap.
+			 * @return {number} Numeric value (MIDI note, sample index, etc.).
+			 */
+			function hapValue( hap ) {
+				let val = hap.value;
+				if ( typeof val !== 'object' ) {
+					val = { value: val };
+				}
+				if ( val.freq ) {
+					// freq → MIDI: 12 * log2(freq / 440 Hz) + 69 (A4).
+					return Math.round( 12 * Math.log2( val.freq / 440 ) + 69 );
+				}
+				const note = val.note != null ? val.note : val.n;
+				if ( typeof note === 'string' ) {
+					return noteNameToMidi( note );
+				}
+				if ( typeof note === 'number' ) {
+					return note;
+				}
+				if ( val.s ) {
+					// For sample patterns, hash the sample name to a number.
+					return hashString( val.s );
+				}
+				if ( typeof val.value === 'number' ) {
+					return val.value;
+				}
+				return 0;
+			}
+
+			/**
+			 * Convert a note name like "c4" or "eb3" to a MIDI number.
+			 *
+			 * @param {string} name Note name.
+			 * @return {number} MIDI note number.
+			 */
+			function noteNameToMidi( name ) {
+				const match = name.match( /^([a-gA-G])([#b]?)(-?\d+)?$/ );
+				if ( ! match ) {
+					return 60;
+				}
+				const semitones = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+				let base = semitones[ match[ 1 ].toLowerCase() ] || 0;
+				if ( match[ 2 ] === '#' ) {
+					base += 1;
+				}
+				if ( match[ 2 ] === 'b' ) {
+					base -= 1;
+				}
+				const octave = match[ 3 ] != null ? parseInt( match[ 3 ], 10 ) : 4;
+				return ( octave + 1 ) * 12 + base;
+			}
+
+			/**
+			 * Deterministic numeric hash for a string.
+			 *
+			 * @param {string} str Input string.
+			 * @return {number} Hash value (0–127 range, like MIDI).
+			 */
+			function hashString( str ) {
+				let hash = 0;
+				for ( let i = 0; i < str.length; i++ ) {
+					hash = ( ( hash << 5 ) - hash ) + str.charCodeAt( i );
+					hash |= 0;
+				}
+				return Math.abs( hash ) % 128;
+			}
+
+			// --- Polyfill Pattern.prototype visualization methods ---
+
+			if ( typeof PatternProto.pianoroll !== 'function' ) {
+				PatternProto.pianoroll = function ( options ) {
+					startViz( this, options || {}, false );
+					return this;
+				};
+			}
+
+			if ( typeof PatternProto._pianoroll !== 'function' ) {
+				PatternProto._pianoroll = function ( options ) {
+					startViz( this, options || {}, false );
+					return this;
+				};
+			}
+
+			if ( typeof PatternProto.punchcard !== 'function' ) {
+				PatternProto.punchcard = function ( options ) {
+					startViz( this, options || {}, true );
+					return this;
+				};
+			}
+
+			if ( typeof PatternProto._punchcard !== 'function' ) {
+				PatternProto._punchcard = function ( options ) {
+					startViz( this, options || {}, true );
+					return this;
+				};
+			}
+
+			this.patternVizRegistered = true;
 		},
 
 		/**
