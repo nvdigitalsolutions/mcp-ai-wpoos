@@ -2,7 +2,7 @@
 
 **Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T17 9Apr26/3.9.1RC1 (P0TDX269399HGN)
 **Date:** 2026-04-09
-**Plugin Version:** 3.9.1RC1
+**Plugin Version:** 1.1.7
 
 ---
 
