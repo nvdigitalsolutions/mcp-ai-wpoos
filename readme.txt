@@ -807,7 +807,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the import duty lookup tool is used (requires ITA API key configuration)
 * **Service URL:** https://api.trade.gov/v1/tariff_rates/search
 * **Terms of Service:** https://developer.trade.gov/
-* **Privacy Policy:** https://www.trade.gov/privacy
+* **Privacy Policy:** https://www.trade.gov/privacy-program
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -877,7 +877,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
 * **Service URL:** https://app.mailjet.com/oauth/authorize (OAuth authorize), https://api.mailjet.com/v3/REST (email campaign API)
-* **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
+* **Terms of Service:** https://www.mailjet.com/legal/terms/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
 **32. Tavily Search API**
