@@ -2,7 +2,7 @@
  * Algorave Audio Visualizer
  *
  * Canvas-based audio visualization using Web Audio API analyser data.
- * Supports waveform, spectrum, bars, circular, particles, and scope modes.
+ * Supports waveform, spectrum, bars, circular, particles, scope, spectrogram, and lissajous modes.
  *
  * Industry best-practices applied:
  * - DPI-aware canvas rendering (devicePixelRatio)
@@ -77,6 +77,9 @@
 
 		/** @type {number} Idle animation phase counter. */
 		idlePhase: 0,
+
+		/** @type {ImageData|null} Scrolling spectrogram buffer. */
+		spectrogramData: null,
 
 		/** @type {string} Status message shown while waiting for audio. */
 		statusMessage: 'WAITING FOR AUDIO',
@@ -174,6 +177,7 @@
 			// Reset decay buffers on resize.
 			this.barHeights = null;
 			this.barPeaks = null;
+			this.spectrogramData = null;
 		},
 
 		/**
@@ -235,8 +239,10 @@
 						: null;
 
 				// Use semi-transparent clear for trailing effects on some modes.
-				const trailModes = [ 'particles', 'circular' ];
-				if ( trailModes.indexOf( this.mode ) !== -1 ) {
+				const trailModes = [ 'particles', 'circular', 'lissajous' ];
+				if ( this.mode === 'spectrogram' ) {
+					// Spectrogram manages its own buffer — skip clearing.
+				} else if ( trailModes.indexOf( this.mode ) !== -1 ) {
 					this.clearCanvas( 0.25 );
 				} else {
 					this.clearCanvas( 1 );
@@ -262,6 +268,12 @@
 						break;
 					case 'scope':
 						this.drawScope( waveData );
+						break;
+					case 'spectrogram':
+						this.drawSpectrogram( freqData || waveData );
+						break;
+					case 'lissajous':
+						this.drawLissajous( waveData );
 						break;
 					default:
 						this.drawWaveform( waveData );
@@ -714,6 +726,195 @@
 					this.ctx.lineTo( x, y );
 				}
 				x += sliceWidth;
+			}
+			this.ctx.stroke();
+		},
+
+		// ── Spectrogram (waterfall) ──────────────────────────────
+
+		/**
+		 * Draw scrolling spectrogram heatmap.
+		 *
+		 * Each animation frame adds a new column on the right and scrolls
+		 * the existing image left. Uses a viridis-style colour palette
+		 * mapped to frequency amplitude.
+		 *
+		 * @param {Uint8Array|Float32Array|null} data Frequency data.
+		 */
+		drawSpectrogram: function ( data ) {
+			if ( ! data ) {
+				this.drawIdleState();
+				return;
+			}
+
+			const dpr = window.devicePixelRatio || 1;
+			const pw = this.canvas.width;   // physical pixels
+			const ph = this.canvas.height;
+
+			// On first call or canvas resize, initialise buffer.
+			if ( ! this.spectrogramData || this.spectrogramData.width !== pw || this.spectrogramData.height !== ph ) {
+				this.ctx.save();
+				this.ctx.setTransform( 1, 0, 0, 1, 0, 0 ); // reset to physical pixels
+				this.spectrogramData = this.ctx.createImageData( pw, ph );
+				this.ctx.restore();
+			}
+
+			const imgData = this.spectrogramData;
+			const isFreq = data instanceof Uint8Array;
+			const stride = pw * 4;  // bytes per row
+			const colWidth = Math.max( 1, Math.round( 2 * dpr ) );
+
+			// Scroll existing data left by colWidth pixels.
+			for ( let y = 0; y < ph; y++ ) {
+				const rowOff = y * stride;
+				for ( let x = 0; x < pw - colWidth; x++ ) {
+					const dst = rowOff + x * 4;
+					const src = rowOff + ( x + colWidth ) * 4;
+					imgData.data[ dst ]     = imgData.data[ src ];
+					imgData.data[ dst + 1 ] = imgData.data[ src + 1 ];
+					imgData.data[ dst + 2 ] = imgData.data[ src + 2 ];
+					imgData.data[ dst + 3 ] = imgData.data[ src + 3 ];
+				}
+			}
+
+			// Write new column(s) on the right.
+			const usableBins = Math.floor( data.length * 0.75 );
+			for ( let y = 0; y < ph; y++ ) {
+				// Map y to frequency bin (low freq at bottom).
+				const binIdx = Math.floor( ( 1 - y / ph ) * usableBins );
+				let value;
+				if ( isFreq ) {
+					value = data[ Math.min( binIdx, data.length - 1 ) ] / 255;
+				} else {
+					value = Math.abs( data[ Math.min( binIdx, data.length - 1 ) ] );
+				}
+
+				// Viridis-inspired palette: dark purple → teal → yellow.
+				const t = Math.min( 1, value * 1.2 );
+				let r, g, b;
+				if ( t < 0.33 ) {
+					const p = t / 0.33;
+					r = Math.floor( 68 * p );
+					g = Math.floor( 1 + 53 * p );
+					b = Math.floor( 84 + 80 * p );
+				} else if ( t < 0.66 ) {
+					const p = ( t - 0.33 ) / 0.33;
+					r = Math.floor( 68 - 35 * p );
+					g = Math.floor( 54 + 133 * p );
+					b = Math.floor( 164 - 30 * p );
+				} else {
+					const p = ( t - 0.66 ) / 0.34;
+					r = Math.floor( 33 + 220 * p );
+					g = Math.floor( 187 + 60 * p );
+					b = Math.floor( 134 - 134 * p );
+				}
+
+				const rowOff = y * stride;
+				for ( let c = 0; c < colWidth; c++ ) {
+					const xp = pw - colWidth + c;
+					const off = rowOff + xp * 4;
+					imgData.data[ off ]     = r;
+					imgData.data[ off + 1 ] = g;
+					imgData.data[ off + 2 ] = b;
+					imgData.data[ off + 3 ] = 255;
+				}
+			}
+
+			// Draw to canvas in physical pixel space.
+			this.ctx.save();
+			this.ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+			this.ctx.putImageData( imgData, 0, 0 );
+			this.ctx.restore();
+
+			// Frequency axis labels (in CSS pixels).
+			this.ctx.fillStyle = 'rgba(255,255,255,0.35)';
+			this.ctx.font = '10px monospace';
+			this.ctx.textAlign = 'left';
+			const labels = [ '20k', '10k', '5k', '1k', '200', '20' ];
+			for ( let i = 0; i < labels.length; i++ ) {
+				const yPos = ( i / ( labels.length - 1 ) ) * this.cssHeight;
+				this.ctx.fillText( labels[ i ] + ' Hz', 4, yPos + 12 );
+			}
+		},
+
+		// ── Lissajous (X/Y stereo scope) ─────────────────────────
+
+		/**
+		 * Draw Lissajous X/Y oscilloscope.
+		 *
+		 * Plots time-domain samples as (x[i], x[i+offset]) pairs to
+		 * create a Lissajous figure — an industry-standard technique for
+		 * visualising stereo correlation and phase relationships.
+		 *
+		 * @param {Float32Array|null} data Time-domain audio data.
+		 */
+		drawLissajous: function ( data ) {
+			if ( ! data ) {
+				this.drawIdleState();
+				return;
+			}
+
+			const w = this.cssWidth;
+			const h = this.cssHeight;
+			const cx = w / 2;
+			const cy = h / 2;
+			const scale = Math.min( cx, cy ) * 0.85;
+
+			// Phase offset — quarter of the buffer for 90° shift (Lissajous).
+			const offset = Math.floor( data.length / 4 );
+
+			// Grid circles.
+			this.ctx.strokeStyle = this.color + '10';
+			this.ctx.lineWidth = 1;
+			for ( let r = 1; r <= 3; r++ ) {
+				this.ctx.beginPath();
+				this.ctx.arc( cx, cy, ( scale / 3 ) * r, 0, Math.PI * 2 );
+				this.ctx.stroke();
+			}
+
+			// Crosshairs.
+			this.ctx.strokeStyle = this.color + '15';
+			this.ctx.beginPath();
+			this.ctx.moveTo( cx - scale, cy );
+			this.ctx.lineTo( cx + scale, cy );
+			this.ctx.moveTo( cx, cy - scale );
+			this.ctx.lineTo( cx, cy + scale );
+			this.ctx.stroke();
+
+			// Glow layer.
+			this.ctx.save();
+			this.ctx.shadowColor = this.color;
+			this.ctx.shadowBlur = 12;
+			this.ctx.lineWidth = 1.5;
+			this.ctx.strokeStyle = this.color + '40';
+			this.ctx.beginPath();
+
+			const step = Math.max( 1, Math.floor( data.length / 512 ) );
+			for ( let i = 0; i < data.length - offset; i += step ) {
+				const px = cx + data[ i ] * scale;
+				const py = cy + data[ i + offset ] * scale;
+				if ( i === 0 ) {
+					this.ctx.moveTo( px, py );
+				} else {
+					this.ctx.lineTo( px, py );
+				}
+			}
+			this.ctx.stroke();
+			this.ctx.restore();
+
+			// Foreground layer.
+			this.ctx.lineWidth = 1;
+			this.ctx.strokeStyle = this.color;
+			this.ctx.beginPath();
+
+			for ( let i = 0; i < data.length - offset; i += step ) {
+				const px = cx + data[ i ] * scale;
+				const py = cy + data[ i + offset ] * scale;
+				if ( i === 0 ) {
+					this.ctx.moveTo( px, py );
+				} else {
+					this.ctx.lineTo( px, py );
+				}
 			}
 			this.ctx.stroke();
 		},

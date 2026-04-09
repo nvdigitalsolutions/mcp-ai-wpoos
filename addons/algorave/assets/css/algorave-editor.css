@@ -194,6 +194,7 @@
 	padding: 4px 12px;
 	background: #0f0f0f;
 	border-bottom: 1px solid #1a1a1a;
+	flex-wrap: wrap;
 }
 
 .algorave-presets-label {

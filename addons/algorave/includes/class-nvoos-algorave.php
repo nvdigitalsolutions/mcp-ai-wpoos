@@ -410,5 +410,17 @@ register_activation_hook(
 	NVOOS_ALGORAVE_FILE,
 	function () {
 		set_transient( 'nvoos_algorave_activated', true, 30 );
+		NV_oOS_Algorave_Seeder::maybe_seed();
 	}
+);
+
+/**
+ * Seed patterns on init for upgrade paths where the activation hook doesn't fire.
+ */
+add_action(
+	'init',
+	function () {
+		NV_oOS_Algorave_Seeder::maybe_seed();
+	},
+	99
 );

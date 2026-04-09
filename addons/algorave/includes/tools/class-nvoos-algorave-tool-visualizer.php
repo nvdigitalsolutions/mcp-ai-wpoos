@@ -38,7 +38,7 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Control the audio visualizer in the browser. Change visualization mode (waveform, spectrum, bars, circular, particles, scope), adjust colors, toggle fullscreen, or turn the visualizer on/off. Use this when the user wants to change how the audio is displayed visually during live coding.', 'nvoos-algorave' );
+		return __( 'Control the audio visualizer in the browser. Change visualization mode (waveform, spectrum, bars, circular, particles, scope, spectrogram, lissajous), adjust colors, toggle fullscreen, or turn the visualizer on/off. Use this when the user wants to change how the audio is displayed visually during live coding.', 'nvoos-algorave' );
 	}
 
 	/**
@@ -56,7 +56,7 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 				'mode'             => array(
 					'type'        => 'string',
 					'description' => __( 'Visualization mode (used with "set_mode" action).', 'nvoos-algorave' ),
-					'enum'        => array( 'waveform', 'spectrum', 'bars', 'circular', 'particles', 'scope' ),
+					'enum'        => array( 'waveform', 'spectrum', 'bars', 'circular', 'particles', 'scope', 'spectrogram', 'lissajous' ),
 				),
 				'color'            => array(
 					'type'        => 'string',
@@ -104,11 +104,11 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 		switch ( $action ) {
 			case 'set_mode':
 				$mode        = sanitize_text_field( $arguments['mode'] ?? 'waveform' );
-				$valid_modes = array( 'waveform', 'spectrum', 'bars', 'circular', 'particles', 'scope' );
+				$valid_modes = array( 'waveform', 'spectrum', 'bars', 'circular', 'particles', 'scope', 'spectrogram', 'lissajous' );
 				if ( ! in_array( $mode, $valid_modes, true ) ) {
 					return array(
 						'success' => false,
-						'error'   => __( 'Invalid mode. Use: waveform, spectrum, bars, circular, particles, or scope.', 'nvoos-algorave' ),
+						'error'   => __( 'Invalid mode. Use: waveform, spectrum, bars, circular, particles, scope, spectrogram, or lissajous.', 'nvoos-algorave' ),
 					);
 				}
 				$result['mode']    = $mode;

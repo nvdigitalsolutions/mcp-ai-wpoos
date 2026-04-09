@@ -72,6 +72,12 @@ $default_code = sprintf(
 		<button type="button" class="algorave-preset-btn" data-preset="ambient"><?php esc_html_e( 'Ambient', 'nvoos-algorave' ); ?></button>
 		<button type="button" class="algorave-preset-btn" data-preset="dnb"><?php esc_html_e( 'DnB', 'nvoos-algorave' ); ?></button>
 		<button type="button" class="algorave-preset-btn" data-preset="minimal"><?php esc_html_e( 'Minimal', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="trap"><?php esc_html_e( 'Trap', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="lofi"><?php esc_html_e( 'Lo-Fi', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="dub"><?php esc_html_e( 'Dub', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="dubstep"><?php esc_html_e( 'Dubstep', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="trance"><?php esc_html_e( 'Trance', 'nvoos-algorave' ); ?></button>
+		<button type="button" class="algorave-preset-btn" data-preset="synthwave"><?php esc_html_e( 'Synthwave', 'nvoos-algorave' ); ?></button>
 	</div>
 
 	<!-- Code Editor -->
@@ -143,6 +149,8 @@ $default_code = sprintf(
 			<button type="button" data-mode="circular" title="<?php esc_attr_e( 'Circular', 'nvoos-algorave' ); ?>">◎</button>
 			<button type="button" data-mode="particles" title="<?php esc_attr_e( 'Particles', 'nvoos-algorave' ); ?>">✦</button>
 			<button type="button" data-mode="scope" title="<?php esc_attr_e( 'Scope', 'nvoos-algorave' ); ?>">⏛</button>
+			<button type="button" data-mode="spectrogram" title="<?php esc_attr_e( 'Spectrogram', 'nvoos-algorave' ); ?>">🌊</button>
+			<button type="button" data-mode="lissajous" title="<?php esc_attr_e( 'Lissajous', 'nvoos-algorave' ); ?>">∞</button>
 		</div>
 	</div>
 	<?php endif; ?>
