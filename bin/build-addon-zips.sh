@@ -21,6 +21,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 VERSION=""
+SKIP_CANVAS=false
 
 while [[ $# -gt 0 ]]; do
 case $1 in
@@ -28,8 +29,12 @@ case $1 in
 VERSION="$2"
 shift 2
 ;;
+--skip-canvas)
+SKIP_CANVAS=true
+shift
+;;
 -h|--help)
-echo "Usage: $0 [--version X.Y.Z]"
+echo "Usage: $0 [--version X.Y.Z] [--skip-canvas]"
 exit 0
 ;;
 *)
@@ -56,14 +61,20 @@ echo "❌ Error: rsync is required but not installed."
 exit 1
 fi
 
-if ! command -v docker >/dev/null 2>&1; then
+if [ "$SKIP_CANVAS" = false ] && ! command -v docker >/dev/null 2>&1; then
 echo "❌ Error: docker is required for reproducible canvas linux-x64 build."
 echo "   This matches PR #4441 build approach (node:20-bookworm container)."
+echo "   Use --skip-canvas to build without the canvas addon."
 exit 1
 fi
 
-if [ ! -d "addons/canvas" ] || [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ]; then
-echo "❌ Error: addons/canvas, addons/algorave, addons/fantasy-football, and addons/cornerstone3d must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, and addons/cornerstone3d must exist."
+exit 1
+fi
+
+if [ "$SKIP_CANVAS" = false ] && [ ! -d "addons/canvas" ]; then
+echo "❌ Error: addons/canvas must exist (or use --skip-canvas to skip it)."
 exit 1
 fi
 
@@ -78,14 +89,23 @@ ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
 FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
 CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
 
-rm -f "$CANVAS_ZIP" "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP"
+rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP"
+if [ "$SKIP_CANVAS" = false ]; then
+rm -f "$CANVAS_ZIP"
+fi
+
+if [ "$SKIP_CANVAS" = true ]; then
+TOTAL_STEPS=3
+else
+TOTAL_STEPS=4
+fi
 
 echo "=========================================="
 echo "Building Standalone Addon ZIPs v${VERSION}"
 echo "=========================================="
 echo ""
 
-echo "[1/4] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
+echo "[1/${TOTAL_STEPS}] Building nvoos-algorave-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/algorave-stage/nvoos-algorave"
 rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
@@ -100,7 +120,7 @@ ALGORAVE_SIZE=$(du -h "$ALGORAVE_ZIP" | cut -f1)
 echo "✅ ${ALGORAVE_ZIP} (${ALGORAVE_SIZE})"
 echo ""
 
-echo "[2/4] Building nvoos-fantasy-football-v${VERSION}.zip"
+echo "[2/${TOTAL_STEPS}] Building nvoos-fantasy-football-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/ff-stage/nvoos-fantasy-football"
 rsync -a "addons/fantasy-football/" "${TMP_DIR}/ff-stage/nvoos-fantasy-football/" \
 --exclude 'node_modules/' \
@@ -115,7 +135,7 @@ FF_SIZE=$(du -h "$FF_ZIP" | cut -f1)
 echo "✅ ${FF_ZIP} (${FF_SIZE})"
 echo ""
 
-echo "[3/4] Building nvoos-cornerstone3d-v${VERSION}.zip"
+echo "[3/${TOTAL_STEPS}] Building nvoos-cornerstone3d-v${VERSION}.zip"
 # Build ESM bundles if they don't exist yet.
 VENDOR_CORNERSTONE_DIR="addons/pro/assets/vendor/cornerstone"
 if [ ! -f "${VENDOR_CORNERSTONE_DIR}/cornerstone-core.esm.js" ]; then
@@ -151,7 +171,12 @@ CS3D_SIZE=$(du -h "$CS3D_ZIP" | cut -f1)
 echo "✅ ${CS3D_ZIP} (${CS3D_SIZE})"
 echo ""
 
-echo "[4/4] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+if [ "$SKIP_CANVAS" = true ]; then
+echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavailable)"
+echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
+echo ""
+else
+echo "[4/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/canvas-work"
 rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude 'node_modules/' \
@@ -198,6 +223,7 @@ zip -r -q "${ROOT_DIR}/${CANVAS_ZIP}" nvoos-canvas/
 CANVAS_SIZE=$(du -h "$CANVAS_ZIP" | cut -f1)
 echo "✅ ${CANVAS_ZIP} (${CANVAS_SIZE})"
 echo ""
+fi
 
 echo "=========================================="
 echo "Addon ZIP build complete"
@@ -205,6 +231,10 @@ echo "=========================================="
 echo "  - ${ALGORAVE_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
+if [ "$SKIP_CANVAS" = false ]; then
 echo "  - ${CANVAS_ZIP}"
+else
+echo "  - (canvas skipped — use Build Canvas Addon workflow)"
+fi
 
 rm -rf "$TMP_DIR"
