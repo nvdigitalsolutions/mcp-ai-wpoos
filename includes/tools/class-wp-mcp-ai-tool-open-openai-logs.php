@@ -114,7 +114,7 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'local-only',           // Returns an external URL for user navigation but makes no server-side HTTP calls.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
