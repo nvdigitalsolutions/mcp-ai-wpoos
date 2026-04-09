@@ -393,7 +393,10 @@
 
 				// Strategy 2: proxy AudioContext.destination so future connections
 				// (made during evaluate()) route through our analyser tap.
-				if ( ! this.strudelDestProxy ) {
+				// This mutates AudioContext.destination which is safe here because
+				// the context belongs to Strudel's internal audio graph and we are
+				// the sole consumer needing to intercept its output.
+				if ( ! this.strudelDestProxy && this.strudelAnalyser && this.strudelFreqAnalyser ) {
 					let audioCtx = null;
 					if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
 						audioCtx = strudel.getAudioContext();
@@ -405,6 +408,9 @@
 						proxy.connect( this.strudelAnalyser );
 						proxy.connect( this.strudelFreqAnalyser );
 
+						// Replace destination so superdough routes through our proxy.
+						// The Strudel AudioContext is created once per session and
+						// never recreated, so a single override is sufficient.
 						Object.defineProperty( audioCtx, 'destination', {
 							get: function () {
 								return proxy;
