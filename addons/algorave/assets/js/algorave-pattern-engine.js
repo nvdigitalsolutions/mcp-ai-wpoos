@@ -424,6 +424,28 @@
 					if ( audioCtx && audioCtx.destination ) {
 						const realDest = audioCtx.destination;
 						const proxy = audioCtx.createGain();
+
+						// Superdough reads destination.maxChannelCount and sets
+						// destination.channelCount to match. A plain GainNode
+						// does not expose maxChannelCount, so superdough would
+						// read undefined → 0, causing "channelCount outside
+						// range [1,32]". Mirror the real destination's channel
+						// properties onto the proxy to prevent this.
+						try {
+							const maxCh = realDest.maxChannelCount || 2;
+							proxy.channelCount = realDest.channelCount || maxCh;
+							proxy.channelCountMode = realDest.channelCountMode || 'explicit';
+							proxy.channelInterpretation = realDest.channelInterpretation || 'speakers';
+							Object.defineProperty( proxy, 'maxChannelCount', {
+								get: function () {
+									return maxCh;
+								},
+								configurable: true,
+							} );
+						} catch ( _chErr ) {
+							// Non-critical — proceed without channel mirroring.
+						}
+
 						proxy.connect( realDest );
 						proxy.connect( this.strudelAnalyser );
 						proxy.connect( this.strudelFreqAnalyser );

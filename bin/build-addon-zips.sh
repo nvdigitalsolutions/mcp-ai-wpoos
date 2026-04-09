@@ -111,7 +111,8 @@ rsync -a "addons/algorave/" "${TMP_DIR}/algorave-stage/nvoos-algorave/" \
 --exclude 'node_modules/' \
 --exclude '.git/' \
 --exclude '.DS_Store' \
---exclude 'tests/'
+--exclude 'tests/' \
+--exclude 'package-lock.json'
 (
 cd "${TMP_DIR}/algorave-stage"
 zip -r -q "${ROOT_DIR}/${ALGORAVE_ZIP}" nvoos-algorave/
