@@ -58,6 +58,9 @@
 		/** @type {boolean} Whether the Strudel analyser is connected to a live audio source. */
 		strudelAnalyserConnected: false,
 
+		/** @type {GainNode|null} Proxy node inserted before AudioContext.destination for analyser tap. */
+		strudelDestProxy: null,
+
 		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
 		strudelReady: null,
 
@@ -364,6 +367,11 @@
 		/**
 		 * Attempt to connect analysers to Strudel's destination node.
 		 *
+		 * Strategy 1: Use strudel.getDestination() to tap the master gain.
+		 * Strategy 2: Insert a proxy GainNode before AudioContext.destination
+		 *             so that future connections (e.g. from superdough) route
+		 *             through the proxy and feed our analysers.
+		 *
 		 * @return {boolean} True if connection succeeded.
 		 */
 		tryConnectAnalyser: function () {
@@ -371,11 +379,46 @@
 				return true;
 			}
 			try {
+				// Strategy 1: tap Strudel's master destination gain node directly.
 				if ( typeof strudel !== 'undefined' && typeof strudel.getDestination === 'function' ) {
 					const dest = strudel.getDestination();
 					if ( dest && typeof dest.connect === 'function' ) {
 						dest.connect( this.strudelAnalyser );
 						dest.connect( this.strudelFreqAnalyser );
+						this.strudelAnalyserConnected = true;
+						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+						return true;
+					}
+				}
+
+				// Strategy 2: proxy AudioContext.destination so future connections
+				// (made during evaluate()) route through our analyser tap.
+				// This mutates AudioContext.destination which is safe here because
+				// the context belongs to Strudel's internal audio graph and we are
+				// the sole consumer needing to intercept its output.
+				if ( ! this.strudelDestProxy && this.strudelAnalyser && this.strudelFreqAnalyser ) {
+					let audioCtx = null;
+					if ( typeof strudel !== 'undefined' && typeof strudel.getAudioContext === 'function' ) {
+						audioCtx = strudel.getAudioContext();
+					}
+					if ( audioCtx && audioCtx.destination ) {
+						const realDest = audioCtx.destination;
+						const proxy = audioCtx.createGain();
+						proxy.connect( realDest );
+						proxy.connect( this.strudelAnalyser );
+						proxy.connect( this.strudelFreqAnalyser );
+
+						// Replace destination so superdough routes through our proxy.
+						// The Strudel AudioContext is created once per session and
+						// never recreated, so a single override is sufficient.
+						Object.defineProperty( audioCtx, 'destination', {
+							get: function () {
+								return proxy;
+							},
+							configurable: true,
+						} );
+
+						this.strudelDestProxy = proxy;
 						this.strudelAnalyserConnected = true;
 						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
 						return true;
@@ -409,6 +452,13 @@
 				try {
 					if ( this.strudelInitialized && typeof strudel !== 'undefined' && typeof strudel.evaluate === 'function' ) {
 						await strudel.evaluate( code );
+
+						// Retry analyser connection now that superdough is active.
+						// evaluate() triggers superdough initialization, making
+						// getDestination() available in builds that lazy-init it.
+						if ( ! this.strudelAnalyserConnected ) {
+							this.tryConnectAnalyser();
+						}
 					} else {
 						const msg = 'strudel.evaluate() not available. Enable Strudel CDN in settings.';
 						// eslint-disable-next-line no-console
@@ -570,6 +620,14 @@
 		 * @return {Uint8Array|null} Frequency data (0–255 per bin).
 		 */
 		getFrequencyData: function () {
+			// Only return data when the analyser is connected to a live audio
+			// source.  Without this guard the visualizer receives a zero-filled
+			// buffer and skips the idle state, causing an invisible flat-line
+			// render while the idle animation should be showing.
+			if ( ! this.strudelAnalyserConnected ) {
+				return null;
+			}
+
 			// Prefer the dedicated frequency analyser when connected to Strudel.
 			const analyser = this.strudelFreqAnalyser || this.strudelAnalyser;
 			if ( analyser ) {
