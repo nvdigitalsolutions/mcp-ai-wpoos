@@ -1,6 +1,6 @@
 # Compliance Documentation
 
-**Last Updated:** February 16, 2026  
+**Last Updated:** April 9, 2026  
 **Status:** Production Ready
 
 This directory contains comprehensive compliance documentation for multiple security and privacy frameworks, plus WordPress.org Plugin Directory compliance.
@@ -9,17 +9,27 @@ This directory contains comprehensive compliance documentation for multiple secu
 
 ## 📋 WordPress.org Plugin Compliance
 
-**Status:** ✅ 100% COMPLIANT (v1.1.2)
+**Status:** ✅ ALL REVIEW ISSUES RESOLVED (v1.1.6 / 3.9.1RC1)
 
 **Key Documents:**
 - **[WORDPRESS_ORG_COMPLIANCE_COMPLETE.md](WORDPRESS_ORG_COMPLIANCE_COMPLETE.md)** - Executive summary of all WordPress.org compliance work
 - **[WORDPRESS_ORG_COMPLIANCE_REPORT.md](WORDPRESS_ORG_COMPLIANCE_REPORT.md)** - Detailed technical compliance report with code examples
 
+**Review-Specific Documents (newest first):**
+- **[WORDPRESS_ORG_COMPLIANCE_2026_04_09.md](WORDPRESS_ORG_COMPLIANCE_2026_04_09.md)** - April 9, 2026 review — URLs, external services, file writes, capability flags
+- **[WORDPRESS_ORG_COMPLIANCE_2026_04_02.md](WORDPRESS_ORG_COMPLIANCE_2026_04_02.md)** - April 2, 2026 review — opt-in, attribution, external services, sanitization
+- **[WORDPRESS_ORG_COMPLIANCE_2026_03_24.md](WORDPRESS_ORG_COMPLIANCE_2026_03_24.md)** - March 24, 2026 review — telemetry, 404 URLs, library versions, base vs pro
+- **[WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md](WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md)** - March 2026 initial review compliance
+
 **Compliance Achievements:**
-- ✅ **35 compliance violations resolved** (PR #3741 + v1.1.2)
+- ✅ **35+ compliance violations resolved** (PR #3741 through v1.1.6)
 - ✅ **Zero trial/freemium model** - Base plugin fully functional
 - ✅ **Zero hardcoded menu positions** - All use automatic positioning  
 - ✅ **Zero pro feature gating** - No disabled fields
+- ✅ **All external services documented** - 43+ services with terms/privacy links
+- ✅ **All capability flags accurate** - 13 mislabeled tools corrected
+- ✅ **All file writes restricted** - Plugin-specific uploads subdirectories only
+- ✅ **All URLs verified** - No 404s in readme.txt
 - ✅ **HEREDOC/NOWDOC removed** - WordPress Coding Standards compliant
 - ✅ **Inline scripts refactored** - Proper enqueuing
 - ✅ **Attribution opt-in** - No forced branding
@@ -27,6 +37,8 @@ This directory contains comprehensive compliance documentation for multiple secu
 **Version History:**
 - **PR #3741 (v1.1.1):** Initial compliance - 15 issues resolved
 - **v1.1.2:** Complete elimination - 20 additional issues resolved
+- **v1.1.3:** Automated review compliance - external services, sanitization, library versions
+- **v1.1.6 (3.9.1RC1):** April 2026 reviews - URLs, capability flags, file write restrictions
 
 ---
 
@@ -229,7 +241,7 @@ As of version 1.2.0, the plugin includes optional, privacy-first activation trac
 
 - **Fully transparent**: All tracking code is open source
 - **GDPR compliant**: No personal data collected, site URLs are hashed
-- **Opt-out available**: Can be disabled in Settings → General → Log Management or via filter hook
+- **Opt-in only**: Disabled by default; must be explicitly enabled in Settings → General → Log Management or via filter hook
 - **Non-blocking**: Uses asynchronous requests that won't delay activation
 - **Local-aware**: Automatically disabled for localhost and development environments
 
@@ -237,9 +249,9 @@ As of version 1.2.0, the plugin includes optional, privacy-first activation trac
 
 **Privacy documentation**: See [EXTERNAL_SERVICES.md](../EXTERNAL_SERVICES.md#plugin-analytics-service) for complete details.
 
-**To disable**:
-1. Via Settings: Go to Settings → NV oOS → General → Log Management → Disable Activation Tracking
-2. Via Filter: `add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );`
+**To enable** (disabled by default):
+1. Via Settings: Go to Settings → NV oOS → General → Log Management → Enable Activation Tracking
+2. Via Filter: `add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_true' );`
 
 ### Framework Updates
 - Frameworks reviewed quarterly
