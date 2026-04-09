@@ -141,7 +141,8 @@ class NV_oOS_Algorave_Tool_Visualizer implements WP_MCP_AI_Tool_Interface, WP_MC
 				break;
 
 			case 'fullscreen':
-				$result['message'] = __( 'Toggling fullscreen visualizer mode.', 'nvoos-algorave' );
+				$result['fullscreen'] = true;
+				$result['message']    = __( 'Toggling fullscreen visualizer mode.', 'nvoos-algorave' );
 				break;
 		}
 

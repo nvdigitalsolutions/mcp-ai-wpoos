@@ -40,6 +40,9 @@
 		/** @type {boolean} Whether audio is currently playing. */
 		playing: false,
 
+		/** @type {string} Currently active engine ('strudel' or 'tonejs'). */
+		activeEngine: '',
+
 		/** @type {object|null} Current Tone.js transport reference. */
 		transport: null,
 
@@ -52,6 +55,9 @@
 		/** @type {AnalyserNode|null} Frequency-domain analyser for spectrum modes. */
 		strudelFreqAnalyser: null,
 
+		/** @type {boolean} Whether the Strudel analyser is connected to a live audio source. */
+		strudelAnalyserConnected: false,
+
 		/** @type {Promise|null} Resolves when Strudel REPL is ready. */
 		strudelReady: null,
 
@@ -60,6 +66,9 @@
 
 		/** @type {boolean} Whether Strudel REPL has completed initialization. */
 		strudelInitialized: false,
+
+		/** @type {boolean} Whether ensureStrudel() is currently running. */
+		strudelInitializing: false,
 
 		/** @type {string} Currently active sample bank. */
 		currentBank: '',
@@ -128,6 +137,16 @@
 			if ( ! this.strudelAvailable ) {
 				return;
 			}
+
+			// Prevent parallel initialization — if another call is already
+			// running ensureStrudel(), just wait for it to finish.
+			if ( this.strudelInitializing ) {
+				if ( this.strudelReady ) {
+					await this.strudelReady;
+				}
+				return;
+			}
+			this.strudelInitializing = true;
 
 			// First call — kick off initStrudel() with all sample collections.
 			// The prebake function loads:
@@ -226,6 +245,7 @@
 					// eslint-disable-next-line no-console
 					console.warn( '[Algorave] Strudel initialization failed:', e );
 					this.strudelAvailable = false;
+					this.strudelInitializing = false;
 					return;
 				}
 			}
@@ -233,6 +253,7 @@
 			try {
 				await this.strudelReady;
 				this.strudelInitialized = true;
+				this.strudelInitializing = false;
 
 				// Register drum machine bank aliases (short names like TR808 for RolandTR808).
 				// Await the async alias loading so aliases are ready before evaluation.
@@ -240,10 +261,14 @@
 
 				// Connect to Strudel's internal AudioContext for visualization.
 				this.connectStrudelAnalyser();
+
+				// Notify other components that Strudel is ready.
+				document.dispatchEvent( new CustomEvent( 'algorave:strudel-ready' ) );
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Strudel initialization failed:', e );
 				this.strudelAvailable = false;
+				this.strudelInitializing = false;
 			}
 		},
 
@@ -308,57 +333,59 @@
 				this.strudelFreqAnalyser.minDecibels = -90;
 				this.strudelFreqAnalyser.maxDecibels = -10;
 
-				// Strategy 1: Strudel exposes its master destination gain node
-				// via getDestination(). Connect the analysers in parallel.
-				if ( typeof strudel.getDestination === 'function' ) {
-					const dest = strudel.getDestination();
-					if ( dest && typeof dest.connect === 'function' ) {
-						dest.connect( this.strudelAnalyser );
-						dest.connect( this.strudelFreqAnalyser );
-						return;
-					}
+				// Try to connect to Strudel's master destination gain node.
+				// If getDestination() is not yet available (superdough lazy-init),
+				// poll until it becomes available. Only one strategy succeeds,
+				// guarded by strudelAnalyserConnected flag.
+				if ( this.tryConnectAnalyser() ) {
+					return;
 				}
 
-				// Strategy 2: Insert a pass-through GainNode between the
-				// AudioContext destination and whatever is connected to it.
-				// We replace audioCtx.destination with a gain proxy so all
-				// future audio routed to destination flows through us.
-				const proxyGain = audioCtx.createGain();
-				proxyGain.gain.value = 1;
-				proxyGain.connect( audioCtx.destination );
-				proxyGain.connect( this.strudelAnalyser );
-				proxyGain.connect( this.strudelFreqAnalyser );
-				this._strudelSplitter = proxyGain;
-
-				// Strategy 3: Poll for getDestination() to become available
-				// after audio starts (some Strudel builds lazy-init superdough).
+				// Poll for getDestination() to become available
+				// (some Strudel builds lazy-init superdough).
 				const self = this;
 				let pollCount = 0;
 				// 20 attempts × 500 ms = 10 seconds maximum polling window.
 				const maxPollAttempts = 20;
 				const pollInterval = setInterval( function () {
 					pollCount++;
-					if ( pollCount > maxPollAttempts ) {
+					if ( self.strudelAnalyserConnected || pollCount > maxPollAttempts ) {
 						clearInterval( pollInterval );
 						return;
 					}
-					if ( typeof strudel !== 'undefined' && typeof strudel.getDestination === 'function' ) {
-						const dest = strudel.getDestination();
-						if ( dest && typeof dest.connect === 'function' ) {
-							try {
-								dest.connect( self.strudelAnalyser );
-								dest.connect( self.strudelFreqAnalyser );
-							} catch ( err ) {
-								// Already connected or node mismatch — ignore.
-							}
-							clearInterval( pollInterval );
-						}
-					}
+					self.tryConnectAnalyser();
 				}, 500 );
 			} catch ( e ) {
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] Could not connect Strudel analyser:', e );
 			}
+		},
+
+		/**
+		 * Attempt to connect analysers to Strudel's destination node.
+		 *
+		 * @return {boolean} True if connection succeeded.
+		 */
+		tryConnectAnalyser: function () {
+			if ( this.strudelAnalyserConnected ) {
+				return true;
+			}
+			try {
+				if ( typeof strudel !== 'undefined' && typeof strudel.getDestination === 'function' ) {
+					const dest = strudel.getDestination();
+					if ( dest && typeof dest.connect === 'function' ) {
+						dest.connect( this.strudelAnalyser );
+						dest.connect( this.strudelFreqAnalyser );
+						this.strudelAnalyserConnected = true;
+						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+						return true;
+					}
+				}
+			} catch ( err ) {
+				// eslint-disable-next-line no-console
+				console.warn( '[Algorave] analyser connect attempt failed:', err );
+			}
+			return false;
 		},
 
 		/**
@@ -370,6 +397,8 @@
 		play: async function ( code, engine ) {
 			await this.ensureStarted();
 			this.stop();
+
+			this.activeEngine = engine || 'strudel';
 
 			if ( 'strudel' === engine ) {
 				// Initialize Strudel lazily (needs user gesture for AudioContext).
@@ -515,17 +544,19 @@
 		 * @return {Float32Array|null} Waveform data (-1 to +1).
 		 */
 		getAnalyserData: function () {
-			// Prefer Tone.js analyser if available and has data.
-			if ( this.analyser ) {
-				return this.analyser.getValue();
-			}
-
-			// Fall back to Strudel's AudioContext analyser.
-			if ( this.strudelAnalyser ) {
+			// When Strudel is the active engine and the analyser is connected
+			// to live audio, prefer it. Tone.js analyser is disconnected from
+			// Strudel's AudioContext and would return silence.
+			if ( this.strudelAnalyser && this.strudelAnalyserConnected && ( this.activeEngine === 'strudel' || ! this.analyser ) ) {
 				const bufferLength = this.strudelAnalyser.frequencyBinCount;
 				const dataArray = new Float32Array( bufferLength );
 				this.strudelAnalyser.getFloatTimeDomainData( dataArray );
 				return dataArray;
+			}
+
+			// Fall back to Tone.js analyser when using tonejs engine.
+			if ( this.analyser ) {
+				return this.analyser.getValue();
 			}
 
 			return null;
@@ -691,5 +722,51 @@
 	// Auto-initialize when config is available.
 	if ( typeof nvoosAlgoraveConfig !== 'undefined' ) {
 		AlgoraveEngine.init( nvoosAlgoraveConfig );
+	} else {
+		// eslint-disable-next-line no-console
+		console.warn( '[Algorave] nvoosAlgoraveConfig not found — engine initialized with defaults.' );
+		AlgoraveEngine.init( {} );
 	}
+
+	// Notify other scripts that AlgoraveEngine is available.
+	document.dispatchEvent( new CustomEvent( 'algorave:engine-ready' ) );
+
+	/**
+	 * Bridge: convert _browser_command tool results into DOM CustomEvents.
+	 *
+	 * When the oOS chat processes a tool result that contains
+	 * `_browser_command: true`, the agentic loop delivers the response to
+	 * the browser. This listener inspects every SSE "tool_result" message
+	 * and dispatches the appropriate addon event so the visualizer,
+	 * play-control, and MIDI output components can react.
+	 */
+	document.addEventListener( 'algorave:browser-command', function ( e ) {
+		if ( ! window.AlgoraveEngine ) {
+			return;
+		}
+
+		const detail = e.detail || {};
+		const action = detail.action || '';
+		const engine = window.AlgoraveEngine;
+
+		// Visualizer commands.
+		if ( action === 'set_mode' || action === 'set_color' || action === 'toggle' || action === 'fullscreen' ) {
+			document.dispatchEvent( new CustomEvent( 'algorave:visualizer', { detail: detail } ) );
+		}
+
+		// Play control commands.
+		if ( action === 'play' && detail.code ) {
+			engine.play( detail.code, detail.engine || 'strudel' );
+		} else if ( action === 'stop' ) {
+			engine.stop();
+		} else if ( action === 'pause' ) {
+			engine.pause();
+		} else if ( action === 'set_bpm' && detail.bpm ) {
+			engine.setBpm( detail.bpm );
+		} else if ( action === 'set_cps' && detail.cps ) {
+			engine.setCps( detail.cps );
+		} else if ( action === 'set_bank' && detail.bank ) {
+			engine.loadBank( detail.bank );
+		}
+	} );
 } )();
