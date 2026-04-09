@@ -803,11 +803,22 @@
 
 				// DPI-aware sizing.
 				const dpr = window.devicePixelRatio || 1;
-				const rect = container.getBoundingClientRect();
+				let rect = container.getBoundingClientRect();
 				canvas.width = rect.width * dpr;
 				canvas.height = rect.height * dpr;
 				const ctx = canvas.getContext( '2d' );
 				ctx.scale( dpr, dpr );
+
+				// Re-size canvas when container dimensions change.
+				if ( typeof ResizeObserver !== 'undefined' ) {
+					const resizeObs = new ResizeObserver( function () {
+						rect = container.getBoundingClientRect();
+						canvas.width = rect.width * dpr;
+						canvas.height = rect.height * dpr;
+						ctx.setTransform( dpr, 0, 0, dpr, 0, 0 );
+					} );
+					resizeObs.observe( container );
+				}
 
 				const cycles = options.cycles || 4;
 				const playheadPos = options.playhead != null ? options.playhead : 0.5;
@@ -946,7 +957,7 @@
 							}
 						}
 
-						ctx.globalAlpha = ( hap.value && hap.value.velocity ) || 1;
+						ctx.globalAlpha = ( hap.value && typeof hap.value.velocity === 'number' ) ? hap.value.velocity : 1;
 						ctx.fillStyle = color;
 						if ( vertical ) {
 							ctx.fillRect( vPx, tPx, barThickness - 1, durPx - 1 );
@@ -1007,7 +1018,7 @@
 					val = { value: val };
 				}
 				if ( val.freq ) {
-					// Rough freq → MIDI conversion.
+					// freq → MIDI: 12 * log2(freq / 440 Hz) + 69 (A4).
 					return Math.round( 12 * Math.log2( val.freq / 440 ) + 69 );
 				}
 				const note = val.note != null ? val.note : val.n;
