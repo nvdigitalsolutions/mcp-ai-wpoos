@@ -88,6 +88,9 @@
 		/** @type {boolean} Whether Pattern.prototype visualization methods have been registered. */
 		patternVizRegistered: false,
 
+		/** @type {boolean} Whether initializeAudioOutput has been monkey-patched. */
+		_audioOutputPatched: false,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -101,6 +104,11 @@
 			// Strudel creates an AudioContext internally, which requires a user
 			// gesture on modern browsers. Deferred to ensureStrudel().
 			this.strudelAvailable = ( typeof window.initStrudel === 'function' );
+
+			// Install the safety wrapper around Eh() *before* anything can
+			// trigger superdough's lazy audio init.  The strudel vendor
+			// bundle is a script dependency, so it's already loaded here.
+			this._patchInitializeAudioOutput();
 
 			// Set up Tone.js if available (optional — Strudel has its own audio engine).
 			if ( typeof Tone !== 'undefined' ) {
@@ -531,11 +539,10 @@
 		 * install the proxy, the first trigger already hit the raw
 		 * AudioDestinationNode.
 		 *
-		 * This method:
-		 *  1. Patches destination.maxChannelCount → 2 when it is 0/invalid.
-		 *  2. Calls strudel.initializeAudioOutput() so the internal
-		 *     ms (ChannelMerger) + fi (GainNode) chain is created eagerly.
-		 *  3. After that, wh() sees ms !== null and never re-runs Eh().
+		 * The monkey-patch (installed during init) wraps every call to
+		 * initializeAudioOutput so the channelCount setter never receives 0.
+		 * This method just calls the (now-safe) function eagerly so the
+		 * internal ms/fi chain is ready before any triggers.
 		 *
 		 * Must be called after initAudio() but before evaluate().
 		 */
@@ -544,42 +551,6 @@
 				return;
 			}
 			try {
-				var audioCtx = ( typeof strudel.getAudioContext === 'function' )
-					? strudel.getAudioContext()
-					: null;
-				if ( ! audioCtx || ! audioCtx.destination ) {
-					return;
-				}
-
-				var dest = audioCtx.destination;
-				var maxCh = dest.maxChannelCount;
-
-				// Patch maxChannelCount if the browser reports 0 or undefined.
-				if ( typeof maxCh !== 'number' || maxCh < 1 ) {
-					try {
-						Object.defineProperty( dest, 'maxChannelCount', {
-							value: 2,
-							writable: false,
-							enumerable: true,
-							configurable: true,
-						} );
-					} catch ( _e1 ) {
-						// Data descriptor failed — try accessor.
-						try {
-							Object.defineProperty( dest, 'maxChannelCount', {
-								get: function () {
-									return 2;
-								},
-								configurable: true,
-							} );
-						} catch ( _e2 ) {
-							// Cannot patch — initializeAudioOutput will likely
-							// fail and the error will be caught downstream.
-						}
-					}
-				}
-
-				// Eagerly run Eh() so ms/fi are created before any triggers.
 				if ( typeof strudel.initializeAudioOutput === 'function' ) {
 					strudel.initializeAudioOutput();
 				}
@@ -587,6 +558,104 @@
 				// eslint-disable-next-line no-console
 				console.warn( '[Algorave] preInitAudioOutput failed:', err );
 			}
+		},
+
+		/**
+		 * Install a safety wrapper around strudel.initializeAudioOutput (Eh).
+		 *
+		 * The original Eh() does:
+		 *   const t = ctx.destination.maxChannelCount;
+		 *   ctx.destination.channelCount = t;          ← throws when t=0
+		 *
+		 * We cannot access the module-private ms/fi variables, so we must
+		 * make Eh() succeed.  The wrapper temporarily overrides the
+		 * channelCount setter on the destination node to clamp values into
+		 * the valid [1, 32] range, calls the original Eh(), then removes
+		 * the override.
+		 *
+		 * Called once during init().
+		 */
+		_patchInitializeAudioOutput: function () {
+			if (
+				typeof strudel === 'undefined' ||
+				typeof strudel.initializeAudioOutput !== 'function' ||
+				this._audioOutputPatched
+			) {
+				return;
+			}
+
+			const origInit = strudel.initializeAudioOutput;
+
+			strudel.initializeAudioOutput = function () {
+				let audioCtx = null;
+				try {
+					audioCtx = ( typeof strudel.getAudioContext === 'function' )
+						? strudel.getAudioContext()
+						: null;
+				} catch ( _e ) {
+					// getAudioContext may throw before context exists.
+				}
+
+				const dest = audioCtx ? audioCtx.destination : null;
+				let patched = false;
+
+				// If maxChannelCount is 0/invalid, install a temporary
+				// setter on the *instance* that clamps values to [1, 32].
+				if ( dest ) {
+					const maxCh = dest.maxChannelCount;
+					if ( typeof maxCh !== 'number' || maxCh < 1 ) {
+						try {
+							// channelCount is defined on AudioNode.prototype,
+							// which may be several levels up the chain.
+							let desc = null;
+							let p = dest;
+							while ( ( p = Object.getPrototypeOf( p ) ) ) {
+								desc = Object.getOwnPropertyDescriptor( p, 'channelCount' );
+								if ( desc ) {
+									break;
+								}
+							}
+							if ( desc && desc.set ) {
+								const origSetter = desc.set;
+								const origGetter = desc.get || null;
+								Object.defineProperty( dest, 'channelCount', {
+									set: function ( v ) {
+										const safe = Math.min( Math.max( v || 2, 1 ), 32 );
+										origSetter.call( dest, safe );
+									},
+									get: origGetter
+										? function () {
+											return origGetter.call( dest );
+										}
+										: function () {
+											return 2;
+										},
+									configurable: true,
+								} );
+								patched = true;
+							}
+						} catch ( _patchErr ) {
+							// Cannot patch — fall through to direct call.
+						}
+					}
+				}
+
+				try {
+					origInit();
+				} finally {
+					// Remove the temporary setter so normal Web Audio
+					// behaviour is restored.
+					if ( patched ) {
+						try {
+							delete dest.channelCount;
+						} catch ( _delErr ) {
+							// Ignore — worst case the clamping setter stays.
+						}
+					}
+				}
+			};
+
+			this._audioOutputPatched = true;
 		},
 
 		/**
@@ -620,6 +689,9 @@
 		 * @param {string} engine Engine type ('strudel' or 'tonejs').
 		 */
 		play: async function ( code, engine ) {
+			// Normalize engine to a known value.
+			engine = ( engine === 'tonejs' ) ? 'tonejs' : 'strudel';
+
 			// ── Eagerly create + resume the audio context ──────────
 			// This MUST happen synchronously (before any await) so the
 			// browser's user-gesture activation window is still open.
@@ -627,14 +699,14 @@
 			// (after async sample-loading in ensureStrudel) and starts
 			// in "suspended" state — causing complete silence even
 			// though the pattern scheduler is running.
-			if ( 'strudel' === ( engine || 'strudel' ) ) {
+			if ( 'strudel' === engine ) {
 				this.ensureAudioContext();
 			}
 
 			await this.ensureStarted();
 			this.stop();
 
-			this.activeEngine = engine || 'strudel';
+			this.activeEngine = engine;
 
 			if ( 'strudel' === engine ) {
 				// Initialize Strudel lazily (needs user gesture for AudioContext).
