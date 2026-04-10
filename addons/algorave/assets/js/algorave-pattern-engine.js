@@ -474,12 +474,47 @@
 		},
 
 		/**
+		 * Eagerly create and resume Strudel's AudioContext.
+		 *
+		 * MUST be called synchronously (before any `await`) while the
+		 * browser's user-gesture activation window is still open.
+		 * `strudel.getAudioContext()` returns a singleton — creating it
+		 * here ensures superdough reuses this already-running context
+		 * instead of lazily creating a new one in "suspended" state
+		 * after the gesture expires.
+		 */
+		ensureAudioContext: function () {
+			if ( typeof strudel === 'undefined' || typeof strudel.getAudioContext !== 'function' ) {
+				return;
+			}
+			try {
+				const ctx = strudel.getAudioContext();
+				if ( ctx && ctx.state === 'suspended' ) {
+					ctx.resume();
+				}
+			} catch ( _e ) {
+				// Non-critical — initAudioOnFirstClick will handle this.
+			}
+		},
+
+		/**
 		 * Play a pattern.
 		 *
 		 * @param {string} code   Pattern code to evaluate.
 		 * @param {string} engine Engine type ('strudel' or 'tonejs').
 		 */
 		play: async function ( code, engine ) {
+			// ── Eagerly create + resume the audio context ──────────
+			// This MUST happen synchronously (before any await) so the
+			// browser's user-gesture activation window is still open.
+			// Without this, Strudel's AudioContext is created lazily
+			// (after async sample-loading in ensureStrudel) and starts
+			// in "suspended" state — causing complete silence even
+			// though the pattern scheduler is running.
+			if ( 'strudel' === ( engine || 'strudel' ) ) {
+				this.ensureAudioContext();
+			}
+
 			await this.ensureStarted();
 			this.stop();
 
@@ -488,6 +523,19 @@
 			if ( 'strudel' === engine ) {
 				// Initialize Strudel lazily (needs user gesture for AudioContext).
 				await this.ensureStrudel();
+
+				// Load AudioWorklets so effects (reverb, delay, etc.) work.
+				// The AudioContext was already created and resumed above, so
+				// initAudio() just loads the worklet module.
+				if ( typeof strudel !== 'undefined' && typeof strudel.initAudio === 'function' ) {
+					try {
+						await strudel.initAudio();
+					} catch ( _e ) {
+						// Non-critical — basic synthesis works without worklets.
+						// eslint-disable-next-line no-console
+						console.warn( '[Algorave] AudioWorklet init skipped:', _e );
+					}
+				}
 
 				// Use strudel.evaluate() from the @strudel/web IIFE namespace.
 				// This provides the full DSL context (stack, note, s, sound, setcps, etc.).
@@ -504,7 +552,7 @@
 						// the proxy was installed.
 						this.tryConnectAnalyser();
 					} else {
-						const msg = 'strudel.evaluate() not available. Enable Strudel CDN in settings.';
+						const msg = 'strudel.evaluate() not available. Enable Strudel Engine in settings.';
 						// eslint-disable-next-line no-console
 						console.warn( '[Algorave] ' + msg );
 						document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
