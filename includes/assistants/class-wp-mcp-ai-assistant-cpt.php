@@ -42,6 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
 		const META_PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
 		const META_SKILLS                  = '_wp_mcp_ai_skills';
+		const META_MCP_APPS                = '_wp_mcp_ai_mcp_apps';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -81,6 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
 			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
 			$this->metaboxes['skills']         = new WP_MCP_AI_Metabox_Skills( $this );
+			$this->metaboxes['mcp-apps']       = new WP_MCP_AI_Metabox_MCP_Apps( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -2190,6 +2192,19 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Register the Agent Skills metabox.
 			if ( isset( $this->metaboxes['skills'] ) ) {
 				$metabox = $this->metaboxes['skills'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
+			// Register the MCP Apps metabox (Pro feature).
+			if ( isset( $this->metaboxes['mcp-apps'] ) && class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+				$metabox = $this->metaboxes['mcp-apps'];
 				add_meta_box(
 					$metabox->get_id(),
 					$metabox->get_title(),
@@ -4476,6 +4491,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle MCP Apps meta (delegated to metabox save).
+			if ( isset( $this->metaboxes['mcp-apps'] ) ) {
+				$this->metaboxes['mcp-apps']->save( $post_id, $post );
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -4921,6 +4941,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} else {
 				$config['preferred_datasets'] = self::sanitize_preferred_datasets_meta( $config['preferred_datasets'] );
 			}
+
+			// Load MCP Apps configuration if available.
+			$mcp_apps = get_post_meta( $assistant_id, self::META_MCP_APPS, true );
+			$config['mcp_apps'] = is_array( $mcp_apps ) ? $mcp_apps : array();
 
 			return $config;
 		}

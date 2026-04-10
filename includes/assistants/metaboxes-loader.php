@@ -24,3 +24,4 @@ require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-met
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mesh-routing.php';
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-datasets.php';
 require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-skills.php';
+require_once WP_MCP_AI_PATH . 'includes/assistants/metaboxes/class-wp-mcp-ai-metabox-mcp-apps.php';
