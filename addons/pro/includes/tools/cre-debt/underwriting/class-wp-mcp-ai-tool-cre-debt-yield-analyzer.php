@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description(): string {
-		return __( 'Analyse debt yield under base case and multiple NOI stress scenarios. Provide NOI, loan amount, and an array of NOI adjustment percentages (e.g. -5%, -10%, -15%) to evaluate downside risk on debt yield.', 'mcp-ai-wpoos-pro' );
+		return __( 'Analyze debt yield under base case and multiple NOI stress scenarios. Provide NOI, loan amount, and an array of NOI adjustment percentages (e.g. -5%, -10%, -15%) to evaluate downside risk on debt yield.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

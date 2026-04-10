@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description(): string {
-		return __( 'Analyse a commercial rent roll: weighted average lease term (WALT), tenant income concentration, lease rollover by year, and mark-to-market analysis comparing in-place rents to market rents per SF.', 'mcp-ai-wpoos-pro' );
+		return __( 'Analyze a commercial rent roll: weighted average lease term (WALT), tenant income concentration, lease rollover by year, and mark-to-market analysis comparing in-place rents to market rents per SF.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -207,7 +207,9 @@ class WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer implements WP_MCP_AI_Tool_Interface,
 		$walt = ( $total_rent > 0 ) ? $walt_num / $total_rent : 0;
 
 		// Concentration percentages.
-		usort( $concentration, fn( $a, $b ) => $b['annual_rent'] <=> $a['annual_rent'] );
+		usort( $concentration, function ( $a, $b ) {
+			return $b['annual_rent'] <=> $a['annual_rent'];
+		} );
 		foreach ( $concentration as &$c ) {
 			$c['pct_of_total_rent'] = ( $total_rent > 0 )
 				? $calc::format_percentage( $c['annual_rent'] / $total_rent )

@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_CRE_Property_Valuation_Engine implements WP_MCP_AI_Tool_Int
 			$cost_value = $depreciated_improvements + $land_value;
 		}
 
-		// Reconciliation — normalise weights.
+		// Reconciliation — normalize weights.
 		$total_weight = 0.0;
 		$approaches   = array();
 

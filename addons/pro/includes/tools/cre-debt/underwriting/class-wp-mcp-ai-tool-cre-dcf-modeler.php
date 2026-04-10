@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_CRE_DCF_Modeler implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'vacancy_rate'       => array(
 					'type'        => 'number',
-					'description' => __( 'Stabilised vacancy rate as decimal (e.g. 0.05 for 5%).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Stabilized vacancy rate as decimal (e.g. 0.05 for 5%).', 'mcp-ai-wpoos-pro' ),
 				),
 				'operating_expenses' => array(
 					'type'        => 'number',
