@@ -492,13 +492,14 @@
 						this.strudelAnalyserConnected = true;
 
 						// Layer 3: eagerly initialise superdough's audio
-						// output chain (ChannelMergerNode ms + GainNode fi)
+						// output chain (ChannelMergerNode + output GainNode)
 						// through the proxy NOW, before any trigger fires.
-						// This ensures Eh() (initializeAudioOutput) reads our
+						// This ensures initializeAudioOutput reads our
 						// proxy's maxChannelCount and sets channelCount
-						// correctly.  Once ms !== null, the lazy init guard
-						// inside connectToDestination (wh) will never call
-						// Eh() again, completely preventing the race.
+						// correctly.  Once the chain is initialised, the
+						// lazy-init guard inside superdough's per-trigger
+						// routing function will skip re-initialisation,
+						// completely preventing the race.
 						if ( typeof strudel !== 'undefined' && typeof strudel.initializeAudioOutput === 'function' ) {
 							try {
 								strudel.initializeAudioOutput();
