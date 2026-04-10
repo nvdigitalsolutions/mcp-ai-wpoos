@@ -425,25 +425,52 @@
 						const realDest = audioCtx.destination;
 						const proxy = audioCtx.createGain();
 
-						// Superdough reads destination.maxChannelCount and sets
-						// destination.channelCount to match. A plain GainNode
-						// does not expose maxChannelCount, so superdough would
-						// read undefined → 0, causing "channelCount outside
-						// range [1,32]". Mirror the real destination's channel
-						// properties onto the proxy to prevent this.
+						// Superdough's initializeAudioOutput (Eh) reads
+						// destination.maxChannelCount and sets channelCount to
+						// match. A plain GainNode inherits maxChannelCount = 32
+						// from AudioNode.prototype, but some browser engines
+						// (or future spec changes) may return 0/undefined. We
+						// mirror the real destination's channel properties onto
+						// the proxy using a data descriptor (more robust than
+						// an accessor across V8 inline-cache optimisations) and
+						// clamp to the GainNode-safe range [1, 32].
+						const maxCh = Math.min( Math.max( realDest.maxChannelCount || 2, 1 ), 32 );
+						const chCount = Math.min( Math.max( realDest.channelCount || maxCh, 1 ), 32 );
 						try {
-							const maxCh = realDest.maxChannelCount || 2;
-							proxy.channelCount = realDest.channelCount || maxCh;
+							proxy.channelCount = chCount;
 							proxy.channelCountMode = realDest.channelCountMode || 'explicit';
 							proxy.channelInterpretation = realDest.channelInterpretation || 'speakers';
 							Object.defineProperty( proxy, 'maxChannelCount', {
-								get: function () {
-									return maxCh;
-								},
+								value: maxCh,
+								writable: false,
+								enumerable: true,
 								configurable: true,
 							} );
 						} catch ( _chErr ) {
-							// Non-critical — proceed without channel mirroring.
+							// Primary descriptor failed — try plain assignment.
+							try {
+								proxy.channelCount = 2;
+								proxy.maxChannelCount = maxCh; // eslint-disable-line no-setter-return
+							} catch ( _e2 ) {
+								// Last resort — leave native GainNode defaults (maxChannelCount 32).
+							}
+						}
+
+						// Verify the proxy returns a valid maxChannelCount.
+						// If Object.defineProperty was silently ignored (e.g.
+						// due to a non-configurable native property in a future
+						// engine), the native value (32) is still safe.
+						if ( ! proxy.maxChannelCount || proxy.maxChannelCount < 1 ) {
+							try {
+								Object.defineProperty( proxy, 'maxChannelCount', {
+									get: function () {
+										return maxCh;
+									},
+									configurable: true,
+								} );
+							} catch ( _e3 ) {
+								// Give up — native fallback (32) will apply.
+							}
 						}
 
 						proxy.connect( realDest );
@@ -463,6 +490,23 @@
 						this.strudelDestProxy = proxy;
 						this.strudelAnalyserConnected = true;
 						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+
+						// Eagerly initialize superdough's audio output chain
+						// now that the proxy is installed. This runs Eh() while
+						// the proxy's maxChannelCount is guaranteed to be set,
+						// and sets the internal ms/fi state so the lazy init
+						// inside wh() never fires during a getTrigger() call.
+						// fi.connect(destination) will route through our proxy
+						// because destination is already overridden above.
+						if ( typeof strudel !== 'undefined' && typeof strudel.initializeAudioOutput === 'function' ) {
+							try {
+								strudel.initializeAudioOutput();
+							} catch ( _initErr ) {
+								// eslint-disable-next-line no-console
+								console.warn( '[Algorave] Pre-init audio output failed:', _initErr );
+							}
+						}
+
 						return true;
 					}
 				}
