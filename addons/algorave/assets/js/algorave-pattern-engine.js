@@ -447,10 +447,9 @@
 								configurable: true,
 							} );
 						} catch ( _chErr ) {
-							// Primary descriptor failed — try plain assignment.
+							// Primary descriptor failed — ensure safe channelCount.
 							try {
 								proxy.channelCount = 2;
-								proxy.maxChannelCount = maxCh; // eslint-disable-line no-setter-return
 							} catch ( _e2 ) {
 								// Last resort — leave native GainNode defaults (maxChannelCount 32).
 							}
@@ -460,7 +459,7 @@
 						// If Object.defineProperty was silently ignored (e.g.
 						// due to a non-configurable native property in a future
 						// engine), the native value (32) is still safe.
-						if ( ! proxy.maxChannelCount || proxy.maxChannelCount < 1 ) {
+						if ( typeof proxy.maxChannelCount !== 'number' || proxy.maxChannelCount < 1 ) {
 							try {
 								Object.defineProperty( proxy, 'maxChannelCount', {
 									get: function () {
