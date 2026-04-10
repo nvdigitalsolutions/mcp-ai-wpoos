@@ -1371,6 +1371,24 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}
 
+		// Add CRE Debt & Securitization (CMBS/CLO) tools if enabled.
+		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
+			$cre_cmbs_tools = array(
+				// CMBS / Securitization module tools.
+				'WP_MCP_AI_Tool_CMBS_Deal_Structurer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-deal-structurer.php',
+				'WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-bond-cash-flow-modeler.php',
+				'WP_MCP_AI_Tool_CMBS_Pool_Analyzer'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-pool-analyzer.php',
+				'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-surveillance-monitor.php',
+				'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-special-servicing-tracker.php',
+				'WP_MCP_AI_Tool_CRE_CLO_Modeler'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cre-clo-modeler.php',
+				'WP_MCP_AI_Tool_CMBS_Defeasance_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-defeasance-calculator.php',
+				'WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-rating-agency-analyzer.php',
+				'WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-investor-reporting-generator.php',
+				'WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-maturity-risk-analyzer.php',
+			);
+			$pro_tools      = array_merge( $pro_tools, $cre_cmbs_tools );
+		}
+
 		/**
 		 * Filter the list of Pro tools to register.
 		 *
