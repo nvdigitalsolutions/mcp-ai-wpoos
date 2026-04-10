@@ -184,7 +184,7 @@ echo '</button>';
 echo '</div>';
 
 echo '<div class="wp-mcp-ai-chat-bubble__panel-body">';
-echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode() output is controlled by the shortcode callback.
+echo wp_kses_post( do_shortcode( $shortcode ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
 echo '</div>';
 
 echo '</div>';

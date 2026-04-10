@@ -1887,7 +1887,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'video/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'video/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -1987,7 +1987,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'audio/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'audio/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -2198,7 +2198,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'image/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -6072,7 +6072,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			// Verify it's an image.
 			$mime_type = get_post_mime_type( $attachment_id );
-			if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+			if ( 0 !== strpos( $mime_type, 'image/' ) ) {
 				return $this->error_response(
 					new WP_Error(
 						'E002',
