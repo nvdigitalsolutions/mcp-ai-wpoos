@@ -431,19 +431,47 @@
 						// read undefined → 0, causing "channelCount outside
 						// range [1,32]". Mirror the real destination's channel
 						// properties onto the proxy to prevent this.
+						//
+						// Layer 1: data descriptor (value + writable) is more
+						// reliable than an accessor (getter) across browsers.
+						// Layer 2: verify the read-back; fall back to accessor
+						// if the data descriptor was silently ignored.
+						const maxCh = Math.max( 1, Math.min( 32, realDest.maxChannelCount || 2 ) );
 						try {
-							const maxCh = realDest.maxChannelCount || 2;
-							proxy.channelCount = realDest.channelCount || maxCh;
+							proxy.channelCount = Math.max( 1, Math.min( 32, realDest.channelCount || maxCh ) );
 							proxy.channelCountMode = realDest.channelCountMode || 'explicit';
 							proxy.channelInterpretation = realDest.channelInterpretation || 'speakers';
+
+							// Prefer a data descriptor — simpler and more
+							// universally supported than an accessor.
 							Object.defineProperty( proxy, 'maxChannelCount', {
-								get: function () {
-									return maxCh;
-								},
+								value: maxCh,
+								writable: true,
 								configurable: true,
+								enumerable: true,
 							} );
+
+							// Verify the property reads back correctly.
+							// Some engines may silently ignore defineProperty
+							// on native AudioNode instances.
+							if ( proxy.maxChannelCount !== maxCh ) {
+								// Fallback: try an accessor descriptor instead.
+								Object.defineProperty( proxy, 'maxChannelCount', {
+									get: function () {
+										return maxCh;
+									},
+									configurable: true,
+								} );
+							}
 						} catch ( _chErr ) {
-							// Non-critical — proceed without channel mirroring.
+							// Last resort: direct assignment (non-standard but
+							// works when defineProperty is blocked).
+							try {
+								proxy.maxChannelCount = maxCh;
+							} catch ( _ignored ) {
+								// Proceed — initializeAudioOutput below will
+								// run against the real destination instead.
+							}
 						}
 
 						proxy.connect( realDest );
@@ -462,6 +490,24 @@
 
 						this.strudelDestProxy = proxy;
 						this.strudelAnalyserConnected = true;
+
+						// Layer 3: eagerly initialise superdough's audio
+						// output chain (ChannelMergerNode ms + GainNode fi)
+						// through the proxy NOW, before any trigger fires.
+						// This ensures Eh() (initializeAudioOutput) reads our
+						// proxy's maxChannelCount and sets channelCount
+						// correctly.  Once ms !== null, the lazy init guard
+						// inside connectToDestination (wh) will never call
+						// Eh() again, completely preventing the race.
+						if ( typeof strudel !== 'undefined' && typeof strudel.initializeAudioOutput === 'function' ) {
+							try {
+								strudel.initializeAudioOutput();
+							} catch ( _initErr ) {
+								// eslint-disable-next-line no-console
+								console.warn( '[Algorave] initializeAudioOutput pre-init failed:', _initErr );
+							}
+						}
+
 						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
 						return true;
 					}
