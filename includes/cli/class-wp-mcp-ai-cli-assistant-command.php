@@ -416,7 +416,11 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 		$json = wp_json_encode( $export, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 
 		if ( $file ) {
-			// WordPress.org compliance: restrict file writes to a plugin-specific uploads subdirectory.
+			// WordPress.org compliance: ALL file writes are restricted to the
+			// plugin-specific uploads subdirectory wp-content/uploads/mcp-ai/exports/.
+			// Only the basename of the user-supplied --file argument is used as the
+			// filename; directory traversal is impossible because sanitize_file_name()
+			// strips path separators and basename() removes any leading path.
 			$upload_dir = wp_upload_dir();
 			$export_dir = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) ) . 'mcp-ai/exports/';
 
@@ -427,9 +431,20 @@ class WP_MCP_AI_CLI_Assistant_Command extends WP_MCP_AI_CLI_Base_Command {
 				WP_CLI::error( __( 'Invalid filename provided.', 'mcp-ai-wpoos' ) );
 			}
 
-			// Create the export directory if it doesn't exist.
+			// Create the export directory if it doesn't exist and protect it from direct web access.
 			if ( ! is_dir( $export_dir ) ) {
 				wp_mkdir_p( $export_dir );
+			}
+			// Prevent direct HTTP access to exported files.
+			$htaccess_file = $export_dir . '.htaccess';
+			if ( ! file_exists( $htaccess_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing web-server deny rule to plugin uploads subdirectory.
+				file_put_contents( $htaccess_file, "Deny from all\n" );
+			}
+			$index_file = $export_dir . 'index.php';
+			if ( ! file_exists( $index_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI-only code writing directory listing guard to plugin uploads subdirectory.
+				file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
 			}
 
 			$file = $export_dir . $safe_filename;

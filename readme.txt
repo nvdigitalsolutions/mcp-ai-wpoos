@@ -819,7 +819,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the import duty lookup tool is used (requires ITA API key configuration)
 * **Service URL:** https://api.trade.gov/v1/tariff_rates/search
 * **Terms of Service:** https://developer.trade.gov/
-* **Privacy Policy:** https://www.trade.gov/privacy-program
+* **Privacy Policy:** https://developer.trade.gov/ (ITA Developer Portal — U.S. government data; see site footer for ITA privacy information)
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete

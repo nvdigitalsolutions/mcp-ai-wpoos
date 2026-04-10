@@ -3161,10 +3161,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Extend PHP execution time for the duration of the SSE stream.
 			// The default max_execution_time (often 30 s) is too short for embedded LLM
 			// inference (which can take 60–120 s) and long agentic loops.
-			// set_time_limit(0) removes the limit; ignore_user_abort(true) keeps PHP alive
-			// even if nginx closes the upstream connection (fastcgi_read_timeout).
+			// A bounded 300 s (5 min) limit keeps streams alive for long agentic loops
+			// without removing the safety net entirely.  ignore_user_abort(true) keeps PHP alive even if nginx closes the upstream connection.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
 			}
 			if ( function_exists( 'ignore_user_abort' ) ) {
 				ignore_user_abort( true );
