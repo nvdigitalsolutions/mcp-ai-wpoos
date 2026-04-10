@@ -431,6 +431,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
 
+		// Load MCP Apps subsystem (remote MCP server connections per assistant).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
+
 		// Load Product Research & Add page if WooCommerce tools enabled.
 		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) && is_admin() ) {
 			// Check if not in base version and WooCommerce is active.

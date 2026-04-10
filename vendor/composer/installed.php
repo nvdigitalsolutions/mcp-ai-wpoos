@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-mcp-apps-to-plugin-infrastructure',
+        'version' => 'dev-copilot/add-mcp-apps-to-plugin-infrastructure',
+        'reference' => '3dd5a499c1ca2bb2ef302792a44859d8f1d0faa5',
         'pretty_version' => 'dev-copilot/code-review-base-plugin',
         'version' => 'dev-copilot/code-review-base-plugin',
         'reference' => '1011ed224a0e297016a20ea58a5f51874aa0ec89',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-mcp-apps-to-plugin-infrastructure',
+            'version' => 'dev-copilot/add-mcp-apps-to-plugin-infrastructure',
+            'reference' => '3dd5a499c1ca2bb2ef302792a44859d8f1d0faa5',
             'pretty_version' => 'dev-copilot/code-review-base-plugin',
             'version' => 'dev-copilot/code-review-base-plugin',
             'reference' => '1011ed224a0e297016a20ea58a5f51874aa0ec89',
