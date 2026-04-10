@@ -1371,10 +1371,36 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}
 
-		// Add CRE Debt & Securitization (CMBS/CLO) tools if enabled.
+		// Add CRE Debt & Securitization toolkit tools if enabled.
 		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
-			$cre_cmbs_tools = array(
-				// CMBS / Securitization module tools.
+			$cre_debt_toolkit_tools = array(
+				// Originations module (11 tools).
+				'WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-pipeline-manager.php',
+				'WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-borrower-profile-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Quote_Generator'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-loan-quote-generator.php',
+				'WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-market-comp-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-screening-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-origination-volume-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Rate_Lock_Manager'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-rate-lock-manager.php',
+				'WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-broker-relationship-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-term-sheet-comparator.php',
+				'WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-execution-strategy-advisor.php',
+				'WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-closing-checklist-manager.php',
+				// Underwriting module (13 tools).
+				'WP_MCP_AI_Tool_CRE_DCF_Modeler'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-dcf-modeler.php',
+				'WP_MCP_AI_Tool_CRE_NOI_Calculator'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-noi-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Sizer'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-loan-sizer.php',
+				'WP_MCP_AI_Tool_CRE_Amortization_Scheduler'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-amortization-scheduler.php',
+				'WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-debt-yield-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-cap-rate-sensitivity.php',
+				'WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-rent-roll-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-operating-expense-benchmarker.php',
+				'WP_MCP_AI_Tool_CRE_Stress_Test_Modeler'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-stress-test-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-leverage-return-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Property_Valuation_Engine'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-property-valuation-engine.php',
+				'WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-environmental-risk-scorer.php',
+				'WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-underwriting-memo-generator.php',
+				// CMBS / Securitization module (10 tools).
 				'WP_MCP_AI_Tool_CMBS_Deal_Structurer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-deal-structurer.php',
 				'WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-bond-cash-flow-modeler.php',
 				'WP_MCP_AI_Tool_CMBS_Pool_Analyzer'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-pool-analyzer.php',
@@ -1385,8 +1411,33 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-rating-agency-analyzer.php',
 				'WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-investor-reporting-generator.php',
 				'WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-maturity-risk-analyzer.php',
+				// Debt Fund Management module (11 tools).
+				'WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-portfolio-dashboard.php',
+				'WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-debt-waterfall-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Return_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-return-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-credit-risk-scorer.php',
+				'WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-concentration-limit-monitor.php',
+				'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-warehouse-line-manager.php',
+				'WP_MCP_AI_Tool_CRE_LP_Report_Generator'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-lp-report-generator.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-capital-call-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-liquidity-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-covenant-compliance-checker.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-scenario-modeler.php',
+				// Asset Management module (12 tools).
+				'WP_MCP_AI_Tool_CRE_Property_Budget_Manager'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-budget-manager.php',
+				'WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-lease-expiration-manager.php',
+				'WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-capex-reserve-planner.php',
+				'WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-tenant-credit-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-hold-sell-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Property_Performance_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-performance-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-surveillance-dashboard.php',
+				'WP_MCP_AI_Tool_CRE_Watchlist_Manager'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-watchlist-manager.php',
+				'WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-workout-scenario-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-modification-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-servicing-fee-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-asset-disposition-analyzer.php',
 			);
-			$pro_tools      = array_merge( $pro_tools, $cre_cmbs_tools );
+			$pro_tools = array_merge( $pro_tools, $cre_debt_toolkit_tools );
 		}
 
 		/**
