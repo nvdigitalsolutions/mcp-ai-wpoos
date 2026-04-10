@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Load all MCP Apps classes.
  */
-$mcp_apps_dir = dirname( __FILE__ ) . '/';
+$mcp_apps_dir = __DIR__ . '/';
 
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-client.php';
 require_once $mcp_apps_dir . 'class-wp-mcp-ai-mcp-app-registry.php';
@@ -53,14 +53,12 @@ function wp_mcp_ai_mcp_apps_register_tools( $registry ) {
 
 	// Try to get assistant_id from the current REST request.
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only, no state change.
-		if ( isset( $_GET['assistant_id'] ) ) {
-			$assistant_id = absint( $_GET['assistant_id'] );
+		if ( isset( $_GET['assistant_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only, no state change.
+			$assistant_id = absint( $_GET['assistant_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only, no state change.
-		if ( ! $assistant_id && isset( $_POST['assistant_id'] ) ) {
-			$assistant_id = absint( $_POST['assistant_id'] );
+		if ( ! $assistant_id && isset( $_POST['assistant_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only, no state change.
+			$assistant_id = absint( $_POST['assistant_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
 
 		// Check JSON body if available.

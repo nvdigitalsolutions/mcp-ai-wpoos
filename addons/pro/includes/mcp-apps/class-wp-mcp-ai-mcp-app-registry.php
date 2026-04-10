@@ -181,7 +181,7 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * and registers bridge tools in the local registry.
 	 *
 	 * @since 1.8.0
-	 * @param int                      $assistant_id Assistant post ID.
+	 * @param int                     $assistant_id Assistant post ID.
 	 * @param WP_MCP_AI_Tool_Registry $registry     Tool registry instance.
 	 * @return array Array of registered bridge tool slugs.
 	 */

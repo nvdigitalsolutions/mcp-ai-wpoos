@@ -92,13 +92,13 @@ class WP_MCP_AI_MCP_App_Tool_Bridge implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @param string $app_label   Human-readable app label.
 	 */
 	public function __construct( array $remote_tool, array $app_config, $app_label = '' ) {
-		$this->remote_tool_name = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : '';
-		$this->slug             = 'mcp_app_' . sanitize_key( $app_label ) . '_' . sanitize_key( $this->remote_tool_name );
-		$this->name             = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : $this->slug;
-		$this->description      = isset( $remote_tool['description'] ) ? sanitize_text_field( $remote_tool['description'] ) : '';
+		$this->remote_tool_name  = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : '';
+		$this->slug              = 'mcp_app_' . sanitize_key( $app_label ) . '_' . sanitize_key( $this->remote_tool_name );
+		$this->name              = isset( $remote_tool['name'] ) ? sanitize_text_field( $remote_tool['name'] ) : $this->slug;
+		$this->description       = isset( $remote_tool['description'] ) ? sanitize_text_field( $remote_tool['description'] ) : '';
 		$this->parameters_schema = isset( $remote_tool['inputSchema'] ) ? $remote_tool['inputSchema'] : array( 'type' => 'object' );
-		$this->app_config       = $app_config;
-		$this->app_label        = $app_label;
+		$this->app_config        = $app_config;
+		$this->app_label         = $app_label;
 
 		// Extract UI resource URI from tool metadata (SEP-1865).
 		$this->ui_resource_uri = '';

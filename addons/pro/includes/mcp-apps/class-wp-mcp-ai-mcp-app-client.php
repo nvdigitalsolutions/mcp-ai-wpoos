@@ -260,19 +260,19 @@ class WP_MCP_AI_MCP_App_Client {
 			return $result;
 		}
 
-		$server_info = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
+		$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
 		$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
 
 		$has_tools     = ! empty( $capabilities['tools'] );
 		$has_resources = ! empty( $capabilities['resources'] );
 
 		return array(
-			'success'      => true,
-			'server_info'  => $server_info,
-			'capabilities' => $capabilities,
-			'has_tools'    => $has_tools,
+			'success'       => true,
+			'server_info'   => $server_info,
+			'capabilities'  => $capabilities,
+			'has_tools'     => $has_tools,
 			'has_resources' => $has_resources,
-			'session_id'   => $this->session_id,
+			'session_id'    => $this->session_id,
 		);
 	}
 
