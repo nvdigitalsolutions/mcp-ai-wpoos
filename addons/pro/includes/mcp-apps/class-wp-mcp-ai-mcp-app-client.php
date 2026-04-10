@@ -3,7 +3,7 @@
  * MCP App Client.
  *
  * Connects to remote MCP servers via Streamable HTTP transport,
- * discovers tools and UI resources per the MCP 2025-11-25 specification
+ * discovers tools and UI resources per the MCP 2025-03-26 specification
  * and MCP Apps extension (SEP-1865, 2026-01-26).
  *
  * @package WP_MCP_AI_Pro

@@ -269,7 +269,10 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		foreach ( $apps as $app ) {
 			$app_copy = $app;
 			if ( ! empty( $app_copy['token'] ) ) {
-				$app_copy['token'] = '••••••••' . substr( $app_copy['token'], -4 );
+				$token_length      = strlen( $app_copy['token'] );
+				$app_copy['token'] = ( $token_length > 8 )
+					? '••••••••' . substr( $app_copy['token'], -4 )
+					: '••••••••';
 			}
 			$safe_apps[] = $app_copy;
 		}

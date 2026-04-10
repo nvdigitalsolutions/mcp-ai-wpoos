@@ -414,7 +414,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		?>
 		<script type="text/javascript">
 		( function() {
-			var appIndex = <?php echo count( $this->get_current_apps_count() ); ?>;
+			var appIndex = <?php echo (int) count( $this->get_current_apps_count() ); ?>;
 			var maxApps = 10;
 
 			document.addEventListener( 'DOMContentLoaded', function() {
