@@ -91,6 +91,9 @@
 		/** @type {boolean} Whether initializeAudioOutput has been monkey-patched. */
 		_audioOutputPatched: false,
 
+		/** @type {boolean} Whether destination channel properties have been permanently patched. */
+		_destinationChannelsPatched: false,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -340,6 +343,10 @@
 				if ( ! audioCtx ) {
 					return;
 				}
+
+				// Ensure the destination channel patch is in place before
+				// tryConnectAnalyser can trigger Eh() via the proxy path.
+				this._patchDestinationChannels( audioCtx );
 
 				this.strudelAnalyser = audioCtx.createAnalyser();
 				this.strudelAnalyser.fftSize = 2048;
@@ -677,9 +684,140 @@
 				if ( ctx && ctx.state === 'suspended' ) {
 					ctx.resume();
 				}
+
+				// Permanently patch the real AudioDestinationNode's channel
+				// properties when maxChannelCount is 0 (some platforms/headless).
+				// This MUST happen before any strudel code can call Eh()
+				// because strudel's internal wh() calls Eh() directly via
+				// lexical scope, completely bypassing our monkey-patch on
+				// strudel.initializeAudioOutput.
+				this._patchDestinationChannels( ctx );
 			} catch ( _e ) {
 				// Non-critical — initAudioOnFirstClick will handle this.
 			}
+		},
+
+		/**
+		 * Permanently patch AudioDestinationNode channel properties.
+		 *
+		 * Superdough's Eh() (initializeAudioOutput) does:
+		 *
+		 *   const t = ctx.destination.maxChannelCount;
+		 *   ctx.destination.channelCount = t;
+		 *
+		 * When maxChannelCount is 0 (no audio hardware enumerated, headless
+		 * environments, or certain browser/OS combos), this throws:
+		 *
+		 *   "The channel count provided (0) is outside the range [1, 32]."
+		 *
+		 * The monkey-patch on strudel.initializeAudioOutput (installed during
+		 * init) only protects calls through the exported reference.  Strudel's
+		 * internal wh() function calls Eh() directly via its lexical closure,
+		 * bypassing the monkey-patch entirely.
+		 *
+		 * This method permanently overrides maxChannelCount and channelCount
+		 * on the AudioDestinationNode instance so that ALL calls to Eh() —
+		 * whether through our wrapper or directly from internal code — see
+		 * valid channel values and never throw.
+		 *
+		 * Safe to call multiple times (idempotent via _destinationChannelsPatched).
+		 *
+		 * @param {AudioContext} ctx The Strudel AudioContext.
+		 */
+		_patchDestinationChannels: function ( ctx ) {
+			if ( this._destinationChannelsPatched || ! ctx || ! ctx.destination ) {
+				return;
+			}
+
+			const dest = ctx.destination;
+			const maxCh = dest.maxChannelCount;
+
+			// Only patch when maxChannelCount is 0 or invalid — the common
+			// case on systems with working audio hardware needs no patching.
+			if ( typeof maxCh === 'number' && maxCh >= 1 ) {
+				this._destinationChannelsPatched = true;
+				return;
+			}
+
+			const safeCh = Math.max( dest.channelCount || 2, 2 );
+
+			// 1. Override maxChannelCount (read-only IDL attribute) with a
+			//    safe value so Eh() reads ≥ 2 instead of 0.
+			try {
+				Object.defineProperty( dest, 'maxChannelCount', {
+					value: safeCh,
+					writable: false,
+					enumerable: true,
+					configurable: true,
+				} );
+			} catch ( _e ) {
+				// Fallback: accessor descriptor.
+				try {
+					Object.defineProperty( dest, 'maxChannelCount', {
+						get: function () {
+							return safeCh;
+						},
+						configurable: true,
+					} );
+				} catch ( _e2 ) {
+					// Cannot override — the _patchInitializeAudioOutput wrapper
+					// is the last line of defence.
+				}
+			}
+
+			// 2. Override channelCount setter to clamp values into [1, 32]
+			//    and silently swallow errors from the native setter (which
+			//    may enforce channelCount ≤ internal maxChannelCount = 0).
+			try {
+				let desc = null;
+				let p = dest;
+				while ( ( p = Object.getPrototypeOf( p ) ) ) {
+					desc = Object.getOwnPropertyDescriptor( p, 'channelCount' );
+					if ( desc ) {
+						break;
+					}
+				}
+
+				if ( desc && desc.set ) {
+					const nativeSetter = desc.set;
+					const nativeGetter = desc.get || null;
+					let fallbackCount = safeCh;
+
+					Object.defineProperty( dest, 'channelCount', {
+						set: function ( v ) {
+							const clamped = Math.min( Math.max( ( typeof v === 'number' && v > 0 ) ? v : safeCh, 1 ), 32 );
+							try {
+								nativeSetter.call( dest, clamped );
+								fallbackCount = clamped;
+							} catch ( _e ) {
+								// Native setter rejected the value (internal
+								// maxChannelCount is still 0).  Store the
+								// desired value so the getter returns it and
+								// downstream code (ChannelMergerNode inputs)
+								// sees a sensible number.
+								fallbackCount = clamped;
+							}
+						},
+						get: nativeGetter
+							? function () {
+								try {
+									const v = nativeGetter.call( dest );
+									return ( typeof v === 'number' && v >= 1 ) ? v : fallbackCount;
+								} catch ( _e ) {
+									return fallbackCount;
+								}
+							}
+							: function () {
+								return fallbackCount;
+							},
+						configurable: true,
+					} );
+				}
+			} catch ( _e ) {
+				// Cannot patch setter — fall through.
+			}
+
+			this._destinationChannelsPatched = true;
 		},
 
 		/**
