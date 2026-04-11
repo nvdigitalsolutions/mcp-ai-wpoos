@@ -1199,7 +1199,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		}
 
 		echo '<div class="wp-mcp-ai-chat-widget__interface">';
-		echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode() output is controlled by the shortcode callback and is not raw user input.
+		echo wp_kses_post( do_shortcode( $shortcode ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
 		echo '</div>';
 
 		echo '</div>';

@@ -255,6 +255,6 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 		return array(
 			'read-only',            // Only reads data, does not modify state.
 			'requires-capability',  // Requires user capabilities.
+			'external-api',         // Calls Google Cloud Vision API.
 		);
 	}
-}
