@@ -2,7 +2,7 @@
 /**
  * Tool Presets Helper - Updated 2026
  *
- * Comprehensive tool selection presets covering 850+ tools organized by
+ * Comprehensive tool selection presets covering 870+ tools organized by
  * use case and profession type. Includes DeepSeek V4 agent coordination tools,
  * quiz management, media templates, music production, fantasy sports, webchat,
  * health vitals management, Shopify, registration management, appointment
@@ -27,7 +27,7 @@
  * @updated 2026-04-11 - Added CRE Debt & Securitization preset (58 tools), expanded education
  *   preset with 19 additional ECA management tools, added 8 missing financial planner tools,
  *   added research_blog_post, bulk_enroll_students, get_student_participation_summary,
- *   vehicle tools to relevant presets. Total preset tool coverage now 850+.
+ *   vehicle tools to relevant presets. Total preset tool coverage now 870+.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	/**
 	 * Get the tool presets configuration.
 	 *
-	 * Updated 2026-04-11 to include all 850+ current tools organized by:
+	 * Updated 2026-04-11 to include all 870+ current tools organized by:
 	 * - Core functionality (AI/ML, Media, Content, etc.)
 	 * - Profession categories (Healthcare, Legal, Education, etc.)
 	 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
