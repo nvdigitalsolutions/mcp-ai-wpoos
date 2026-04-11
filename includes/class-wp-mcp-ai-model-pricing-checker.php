@@ -228,9 +228,9 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		// Verify nonce.
 		check_ajax_referer( 'wp_mcp_ai_dismiss_price_notice', 'nonce' );
 
-		// Check if user is logged in.
-		if ( ! is_user_logged_in() ) {
-			wp_send_json_error( array( 'message' => __( 'You must be logged in to dismiss notices.', 'mcp-ai-wpoos' ) ) );
+		// Check capabilities — only administrators see pricing notices.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 			return;
 		}
 

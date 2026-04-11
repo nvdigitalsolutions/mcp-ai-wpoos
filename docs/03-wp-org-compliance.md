@@ -1,6 +1,6 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Document version:** 2.0 — 2026-04-09  
+**Document version:** 3.0 — 2026-04-11  
 **Plugin version:** 1.1.7
 
 This document records every issue raised by the WordPress.org plugin directory automated
@@ -148,6 +148,103 @@ directory, temp directories, or standard output streams.
 
 ---
 
+## R2-4. Additional findings from full code review (2026-04-11)
+
+A complete code review of the base plugin (`includes/` directory) was performed to proactively
+identify and fix issues before re-submission. The following items were found and resolved.
+
+### R2-4a. Unescaped `do_shortcode()` output in AJAX response
+
+**File:** `includes/class-wp-mcp-ai-professional-selector-shortcode.php`
+
+The `do_shortcode()` output was sent via `wp_send_json_success()` without server-side
+sanitisation. The client inserts this HTML via `.html()`, making unescaped output a potential
+XSS vector.
+
+| File | Line | Change |
+|------|------|--------|
+| `class-wp-mcp-ai-professional-selector-shortcode.php` | 582 | `'html' => $html` → `'html' => wp_kses_post( $html )` |
+
+All other `do_shortcode()` calls in the base plugin were verified as properly escaped
+(`wp_kses_post()`, `wp_strip_all_tags()`).
+
+### R2-4b. Missing `get_capability_flags()` on tools with external HTTP calls
+
+Two base tools made external HTTP requests but had no `get_capability_flags()` method, meaning
+they were not declared as `'external-api'`:
+
+| Tool file | External service | Change |
+|-----------|-----------------|--------|
+| `class-wp-mcp-ai-tool-2fa-setup-assistant.php` | `api.qrserver.com` (QR code generation) | Added `get_capability_flags()` returning `'external-api'`, `'state-changing'`, `'requires-capability'` |
+| `class-wp-mcp-ai-tool-responsive-image-validator.php` | User-provided URLs via `wp_remote_get()` | Added `get_capability_flags()` returning `'read-only'`, `'external-api'`, `'requires-capability'` |
+
+### R2-4c. `trigger-all-import` capability flag correction
+
+The WP All Import trigger tool uses `wp_remote_get( home_url() )` which is an HTTP loopback
+request. While the compliance doc previously classified this as `'local-only'`, the automated
+reviewer treats any `wp_remote_*` call as an external request.
+
+| File | Change |
+|------|--------|
+| `class-wp-mcp-ai-tool-trigger-all-import.php` | `'local-only'` → `'external-api'` in `get_capability_flags()` |
+
+### R2-4d. Undocumented external services in readme.txt
+
+Two services used by base tools were not listed in the `== External Services ==` section:
+
+| Service | Tool | Addition |
+|---------|------|----------|
+| **Crawl4AI** (self-hosted/configurable endpoint) | `run_crawl4ai_job`, `crawl4ai_price_lookup` | Added as service #44 with URL, data sent, when used, terms (Apache 2.0), and privacy note |
+| **Varnish Cache** (self-hosted infrastructure) | `purge_varnish_cache` | Added as service #45 with URL, data sent, when used, terms (BSD-2-Clause), and privacy note |
+
+Both are self-hosted by default (no data leaves the user's server), but WordPress.org requires
+all external HTTP calls to be documented regardless.
+
+### R2-4e. AJAX dismiss handlers missing `current_user_can()` capability check
+
+Two AJAX handlers that dismiss admin notices verified nonces but did not check
+`current_user_can()`. While these handlers only modify the calling user's own meta
+(harmless in practice), WordPress.org reviewers require explicit capability checks on
+all state-changing AJAX handlers.
+
+| File | Handler | Change |
+|------|---------|--------|
+| `includes/bootstrap/hooks.php` | `wp_mcp_ai_dismiss_directory_notice_ajax()` | Added `current_user_can( 'manage_options' )` check before `update_user_meta()` |
+| `includes/class-wp-mcp-ai-model-pricing-checker.php` | `dismiss_price_notice()` | Replaced `is_user_logged_in()` with `current_user_can( 'manage_options' )` — only admins see pricing notices |
+
+### R2-4f. Unsanitised `$_POST` iteration in settings diagnostic logging
+
+`includes/admin/sections/abstract-wp-mcp-ai-settings-section.php` iterated raw `$_POST`
+keys and values when logging subtab diagnostics. While output went only to `error_log()`
+via `wp_json_encode()`, raw superglobal access is flagged by automated reviewers.
+
+| File | Line | Change |
+|------|------|--------|
+| `abstract-wp-mcp-ai-settings-section.php` | 201–204 | Added `sanitize_key()` on `$key` and `sanitize_text_field( wp_unslash() )` on `$value` |
+
+### R2-4g. Full code review — verified clean areas
+
+The following areas were audited and confirmed clean (no issues found):
+
+| Area | Result |
+|------|--------|
+| `set_time_limit(0)` | ✅ No unbounded calls — all use calculated/bounded values |
+| User-facing "Powered by" attribution | ✅ None found — all mentions are admin-only |
+| File writes to plugin directory | ✅ All writes target `wp_upload_dir()`, temp dirs, or stdout |
+| `register_setting()` sanitisation | ✅ All have sanitise callbacks |
+| `eval()` / dangerous functions | ✅ None found |
+| AJAX nonce verification | ✅ All handlers verify nonces |
+| `unserialize()` | ✅ None found |
+| `file_get_contents()` with URLs (SSRF) | ✅ All calls read local files only |
+| Open redirects | ✅ All redirects use `wp_safe_redirect()` with safe targets |
+| REST API `permission_callback` | ✅ All routes have callbacks; public endpoints are protocol-required (A2A agent-card, CORS preflight) |
+| Direct DB queries without `prepare()` | ✅ ~26 unprepared queries use only hardcoded table names/constants — no user input; no SQL injection risk |
+| `$_POST` / `$_GET` / `$_REQUEST` sanitisation | ✅ All superglobal accesses use `sanitize_text_field()`, `sanitize_key()`, `absint()`, or `wp_unslash()` |
+| `$_COOKIE` iteration | ✅ Cookie forwarding in JetFormBuilder handlers uses `sanitize_key()` + `sanitize_text_field( wp_unslash() )` |
+| `$_SERVER` headers | ✅ `HTTP_CLIENT_IP` already sanitised with `sanitize_text_field( wp_unslash() )` |
+
+---
+
 ## R2 — Summary checklist
 
 - [x] Two broken URLs in readme.txt corrected (Trade.gov, Mailjet)
@@ -157,6 +254,13 @@ directory, temp directories, or standard output streams.
 - [x] CLI assistant export restricted to plugin-specific uploads subdirectory
 - [x] sync-docs file write to plugin directories removed
 - [x] Full audit of all file write operations — all write to uploads/temp/stdout
+- [x] `do_shortcode()` output in AJAX response wrapped in `wp_kses_post()` (R2-4a)
+- [x] Two tools missing `get_capability_flags()` with `'external-api'` — added (R2-4b)
+- [x] `trigger-all-import` capability flag corrected to `'external-api'` (R2-4c)
+- [x] Crawl4AI and Varnish added to readme.txt External Services section (R2-4d)
+- [x] Two AJAX dismiss handlers hardened with `current_user_can( 'manage_options' )` (R2-4e)
+- [x] Unsanitised `$_POST` iteration in settings diagnostic logging sanitised (R2-4f)
+- [x] Full code review verified: no `set_time_limit(0)`, no forced attribution, no `eval()`, no SSRF, no open redirects, no `unserialize()`, all REST routes have permission callbacks, all DB queries safe, all superglobals sanitised (R2-4g)
 
 ---
 ---

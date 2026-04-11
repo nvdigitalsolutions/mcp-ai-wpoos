@@ -992,6 +992,22 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://goqr.me/api/
 * **Privacy Policy:** https://goqr.me/privacy-safety-security/
 
+**44. Crawl4AI (Self-Hosted or Configurable Endpoint)**
+* **Purpose:** Web page crawling and content extraction for AI context ingestion and price lookup
+* **Data Sent:** Target URLs to crawl, crawl configuration parameters (extraction strategy, chunking, CSS selectors); site URL included in User-Agent header
+* **When:** When the `run_crawl4ai_job` or `crawl4ai_price_lookup` tools are used and a Crawl4AI endpoint is configured
+* **Service URL:** Configurable via Settings → NV oOS → Crawl4AI Base URL (no default — must be explicitly configured by the administrator); typically self-hosted (e.g., http://localhost:11235)
+* **Terms of Service:** https://github.com/unclecode/crawl4ai/blob/main/LICENSE (Apache 2.0)
+* **Privacy Policy:** N/A — self-hosted by default; if using a third-party hosted instance, consult that provider's privacy policy
+
+**45. Varnish Cache Server (Self-Hosted Infrastructure)**
+* **Purpose:** HTTP cache purging via PURGE requests to a Varnish reverse-proxy server
+* **Data Sent:** HTTP PURGE method request with the URL path to invalidate and an optional X-Purge-Regex header; no user data or credentials are transmitted
+* **When:** When the `purge_varnish_cache` tool is used
+* **Service URL:** Configurable via the `wp_mcp_ai_varnish_host` filter (default: 127.0.0.1:6081 — localhost)
+* **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
+* **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
+
 
 
 **What is sent to external services:**
