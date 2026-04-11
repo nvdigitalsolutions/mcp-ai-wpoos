@@ -3,7 +3,7 @@
 **Review ID:** AUTO nvdigital-open-operator-system-oos/vsamtani/25Dec25/T17 9Apr26/3.9.1RC1 (P0TDX269399HGN)
 **Date:** 2026-04-09
 **Plugin Version:** 1.1.7
-**Last Updated:** 2026-04-11 (pre-submission compliance re-check against all 13 guidelines)
+**Last Updated:** 2026-04-11 (pre-submission compliance re-check against all 13 guidelines + additional security hardening)
 
 ---
 
@@ -290,7 +290,36 @@ All three block render files (`blocks/chat/render.php`, `blocks/chat-bubble/rend
 
 ---
 
-## Proactive Audit — Full Results
+## Issue 5: AJAX Dismiss Handlers Missing Capability Checks (April 11)
+
+**Guideline:** All state-changing AJAX handlers must verify both nonce and user capability before performing operations.
+
+**Finding:** Two AJAX handlers that dismiss admin notices verified nonces but did not check `current_user_can()`. While these handlers only modify the calling user's own meta (harmless in practice), WordPress.org reviewers require explicit capability checks on all state-changing AJAX handlers.
+
+**Fix Applied:**
+
+| File | Handler | Change |
+|------|---------|--------|
+| `includes/bootstrap/hooks.php` | `wp_mcp_ai_dismiss_directory_notice_ajax()` | Added `current_user_can( 'manage_options' )` check before `update_user_meta()` |
+| `includes/class-wp-mcp-ai-model-pricing-checker.php` | `dismiss_price_notice()` | Replaced `is_user_logged_in()` with `current_user_can( 'manage_options' )` — only administrators see pricing notices |
+
+**Status:** ✅ Fixed
+
+---
+
+## Issue 6: Unsanitised `$_POST` Iteration in Settings Diagnostic Logging (April 11)
+
+**Guideline:** All `$_POST`, `$_GET`, `$_REQUEST`, and `$_SERVER` superglobal accesses must be properly sanitised — even when used only in diagnostic logging.
+
+**Finding:** `includes/admin/sections/abstract-wp-mcp-ai-settings-section.php` iterated raw `$_POST` keys and values when logging subtab diagnostics. While the output went only to `error_log()` via `wp_json_encode()`, raw superglobal access is flagged by automated reviewers.
+
+**Fix Applied:**
+
+| File | Line | Change |
+|------|------|--------|
+| `includes/admin/sections/abstract-wp-mcp-ai-settings-section.php` | 201–204 | Added `sanitize_key()` on `$key` and `sanitize_text_field( wp_unslash() )` on `$value` in `$_POST` iteration loop |
+
+**Status:** ✅ Fixed
 
 Beyond the reviewer-flagged issues, the following compliance areas were proactively audited across the full base plugin:
 
@@ -305,6 +334,10 @@ Beyond the reviewer-flagged issues, the following compliance areas were proactiv
 | Nonce verification on AJAX handlers | ✅ All handlers verify nonces |
 | `$wpdb->prepare()` for all dynamic queries | ✅ All prepared |
 | Sanitization of `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER` | ✅ All sanitized |
+| `$_POST` / `$_GET` / `$_REQUEST` sanitisation | ✅ All superglobal accesses use `sanitize_text_field()`, `sanitize_key()`, `absint()`, or `wp_unslash()` |
+| `$_COOKIE` iteration | ✅ Cookie forwarding in JetFormBuilder handlers uses `sanitize_key()` + `sanitize_text_field( wp_unslash() )` |
+| `$_SERVER` headers | ✅ `HTTP_CLIENT_IP` already sanitised with `sanitize_text_field( wp_unslash() )` |
+| AJAX handler capability checks | ✅ All handlers verify `current_user_can()` (fixed in Issue 5) |
 | `set_time_limit(0)` | ✅ Not used; all bounded (300s or variable) |
 | File writes to plugin directory | ✅ None; all to uploads/temp/stdout |
 | `wp_deregister_script()` overrides | ✅ None |
@@ -343,4 +376,7 @@ Beyond the reviewer-flagged issues, the following compliance areas were proactiv
 - [x] Guideline 13 (Resources): N/A ✅
 - [x] do_shortcode() escaping: 7 instances fixed with wp_kses_post() ✅ Fixed
 - [x] Tool capability flags: 3 additional tools corrected to 'external-api' ✅ Fixed
+- [x] AJAX dismiss handlers hardened with `current_user_can( 'manage_options' )` ✅ Fixed
+- [x] Unsanitised `$_POST` iteration in settings diagnostic logging sanitised ✅ Fixed
+- [x] Expanded superglobal audit: `$_COOKIE` iteration, `$_SERVER` headers all properly sanitised ✅ Verified
 - [x] All previous April 9 fixes verified intact ✅
