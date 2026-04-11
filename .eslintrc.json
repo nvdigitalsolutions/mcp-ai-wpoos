@@ -22,13 +22,17 @@
 		"wpMcpAiAdmin": "readonly"
 	},
 	"rules": {
-		"no-console": "warn",
+		"no-console": "off",
 		"camelcase": [
 			"error",
 			{
 				"properties": "never",
 				"ignoreDestructuring": true,
-				"ignoreImports": true
+				"ignoreImports": true,
+				"ignoreGlobals": true,
+				"allow": [
+					"^WP_MCP_AI_"
+				]
 			}
 		],
 		"no-var": "error",
@@ -36,7 +40,8 @@
 		"no-unused-vars": [
 			"error",
 			{
-				"argsIgnorePattern": "^_"
+				"argsIgnorePattern": "^_",
+				"varsIgnorePattern": "^_"
 			}
 		]
 	},
@@ -48,10 +53,56 @@
 				"**/chat-bundle.js",
 				"**/orchestration/autonomous-orchestrator.js",
 				"**/orchestration/browser-circuit-breaker.js",
-				"**/orchestration/research-compiler.js"
+				"**/orchestration/research-compiler.js",
+				"**/sse-service.js"
 			],
 			"parserOptions": {
 				"sourceType": "module"
+			}
+		},
+		{
+			"files": [
+				"src/**/*.js",
+				"src/**/*.jsx"
+			],
+			"extends": [
+				"plugin:@wordpress/eslint-plugin/recommended"
+			],
+			"parserOptions": {
+				"ecmaVersion": 2020,
+				"sourceType": "module",
+				"ecmaFeatures": {
+					"jsx": true
+				}
+			},
+			"rules": {
+				"no-console": "off",
+				"camelcase": [
+					"error",
+					{
+						"properties": "never",
+						"ignoreDestructuring": true,
+						"ignoreImports": true,
+						"ignoreGlobals": true
+					}
+				],
+				"no-nested-ternary": "off",
+				"import/no-unresolved": "off",
+				"import/no-extraneous-dependencies": "off",
+				"import/named": "off",
+				"import/default": "off",
+				"@wordpress/no-unsafe-wp-apis": "off",
+				"@wordpress/i18n-no-variables": "off",
+				"@wordpress/i18n-ellipsis": "off",
+				"prettier/prettier": "off",
+				"jsdoc/require-param": "off",
+				"jsdoc/require-param-description": "off",
+				"jsdoc/require-returns-description": "off",
+				"jsdoc/no-undefined-types": "off",
+				"jsdoc/check-types": "off",
+				"jsdoc/check-param-names": "off",
+				"jsdoc/check-line-alignment": "off",
+				"jsdoc/empty-tags": "off"
 			}
 		}
 	]

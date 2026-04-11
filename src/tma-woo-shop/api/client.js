@@ -94,7 +94,7 @@ export async function executeTool( tool, args ) {
 	const res = await fetch( url, {
 		method: 'POST',
 		headers: buildHeaders(),
-		body: JSON.stringify( { tool, arguments: args } ),
+		body: JSON.stringify( { slug: tool, arguments: args } ),
 	} );
 	if ( ! res.ok ) {
 		throw new Error( `Tool "${ tool }" failed: HTTP ${ res.status }` );
@@ -106,18 +106,21 @@ export async function executeTool( tool, args ) {
 
 /**
  * Normalise the response shape from both local tools and remote_wp_connection.
- * Both return data inside `result.data` but the key name differs per action.
+ * The TMA controller wraps tool results in {success, result: {...}} while some
+ * legacy paths may use {data: {...}}.
  *
  * @param {any}    raw
  * @param {string} dataKey  e.g. 'products', 'orders', 'categories', 'product'
  * @return {any}
  */
 function extractData( raw, dataKey ) {
-	// Local tools wrap in raw.data.<key>; remote wraps in raw.data.<key> too
-	// but may also use raw.<key> directly.
+	// Controller returns {success, result: {...}} – check result first,
+	// then fall back to legacy data paths for backward compatibility.
 	return (
+		raw?.result?.[ dataKey ] ??
 		raw?.data?.[ dataKey ] ??
 		raw?.[ dataKey ] ??
+		raw?.result ??
 		raw?.data ??
 		null
 	);
@@ -146,10 +149,19 @@ export async function wooFetch( action, args = {} ) {
 
 	if ( source === 'remote' && connectionId ) {
 		// Route through the remote_wp_connection tool.
+		// Remote WC REST API uses `per_page`; callers may pass `limit` (the
+		// local tool convention).  Normalise so the remote tool always receives
+		// `per_page`.
+		const remoteArgs = { ...args };
+		if ( remoteArgs.limit && ! remoteArgs.per_page ) {
+			remoteArgs.per_page = remoteArgs.limit;
+		}
+		delete remoteArgs.limit;
+
 		const raw = await executeTool( 'remote_wp_connection', {
 			action,
 			connection_id: connectionId,
-			...args,
+			...remoteArgs,
 		} );
 
 		// remote_wp_connection returns { data: { products/orders/... } } or similar.
@@ -168,7 +180,7 @@ export async function wooFetch( action, args = {} ) {
 	switch ( action ) {
 		case 'get_wc_products': {
 			const raw = await executeTool( 'get_woo_products', {
-				limit:   args.limit ?? 20,
+				limit:   args.per_page ?? args.limit ?? 20,
 				search:  args.search ?? '',
 				category: args.category ?? '',
 				orderby: args.orderby ?? '',
@@ -204,7 +216,7 @@ export async function wooFetch( action, args = {} ) {
 		}
 		case 'get_wc_orders': {
 			const raw = await executeTool( 'get_woo_recent_orders', {
-				per_page: args.per_page ?? 10,
+				limit: args.per_page ?? args.limit ?? 10,
 			} );
 			return extractData( raw, 'orders' ) ?? [];
 		}

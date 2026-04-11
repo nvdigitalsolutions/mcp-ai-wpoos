@@ -46,8 +46,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-			$settings['enable_jetengine_cct']   = isset( $_POST['enable_jetengine_cct'] ) ? true : false;
-			$settings['enable_jetengine_tools'] = isset( $_POST['enable_jetengine_tools'] ) ? true : false;
+			$settings['enable_jetengine_cct']              = isset( $_POST['enable_jetengine_cct'] ) ? true : false;
+			$settings['enable_jetengine_tools']             = isset( $_POST['enable_jetengine_tools'] ) ? true : false;
+			$settings['jetengine_mcp_enabled']              = isset( $_POST['jetengine_mcp_enabled'] ) ? true : false;
+			$settings['jetengine_mcp_context_injection']    = isset( $_POST['jetengine_mcp_context_injection'] ) ? true : false;
+			$settings['jetengine_mcp_cache_ttl']            = isset( $_POST['jetengine_mcp_cache_ttl'] ) ? absint( $_POST['jetengine_mcp_cache_ttl'] ) : 300;
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -89,6 +92,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 			$settings         = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$cct_enabled      = isset( $settings['enable_jetengine_cct'] ) ? (bool) $settings['enable_jetengine_cct'] : true;
 			$tools_enabled    = isset( $settings['enable_jetengine_tools'] ) ? (bool) $settings['enable_jetengine_tools'] : true;
+			$mcp_enabled      = isset( $settings['jetengine_mcp_enabled'] ) ? (bool) $settings['jetengine_mcp_enabled'] : true;
+			$mcp_context      = isset( $settings['jetengine_mcp_context_injection'] ) ? (bool) $settings['jetengine_mcp_context_injection'] : false;
+			$mcp_cache_ttl    = isset( $settings['jetengine_mcp_cache_ttl'] ) ? absint( $settings['jetengine_mcp_cache_ttl'] ) : 300;
+
+			// Detect MCP server availability.
+			$has_mcp_server = false;
+			if ( class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+				$has_mcp_server = WP_MCP_AI_JetEngine_Compat::has_mcp_server();
+			}
 
 			?>
 			<div class="wrap">
@@ -188,6 +200,109 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 								</tr>
 							</tbody>
 						</table>
+
+						<h2><?php esc_html_e( 'MCP Server Integration', 'mcp-ai-wpoos' ); ?></h2>
+
+						<div style="background: <?php echo esc_attr( $has_mcp_server ? '#d5f0db' : '#f0f6fc' ); ?>; border-left: 4px solid <?php echo esc_attr( $has_mcp_server ? '#0a5f1a' : '#2271b1' ); ?>; padding: 1.5rem; margin: 1rem 0;">
+							<?php if ( $has_mcp_server ) : ?>
+								<h3 style="margin-top: 0; color: #0a5f1a;">✓ <?php esc_html_e( 'JetEngine MCP Server Available', 'mcp-ai-wpoos' ); ?></h3>
+								<p>
+									<?php esc_html_e( 'JetEngine 3.8+ MCP Server detected. Native MCP tools, resources, and prompts are available via JSON-RPC 2.0 protocol.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<p><strong><?php esc_html_e( 'Endpoint:', 'mcp-ai-wpoos' ); ?></strong> <code><?php echo esc_url( rest_url( 'jet-engine/v1/mcp' ) ); ?></code></p>
+							<?php else : ?>
+								<h3 style="margin-top: 0; color: #2271b1;"><?php esc_html_e( 'MCP Server Not Available', 'mcp-ai-wpoos' ); ?></h3>
+								<p>
+									<?php esc_html_e( 'JetEngine MCP Server requires JetEngine 3.8+. Upgrade JetEngine to unlock native MCP tools for AI-powered site structure management.', 'mcp-ai-wpoos' ); ?>
+								</p>
+							<?php endif; ?>
+						</div>
+
+						<table class="form-table">
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Enable MCP Integration', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="jetengine_mcp_enabled" value="1" <?php checked( $mcp_enabled ); ?> <?php disabled( ! $has_mcp_server ); ?> />
+										<?php esc_html_e( 'Use JetEngine MCP Server for tool dispatch (recommended for 3.8+)', 'mcp-ai-wpoos' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'When enabled, operations are routed through the native MCP server instead of direct REST API calls. Falls back gracefully if MCP is unavailable.', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'AI Context Injection', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="jetengine_mcp_context_injection" value="1" <?php checked( $mcp_context ); ?> <?php disabled( ! $has_mcp_server ); ?> />
+										<?php esc_html_e( 'Auto-inject JetEngine site context into AI system prompts', 'mcp-ai-wpoos' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Automatically includes post types, taxonomies, and relations in AI assistant context for better grounding.', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Cache TTL (seconds)', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<input type="number" name="jetengine_mcp_cache_ttl" value="<?php echo esc_attr( $mcp_cache_ttl ); ?>" min="60" max="3600" class="small-text" <?php disabled( ! $has_mcp_server ); ?> />
+									<p class="description">
+										<?php esc_html_e( 'How long to cache MCP tool/resource discovery responses. Default: 300 seconds (5 minutes).', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</td>
+							</tr>
+						</table>
+
+						<?php if ( $has_mcp_server ) : ?>
+							<h3><?php esc_html_e( 'Available MCP Tools', 'mcp-ai-wpoos' ); ?></h3>
+							<table class="widefat" style="margin-top: 0.5rem;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Source', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td><code>jetengine_mcp</code></td>
+										<td><?php esc_html_e( 'MCP Bridge — discover and call JetEngine MCP tools', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_create_post_type</code></td>
+										<td><?php esc_html_e( 'Create custom post types via MCP', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_create_taxonomy</code></td>
+										<td><?php esc_html_e( 'Create custom taxonomies via MCP', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_create_meta_field</code></td>
+										<td><?php esc_html_e( 'Create meta fields via MCP', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_manage_relations</code></td>
+										<td><?php esc_html_e( 'List and manage JetEngine relations', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_site_context</code></td>
+										<td><?php esc_html_e( 'Get site structure overview for AI grounding', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+									<tr>
+										<td><code>jetengine_prompts</code></td>
+										<td><?php esc_html_e( 'Discover and render JetEngine prompt templates', 'mcp-ai-wpoos' ); ?></td>
+										<td><span style="color: #2271b1;">MCP 3.8+</span></td>
+									</tr>
+								</tbody>
+							</table>
+						<?php endif; ?>
 
 						<?php submit_button( __( 'Save JetEngine Settings', 'mcp-ai-wpoos' ) ); ?>
 					</form>

@@ -5,7 +5,7 @@
 
 ## Overview
 
-NVIDIA NIM (NVIDIA Inference Microservices) provides access to optimized AI models via NVIDIA's cloud inference platform. The plugin supports 40+ models including Meta Llama, Mistral, NVIDIA Nemotron, Google Gemma, Qwen, DeepSeek, and IBM Granite families.
+NVIDIA NIM (NVIDIA Inference Microservices) provides access to optimized AI models via NVIDIA's cloud inference platform. The plugin supports 40+ models including Meta Llama, Mistral, NVIDIA Nemotron, Google Gemma (including Gemma 4 multimodal), Qwen, DeepSeek, and IBM Granite families.
 
 NVIDIA NIM uses an OpenAI-compatible API, making it a drop-in alternative for chat completions.
 
@@ -55,6 +55,8 @@ NVIDIA NIM provides access to 40+ optimized models. Popular choices include:
 | `meta/llama-3.1-8b-instruct` | 128K | Fast, cost-effective |
 | `nvidia/nemotron-70b-instruct` | 32K | NVIDIA-optimized reasoning |
 | `mistralai/mistral-large-2-instruct` | 128K | Multilingual, code |
+| `google/gemma-4-31b-it` | 256K | Multimodal, open-source (Apache 2.0) |
+| `google/gemma-4-26b-it` | 256K | Efficient MoE, multimodal |
 | `google/gemma-3-27b-it` | 128K | Efficient, open-source |
 | `qwen/qwen3-235b-a22b` | 131K | Large MoE model |
 | `deepseek-ai/deepseek-r1` | 128K | Reasoning, math |

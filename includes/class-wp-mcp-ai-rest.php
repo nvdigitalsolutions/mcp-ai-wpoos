@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controlle
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -426,6 +427,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate A2A protocol routes to A2A Controller.
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			if ( ! empty( $settings['enable_a2a_server'] ) ) {
+				$a2a_controller = new WP_MCP_AI_REST_A2A_Controller( $this, $this->authenticator, $this->validator );
+				$a2a_controller->register_routes();
+			}
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 
@@ -3153,10 +3161,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Extend PHP execution time for the duration of the SSE stream.
 			// The default max_execution_time (often 30 s) is too short for embedded LLM
 			// inference (which can take 60–120 s) and long agentic loops.
-			// set_time_limit(0) removes the limit; ignore_user_abort(true) keeps PHP alive
-			// even if nginx closes the upstream connection (fastcgi_read_timeout).
+			// A bounded 300 s (5 min) limit keeps streams alive for long agentic loops
+			// without removing the safety net entirely.  ignore_user_abort(true) keeps PHP alive even if nginx closes the upstream connection.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
 			}
 			if ( function_exists( 'ignore_user_abort' ) ) {
 				ignore_user_abort( true );
@@ -4658,12 +4666,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$auth_context = $this->get_auth_context();
 			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
+			$is_guest     = ! empty( $auth_context['is_guest'] );
 
 			$context = array(
 				'user_id'          => $user_id,
 				'assistant_id'     => $assistant_id,
 				'request'          => $request,
 				'assistant_config' => $assistant_config,
+				'guest_request'    => $is_guest,
 			);
 
 			if ( ! empty( $auth_context['token_authenticated'] ) ) {
@@ -4675,7 +4685,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) ) {
+			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) && ! $is_guest ) {
 				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 			}
 
@@ -9451,11 +9461,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// in their completion responses instead of generating a new one.
 			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
 
+			// Determine guest status for tool permission bypass.
+			// Guest requests come via guest tokens (auth_context) or anonymous users on public assistants.
+			$auth_context  = $this->get_auth_context();
+			$is_guest      = ! empty( $auth_context['is_guest'] );
+			$required_cap  = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
+			if ( ! $is_guest && 0 === $user_id && 'public' === $required_cap ) {
+				$is_guest = true;
+			}
+
 			$context = array(
 				'user_id'               => $user_id,
 				'assistant_id'          => $assistant_id,
 				'request'               => $request,
 				'assistant_config'      => $assistant_config,
+				'guest_request'         => $is_guest,
 				'agentic_loop'          => true,
 				'iteration'             => $iteration,
 				'max_iterations'        => $max_iterations,

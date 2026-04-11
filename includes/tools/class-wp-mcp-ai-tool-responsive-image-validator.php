@@ -851,4 +851,15 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	public function has_privacy_data() {
 		return false;
 	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',           // Only reads data, does not modify state.
+			'external-api',        // Fetches user-provided URLs via wp_remote_get().
+			'requires-capability', // Requires user capabilities.
+		);
+	}
 }

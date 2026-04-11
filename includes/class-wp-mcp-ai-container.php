@@ -679,6 +679,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'section.a2a',
+			function () {
+				return new WP_MCP_AI_Section_A2A();
+			}
+		);
+
 		// Performance section is only available with Pro addon.
 		$this->singleton(
 			'section.performance',

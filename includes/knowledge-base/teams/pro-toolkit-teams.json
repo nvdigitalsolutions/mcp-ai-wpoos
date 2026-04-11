@@ -1,0 +1,297 @@
+{
+  "teams": [
+    {
+      "title": "Wealth Management Advisory Team",
+      "slug": "wealth_management_advisory_team",
+      "description": "Comprehensive financial advisory team covering investments, retirement, and tax strategy.",
+      "members": [
+        "wealth_management_advisor",
+        "pro_investment_advisor",
+        "retirement_planning_specialist",
+        "pro_tax_strategy_advisor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Home Buying & Mortgage Team",
+      "slug": "home_buying_mortgage_team",
+      "description": "Mortgage analysis and financial planning for homebuyers.",
+      "members": [
+        "mortgage_lending_specialist",
+        "personal_financial_planner"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Digital Media Production Team",
+      "slug": "digital_media_production_team",
+      "description": "Full-stack visual content creation from image to video with brand consistency.",
+      "members": [
+        "digital_image_producer",
+        "pro_video_production_specialist",
+        "brand_visual_designer",
+        "digital_asset_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.7,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel workflow for simultaneous visual content production across formats",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "brand_visual_designer",
+            "task": "Establish brand guidelines, color palette, and visual direction",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "digital_image_producer",
+            "task": "Produce image assets aligned with brand direction",
+            "dependencies": [1]
+          },
+          {
+            "step": 2,
+            "agent": "pro_video_production_specialist",
+            "task": "Produce video content aligned with brand direction",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "digital_asset_manager",
+            "task": "Organize, tag, and distribute final assets",
+            "dependencies": [2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Social Media & Content Team",
+      "slug": "social_media_content_team",
+      "description": "Cross-channel social media management with content creation support.",
+      "members": [
+        "pro_social_media_strategist",
+        "pro_content_marketing_manager",
+        "digital_image_producer",
+        "pro_video_production_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.7,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel workflow for coordinated content strategy and production",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "pro_social_media_strategist",
+            "task": "Define channel strategy, audience targeting, and content calendar",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "pro_content_marketing_manager",
+            "task": "Develop content themes, messaging, and editorial plan",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "digital_image_producer",
+            "task": "Create visual assets for social media campaigns",
+            "dependencies": [1]
+          },
+          {
+            "step": 2,
+            "agent": "pro_video_production_specialist",
+            "task": "Produce video content for social media channels",
+            "dependencies": [1]
+          }
+        ]
+      }
+    },
+    {
+      "title": "eCommerce Growth Team",
+      "slug": "ecommerce_growth_team",
+      "description": "End-to-end eCommerce management from operations to analytics.",
+      "members": [
+        "ecommerce_operations_manager",
+        "business_analytics_specialist",
+        "crm_sales_manager",
+        "inventory_supply_chain_specialist",
+        "customer_experience_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.3,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel workflow for simultaneous eCommerce optimization across departments",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "business_analytics_specialist",
+            "task": "Analyze sales data, traffic patterns, and conversion metrics",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "inventory_supply_chain_specialist",
+            "task": "Monitor inventory levels and optimize supply chain",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "ecommerce_operations_manager",
+            "task": "Coordinate store operations based on analytics and inventory insights",
+            "dependencies": [1]
+          },
+          {
+            "step": 2,
+            "agent": "crm_sales_manager",
+            "task": "Optimize customer segments and sales pipelines",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "customer_experience_manager",
+            "task": "Refine customer journey and post-purchase experience",
+            "dependencies": [2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Revenue Operations Team",
+      "slug": "revenue_operations_team",
+      "description": "Data-driven revenue optimization across sales, marketing, and customer channels.",
+      "members": [
+        "revenue_operations_analyst",
+        "business_analytics_specialist",
+        "crm_sales_manager",
+        "ecommerce_operations_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Website Launch Team",
+      "slug": "website_launch_team",
+      "description": "Full website design and development from architecture to content.",
+      "members": [
+        "pro_website_builder",
+        "full_stack_site_architect",
+        "brand_visual_designer",
+        "pro_content_marketing_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.5,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential workflow for structured website design, build, and content launch",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "full_stack_site_architect",
+            "task": "Define site architecture, technology stack, and infrastructure",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "brand_visual_designer",
+            "task": "Create visual design system, layouts, and UI components",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "pro_website_builder",
+            "task": "Build and configure the website based on architecture and design",
+            "dependencies": [1, 2]
+          },
+          {
+            "step": 4,
+            "agent": "pro_content_marketing_manager",
+            "task": "Populate content, optimize SEO, and prepare for launch",
+            "dependencies": [3]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Global Product Registration Team",
+      "slug": "global_product_registration_team",
+      "description": "Multi-country product registration with multilingual documentation and compliance workflows.",
+      "members": [
+        "pro_regulatory_affairs_manager",
+        "regulatory_documentation_specialist",
+        "compliance_workflow_analyst",
+        "multilingual_content_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential workflow for multi-country regulatory registration and documentation",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "pro_regulatory_affairs_manager",
+            "task": "Assess regulatory requirements and define registration strategy per country",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "regulatory_documentation_specialist",
+            "task": "Prepare and compile required documentation packages",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "multilingual_content_specialist",
+            "task": "Translate and localize documentation for target markets",
+            "dependencies": [2]
+          },
+          {
+            "step": 4,
+            "agent": "compliance_workflow_analyst",
+            "task": "Validate compliance, audit workflows, and finalize submissions",
+            "dependencies": [1, 2, 3]
+          }
+        ]
+      }
+    },
+    {
+      "title": "DJ & Entertainment Team",
+      "slug": "dj_entertainment_team",
+      "description": "Event management combining DJ services with booking and document generation.",
+      "members": [
+        "dj_event_manager",
+        "appointment_scheduling_coordinator",
+        "document_production_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.6
+    },
+    {
+      "title": "AI Platform Development Team",
+      "slug": "ai_platform_development_team",
+      "description": "Custom AI tool development with full-stack capabilities and performance analytics.",
+      "members": [
+        "ai_tool_developer",
+        "full_stack_site_architect",
+        "business_analytics_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.3
+    }
+  ]
+}

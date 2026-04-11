@@ -158,8 +158,7 @@ class WP_MCP_AI_Admin_Test_Model {
 				// Render the professional selector shortcode.
 				if ( shortcode_exists( 'mcp_ai_professional_selector' ) ) {
 					// Enable all features for testing.
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is already escaped.
-					echo do_shortcode( '[mcp_ai_professional_selector show_temperature="true" enable_streaming="true" save_transcript="false" allow_sensitive_tools="true"]' );
+					echo wp_kses_post( do_shortcode( '[mcp_ai_professional_selector show_temperature="true" enable_streaming="true" save_transcript="false" allow_sensitive_tools="true"]' ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
 				} else {
 					?>
 					<div class="notice notice-error">

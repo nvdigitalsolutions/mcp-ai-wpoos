@@ -86,10 +86,10 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'limit'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of results to return for the search action (1–100). Default: 20.', 'mcp-ai-wpoos-pro' ),
-					'default'     => 20,
+					'description' => __( 'Maximum number of results to return for the search action (1–10). Default: 10.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 10,
 					'minimum'     => 1,
-					'maximum'     => 100,
+					'maximum'     => 10,
 				),
 				'upid'           => array(
 					'type'        => 'string',
@@ -158,11 +158,13 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array|WP_Error
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id  = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$is_guest = ! empty( $context['guest_request'] ) && ! empty( $context['assistant_id'] );
 
 		$required_capability = apply_filters( 'wp_mcp_ai_shopify_catalog_required_capability', 'read', $context );
 
-		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) {
+		// Allow guest users when the assistant is configured for public access.
+		if ( ! $is_guest && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
 			return new WP_Error( 'wp_mcp_ai_shopify_forbidden', __( 'You do not have permission to use the Shopify Catalog tool.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -248,7 +250,7 @@ class WP_MCP_AI_Pro_Tool_Shopify_Catalog implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_shopify_catalog_missing_query', __( 'query is required for the search action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$limit = isset( $arguments['limit'] ) ? max( 1, min( 100, absint( $arguments['limit'] ) ) ) : 20;
+		$limit = isset( $arguments['limit'] ) ? max( 1, min( 10, absint( $arguments['limit'] ) ) ) : 10;
 
 		$filters = $this->build_catalog_filters( $arguments );
 		if ( is_wp_error( $filters ) ) {

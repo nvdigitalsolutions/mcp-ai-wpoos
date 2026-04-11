@@ -643,7 +643,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$prompt .= "\n";
 		$prompt .= '    "name": "Brand Name",';
 		$prompt .= "\n";
-		$prompt .= '    "website": "https://brand.com" (if found)';
+		$prompt .= '    "website": "https://brand.com"';
 		$prompt .= "\n";
 		$prompt .= '  },';
 		$prompt .= "\n";
@@ -655,7 +655,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$prompt .= "\n";
 		$prompt .= '    "sku": "SKU-123",';
 		$prompt .= "\n";
-		$prompt .= '    "isbn": "978-1234567890" (if book)';
+		$prompt .= '    "isbn": "978-1234567890"';
 		$prompt .= "\n";
 		$prompt .= '  },';
 		$prompt .= "\n";
@@ -761,9 +761,9 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$prompt .= "\n";
 		$prompt .= '  "stock_status": "instock",';
 		$prompt .= "\n";
-		$prompt .= '  "availability_region": "US" or "Worldwide",';
+		$prompt .= '  "availability_region": "Worldwide",';
 		$prompt .= "\n";
-		$prompt .= '  "external_url": "https://external-site.com/product" (if external type),';
+		$prompt .= '  "external_url": "https://external-site.com/product",';
 		$prompt .= "\n";
 		$prompt .= '  "sources": [';
 		$prompt .= "\n";
@@ -830,7 +830,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$messages = array(
 			array(
 				'role'    => 'system',
-				'content' => 'You are a helpful AI assistant and e-commerce product researcher. You research products and gather comprehensive, accurate product information. Always respond with valid JSON matching the requested format. Use web search when available to ensure accuracy and get current pricing.',
+				'content' => 'You are a helpful AI assistant and e-commerce product researcher. You research products and gather comprehensive, accurate product information. Always respond with valid JSON only — no markdown code fences, no commentary, no text before or after the JSON object. Use web search when available to ensure accuracy and get current pricing.',
 			),
 			array(
 				'role'    => 'user',
@@ -846,13 +846,20 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Make the API call.
+		$options = array(
+			'model'       => $model,
+			'temperature' => 0.2, // Low temperature for factual, accurate content.
+			'max_tokens'  => 3000, // Allow for detailed product information.
+		);
+
+		// Request JSON mode for providers that support it.
+		if ( 'openai' === $provider ) {
+			$options['response_format'] = array( 'type' => 'json_object' );
+		}
+
 		$result = $client->create_chat_completion(
 			$messages,
-			array(
-				'model'       => $model,
-				'temperature' => 0.2, // Low temperature for factual, accurate content.
-				'max_tokens'  => 3000, // Allow for detailed product information.
-			)
+			$options
 		);
 
 		if ( is_wp_error( $result ) ) {
@@ -997,6 +1004,21 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		} else {
 			$json = $content;
 		}
+
+		// Trim whitespace.
+		$json = trim( $json );
+
+		// If the extracted string doesn't look like JSON, try to find a JSON object in it.
+		if ( '{' !== substr( $json, 0, 1 ) ) {
+			$start = strpos( $json, '{' );
+			$end   = strrpos( $json, '}' );
+			if ( false !== $start && false !== $end && $end > $start ) {
+				$json = substr( $json, $start, $end - $start + 1 );
+			}
+		}
+
+		// Remove trailing commas before closing braces/brackets (common AI mistake).
+		$json = preg_replace( '/,\s*([\]}])/s', '$1', $json );
 
 		// Parse JSON.
 		$data = json_decode( $json, true );

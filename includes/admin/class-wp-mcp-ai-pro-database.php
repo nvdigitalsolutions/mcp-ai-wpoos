@@ -202,11 +202,11 @@ class WP_MCP_AI_Pro_Database {
 	private function populate_initial_controls() {
 		global $wpdb;
 
-		$controls_table = $wpdb->prefix . 'mcp_ai_controls';
+		$controls_table = esc_sql( $wpdb->prefix . 'mcp_ai_controls' );
 
 		// Check if already populated.
-  // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Direct query required for custom plugin table DDL/schema operation; no WP API exists for this.
-		$count = $wpdb->get_var( "SELECT COUNT(*) FROM $controls_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query on custom plugin table with esc_sql()-escaped table name; no WP API for custom tables.
+		$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$controls_table}" );
 		if ( $count > 0 ) {
 			return;
 		}

@@ -66,9 +66,9 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			'in_footer'     => true,
 		),
 		'mathjs'    => array(
-			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/mathjs@12.3.0/lib/browser/math.js',
+			'cdn_url'       => 'https://cdn.jsdelivr.net/npm/mathjs@15.2.0/lib/browser/math.js',
 			'fallback_url'  => 'assets/vendor/mathjs/lib/browser/math.js',
-			'version'       => '12.3.0',
+			'version'       => '15.2.0',
 			'handle'        => 'mathjs',
 			'dependencies'  => array(),
 			'in_footer'     => true,

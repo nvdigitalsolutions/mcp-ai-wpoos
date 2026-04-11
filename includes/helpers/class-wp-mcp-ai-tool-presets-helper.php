@@ -2,13 +2,13 @@
 /**
  * Tool Presets Helper - Updated 2026
  *
- * Comprehensive tool selection presets covering 770+ tools organized by
+ * Comprehensive tool selection presets covering 870+ tools organized by
  * use case and profession type. Includes DeepSeek V4 agent coordination tools,
  * quiz management, media templates, music production, fantasy sports, webchat,
  * health vitals management, Shopify, registration management, appointment
  * scheduling, cloud storage, cross-platform messaging, Brevo email marketing,
- * Mailgun transactional email, listing image downloads, and more.
- * Clear All/Select All functionality included.
+ * Mailgun transactional email, listing image downloads, CRE debt & securitization,
+ * and more. Clear All/Select All functionality included.
  *
  * @package WP_MCP_AI
  * @since 1.9.0
@@ -19,10 +19,18 @@
  *   search, sales pipeline tools, health metrics logging, vitals import, MOH sync, social listening,
  *   competitor analysis, workflow CRUD, vault tools, and more across all presets.
  * @updated 2026-03-30 - Added 8 missing tools: Brevo email/contacts/stats, Mailgun email,
+ *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
+ * @updated 2026-04-04 - Enhanced agent workflow presets with industry-standard patterns:
+ *   supervisor, pipeline, swarm, hierarchical, and review/QA patterns. Added delegate_to_a2a_agent,
+ *   deep_research, context lifecycle, task dependency tools to existing presets.
+ *   Updated autonomous_orchestration with workflow rules and task dependencies.
+ * @updated 2026-04-11 - Added CRE Debt & Securitization preset (58 tools), expanded education
+ *   preset with 19 additional ECA management tools, added 8 missing financial planner tools,
+ *   added research_blog_post, bulk_enroll_students, get_student_participation_summary,
+ *   vehicle tools to relevant presets. Total preset tool coverage now 870+.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
- *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -40,13 +48,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	/**
 	 * Get the tool presets configuration.
 	 *
-	 * Updated 2026-03-16 to include all 760+ current tools organized by:
+	 * Updated 2026-04-11 to include all 870+ current tools organized by:
 	 * - Core functionality (AI/ML, Media, Content, etc.)
 	 * - Profession categories (Healthcare, Legal, Education, etc.)
 	 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
 	 * - Advanced tools (Math/Science, Research, Project Management)
 	 * - Agentic workflows (including agent coordination tools)
 	 * - Registration & Compliance Management
+	 * - CRE Debt & Securitization (CMBS, underwriting, originations, fund management)
 	 * - Full cross-platform messaging (Discord, Slack, Teams, Apple Messages, etc.)
 	 * - Shopify e-commerce, cloud storage, tool scaffolding, and more
 	 *
@@ -60,16 +69,28 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'agentic_workflow'          => array(
 				'name'        => __( '🤖 Agentic Workflow', 'mcp-ai-wpoos' ),
-				'description' => __( 'DeepSeek V4 multi-agent orchestration tools for team composition, delegation, memory management, and result aggregation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-agent orchestration tools for team composition, delegation, A2A communication, memory management, and result aggregation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// Agent coordination tools (DeepSeek V4).
+					// Agent coordination & delegation.
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
-					// Agent memory tools (Phase 4/5).
+					// Agent memory & context management.
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
+					'memory_audit_trail',
+					// Workflow execution & validation.
 					'execute_workflow',
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+					// Task planning & tracking.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
 					// Supporting tools for agentic operations.
 					'list_professions',
 					'get_profession',
@@ -78,10 +99,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_assistant',
 					'probe_chat',
 					'query_mesh_intelligent',
-					// Workflow validation & monitoring (NEW).
-					'check_workflow_health',
-					'validate_workflow',
-					'visualize_workflow_metrics',
+					'deep_research',
+					'web_search',
 				),
 			),
 
@@ -263,6 +282,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'web_search',
 					'web_search_validated',
 					'deep_research',
+					'research_blog_post',
 					'submit_document_prompt',
 					// Taxonomy management.
 					'create_term',
@@ -952,7 +972,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'assistant_management'      => array(
 				'name'        => __( '🤖 Assistant Management', 'mcp-ai-wpoos' ),
-				'description' => __( 'AI assistant creation, configuration, and management', 'mcp-ai-wpoos' ),
+				'description' => __( 'AI assistant creation, configuration, agent team management, and A2A delegation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_assistant',
 					'create_assistant_validated',
@@ -964,10 +984,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'save_profession',
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
 					'execute_workflow',
+					'validate_workflow',
+					'check_workflow_health',
 				),
 			),
 
@@ -1142,8 +1166,32 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_eca',
 					'list_ecas',
 					'enroll_student_eca',
+					'withdraw_student_eca',
 					'research_eca',
 					'sync_ecas_from_isams',
+					'sync_eca_enrollments_from_isams',
+					'sync_ecas_to_isams',
+					'sync_ecas_from_socs',
+					'import_ecas_csv',
+					'export_eca_data',
+					// ECA Attendance & Scheduling (Pro).
+					'mark_eca_attendance',
+					'get_eca_attendance_report',
+					'get_eca_timetable',
+					'set_eca_schedule',
+					'check_eca_conflicts',
+					'manage_eca_term',
+					'manage_eca_waitlist',
+					// ECA Notifications & Reports (Pro).
+					'send_eca_notification',
+					'configure_eca_notifications',
+					'send_eca_parent_report',
+					'generate_eca_participation_report',
+					'generate_eca_analytics',
+					'create_eca_workflow_rule',
+					// Student bulk operations (Pro).
+					'bulk_enroll_students',
+					'get_student_participation_summary',
 					// Task Management (Pro).
 					'create_task',
 					'update_task',
@@ -1216,6 +1264,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'cash_flow_analyzer',
 					'retirement_calculator',
 					'tax_estimator',
+					// Market Intelligence (Pro).
+					'financial_search',
+					'financial_news_aggregator',
+					'financial_report_generator',
+					'stock_data_fetcher',
+					'market_forecast_analyzer',
+					'market_sentiment_analyzer',
 					// Analytics.
 					'google_analytics_report',
 					'quickbooks_report',
@@ -2301,6 +2356,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_places',
 					// Analytics & Reporting.
 					'create_chart',
+					// Vehicle Estimates (Pro).
+					'vehicle_repair_estimate',
+					'vehicle_cleaning_estimate',
+					'vin_decode',
 					// Social Media & Marketing.
 					'post_facebook_instagram',
 					'post_google_business_update',
@@ -2387,14 +2446,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'autonomous_orchestration'  => array(
 				'name'        => __( '🎯 Autonomous Orchestration', 'mcp-ai-wpoos' ),
-				'description' => __( 'Task planning, autonomous sessions, health monitoring, and capacity management for continuous AI workflow loops', 'mcp-ai-wpoos' ),
+				'description' => __( 'Task planning, autonomous sessions, health monitoring, capacity management, and workflow rules for continuous AI workflow loops', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
 					'create_agent_team',
 					'delegate_to_agent',
+					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
 					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
 					// Core orchestration tools (Base plugin).
 					'create_task_plan',
 					'update_task_plan',
@@ -2405,6 +2467,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'analyze_loop_health',
 					'get_session_status',
 					'calculate_orchestration_capacity',
+					// Workflow execution & validation.
+					'execute_workflow',
+					'validate_workflow',
+					'check_workflow_health',
+					'visualize_workflow_metrics',
+					// Workflow rules (Pro).
+					'create_workflow_rule',
+					'update_workflow_rule',
+					'delete_workflow_rule',
+					'list_workflow_rules',
+					// Task dependencies (Pro).
+					'add_task_dependency',
+					'get_task_dependencies',
+					'remove_task_dependency',
 					// Template management (Pro addon).
 					'create_template',
 					'instantiate_template',
@@ -2428,11 +2504,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'task_planning'             => array(
 				'name'        => __( '📋 Task Planning', 'mcp-ai-wpoos' ),
-				'description' => __( 'Create and manage task plans with progress tracking', 'mcp-ai-wpoos' ),
+				'description' => __( 'Create and manage task plans with progress tracking and dependency management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_task_plan',
 					'update_task_plan',
 					'get_task_plan',
+					// Task dependency management.
+					'add_task_dependency',
+					'get_task_dependencies',
+					'remove_task_dependency',
+					'create_task',
+					'list_tasks',
+					'update_task',
+					'delete_task',
+					// Template management.
 					'create_template',
 					'instantiate_template',
 					'list_templates',
@@ -2441,9 +2526,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'research_automation'       => array(
 				'name'        => __( '🔍 Research Automation', 'mcp-ai-wpoos' ),
-				'description' => __( 'Multi-source research with aggregation, verification, and professional report generation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-source research with aggregation, verification, professional report generation, and crawling', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination and memory.
+					'create_agent_team',
+					'delegate_to_agent',
 					'store_agent_context',
 					'retrieve_agent_memory',
 					// Research enhancement.
@@ -2458,6 +2545,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'deep_research',
 					'search_content',
 					'semantic_content_search',
+					'run_crawl4ai_job',
+					'scrape_product',
 					// Data collection.
 					'search_drive',
 					'search_gmail',
@@ -2467,7 +2556,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'workflow_monitoring'       => array(
 				'name'        => __( '📊 Workflow Monitoring', 'mcp-ai-wpoos' ),
-				'description' => __( 'Monitor autonomous sessions, health status, workflow rules, and system capacity', 'mcp-ai-wpoos' ),
+				'description' => __( 'Monitor autonomous sessions, health status, workflow rules, capacity, and execution logs', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'manage_autonomous_session',
 					'get_session_status',
@@ -2475,6 +2564,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'calculate_orchestration_capacity',
 					'detect_completion_indicators',
 					'check_exit_conditions',
+					// Workflow validation.
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
 					// Workflow rules (Pro).
 					'create_workflow_rule',
 					'update_workflow_rule',
@@ -2482,6 +2575,168 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_workflow_rules',
 					'test_workflow_rule',
 					'get_workflow_execution_log',
+				),
+			),
+
+			// =================================================================.
+			// AGENT WORKFLOW PATTERNS (Industry Standard - 2026).
+			// Based on supervisor, pipeline, swarm, and hierarchical patterns.
+			// =================================================================.
+
+			'agent_supervisor'          => array(
+				'name'        => __( '👔 Supervisor Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Central supervisor agent assigns, tracks, and aggregates sub-agent work with quality control and escalation paths', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Supervisor coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Task management & tracking.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					// Session & health oversight.
+					'manage_autonomous_session',
+					'get_session_status',
+					'analyze_loop_health',
+					'check_exit_conditions',
+					'detect_completion_indicators',
+					// Quality control.
+					'validate_workflow',
+					'verify_information',
+					'validate_reasoning_chain',
+					// Agent memory for coordination state.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'prioritize_context',
+				),
+			),
+
+			'agent_pipeline'            => array(
+				'name'        => __( '🔗 Pipeline Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Sequential agent assembly line where each agent refines output from the previous step with stage validation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Pipeline orchestration.
+					'create_agent_team',
+					'delegate_to_agent',
+					'execute_workflow',
+					'aggregate_agent_results',
+					// Stage tracking & validation.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					'detect_completion_indicators',
+					'check_exit_conditions',
+					// Data transformation between stages.
+					'extract_structured_data',
+					'convert_html_to_markdown',
+					'store_agent_context',
+					'retrieve_agent_memory',
+					// Workflow health.
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+				),
+			),
+
+			'agent_swarm'               => array(
+				'name'        => __( '🐝 Swarm Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Autonomous parallel agents work independently and aggregate results for search, analysis, and simulation tasks', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Swarm coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Parallel data collection.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'run_crawl4ai_job',
+					'scrape_product',
+					// Result aggregation & analysis.
+					'aggregate_research_data',
+					'analyze_data_patterns',
+					'extract_structured_data',
+					'verify_information',
+					'generate_research_report',
+					// Shared context for swarm coordination.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					// Health & capacity.
+					'calculate_orchestration_capacity',
+					'analyze_loop_health',
+				),
+			),
+
+			'agent_hierarchical'        => array(
+				'name'        => __( '🏛️ Hierarchical Pattern', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-level manager-specialist agent relationships with escalation, delegation depth, and structured reporting', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Hierarchical team management.
+					'create_agent_team',
+					'delegate_to_agent',
+					'delegate_to_a2a_agent',
+					'aggregate_agent_results',
+					// Multi-level task planning.
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'add_task_dependency',
+					'get_task_dependencies',
+					// Workflow management at each level.
+					'execute_workflow',
+					'create_workflow_rule',
+					'update_workflow_rule',
+					'list_workflow_rules',
+					// Context passing between levels.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'manage_context_lifecycle',
+					'prioritize_context',
+					// Session monitoring across hierarchy.
+					'manage_autonomous_session',
+					'get_session_status',
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
+					'calculate_orchestration_capacity',
+					// Reporting up the chain.
+					'generate_research_report',
+				),
+			),
+
+			'agent_review_qa'           => array(
+				'name'        => __( '✅ Review & QA Agent', 'mcp-ai-wpoos' ),
+				'description' => __( 'Quality assurance and review agent pattern for output validation, compliance checking, and error correction', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Quality validation.
+					'validate_workflow',
+					'validate_reasoning_chain',
+					'verify_information',
+					'check_workflow_health',
+					// Review agent coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'aggregate_agent_results',
+					// Completion & exit criteria.
+					'detect_completion_indicators',
+					'check_exit_conditions',
+					'analyze_loop_health',
+					// Data analysis for QA.
+					'analyze_data_patterns',
+					'extract_structured_data',
+					'generate_research_report',
+					// Context for review state.
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'memory_audit_trail',
 				),
 			),
 
@@ -2550,6 +2805,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'tax_estimator',
 					'college_savings_calculator',
 					'insurance_needs_analyzer',
+					// Market & Investment Intelligence (Pro - 8 tools).
+					'financial_search',
+					'financial_news_aggregator',
+					'financial_report_generator',
+					'financial_logic_visualizer',
+					'stock_data_fetcher',
+					'investment_signal_tracker',
+					'market_forecast_analyzer',
+					'market_sentiment_analyzer',
 				),
 			),
 
@@ -2816,6 +3080,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'research_policy',
 					'research_eca',
 					'research_quiz_topic',
+					'research_blog_post',
 					// Data extraction.
 					'extract_structured_data',
 					'analyze_data_patterns',
@@ -3064,28 +3329,102 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			),
 
 			// =================================================================.
+			// CRE DEBT & SECURITIZATION PRESET
+			// =================================================================.
+
+			'cre_debt_securitization'   => array(
+				'name'        => __( '🏦 CRE Debt & Securitization', 'mcp-ai-wpoos' ),
+				'description' => __( 'Commercial real estate debt underwriting, CMBS securitization, loan origination, fund management, and asset surveillance tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// CRE Underwriting (14 tools).
+					'cre_debt_calculator',
+					'cre_loan_sizer',
+					'cre_noi_calculator',
+					'cre_dcf_modeler',
+					'cre_cap_rate_sensitivity',
+					'cre_debt_yield_analyzer',
+					'cre_rent_roll_analyzer',
+					'cre_amortization_scheduler',
+					'cre_leverage_return_analyzer',
+					'cre_stress_test_modeler',
+					'cre_property_valuation_engine',
+					'cre_operating_expense_benchmarker',
+					'cre_environmental_risk_scorer',
+					'cre_underwriting_memo_generator',
+					// CRE Originations (11 tools).
+					'cre_deal_screening_calculator',
+					'cre_loan_quote_generator',
+					'cre_deal_pipeline_manager',
+					'cre_borrower_profile_analyzer',
+					'cre_market_comp_analyzer',
+					'cre_term_sheet_comparator',
+					'cre_rate_lock_manager',
+					'cre_closing_checklist_manager',
+					'cre_execution_strategy_advisor',
+					'cre_broker_relationship_tracker',
+					'cre_origination_volume_tracker',
+					// CRE Asset Management (12 tools).
+					'cre_property_performance_tracker',
+					'cre_loan_surveillance_dashboard',
+					'cre_watchlist_manager',
+					'cre_lease_expiration_manager',
+					'cre_tenant_credit_analyzer',
+					'cre_property_budget_manager',
+					'cre_capex_reserve_planner',
+					'cre_hold_sell_analyzer',
+					'cre_asset_disposition_analyzer',
+					'cre_workout_scenario_modeler',
+					'cre_loan_modification_calculator',
+					'cre_servicing_fee_calculator',
+					// CMBS Securitization (10 tools).
+					'cmbs_deal_structurer',
+					'cmbs_pool_analyzer',
+					'cmbs_bond_cash_flow_modeler',
+					'cmbs_rating_agency_analyzer',
+					'cmbs_defeasance_calculator',
+					'cmbs_investor_reporting_generator',
+					'cmbs_maturity_risk_analyzer',
+					'cmbs_special_servicing_tracker',
+					'cmbs_surveillance_monitor',
+					'cre_clo_modeler',
+					// CRE Debt Fund & Portfolio (11 tools).
+					'cre_fund_portfolio_dashboard',
+					'cre_fund_return_calculator',
+					'cre_fund_capital_call_calculator',
+					'cre_fund_liquidity_analyzer',
+					'cre_fund_scenario_modeler',
+					'cre_lp_report_generator',
+					'cre_concentration_limit_monitor',
+					'cre_covenant_compliance_checker',
+					'cre_credit_risk_scorer',
+					'cre_debt_waterfall_modeler',
+					'cre_warehouse_line_manager',
+				),
+			),
+
+			// =================================================================.
 			// SPORTS & ENTERTAINMENT PRESETS
 			// =================================================================.
 
 			'fantasy_sports'            => array(
 				'name'        => __( '🏆 Fantasy Sports & Analytics', 'mcp-ai-wpoos' ),
-				'description' => __( 'Fantasy sports management, player research, league analytics, and trade analysis for ESPN, Yahoo, and more', 'mcp-ai-wpoos' ),
+				'description' => __( 'Fantasy sports management, player research, league analytics, and trade analysis for ESPN, Yahoo, and more. Requires the Fantasy Football addon.', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// ESPN Fantasy Sports (Pro).
+					// ESPN Fantasy Sports (Fantasy Football Addon).
 					'espn_fantasy_get_league',
 					'espn_fantasy_get_teams',
 					'espn_fantasy_get_roster',
 					'espn_fantasy_get_standings',
 					'espn_fantasy_analyze_lineup',
 					'espn_fantasy_sync_league',
-					// Yahoo Fantasy Football (Pro).
+					// Yahoo Fantasy Football (Fantasy Football Addon).
 					'yahoo_ff_auth',
 					'yahoo_ff_get_leagues',
 					'yahoo_ff_get_roster',
 					'yahoo_ff_get_player_stats',
 					'yahoo_ff_league_standings',
 					'yahoo_ff_trade_analyzer',
-					// Fantasy Football Tools (Pro).
+					// Fantasy Football Tools (Fantasy Football Addon).
 					'ff_player_research',
 					'ff_create_league_report',
 					'ff_generate_team_logo',

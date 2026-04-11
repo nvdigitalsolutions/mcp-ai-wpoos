@@ -3,7 +3,13 @@
  *
  * Provides the `Telegram.WebApp` object to the component tree and applies the
  * current Telegram theme parameters to CSS custom properties. Components can
- * read `useTMA()` to access haptic feedback helpers and user data.
+ * read `useTMA()` to access haptic feedback helpers, user data, and – crucially
+ * – the `authReady` flag that indicates whether session validation has finished.
+ *
+ * On mount the provider calls the `/validate` endpoint so that subsequent
+ * tool-execution requests carry a valid TMA session token.  Without this step,
+ * `check_permission()` in the controller returns 403 because Telegram WebView
+ * does not share WordPress auth cookies.
  *
  * @package WP_MCP_AI
  * @since   1.2.0
@@ -14,13 +20,15 @@ import {
 	useContext,
 	useEffect,
 	useState,
-} from '@wordpress/element';
+} from 'react';
+import { validateInitData, setTmaToken, setNonce } from '../api/client';
 
-/** @type {React.Context<{twa: object|null, user: object|null, haptic: Function}>} */
+/** @type {React.Context<{twa: object|null, user: object|null, haptic: Function, authReady: boolean}>} */
 const TMAContext = createContext( {
-	twa:    null,
-	user:   null,
-	haptic: () => {},
+	twa:       null,
+	user:      null,
+	haptic:    () => {},
+	authReady: false,
 } );
 
 /**
@@ -69,6 +77,16 @@ function updateVH( twa ) {
 /**
  * TMAProvider – wraps the app and keeps Telegram context up-to-date.
  *
+ * On mount it:
+ *  1. Applies the Telegram theme and viewport helpers.
+ *  2. Calls `/validate` with `initData` to obtain a TMA session token and a
+ *     fresh WordPress nonce.
+ *  3. Sets `authReady = true` once validation completes (or is skipped when
+ *     running outside Telegram, e.g. during development).
+ *
+ * Child hooks should gate data-loading on `authReady` so that tool-execution
+ * requests are not fired before the session token is available.
+ *
  * @param {{ children: React.ReactNode }} props
  * @return {JSX.Element}
  */
@@ -76,11 +94,14 @@ export function TMAProvider( { children } ) {
 	const [ twa ] = useState(
 		() => ( window.Telegram?.WebApp ) ?? null
 	);
+	const [ authReady, setAuthReady ] = useState( false );
 
 	const user = twa?.initDataUnsafe?.user ?? null;
 
 	useEffect( () => {
 		if ( ! twa ) {
+			// Not inside Telegram – skip validation, mark ready immediately.
+			setAuthReady( true );
 			return;
 		}
 		applyTheme( twa.themeParams );
@@ -92,15 +113,45 @@ export function TMAProvider( { children } ) {
 
 		twa.ready();
 		twa.expand();
-	}, [ twa ] );
 
-	/** @param {'light'|'medium'|'heavy'|'rigid'|'soft'} type */
+		// Validate Telegram initData and obtain a TMA session token.
+		// This must complete before any tool-execution calls are made.
+		validateInitData()
+			.then( ( res ) => {
+				if ( res ) {
+					if ( res.tma_token ) {
+						setTmaToken( res.tma_token );
+					}
+					if ( res.nonce || res.wp_nonce ) {
+						setNonce( res.nonce || res.wp_nonce );
+					}
+				}
+			} )
+			.catch( () => {
+				// Validation failed – proceed anyway; nonce auth may still work.
+			} )
+			.finally( () => {
+				setAuthReady( true );
+			} );
+	}, [ twa ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	/** @param {'light'|'medium'|'heavy'|'rigid'|'soft'|'selectionChanged'|'success'|'error'|'warning'} type */
 	const haptic = ( type = 'light' ) => {
-		twa?.HapticFeedback?.impactOccurred( type );
+		const hf = twa?.HapticFeedback;
+		if ( ! hf ) {
+			return;
+		}
+		if ( type === 'selectionChanged' ) {
+			hf.selectionChanged();
+		} else if ( [ 'success', 'error', 'warning' ].includes( type ) ) {
+			hf.notificationOccurred( type );
+		} else {
+			hf.impactOccurred( type );
+		}
 	};
 
 	return (
-		<TMAContext.Provider value={ { twa, user, haptic } }>
+		<TMAContext.Provider value={ { twa, user, haptic, authReady } }>
 			{ children }
 		</TMAContext.Provider>
 	);

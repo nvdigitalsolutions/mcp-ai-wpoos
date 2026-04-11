@@ -39,12 +39,12 @@ export const convertTemplateToWorkflow = ( template ) => {
 	yPosition += ySpacing;
 
 	// Convert workflow steps to nodes
-	template.workflow.forEach( ( step, index ) => {
+	template.workflow.forEach( ( step ) => {
 		const nodeType = mapStepTypeToNodeType( step.type );
 		const nodeId = generateNodeId( nodeType );
 
 		// Calculate position based on step type
-		let xPosition = 250;
+		const xPosition = 250;
 		if ( step.type === 'parallel' && step.roles && step.roles.length > 1 ) {
 			// Create multiple parallel nodes
 			const parallelNodeIds = [];

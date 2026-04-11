@@ -1,6 +1,6 @@
 Profession Playbooks (Authorable Base Knowledge)
 
-This folder is intended to be edited by humans. The plugin can assemble a profession’s Base Knowledge
+This folder is intended to be edited by humans. The plugin can assemble a profession's Base Knowledge
 from three layers:
 
 
@@ -15,12 +15,12 @@ Editing workflow
 - Improve a profession by editing professions/<slug>.txt
 - Improve an entire category by editing categories/<category>.txt
 - Improve everything by editing global.txt
-- Then run the plugin’s “Sync Profession Playbooks” (or the reseed/sync routine) to regenerate attachments.
+- Then run the plugin's "Sync Profession Playbooks" (or the reseed/sync routine) to regenerate attachments.
 
 Guidelines
 - Avoid duplicating the JSON seed metadata (title, expertise list, etc.).
 - Add concrete SOPs: intake questions, workflows, checklists, templates, and examples.
-- Include “red flags” and escalation triggers.
+- Include "red flags" and escalation triggers.
 - Keep the playbook stable and deterministic; prefer evergreen guidance over news.
 
 File naming

@@ -28,11 +28,10 @@ export default function ProductFilters( {
 	return (
 		<div className="tma-woo-filters">
 			{ /* Category pills */ }
-			<div className="tma-woo-filters__cats" role="list">
+			<div className="tma-woo-filters__cats">
 				<button
 					className={ `tma-woo-cat-pill${ ! activeCategoryId ? ' active' : '' }` }
 					onClick={ () => onCategory( '' ) }
-					role="listitem"
 				>
 					All
 				</button>
@@ -41,7 +40,6 @@ export default function ProductFilters( {
 						key={ cat.id }
 						className={ `tma-woo-cat-pill${ activeCategoryId === cat.id ? ' active' : '' }` }
 						onClick={ () => onCategory( cat.id ) }
-						role="listitem"
 					>
 						{ cat.name }
 					</button>

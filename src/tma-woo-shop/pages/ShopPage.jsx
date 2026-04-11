@@ -12,7 +12,7 @@
  * @since   1.1.5
  */
 
-import { useState } from '@wordpress/element';
+import { useState } from 'react';
 import { useNav } from '../context/NavContext';
 import { useTMA } from '../context/TMAContext';
 import { useProducts } from '../hooks/useProducts';
@@ -25,7 +25,7 @@ import ErrorMessage from '../components/ErrorMessage';
 /** @param {{ params:object }} props */
 export default function ShopPage() {
 	const { navigate } = useNav();
-	const { haptic, twa } = useTMA();
+	const { haptic } = useTMA();
 
 	const [ search, setSearch ] = useState( '' );
 	const [ categoryId, setCategoryId ] = useState( '' );

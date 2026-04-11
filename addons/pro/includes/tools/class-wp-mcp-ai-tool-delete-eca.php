@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Deletes an ECA.
+ * Deletes an ECA with safety checks and cascade cleanup.
  */
 class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
@@ -34,7 +34,7 @@ class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes an Extra-Curricular Activity. Note: This does not automatically unenroll students. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+		return __( 'Deletes or cancels an Extra-Curricular Activity. Supports soft delete (cancel) or permanent deletion with cascade cleanup of student enrollments. Requires confirmation when active enrollments exist.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -44,20 +44,26 @@ class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'eca_id' => array(
+				'eca_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
+				),
+				'soft_delete'    => array(
+					'type'        => 'boolean',
+					'description' => __( 'If true, sets the ECA status to cancelled instead of permanently deleting it. Default false.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'confirm_delete' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Must be true when the ECA has active enrollments. This confirms you understand students will be unenrolled.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'eca_id' ),
 			'additionalProperties' => false,
 		);
 	}
-
-	/**
-	 * {@inheritdoc}
-	 */
 
 	/**
 	 * Get extended tool definition including toolkit metadata.
@@ -76,6 +82,9 @@ class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write', 'destructive' );
 	}
@@ -119,16 +128,100 @@ class WP_MCP_AI_Tool_Delete_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error( 'wp_mcp_ai_invalid_eca', __( 'Invalid ECA ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result = wp_delete_post( $eca_id, true );
+		$soft_delete    = ! empty( $arguments['soft_delete'] );
+		$confirm_delete = ! empty( $arguments['confirm_delete'] );
+
+		// Check for active enrollments.
+		$enrollments        = get_post_meta( $eca_id, '_eca_enrollments', true );
+		$current_enrollment = absint( get_post_meta( $eca_id, '_eca_current_enrollment', true ) );
+		$has_enrollments    = $current_enrollment > 0 || ( is_array( $enrollments ) && ! empty( $enrollments ) );
+
+		if ( $has_enrollments && ! $confirm_delete ) {
+			return new WP_Error(
+				'wp_mcp_ai_confirmation_required',
+				sprintf(
+					/* translators: %d: enrollment count */
+					__( 'This ECA has %d active enrollment(s). Set confirm_delete to true to proceed. Students will be unenrolled.', 'mcp-ai-wpoos-pro' ),
+					$current_enrollment
+				)
+			);
+		}
+
+		// Build list of affected students for audit.
+		$affected_students = array();
+		if ( is_array( $enrollments ) ) {
+			foreach ( $enrollments as $enrollment ) {
+				if ( isset( $enrollment['student_id'] ) ) {
+					$affected_students[] = absint( $enrollment['student_id'] );
+				}
+			}
+		}
+
+		// Cascade: remove enrollment references from students.
+		foreach ( $affected_students as $student_id ) {
+			$student_enrollments = get_post_meta( $student_id, '_student_eca_enrollments', true );
+			if ( is_array( $student_enrollments ) ) {
+				$student_enrollments = array_filter(
+					$student_enrollments,
+					function ( $e ) use ( $eca_id ) {
+						return isset( $e['eca_id'] ) && absint( $e['eca_id'] ) !== $eca_id;
+					}
+				);
+				update_post_meta( $student_id, '_student_eca_enrollments', array_values( $student_enrollments ) );
+			}
+		}
+
+		if ( $soft_delete ) {
+			// Soft delete: set status to cancelled.
+			update_post_meta( $eca_id, '_eca_status', 'cancelled' );
+			update_post_meta( $eca_id, '_eca_cancelled_at', current_time( 'mysql' ) );
+			update_post_meta( $eca_id, '_eca_cancelled_by', $current_user_id );
+
+			/**
+			 * Fires after an ECA is soft-deleted (cancelled).
+			 *
+			 * @param int   $eca_id            ECA post ID.
+			 * @param array $affected_students Student IDs that were enrolled.
+			 * @param int   $current_user_id   User who performed the action.
+			 */
+			do_action( 'wp_mcp_ai_eca_deleted', $eca_id, $affected_students, $current_user_id );
+
+			return array(
+				'success'           => true,
+				'message'           => __( 'ECA cancelled successfully. Students have been unenrolled.', 'mcp-ai-wpoos-pro' ),
+				'eca_id'            => $eca_id,
+				'action'            => 'cancelled',
+				'students_affected' => count( $affected_students ),
+			);
+		}
+
+		// Permanent delete.
+		$eca_name = $eca->post_title;
+		$result   = wp_delete_post( $eca_id, true );
 
 		if ( ! $result ) {
 			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete ECA.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		/**
+		 * Fires after an ECA is permanently deleted.
+		 *
+		 * @param int   $eca_id            ECA post ID.
+		 * @param array $affected_students Student IDs that were enrolled.
+		 * @param int   $current_user_id   User who performed the action.
+		 */
+		do_action( 'wp_mcp_ai_eca_deleted', $eca_id, $affected_students, $current_user_id );
+
 		return array(
-			'success' => true,
-			'message' => __( 'ECA deleted successfully.', 'mcp-ai-wpoos-pro' ),
-			'eca_id'  => $eca_id,
+			'success'           => true,
+			'message'           => sprintf(
+				/* translators: %s: ECA name */
+				__( 'ECA "%s" permanently deleted. Students have been unenrolled.', 'mcp-ai-wpoos-pro' ),
+				$eca_name
+			),
+			'eca_id'            => $eca_id,
+			'action'            => 'deleted',
+			'students_affected' => count( $affected_students ),
 		);
 	}
 }

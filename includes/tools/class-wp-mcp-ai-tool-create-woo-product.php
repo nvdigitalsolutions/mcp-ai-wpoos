@@ -1460,7 +1460,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_capability_flags() {
 		return array(
 			'write',                // Creates products.
-			'local-only',           // No external API calls (except image sideloading).
+			'external-api',         // May fetch external URLs for brand lookup and image sideloading.
 			'requires-capability',  // Requires product creation capabilities.
 			'state-changing',       // Modifies database state.
 			'reversible',           // Can be undone by deleting the product.

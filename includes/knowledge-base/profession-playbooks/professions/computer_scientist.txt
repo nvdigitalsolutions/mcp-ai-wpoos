@@ -618,7 +618,6 @@ class SkipList:
             new_node.forward[i] = update[i].forward[i]
             update[i].forward[i] = new_node
 ```
-```
 
 8) Vocabulary and standards
 

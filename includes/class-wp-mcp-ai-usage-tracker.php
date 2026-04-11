@@ -645,6 +645,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.000190,
 			),
 			// Text Generation Models.
+			'@cf/google/gemma-4-26b-it'                    => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
 			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
 				'input_cost_per_1k'  => 0.000350,
 				'output_cost_per_1k' => 0.001000,

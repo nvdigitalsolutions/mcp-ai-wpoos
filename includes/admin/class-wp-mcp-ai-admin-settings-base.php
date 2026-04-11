@@ -281,7 +281,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			return array(
 				'openai_api_key'                       => '',
+				'openai_api_key_type'                  => 'standard',
+				'openai_project_id'                    => '',
+				'openai_base_url'                      => '',
 				'gemini_api_key'                       => '',
+				'gemini_api_key_type'                  => 'standard',
+				'gemini_base_url'                      => '',
+				'anthropic_api_key_type'               => 'standard',
+				'anthropic_base_url'                   => '',
 				'ollama_endpoint_url'                  => '',
 				'ollama_model'                         => '',
 				'lm_studio_endpoint_url'               => '',
@@ -477,6 +484,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_burst'                     => 10,
 				'federation_jwks_keys'                 => array(),
 				'federation_price_hints'               => array(),
+				// A2A Protocol settings.
+				'enable_a2a_server'                    => false,
+				'a2a_exposed_assistants'               => array(),
+				'a2a_enable_push_notifications'        => false,
+				'enable_a2a_client'                    => false,
+				'a2a_default_auth_type'                => 'none',
+				'a2a_default_auth_token'               => '',
 				// Orchestration Layer settings - defaults match "Balanced" preset.
 				'orchestration_preset'                 => 'custom',
 				'enable_budget_management'             => true,
