@@ -200,7 +200,29 @@ Two services used by base tools were not listed in the `== External Services ==`
 Both are self-hosted by default (no data leaves the user's server), but WordPress.org requires
 all external HTTP calls to be documented regardless.
 
-### R2-4e. Full code review — verified clean areas
+### R2-4e. AJAX dismiss handlers missing `current_user_can()` capability check
+
+Two AJAX handlers that dismiss admin notices verified nonces but did not check
+`current_user_can()`. While these handlers only modify the calling user's own meta
+(harmless in practice), WordPress.org reviewers require explicit capability checks on
+all state-changing AJAX handlers.
+
+| File | Handler | Change |
+|------|---------|--------|
+| `includes/bootstrap/hooks.php` | `wp_mcp_ai_dismiss_directory_notice_ajax()` | Added `current_user_can( 'manage_options' )` check before `update_user_meta()` |
+| `includes/class-wp-mcp-ai-model-pricing-checker.php` | `dismiss_price_notice()` | Replaced `is_user_logged_in()` with `current_user_can( 'manage_options' )` — only admins see pricing notices |
+
+### R2-4f. Unsanitised `$_POST` iteration in settings diagnostic logging
+
+`includes/admin/sections/abstract-wp-mcp-ai-settings-section.php` iterated raw `$_POST`
+keys and values when logging subtab diagnostics. While output went only to `error_log()`
+via `wp_json_encode()`, raw superglobal access is flagged by automated reviewers.
+
+| File | Line | Change |
+|------|------|--------|
+| `abstract-wp-mcp-ai-settings-section.php` | 201–204 | Added `sanitize_key()` on `$key` and `sanitize_text_field( wp_unslash() )` on `$value` |
+
+### R2-4g. Full code review — verified clean areas
 
 The following areas were audited and confirmed clean (no issues found):
 
@@ -217,6 +239,9 @@ The following areas were audited and confirmed clean (no issues found):
 | Open redirects | ✅ All redirects use `wp_safe_redirect()` with safe targets |
 | REST API `permission_callback` | ✅ All routes have callbacks; public endpoints are protocol-required (A2A agent-card, CORS preflight) |
 | Direct DB queries without `prepare()` | ✅ ~26 unprepared queries use only hardcoded table names/constants — no user input; no SQL injection risk |
+| `$_POST` / `$_GET` / `$_REQUEST` sanitisation | ✅ All superglobal accesses use `sanitize_text_field()`, `sanitize_key()`, `absint()`, or `wp_unslash()` |
+| `$_COOKIE` iteration | ✅ Cookie forwarding in JetFormBuilder handlers uses `sanitize_key()` + `sanitize_text_field( wp_unslash() )` |
+| `$_SERVER` headers | ✅ `HTTP_CLIENT_IP` already sanitised with `sanitize_text_field( wp_unslash() )` |
 
 ---
 
@@ -233,7 +258,9 @@ The following areas were audited and confirmed clean (no issues found):
 - [x] Two tools missing `get_capability_flags()` with `'external-api'` — added (R2-4b)
 - [x] `trigger-all-import` capability flag corrected to `'external-api'` (R2-4c)
 - [x] Crawl4AI and Varnish added to readme.txt External Services section (R2-4d)
-- [x] Full code review verified: no `set_time_limit(0)`, no forced attribution, no `eval()`, no SSRF, no open redirects, no `unserialize()`, all REST routes have permission callbacks, all DB queries safe (R2-4e)
+- [x] Two AJAX dismiss handlers hardened with `current_user_can( 'manage_options' )` (R2-4e)
+- [x] Unsanitised `$_POST` iteration in settings diagnostic logging sanitised (R2-4f)
+- [x] Full code review verified: no `set_time_limit(0)`, no forced attribution, no `eval()`, no SSRF, no open redirects, no `unserialize()`, all REST routes have permission callbacks, all DB queries safe, all superglobals sanitised (R2-4g)
 
 ---
 ---
