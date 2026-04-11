@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-assistant-tools-preset',
+        'version' => 'dev-copilot/update-assistant-tools-preset',
+        'reference' => 'e64167e555f82cd26ccc2f79928a98e42709541b',
         'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-45fa23e2-3743-4b06-a7bc-12e87b88f505',
         'version' => 'dev-copilot/rebuild-all-zips-with-script-45fa23e2-3743-4b06-a7bc-12e87b88f505',
         'reference' => '3db4d9db10dafe5db15b562e12daff7c22b2b69f',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-assistant-tools-preset',
+            'version' => 'dev-copilot/update-assistant-tools-preset',
+            'reference' => 'e64167e555f82cd26ccc2f79928a98e42709541b',
             'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-45fa23e2-3743-4b06-a7bc-12e87b88f505',
             'version' => 'dev-copilot/rebuild-all-zips-with-script-45fa23e2-3743-4b06-a7bc-12e87b88f505',
             'reference' => '3db4d9db10dafe5db15b562e12daff7c22b2b69f',
