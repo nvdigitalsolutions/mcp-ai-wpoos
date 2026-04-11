@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-pro-specialized-toolkit',
-        'version' => 'dev-copilot/create-pro-specialized-toolkit',
-        'reference' => 'fbda893979212921bd6a67c95ddd4115dd393c80',
+        'pretty_version' => 'dev-copilot/research-best-practices-plugin',
+        'version' => 'dev-copilot/research-best-practices-plugin',
+        'reference' => 'c1188145362fc28f17ae3b1c641602e7827380f6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-pro-specialized-toolkit',
-            'version' => 'dev-copilot/create-pro-specialized-toolkit',
-            'reference' => 'fbda893979212921bd6a67c95ddd4115dd393c80',
+            'pretty_version' => 'dev-copilot/research-best-practices-plugin',
+            'version' => 'dev-copilot/research-best-practices-plugin',
+            'reference' => 'c1188145362fc28f17ae3b1c641602e7827380f6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
