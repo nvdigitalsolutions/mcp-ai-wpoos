@@ -9,7 +9,7 @@ Stable tag: 1.1.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 220+ built-in tools.
 
 == Description ==
 
@@ -19,7 +19,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 220+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
 **Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
@@ -52,7 +52,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 **AI Assistant Management**
 * Create unlimited AI assistants with custom system prompts
 * Per-assistant model configuration (temperature, max tokens)
-* 182 pre-built profession templates across 12 industry categories
+* 296 pre-built profession templates across 17 industry categories
 * One-click team deployments for coordinated AI workflows
 * 16 pre-built Agent Skills (document editing, design, MCP server building, testing, and more) included in the base plugin — auto-installed on activation, fully customisable
 
@@ -265,23 +265,55 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 200+ tools for content, media, research, and operations
-5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
+4. **Tool Registry** - 220+ tools for content, media, research, and operations
+5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
 
-= 1.1.7 - April 9, 2026 =
+= 1.1.7 - April 11, 2026 =
 
-**WordPress.org Plugin Directory Compliance — April 9, 2026**
+**MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening**
+
+*New Features*
+
+* MCP Apps (SEP-1865) — Per-assistant remote MCP server connections (up to 10 per assistant) with JSON-RPC 2.0 tool bridging, transient-cached discovery, admin metabox, and REST endpoints
+* CRE Debt & Securitization Pro Toolkit — 57 new tools across 5 modules (Originations, Underwriting, CMBS, Debt Fund, Asset Management) with shared financial calculator engine
+* CRE Debt CPT/CCT infrastructure with Chart.js admin dashboard
+* 36 new pro toolkit professions across 5 knowledge bases (CRE debt, financial services, digital media, business operations, specialized services)
+* 17 new team configurations including 7 CRE debt lifecycle teams and 10 cross-functional pro toolkit teams
+* Total professions: 296 (was 259). Total teams: 100
+* Assistant tool presets updated with new pro toolkit tool slugs
+
+*WordPress.org Compliance (April 9–11)*
 
 * Fixed 2 broken URLs in readme.txt External Services section (Trade.gov, Mailjet)
 * Corrected 13 base tool capability flags from `local-only` to `external-api` (tools making external HTTP calls)
 * Restricted CLI assistant export to dedicated uploads subdirectory (`uploads/mcp-ai/exports/`)
 * Removed sync-docs file write to plugin/theme directories
-* Clarified capability flag comments on 4 tools (2 URL-returning, 2 loopback)
+* AJAX capability checks added — `dismiss_directory_notice` and `dismiss_price_notice` require `manage_options`
+* $_POST sanitisation hardened — `sanitize_key()` on keys and `sanitize_text_field( wp_unslash() )` on values
+* Missing closing class braces fixed in vision-object-localization and vision-product-search tools
 * Full proactive audit passed — ABSPATH guards, text domain, CDN scripts, obfuscation, redirects, nonces, SQL, sanitization
+
+*Algorave Audio Fixes (April 8–11)*
+
+* AudioContext synchronous resume within user-gesture handler before async operations
+* channelCount=0 proxy fix — data descriptor for maxChannelCount clamped to [1,32] with eager initializeAudioOutput
+* Visualizer AnalyserNode connection timing fixed across 5 PRs
+* Async aliasBank CDN redirect and unhandled rejection fixes
+
+*Security*
+
+* nodemailer updated to 8.0.5 (SMTP CRLF injection fix)
+* basic-ftp updated to 5.2.1 (CRLF command injection fix)
+* mathjs and langsmith updated for security vulnerabilities
+
+*Build*
+
 * Production classmap regenerated via `composer install --no-dev --classmap-authoritative`
+* All 30+ distribution ZIPs rebuilt for v1.1.7
+* CLAUDE.md excluded from plugin ZIP builds
 
 = 1.1.6 - April 2026 (Updated April 6) =
 
@@ -550,7 +582,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
   * Influencer Identification - Discover brand influencers based on reach and engagement criteria
 * **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
 * **Cloudflare Image Models** - Added support for Flux-2 Dev, Leonardo Lucid Origin, and Phoenix 1.0 models
-* **200+ Profession Orchestration** - Intelligent agent role assignment via WP-CLI commands
+* **296 Profession Orchestration** - Intelligent agent role assignment via WP-CLI commands
 
 **Bug Fixes**
 
@@ -579,7 +611,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * Multi-provider support: OpenAI, Gemini, NVIDIA NIM, Ollama, LM Studio
 * Full MCP (Model Context Protocol) server implementation
 * Modern chat interface with streaming responses
-* 182 profession templates across 12 industry categories
+* 296 profession templates across 17 industry categories
 * Comprehensive REST API
 * SSE (Server-Sent Events) streaming support
 * Rate limiting and usage tracking
