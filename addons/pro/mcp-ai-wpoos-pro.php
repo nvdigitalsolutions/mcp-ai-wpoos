@@ -572,6 +572,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
 		}
 
+		// Load CRE Debt & Securitization Toolkit if enabled (Pro feature).
+		// Provides CPTs (Loans, Properties), portfolio dashboard, and research pages.
+		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/cre-debt-toolkit-init.php';
+		}
+
 		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
