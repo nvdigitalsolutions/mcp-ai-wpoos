@@ -289,3 +289,4 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 			'external-api',         // Calls Google Cloud Vision API.
 		);
 	}
+}
