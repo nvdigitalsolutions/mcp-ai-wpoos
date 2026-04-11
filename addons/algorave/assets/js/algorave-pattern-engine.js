@@ -88,6 +88,9 @@
 		/** @type {boolean} Whether Pattern.prototype visualization methods have been registered. */
 		patternVizRegistered: false,
 
+		/** @type {boolean} Whether initializeAudioOutput has been monkey-patched. */
+		_audioOutputPatched: false,
+
 		/**
 		 * Initialize the engine with config.
 		 *
@@ -101,6 +104,11 @@
 			// Strudel creates an AudioContext internally, which requires a user
 			// gesture on modern browsers. Deferred to ensureStrudel().
 			this.strudelAvailable = ( typeof window.initStrudel === 'function' );
+
+			// Install the safety wrapper around Eh() *before* anything can
+			// trigger superdough's lazy audio init.  The strudel vendor
+			// bundle is a script dependency, so it's already loaded here.
+			this._patchInitializeAudioOutput();
 
 			// Set up Tone.js if available (optional — Strudel has its own audio engine).
 			if ( typeof Tone !== 'undefined' ) {
@@ -425,25 +433,51 @@
 						const realDest = audioCtx.destination;
 						const proxy = audioCtx.createGain();
 
-						// Superdough reads destination.maxChannelCount and sets
-						// destination.channelCount to match. A plain GainNode
-						// does not expose maxChannelCount, so superdough would
-						// read undefined → 0, causing "channelCount outside
-						// range [1,32]". Mirror the real destination's channel
-						// properties onto the proxy to prevent this.
+						// Superdough's initializeAudioOutput (Eh) reads
+						// destination.maxChannelCount and sets channelCount to
+						// match. A plain GainNode inherits maxChannelCount = 32
+						// from AudioNode.prototype, but some browser engines
+						// (or future spec changes) may return 0/undefined. We
+						// mirror the real destination's channel properties onto
+						// the proxy using a data descriptor (more robust than
+						// an accessor across V8 inline-cache optimisations) and
+						// clamp to the GainNode-safe range [1, 32].
+						const maxCh = Math.min( Math.max( realDest.maxChannelCount || 2, 1 ), 32 );
+						const chCount = Math.min( Math.max( realDest.channelCount || maxCh, 1 ), 32 );
 						try {
-							const maxCh = realDest.maxChannelCount || 2;
-							proxy.channelCount = realDest.channelCount || maxCh;
+							proxy.channelCount = chCount;
 							proxy.channelCountMode = realDest.channelCountMode || 'explicit';
 							proxy.channelInterpretation = realDest.channelInterpretation || 'speakers';
 							Object.defineProperty( proxy, 'maxChannelCount', {
-								get: function () {
-									return maxCh;
-								},
+								value: maxCh,
+								writable: false,
+								enumerable: true,
 								configurable: true,
 							} );
 						} catch ( _chErr ) {
-							// Non-critical — proceed without channel mirroring.
+							// Primary descriptor failed — ensure safe channelCount.
+							try {
+								proxy.channelCount = 2;
+							} catch ( _e2 ) {
+								// Last resort — leave native GainNode defaults (maxChannelCount 32).
+							}
+						}
+
+						// Verify the proxy returns a valid maxChannelCount.
+						// If Object.defineProperty was silently ignored (e.g.
+						// due to a non-configurable native property in a future
+						// engine), the native value (32) is still safe.
+						if ( typeof proxy.maxChannelCount !== 'number' || proxy.maxChannelCount < 1 ) {
+							try {
+								Object.defineProperty( proxy, 'maxChannelCount', {
+									get: function () {
+										return maxCh;
+									},
+									configurable: true,
+								} );
+							} catch ( _e3 ) {
+								// Give up — native fallback (32) will apply.
+							}
 						}
 
 						proxy.connect( realDest );
@@ -463,6 +497,23 @@
 						this.strudelDestProxy = proxy;
 						this.strudelAnalyserConnected = true;
 						document.dispatchEvent( new CustomEvent( 'algorave:analyser-connected' ) );
+
+						// Eagerly initialize superdough's audio output chain
+						// now that the proxy is installed. This runs Eh() while
+						// the proxy's maxChannelCount is guaranteed to be set,
+						// and sets the internal ms/fi state so the lazy init
+						// inside wh() never fires during a getTrigger() call.
+						// fi.connect(destination) will route through our proxy
+						// because destination is already overridden above.
+						if ( typeof strudel !== 'undefined' && typeof strudel.initializeAudioOutput === 'function' ) {
+							try {
+								strudel.initializeAudioOutput();
+							} catch ( _initErr ) {
+								// eslint-disable-next-line no-console
+								console.warn( '[Algorave] Pre-init audio output failed:', _initErr );
+							}
+						}
+
 						return true;
 					}
 				}
@@ -471,6 +522,140 @@
 				console.warn( '[Algorave] analyser connect attempt failed:', err );
 			}
 			return false;
+		},
+
+		/**
+		 * Pre-initialize superdough's audio output chain BEFORE evaluate().
+		 *
+		 * Superdough's Eh() (initializeAudioOutput) reads
+		 * destination.maxChannelCount and sets destination.channelCount to
+		 * match.  If maxChannelCount is 0 (some browser/OS combos, headless
+		 * environments, or before audio hardware enumerates), this throws:
+		 *
+		 *   "The channel count provided (0) is outside the range [1, 32]."
+		 *
+		 * Eh() is called lazily — on the very first getTrigger() — which
+		 * fires inside evaluate().  If we wait until AFTER evaluate() to
+		 * install the proxy, the first trigger already hit the raw
+		 * AudioDestinationNode.
+		 *
+		 * The monkey-patch (installed during init) wraps every call to
+		 * initializeAudioOutput so the channelCount setter never receives 0.
+		 * This method just calls the (now-safe) function eagerly so the
+		 * internal ms/fi chain is ready before any triggers.
+		 *
+		 * Must be called after initAudio() but before evaluate().
+		 */
+		preInitAudioOutput: function () {
+			if ( typeof strudel === 'undefined' ) {
+				return;
+			}
+			try {
+				if ( typeof strudel.initializeAudioOutput === 'function' ) {
+					strudel.initializeAudioOutput();
+				}
+			} catch ( err ) {
+				// eslint-disable-next-line no-console
+				console.warn( '[Algorave] preInitAudioOutput failed:', err );
+			}
+		},
+
+		/**
+		 * Install a safety wrapper around strudel.initializeAudioOutput (Eh).
+		 *
+		 * The original Eh() does:
+		 *   const t = ctx.destination.maxChannelCount;
+		 *   ctx.destination.channelCount = t;          ← throws when t=0
+		 *
+		 * We cannot access the module-private ms/fi variables, so we must
+		 * make Eh() succeed.  The wrapper temporarily overrides the
+		 * channelCount setter on the destination node to clamp values into
+		 * the valid [1, 32] range, calls the original Eh(), then removes
+		 * the override.
+		 *
+		 * Called once during init().
+		 */
+		_patchInitializeAudioOutput: function () {
+			if (
+				typeof strudel === 'undefined' ||
+				typeof strudel.initializeAudioOutput !== 'function' ||
+				this._audioOutputPatched
+			) {
+				return;
+			}
+
+			const origInit = strudel.initializeAudioOutput;
+
+			strudel.initializeAudioOutput = function () {
+				let audioCtx = null;
+				try {
+					audioCtx = ( typeof strudel.getAudioContext === 'function' )
+						? strudel.getAudioContext()
+						: null;
+				} catch ( _e ) {
+					// getAudioContext may throw before context exists.
+				}
+
+				const dest = audioCtx ? audioCtx.destination : null;
+				let patched = false;
+
+				// If maxChannelCount is 0/invalid, install a temporary
+				// setter on the *instance* that clamps values to [1, 32].
+				if ( dest ) {
+					const maxCh = dest.maxChannelCount;
+					if ( typeof maxCh !== 'number' || maxCh < 1 ) {
+						try {
+							// channelCount is defined on AudioNode.prototype,
+							// which may be several levels up the chain.
+							let desc = null;
+							let p = dest;
+							while ( ( p = Object.getPrototypeOf( p ) ) ) {
+								desc = Object.getOwnPropertyDescriptor( p, 'channelCount' );
+								if ( desc ) {
+									break;
+								}
+							}
+							if ( desc && desc.set ) {
+								const origSetter = desc.set;
+								const origGetter = desc.get || null;
+								Object.defineProperty( dest, 'channelCount', {
+									set: function ( v ) {
+										const safe = Math.min( Math.max( v || 2, 1 ), 32 );
+										origSetter.call( dest, safe );
+									},
+									get: origGetter
+										? function () {
+											return origGetter.call( dest );
+										}
+										: function () {
+											return 2;
+										},
+									configurable: true,
+								} );
+								patched = true;
+							}
+						} catch ( _patchErr ) {
+							// Cannot patch — fall through to direct call.
+						}
+					}
+				}
+
+				try {
+					origInit();
+				} finally {
+					// Remove the temporary setter so normal Web Audio
+					// behaviour is restored.
+					if ( patched ) {
+						try {
+							delete dest.channelCount;
+						} catch ( _delErr ) {
+							// Ignore — worst case the clamping setter stays.
+						}
+					}
+				}
+			};
+
+			this._audioOutputPatched = true;
 		},
 
 		/**
@@ -504,6 +689,9 @@
 		 * @param {string} engine Engine type ('strudel' or 'tonejs').
 		 */
 		play: async function ( code, engine ) {
+			// Normalize engine to a known value.
+			engine = ( engine === 'tonejs' ) ? 'tonejs' : 'strudel';
+
 			// ── Eagerly create + resume the audio context ──────────
 			// This MUST happen synchronously (before any await) so the
 			// browser's user-gesture activation window is still open.
@@ -511,14 +699,14 @@
 			// (after async sample-loading in ensureStrudel) and starts
 			// in "suspended" state — causing complete silence even
 			// though the pattern scheduler is running.
-			if ( 'strudel' === ( engine || 'strudel' ) ) {
+			if ( 'strudel' === engine ) {
 				this.ensureAudioContext();
 			}
 
 			await this.ensureStarted();
 			this.stop();
 
-			this.activeEngine = engine || 'strudel';
+			this.activeEngine = engine;
 
 			if ( 'strudel' === engine ) {
 				// Initialize Strudel lazily (needs user gesture for AudioContext).
@@ -536,6 +724,18 @@
 						console.warn( '[Algorave] AudioWorklet init skipped:', _e );
 					}
 				}
+
+				// Pre-initialize superdough's audio output chain BEFORE
+				// evaluate().  This patches destination.maxChannelCount
+				// if the browser reports 0 and eagerly creates the
+				// internal ms/fi chain, preventing the lazy Eh() from
+				// failing inside the first getTrigger().
+				this.preInitAudioOutput();
+
+				// Also install the analyser proxy BEFORE evaluate() so
+				// audio routed through destination during the first
+				// trigger is captured by our visualiser analysers.
+				this.tryConnectAnalyser();
 
 				// Use strudel.evaluate() from the @strudel/web IIFE namespace.
 				// This provides the full DSL context (stack, note, s, sound, setcps, etc.).
