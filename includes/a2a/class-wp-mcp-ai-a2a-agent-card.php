@@ -97,7 +97,7 @@ class WP_MCP_AI_A2A_Agent_Card {
 
 		$card = array(
 			'name'                => $name,
-			'description'         => ! empty( $description ) ? $description : __( 'An AI assistant powered by NV oOS.', 'mcp-ai-wpoos' ),
+			'description'         => ! empty( $description ) ? $description : __( 'An AI assistant.', 'mcp-ai-wpoos' ),
 			'url'                 => $a2a_url,
 			'protocolVersion'     => self::PROTOCOL_VERSION,
 			'version'             => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
@@ -134,7 +134,7 @@ class WP_MCP_AI_A2A_Agent_Card {
 			'name'                => get_bloginfo( 'name' ) . ' AI Agent',
 			'description'         => sprintf(
 				/* translators: %s: site name */
-				__( 'AI agent for %s, powered by NV oOS.', 'mcp-ai-wpoos' ),
+				__( 'AI agent for %s.', 'mcp-ai-wpoos' ),
 				get_bloginfo( 'name' )
 			),
 			'url'                 => $a2a_url,

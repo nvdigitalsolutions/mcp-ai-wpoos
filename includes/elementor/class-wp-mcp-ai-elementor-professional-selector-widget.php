@@ -408,8 +408,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		$shortcode .= ']';
 
 		echo '<div class="wp-mcp-ai-professional-selector-widget">';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode handles escaping.
-		echo do_shortcode( $shortcode );
+		echo wp_kses_post( do_shortcode( $shortcode ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
 		echo '</div>';
 	}
 }

@@ -1290,6 +1290,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'requires-model',       // Requires image model specification.
 			'consumes-tokens',      // Uses AI credits/tokens.
 			'model-dependent',      // Output quality varies by model.
+			'external-api',         // Downloads images from external URLs and calls Gemini API.
 		);
 	}
 

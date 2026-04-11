@@ -264,7 +264,6 @@ class WP_MCP_AI_Elementor_Telegram_Login_Widget extends \Elementor\Widget_Base {
 		}
 		$shortcode_tag .= ']';
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode output is handled inside the shortcode callback.
-		echo do_shortcode( $shortcode_tag );
+		echo wp_kses_post( do_shortcode( $shortcode_tag ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
 	}
 }

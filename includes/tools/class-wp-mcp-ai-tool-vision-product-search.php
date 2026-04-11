@@ -286,6 +286,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'read-only',            // Only reads data, does not modify state.
 			'requires-capability',  // Requires user capabilities.
+			'external-api',         // Calls Google Cloud Vision API.
 		);
 	}
 }
