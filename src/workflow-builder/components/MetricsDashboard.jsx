@@ -7,7 +7,7 @@
  * @since 2.2.0
  */
 
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { getExecutionStats, getNodeMetrics } from '../utils/executionHistory';
 
@@ -18,17 +18,17 @@ const MetricsDashboard = ( { workflowId, nodes } ) => {
 	const [ stats, setStats ] = useState( null );
 	const [ nodeMetrics, setNodeMetrics ] = useState( {} );
 
-	useEffect( () => {
-		loadMetrics();
-	}, [ workflowId ] );
-
-	const loadMetrics = () => {
+	const loadMetrics = useCallback( () => {
 		const executionStats = getExecutionStats( workflowId );
 		const metrics = getNodeMetrics( workflowId );
 
 		setStats( executionStats );
 		setNodeMetrics( metrics );
-	};
+	}, [ workflowId ] );
+
+	useEffect( () => {
+		loadMetrics();
+	}, [ workflowId, loadMetrics ] );
 
 	if ( ! stats ) {
 		return (

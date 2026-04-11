@@ -1,0 +1,4 @@
+# Ignore everything in the ESM assets directory (built by bin/vendor-cornerstone.js)
+assets/cornerstone/*.esm.js
+assets/cornerstone/vendor-meta.json
+node_modules/

@@ -658,6 +658,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'mini_app_template'            => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
 				'mini_app_woo_source'          => ( isset( $_POST['telegram_mini_app_woo_source'] ) && 'remote' === $_POST['telegram_mini_app_woo_source'] ) ? 'remote' : 'local',
 				'mini_app_woo_connection_id'   => isset( $_POST['telegram_mini_app_woo_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_woo_connection_id'] ) ) : '',
+				'mini_app_shopify_connection_id' => isset( $_POST['telegram_mini_app_shopify_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_shopify_connection_id'] ) ) : '',
+				'mini_app_flowhub_connection_id' => isset( $_POST['telegram_mini_app_flowhub_connection_id'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_flowhub_connection_id'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -718,6 +720,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'shopify_api_mode'    => 'shopify' === $connection_type && isset( $shopify_api_mode )
 					? $shopify_api_mode
 					: ( 'shopify' === $connection_type ? 'admin_api' : '' ),
+				'shopify_catalog_shop_id' => 'shopify' === $connection_type && isset( $_POST['shopify_catalog_shop_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_text_field( wp_unslash( $_POST['shopify_catalog_shop_id'] ) )
+					: '',
 				// ShipEngine-specific fields.
 				'shipengine_carrier_id' => 'shipengine' === $connection_type && isset( $_POST['shipengine_carrier_id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['shipengine_carrier_id'] ) )
@@ -1564,6 +1569,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="shopify-only-field shopify-catalog-api-field" style="display: none;">
+					<th scope="row">
+						<label for="shopify_catalog_shop_id"><?php esc_html_e( 'Shop ID (recommended)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="shopify_catalog_shop_id" id="shopify_catalog_shop_id" class="regular-text"
+							value="<?php echo esc_attr( $is_edit && $is_catalog_edit && ! empty( $connection['shopify_catalog_shop_id'] ) ? $connection['shopify_catalog_shop_id'] : '' ); ?>"
+							autocomplete="off" placeholder="12345678901 or gid://shopify/Shop/12345678901">
+						<p class="description"><?php esc_html_e( 'Your Shopify numeric Shop ID or GID (e.g. 12345678901 or gid://shopify/Shop/12345678901). Limits Catalog API search results to only your store products. Without this, the Catalog API returns results from all Shopify stores globally. Find your Shop ID in the Shopify admin URL or via the Admin API (shop { id }).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<tr class="shopify-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Shopify Setup Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -1586,7 +1603,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<li><?php esc_html_e( 'Go to the Shopify Dev Dashboard at dev.shopify.com and sign in.', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Create a new API key (app) and copy the Client ID and Client Secret (shpss_…).', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( 'Paste the Client ID and Client Secret above. A JWT bearer token is obtained automatically on each request (tokens expire in ~60 minutes and are cached).', 'mcp-ai-wpoos-pro' ); ?></li>
-									<li><?php esc_html_e( 'The Catalog API enables product search and lookup across the global Shopify catalog — no store domain is required.', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( 'To limit results to your store only, enter your numeric Shop ID above. Find it in your Shopify admin URL (the number after /store/) or via the Admin GraphQL API query: { shop { id } }.', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ol>
 							</div>
 						</div>
@@ -2785,7 +2802,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 						<p class="description" style="margin-top: 6px;">
 							<strong><?php esc_html_e( 'Mini App URL:', 'mcp-ai-wpoos-pro' ); ?></strong>
-							<input type="text" readonly="readonly" value="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-mini-app' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">
+							<?php
+							// Use the per-connection URL when editing so each bot has a unique Mini App address.
+							$_tma_url = ( $is_edit && '' !== $editing )
+								? rest_url( 'mcp-ai/v1/telegram-mini-app/' . sanitize_key( $editing ) )
+								: rest_url( 'mcp-ai/v1/telegram-mini-app' );
+							?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $_tma_url ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">
+							<?php if ( $is_edit && '' !== $editing ) : ?>
+								<p class="description" style="margin-top: 4px;">
+									<?php esc_html_e( 'This URL is unique to this bot. Use it when configuring the Mini App in @BotFather so that each bot resolves its own settings and credentials.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
 						</p>
 					</td>
 				</tr>
@@ -2922,21 +2950,125 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</p>
 					</td>
 				</tr>
+				<?php
+				/*
+				 * Shopify Data Source row – visible only when a Shopify Mini App
+				 * template (shopify_shop or jewelry_shop) is selected for this connection.
+				 */
+				$tg_shopify_connection_id = ( $is_edit && isset( $connection['mini_app_shopify_connection_id'] ) )
+					? sanitize_key( $connection['mini_app_shopify_connection_id'] )
+					: '';
+
+				// Gather all Shopify remote connections for the dropdown.
+				$_shopify_remote_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
+						if ( isset( $_rc['connection_type'] ) && 'shopify' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+							$_shopify_remote_connections[] = $_rc;
+						}
+					}
+				}
+				?>
+				<tr class="telegram-only-field tma-shopify-source-row" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Shopify Data Source', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<select name="telegram_mini_app_shopify_connection_id" id="telegram_mini_app_shopify_connection_id">
+							<option value=""><?php esc_html_e( '— Select a Shopify connection —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $_shopify_remote_connections as $_rc ) : ?>
+								<option value="<?php echo esc_attr( $_rc['id'] ); ?>" <?php selected( $tg_shopify_connection_id, $_rc['id'] ); ?>>
+									<?php echo esc_html( ( $_rc['name'] ?? $_rc['id'] ) . ' (' . ( $_rc['url'] ?? '' ) . ')' ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<?php if ( empty( $_shopify_remote_connections ) ) : ?>
+							<p class="description" style="color:#d63638;">
+								<?php
+								printf(
+									/* translators: %s: link to remote sites admin page */
+									esc_html__( 'No Shopify remote connections found. %s first.', 'mcp-ai-wpoos-pro' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '">' . esc_html__( 'Add one in Remote Sites', 'mcp-ai-wpoos-pro' ) . '</a>'
+								);
+								?>
+							</p>
+						<?php endif; ?>
+						<p class="description">
+							<?php esc_html_e( 'Choose the Shopify store connection that this Mini App reads its product and order data from. Configure Shopify connections in Remote Sites.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<?php
+				/*
+				 * Flowhub Data Source row – visible only when a Flowhub Mini App
+				 * template (flowhub_ecommerce) is selected for this connection.
+				 */
+				$tg_flowhub_connection_id = ( $is_edit && isset( $connection['mini_app_flowhub_connection_id'] ) )
+					? sanitize_key( $connection['mini_app_flowhub_connection_id'] )
+					: '';
+
+				// Gather all Flowhub remote connections for the dropdown.
+				$_flowhub_remote_connections = array();
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					foreach ( WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections() as $_rc ) {
+						if ( isset( $_rc['connection_type'] ) && 'flowhub' === $_rc['connection_type'] && ! empty( $_rc['enabled'] ) ) {
+							$_flowhub_remote_connections[] = $_rc;
+						}
+					}
+				}
+				?>
+				<tr class="telegram-only-field tma-flowhub-source-row" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Flowhub Data Source', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<select name="telegram_mini_app_flowhub_connection_id" id="telegram_mini_app_flowhub_connection_id">
+							<option value=""><?php esc_html_e( '— Select a Flowhub connection —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $_flowhub_remote_connections as $_rc ) : ?>
+								<option value="<?php echo esc_attr( $_rc['id'] ); ?>" <?php selected( $tg_flowhub_connection_id, $_rc['id'] ); ?>>
+									<?php echo esc_html( ( $_rc['name'] ?? $_rc['id'] ) . ' (' . ( $_rc['url'] ?? '' ) . ')' ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<?php if ( empty( $_flowhub_remote_connections ) ) : ?>
+							<p class="description" style="color:#d63638;">
+								<?php
+								printf(
+									/* translators: %s: link to remote sites admin page */
+									esc_html__( 'No Flowhub remote connections found. %s first.', 'mcp-ai-wpoos-pro' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) . '">' . esc_html__( 'Add one in Remote Sites', 'mcp-ai-wpoos-pro' ) . '</a>'
+								);
+								?>
+							</p>
+						<?php endif; ?>
+						<p class="description">
+							<?php esc_html_e( 'Choose the Flowhub connection that this Mini App reads its product data from. Configure Flowhub connections in Remote Sites.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<script>
 				( function() {
-					/* Toggle the WooCommerce Data Source row when the template changes. */
+					/* Toggle the WooCommerce / Shopify / Flowhub Data Source rows when the template changes. */
 					var tplSel      = document.getElementById( 'telegram_mini_app_template' );
 					var wooRow      = document.querySelector( '.tma-woo-source-row' );
+					var shopifyRow  = document.querySelector( '.tma-shopify-source-row' );
+					var flowhubRow  = document.querySelector( '.tma-flowhub-source-row' );
 					var remoteWrap  = document.getElementById( 'tma-woo-remote-wrap' );
 					var radioLocal  = document.getElementById( 'tma-woo-source-local' );
 					var radioRemote = document.getElementById( 'tma-woo-source-remote' );
 
-					var ecommerceTemplates = [ 'woo_shop', 'ecommerce' ];
+					var wooTemplates     = [ 'woo_shop', 'ecommerce' ];
+					var shopifyTemplates = [ 'shopify_shop', 'jewelry_shop', 'shopify_ecommerce' ];
+					var flowhubTemplates = [ 'flowhub_ecommerce' ];
 
-					function toggleWooRow() {
-						if ( ! tplSel || ! wooRow ) { return; }
-						var show = ecommerceTemplates.indexOf( tplSel.value ) !== -1;
-						wooRow.style.display = show ? '' : 'none';
+					function toggleDataSourceRows() {
+						if ( ! tplSel ) { return; }
+						var val = tplSel.value;
+						if ( wooRow )     { wooRow.style.display     = wooTemplates.indexOf( val ) !== -1     ? '' : 'none'; }
+						if ( shopifyRow ) { shopifyRow.style.display = shopifyTemplates.indexOf( val ) !== -1 ? '' : 'none'; }
+						if ( flowhubRow ) { flowhubRow.style.display = flowhubTemplates.indexOf( val ) !== -1 ? '' : 'none'; }
 					}
 
 					function toggleRemoteWrap() {
@@ -2945,8 +3077,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					}
 
 					if ( tplSel ) {
-						tplSel.addEventListener( 'change', toggleWooRow );
-						toggleWooRow();
+						tplSel.addEventListener( 'change', toggleDataSourceRows );
+						toggleDataSourceRows();
 					}
 					if ( radioLocal )  { radioLocal.addEventListener( 'change', toggleRemoteWrap ); }
 					if ( radioRemote ) { radioRemote.addEventListener( 'change', toggleRemoteWrap ); }
@@ -5685,6 +5817,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				telegramFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+				// Re-apply template-based data source row visibility so only the
+				// relevant row (WooCommerce or Shopify) is shown, not both.
+				var _tplSel = document.getElementById( 'telegram_mini_app_template' );
+				if ( _tplSel ) {
+					var _val          = _tplSel.value;
+					var _wooRow       = document.querySelector( '.tma-woo-source-row' );
+					var _shopifyRow   = document.querySelector( '.tma-shopify-source-row' );
+					var _flowhubRow   = document.querySelector( '.tma-flowhub-source-row' );
+					var _wooTpls      = [ 'woo_shop', 'ecommerce' ];
+					var _shopifyTpls  = [ 'shopify_shop', 'jewelry_shop', 'shopify_ecommerce' ];
+					var _flowhubTpls  = [ 'flowhub_ecommerce' ];
+					if ( _wooRow )     { _wooRow.style.display     = _wooTpls.indexOf( _val ) !== -1     ? 'table-row' : 'none'; }
+					if ( _shopifyRow ) { _shopifyRow.style.display = _shopifyTpls.indexOf( _val ) !== -1 ? 'table-row' : 'none'; }
+					if ( _flowhubRow ) { _flowhubRow.style.display = _flowhubTpls.indexOf( _val ) !== -1 ? 'table-row' : 'none'; }
+				}
 				// Telegram uses Bot API with bot token
 				urlField.value = 'https://api.telegram.org';
 				urlField.readOnly = true;

@@ -87,6 +87,11 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'Optional transport hint. Use `rest` to require internal controller dispatch or `http` to force wp_remote_request.', 'mcp-ai-wpoos' ),
 					'default'     => 'auto',
 				),
+				'prefer_mcp'  => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true and JetEngine 3.8+ MCP Server is available, route through MCP instead of direct REST. Default: true.', 'mcp-ai-wpoos' ),
+					'default'     => true,
+				),
 			),
 			'required'             => array( 'operation' ),
 			'additionalProperties' => false,
@@ -128,6 +133,31 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 		$transport = isset( $arguments['transport'] ) ? sanitize_key( $arguments['transport'] ) : 'auto';
 		$id        = isset( $arguments['id'] ) ? sanitize_text_field( (string) $arguments['id'] ) : '';
 
+		// Try MCP dispatch if preferred and available.
+		$prefer_mcp = isset( $arguments['prefer_mcp'] ) ? (bool) $arguments['prefer_mcp'] : true;
+		if ( $prefer_mcp && class_exists( 'WP_MCP_AI_JetEngine_Compat' ) && WP_MCP_AI_JetEngine_Compat::has_mcp_server() ) {
+			if ( class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) || $this->load_mcp_client() ) {
+				$client     = new WP_MCP_AI_JetEngine_MCP_Client();
+				$mcp_result = $client->tools_call( $operation, $params );
+
+				if ( ! is_wp_error( $mcp_result ) ) {
+					$summary_text = sprintf(
+						/* translators: %s: JetEngine operation */
+						__( 'Executed JetEngine operation via MCP: %s', 'mcp-ai-wpoos' ),
+						$operation
+					);
+
+					return array(
+						'message'   => $summary_text,
+						'summary'   => $summary_text,
+						'result'    => $mcp_result,
+						'transport' => 'mcp',
+					);
+				}
+				// MCP failed — fall through to legacy REST.
+			}
+		}
+
 		$path_params = array();
 		if ( isset( $arguments['path_params'] ) && is_array( $arguments['path_params'] ) ) {
 			foreach ( $arguments['path_params'] as $param ) {
@@ -164,6 +194,31 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			'summary' => $summary_text,
 			'result'  => $result,
 		);
+	}
+
+
+	/**
+	 * Load the MCP client class if not already loaded.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return bool True if the client class is available.
+	 */
+	private function load_mcp_client() {
+		if ( class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) ) {
+			return true;
+		}
+
+		$client_file = defined( 'WP_MCP_AI_PRO_PATH' )
+			? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-mcp-client.php'
+			: '';
+
+		if ( ! empty( $client_file ) && file_exists( $client_file ) ) {
+			require_once $client_file;
+			return true;
+		}
+
+		return false;
 	}
 
 
@@ -205,7 +260,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 			'state-changing',      // Modifies JetEngine CCT data.
 			'requires-plugin',     // Requires JetEngine plugin.
 			'requires-capability', // Requires appropriate user capabilities.
-			'local-only',          // No external API calls.
+			'local-only',          // Dispatches to local site REST API; no external API calls.
 		);
 	}
 }

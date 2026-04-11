@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -73,15 +73,17 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
-* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools (NEW January 2026)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 9 specialized tools, A2A protocol for inter-agent communication, Agent Command Center dashboard
 
 **Chat Interface**
 * Modern, responsive chat UI
 * Shortcode: `[mcp_ai_chat assistant="123"]`
+* Floating chat bubble widget (Elementor + Gutenberg) — configurable position, size, animations
 * Elementor widget support
 * File attachments (images, PDFs, documents)
 * Real-time streaming responses (SSE)
 * Chat history persistence (24h localStorage)
+* Sub-agent panel with live workflow tracking
 
 **MCP Server (Model Context Protocol)**
 * Full JSON-RPC 2.0 implementation
@@ -268,6 +270,52 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.7 - April 9, 2026 =
+
+**WordPress.org Plugin Directory Compliance — April 9, 2026**
+
+* Fixed 2 broken URLs in readme.txt External Services section (Trade.gov, Mailjet)
+* Corrected 13 base tool capability flags from `local-only` to `external-api` (tools making external HTTP calls)
+* Restricted CLI assistant export to dedicated uploads subdirectory (`uploads/mcp-ai/exports/`)
+* Removed sync-docs file write to plugin/theme directories
+* Clarified capability flag comments on 4 tools (2 URL-returning, 2 loopback)
+* Full proactive audit passed — ABSPATH guards, text domain, CDN scripts, obfuscation, redirects, nonces, SQL, sanitization
+* Production classmap regenerated via `composer install --no-dev --classmap-authoritative`
+
+= 1.1.6 - April 2026 (Updated April 6) =
+
+**A2A Protocol, JetEngine MCP, Agent Command Center, Chat Bubble Widget**
+
+* JetEngine 3.8 MCP Server integration — 7 new Pro tools for CPT/taxonomy/meta field creation via JSON-RPC 2.0
+* Agent-to-Agent (A2A) protocol — `/.well-known/agent.json` discovery, task state machine, push notifications
+* Agent Command Center dashboard — 7 tabs with KPI cards, analytics, approvals, uptime monitoring
+* Floating chat bubble widget for Elementor and Gutenberg — 4 positions, dark mode, WCAG keyboard nav
+* Anthropic & Gemini subscription tier support with custom base URLs
+* ECA Pro Toolkit — 24 new tools across 8 categories plus 4 upgraded tools
+* Image validation tools for product actualization and vehicle estimates (A–F ratings)
+* 5 new agent workflow presets (supervisor, pipeline, swarm, hierarchical, review QA)
+* Chat UI sub-agent panel with agent cards, workflow tracker, delegation notices
+* Enterprise TMA templates — 5 inline templates upgraded to 5-tab architecture
+* New Shopify Shop TMA (React SPA) + critical Shopify Jewelry TMA fixes
+* Per-connection TMA URL routing for multi-bot Telegram setups
+* Schedule preset install overrides for `assistant_id` and `credentials`
+
+**Security**
+
+* SQL query hardening — `$wpdb->prepare()` replacing raw interpolation in 5 files
+* Guest token TTL wired to admin setting with absolute max (7 days) enforcement
+* Output escaping fix — shortcode content via `wp_kses_post()`
+* Removed unsafe `urldecode()` after `sanitize_text_field()`
+* Lodash security vulnerability fix in pro addon
+
+**Bug Fixes**
+
+* `execute()` signature compatibility fix for 7 JetEngine MCP tool classes
+* Analytics tab wired to actual hooks with real per-agent metrics
+* TMA React imports from `react` directly (not `@wordpress/element`)
+* Multiple TMA auth, session, and white screen fixes
+* Model pricing auto-update for missing CCT models
 
 = 1.1.6 - April 2026 =
 
@@ -771,7 +819,7 @@ These services are only contacted when specific tools/features are used:
 * **When:** When the import duty lookup tool is used (requires ITA API key configuration)
 * **Service URL:** https://api.trade.gov/v1/tariff_rates/search
 * **Terms of Service:** https://developer.trade.gov/
-* **Privacy Policy:** https://www.trade.gov/privacy
+* **Privacy Policy:** https://developer.trade.gov/ (ITA Developer Portal — U.S. government data; see site footer for ITA privacy information)
 
 **24. Google Maps Platform API**
 * **Purpose:** Geocoding, place search, place details, and autocomplete
@@ -841,7 +889,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
 * **Service URL:** https://app.mailjet.com/oauth/authorize (OAuth authorize), https://api.mailjet.com/v3/REST (email campaign API)
-* **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
+* **Terms of Service:** https://www.mailjet.com/legal/terms/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
 **32. Tavily Search API**
@@ -943,6 +991,22 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Service URL:** https://api.qrserver.com/v1/create-qr-code/
 * **Terms of Service:** https://goqr.me/api/
 * **Privacy Policy:** https://goqr.me/privacy-safety-security/
+
+**44. Crawl4AI (Self-Hosted or Configurable Endpoint)**
+* **Purpose:** Web page crawling and content extraction for AI context ingestion and price lookup
+* **Data Sent:** Target URLs to crawl, crawl configuration parameters (extraction strategy, chunking, CSS selectors); site URL included in User-Agent header
+* **When:** When the `run_crawl4ai_job` or `crawl4ai_price_lookup` tools are used and a Crawl4AI endpoint is configured
+* **Service URL:** Configurable via Settings → NV oOS → Crawl4AI Base URL (no default — must be explicitly configured by the administrator); typically self-hosted (e.g., http://localhost:11235)
+* **Terms of Service:** https://github.com/unclecode/crawl4ai/blob/main/LICENSE (Apache 2.0)
+* **Privacy Policy:** N/A — self-hosted by default; if using a third-party hosted instance, consult that provider's privacy policy
+
+**45. Varnish Cache Server (Self-Hosted Infrastructure)**
+* **Purpose:** HTTP cache purging via PURGE requests to a Varnish reverse-proxy server
+* **Data Sent:** HTTP PURGE method request with the URL path to invalidate and an optional X-Purge-Regex header; no user data or credentials are transmitted
+* **When:** When the `purge_varnish_cache` tool is used
+* **Service URL:** Configurable via the `wp_mcp_ai_varnish_host` filter (default: 127.0.0.1:6081 — localhost)
+* **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
+* **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
 
 
 

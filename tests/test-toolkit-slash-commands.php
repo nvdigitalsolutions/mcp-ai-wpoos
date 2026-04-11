@@ -360,7 +360,6 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 			'dj_management'           => 11,
 			'document_generation'     => 13,
 			'ecommerce_pro'           => 15,
-			'fantasy_football'        => 12,
 			'financial_planner'       => 14,
 			'image_production'        => 13,
 			'media_pro'               => 11,

@@ -486,7 +486,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes external API calls to OpenAI.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

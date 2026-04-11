@@ -38,7 +38,9 @@ function wp_mcp_ai_doc_gen_bundle_map() {
 /**
  * Get the list of Cornerstone3D package names.
  *
- * These are loaded at runtime via the esm.sh CDN by imaging-viewer.js.
+ * These are loaded at runtime by imaging-viewer.js — from local vendor bundles
+ * when available (built by bin/vendor-cornerstone.js), otherwise from the
+ * esm.sh CDN.
  *
  * @return array List of @cornerstonejs/* package names.
  */
@@ -48,6 +50,44 @@ function wp_mcp_ai_cornerstone_package_names() {
 		'@cornerstonejs/tools',
 		'@cornerstonejs/dicom-image-loader',
 	);
+}
+
+/**
+ * Check whether vendored Cornerstone3D ESM bundles are available on disk.
+ *
+ * These are built by `bin/vendor-cornerstone.js` and placed in
+ * `assets/vendor/cornerstone/`.  When present, the imaging viewer loads
+ * Cornerstone3D entirely from local files with no CDN dependency.
+ *
+ * Also checks the standalone nvoos-cornerstone3d addon which provides
+ * the same bundles as a separate WordPress plugin.
+ *
+ * Delegates to the admin page class when loaded; otherwise performs a
+ * standalone filesystem check.
+ *
+ * @since 2.1.0
+ * @return bool
+ */
+function wp_mcp_ai_has_vendored_cornerstone() {
+	// Check standalone addon first (installed as a separate plugin).
+	if ( function_exists( 'nvoos_cornerstone3d_is_available' ) && nvoos_cornerstone3d_is_available() ) {
+		return true;
+	}
+
+	if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+		return false;
+	}
+	// Delegate to the admin class when it is loaded (single source of truth).
+	if ( class_exists( 'WP_MCP_AI_Imaging_Admin_Page' ) && method_exists( 'WP_MCP_AI_Imaging_Admin_Page', 'has_vendored_cornerstone' ) ) {
+		return WP_MCP_AI_Imaging_Admin_Page::has_vendored_cornerstone();
+	}
+	// Standalone fallback — the admin class may not be loaded in REST/CLI contexts.
+	$base = WP_MCP_AI_PRO_PATH . 'assets/vendor/cornerstone/';
+	return file_exists( $base . 'cornerstone-core.esm.js' )
+		&& file_exists( $base . 'cornerstone-tools.esm.js' )
+		&& file_exists( $base . 'cornerstone-dicom-loader.esm.js' )
+		&& file_exists( $base . 'dicom-parser.esm.js' )
+		&& file_exists( $base . 'xmlbuilder2.esm.js' );
 }
 
 /**
@@ -88,8 +128,11 @@ function wp_mcp_ai_is_npm_package_available( $package_name ) {
 		}
 	}
 
-	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	// Check for Cornerstone3D packages — prefer vendored ESM bundles, fall back to CDN.
 	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( wp_mcp_ai_has_vendored_cornerstone() ) {
+			return true;
+		}
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
 			return true;
 		}
@@ -160,15 +203,26 @@ function wp_mcp_ai_get_npm_package_status( $package_name ) {
 		}
 	}
 
-	// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).
+	// Check for Cornerstone3D packages — prefer vendored ESM bundles, fall back to CDN.
 	if ( in_array( $package_name, wp_mcp_ai_cornerstone_package_names(), true ) ) {
+		if ( wp_mcp_ai_has_vendored_cornerstone() ) {
+			return array(
+				'available' => true,
+				'source'    => 'vendor',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Vendored)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'assets/js/imaging-viewer.js' ) ) {
 			return array(
 				'available' => true,
 				'source'    => 'cdn',
 				'message'   => sprintf(
 					/* translators: %s: package name */
-					__( '%s (Pre-packed / CDN)', 'mcp-ai-wpoos-pro' ),
+					__( '%s (CDN)', 'mcp-ai-wpoos-pro' ),
 					$package_name
 				),
 			);

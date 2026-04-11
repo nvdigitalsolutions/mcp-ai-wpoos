@@ -63,8 +63,18 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 					'description' => __( 'The name of the option to update (e.g., "blogname").', 'mcp-ai-wpoos-pro' ),
 				),
 				'option_value' => array(
-					'type'        => 'mixed',
 					'description' => __( 'The new value for the option.', 'mcp-ai-wpoos-pro' ),
+					'anyOf'       => array(
+						array( 'type' => 'string' ),
+						array( 'type' => 'number' ),
+						array( 'type' => 'boolean' ),
+						array( 'type' => 'object' ),
+						array(
+							'type'  => 'array',
+							'items' => array(),
+						),
+						array( 'type' => 'null' ),
+					),
 				),
 			),
 			'required'             => array( 'option_name', 'option_value' ),

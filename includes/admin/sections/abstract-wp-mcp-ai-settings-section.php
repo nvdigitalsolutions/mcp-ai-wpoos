@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 				foreach ( $_POST as $key => $value ) {
 					if ( strpos( $key, 'subtab_' ) === 0 ) {
-						$post_subtab_fields[ $key ] = $value;
+						$post_subtab_fields[ sanitize_key( $key ) ] = sanitize_text_field( wp_unslash( $value ) );
 					}
 				}
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.

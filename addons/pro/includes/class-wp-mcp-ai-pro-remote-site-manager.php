@@ -234,6 +234,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['mini_app_woo_connection_id'] = $existing_connection['mini_app_woo_connection_id'];
 			}
 
+			// Preserve existing mini_app_shopify_connection_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_shopify_connection_id'] ) && isset( $existing_connection['mini_app_shopify_connection_id'] ) ) {
+				$connection_data['mini_app_shopify_connection_id'] = $existing_connection['mini_app_shopify_connection_id'];
+			}
+
 			// Preserve existing auto_create_wp_user (Telegram) if not provided.
 			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
 				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
@@ -472,7 +477,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'mini_app_assistant_id'      => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
 			'mini_app_template'          => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
 			'mini_app_woo_source'        => ( isset( $connection_data['mini_app_woo_source'] ) && 'remote' === $connection_data['mini_app_woo_source'] ) ? 'remote' : 'local',
-			'mini_app_woo_connection_id' => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
+			'mini_app_woo_connection_id'     => isset( $connection_data['mini_app_woo_connection_id'] ) ? sanitize_key( $connection_data['mini_app_woo_connection_id'] ) : '',
+			'mini_app_shopify_connection_id' => isset( $connection_data['mini_app_shopify_connection_id'] ) ? sanitize_key( $connection_data['mini_app_shopify_connection_id'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
@@ -543,6 +549,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'shopify_api_mode'    => isset( $connection_data['shopify_api_mode'] ) && in_array( $connection_data['shopify_api_mode'], array( 'admin_api', 'catalog_api' ), true )
 				? $connection_data['shopify_api_mode']
 				: 'admin_api',
+			'shopify_catalog_shop_id' => isset( $connection_data['shopify_catalog_shop_id'] )
+				? sanitize_text_field( $connection_data['shopify_catalog_shop_id'] )
+				: '',
 			// ShipEngine-specific fields.
 			'shipengine_carrier_id' => isset( $connection_data['shipengine_carrier_id'] )
 				? sanitize_text_field( $connection_data['shipengine_carrier_id'] )

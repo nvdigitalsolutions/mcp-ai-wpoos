@@ -261,6 +261,11 @@ if ( ! function_exists( 'wp_mcp_ai_dismiss_directory_notice_ajax' ) ) {
 	function wp_mcp_ai_dismiss_directory_notice_ajax() {
 		check_ajax_referer( 'wp_mcp_ai_dismiss_directory_notice', 'nonce' );
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+			return;
+		}
+
 		$user_id = get_current_user_id();
 		update_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true );
 

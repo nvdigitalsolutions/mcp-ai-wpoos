@@ -117,7 +117,6 @@ declare -a TOOLKITS=(
     "regulatory-registration|Regulatory Registration Toolkit|enable_regulatory_registration_toolkit|regulatory-registration|regulatory-registration-toolkit-init.php|Regulatory product registration and compliance management for multi-country submissions.||phpoffice/phpspreadsheet"
     "site-creator|Site Creator Toolkit|enable_site_creator_toolkit|site-creator-toolkit|site-creator-toolkit-init.php|Advanced site creation with page builders, section builders, and widget builders.||"
     "healthcare-imaging|Healthcare Imaging Toolkit|enable_healthcare_imaging|_none_|healthcare-imaging-toolkit-init.php|DICOM medical imaging viewer with Cornerstone3D for PET/CT/MR studies.||"
-    "fantasy-football|Fantasy Football Toolkit|enable_fantasy_football|_none_|fantasy-football-toolkit-init.php|Yahoo Fantasy Sports integration with team management, player research, and trade analysis.|includes/fantasy-football|"
     "media|Media Toolkit|enable_media_toolkit|_none_|media-toolkit-init.php|Image optimization, video processing, SVG vectorization, and math equation rendering.||"
 )
 

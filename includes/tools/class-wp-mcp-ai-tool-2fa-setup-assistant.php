@@ -695,6 +695,17 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	}
 
 	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'external-api',        // Fetches QR code from api.qrserver.com.
+			'state-changing',      // Stores 2FA configuration in user meta.
+			'requires-capability', // Requires user capabilities.
+		);
+	}
+
+	/**
 	 * Erase privacy data
 	 *
 	 * @since 1.0.0

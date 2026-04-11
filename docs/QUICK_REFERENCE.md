@@ -1,11 +1,25 @@
 # NV oOS Quick Reference Guide
 
 **Version:** 1.1.6  
-**Last Updated:** March 28, 2026
+**Last Updated:** April 6, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (March 2026)
+## 🆕 Recent Updates (April 2026)
+
+- **JetEngine 3.8 MCP Server Integration** ⭐ NEW – JSON-RPC 2.0 bridge into JetEngine's native MCP Server with 7 new Pro tools (`jetengine_mcp`, `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`). MCP-first dispatch with REST v2 fallback. Admin status panel with 3 new settings.
+- **Agent-to-Agent (A2A) Protocol** ⭐ NEW – Full A2A protocol making assistants discoverable and interoperable. `/.well-known/agent.json` discovery, JSON-RPC 2.0 server with task state machine, A2A client for remote agents, `delegate_to_a2a_agent` tool, push notification webhooks.
+- **Agent Command Center** ⭐ NEW – 7-tab Pro dashboard: Overview (KPI cards), Activity Log, Active Tasks, Approvals, Analytics (Chart.js with real per-agent metrics), Uptime & Health, Strategy (efficiency scoring).
+- **Floating Chat Bubble** ⭐ NEW – Configurable floating chat bubble as Elementor widget and Gutenberg block. 4 positions, 3 sizes, animations, dark mode, WCAG keyboard nav, sessionStorage persistence.
+- **Anthropic & Gemini Subscription Tiers** ⭐ NEW – Custom base URLs and API key type selectors (standard/team/enterprise) for Anthropic and Gemini. Centralized headers with filter hooks.
+- **ECA Pro Toolkit — 24 New Tools** ⭐ NEW – Attendance, waitlist, scheduling, notifications, analytics, integration, and workflow tools. 4 existing tools upgraded.
+- **Image Validation Tools** ⭐ NEW – `validate_image_for_product` (9 product types) and `validate_image_for_vehicle` (cleaning/repair). AI Vision–powered, industry-standard A–F ratings.
+- **Agent Workflow Presets** ⭐ NEW – 5 new presets: supervisor, pipeline, swarm, hierarchical, review QA. Chat UI sub-agent panel with agent cards and workflow tracker.
+- **Enterprise TMA Templates** ⭐ NEW – 5 inline templates upgraded to 5-tab architecture. New Shopify Shop TMA (React SPA). Per-connection TMA URLs for multi-bot Telegram.
+- **Security Hardening** – SQL query hardening, guest token TTL wired to admin setting, output escaping fixes, lodash vulnerability patch.
+- **Bug Fixes** – `execute()` signature compatibility, analytics hooks, TMA auth/imports/white screen, model pricing auto-update, and more.
+
+### Previous Updates (March 2026)
 
 - **Getting Started Wizard** ⭐ NEW – 4-step onboarding wizard with 8 use-case presets (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose). Selecting a preset creates a fully-configured assistant with tools, system prompt, and tuned temperature — working out of the box. WCAG 2.1 accessible with keyboard navigation. Access via **NV oOS → Getting Started**.
 - **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
@@ -591,7 +605,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 533 tools detailed (165 base + 368 pro)
+- [Tool Reference](reference/tools/tool-reference.md) - All 568 tools detailed (166 base + 402 pro)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

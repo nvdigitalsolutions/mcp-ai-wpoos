@@ -236,6 +236,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '/src' \
         --exclude 'ARCHITECTURE.md' \
         --exclude 'CHANGELOG.md' \
+        --exclude 'CLAUDE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -706,6 +707,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '/src' \
         --exclude 'ARCHITECTURE.md' \
         --exclude 'CHANGELOG.md' \
+        --exclude 'CLAUDE.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \

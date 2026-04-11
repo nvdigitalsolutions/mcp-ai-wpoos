@@ -373,6 +373,19 @@ All CCTs are registered via `maybe_register_cct()` on the `init` hook (priority 
 
 ## Changelog
 
+### Version 2.1.0
+- ✅ JetEngine 3.8+ MCP Server integration
+- ✅ JSON-RPC 2.0 client for MCP Server communication
+- ✅ 7 new MCP-powered tools (bridge, create_post_type, create_taxonomy, create_meta_field, manage_relations, site_context, prompts)
+- ✅ MCP Resources class for AI context enrichment
+- ✅ MCP Prompts class for prompt template access
+- ✅ Auto-inject site context into AI system prompts
+- ✅ MCP dispatch path with legacy REST fallback
+- ✅ Admin UI MCP Server status panel
+- ✅ `prefer_mcp` parameter for invoke_jetengine_route
+- ✅ MCP tools listed alongside REST routes
+- ✅ Cache TTL and context injection settings
+
 ### Version 2.0.0
 - ✅ Initial release
 - ✅ AI Assistant metabox for JetEngine CPTs

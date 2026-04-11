@@ -8,6 +8,7 @@
 # - Combined (base + pro)
 # - Core plugin (lightweight)
 # - WordPress.org compliant package (with CDN exclusions and text domain transformation)
+# - Standalone add-ons (canvas + algorave)
 #
 # Usage:
 #   ./bin/rebuild-all-zips.sh                          # Rebuild all versions
@@ -75,6 +76,24 @@ echo ""
 
 echo ""
 echo "=========================================="
+echo "Building Standalone Add-on Packages"
+echo "=========================================="
+echo ""
+
+# Auto-detect Docker availability: canvas addon requires Docker for native binary
+# compilation. When Docker is unavailable (CI runners, lightweight environments),
+# skip the canvas build — it has its own dedicated workflow (build-canvas-addon.yml).
+ADDON_SKIP_CANVAS=""
+if ! command -v docker >/dev/null 2>&1; then
+echo "ℹ️  Docker not available — skipping canvas addon build."
+echo "   Canvas ZIPs are built by the dedicated 'Build Canvas Addon' workflow."
+echo ""
+ADDON_SKIP_CANVAS="--skip-canvas"
+fi
+"$SCRIPT_DIR/build-addon-zips.sh" --version "$VERSION" $ADDON_SKIP_CANVAS
+
+echo ""
+echo "=========================================="
 echo "Building WordPress.org Compliant Package"
 echo "=========================================="
 echo ""
@@ -96,6 +115,11 @@ if [ -d "$ROOT_DIR/build/toolkit-addons" ]; then
     ls -lh "$ROOT_DIR/build/toolkit-addons/"*.zip 2>/dev/null | awk '{print "   " $9 " (" $5 ")"}'
     TOOLKIT_COUNT=$(ls -1 "$ROOT_DIR/build/toolkit-addons/"*.zip 2>/dev/null | wc -l)
     echo "   (${TOOLKIT_COUNT} individual toolkit add-on ZIPs)"
+    echo ""
+fi
+if ls "$ROOT_DIR/build"/nvoos-*-linux-x64-v*.zip >/dev/null 2>&1; then
+    echo "📦 Standalone add-ons:"
+    ls -lh "$ROOT_DIR/build"/nvoos-*-linux-x64-v*.zip | awk '{print "   " $9 " (" $5 ")"}'
     echo ""
 fi
 echo "📄 WordPress.org submission package:"

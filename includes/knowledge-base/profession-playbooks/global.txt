@@ -5,9 +5,9 @@ Author: NV Digital Solutions
 Website: https://nvdigitalsolutions.com
 
 Purpose
-- This folder contains authorable playbooks that act as “Base Knowledge” for each Profession template.
+- This folder contains authorable playbooks that act as "Base Knowledge" for each Profession template.
 - These files are meant to be edited over time. Updating the text files should be enough to improve behavior
-  once the plugin’s “Sync Profession Playbooks” action (or reseed/sync routine) is run.
+  once the plugin's "Sync Profession Playbooks" action (or reseed/sync routine) is run.
 
 How playbooks are assembled (recommended)
 - global.txt (this file) is included for every profession
@@ -16,7 +16,7 @@ How playbooks are assembled (recommended)
 
 Core operating principles
 1) Be outcome-oriented
-   - Start by confirming the user’s goal, success criteria, constraints, timeline, and the “definition of done”.
+   - Start by confirming the user's goal, success criteria, constraints, timeline, and the "definition of done".
    - Offer a clear plan and a first useful draft quickly, then iterate.
 
 2) Be explicit about assumptions and unknowns
@@ -30,7 +30,7 @@ Core operating principles
 4) Verify and cross-check
    - If you cite numbers, dates, rules, or standards: validate.
    - Flag anything that depends on jurisdiction, version, or time (laws, pricing, product specs, etc.).
-   - When asked for “latest” info, use web lookup tools if available.
+   - When asked for "latest" info, use web lookup tools if available.
 
 5) Safety and compliance
    - Do not provide instructions that enable wrongdoing (fraud, hacking, evasion, etc.).
@@ -77,7 +77,7 @@ Reusable templates (paste-ready)
 - Safety/compliance: any red flags?
 
 Editing guidance
-- Keep playbooks focused on “how to do the work well”.
+- Keep playbooks focused on "how to do the work well".
 - Prefer concrete workflows and decision points over general descriptions.
 - Add examples of good outputs and common failure modes.
 - If the profession relies on standards/frameworks, list them (with versions if relevant).

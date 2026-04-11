@@ -213,45 +213,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'rows'        => 8,
 				),
 
-				// Yahoo Fantasy Sports.
-				'yahoo_client_id'                   => array(
-					'type'         => 'text',
-					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to Yahoo Developer */
-						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.', 'mcp-ai-wpoos' ),
-						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-				),
-				'yahoo_client_secret'               => array(
-					'type'         => 'password',
-					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-
-				// ESPN Fantasy Sports.
-				'espn_fantasy_espn_s2'              => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN S2 Cookie', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to ESPN authentication docs */
-						__( 'ESPN S2 authentication cookie for accessing private leagues. Required along with SWID cookie. See %s for how to obtain these cookies from your browser.', 'mcp-ai-wpoos' ),
-						'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-				'espn_fantasy_swid'                 => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN SWID Cookie', 'mcp-ai-wpoos' ),
-					'description'  => __( 'ESPN SWID authentication cookie for accessing private leagues. Required along with S2 cookie. Extract from browser after logging into ESPN Fantasy.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
 			);
 		}
 
@@ -285,12 +246,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 					'label'  => __( 'Google Analytics', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-line',
 					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json' ),
-				),
-				'fantasy_sports' => array(
-					'id'     => 'fantasy_sports',
-					'label'  => __( 'Fantasy Sports', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-games',
-					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret', 'espn_fantasy_espn_s2', 'espn_fantasy_swid' ),
 				),
 			);
 		}
