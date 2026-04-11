@@ -785,7 +785,8 @@
 
 					Object.defineProperty( dest, 'channelCount', {
 						set: function ( v ) {
-							const clamped = Math.min( Math.max( ( typeof v === 'number' && v > 0 ) ? v : safeCh, 1 ), 32 );
+							const isValid = ( typeof v === 'number' && v > 0 );
+							const clamped = Math.min( Math.max( isValid ? v : safeCh, 1 ), 32 );
 							try {
 								nativeSetter.call( dest, clamped );
 								fallbackCount = clamped;
