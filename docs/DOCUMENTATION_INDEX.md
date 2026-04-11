@@ -31,6 +31,12 @@ This document provides a comprehensive index of all documentation available for 
 > - **Tool Count** – 166 base + 402 pro = **568 total tools** (was 533).
 > - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
 
+> **📌 APRIL 7, 2026 UPDATE:** 📐 **ARCHITECTURE DOCUMENTATION REFRESH**
+> - **Architecture Overview Updated** – `docs/architecture/ARCHITECTURE.md` refreshed from Dec 2025 → Apr 2026 with current counts: 9 AI providers, 353 tool classes (226 base + 127 pro), 22 REST controllers, 24 Elementor widgets, 24 Gutenberg blocks, 9 NPM packages
+> - **New: Request Flow Walkthrough** – `docs/architecture/REQUEST-FLOW-WALKTHROUGH.md` — end-to-end trace of chat message lifecycle: browser `sendChat()` → REST routing → authentication → assistant resolution → SSE setup → LLM call → agentic tool loop → final response streaming → frontend rendering
+> - **README.md Updated** – Architecture diagram now shows all 9 providers; repository statistics section corrected; docs section links to new walkthrough
+> - **See**: [Architecture Overview](architecture/ARCHITECTURE.md) | [Request Flow Walkthrough](architecture/REQUEST-FLOW-WALKTHROUGH.md)
+
 > **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
 > - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
 > - **Shopify Connection Auto-Resolve** – All 5 Shopify tools auto-resolve `connection_id` from assistant context. New `remote_shopify_connection` tool. `WP_MCP_AI_Shopify_Connection_Resolver` trait.

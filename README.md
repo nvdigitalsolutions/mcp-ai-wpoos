@@ -152,7 +152,7 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 ## 🏗 System Architecture
 
-NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
+NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system supports **9 AI providers** (OpenAI, Gemini, Anthropic, NVIDIA NIM, Ollama, LM Studio, Hugging Face, Cloudflare Workers AI, Embedded GGUF), **353 tool classes** (226 base + 127 Pro), **22 REST controllers**, and **24 Elementor widgets**. The system architecture comprises:
 
 - **9 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Embedded
 - **837 tool classes** (227 base + 610 pro) registered through a singleton Tool Registry

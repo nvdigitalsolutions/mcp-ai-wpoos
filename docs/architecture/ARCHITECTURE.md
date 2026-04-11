@@ -213,6 +213,8 @@ See [orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRAT
 
 ### Chat Request Flow
 
+For a detailed, line-by-line trace of the complete request flow, see [REQUEST-FLOW-WALKTHROUGH.md](REQUEST-FLOW-WALKTHROUGH.md).
+
 ```
  1. User sends message via frontend (shortcode / Elementor / chat bubble / TMA)
     ↓
