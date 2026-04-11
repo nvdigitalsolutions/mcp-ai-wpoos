@@ -579,7 +579,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		wp_send_json_success(
 			array(
-				'html'   => $html,
+				'html'   => wp_kses_post( $html ),
 				'config' => $config,
 			)
 		);
