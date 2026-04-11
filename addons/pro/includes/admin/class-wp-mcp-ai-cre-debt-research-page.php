@@ -139,10 +139,8 @@ class WP_MCP_AI_CRE_Debt_Research_Page {
 			<div class="cre-research-chat-wrap">
 				<?php if ( $assistant_id ) : ?>
 					<?php
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output from do_shortcode is safe; wp_kses_post is applied.
-					echo wp_kses_post(
-						do_shortcode( '[mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="500px"]' )
-					);
+					// The shortcode renders a complete chat UI with necessary HTML attributes.
+					echo do_shortcode( '[mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="500px"]' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode handles its own escaping.
 					?>
 				<?php else : ?>
 					<div class="notice notice-warning">
@@ -227,17 +225,19 @@ class WP_MCP_AI_CRE_Debt_Research_Page {
 		}
 
 		// Save loan meta from research data.
-		$meta_fields = array(
-			'borrower_name', 'borrower_entity', 'loan_amount', 'interest_rate',
-			'rate_type', 'origination_date', 'maturity_date', 'amortization',
-			'io_period', 'prepay_type', 'loan_status',
-		);
+		$text_fields    = array( 'borrower_name', 'borrower_entity', 'rate_type', 'origination_date', 'maturity_date', 'prepay_type', 'loan_status' );
+		$numeric_fields = array( 'loan_amount', 'interest_rate', 'amortization', 'io_period' );
 
-		foreach ( $meta_fields as $field ) {
+		foreach ( $text_fields as $field ) {
 			$post_key = 'cre_' . $field;
 			if ( isset( $_POST[ $post_key ] ) ) {
-				$value = sanitize_text_field( wp_unslash( $_POST[ $post_key ] ) );
-				update_post_meta( $post_id, '_cre_' . $field, $value );
+				update_post_meta( $post_id, '_cre_' . $field, sanitize_text_field( wp_unslash( $_POST[ $post_key ] ) ) );
+			}
+		}
+		foreach ( $numeric_fields as $field ) {
+			$post_key = 'cre_' . $field;
+			if ( isset( $_POST[ $post_key ] ) ) {
+				update_post_meta( $post_id, '_cre_' . $field, floatval( $_POST[ $post_key ] ) );
 			}
 		}
 
@@ -279,17 +279,19 @@ class WP_MCP_AI_CRE_Debt_Research_Page {
 		}
 
 		// Save property meta.
-		$meta_fields = array(
-			'prop_address', 'prop_city', 'prop_state', 'prop_zip',
-			'prop_sqft', 'prop_units', 'prop_year_built', 'prop_occupancy',
-			'prop_market', 'prop_noi', 'prop_value', 'prop_cap_rate',
-		);
+		$text_fields    = array( 'prop_address', 'prop_city', 'prop_state', 'prop_zip', 'prop_market' );
+		$numeric_fields = array( 'prop_sqft', 'prop_units', 'prop_year_built', 'prop_occupancy', 'prop_noi', 'prop_value', 'prop_cap_rate' );
 
-		foreach ( $meta_fields as $field ) {
+		foreach ( $text_fields as $field ) {
 			$post_key = 'cre_' . $field;
 			if ( isset( $_POST[ $post_key ] ) ) {
-				$value = sanitize_text_field( wp_unslash( $_POST[ $post_key ] ) );
-				update_post_meta( $post_id, '_cre_' . $field, $value );
+				update_post_meta( $post_id, '_cre_' . $field, sanitize_text_field( wp_unslash( $_POST[ $post_key ] ) ) );
+			}
+		}
+		foreach ( $numeric_fields as $field ) {
+			$post_key = 'cre_' . $field;
+			if ( isset( $_POST[ $post_key ] ) ) {
+				update_post_meta( $post_id, '_cre_' . $field, floatval( $_POST[ $post_key ] ) );
 			}
 		}
 

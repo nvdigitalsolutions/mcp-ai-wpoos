@@ -266,11 +266,14 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 			// Maturity schedule (bucket by year).
 			$maturity = get_post_meta( $loan_id, '_cre_maturity_date', true );
 			if ( $maturity ) {
-				$year = substr( $maturity, 0, 4 );
-				if ( ! isset( $data['maturity_schedule'][ $year ] ) ) {
-					$data['maturity_schedule'][ $year ] = 0;
+				$parsed = date_parse( $maturity );
+				$year   = ( $parsed && ! empty( $parsed['year'] ) && 0 === $parsed['error_count'] ) ? (string) $parsed['year'] : '';
+				if ( $year ) {
+					if ( ! isset( $data['maturity_schedule'][ $year ] ) ) {
+						$data['maturity_schedule'][ $year ] = 0;
+					}
+					$data['maturity_schedule'][ $year ] += $balance;
 				}
-				$data['maturity_schedule'][ $year ] += $balance;
 			}
 
 			// Rate distribution bucket.
@@ -542,19 +545,19 @@ class WP_MCP_AI_CRE_Debt_Dashboard_Page {
 									$status_slug = sanitize_title( $loan['status'] );
 									?>
 									<tr>
-										<td>
+										<td data-label="<?php esc_attr_e( 'Loan', 'mcp-ai-wpoos-pro' ); ?>">
 											<a href="<?php echo esc_url( get_edit_post_link( $loan['id'] ) ); ?>">
 												<?php echo esc_html( $loan['title'] ); ?>
 											</a>
 										</td>
-										<td><?php echo esc_html( $loan['type'] ); ?></td>
-										<td>$<?php echo esc_html( number_format( $loan['balance'], 0 ) ); ?></td>
-										<td><?php echo $loan['rate'] > 0 ? esc_html( $loan['rate'] . '%' ) : '—'; ?></td>
-										<td class="<?php echo esc_attr( $dscr_class ); ?>"><?php echo $loan['dscr'] > 0 ? esc_html( $loan['dscr'] . 'x' ) : '—'; ?></td>
-										<td class="<?php echo esc_attr( $ltv_class ); ?>"><?php echo $loan['ltv'] > 0 ? esc_html( $loan['ltv'] . '%' ) : '—'; ?></td>
-										<td class="<?php echo esc_attr( $dy_class ); ?>"><?php echo $loan['dy'] > 0 ? esc_html( $loan['dy'] . '%' ) : '—'; ?></td>
-										<td><?php echo $loan['maturity'] ? esc_html( $loan['maturity'] ) : '—'; ?></td>
-										<td><span class="cre-status-badge cre-status-<?php echo esc_attr( $status_slug ); ?>"><?php echo esc_html( ucwords( str_replace( '_', ' ', $loan['status'] ) ) ); ?></span></td>
+										<td data-label="<?php esc_attr_e( 'Type', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_html( $loan['type'] ); ?></td>
+										<td data-label="<?php esc_attr_e( 'Balance', 'mcp-ai-wpoos-pro' ); ?>">$<?php echo esc_html( number_format( $loan['balance'], 0 ) ); ?></td>
+										<td data-label="<?php esc_attr_e( 'Rate', 'mcp-ai-wpoos-pro' ); ?>"><?php echo $loan['rate'] > 0 ? esc_html( $loan['rate'] . '%' ) : '—'; ?></td>
+										<td data-label="<?php esc_attr_e( 'DSCR', 'mcp-ai-wpoos-pro' ); ?>" class="<?php echo esc_attr( $dscr_class ); ?>"><?php echo $loan['dscr'] > 0 ? esc_html( $loan['dscr'] . 'x' ) : '—'; ?></td>
+										<td data-label="<?php esc_attr_e( 'LTV', 'mcp-ai-wpoos-pro' ); ?>" class="<?php echo esc_attr( $ltv_class ); ?>"><?php echo $loan['ltv'] > 0 ? esc_html( $loan['ltv'] . '%' ) : '—'; ?></td>
+										<td data-label="<?php esc_attr_e( 'Debt Yield', 'mcp-ai-wpoos-pro' ); ?>" class="<?php echo esc_attr( $dy_class ); ?>"><?php echo $loan['dy'] > 0 ? esc_html( $loan['dy'] . '%' ) : '—'; ?></td>
+										<td data-label="<?php esc_attr_e( 'Maturity', 'mcp-ai-wpoos-pro' ); ?>"><?php echo $loan['maturity'] ? esc_html( $loan['maturity'] ) : '—'; ?></td>
+										<td data-label="<?php esc_attr_e( 'Status', 'mcp-ai-wpoos-pro' ); ?>"><span class="cre-status-badge cre-status-<?php echo esc_attr( $status_slug ); ?>"><?php echo esc_html( ucwords( str_replace( '_', ' ', $loan['status'] ) ) ); ?></span></td>
 									</tr>
 								<?php endforeach; ?>
 							<?php endif; ?>

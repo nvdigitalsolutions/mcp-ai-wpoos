@@ -67,7 +67,7 @@ function wp_mcp_ai_enqueue_cre_debt_toolkit_admin_styles( $hook ) {
 
 	// Only load on CRE Debt screens.
 	$screen = get_current_screen();
-	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_cre_loan', 'mcp_ai_cre_property' ), true ) ) {
+	if ( ! $screen || ! isset( $screen->post_type ) || ! in_array( $screen->post_type, array( 'mcp_ai_cre_loan', 'mcp_ai_cre_property' ), true ) ) {
 		return;
 	}
 

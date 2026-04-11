@@ -172,7 +172,7 @@ class WP_MCP_AI_CRE_Debt_CPT {
 			'CMBS'           => __( 'CMBS conduit securitized loan', 'mcp-ai-wpoos-pro' ),
 			'Agency'         => __( 'Fannie Mae / Freddie Mac agency loan', 'mcp-ai-wpoos-pro' ),
 			'SBA'            => __( 'SBA 504 or 7(a) commercial loan', 'mcp-ai-wpoos-pro' ),
-			'CRE CLO'       => __( 'CRE CLO securitized transitional loan', 'mcp-ai-wpoos-pro' ),
+			'CRE CLO'        => __( 'CRE CLO securitized transitional loan', 'mcp-ai-wpoos-pro' ),
 			'Preferred Equity' => __( 'Preferred equity position', 'mcp-ai-wpoos-pro' ),
 		);
 
