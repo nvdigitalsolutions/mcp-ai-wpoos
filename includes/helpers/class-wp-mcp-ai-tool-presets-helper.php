@@ -2,13 +2,13 @@
 /**
  * Tool Presets Helper - Updated 2026
  *
- * Comprehensive tool selection presets covering 770+ tools organized by
+ * Comprehensive tool selection presets covering 850+ tools organized by
  * use case and profession type. Includes DeepSeek V4 agent coordination tools,
  * quiz management, media templates, music production, fantasy sports, webchat,
  * health vitals management, Shopify, registration management, appointment
  * scheduling, cloud storage, cross-platform messaging, Brevo email marketing,
- * Mailgun transactional email, listing image downloads, and more.
- * Clear All/Select All functionality included.
+ * Mailgun transactional email, listing image downloads, CRE debt & securitization,
+ * and more. Clear All/Select All functionality included.
  *
  * @package WP_MCP_AI
  * @since 1.9.0
@@ -19,14 +19,18 @@
  *   search, sales pipeline tools, health metrics logging, vitals import, MOH sync, social listening,
  *   competitor analysis, workflow CRUD, vault tools, and more across all presets.
  * @updated 2026-03-30 - Added 8 missing tools: Brevo email/contacts/stats, Mailgun email,
- * @author    NV Digital Solutions
- * @copyright Copyright (c) 2025-2026 NV Digital Solutions
- * @license   GPL-3.0-or-later
  *   Shopify Catalog, Facebook/Instagram/Google Maps image downloads to relevant presets.
  * @updated 2026-04-04 - Enhanced agent workflow presets with industry-standard patterns:
  *   supervisor, pipeline, swarm, hierarchical, and review/QA patterns. Added delegate_to_a2a_agent,
  *   deep_research, context lifecycle, task dependency tools to existing presets.
  *   Updated autonomous_orchestration with workflow rules and task dependencies.
+ * @updated 2026-04-11 - Added CRE Debt & Securitization preset (58 tools), expanded education
+ *   preset with 19 additional ECA management tools, added 8 missing financial planner tools,
+ *   added research_blog_post, bulk_enroll_students, get_student_participation_summary,
+ *   vehicle tools to relevant presets. Total preset tool coverage now 850+.
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -44,13 +48,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	/**
 	 * Get the tool presets configuration.
 	 *
-	 * Updated 2026-03-16 to include all 760+ current tools organized by:
+	 * Updated 2026-04-11 to include all 850+ current tools organized by:
 	 * - Core functionality (AI/ML, Media, Content, etc.)
 	 * - Profession categories (Healthcare, Legal, Education, etc.)
 	 * - Specialized workflows (Quiz Management, Media Templates, Music Production)
 	 * - Advanced tools (Math/Science, Research, Project Management)
 	 * - Agentic workflows (including agent coordination tools)
 	 * - Registration & Compliance Management
+	 * - CRE Debt & Securitization (CMBS, underwriting, originations, fund management)
 	 * - Full cross-platform messaging (Discord, Slack, Teams, Apple Messages, etc.)
 	 * - Shopify e-commerce, cloud storage, tool scaffolding, and more
 	 *
@@ -277,6 +282,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'web_search',
 					'web_search_validated',
 					'deep_research',
+					'research_blog_post',
 					'submit_document_prompt',
 					// Taxonomy management.
 					'create_term',
@@ -1160,8 +1166,32 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_eca',
 					'list_ecas',
 					'enroll_student_eca',
+					'withdraw_student_eca',
 					'research_eca',
 					'sync_ecas_from_isams',
+					'sync_eca_enrollments_from_isams',
+					'sync_ecas_to_isams',
+					'sync_ecas_from_socs',
+					'import_ecas_csv',
+					'export_eca_data',
+					// ECA Attendance & Scheduling (Pro).
+					'mark_eca_attendance',
+					'get_eca_attendance_report',
+					'get_eca_timetable',
+					'set_eca_schedule',
+					'check_eca_conflicts',
+					'manage_eca_term',
+					'manage_eca_waitlist',
+					// ECA Notifications & Reports (Pro).
+					'send_eca_notification',
+					'configure_eca_notifications',
+					'send_eca_parent_report',
+					'generate_eca_participation_report',
+					'generate_eca_analytics',
+					'create_eca_workflow_rule',
+					// Student bulk operations (Pro).
+					'bulk_enroll_students',
+					'get_student_participation_summary',
 					// Task Management (Pro).
 					'create_task',
 					'update_task',
@@ -1234,6 +1264,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'cash_flow_analyzer',
 					'retirement_calculator',
 					'tax_estimator',
+					// Market Intelligence (Pro).
+					'financial_search',
+					'financial_news_aggregator',
+					'financial_report_generator',
+					'stock_data_fetcher',
+					'market_forecast_analyzer',
+					'market_sentiment_analyzer',
 					// Analytics.
 					'google_analytics_report',
 					'quickbooks_report',
@@ -2319,6 +2356,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_places',
 					// Analytics & Reporting.
 					'create_chart',
+					// Vehicle Estimates (Pro).
+					'vehicle_repair_estimate',
+					'vehicle_cleaning_estimate',
+					'vin_decode',
 					// Social Media & Marketing.
 					'post_facebook_instagram',
 					'post_google_business_update',
@@ -2764,6 +2805,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'tax_estimator',
 					'college_savings_calculator',
 					'insurance_needs_analyzer',
+					// Market & Investment Intelligence (Pro - 8 tools).
+					'financial_search',
+					'financial_news_aggregator',
+					'financial_report_generator',
+					'financial_logic_visualizer',
+					'stock_data_fetcher',
+					'investment_signal_tracker',
+					'market_forecast_analyzer',
+					'market_sentiment_analyzer',
 				),
 			),
 
@@ -3030,6 +3080,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'research_policy',
 					'research_eca',
 					'research_quiz_topic',
+					'research_blog_post',
 					// Data extraction.
 					'extract_structured_data',
 					'analyze_data_patterns',
@@ -3274,6 +3325,80 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'deep_research',
 					// Communication.
 					'send_group_email',
+				),
+			),
+
+			// =================================================================.
+			// CRE DEBT & SECURITIZATION PRESET
+			// =================================================================.
+
+			'cre_debt_securitization'   => array(
+				'name'        => __( '🏦 CRE Debt & Securitization', 'mcp-ai-wpoos' ),
+				'description' => __( 'Commercial real estate debt underwriting, CMBS securitization, loan origination, fund management, and asset surveillance tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// CRE Underwriting (14 tools).
+					'cre_debt_calculator',
+					'cre_loan_sizer',
+					'cre_noi_calculator',
+					'cre_dcf_modeler',
+					'cre_cap_rate_sensitivity',
+					'cre_debt_yield_analyzer',
+					'cre_rent_roll_analyzer',
+					'cre_amortization_scheduler',
+					'cre_leverage_return_analyzer',
+					'cre_stress_test_modeler',
+					'cre_property_valuation_engine',
+					'cre_operating_expense_benchmarker',
+					'cre_environmental_risk_scorer',
+					'cre_underwriting_memo_generator',
+					// CRE Originations (11 tools).
+					'cre_deal_screening_calculator',
+					'cre_loan_quote_generator',
+					'cre_deal_pipeline_manager',
+					'cre_borrower_profile_analyzer',
+					'cre_market_comp_analyzer',
+					'cre_term_sheet_comparator',
+					'cre_rate_lock_manager',
+					'cre_closing_checklist_manager',
+					'cre_execution_strategy_advisor',
+					'cre_broker_relationship_tracker',
+					'cre_origination_volume_tracker',
+					// CRE Asset Management (12 tools).
+					'cre_property_performance_tracker',
+					'cre_loan_surveillance_dashboard',
+					'cre_watchlist_manager',
+					'cre_lease_expiration_manager',
+					'cre_tenant_credit_analyzer',
+					'cre_property_budget_manager',
+					'cre_capex_reserve_planner',
+					'cre_hold_sell_analyzer',
+					'cre_asset_disposition_analyzer',
+					'cre_workout_scenario_modeler',
+					'cre_loan_modification_calculator',
+					'cre_servicing_fee_calculator',
+					// CMBS Securitization (10 tools).
+					'cmbs_deal_structurer',
+					'cmbs_pool_analyzer',
+					'cmbs_bond_cash_flow_modeler',
+					'cmbs_rating_agency_analyzer',
+					'cmbs_defeasance_calculator',
+					'cmbs_investor_reporting_generator',
+					'cmbs_maturity_risk_analyzer',
+					'cmbs_special_servicing_tracker',
+					'cmbs_surveillance_monitor',
+					'cre_clo_modeler',
+					// CRE Debt Fund & Portfolio (11 tools).
+					'cre_fund_portfolio_dashboard',
+					'cre_fund_return_calculator',
+					'cre_fund_capital_call_calculator',
+					'cre_fund_liquidity_analyzer',
+					'cre_fund_scenario_modeler',
+					'cre_lp_report_generator',
+					'cre_concentration_limit_monitor',
+					'cre_covenant_compliance_checker',
+					'cre_credit_risk_scorer',
+					'cre_debt_waterfall_modeler',
+					'cre_warehouse_line_manager',
 				),
 			),
 
