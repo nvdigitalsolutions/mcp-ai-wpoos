@@ -404,10 +404,12 @@
 
 		// When Elementor passes the widget wrapper it may or may not be the
 		// root element itself – handle both cases.
-		if ( scope && scope.classList && scope.classList.contains( CLASSES.ROOT ) ) {
+		if ( scope instanceof HTMLElement && scope.classList.contains( CLASSES.ROOT ) ) {
 			roots = [ scope ];
-		} else {
+		} else if ( container.querySelectorAll ) {
 			roots = container.querySelectorAll( '.' + CLASSES.ROOT );
+		} else {
+			roots = [];
 		}
 
 		for ( let i = 0; i < roots.length; i++ ) {
@@ -421,7 +423,9 @@
 				}
 
 				// DOM node was replaced (Elementor re-render) – destroy stale instance.
-				instances[ id ].destroy();
+				if ( typeof instances[ id ].destroy === 'function' ) {
+					instances[ id ].destroy();
+				}
 				delete instances[ id ];
 			}
 
