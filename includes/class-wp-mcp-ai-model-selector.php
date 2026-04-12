@@ -341,7 +341,7 @@ class WP_MCP_AI_Model_Selector {
 	 * @param array  $settings Plugin settings array.
 	 * @return string Provider-specific fallback model, or empty string if not configured.
 	 */
-	protected static function get_provider_fallback_model( $model, $settings ) {
+	private static function get_provider_fallback_model( $model, $settings ) {
 		$model_lower = strtolower( $model );
 
 		// Detect provider from model ID and check provider-specific fallback.
