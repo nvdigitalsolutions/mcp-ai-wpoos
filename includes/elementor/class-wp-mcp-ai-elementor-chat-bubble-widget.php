@@ -678,6 +678,19 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 
 	/**
 	 * Render the widget on the front-end.
+	 *
+	 * On the live front-end the complete bubble HTML is queued for
+	 * rendering inside wp_footer via WP_MCP_AI_Shortcode::queue_footer_bubble().
+	 * This ensures the bubble is a direct child of <body>, which:
+	 *
+	 *  1. Escapes ancestor stacking-context / overflow:hidden traps
+	 *     created by Elementor header/footer sections.
+	 *  2. Avoids wp_kses_post() stripping data-* attributes that
+	 *     chat.js relies on (data-wp-mcp-ai-chat, data-template).
+	 *  3. Guarantees scripts are loaded after the DOM is present.
+	 *
+	 * Inside the Elementor visual editor the widget renders inline
+	 * so the builder can display and manage it.
 	 */
 	protected function render() {
 		$settings = $this->get_settings_for_display();
@@ -716,6 +729,53 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		$panel_title = isset( $settings['panel_title'] ) ? $settings['panel_title'] : __( 'Chat with AI', 'mcp-ai-wpoos' );
 		$tooltip     = isset( $settings['bubble_tooltip'] ) ? trim( $settings['bubble_tooltip'] ) : '';
 
+		/*
+		 * Process the shortcode now so that scripts and inline config
+		 * are enqueued at the normal time.  The HTML output is captured
+		 * and included in the footer-rendered bubble below.
+		 */
+		$shortcode_html = do_shortcode( $shortcode );
+
+		/*
+		 * Inside the Elementor editor the widget must render inline
+		 * for the visual builder to work correctly.
+		 */
+		$is_editor = (
+			\Elementor\Plugin::$instance->editor->is_edit_mode() ||
+			\Elementor\Plugin::$instance->preview->is_preview_mode()
+		);
+
+		if ( $is_editor ) {
+			$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html );
+			return;
+		}
+
+		/*
+		 * Front-end: buffer the bubble HTML and queue it for wp_footer
+		 * so it renders as a direct child of <body>.
+		 */
+		ob_start();
+		$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html );
+		$bubble_html = ob_get_clean();
+
+		WP_MCP_AI_Shortcode::queue_footer_bubble( $bubble_html );
+	}
+
+	/**
+	 * Output the bubble HTML structure.
+	 *
+	 * Extracted from render() so both the inline (editor) and footer
+	 * (front-end) code-paths share the same markup.
+	 *
+	 * @param string $classes        CSS class string.
+	 * @param string $data_attrs     Pre-escaped data-attribute string.
+	 * @param string $css_vars       Inline CSS custom properties string.
+	 * @param string $panel_title    Panel dialog title.
+	 * @param string $tooltip        Optional bubble tooltip text.
+	 * @param array  $settings       Widget settings.
+	 * @param string $shortcode_html Pre-rendered shortcode output.
+	 */
+	protected function render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $data_attrs built with esc_attr().
 		echo '<div class="' . esc_attr( $classes ) . '" ' . $data_attrs . ' style="' . esc_attr( $css_vars ) . '">';
 
@@ -754,7 +814,7 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		echo '</div>';
 
 		echo '<div class="wp-mcp-ai-chat-bubble__panel-body">';
-		echo wp_kses_post( do_shortcode( $shortcode ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
+		echo WP_MCP_AI_Shortcode::kses_chat_output( $shortcode_html ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() passes HTML through wp_kses_post() with data-* support.
 		echo '</div>';
 
 		echo '</div>';

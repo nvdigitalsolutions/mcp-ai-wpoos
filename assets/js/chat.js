@@ -11287,8 +11287,9 @@
         }
     }
 
-    function init() {
-        const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+    function init( scope ) {
+        const searchRoot = ( scope instanceof HTMLElement ) ? scope : document;
+        const containers = searchRoot.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
             // Skip if already initialized
             if (container.hasAttribute('data-wp-mcp-ai-initialized')) {
@@ -11296,7 +11297,7 @@
             }
 
             const instanceId = container.getAttribute('id');
-            const config = window.wpMcpAiChatInstances[instanceId];
+            const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
 
             if (!config) {
                 setStatus(container, getString('missingAssistant', 'Assistant configuration missing.'));
@@ -18687,9 +18688,9 @@
     /**
      * Enhanced init function to include cron status
      */
-    function initWithCronStatus() {
-        // Call original init
-        init();
+    function initWithCronStatus( scope ) {
+        // Call original init with optional scope
+        init( scope );
 
         // Initialize global job event bus listeners (once)
         initializeGlobalJobListeners();
