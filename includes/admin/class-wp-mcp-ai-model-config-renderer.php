@@ -468,7 +468,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 					type: 'POST',
 					data: {
 						action: 'wp_mcp_ai_save_model_config',
-						nonce: wpMcpAi.nonce,
+						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>',
 						model: modelId,
 						config: config
 					},
