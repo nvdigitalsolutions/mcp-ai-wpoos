@@ -523,6 +523,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		 *
 		 * Using 80 % of the TPM limit leaves headroom for output tokens and
 		 * overhead that the heuristic token estimator cannot capture precisely.
+		 *
+		 * This mirrors WP_MCP_AI_REST::TPM_SAFETY_MARGIN — keep in sync.
 		 */
 		const TPM_SAFETY_MARGIN = 0.8;
 

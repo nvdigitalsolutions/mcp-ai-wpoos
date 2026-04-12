@@ -280,6 +280,9 @@ class WP_MCP_AI_Token_Budget_Manager {
 			return array();
 		}
 
+		// Estimate message tokens only — pass 0 for max_output_tokens so that
+		// the budget calculation does not include output-token reservation, which
+		// would inflate `$budget['used']` relative to the caller's $max_tokens.
 		$budget = self::calculate_budget( $model, $messages, 0 );
 
 		// If message tokens already fit within the requested budget, return as-is.
