@@ -1635,10 +1635,15 @@ class WP_MCP_AI_Shortcode {
 		// Re-trigger bubble init AND chat init for the just-injected markup.
 		// chat-bubble.js exposes window.wpMcpAiChatBubble.init().
 		// chat.js exposes window.wpMcpAiChatInit.init().
-		echo '<script>' // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline bootstrap for dynamically injected bubble HTML.
-			. 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
-			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}'
-			. '</script>' . "\n";
+		// wp_get_inline_script_tag() (WP 5.7+) adds the CSP nonce automatically.
+		$reinit_js = 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
+			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}';
+
+		if ( function_exists( 'wp_get_inline_script_tag' ) ) {
+			echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
+		} else {
+			echo '<script>' . $reinit_js . '</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,WordPress.Security.EscapeOutput.OutputNotEscaped -- Fallback for WP < 5.7; content is a static string.
+		}
 
 		self::$footer_bubbles = array();
 	}
@@ -1703,6 +1708,11 @@ class WP_MCP_AI_Shortcode {
 
 			// Safe SVG elements for chat UI icons (no script, foreignObject,
 			// or event-handler attributes).
+			//
+			// Note: WordPress kses normalises attribute names to lowercase, so
+			// `viewBox` in HTML becomes `viewbox` after kses processing.  Most
+			// browsers tolerate lowercase `viewbox` in inline SVG; for strict
+			// SVG compliance the icons would need to live outside kses.
 			$svg_global = array(
 				'class'       => true,
 				'id'          => true,
@@ -1715,13 +1725,13 @@ class WP_MCP_AI_Shortcode {
 			$tags['svg'] = array_merge(
 				$svg_global,
 				array(
-					'xmlns'       => true,
-					'width'       => true,
-					'height'      => true,
-					'viewbox'     => true,
-					'fill'        => true,
-					'stroke'      => true,
-					'stroke-width' => true,
+					'xmlns'        => true,
+					'width'        => true,
+					'height'       => true,
+					'viewbox'      => true, // Lowercase – kses normalises viewBox → viewbox.
+					'fill'         => true,
+					'stroke'       => true,
+					'stroke-width' => true, // SVG attribute is hyphenated (stroke-width).
 				)
 			);
 
