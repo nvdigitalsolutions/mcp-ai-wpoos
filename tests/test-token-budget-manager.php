@@ -247,4 +247,72 @@ class WP_MCP_AI_Token_Budget_Manager_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $budget );
 		$this->assertGreaterThan( 0, $budget['used'] );
 	}
+
+	/**
+	 * Test truncation when target is much lower than context window.
+	 *
+	 * Regression test: truncate_messages() previously compared used tokens
+	 * against the model context window instead of the target, so truncation
+	 * was skipped when TPM << context window (e.g. 40 000 TPM on Claude with
+	 * a 200 000 context window).
+	 */
+	public function test_truncate_messages_respects_low_target() {
+		// Build a conversation that is well under the Claude context window (200k)
+		// but significantly over a 1 000-token target.
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are a helpful assistant.',
+			),
+		);
+
+		// Each message: ~100 chars → ~25 tokens.  40 messages ≈ 1 000 tokens.
+		for ( $i = 0; $i < 80; $i++ ) {
+			$messages[] = array(
+				'role'    => ( 0 === $i % 2 ) ? 'user' : 'assistant',
+				'content' => str_repeat( 'word ', 20 ), // ~100 chars → ~25 tokens.
+			);
+		}
+
+		// Total ≈ 2 000+ tokens but well under Claude's 200 000 context window.
+		$target = 500; // A small TPM-derived target.
+
+		$truncated = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, 'claude-3.5-sonnet', $target );
+
+		// The truncated set MUST be smaller than the original.
+		$this->assertLessThan( count( $messages ), count( $truncated ), 'truncate_messages should have removed messages to meet the target' );
+
+		// Estimate tokens in truncated result.
+		$tokens = 0;
+		foreach ( $truncated as $msg ) {
+			$tokens += WP_MCP_AI_Token_Budget_Manager::estimate_tokens( wp_json_encode( $msg ) );
+		}
+
+		$this->assertLessThanOrEqual( $target, $tokens, 'Truncated messages should fit within the target token budget' );
+
+		// System message must be preserved.
+		$roles = wp_list_pluck( $truncated, 'role' );
+		$this->assertContains( 'system', $roles, 'System message should be preserved after truncation' );
+	}
+
+	/**
+	 * Test truncation returns messages as-is when already under target.
+	 */
+	public function test_truncate_messages_noop_when_within_target() {
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'Short system prompt.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		// Generous target that exceeds the tiny conversation.
+		$truncated = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, 'gpt-4o', 10000 );
+
+		$this->assertCount( count( $messages ), $truncated, 'Messages should not be truncated when within target' );
+	}
 }

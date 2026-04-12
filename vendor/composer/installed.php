@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-model-fallback-config-error',
-        'version' => 'dev-copilot/fix-model-fallback-config-error',
-        'reference' => 'e8707bce546593cf17df09dae3171042ed020e8b',
+        'pretty_version' => 'dev-copilot/fix-response-truncation-error',
+        'version' => 'dev-copilot/fix-response-truncation-error',
+        'reference' => '02fc6c77bcc4b27cdbd1c5f4c2e3ff5223b3d4ab',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-model-fallback-config-error',
-            'version' => 'dev-copilot/fix-model-fallback-config-error',
-            'reference' => 'e8707bce546593cf17df09dae3171042ed020e8b',
+            'pretty_version' => 'dev-copilot/fix-response-truncation-error',
+            'version' => 'dev-copilot/fix-response-truncation-error',
+            'reference' => '02fc6c77bcc4b27cdbd1c5f4c2e3ff5223b3d4ab',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
