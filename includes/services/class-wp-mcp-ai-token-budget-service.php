@@ -74,7 +74,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.0-flash-image'    => 1048576,
 		'imagen-3'                  => 8192,
 		// Claude Mythos: 1M context window, 128K output (most capable).
-		'claude-mythos'             => 1000000,
+		'claude-mythos-preview'     => 1000000,
 		// Claude 4.x models: 200K stable context window (1M available in beta).
 		'claude-opus-4-6'           => 200000,
 		'claude-sonnet-4-6'         => 200000,
@@ -106,7 +106,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	protected static $default_tpm_limits = array(
 		// Anthropic Claude models — Tier 1 defaults.
-		'claude-mythos'     => 40000,
+		'claude-mythos-preview' => 40000,
 		'claude-opus-4-6'   => 40000,
 		'claude-sonnet-4-6' => 80000,
 		'claude-opus-4-5'   => 40000,
@@ -126,7 +126,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @var array
 	 */
 	protected static $model_max_output_tokens = array(
-		'claude-mythos'     => 128000,
+		'claude-mythos-preview' => 128000,
 		'claude-opus-4-6'   => 128000,
 		'claude-sonnet-4-6' => 64000,
 		'claude-opus-4-5'   => 128000,
