@@ -11288,7 +11288,7 @@
     }
 
     function init( scope ) {
-        var searchRoot = ( scope instanceof HTMLElement ) ? scope : document;
+        const searchRoot = ( scope instanceof HTMLElement ) ? scope : document;
         const containers = searchRoot.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
             // Skip if already initialized

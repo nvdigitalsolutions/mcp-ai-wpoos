@@ -1622,24 +1622,33 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
-	 * Sanitise shortcode output while preserving data-* attributes.
+	 * Sanitise shortcode output while preserving specific data attributes.
 	 *
 	 * WordPress's wp_kses_post() strips data-* attributes by default.
 	 * The chat interface relies on data-wp-mcp-ai-chat and data-template
-	 * for JavaScript initialisation.  This wrapper temporarily adds
-	 * data-* to the kses allow-list, then removes the filter.
+	 * for JavaScript initialisation.  This wrapper temporarily adds those
+	 * specific attributes to the kses allow-list, then removes the filter.
+	 *
+	 * Only explicitly required attributes are allowed to minimise the
+	 * attack surface (no wildcard data-*).
 	 *
 	 * @param string $html Raw shortcode output.
-	 * @return string Sanitised HTML with data-* attributes intact.
+	 * @return string Sanitised HTML with required data attributes intact.
 	 */
 	public static function kses_chat_output( $html ) {
 		$filter = function ( $tags, $context ) {
 			if ( 'post' !== $context ) {
 				return $tags;
 			}
+			// Only allow the specific data attributes the chat UI needs.
+			$extra_attrs = array(
+				'data-wp-mcp-ai-chat'        => true,
+				'data-template'              => true,
+				'data-wp-mcp-ai-initialized' => true,
+			);
 			foreach ( $tags as $tag => $attrs ) {
 				if ( is_array( $attrs ) ) {
-					$tags[ $tag ]['data-*'] = true;
+					$tags[ $tag ] = array_merge( $attrs, $extra_attrs );
 				}
 			}
 			return $tags;
