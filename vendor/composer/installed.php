@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-        'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-        'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-d67001ef-6c75-4141-87eb-5d68649c6feb',
+        'version' => 'dev-copilot/rebuild-all-zips-d67001ef-6c75-4141-87eb-5d68649c6feb',
+        'reference' => '23df57d172ae1f9d1495d14af5aedcdc034ca7cd',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-            'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-            'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-d67001ef-6c75-4141-87eb-5d68649c6feb',
+            'version' => 'dev-copilot/rebuild-all-zips-d67001ef-6c75-4141-87eb-5d68649c6feb',
+            'reference' => '23df57d172ae1f9d1495d14af5aedcdc034ca7cd',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
