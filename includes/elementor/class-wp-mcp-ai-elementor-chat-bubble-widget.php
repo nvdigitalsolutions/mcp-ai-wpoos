@@ -682,6 +682,20 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 
+		/*
+		 * Explicitly enqueue bubble assets so they are loaded regardless of
+		 * Elementor's Improved Asset Loading optimization.  The Gutenberg
+		 * chat-bubble block already does this (see blocks/chat-bubble/render.php);
+		 * without these calls the bubble JS/CSS may never reach the page when
+		 * Elementor skips get_script_depends() handles during its optimization pass.
+		 *
+		 * The main chat script (WP_MCP_AI_Shortcode::SCRIPT_HANDLE) and its
+		 * localization are enqueued inside the shortcode's render_shortcode()
+		 * method via do_shortcode() below, so we only need the bubble pair here.
+		 */
+		wp_enqueue_script( 'wp-mcp-ai-chat-bubble' );
+		wp_enqueue_style( 'wp-mcp-ai-chat-bubble-style' );
+
 		$bubble_id = 'wp-mcp-ai-bubble-' . $this->get_id();
 		$position  = sanitize_key( isset( $settings['bubble_position'] ) ? $settings['bubble_position'] : 'bottom-right' );
 		$size      = sanitize_key( isset( $settings['bubble_size'] ) ? $settings['bubble_size'] : 'medium' );

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-9th-apr-compliance-document',
-        'version' => 'dev-copilot/update-9th-apr-compliance-document',
-        'reference' => '60b394c87147057dfc08860f887afe48b74eceee',
+        'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
+        'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
+        'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-9th-apr-compliance-document',
-            'version' => 'dev-copilot/update-9th-apr-compliance-document',
-            'reference' => '60b394c87147057dfc08860f887afe48b74eceee',
+            'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
+            'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
+            'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
