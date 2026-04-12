@@ -73,7 +73,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-flash-image'    => 1048576,
 		'gemini-2.0-flash-image'    => 1048576,
 		'imagen-3'                  => 8192,
-		// Claude 4.x models: 1M context window (200K stable, 1M beta).
+		// Claude 4.x models: 200K stable context window (1M available in beta).
 		'claude-opus-4-6'           => 200000,
 		'claude-sonnet-4-6'         => 200000,
 		'claude-opus-4-5'           => 200000,
@@ -707,18 +707,9 @@ class WP_MCP_AI_Token_Budget_Manager {
 			$suggested[] = 'gemini-2.0-flash';
 			$suggested[] = 'gemini-1.5-pro';
 		} elseif ( $is_claude ) {
-			// Claude models — suggest models with higher TPM limits (Tier 1 defaults).
-			// Sonnet models generally have 2× the TPM of Opus at the same tier.
-			$claude_alternatives = array(
-				'claude-sonnet-4-6' => 80000,
-				'claude-sonnet-4-5' => 80000,
-				'claude-haiku-4-5'  => 50000,
-				'claude-3-5-sonnet' => 80000,
-				'claude-opus-4-6'   => 40000,
-				'claude-3-haiku'    => 50000,
-			);
-
-			foreach ( $claude_alternatives as $model => $tpm ) {
+			// Claude models — suggest models with higher TPM limits.
+			// Uses the same hardcoded defaults as $default_tpm_limits.
+			foreach ( self::$default_tpm_limits as $model => $tpm ) {
 				if ( $model !== $current_model && $tpm >= $required_tokens ) {
 					$suggested[] = $model;
 				}

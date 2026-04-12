@@ -946,15 +946,15 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			// Cap against the model's known maximum output limit.
 			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
-				$model_output_cap = WP_MCP_AI_Token_Budget_Manager::get_model_max_output_tokens( isset( $payload['model'] ) ? $payload['model'] : ( isset( $options['model'] ) ? $options['model'] : '' ) );
+				$resolved_model   = isset( $payload['model'] ) ? $payload['model'] : ( isset( $options['model'] ) ? $options['model'] : '' );
+				$model_output_cap = WP_MCP_AI_Token_Budget_Manager::get_model_max_output_tokens( $resolved_model );
 				if ( $model_output_cap > 0 && $max_tokens > $model_output_cap ) {
 					$max_tokens = $model_output_cap;
 				}
 
 				// Ensure max_tokens does not consume the entire TPM budget.
 				// Leave at least 50% of the TPM budget for input tokens.
-				$resolved_model = isset( $payload['model'] ) ? $payload['model'] : ( isset( $options['model'] ) ? $options['model'] : '' );
-				$tpm_limit      = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $resolved_model );
+				$tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $resolved_model );
 				if ( null !== $tpm_limit && $tpm_limit > 0 ) {
 					$tpm_output_cap = (int) ( $tpm_limit * 0.5 );
 					if ( $max_tokens > $tpm_output_cap ) {
