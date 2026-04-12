@@ -2930,8 +2930,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// tool_call_ids with no matching tool-response messages. On the very next user
 				// turn the full conversation — including that orphaned assistant message — is
 				// sent back to OpenAI, which rejects the request with:
-				//   "An assistant message with 'tool_calls' must be followed by tool messages
-				//    responding to each 'tool_call_id'."
+				// "An assistant message with 'tool_calls' must be followed by tool messages
+				// responding to each 'tool_call_id'."
 				// Stripping the unexecuted tool_calls from the final response prevents the
 				// client from ever storing that invalid state. The defensive filter inside
 				// filter_tool_messages_for_payload() provides a second layer of protection for
@@ -4605,7 +4605,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( $fields_param && is_string( $fields_param ) ) {
 				$allowed_fields = wp_parse_list( $fields_param );
 				// Valid tool fields: name, description, inputSchema. 'name' is always included.
-				$valid_fields = array( 'name', 'description', 'inputSchema' );
+				$valid_fields   = array( 'name', 'description', 'inputSchema' );
 				$allowed_fields = array_intersect( $allowed_fields, $valid_fields );
 				if ( ! empty( $allowed_fields ) ) {
 					if ( ! in_array( 'name', $allowed_fields, true ) ) {
@@ -6048,7 +6048,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
-			$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			// If max_output_tokens alone would consume more than 50% of the model's TPM budget,
+			// cap it proactively to leave room for input tokens. This is especially important for
+			// Anthropic models with low Tier 1 TPM limits (e.g. 40K for claude-opus-4-6).
+			if ( $max_output_tokens > 0 ) {
+				$tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+				if ( null !== $tpm_limit && $tpm_limit > 0 && $max_output_tokens > (int) ( $tpm_limit * 0.5 ) ) {
+					$capped                = max( 1024, (int) ( $tpm_limit * 0.5 ) );
+					$options['max_tokens'] = $capped;
+					$max_output_tokens     = $capped;
+
+					WP_MCP_AI_Logger::log_event(
+						'preflight_max_tokens_capped',
+						'Capped max_tokens to fit within TPM budget during pre-flight check.',
+						array(
+							'model'          => $model,
+							'original_value' => isset( $options['max_tokens'] ) ? $options['max_tokens'] : 0,
+							'capped_value'   => $capped,
+							'tpm_limit'      => $tpm_limit,
+							'assistant_id'   => $assistant_id,
+						)
+					);
+				}
+			}
+
+			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
 
 			if ( ! is_wp_error( $tpm_validation ) ) {
 				return array(
@@ -9594,9 +9619,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Determine guest status for tool permission bypass.
 			// Guest requests come via guest tokens (auth_context) or anonymous users on public assistants.
-			$auth_context  = $this->get_auth_context();
-			$is_guest      = ! empty( $auth_context['is_guest'] );
-			$required_cap  = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
+			$auth_context = $this->get_auth_context();
+			$is_guest     = ! empty( $auth_context['is_guest'] );
+			$required_cap = isset( $assistant_config['required_capability'] ) ? $assistant_config['required_capability'] : '';
 			if ( ! $is_guest && 0 === $user_id && 'public' === $required_cap ) {
 				$is_guest = true;
 			}

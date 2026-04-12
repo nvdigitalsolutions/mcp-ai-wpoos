@@ -17,11 +17,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	 * Provides a wrapper around Anthropic's Messages API endpoint.
 	 */
 	class WP_MCP_AI_Anthropic_Client {
-		const API_ENDPOINT      = 'https://api.anthropic.com/v1/messages';
-		const API_COUNT_TOKENS  = 'https://api.anthropic.com/v1/messages/count_tokens';
-		const API_VERSION       = '2023-06-01';
-		const USER_AGENT        = 'WP-MCP-AI-Anthropic-Client/1.0';
-		const DEFAULT_BASE_URL  = 'https://api.anthropic.com/v1';
+		const API_ENDPOINT     = 'https://api.anthropic.com/v1/messages';
+		const API_COUNT_TOKENS = 'https://api.anthropic.com/v1/messages/count_tokens';
+		const API_VERSION      = '2023-06-01';
+		const USER_AGENT       = 'WP-MCP-AI-Anthropic-Client/1.0';
+		const DEFAULT_BASE_URL = 'https://api.anthropic.com/v1';
 
 		/**
 		 * Maximum image size in bytes (10MB).
@@ -616,10 +616,10 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'anthropic_tpm_output_capped',
 					'Capped max_output_tokens to fit within Anthropic TPM budget.',
 					array(
-						'model'                  => $model,
-						'original_max_tokens'    => $max_output_tokens,
-						'capped_max_tokens'      => $max_output_for_budget,
-						'tpm_limit'              => $tpm_limit,
+						'model'               => $model,
+						'original_max_tokens' => $max_output_tokens,
+						'capped_max_tokens'   => $max_output_for_budget,
+						'tpm_limit'           => $tpm_limit,
 					)
 				);
 			}
@@ -978,7 +978,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					// cache_control so Anthropic can cache the entire tool block (saves
 					// tokens on subsequent turns that use the same tool set).
 					if ( ! empty( $options['cache_system_prompt'] ) ) {
-						$last_tool_idx = count( $tools ) - 1;
+						$last_tool_idx                            = count( $tools ) - 1;
 						$tools[ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 					}
 					$payload['tools'] = $tools;
