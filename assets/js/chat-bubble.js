@@ -388,18 +388,41 @@
 	 * ------------------------------------------------------------- */
 
 	/**
-	 * Discover and initialise all chat-bubble elements on the page.
+	 * Discover and initialise chat-bubble elements on the page.
+	 *
+	 * When called without arguments the entire document is scanned.
+	 * When a scope element is provided (e.g. from Elementor's
+	 * `frontend/element_ready` callback) only that subtree is scanned,
+	 * allowing bubbles rendered in Elementor Pro headers, footers, and
+	 * popups to be initialised after the initial DOMContentLoaded pass.
+	 *
+	 * @param {HTMLElement} [scope] Optional container to search within.
 	 */
-	function init() {
-		const roots = document.querySelectorAll( '.' + CLASSES.ROOT );
+	function init( scope ) {
+		let roots;
+		const container = scope || document;
+
+		// When Elementor passes the widget wrapper it may or may not be the
+		// root element itself – handle both cases.
+		if ( scope && scope.classList && scope.classList.contains( CLASSES.ROOT ) ) {
+			roots = [ scope ];
+		} else {
+			roots = container.querySelectorAll( '.' + CLASSES.ROOT );
+		}
 
 		for ( let i = 0; i < roots.length; i++ ) {
 			const root = roots[ i ];
 			const id   = root.getAttribute( 'data-bubble-id' ) || 'default-' + i;
 
-			// Prevent double-init.
 			if ( instances[ id ] ) {
-				continue;
+				// Same DOM node – already initialised, skip.
+				if ( instances[ id ].root === root ) {
+					continue;
+				}
+
+				// DOM node was replaced (Elementor re-render) – destroy stale instance.
+				instances[ id ].destroy();
+				delete instances[ id ];
 			}
 
 			instances[ id ] = new BubbleInstance( root );
@@ -411,6 +434,19 @@
 	 * ------------------------------------------------------------- */
 
 	window.wpMcpAiChatBubble = {
+
+		/**
+		 * Re-run bubble initialisation.
+		 *
+		 * Call with no arguments to scan the full document or pass a
+		 * container element to limit the scan (useful after injecting
+		 * new bubble markup via AJAX or page-builder re-renders).
+		 *
+		 * @param {HTMLElement} [scope] Optional subtree to scan.
+		 */
+		init: function( scope ) {
+			init( scope );
+		},
 
 		/**
 		 * Open a specific bubble by ID.
@@ -463,6 +499,36 @@
 	};
 
 	/* ---------------------------------------------------------------
+	 * Elementor Integration
+	 *
+	 * Elementor Pro header/footer/popup templates inject widget HTML
+	 * dynamically.  Without hooking into `frontend/element_ready` the
+	 * bubble buttons will never receive event listeners.
+	 *
+	 * @see https://developers.elementor.com/docs/addons/frontend-hooks/
+	 * ------------------------------------------------------------- */
+
+	/**
+	 * Register the Elementor widget-ready handler.
+	 */
+	function registerElementorHandler() {
+		if (
+			window.elementorFrontend &&
+			window.elementorFrontend.hooks &&
+			window.elementorFrontend.hooks.addAction
+		) {
+			window.elementorFrontend.hooks.addAction(
+				'frontend/element_ready/wp_mcp_ai_chat_bubble.default',
+				function( $element ) {
+					if ( $element && $element[ 0 ] ) {
+						init( $element[ 0 ] );
+					}
+				}
+			);
+		}
+	}
+
+	/* ---------------------------------------------------------------
 	 * Bootstrap
 	 * ------------------------------------------------------------- */
 
@@ -470,6 +536,15 @@
 		document.addEventListener( 'DOMContentLoaded', init );
 	} else {
 		init();
+	}
+
+	// Elementor: register immediately if elementorFrontend is already loaded.
+	registerElementorHandler();
+
+	// Elementor: if elementorFrontend hasn't loaded yet, wait for its init event.
+	// The `elementor/frontend/init` event is fired via jQuery on `window`.
+	if ( window.jQuery ) {
+		window.jQuery( window ).on( 'elementor/frontend/init', registerElementorHandler );
 	}
 
 } )();
