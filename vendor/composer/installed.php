@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-        'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-        'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
+        'pretty_version' => 'dev-copilot/fix-model-fallback-config-error',
+        'version' => 'dev-copilot/fix-model-fallback-config-error',
+        'reference' => 'e8707bce546593cf17df09dae3171042ed020e8b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-            'version' => 'dev-copilot/fix-elementor-chat-bubble-init',
-            'reference' => '7f7e1042896b0f65ad47d0e33b0baa0e547a6b5b',
+            'pretty_version' => 'dev-copilot/fix-model-fallback-config-error',
+            'version' => 'dev-copilot/fix-model-fallback-config-error',
+            'reference' => 'e8707bce546593cf17df09dae3171042ed020e8b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
