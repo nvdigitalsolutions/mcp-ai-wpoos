@@ -73,7 +73,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-flash-image'    => 1048576,
 		'gemini-2.0-flash-image'    => 1048576,
 		'imagen-3'                  => 8192,
-		'claude-3.5-sonnet'         => 200000,
+		// Claude 4.x models: 1M context window (200K stable, 1M beta).
+		'claude-opus-4-6'           => 200000,
+		'claude-sonnet-4-6'         => 200000,
+		'claude-opus-4-5'           => 200000,
+		'claude-sonnet-4-5'         => 200000,
+		'claude-haiku-4-5'          => 200000,
+		// Claude 3.x models.
+		'claude-3-5-sonnet'         => 200000,
 		'claude-3-opus'             => 200000,
 		'claude-3-haiku'            => 200000,
 		'llama3'                    => 8192,
@@ -84,6 +91,46 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'deepseek-r1-0528-qwen3-8b' => 32768,
 		'qwen2'                     => 32768,
 		'gemma2'                    => 8192,
+	);
+
+	/**
+	 * Hardcoded TPM (Tokens Per Minute) fallback limits.
+	 *
+	 * Used when no CCT-based limit is configured. Values reflect Anthropic Tier 1
+	 * defaults and conservative estimates for other providers. These ensure that
+	 * TPM validation has a reasonable safety net even without explicit configuration.
+	 *
+	 * @var array
+	 */
+	protected static $default_tpm_limits = array(
+		// Anthropic Claude models — Tier 1 defaults.
+		'claude-opus-4-6'           => 40000,
+		'claude-sonnet-4-6'         => 80000,
+		'claude-opus-4-5'           => 40000,
+		'claude-sonnet-4-5'         => 80000,
+		'claude-haiku-4-5'          => 50000,
+		'claude-3-5-sonnet'         => 80000,
+		'claude-3-opus'             => 40000,
+		'claude-3-haiku'            => 50000,
+	);
+
+	/**
+	 * Maximum output tokens per model.
+	 *
+	 * Used to cap the reserved output tokens when calculating budgets so we
+	 * do not over-reserve and accidentally exceed the TPM limit.
+	 *
+	 * @var array
+	 */
+	protected static $model_max_output_tokens = array(
+		'claude-opus-4-6'           => 128000,
+		'claude-sonnet-4-6'         => 64000,
+		'claude-opus-4-5'           => 128000,
+		'claude-sonnet-4-5'         => 64000,
+		'claude-haiku-4-5'          => 64000,
+		'claude-3-5-sonnet'         => 8192,
+		'claude-3-opus'             => 4096,
+		'claude-3-haiku'            => 4096,
 	);
 
 	/**
@@ -151,6 +198,31 @@ class WP_MCP_AI_Token_Budget_Manager {
 	}
 
 	/**
+	 * Get the maximum output tokens a model can produce per request.
+	 *
+	 * @param string $model Model identifier.
+	 *
+	 * @return int Maximum output tokens, or 0 if unknown.
+	 */
+	public static function get_model_max_output_tokens( $model ) {
+		$model = sanitize_text_field( $model );
+
+		// Exact match.
+		if ( isset( self::$model_max_output_tokens[ $model ] ) ) {
+			return self::$model_max_output_tokens[ $model ];
+		}
+
+		// Prefix match for date-versioned model IDs.
+		foreach ( self::$model_max_output_tokens as $key => $limit ) {
+			if ( 0 === strpos( $model, $key ) ) {
+				return $limit;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
 	 * Get the TPM (Tokens Per Minute) rate limit for a model.
 	 *
 	 * @param string $model Model identifier.
@@ -160,12 +232,25 @@ class WP_MCP_AI_Token_Budget_Manager {
 	public static function get_model_tpm_limit( $model ) {
 		$model = sanitize_text_field( $model );
 
-		// Try to get TPM limit from CCT.
+		// Try to get TPM limit from CCT first (user-configured or auto-discovered).
 		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
 
 			if ( $cct_data && isset( $cct_data['tpm_limit'] ) && $cct_data['tpm_limit'] > 0 ) {
 				return absint( $cct_data['tpm_limit'] );
+			}
+		}
+
+		// Fall back to hardcoded TPM defaults (Anthropic Tier 1 defaults, etc.).
+		// Check exact match first, then try prefix matching for date-versioned model IDs
+		// (e.g. 'claude-opus-4-6-20260301' matches 'claude-opus-4-6').
+		if ( isset( self::$default_tpm_limits[ $model ] ) ) {
+			return self::$default_tpm_limits[ $model ];
+		}
+
+		foreach ( self::$default_tpm_limits as $key => $limit ) {
+			if ( 0 === strpos( $model, $key ) ) {
+				return $limit;
 			}
 		}
 
@@ -252,8 +337,35 @@ class WP_MCP_AI_Token_Budget_Manager {
 		}
 
 		// Reserve space for output.
-		$reserved_for_output = $max_output_tokens > 0 ? $max_output_tokens : (int) ( $effective_limit * 0.2 );
-		$available           = max( 0, $effective_limit - $used_tokens - $reserved_for_output );
+		// When max_output_tokens is not explicitly provided, use a model-aware default
+		// rather than a blanket 20% of the context window. This prevents over-reserving
+		// for models with low TPM limits (e.g. Anthropic Tier 1: 40K TPM).
+		if ( $max_output_tokens > 0 ) {
+			$reserved_for_output = $max_output_tokens;
+		} else {
+			// Check for a known model-specific output limit.
+			$model_output_cap = self::get_model_max_output_tokens( $model );
+
+			if ( $model_output_cap > 0 ) {
+				// Use the lesser of 20% of context window or the model's output cap.
+				$reserved_for_output = min( (int) ( $effective_limit * 0.2 ), $model_output_cap );
+			} else {
+				$reserved_for_output = (int) ( $effective_limit * 0.2 );
+			}
+
+			// When a TPM limit is configured, ensure reserved output does not cause the
+			// total (input + reserved) to exceed it. Cap to at most 25% of TPM.
+			$tpm_limit = self::get_model_tpm_limit( $model );
+			if ( null !== $tpm_limit && $tpm_limit > 0 ) {
+				$tpm_output_cap      = (int) ( $tpm_limit * 0.25 );
+				$reserved_for_output = min( $reserved_for_output, $tpm_output_cap );
+			}
+
+			// Ensure we always reserve at least some tokens for output.
+			$reserved_for_output = max( 1024, $reserved_for_output );
+		}
+
+		$available = max( 0, $effective_limit - $used_tokens - $reserved_for_output );
 
 		return array(
 			'available' => $available,
@@ -595,10 +707,15 @@ class WP_MCP_AI_Token_Budget_Manager {
 			$suggested[] = 'gemini-2.0-flash';
 			$suggested[] = 'gemini-1.5-pro';
 		} elseif ( $is_claude ) {
-			// Claude models have varying TPM limits.
+			// Claude models — suggest models with higher TPM limits (Tier 1 defaults).
+			// Sonnet models generally have 2× the TPM of Opus at the same tier.
 			$claude_alternatives = array(
+				'claude-sonnet-4-6' => 80000,
+				'claude-sonnet-4-5' => 80000,
+				'claude-haiku-4-5'  => 50000,
+				'claude-3-5-sonnet' => 80000,
+				'claude-opus-4-6'   => 40000,
 				'claude-3-haiku'    => 50000,
-				'claude-3.5-sonnet' => 40000,
 			);
 
 			foreach ( $claude_alternatives as $model => $tpm ) {
