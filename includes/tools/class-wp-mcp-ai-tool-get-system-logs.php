@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of NV oOS activity types to include (tool_execution, openai_request, etc.).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional list of NV oOS activity types to include (tool_execution, chat_interaction, api_request, etc.). Provider-specific types such as openai_request, anthropic_request, gemini_request, and ollama_request are also supported.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
