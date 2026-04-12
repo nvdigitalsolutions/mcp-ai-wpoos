@@ -68,5 +68,5 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 }
 
 echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $wrapper_attributes is sanitized by get_block_wrapper_attributes() (WP core) or via esc_attr() in the non-block fallback.
-echo wp_kses_post( do_shortcode( $shortcode ) ); // wp_kses_post() escapes shortcode output to prevent XSS.
+echo WP_MCP_AI_Shortcode::kses_chat_output( do_shortcode( $shortcode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() passes HTML through wp_kses_post() with data-* support.
 echo '</div>';

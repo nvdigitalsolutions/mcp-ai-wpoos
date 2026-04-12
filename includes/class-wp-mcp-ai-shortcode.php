@@ -1560,6 +1560,99 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * ---------------------------------------------------------------
+	 * Footer chat-bubble rendering
+	 *
+	 * Elementor widgets and Gutenberg blocks render the chat-bubble
+	 * shell via wp_footer so the markup is a direct child of <body>.
+	 * This avoids:
+	 *  1. Stacking-context / overflow:hidden traps in page-builder
+	 *     sections (Elementor header/footer templates especially).
+	 *  2. wp_kses_post() stripping data-* attributes that chat.js
+	 *     relies on for initialisation.
+	 *  3. Script-timing issues when the header template renders
+	 *     after footer scripts have already been printed.
+	 * ------------------------------------------------------------- */
+
+	/**
+	 * Queued chat-bubble HTML fragments for footer rendering.
+	 *
+	 * @var string[]
+	 */
+	private static $footer_bubbles = array();
+
+	/**
+	 * Whether the wp_footer hook has been registered.
+	 *
+	 * @var bool
+	 */
+	private static $footer_hook_registered = false;
+
+	/**
+	 * Queue a fully-built chat-bubble HTML fragment for rendering
+	 * inside wp_footer.
+	 *
+	 * The HTML should already be properly escaped at the call-site
+	 * (esc_attr, esc_html, sanitize_hex_color, etc.).
+	 *
+	 * @param string $html Complete bubble HTML.
+	 */
+	public static function queue_footer_bubble( $html ) {
+		self::$footer_bubbles[] = $html;
+
+		if ( ! self::$footer_hook_registered ) {
+			// Priority 5: render before footer scripts (priority 20) so the
+			// DOM is present when chat.js and chat-bubble.js auto-initialise.
+			add_action( 'wp_footer', array( __CLASS__, 'render_footer_bubbles' ), 5 );
+			self::$footer_hook_registered = true;
+		}
+	}
+
+	/**
+	 * Output all queued chat-bubble fragments.
+	 *
+	 * Hooked to `wp_footer` at priority 5.
+	 */
+	public static function render_footer_bubbles() {
+		foreach ( self::$footer_bubbles as $html ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML pre-escaped by callers using esc_attr(), esc_html(), sanitize_hex_color(), and wp_kses_post().
+			echo $html;
+		}
+		self::$footer_bubbles = array();
+	}
+
+	/**
+	 * Sanitise shortcode output while preserving data-* attributes.
+	 *
+	 * WordPress's wp_kses_post() strips data-* attributes by default.
+	 * The chat interface relies on data-wp-mcp-ai-chat and data-template
+	 * for JavaScript initialisation.  This wrapper temporarily adds
+	 * data-* to the kses allow-list, then removes the filter.
+	 *
+	 * @param string $html Raw shortcode output.
+	 * @return string Sanitised HTML with data-* attributes intact.
+	 */
+	public static function kses_chat_output( $html ) {
+		$filter = function ( $tags, $context ) {
+			if ( 'post' !== $context ) {
+				return $tags;
+			}
+			foreach ( $tags as $tag => $attrs ) {
+				if ( is_array( $attrs ) ) {
+					$tags[ $tag ]['data-*'] = true;
+				}
+			}
+			return $tags;
+		};
+
+		add_filter( 'wp_kses_allowed_html', $filter, 99, 2 );
+		$safe = wp_kses_post( $html );
+		remove_filter( 'wp_kses_allowed_html', $filter, 99 );
+
+		return $safe;
+	}
+
+	/**
 	 * Resolve the assistant identifier provided via shortcode attributes.
 	 *
 	 * Accepts numeric IDs, assistant slugs, or profession test identifiers (profession_XXX).
