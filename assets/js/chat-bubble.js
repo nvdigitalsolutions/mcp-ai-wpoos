@@ -131,6 +131,7 @@
 		this.isOpen        = false;
 		this.chatInited    = false;
 		this.autoOpenTimer = null;
+		this.promoted      = false;
 
 		this.trigger    = rootEl.querySelector( '.' + CLASSES.TRIGGER );
 		this.panel      = rootEl.querySelector( '.' + CLASSES.PANEL );
@@ -141,10 +142,41 @@
 			return;
 		}
 
+		this._promoteToBody();
 		this._bindEvents();
 		this._restoreState();
 		this._scheduleAutoOpen();
 	}
+
+	/**
+	 * Move the bubble element to document.body so it escapes any
+	 * ancestor stacking-context created by page-builders (Elementor
+	 * sections/columns often set transforms, z-index, or overflow
+	 * that trap position:fixed children and block click events).
+	 *
+	 * Skipped inside the Elementor editor where the element must
+	 * stay in-place for the visual builder to work, and skipped when
+	 * the element is already a direct child of body.
+	 */
+	BubbleInstance.prototype._promoteToBody = function() {
+		// Already a direct child of body – nothing to do.
+		if ( this.root.parentNode === document.body ) {
+			return;
+		}
+
+		// Inside the Elementor visual editor the widget must remain
+		// within its container so the builder can manage it.
+		if (
+			window.elementorFrontend &&
+			typeof window.elementorFrontend.isEditMode === 'function' &&
+			window.elementorFrontend.isEditMode()
+		) {
+			return;
+		}
+
+		document.body.appendChild( this.root );
+		this.promoted = true;
+	};
 
 	/**
 	 * Bind DOM event listeners.
@@ -366,6 +398,11 @@
 	BubbleInstance.prototype.destroy = function() {
 		if ( this.autoOpenTimer ) {
 			clearTimeout( this.autoOpenTimer );
+		}
+
+		// Remove the DOM element if it was promoted to body.
+		if ( this.promoted && this.root.parentNode ) {
+			this.root.parentNode.removeChild( this.root );
 		}
 	};
 

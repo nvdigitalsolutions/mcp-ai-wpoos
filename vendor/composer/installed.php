@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-chat-bubble-button-click',
+        'version' => 'dev-copilot/fix-chat-bubble-button-click',
+        'reference' => '4f979e6091a5a8333fd9a2df03e4d3bb20b5dc03',
         'pretty_version' => 'dev-copilot/fix-response-truncation-error',
         'version' => 'dev-copilot/fix-response-truncation-error',
         'reference' => '02fc6c77bcc4b27cdbd1c5f4c2e3ff5223b3d4ab',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-chat-bubble-button-click',
+            'version' => 'dev-copilot/fix-chat-bubble-button-click',
+            'reference' => '4f979e6091a5a8333fd9a2df03e4d3bb20b5dc03',
             'pretty_version' => 'dev-copilot/fix-response-truncation-error',
             'version' => 'dev-copilot/fix-response-truncation-error',
             'reference' => '02fc6c77bcc4b27cdbd1c5f4c2e3ff5223b3d4ab',
