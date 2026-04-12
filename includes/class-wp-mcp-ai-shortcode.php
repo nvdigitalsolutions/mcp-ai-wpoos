@@ -1592,6 +1592,10 @@ class WP_MCP_AI_Shortcode {
 	 * Queue a fully-built chat-bubble HTML fragment for rendering
 	 * inside wp_footer.
 	 *
+	 * Used by the Gutenberg chat-bubble block.  The Elementor widget
+	 * renders inline and does not use this mechanism (JS promotes
+	 * the element to document.body instead).
+	 *
 	 * The HTML should already be properly escaped at the call-site
 	 * (esc_attr, esc_html, sanitize_hex_color, etc.).
 	 *
@@ -1612,45 +1616,180 @@ class WP_MCP_AI_Shortcode {
 	 * Output all queued chat-bubble fragments.
 	 *
 	 * Hooked to `wp_footer` at priority 5.
+	 *
+	 * Because the bubble HTML is injected after DOMContentLoaded, the
+	 * chat-bubble.js auto-initialiser may have already run its global
+	 * scan.  An inline script is appended to re-trigger initialisation
+	 * so the newly-injected bubbles receive event listeners.
 	 */
 	public static function render_footer_bubbles() {
+		if ( empty( self::$footer_bubbles ) ) {
+			return;
+		}
+
 		foreach ( self::$footer_bubbles as $html ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML pre-escaped by callers using esc_attr(), esc_html(), sanitize_hex_color(), and wp_kses_post().
 			echo $html;
 		}
+
+		// Re-trigger bubble init AND chat init for the just-injected markup.
+		// chat-bubble.js exposes window.wpMcpAiChatBubble.init().
+		// chat.js exposes window.wpMcpAiChatInit.init().
+		echo '<script>' // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline bootstrap for dynamically injected bubble HTML.
+			. 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
+			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}'
+			. '</script>' . "\n";
+
 		self::$footer_bubbles = array();
 	}
 
 	/**
-	 * Sanitise shortcode output while preserving specific data attributes.
+	 * Sanitise shortcode output while preserving elements the chat UI needs.
 	 *
-	 * WordPress's wp_kses_post() strips data-* attributes by default.
-	 * The chat interface relies on data-wp-mcp-ai-chat and data-template
-	 * for JavaScript initialisation.  This wrapper temporarily adds those
-	 * specific attributes to the kses allow-list, then removes the filter.
+	 * WordPress's wp_kses_post() strips data-* attributes and SVG elements
+	 * by default.  The chat interface relies on:
 	 *
-	 * Only explicitly required attributes are allowed to minimise the
-	 * attack surface (no wildcard data-*).
+	 *  - `data-wp-mcp-ai-chat` and `data-template` for JS initialisation.
+	 *  - SVG icons inside action buttons (send, attach, transcribe, etc.).
+	 *  - Form element attributes (`required`, `placeholder`, `accept`,
+	 *    `multiple`, `aria-controls`, `aria-label`, `hidden`).
+	 *
+	 * This wrapper temporarily extends the kses allow-list with the
+	 * specific tags and attributes the chat UI needs, then removes the
+	 * filter.  Only safe, presentation-only SVG elements are allowed —
+	 * script, foreignObject, and event-handler attributes are NOT added.
 	 *
 	 * @param string $html Raw shortcode output.
-	 * @return string Sanitised HTML with required data attributes intact.
+	 * @return string Sanitised HTML with required elements intact.
 	 */
 	public static function kses_chat_output( $html ) {
 		$filter = function ( $tags, $context ) {
 			if ( 'post' !== $context ) {
 				return $tags;
 			}
-			// Only allow the specific data attributes the chat UI needs.
+
+			// Data attributes the chat JS needs on container elements.
 			$extra_attrs = array(
 				'data-wp-mcp-ai-chat'        => true,
 				'data-template'              => true,
 				'data-wp-mcp-ai-initialized' => true,
+				'data-instance-id'           => true,
+				'hidden'                     => true,
+				'aria-controls'              => true,
+				'aria-label'                 => true,
+				'aria-expanded'              => true,
+				'aria-hidden'                => true,
+				'aria-live'                  => true,
+				'required'                   => true,
+				'placeholder'                => true,
 			);
+
 			foreach ( $tags as $tag => $attrs ) {
 				if ( is_array( $attrs ) ) {
 					$tags[ $tag ] = array_merge( $attrs, $extra_attrs );
 				}
 			}
+
+			// Additional form element attributes.
+			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
+				$tags['input']['accept']   = true;
+				$tags['input']['multiple'] = true;
+			}
+
+			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
+				$tags['textarea']['required']    = true;
+				$tags['textarea']['placeholder'] = true;
+			}
+
+			// Safe SVG elements for chat UI icons (no script, foreignObject,
+			// or event-handler attributes).
+			$svg_global = array(
+				'class'       => true,
+				'id'          => true,
+				'style'       => true,
+				'aria-hidden' => true,
+				'focusable'   => true,
+				'role'        => true,
+			);
+
+			$tags['svg'] = array_merge(
+				$svg_global,
+				array(
+					'xmlns'       => true,
+					'width'       => true,
+					'height'      => true,
+					'viewbox'     => true,
+					'fill'        => true,
+					'stroke'      => true,
+					'stroke-width' => true,
+				)
+			);
+
+			$tags['path'] = array(
+				'd'               => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['circle'] = array(
+				'cx'   => true,
+				'cy'   => true,
+				'r'    => true,
+				'fill' => true,
+				'class' => true,
+			);
+
+			$tags['line'] = array(
+				'x1'              => true,
+				'y1'              => true,
+				'x2'              => true,
+				'y2'              => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['rect'] = array(
+				'x'      => true,
+				'y'      => true,
+				'width'  => true,
+				'height' => true,
+				'rx'     => true,
+				'ry'     => true,
+				'fill'   => true,
+				'stroke' => true,
+				'class'  => true,
+			);
+
+			$tags['g'] = array(
+				'fill'      => true,
+				'transform' => true,
+				'class'     => true,
+			);
+
+			$tags['polyline'] = array(
+				'points'          => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['polygon'] = array(
+				'points' => true,
+				'fill'   => true,
+				'stroke' => true,
+				'class'  => true,
+			);
+
 			return $tags;
 		};
 
