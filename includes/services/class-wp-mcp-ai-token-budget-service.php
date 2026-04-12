@@ -280,10 +280,13 @@ class WP_MCP_AI_Token_Budget_Manager {
 			return array();
 		}
 
-		$budget = self::calculate_budget( $model, $messages, $max_tokens );
+		$budget = self::calculate_budget( $model, $messages, 0 );
 
-		// If already within budget, return as-is.
-		if ( $budget['used'] <= $budget['limit'] ) {
+		// If message tokens already fit within the requested budget, return as-is.
+		// Compare against $max_tokens (the caller's target) rather than the model's
+		// context-window limit so that TPM-based truncation works correctly when
+		// TPM << context window (e.g. 40 000 TPM vs 200 000 context for Claude).
+		if ( $budget['used'] <= $max_tokens ) {
 			return $messages;
 		}
 

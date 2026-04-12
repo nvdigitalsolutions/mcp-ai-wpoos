@@ -2630,6 +2630,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
+			// Pre-flight TPM validation: truncate or switch model before the
+			// initial LLM call to avoid TPM-limit rejections (especially
+			// relevant for Anthropic models with low TPM ceilings).
+			$preflight = $this->preflight_tpm_check( $messages, $options, $assistant_id );
+			if ( is_wp_error( $preflight ) ) {
+				return $preflight;
+			}
+			$messages = $preflight['messages'];
+			$options  = $preflight['options'];
+
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -3243,6 +3253,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			$transcript_context['request_started_at'] = microtime( true );
+
+			// Pre-flight TPM validation (streaming path): truncate or switch
+			// model before the initial LLM call to avoid TPM-limit rejections.
+			$preflight = $this->preflight_tpm_check( $messages, $options, $assistant_id );
+			if ( is_wp_error( $preflight ) ) {
+				$this->send_sse_event(
+					'error',
+					array(
+						'code'    => $preflight->get_error_code(),
+						'message' => $preflight->get_error_message(),
+					)
+				);
+				$this->send_sse_done();
+				$this->finish_sse();
+				return;
+			}
+			$messages = $preflight['messages'];
+			$options  = $preflight['options'];
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -5995,6 +6023,109 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => absint( $assistant_id ),
 				'provider'     => isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '',
 				'model'        => isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : '',
+			);
+		}
+
+		/**
+		 * Pre-flight TPM (tokens-per-minute) check with automatic truncation.
+		 *
+		 * Attempts model switching first (when enabled), then falls back to
+		 * message truncation.  Returns the (possibly modified) messages and
+		 * options arrays, or a WP_Error when the request cannot be shrunk to fit.
+		 *
+		 * @param array $messages Messages array.
+		 * @param array $options  Chat completion options (passed by reference for model switching).
+		 * @param int   $assistant_id Assistant post ID (for logging).
+		 * @return array|WP_Error Array with 'messages' and 'options' keys, or WP_Error.
+		 */
+		protected function preflight_tpm_check( array $messages, array $options, $assistant_id = 0 ) {
+			if ( ! class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				return array(
+					'messages' => $messages,
+					'options'  => $options,
+				);
+			}
+
+			$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+			$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			if ( ! is_wp_error( $tpm_validation ) ) {
+				return array(
+					'messages' => $messages,
+					'options'  => $options,
+				);
+			}
+
+			// Try switching to a fallback model with a higher TPM limit.
+			$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+			$fallback_model      = WP_MCP_AI_Model_Selector::resolve_fallback_model( $model, $settings );
+			$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
+
+			if ( $auto_switch_enabled && $fallback_model !== $model ) {
+				$fallback_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $fallback_model, $max_output_tokens );
+
+				if ( ! is_wp_error( $fallback_validation ) ) {
+					$options['model'] = $fallback_model;
+
+					$fallback_model_config = class_exists( 'WP_MCP_AI_Model_Config' )
+						? WP_MCP_AI_Model_Config::get_model_config( $fallback_model )
+						: null;
+					if ( $fallback_model_config && ! empty( $fallback_model_config['provider'] ) ) {
+						$options['provider'] = sanitize_key( $fallback_model_config['provider'] );
+					}
+
+					WP_MCP_AI_Logger::log_event(
+						'preflight_model_switched',
+						'Switched to higher-capacity model before initial chat request.',
+						array(
+							'original_model' => $model,
+							'new_model'      => $fallback_model,
+							'assistant_id'   => $assistant_id,
+						)
+					);
+
+					return array(
+						'messages' => $messages,
+						'options'  => $options,
+					);
+				}
+			}
+
+			// Model switch not available/helpful — truncate messages.
+			$tpm_limit     = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+			$target_tokens = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
+			$messages      = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
+
+			// Re-validate after truncation.
+			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			if ( is_wp_error( $tpm_validation ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Pre-flight TPM check failed even after truncation.',
+					array(
+						'assistant_id' => $assistant_id,
+						'model'        => $model,
+						'tpm_limit'    => $tpm_limit,
+						'error'        => $tpm_validation->get_error_message(),
+					)
+				);
+				return $tpm_validation;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'preflight_messages_truncated',
+				'Messages truncated to fit within TPM limits before initial chat request.',
+				array(
+					'model'         => $model,
+					'target_tokens' => $target_tokens,
+					'assistant_id'  => $assistant_id,
+				)
+			);
+
+			return array(
+				'messages' => $messages,
+				'options'  => $options,
 			);
 		}
 

@@ -181,6 +181,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				);
 			}
 
+			// Pre-flight TPM validation: truncate conversation if it exceeds the
+			// model's tokens-per-minute limit to avoid an API rejection.
+			$messages = $this->enforce_tpm_budget( $messages, $model, $options );
+			if ( is_wp_error( $messages ) ) {
+				return $messages;
+			}
+
 			$payload = $this->build_payload( $messages, $options );
 
 			if ( is_wp_error( $payload ) ) {
@@ -509,6 +516,86 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			return 'claude-3-5-sonnet-20241022';
+		}
+
+		/**
+		 * Safety margin applied when truncating messages to fit within TPM budget.
+		 *
+		 * Using 80 % of the TPM limit leaves headroom for output tokens and
+		 * overhead that the heuristic token estimator cannot capture precisely.
+		 */
+		const TPM_SAFETY_MARGIN = 0.8;
+
+		/**
+		 * Enforce TPM (tokens-per-minute) budget before dispatching to the API.
+		 *
+		 * If the estimated token count for the conversation exceeds the model's
+		 * configured TPM limit the method automatically truncates older messages
+		 * so the request fits. When truncation alone is not enough a WP_Error is
+		 * returned so the caller can surface a meaningful message to the user.
+		 *
+		 * @param array  $messages Messages array (OpenAI-compatible format).
+		 * @param string $model    Resolved model identifier.
+		 * @param array  $options  Request options.
+		 * @return array|WP_Error  Potentially truncated messages, or WP_Error.
+		 */
+		protected function enforce_tpm_budget( array $messages, $model, array $options ) {
+			if ( ! class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				return $messages;
+			}
+
+			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+			$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			if ( ! is_wp_error( $tpm_validation ) ) {
+				return $messages;
+			}
+
+			// TPM exceeded — attempt automatic truncation.
+			$tpm_limit     = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+			$target_tokens = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : 0;
+
+			if ( $target_tokens <= 0 ) {
+				// No usable TPM limit available; cannot truncate meaningfully.
+				return $tpm_validation;
+			}
+
+			// Reserve room for the output tokens within the TPM budget.
+			$input_target = $target_tokens;
+			if ( $max_output_tokens > 0 && $max_output_tokens < $target_tokens ) {
+				$input_target = $target_tokens - $max_output_tokens;
+			}
+
+			$messages = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $input_target );
+
+			WP_MCP_AI_Logger::log_event(
+				'anthropic_tpm_truncation',
+				'Messages truncated to fit within Anthropic TPM budget.',
+				array(
+					'model'         => $model,
+					'tpm_limit'     => $tpm_limit,
+					'target_tokens' => $input_target,
+					'message_count' => count( $messages ),
+				)
+			);
+
+			// Re-validate after truncation.
+			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			if ( is_wp_error( $tpm_validation ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Anthropic TPM limit still exceeded after message truncation.',
+					array(
+						'model'         => $model,
+						'tpm_limit'     => $tpm_limit,
+						'target_tokens' => $input_target,
+						'error'         => $tpm_validation->get_error_message(),
+					)
+				);
+				return $tpm_validation;
+			}
+
+			return $messages;
 		}
 
 		/**
