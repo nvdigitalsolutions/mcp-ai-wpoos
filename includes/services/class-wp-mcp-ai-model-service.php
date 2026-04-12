@@ -245,6 +245,9 @@ class WP_MCP_AI_Model_Service {
 		// The models are static and don't require API access to list.
 		$models = array();
 
+		// Claude Mythos (Capybara tier) - Most capable (Apr 2026).
+		$models['claude-mythos-preview'] = 'Claude Mythos Preview (Apr 2026) - Most Capable';
+
 		// Claude 4.6 series (multimodal - vision capable) - Latest (Feb 2026).
 		$models['claude-opus-4-6']   = 'Claude Opus 4.6 (Feb 2026) - Flagship';
 		$models['claude-sonnet-4-6'] = 'Claude Sonnet 4.6 (Feb 2026) - Recommended';
