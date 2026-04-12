@@ -17,11 +17,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	 * Provides a wrapper around Anthropic's Messages API endpoint.
 	 */
 	class WP_MCP_AI_Anthropic_Client {
-		const API_ENDPOINT      = 'https://api.anthropic.com/v1/messages';
-		const API_COUNT_TOKENS  = 'https://api.anthropic.com/v1/messages/count_tokens';
-		const API_VERSION       = '2023-06-01';
-		const USER_AGENT        = 'WP-MCP-AI-Anthropic-Client/1.0';
-		const DEFAULT_BASE_URL  = 'https://api.anthropic.com/v1';
+		const API_ENDPOINT     = 'https://api.anthropic.com/v1/messages';
+		const API_COUNT_TOKENS = 'https://api.anthropic.com/v1/messages/count_tokens';
+		const API_VERSION      = '2023-06-01';
+		const USER_AGENT       = 'WP-MCP-AI-Anthropic-Client/1.0';
+		const DEFAULT_BASE_URL = 'https://api.anthropic.com/v1';
 
 		/**
 		 * Maximum image size in bytes (10MB).
@@ -238,22 +238,51 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			if ( $code < 200 || $code >= 300 ) {
 				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Anthropic.', 'mcp-ai-wpoos' );
+				$error_type    = isset( $decoded['error']['type'] ) ? sanitize_text_field( $decoded['error']['type'] ) : '';
+
+				// Build structured error data with Anthropic-specific metadata.
+				$error_data = array(
+					'status' => $code,
+					'body'   => $decoded,
+				);
+
+				// Anthropic-specific error codes for better downstream handling.
+				$error_code = 'wp_mcp_ai_api_error';
+				if ( 429 === $code ) {
+					$error_code = 'wp_mcp_ai_rate_limit_exceeded';
+					// Extract retry-after header if present.
+					$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+					if ( ! empty( $retry_after ) ) {
+						$error_data['retry_after'] = absint( $retry_after );
+					}
+					$error_data['actions'] = array(
+						'rate_limit_info' => __( 'The Anthropic API rate limit has been exceeded. The request will be retried automatically, or try again in a few moments.', 'mcp-ai-wpoos' ),
+					);
+				} elseif ( 529 === $code || 'overloaded_error' === $error_type ) {
+					$error_code            = 'wp_mcp_ai_overloaded';
+					$error_data['actions'] = array(
+						'overloaded_info' => __( 'The Anthropic API is temporarily overloaded. Please wait a moment and try again.', 'mcp-ai-wpoos' ),
+					);
+				} elseif ( 413 === $code || 'request_too_large' === $error_type ) {
+					$error_code            = 'wp_mcp_ai_request_too_large';
+					$error_data['actions'] = array(
+						'request_too_large_info' => __( 'The request exceeds the model\'s context window. Try reducing the conversation length or switching to a model with a larger context window.', 'mcp-ai-wpoos' ),
+					);
+				}
 
 				WP_MCP_AI_Logger::log_error(
 					'Anthropic returned an error response.',
 					array(
-						'code' => $code,
-						'body' => $decoded,
+						'code'       => $code,
+						'error_type' => $error_type,
+						'body'       => $decoded,
 					)
 				);
 
 				return new WP_Error(
-					'wp_mcp_ai_api_error',
+					$error_code,
 					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
+					$error_data
 				);
 			}
 
@@ -330,12 +359,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-3-5-sonnet-20241022',
-					'name'           => __( 'Claude 3.5 Sonnet (recommended)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude 3.5 Sonnet', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
 					'id'             => 'claude-3-opus-20240229',
-					'name'           => __( 'Claude 3 Opus (most capable)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude 3 Opus', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-haiku-4-5',
+					'name'           => __( 'Claude Haiku 4.5 (fastest)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
@@ -345,12 +379,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				),
 				array(
 					'id'             => 'claude-sonnet-4-6',
-					'name'           => __( 'Claude Sonnet 4.6 (latest)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Sonnet 4.6 (recommended)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(
 					'id'             => 'claude-opus-4-5',
 					'name'           => __( 'Claude Opus 4.5', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-opus-4-6',
+					'name'           => __( 'Claude Opus 4.6 (most capable)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 			);
@@ -547,7 +586,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
-			$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+			// If max_output_tokens is not explicitly set, the calculate_budget method will
+			// auto-reserve a percentage. For the initial validation, pass 0 so the budget
+			// manager uses its model-aware defaults (which now cap against TPM).
+			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
 
 			if ( ! is_wp_error( $tpm_validation ) ) {
 				return $messages;
@@ -562,11 +605,33 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return $tpm_validation;
 			}
 
+			// If the explicit max_output_tokens is larger than what the TPM budget can
+			// accommodate alongside input, cap it so we leave at least 50% of the budget
+			// for input tokens. This prevents the output reservation from starving the
+			// input budget (e.g. max_tokens=32000 with TPM=40000 would leave 0 for input).
+			$max_output_for_budget = $max_output_tokens;
+			if ( $max_output_for_budget > 0 && $max_output_for_budget > (int) ( $target_tokens * 0.5 ) ) {
+				$max_output_for_budget = (int) ( $target_tokens * 0.5 );
+				WP_MCP_AI_Logger::log_event(
+					'anthropic_tpm_output_capped',
+					'Capped max_output_tokens to fit within Anthropic TPM budget.',
+					array(
+						'model'               => $model,
+						'original_max_tokens' => $max_output_tokens,
+						'capped_max_tokens'   => $max_output_for_budget,
+						'tpm_limit'           => $tpm_limit,
+					)
+				);
+			}
+
 			// Reserve room for the output tokens within the TPM budget.
 			$input_target = $target_tokens;
-			if ( $max_output_tokens > 0 && $max_output_tokens < $target_tokens ) {
-				$input_target = $target_tokens - $max_output_tokens;
+			if ( $max_output_for_budget > 0 && $max_output_for_budget < $target_tokens ) {
+				$input_target = $target_tokens - $max_output_for_budget;
 			}
+
+			// Ensure we have a reasonable minimum input budget.
+			$input_target = max( 1024, $input_target );
 
 			$messages = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $input_target );
 
@@ -581,8 +646,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				)
 			);
 
-			// Re-validate after truncation.
-			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+			// Re-validate after truncation — use the capped output value.
+			$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_for_budget );
 
 			if ( is_wp_error( $tpm_validation ) ) {
 				WP_MCP_AI_Logger::log_error(
@@ -859,8 +924,12 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			// Set max_tokens (required by Anthropic).
+			// Anthropic's max_tokens refers to the maximum output tokens the model should
+			// generate. We cap this against the model's known output limit and, when a
+			// TPM budget is active, ensure it does not consume the entire per-minute
+			// allowance — leaving room for input tokens.
 			if ( isset( $options['max_tokens'] ) && $options['max_tokens'] > 0 ) {
-				$payload['max_tokens'] = absint( $options['max_tokens'] );
+				$max_tokens = absint( $options['max_tokens'] );
 			} else {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
@@ -872,9 +941,29 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				 * @param array $options    Request options.
 				 */
 				$max_tokens = apply_filters( 'wp_mcp_ai_anthropic_max_tokens', $max_tokens, $options );
-
-				$payload['max_tokens'] = max( 1, absint( $max_tokens ) );
+				$max_tokens = max( 1, absint( $max_tokens ) );
 			}
+
+			// Cap against the model's known maximum output limit.
+			if ( class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$resolved_model   = isset( $payload['model'] ) ? $payload['model'] : ( isset( $options['model'] ) ? $options['model'] : '' );
+				$model_output_cap = WP_MCP_AI_Token_Budget_Manager::get_model_max_output_tokens( $resolved_model );
+				if ( $model_output_cap > 0 && $max_tokens > $model_output_cap ) {
+					$max_tokens = $model_output_cap;
+				}
+
+				// Ensure max_tokens does not consume the entire TPM budget.
+				// Leave at least 50% of the TPM budget for input tokens.
+				$tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $resolved_model );
+				if ( null !== $tpm_limit && $tpm_limit > 0 ) {
+					$tpm_output_cap = (int) ( $tpm_limit * 0.5 );
+					if ( $max_tokens > $tpm_output_cap ) {
+						$max_tokens = max( 1024, $tpm_output_cap );
+					}
+				}
+			}
+
+			$payload['max_tokens'] = $max_tokens;
 
 			// Add temperature if specified.
 			if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
@@ -889,7 +978,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					// cache_control so Anthropic can cache the entire tool block (saves
 					// tokens on subsequent turns that use the same tool set).
 					if ( ! empty( $options['cache_system_prompt'] ) ) {
-						$last_tool_idx = count( $tools ) - 1;
+						$last_tool_idx                            = count( $tools ) - 1;
 						$tools[ $last_tool_idx ]['cache_control'] = array( 'type' => 'ephemeral' );
 					}
 					$payload['tools'] = $tools;
