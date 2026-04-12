@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-openai-chat-client-integration',
-        'version' => 'dev-copilot/review-openai-chat-client-integration',
-        'reference' => '7e8efcd970222f11aa80e237fea2b8419b5db8de',
+        'pretty_version' => 'dev-copilot/rebuild-app-zips',
+        'version' => 'dev-copilot/rebuild-app-zips',
+        'reference' => '8f7749a9149646e3637efe02c009f94744247943',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-openai-chat-client-integration',
-            'version' => 'dev-copilot/review-openai-chat-client-integration',
-            'reference' => '7e8efcd970222f11aa80e237fea2b8419b5db8de',
+            'pretty_version' => 'dev-copilot/rebuild-app-zips',
+            'version' => 'dev-copilot/rebuild-app-zips',
+            'reference' => '8f7749a9149646e3637efe02c009f94744247943',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
