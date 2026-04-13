@@ -119,8 +119,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			case 'resources/list':
 				return $this->mcp_resources_list( $params, $request );
 
+			case 'resources/read':
+				return $this->mcp_resources_read( $params, $request );
+
 			case 'prompts/list':
 				return $this->mcp_prompts_list( $params, $request );
+
+			case 'prompts/get':
+				return $this->mcp_prompts_get( $params, $request );
 
 			default:
 				return new WP_Error(
@@ -134,7 +140,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 						'status'  => 404,
 						'actions' => array(
 							'check_method' => __( 'Verify the method name is spelled correctly and supported by this server.', 'mcp-ai-wpoos' ),
-							'list_methods' => __( 'Supported methods: initialize, tools/list, tools/call, resources/list, prompts/list', 'mcp-ai-wpoos' ),
+							'list_methods' => __( 'Supported methods: initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -638,6 +644,220 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	}
 
 	/**
+	 * Handle MCP resources/read request.
+	 *
+	 * Returns the content of a specific resource identified by URI.
+	 * Only serves files that are in the assistant's memory_files allowlist.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array           $params  Method parameters. Must include 'uri'.
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array|WP_Error MCP contents response or error.
+	 */
+	protected function mcp_resources_read( $params, WP_REST_Request $request ) {
+		if ( ! isset( $params['uri'] ) || ! is_string( $params['uri'] ) || '' === $params['uri'] ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				__( 'Missing required parameter: uri. Provide the URI of the resource to read.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'provide_uri'    => __( 'Include the "uri" parameter in your resources/read request.', 'mcp-ai-wpoos' ),
+						'list_resources' => __( 'Call resources/list first to discover available resource URIs.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$uri = esc_url_raw( $params['uri'] );
+
+		// Resolve assistant scope same as resources/list.
+		$assistant_id = 0;
+
+		if ( isset( $params['assistant_id'] ) ) {
+			$assistant_id = absint( $params['assistant_id'] );
+		}
+
+		$assistant_id = $this->resolve_assistant_id( $assistant_id );
+		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+
+		if ( is_wp_error( $scoped_id ) ) {
+			return $scoped_id;
+		}
+
+		$assistant_id = $scoped_id;
+
+		if ( ! $assistant_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_assistant',
+				__( 'No assistant context available. Provide an assistant_id or authenticate with an assistant-scoped token.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'provide_assistant' => __( 'Include "assistant_id" in the request params or use an assistant-scoped bearer token.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$assistant_post = $this->validate_assistant_access( $assistant_id );
+
+		if ( is_wp_error( $assistant_post ) ) {
+			return $assistant_post;
+		}
+
+		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+		// Validate the URI is in the assistant's memory_files allowlist.
+		$memory_files = isset( $config['memory_files'] ) && is_array( $config['memory_files'] )
+			? $config['memory_files']
+			: array();
+
+		$matched_file_id = 0;
+
+		foreach ( $memory_files as $file_id ) {
+			$file_id = absint( $file_id );
+			if ( ! $file_id ) {
+				continue;
+			}
+
+			$attachment_url = wp_get_attachment_url( $file_id );
+			if ( false !== $attachment_url && $attachment_url === $uri ) {
+				$matched_file_id = $file_id;
+				break;
+			}
+		}
+
+		if ( ! $matched_file_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_resource_not_found',
+				__( 'The requested resource URI was not found among this assistant\'s memory files.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 404,
+					'actions' => array(
+						'check_uri'      => __( 'Verify the URI matches one returned by resources/list.', 'mcp-ai-wpoos' ),
+						'list_resources' => __( 'Call resources/list to see available resources for this assistant.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$attachment = get_post( $matched_file_id );
+
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_resource_not_found',
+				__( 'The attachment for this resource no longer exists.', 'mcp-ai-wpoos' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$mime_type = get_post_mime_type( $attachment );
+		$file_path = get_attached_file( $matched_file_id );
+
+		// Security: Validate the file path is within ABSPATH.
+		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_resource_unavailable',
+				__( 'The resource file is not available on disk.', 'mcp-ai-wpoos' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$real_path    = realpath( $file_path );
+		$real_abspath = realpath( ABSPATH );
+
+		if ( false === $real_path || false === $real_abspath || 0 !== strpos( $real_path, $real_abspath ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_resource_unavailable',
+				__( 'The resource file path is outside the allowed directory.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Enforce 1 MB size limit.
+		$max_size = 1048576; // 1 MB.
+		$file_size = filesize( $file_path );
+
+		if ( false === $file_size || $file_size > $max_size ) {
+			return new WP_Error(
+				'wp_mcp_ai_resource_too_large',
+				__( 'The resource file exceeds the maximum allowed size of 1 MB.', 'mcp-ai-wpoos' ),
+				array(
+					'status' => 413,
+					'size'   => $file_size,
+				)
+			);
+		}
+
+		// Determine if this is a text-based or binary MIME type.
+		$text_mime_prefixes = array( 'text/', 'application/json', 'application/xml', 'application/javascript', 'application/x-yaml', 'application/csv' );
+		$is_text            = false;
+
+		foreach ( $text_mime_prefixes as $prefix ) {
+			if ( 0 === strpos( $mime_type, $prefix ) ) {
+				$is_text = true;
+				break;
+			}
+		}
+
+		$contents = array();
+
+		if ( $is_text ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local attachment file, not a URL.
+			$file_contents = file_get_contents( $file_path );
+
+			if ( false === $file_contents ) {
+				return new WP_Error(
+					'wp_mcp_ai_resource_read_failed',
+					__( 'Failed to read the resource file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$contents[] = array(
+				'uri'      => $uri,
+				'mimeType' => $mime_type,
+				'text'     => $file_contents,
+			);
+		} else {
+			// Binary content: base64-encode it.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local attachment file, not a URL.
+			$file_contents = file_get_contents( $file_path );
+
+			if ( false === $file_contents ) {
+				return new WP_Error(
+					'wp_mcp_ai_resource_read_failed',
+					__( 'Failed to read the resource file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required by MCP protocol for binary resource content.
+			$contents[] = array(
+				'uri'      => $uri,
+				'mimeType' => $mime_type,
+				'blob'     => base64_encode( $file_contents ),
+			);
+		}
+
+		/**
+		 * Filters the resources/read response contents before returning.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param array           $contents     MCP contents array.
+		 * @param string          $uri          Requested resource URI.
+		 * @param int             $assistant_id Assistant ID.
+		 * @param WP_REST_Request $request      REST request instance.
+		 */
+		$contents = apply_filters( 'wp_mcp_ai_resources_read', $contents, $uri, $assistant_id, $request );
+
+		return array( 'contents' => $contents );
+	}
+
+	/**
 	 * Handle MCP prompts/list request.
 	 *
 	 * @param array           $params  Method parameters.
@@ -661,17 +881,136 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
-				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
+				$default_arguments = array(
+					array(
+						'name'        => 'context',
+						'description' => __( 'Additional context or instructions to incorporate when rendering this prompt.', 'mcp-ai-wpoos' ),
+						'required'    => false,
+					),
+				);
+
+				/**
+				 * Filters the arguments for an individual prompt in prompts/list.
+				 *
+				 * @since 2.2.0
+				 *
+				 * @param array   $arguments    Prompt arguments schema.
+				 * @param WP_Post $post         Assistant post object.
+				 */
+				$arguments = apply_filters( 'wp_mcp_ai_prompt_arguments', $default_arguments, $post );
 
 				$prompts[] = array(
 					'name'        => $post->post_name,
 					'description' => get_the_title( $post ),
-					'arguments'   => array(),
+					'arguments'   => $arguments,
 				);
 			}
 		}
 
 		return array( 'prompts' => $prompts );
+	}
+
+	/**
+	 * Handle MCP prompts/get request.
+	 *
+	 * Returns the rendered content of a specific prompt template identified by name.
+	 * Each prompt corresponds to a published assistant and its system prompt.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array           $params  Method parameters. Must include 'name'.
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array|WP_Error MCP prompt response or error.
+	 */
+	protected function mcp_prompts_get( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+		if ( ! isset( $params['name'] ) || ! is_string( $params['name'] ) || '' === $params['name'] ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				__( 'Missing required parameter: name. Provide the name (slug) of the prompt to retrieve.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'provide_name'  => __( 'Include the "name" parameter matching an assistant slug from prompts/list.', 'mcp-ai-wpoos' ),
+						'list_prompts'  => __( 'Call prompts/list first to discover available prompt names.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$name = sanitize_title( $params['name'] );
+
+		// Look up the assistant by post_name (slug).
+		$query = new WP_Query(
+			array(
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'name'                   => $name,
+				'posts_per_page'         => 1,
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+				'update_post_meta_cache' => true,
+			)
+		);
+
+		if ( ! $query->have_posts() ) {
+			return new WP_Error(
+				'wp_mcp_ai_prompt_not_found',
+				sprintf(
+					/* translators: %s: prompt name */
+					__( 'Prompt not found: %s', 'mcp-ai-wpoos' ),
+					$name
+				),
+				array(
+					'status'  => 404,
+					'actions' => array(
+						'check_name'   => __( 'Verify the prompt name matches a published assistant slug.', 'mcp-ai-wpoos' ),
+						'list_prompts' => __( 'Call prompts/list to see available prompts.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$post          = $query->posts[0];
+		$config        = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
+		$system_prompt = isset( $config['system_prompt'] ) ? $config['system_prompt'] : '';
+
+		// If a context argument was provided, append it to the system prompt content.
+		$arguments = isset( $params['arguments'] ) && is_array( $params['arguments'] ) ? $params['arguments'] : array();
+		$context   = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
+
+		if ( ! empty( $context ) ) {
+			$system_prompt .= "\n\n" . $context;
+		}
+
+		$prompt_content = array(
+			'description' => get_the_title( $post ),
+			'messages'    => array(
+				array(
+					'role'    => 'user',
+					'content' => array(
+						'type' => 'text',
+						'text' => $system_prompt,
+					),
+				),
+			),
+		);
+
+		/**
+		 * Filters the prompts/get response before returning.
+		 *
+		 * Allows Pro/integrations to enrich the prompt with additional
+		 * messages, context, or transformed content.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param array           $prompt_content Prompt response with description and messages.
+		 * @param WP_Post         $post           Assistant post object.
+		 * @param array           $arguments      Request arguments.
+		 * @param WP_REST_Request $request        REST request instance.
+		 */
+		$prompt_content = apply_filters( 'wp_mcp_ai_prompts_get', $prompt_content, $post, $arguments, $request );
+
+		return $prompt_content;
 	}
 
 	/**
