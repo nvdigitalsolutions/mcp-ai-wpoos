@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-new-tab-for-chat-widget',
-        'version' => 'dev-copilot/create-new-tab-for-chat-widget',
-        'reference' => '818bc1511c2dbe655903f97d22032221ed387757',
+        'pretty_version' => 'dev-copilot/rebuild-zips-with-script-again',
+        'version' => 'dev-copilot/rebuild-zips-with-script-again',
+        'reference' => '328b4a2375bc9e1c36770473925ff1be0996c52e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-new-tab-for-chat-widget',
-            'version' => 'dev-copilot/create-new-tab-for-chat-widget',
-            'reference' => '818bc1511c2dbe655903f97d22032221ed387757',
+            'pretty_version' => 'dev-copilot/rebuild-zips-with-script-again',
+            'version' => 'dev-copilot/rebuild-zips-with-script-again',
+            'reference' => '328b4a2375bc9e1c36770473925ff1be0996c52e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
