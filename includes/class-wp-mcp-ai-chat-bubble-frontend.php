@@ -31,6 +31,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Chat_Bubble_Frontend {
 
 	/**
+	 * Default panel width in pixels.
+	 *
+	 * @var int
+	 */
+	const DEFAULT_PANEL_WIDTH = 400;
+
+	/**
+	 * Default panel height in pixels.
+	 *
+	 * @var int
+	 */
+	const DEFAULT_PANEL_HEIGHT = 550;
+
+	/**
+	 * Default bubble color.
+	 *
+	 * @var string
+	 */
+	const DEFAULT_BUBBLE_COLOR = '#4f46e5';
+
+	/**
 	 * Whether the bubble has already been rendered for this request.
 	 *
 	 * @var bool
@@ -151,23 +172,27 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 		}
 
 		$header_background = isset( $settings['chat_bubble_header_background'] ) ? sanitize_hex_color( $settings['chat_bubble_header_background'] ) : '';
-		$header_bg         = ! empty( $header_background )
-			? $header_background
-			: ( ! empty( $bubble_color ) ? $bubble_color : '#4f46e5' );
-		$vars[]            = '--wp-mcp-ai-chat-bubble-header-background:' . sanitize_hex_color( $header_bg );
+		if ( ! empty( $header_background ) ) {
+			$header_bg = $header_background;
+		} elseif ( ! empty( $bubble_color ) ) {
+			$header_bg = $bubble_color;
+		} else {
+			$header_bg = self::DEFAULT_BUBBLE_COLOR;
+		}
+		$vars[] = '--wp-mcp-ai-chat-bubble-header-background:' . $header_bg;
 
 		$header_text_color = isset( $settings['chat_bubble_header_text_color'] ) ? sanitize_hex_color( $settings['chat_bubble_header_text_color'] ) : '';
 		if ( ! empty( $header_text_color ) ) {
 			$vars[] = '--wp-mcp-ai-chat-bubble-header-text-color:' . $header_text_color;
 		}
 
-		$panel_width = isset( $settings['chat_bubble_panel_width'] ) ? absint( $settings['chat_bubble_panel_width'] ) : 400;
-		if ( 400 !== $panel_width && $panel_width > 0 ) {
+		$panel_width = isset( $settings['chat_bubble_panel_width'] ) ? absint( $settings['chat_bubble_panel_width'] ) : self::DEFAULT_PANEL_WIDTH;
+		if ( self::DEFAULT_PANEL_WIDTH !== $panel_width && $panel_width > 0 ) {
 			$vars[] = '--wp-mcp-ai-chat-bubble-panel-width:' . $panel_width . 'px';
 		}
 
-		$panel_height = isset( $settings['chat_bubble_panel_height'] ) ? absint( $settings['chat_bubble_panel_height'] ) : 550;
-		if ( 550 !== $panel_height && $panel_height > 0 ) {
+		$panel_height = isset( $settings['chat_bubble_panel_height'] ) ? absint( $settings['chat_bubble_panel_height'] ) : self::DEFAULT_PANEL_HEIGHT;
+		if ( self::DEFAULT_PANEL_HEIGHT !== $panel_height && $panel_height > 0 ) {
 			$vars[] = '--wp-mcp-ai-chat-bubble-panel-height:' . $panel_height . 'px';
 		}
 
@@ -342,7 +367,8 @@ class WP_MCP_AI_Chat_Bubble_Frontend {
 		 * data-wp-mcp-ai-chat-initialized or similar longer attributes.
 		 */
 		$safe_html = WP_MCP_AI_Shortcode::kses_chat_output( $shortcode_html );
-		$safe_html = preg_replace( '/data-wp-mcp-ai-chat(?![-\w])/', 'data-wp-mcp-ai-chat-deferred', $safe_html );
+		$deferred  = preg_replace( '/data-wp-mcp-ai-chat(?![-\w])/', 'data-wp-mcp-ai-chat-deferred', $safe_html );
+		$safe_html = null !== $deferred ? $deferred : $safe_html;
 		echo $safe_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() passes HTML through wp_kses_post() with data-* support; the regex only renames a data attribute.
 
 		echo '</div>'; // .panel-body
