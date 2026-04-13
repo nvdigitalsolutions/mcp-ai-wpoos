@@ -231,8 +231,10 @@ echo '</div>';
 if ( ! empty( $inline_configs ) ) {
 	echo '<script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline config must live in the block markup for reliable delivery; the main chat script is already enqueued.
 	echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
+	// JSON_HEX_TAG prevents </script> breakout; JSON_HEX_AMP prevents HTML entity injection.
+	$json_flags = JSON_HEX_TAG | JSON_HEX_AMP;
 	foreach ( $inline_configs as $id => $cfg ) {
-		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id ) . ']=' . wp_json_encode( $cfg ) . ';';
+		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
 	}
 	echo '</script>';
 }
