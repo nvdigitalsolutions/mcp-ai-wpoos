@@ -1603,10 +1603,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for client-side WebLLM (loaded via CDN, not bundled).
 			// This package is used in embedded-llm-client.js which loads it from CDN at runtime.
+			// The file was moved to the NV oOS Embedded addon.
 			if ( '@mlc-ai/web-llm' === $package ) {
-				// Check if the client-side embedded LLM JavaScript file exists.
-				$embedded_client_path = WP_MCP_AI_PATH . 'assets/js/embedded-llm-client.js';
-				return file_exists( $embedded_client_path );
+				// Check if the Embedded addon is active (provides embedded-llm-client.js).
+				if ( defined( 'NVOOS_EMBEDDED_PATH' ) ) {
+					return file_exists( NVOOS_EMBEDDED_PATH . 'assets/js/embedded-llm-client.js' );
+				}
+				return false;
 			}
 
 			// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).

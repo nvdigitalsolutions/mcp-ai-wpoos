@@ -278,13 +278,13 @@ class WP_MCP_AI_WebChat_CPT {
 		}
 
 		// Enqueue admin styles if available.
-		$css_file = WP_MCP_AI_PRO_PATH . 'assets/css/admin-webchat.css';
+		$css_file = NVOOS_EMBEDDED_PATH . 'assets/css/admin-webchat.css';
 		if ( file_exists( $css_file ) ) {
 			wp_enqueue_style(
 				'wp-mcp-ai-webchat-admin',
-				WP_MCP_AI_PRO_URL . 'assets/css/admin-webchat.css',
+				NVOOS_EMBEDDED_URL . 'assets/css/admin-webchat.css',
 				array(),
-				WP_MCP_AI_PRO_VERSION
+				NVOOS_EMBEDDED_VERSION
 			);
 		}
 	}

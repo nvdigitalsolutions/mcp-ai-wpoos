@@ -294,7 +294,25 @@
 			recommended: false,
 			functionCalling: false,
 			isThinkingModel: false
-		}
+		},
+'SmolLM2-360M-Instruct-q4f16_1-MLC': {
+name: 'SmolLM2 360M Instruct',
+size: '~250MB',
+description: 'Smallest SmolLM2 variant. Ultra-fast for basic responses on any device.',
+contextWindow: 4096,
+recommended: false,
+functionCalling: false,
+isThinkingModel: false
+},
+'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC': {
+name: 'TinyLlama 1.1B Chat',
+size: '~700MB',
+description: 'Lightweight open-source chat model based on Llama architecture.',
+contextWindow: 2048,
+recommended: false,
+functionCalling: false,
+isThinkingModel: false
+}
 	};
 
 	/**

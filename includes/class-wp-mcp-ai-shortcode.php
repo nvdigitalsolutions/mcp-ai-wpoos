@@ -133,61 +133,15 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
-		// Register embedded LLM client scripts (always register, enqueue conditionally).
-		// This prevents conflicts when multiple widgets with different providers are on the same page.
+		// Register embedded LLM client scripts via the Embedded addon (or Pro addon).
+		// The addon provides the actual script files and handles registration.
 		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-			$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
-			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
-			$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
-			$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
-
-			// Register WebLLM loader (loads WebLLM library dynamically).
-			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
-				wp_register_script(
-					'webllm-loader',
-					$webllm_loader_path,
-					array(),
-					$webllm_loader_version,
-					true
-				);
-			}
-
-			// Register embedded LLM client (depends on WebLLM loader).
-			if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-embedded-llm-client',
-					$embedded_script_path,
-					array( 'webllm-loader' ),
-					$embedded_script_version,
-					true
-				);
-			}
-
-			// Register enhanced WebLLM scripts for tool calling and knowledge support.
-			$tool_adapter_path        = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
-			$tool_adapter_version     = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
-			$function_calling_path    = WP_MCP_AI_URL . 'assets/js/webllm-function-calling-client.min.js';
-			$function_calling_version = $this->get_asset_version( 'assets/js/webllm-function-calling-client.min.js' );
-
-			if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-webllm-tool-adapter',
-					$tool_adapter_path,
-					array(),
-					$tool_adapter_version,
-					true
-				);
-			}
-
-			if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-webllm-function-calling',
-					$function_calling_path,
-					array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
-					$function_calling_version,
-					true
-				);
-			}
+			/**
+			 * Fires to let the Embedded addon register its WebLLM scripts.
+			 *
+			 * @since 2.3.0
+			 */
+			do_action( 'wp_mcp_ai_register_embedded_scripts' );
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -391,7 +345,11 @@ class WP_MCP_AI_Shortcode {
 	 * @return bool True if embedded provider is available, false otherwise.
 	 */
 	protected function is_embedded_provider_available( $provider ) {
-		return 'embedded' === $provider && defined( 'WP_MCP_AI_PRO_VERSION' );
+		if ( 'embedded' !== $provider ) {
+			return false;
+		}
+		// Check via filter (Embedded addon or Pro addon can provide embedded support).
+		return (bool) apply_filters( 'wp_mcp_ai_is_embedded_provider_available', defined( 'WP_MCP_AI_PRO_VERSION' ) );
 	}
 
 	/**
@@ -867,8 +825,7 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$is_embedded_server_model = 'embedded' === $assistant_provider
 				&& ! empty( $assistant_model )
-				&& class_exists( 'WP_MCP_AI_Embedded_Client' )
-				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( $assistant_model );
+				&& apply_filters( 'wp_mcp_ai_is_embedded_server_model', false, $assistant_model );
 			$needs_embedded_provider  = $this->is_embedded_provider_available( $assistant_provider ) && ! $is_embedded_server_model;
 
 			// Parse additional_tools from the shortcode attribute early so it can be used for:
@@ -895,19 +852,18 @@ class WP_MCP_AI_Shortcode {
 			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
-				// Enqueue embedded provider scripts.
-				// WordPress ensures these are only loaded once even if called multiple times.
-				wp_enqueue_script( 'webllm-loader' );
-				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
-
-				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
-				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
-
-				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
-					// Enqueue tool adapter and function calling client for enhanced capabilities.
-					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
-					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
-				}
+				/**
+				 * Fires to enqueue embedded provider scripts (WebLLM loader, client, tool adapter).
+				 * The Embedded addon handles the actual enqueue from its own assets.
+				 *
+				 * @since 2.3.0
+				 *
+				 * @param bool $needs_embedded    Whether embedded provider scripts are needed.
+				 * @param bool $has_tools         Whether the assistant has tools configured.
+				 * @param bool $has_system_prompt Whether the assistant has a system prompt.
+				 * @param bool $has_knowledge     Whether the assistant has knowledge files.
+				 */
+				do_action( 'wp_mcp_ai_enqueue_embedded_scripts', $needs_embedded_provider, $has_tools, $has_system_prompt, $has_knowledge );
 			}
 
 			// Enqueue chat script (always with same dependencies - no conditional changes).
