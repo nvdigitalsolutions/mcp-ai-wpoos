@@ -162,12 +162,8 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	// All channel tools, grouped by platform for readability.
 	$all_tools = array(
 
-		// WebChat message tools (JetEngine CCT-backed).
-		'WP_MCP_AI_Tool_Save_WebChat_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-webchat-message.php',
-		'WP_MCP_AI_Tool_Get_WebChat_Messages' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-webchat-messages.php',
-
-		// WebChat P2P (WebRTC / signaling) tools.
-		'WP_MCP_AI_Pro_Tool_Send_WebChat_Message' => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-webchat-message.php',
+		// WebChat tools have been moved to the NV oOS Embedded addon.
+		// They are registered via the Embedded addon's register_webchat_tools() method.
 
 		// Google Chat space tools.
 		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'          => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
