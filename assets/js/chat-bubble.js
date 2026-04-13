@@ -286,8 +286,8 @@
 		this.chatInited = true;
 
 		// Activate deferred chat containers so chat.js can discover them.
-		var deferred = this.panel.querySelectorAll( '[data-wp-mcp-ai-chat-deferred]' );
-		for ( var i = 0; i < deferred.length; i++ ) {
+		const deferred = this.panel.querySelectorAll( '[data-wp-mcp-ai-chat-deferred]' );
+		for ( let i = 0; i < deferred.length; i++ ) {
 			deferred[ i ].setAttribute( 'data-wp-mcp-ai-chat', '' );
 			deferred[ i ].removeAttribute( 'data-wp-mcp-ai-chat-deferred' );
 		}
