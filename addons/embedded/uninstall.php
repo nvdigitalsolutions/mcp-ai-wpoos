@@ -17,7 +17,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'nvoos_embedded_settings' );
 
 // Note: We intentionally do NOT delete:
-// - wp_mcp_ai_settings (shared with base plugin)
-// - mcp_ai_webchat posts (user data — preserved for re-activation)
-// - GGUF model files in uploads (user-downloaded — preserved)
-// - WebLLM feature flag options (shared with base plugin)
+// - wp_mcp_ai_settings (shared with base plugin).
+// - mcp_ai_webchat posts (user data preserved for re-activation).
+// - GGUF model files in uploads (user-downloaded, preserved).
+// - WebLLM feature flag options (shared with base plugin).

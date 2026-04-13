@@ -18,6 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Core singleton for the NV oOS Embedded AI Addon.
  *
  * @since 1.0.0
+ *
+ * phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedClassFound -- Addon class follows NV_oOS_ naming convention.
+ * phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid -- Matches NV_oOS_Algorave convention.
  */
 class NV_oOS_Embedded {
 
@@ -145,7 +148,7 @@ class NV_oOS_Embedded {
 	 * @param bool $available Current availability status.
 	 * @return bool True if embedded provider is available.
 	 */
-	public static function is_embedded_provider_available( $available ) {
+	public static function is_embedded_provider_available( $available ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- WordPress filter callback.
 		return true;
 	}
 
@@ -174,7 +177,7 @@ class NV_oOS_Embedded {
 	 * @param int   $assistant_id Assistant ID.
 	 * @return array Configuration array.
 	 */
-	public static function get_embedded_client_config( $config, $assistant_id ) {
+	public static function get_embedded_client_config( $config, $assistant_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress filter callback.
 		// Config is already built by the REST chat controller.
 		return $config;
 	}
@@ -290,10 +293,13 @@ class NV_oOS_Embedded {
 
 		// Load WebChat Signaling REST Controller.
 		require_once NVOOS_EMBEDDED_PATH . 'includes/webchat/class-wp-mcp-ai-webchat-signaling-rest-controller.php';
-		add_action( 'rest_api_init', function () {
-			$controller = new WP_MCP_AI_WebChat_Signaling_REST_Controller();
-			$controller->register_routes();
-		} );
+		add_action(
+			'rest_api_init',
+			function () {
+				$controller = new WP_MCP_AI_WebChat_Signaling_REST_Controller();
+				$controller->register_routes();
+			}
+		);
 
 		// Load WebChat Settings page.
 		if ( is_admin() ) {
