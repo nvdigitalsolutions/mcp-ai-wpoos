@@ -183,11 +183,59 @@ echo '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 
 echo '</button>';
 echo '</div>';
 
+/*
+ * ── Capture config and process shortcode ─────────────────────────────
+ */
+
+$configs_before = isset( $GLOBALS['wp_mcp_ai_chat_configs'] )
+	? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] )
+	: array();
+
+$shortcode_output = do_shortcode( $shortcode );
+
+/*
+ * Identify new chat instance config(s) created by the shortcode.
+ */
+$inline_configs = array();
+if ( isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+	foreach ( $GLOBALS['wp_mcp_ai_chat_configs'] as $id => $cfg ) {
+		if ( ! in_array( $id, $configs_before, true ) ) {
+			$inline_configs[ $id ] = $cfg;
+		}
+	}
+}
+
 echo '<div class="wp-mcp-ai-chat-bubble__panel-body">';
-echo WP_MCP_AI_Shortcode::kses_chat_output( do_shortcode( $shortcode ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() passes HTML through wp_kses_post() with data-* support.
+
+/*
+ * Defer chat initialisation: replace the discovery attribute so chat.js
+ * does not initialise the container on its DOMContentLoaded pass (while
+ * the bubble panel is hidden).  chat-bubble.js _lazyInitChat() renames
+ * the attribute back right before calling init() when the bubble opens.
+ */
+$safe_html = WP_MCP_AI_Shortcode::kses_chat_output( $shortcode_output );
+$safe_html = preg_replace( '/data-wp-mcp-ai-chat(?![-\w])/', 'data-wp-mcp-ai-chat-deferred', $safe_html );
+echo $safe_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() sanitises via wp_kses_post(); the regex only renames a data attribute.
+
 echo '</div>';
 
 echo '</div>';
+
+/*
+ * Output the chat instance config as an inline <script> tag.
+ *
+ * This guarantees the config is in window.wpMcpAiChatInstances even
+ * when wp_add_inline_script() (called inside the shortcode) does not
+ * print — e.g. with aggressive script deferral or caching plugins.
+ */
+if ( ! empty( $inline_configs ) ) {
+	echo '<script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline config must live in the block markup for reliable delivery; the main chat script is already enqueued.
+	echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
+	foreach ( $inline_configs as $id => $cfg ) {
+		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id ) . ']=' . wp_json_encode( $cfg ) . ';';
+	}
+	echo '</script>';
+}
 
 echo '</div>';
 
