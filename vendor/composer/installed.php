@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-bubble-issue',
-        'version' => 'dev-copilot/fix-chat-bubble-issue',
-        'reference' => '4086495506fabc0ca3dbb7373d3488331e40e1a6',
+        'pretty_version' => 'dev-copilot/create-new-tab-for-chat-widget',
+        'version' => 'dev-copilot/create-new-tab-for-chat-widget',
+        'reference' => '818bc1511c2dbe655903f97d22032221ed387757',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-bubble-issue',
-            'version' => 'dev-copilot/fix-chat-bubble-issue',
-            'reference' => '4086495506fabc0ca3dbb7373d3488331e40e1a6',
+            'pretty_version' => 'dev-copilot/create-new-tab-for-chat-widget',
+            'version' => 'dev-copilot/create-new-tab-for-chat-widget',
+            'reference' => '818bc1511c2dbe655903f97d22032221ed387757',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

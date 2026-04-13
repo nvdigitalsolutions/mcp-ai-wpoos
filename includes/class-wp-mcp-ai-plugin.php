@@ -221,6 +221,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				WP_MCP_AI_Assistant_Builder_Blocks::init();
 			}
 
+			// Initialize the global chat bubble frontend (settings-driven, no widget needed).
+			if ( class_exists( 'WP_MCP_AI_Chat_Bubble_Frontend' ) ) {
+				$chat_bubble_frontend = new WP_MCP_AI_Chat_Bubble_Frontend();
+				$chat_bubble_frontend->init();
+			}
+
 			// Initialize WordPress integration enhancements (Privacy API and Site Health).
 			if ( class_exists( 'WP_MCP_AI_Privacy' ) ) {
 				new WP_MCP_AI_Privacy();
