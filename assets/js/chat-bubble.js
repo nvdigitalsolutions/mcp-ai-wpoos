@@ -272,12 +272,25 @@
 	 * The shortcode HTML is already rendered inside the panel; this
 	 * triggers `wpMcpAiChatInit.init()` once so the chat becomes
 	 * interactive only when the user first opens the bubble.
+	 *
+	 * Chat containers inside the bubble panel use the attribute
+	 * `data-wp-mcp-ai-chat-deferred` instead of `data-wp-mcp-ai-chat`
+	 * so that the main chat.js DOMContentLoaded pass does not
+	 * initialise them prematurely while the panel is hidden.  We
+	 * activate those containers here, right before calling init().
 	 */
 	BubbleInstance.prototype._lazyInitChat = function() {
 		if ( this.chatInited ) {
 			return;
 		}
 		this.chatInited = true;
+
+		// Activate deferred chat containers so chat.js can discover them.
+		const deferred = this.panel.querySelectorAll( '[data-wp-mcp-ai-chat-deferred]' );
+		for ( let i = 0; i < deferred.length; i++ ) {
+			deferred[ i ].setAttribute( 'data-wp-mcp-ai-chat', '' );
+			deferred[ i ].removeAttribute( 'data-wp-mcp-ai-chat-deferred' );
+		}
 
 		if (
 			window.wpMcpAiChatInit &&
