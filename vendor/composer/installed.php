@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/remove-embedded-chat-clients',
+        'version' => 'dev-copilot/remove-embedded-chat-clients',
+        'reference' => '9f7a0b427714f77f8ec4e346428f3855918d9922',
         'pretty_version' => 'dev-copilot/rebuild-zips-with-script-again',
         'version' => 'dev-copilot/rebuild-zips-with-script-again',
         'reference' => '328b4a2375bc9e1c36770473925ff1be0996c52e',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/remove-embedded-chat-clients',
+            'version' => 'dev-copilot/remove-embedded-chat-clients',
+            'reference' => '9f7a0b427714f77f8ec4e346428f3855918d9922',
             'pretty_version' => 'dev-copilot/rebuild-zips-with-script-again',
             'version' => 'dev-copilot/rebuild-zips-with-script-again',
             'reference' => '328b4a2375bc9e1c36770473925ff1be0996c52e',

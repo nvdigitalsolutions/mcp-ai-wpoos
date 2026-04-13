@@ -336,10 +336,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
-		// Load the server-side Embedded LLM client (llama.cpp / GGUF inference).
-		// This is a Pro-only feature; the base plugin's language model router uses
-		// class_exists() to detect its presence before instantiating it.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+		// Embedded LLM client has been moved to the standalone NV oOS Embedded addon.
+		// The base plugin's language model router uses the wp_mcp_ai_embedded_chat_completion
+		// filter which the Embedded addon hooks into.
 
 		// Load CPT meta schema registry — exposes custom meta field definitions for all
 		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
@@ -382,11 +381,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
 
-			// Load WebLLM Advanced Features settings page (Phase 1).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
+			// WebLLM settings page has been moved to the NV oOS Embedded addon.
 
-			// Load Embedded Model AJAX handlers (Pro-only: download/delete/list GGUF models and llama-cli binary).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
+			// Embedded Model AJAX handlers have been moved to the NV oOS Embedded addon.
 
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
@@ -403,30 +400,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
-		// Load WebChat integration system if enabled.
-		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
-			WP_MCP_AI_WebChat_CPT::init();
-			// Load JetEngine WebChat Messages CCT if JetEngine is active.
-			if ( function_exists( 'jet_engine' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
-				WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
-			}
-			// Load WebChat Self-Hosted Signaling REST Controller.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-webchat-signaling-rest-controller.php';
-			add_action( 'rest_api_init', function() {
-				$controller = new WP_MCP_AI_WebChat_Signaling_REST_Controller();
-				$controller->register_routes();
-			} );
-			// Load WebChat Settings page.
-			if ( is_admin() ) {
-				// Check if not in base version.
-				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-				if ( ! $is_base ) {
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
-				}
-			}
-		}
+		// WebChat integration has been moved to the NV oOS Embedded addon.
+		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
