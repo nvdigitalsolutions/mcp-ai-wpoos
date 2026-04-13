@@ -308,6 +308,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.ph
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
 require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-assistant-builder-blocks.php';
 
+// Global chat bubble frontend (settings-driven, no widget needed).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-bubble-frontend.php';
+
 // ---------------------------------------------------------------------------
 // Clean output buffer
 // ---------------------------------------------------------------------------
