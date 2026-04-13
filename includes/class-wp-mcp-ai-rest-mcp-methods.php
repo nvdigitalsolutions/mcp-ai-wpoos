@@ -922,7 +922,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error MCP prompt response or error.
 	 */
-	protected function mcp_prompts_get( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+	protected function mcp_prompts_get( $params, WP_REST_Request $request ) {
 		if ( ! isset( $params['name'] ) || ! is_string( $params['name'] ) || '' === $params['name'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',

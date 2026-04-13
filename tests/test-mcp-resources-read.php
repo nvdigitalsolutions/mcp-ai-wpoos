@@ -118,7 +118,10 @@ class WP_MCP_AI_MCP_Resources_Read_Test extends WP_UnitTestCase {
 		$file_path  = $upload_dir['path'] . '/' . $filename;
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test helper.
-		file_put_contents( $file_path, $content );
+		$result = file_put_contents( $file_path, $content );
+		if ( false === $result ) {
+			$this->fail( 'Failed to create test file: ' . $filename );
+		}
 
 		$attachment_id = wp_insert_attachment(
 			array(
@@ -257,7 +260,10 @@ class WP_MCP_AI_MCP_Resources_Read_Test extends WP_UnitTestCase {
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['path'] . '/secret-file.txt';
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test helper.
-		file_put_contents( $file_path, 'secret content' );
+		$result = file_put_contents( $file_path, 'secret content' );
+		if ( false === $result ) {
+			$this->fail( 'Failed to create test file: secret-file.txt' );
+		}
 
 		$attachment_id = wp_insert_attachment(
 			array(
