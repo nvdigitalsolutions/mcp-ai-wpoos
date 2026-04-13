@@ -3781,19 +3781,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Extract thinking/reasoning text from the response if present.
 			// Supports multiple providers:
+			// - Anthropic extended thinking: message['thinking'] + provider='anthropic'.
 			// - Gemini 2.0 Flash Thinking mode: message['thinking'].
 			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning'].
 			$thinking_text            = '';
 			$thinking_provider_format = 'gemini'; // Default to Gemini format.
 
+			// Detect response provider for correct thinking format.
+			$response_provider = isset( $response['provider'] ) ? sanitize_key( $response['provider'] ) : '';
+
 			// Validate response structure before accessing nested keys.
 			if ( ! empty( $response['choices'] ) && is_array( $response['choices'] ) && isset( $response['choices'][0]['message'] ) ) {
 				$message = $response['choices'][0]['message'];
 
-				// Check for Gemini thinking text.
+				// Check for thinking text (Anthropic or Gemini).
 				if ( ! empty( $message['thinking'] ) ) {
 					$thinking_text            = $message['thinking'];
-					$thinking_provider_format = 'gemini';
+					$thinking_provider_format = 'anthropic' === $response_provider ? 'anthropic' : 'gemini';
 				} elseif ( ! empty( $message['reasoning_content'] ) ) {
 					// Check for OpenAI reasoning_content (future-ready).
 					$thinking_text            = $message['reasoning_content'];
@@ -3819,6 +3823,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 										'reasoning_content' => $chunk,
 									),
 								),
+							),
+						);
+					};
+				} elseif ( 'anthropic' === $thinking_provider_format ) {
+					// Use Anthropic content_block_delta format for extended thinking.
+					$thinking_formatter = function ( $chunk ) {
+						return array(
+							'type'  => 'content_block_delta',
+							'delta' => array(
+								'type'     => 'thinking_delta',
+								'thinking' => $chunk,
 							),
 						);
 					};

@@ -353,6 +353,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		public function list_models( array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- $options reserved for future API-based enumeration.
 			return array(
 				array(
+					'id'             => 'claude-mythos-preview',
+					'name'           => __( 'Claude Mythos Preview (most capable)', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
 					'id'             => 'claude-3-haiku-20240307',
 					'name'           => __( 'Claude 3 Haiku (fastest)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
@@ -1581,8 +1586,20 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 			}
 
+			// Flatten text-only segments to a plain string for full OpenAI-compatible
+			// response format.  OpenAI and Gemini normalized responses always set
+			// message.content as a string, and the rest of the plugin (SSE streaming,
+			// chat JS, conversation persistence) relies on this.  Keeping the array
+			// format caused downstream code to receive an array where a string was
+			// expected, which could result in empty chat bubbles or missing responses.
 			if ( ! empty( $segments ) ) {
-				$message['content'] = $segments;
+				$text_parts = array();
+				foreach ( $segments as $seg ) {
+					if ( isset( $seg['text'] ) ) {
+						$text_parts[] = $seg['text'];
+					}
+				}
+				$message['content'] = implode( "\n\n", $text_parts );
 			}
 
 			if ( ! empty( $tool_calls ) ) {

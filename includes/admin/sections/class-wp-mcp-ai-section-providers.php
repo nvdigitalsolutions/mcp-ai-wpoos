@@ -104,6 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
+					'claude-mythos-preview'      => 'Claude Mythos Preview (Most Capable)',
 					'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 (Recommended)',
 					'claude-opus-4-6'            => 'Claude Opus 4.6 (Flagship)',
 					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',

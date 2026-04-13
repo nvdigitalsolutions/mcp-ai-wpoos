@@ -1029,7 +1029,23 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'deprecated',
 			),
 
-			// Anthropic Models (February 2026).
+			// Anthropic Models (April 2026).
+			// Claude Mythos (Capybara tier) - Most capable model.
+			// Gated research preview. 1M context, 128K output.
+			'claude-mythos-preview'                        => array(
+				'name'           => 'Claude Mythos Preview (Most Capable)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'max_output'     => 128000,
+				'fallback_model' => 'claude-opus-4-6',
+				'cost_per_1k'    => 0.020,
+				'status'         => 'active',
+			),
+
 			// Claude 4.6 series (multimodal - vision capable) - Latest.
 			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
 			// Context window: 1M tokens (beta) for 4.6 models.
