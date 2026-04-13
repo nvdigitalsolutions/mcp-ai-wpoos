@@ -679,18 +679,42 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 	/**
 	 * Render the widget on the front-end.
 	 *
-	 * On the live front-end the complete bubble HTML is queued for
-	 * rendering inside wp_footer via WP_MCP_AI_Shortcode::queue_footer_bubble().
-	 * This ensures the bubble is a direct child of <body>, which:
+	 * The bubble is always rendered inline so that:
 	 *
-	 *  1. Escapes ancestor stacking-context / overflow:hidden traps
-	 *     created by Elementor header/footer sections.
-	 *  2. Avoids wp_kses_post() stripping data-* attributes that
-	 *     chat.js relies on (data-wp-mcp-ai-chat, data-template).
-	 *  3. Guarantees scripts are loaded after the DOM is present.
+	 *  1. Elementor can detect the widget output and fire the
+	 *     `frontend/element_ready` hook for JavaScript init.
+	 *  2. There are no timing issues with wp_footer priorities when
+	 *     the widget is placed in header, footer, or popup templates.
+	 *  3. Script and style enqueue calls take effect at the normal
+	 *     template-rendering stage.
 	 *
-	 * Inside the Elementor visual editor the widget renders inline
-	 * so the builder can display and manage it.
+	 * The companion JavaScript (`chat-bubble.js`) automatically promotes
+	 * the bubble element to `document.body` via `_promoteToBody()` on
+	 * the live front-end, escaping ancestor stacking-context traps
+	 * (overflow:hidden, transforms, z-index) created by Elementor
+	 * sections, columns, and header/footer templates.
+	 *
+	 * **Placement guidance — Elementor Theme Builder:**
+	 *
+	 *  - **Site-Wide Footer** (recommended): Place the widget in a
+	 *    footer template with display conditions set to "Entire Site."
+	 *    The footer renders on every page and the widget is promoted
+	 *    to `<body>` by JavaScript.  The footer location renders
+	 *    before `wp_footer`, so all scripts and inline configs are
+	 *    guaranteed to be available.
+	 *
+	 *  - **Site-Wide Header**: Also works well.  The header renders
+	 *    even earlier than the footer, so there are no timing issues.
+	 *
+	 *  - **Individual pages / Single templates**: Works for page-
+	 *    specific chat bubbles.  The widget appears only on pages
+	 *    matching the template's display conditions.
+	 *
+	 *  - **Popups**: Supported but not recommended.  Popups render
+	 *    dynamically and the fixed-position bubble may conflict with
+	 *    the popup's own positioning.
+	 *
+	 * @see assets/js/chat-bubble.js BubbleInstance._promoteToBody()
 	 */
 	protected function render() {
 		$settings = $this->get_settings_for_display();
@@ -731,34 +755,16 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 
 		/*
 		 * Process the shortcode now so that scripts and inline config
-		 * are enqueued at the normal time.  The HTML output is captured
-		 * and included in the footer-rendered bubble below.
+		 * are enqueued at the normal time.
 		 */
 		$shortcode_html = do_shortcode( $shortcode );
 
 		/*
-		 * Inside the Elementor editor the widget must render inline
-		 * for the visual builder to work correctly.
+		 * Render bubble HTML inline.  On the live front-end the JS
+		 * _promoteToBody() call moves it to document.body automatically,
+		 * escaping any ancestor stacking-context traps.
 		 */
-		$is_editor = (
-			\Elementor\Plugin::$instance->editor->is_edit_mode() ||
-			\Elementor\Plugin::$instance->preview->is_preview_mode()
-		);
-
-		if ( $is_editor ) {
-			$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html );
-			return;
-		}
-
-		/*
-		 * Front-end: buffer the bubble HTML and queue it for wp_footer
-		 * so it renders as a direct child of <body>.
-		 */
-		ob_start();
 		$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html );
-		$bubble_html = ob_get_clean();
-
-		WP_MCP_AI_Shortcode::queue_footer_bubble( $bubble_html );
 	}
 
 	/**
