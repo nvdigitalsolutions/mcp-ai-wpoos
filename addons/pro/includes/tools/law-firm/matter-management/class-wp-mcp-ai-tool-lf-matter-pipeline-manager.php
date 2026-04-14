@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager implements WP_MCP_AI_Tool_Interf
 
 		foreach ( $meta_fields as $arg_key => $meta_key ) {
 			if ( ! empty( $arguments[ $arg_key ] ) ) {
-				$value = is_int( $arguments[ $arg_key ] ) ? absint( $arguments[ $arg_key ] ) : sanitize_text_field( $arguments[ $arg_key ] );
+				$value = ( 'client_id' === $arg_key ) ? absint( $arguments[ $arg_key ] ) : sanitize_text_field( $arguments[ $arg_key ] );
 				update_post_meta( $post_id, $meta_key, $value );
 			}
 		}

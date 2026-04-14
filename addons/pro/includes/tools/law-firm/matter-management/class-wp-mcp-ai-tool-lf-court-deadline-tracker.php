@@ -99,6 +99,10 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 					'description' => __( 'Deadline priority level.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'medium', 'high', 'critical' ),
 				),
+				'deadline_id'          => array(
+					'type'        => 'string',
+					'description' => __( 'Deadline ID or description to identify a specific deadline (for mark_complete action).', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'   => array( 'action', 'matter_id' ),
 		);
@@ -195,7 +199,12 @@ class WP_MCP_AI_Tool_LF_Court_Deadline_Tracker implements WP_MCP_AI_Tool_Interfa
 				);
 
 			case 'mark_complete':
-				$deadline_id = isset( $arguments['deadline_description'] ) ? sanitize_text_field( $arguments['deadline_description'] ) : '';
+				$deadline_id = '';
+				if ( isset( $arguments['deadline_id'] ) ) {
+					$deadline_id = sanitize_text_field( $arguments['deadline_id'] );
+				} elseif ( isset( $arguments['deadline_description'] ) ) {
+					$deadline_id = sanitize_text_field( $arguments['deadline_description'] );
+				}
 				$found       = false;
 
 				foreach ( $deadlines as &$dl ) {
