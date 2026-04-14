@@ -1777,7 +1777,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		);
 
 		// Sanitize.
-		$assistant_id          = absint( $atts['assistant_id'] );
+		$assistant_id          = ! empty( $atts['assistant_id'] ) ? absint( $atts['assistant_id'] ) : 0;
 		$primary_color         = sanitize_hex_color( $atts['primary_color'] );
 		$show_package_selector = ( 'no' !== sanitize_key( $atts['show_package_selector'] ) );
 		$show_addon_selector   = ( 'no' !== sanitize_key( $atts['show_addon_selector'] ) );
@@ -1823,7 +1823,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 				'restUrl'        => esc_url_raw( trailingslashit( rest_url( 'mcp-ai/v1' ) ) ),
 				'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
-				'assistantId'    => $assistant_id ? (string) $assistant_id : '',
+				'assistantId'    => $assistant_id > 0 ? (string) $assistant_id : '',
 				'currency'       => $currency,
 				'taxRate'        => $tax_rate,
 				'i18n'           => array(
@@ -1898,7 +1898,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 
 		ob_start();
 		?>
-		<div class="mcp-vce-app" role="application"<?php echo wp_kses_post( $style_attr ); ?>>
+		<div class="mcp-vce-app" role="application"<?php echo $style_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- value sanitized via sanitize_hex_color() and esc_attr(); only output when non-empty. ?>>
 
 			<!-- ── HEADER ───────────────────────────────────────────────── -->
 			<div class="mcp-vce-header" role="banner">

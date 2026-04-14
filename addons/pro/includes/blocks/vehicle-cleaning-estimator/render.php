@@ -54,5 +54,5 @@ $shortcode = '[mcp_vehicle_cleaning_estimator ' . implode( ' ', $shortcode_atts 
 // Render with block wrapper.
 ?>
 <div <?php echo wp_kses_post( get_block_wrapper_attributes() ); ?>>
-	<?php echo wp_kses_post( do_shortcode( $shortcode ) ); ?>
+	<?php echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- shortcode renderer handles all escaping internally. ?>
 </div>

@@ -51,7 +51,7 @@
 }
 
 /* Full-screen overlay mode (toggled by JS) */
-.mcp-vce-app.mce-fullscreen {
+.mcp-vce-app.mcp-vce-app--fullscreen {
 	position  : fixed;
 	inset     : 0;
 	z-index   : 9999;
@@ -215,7 +215,7 @@
 }
 
 .mcp-vce-dropzone:hover,
-.mcp-vce-dropzone.mce-drag-over {
+.mcp-vce-dropzone.mcp-vce-dropzone--drag-over {
 	border-color     : var(--mce-primary);
 	background       : rgba(0, 115, 170, 0.04);
 }

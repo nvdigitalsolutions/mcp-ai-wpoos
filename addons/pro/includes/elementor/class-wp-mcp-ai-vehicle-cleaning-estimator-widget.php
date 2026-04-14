@@ -256,6 +256,6 @@ class WP_MCP_AI_Vehicle_Cleaning_Estimator_Widget extends \Elementor\Widget_Base
 		}
 
 		$shortcode = '[mcp_vehicle_cleaning_estimator ' . implode( ' ', $attributes ) . ']';
-		echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- shortcode output escaped within render method.
+		echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaping is handled within render_vehicle_cleaning_estimator() in class-wp-mcp-ai-pro-toolkit-shortcodes.php.
 	}
 }
