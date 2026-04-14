@@ -12,9 +12,9 @@
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.7  
-**Release Date:** 2026-04-11 (April 2026 — MCP Apps per-assistant remote server connections, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams, WordPress.org compliance hardening, Algorave audio fixes)  
-**Latest Updates:** April 2026 - MCP Apps: per-assistant remote MCP server connections with tool bridging (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org plugin directory compliance hardening (AJAX capability checks, $_POST sanitisation, capability flag corrections), Algorave audio fixes (AudioContext resume, channelCount proxy, visualizer analyser), security dependency updates (nodemailer, basic-ftp, mathjs, langsmith), CRE Debt CPT/CCT dashboard with Chart.js, assistant tool presets updated with new pro toolkits  
-**MCP Specification:** 2024-11-05  
+**Release Date:** 2026-04-14 (April 2026 — Full MCP 2024-11-05 compliance, MCP Apps per-assistant remote server connections, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams, WordPress.org compliance hardening, Algorave audio fixes)  
+**Latest Updates:** April 2026 - Full MCP 2024-11-05 protocol compliance (all 11 methods: initialize, ping, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get, completion/complete, logging/setLevel, notifications/cancelled), JSON-RPC batching, tool annotations, session management, MCP Apps: per-assistant remote MCP server connections with tool bridging (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org compliance hardening, Algorave audio fixes, security dependency updates  
+**MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
@@ -2849,17 +2849,20 @@ For complete SSE implementation details, configuration options, and troubleshoot
 NV oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
 
 **MCP Version:** 2024-11-05  
-**Compliance:** OAuth 2.1, Streamable HTTP transport, Progress notifications
+**Compliance:** Full MCP 2024-11-05 — all 11 protocol methods, OAuth 2.1, Streamable HTTP, JSON-RPC batching, tool annotations, session management
 
 ### What's New in MCP 2024-11-05
 
-The latest specification includes significant enhancements:
+The latest specification is **fully implemented**:
 - **OAuth 2.1 Security**: PKCE, token rotation, mandatory HTTPS
 - **Streamable HTTP Transport**: Better reconnection and bidirectional communication
+- **JSON-RPC Batching**: Efficient parallel task processing (up to 20 messages per batch)
+- **Tool Annotations**: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` metadata
 - **Progress Notifications**: Descriptive status updates during tool execution
-- **Tool Annotations**: Metadata for read-only, destructive operations
-- **Session Management**: State recovery via `Mcp-Session-Id` header
-- **JSON-RPC Batching**: Efficient parallel task processing
+- **Completions**: Argument autocompletion for tools and prompts
+- **Session Management**: State recovery via `Mcp-Session-Id` header (1h TTL)
+- **Logging**: Client-controlled log verbosity via `logging/setLevel`
+- **Cancellation**: Request cancellation via `notifications/cancelled`
 
 ### Endpoint URL
 
@@ -2882,11 +2885,17 @@ All requests must use standard JSON-RPC 2.0 format:
 
 ### Supported Methods
 
-- **`initialize`** - Initialize MCP connection and retrieve server capabilities (with 2024-11-05 enhancements)
+- **`initialize`** - Initialize MCP connection and retrieve server capabilities
+- **`ping`** - Server liveness check
 - **`tools/list`** - List available tools with annotations for the authenticated assistant
 - **`tools/call`** - Execute a specific tool with progress notifications support
 - **`resources/list`** - List available resources (knowledge files, etc.) with metadata
+- **`resources/read`** - Read resource content by URI with MIME-typed responses
 - **`prompts/list`** - List available prompt shortcuts
+- **`prompts/get`** - Get full prompt content with system instructions and argument values
+- **`completion/complete`** - Argument autocompletion (enum/boolean for tools, slug matching for prompts)
+- **`logging/setLevel`** - Client-controlled log verbosity (8 standard levels)
+- **`notifications/cancelled`** - Cancel a pending request
 
 ### Authentication (OAuth 2.1 Enhanced)
 

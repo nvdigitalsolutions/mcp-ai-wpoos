@@ -85,9 +85,13 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Chat history persistence (24h localStorage)
 * Sub-agent panel with live workflow tracking
 
-**MCP Server (Model Context Protocol)**
-* Full JSON-RPC 2.0 implementation
+**MCP Server (Model Context Protocol 2024-11-05)**
+* Full JSON-RPC 2.0 implementation with batching support (up to 20 messages per batch)
 * Connect Claude Desktop, LM Studio, and other MCP clients
+* All 11 MCP methods: `initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`, `prompts/get`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`
+* Tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`)
+* Argument autocompletion for tools and prompts
+* Session management via `Mcp-Session-Id` header (1h TTL)
 * REST API endpoints for remote integration
 * SSE streaming for real-time responses
 
@@ -273,7 +277,21 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 = 1.1.7 - April 11, 2026 =
 
-**MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening**
+**MCP Protocol Completion, MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening**
+
+*MCP Protocol 2024-11-05 Completion (April 14)*
+
+* Full MCP 2024-11-05 spec compliance — all 11 protocol methods now implemented
+* `resources/read` — read resource content by URI with MIME-typed responses (text or blob)
+* `prompts/get` — get full prompt content with system instructions and argument values
+* `ping` — server liveness check
+* `completion/complete` — argument autocompletion (enum/boolean for tools, slug matching for prompts)
+* `logging/setLevel` — client-controlled log verbosity (8 standard levels, action hook: `wp_mcp_ai_mcp_logging_set_level`)
+* `notifications/cancelled` — request cancellation handler (action hook: `wp_mcp_ai_mcp_request_cancelled`)
+* JSON-RPC batching — process up to 20 messages per batch (configurable via `wp_mcp_ai_max_batch_size` filter)
+* Tool annotations — maps `WP_MCP_AI_Tool_Capability_Flags_Interface` to MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`)
+* `Mcp-Session-Id` session management — transient-backed session state with 1 hour TTL
+* Comprehensive test suite for all new methods (`test-mcp-protocol-completion.php`)
 
 *New Features*
 
