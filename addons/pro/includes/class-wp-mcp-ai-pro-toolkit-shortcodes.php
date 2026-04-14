@@ -127,6 +127,9 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		// Media toolkit shortcodes.
 		add_shortcode( 'mcp_media_templates', array( $this, 'media_templates_shortcode' ) );
 		add_shortcode( 'mcp_media_collections', array( $this, 'media_collections_shortcode' ) );
+
+		// Vehicle Cleaning Estimator shortcode.
+		add_shortcode( 'mcp_vehicle_cleaning_estimator', array( $this, 'render_vehicle_cleaning_estimator' ) );
 	}
 
 	/**
@@ -1723,5 +1726,335 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		}
 
 		echo '</div>';
+	}
+
+	// ── Vehicle Cleaning Estimator ────────────────────────────────────────────
+
+	/**
+	 * Script handle for the vehicle cleaning estimator.
+	 */
+	const VCE_SCRIPT_HANDLE = 'wp-mcp-ai-vehicle-cleaning-estimator';
+
+	/**
+	 * Style handle for the vehicle cleaning estimator.
+	 */
+	const VCE_STYLE_HANDLE = 'wp-mcp-ai-vehicle-cleaning-estimator';
+
+	/**
+	 * Render the Vehicle Cleaning Estimator shortcode.
+	 *
+	 * Shortcode: [mcp_vehicle_cleaning_estimator]
+	 *
+	 * Attributes:
+	 *   assistant_id          (string)  Post ID of the NV oOS assistant to use.
+	 *   primary_color         (string)  CSS colour for the brand accent.
+	 *   show_package_selector (string)  'yes' | 'no'   (default 'yes')
+	 *   show_addon_selector   (string)  'yes' | 'no'   (default 'yes')
+	 *   currency              (string)  ISO-4217 code  (default 'CAD')
+	 *   tax_rate              (float)   Percentage, e.g. 13 for 13 %  (default 0)
+	 *   placeholder_text      (string)  Custom drop-zone tip text.
+	 *   cta_label             (string)  Submit button label.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function render_vehicle_cleaning_estimator( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'assistant_id'          => '',
+				'primary_color'         => '',
+				'show_package_selector' => 'yes',
+				'show_addon_selector'   => 'yes',
+				'currency'              => 'CAD',
+				'tax_rate'              => 0,
+				'placeholder_text'      => '',
+				'cta_label'             => '',
+			),
+			$atts,
+			'mcp_vehicle_cleaning_estimator'
+		);
+
+		// Sanitize.
+		$assistant_id          = absint( $atts['assistant_id'] );
+		$primary_color         = sanitize_hex_color( $atts['primary_color'] );
+		$show_package_selector = ( 'no' !== sanitize_key( $atts['show_package_selector'] ) );
+		$show_addon_selector   = ( 'no' !== sanitize_key( $atts['show_addon_selector'] ) );
+		$currency              = sanitize_text_field( strtoupper( $atts['currency'] ) );
+		$tax_rate              = (float) $atts['tax_rate'] / 100.0;
+		$placeholder_text      = sanitize_text_field( $atts['placeholder_text'] );
+		$cta_label             = sanitize_text_field( $atts['cta_label'] );
+
+		// Allowed currencies.
+		$allowed_currencies = array( 'CAD', 'USD', 'GBP', 'EUR', 'AUD' );
+		if ( ! in_array( $currency, $allowed_currencies, true ) ) {
+			$currency = 'CAD';
+		}
+
+		// Clamp tax rate.
+		if ( $tax_rate < 0 ) {
+			$tax_rate = 0;
+		} elseif ( $tax_rate > 0.5 ) {
+			$tax_rate = 0.5;
+		}
+
+		// Enqueue assets.
+		wp_enqueue_style(
+			self::VCE_STYLE_HANDLE,
+			WP_MCP_AI_PRO_URL . 'assets/css/vehicle-cleaning-estimator.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+
+		wp_enqueue_script(
+			self::VCE_SCRIPT_HANDLE,
+			WP_MCP_AI_PRO_URL . 'assets/js/vehicle-cleaning-estimator.js',
+			array(),
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		// Pass configuration to JS.
+		wp_localize_script(
+			self::VCE_SCRIPT_HANDLE,
+			'mcpVehicleCleaningEstimator',
+			array(
+				'restUrl'        => esc_url_raw( trailingslashit( rest_url( 'mcp-ai/v1' ) ) ),
+				'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'assistantId'    => $assistant_id ? (string) $assistant_id : '',
+				'currency'       => $currency,
+				'taxRate'        => $tax_rate,
+				'i18n'           => array(
+					'your_estimate'     => __( 'Your Estimate', 'mcp-ai-wpoos-pro' ),
+					'vehicle_detected'  => __( 'Vehicle detected:', 'mcp-ai-wpoos-pro' ),
+					'subtotal'          => __( 'Subtotal', 'mcp-ai-wpoos-pro' ),
+					'tax'               => __( 'Tax', 'mcp-ai-wpoos-pro' ),
+					'total'             => __( 'Total', 'mcp-ai-wpoos-pro' ),
+					'estimate_note'     => __( 'This is an estimate only. Final price may vary based on vehicle condition.', 'mcp-ai-wpoos-pro' ),
+					'upload_failed'     => __( 'Image upload failed. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'max_images_reached'=> __( 'Maximum 10 images allowed.', 'mcp-ai-wpoos-pro' ),
+					'remove_image'      => __( 'Remove image', 'mcp-ai-wpoos-pro' ),
+					'request_failed'    => __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'parse_error'       => __( 'Could not parse the response. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'network_error'     => __( 'Network error. Please check your connection.', 'mcp-ai-wpoos-pro' ),
+				),
+			)
+		);
+
+		// Defaults.
+		if ( ! $placeholder_text ) {
+			$placeholder_text = __( 'Drag vehicle photos here or tap to upload', 'mcp-ai-wpoos-pro' );
+		}
+		if ( ! $cta_label ) {
+			$cta_label = __( 'Get My Estimate', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Build inline style override for primary colour.
+		$style_attr = '';
+		if ( $primary_color ) {
+			$style_attr = ' style="--mce-primary:' . esc_attr( $primary_color ) . ';"';
+		}
+
+		// Package data for rendering.
+		$packages = array(
+			array(
+				'slug' => 'premium_exterior_express',
+				'name' => __( 'Premium Exterior Express', 'mcp-ai-wpoos-pro' ),
+				'desc' => __( 'Exterior wash, dry, windows &amp; tires', 'mcp-ai-wpoos-pro' ),
+				'icon' => '🚗',
+			),
+			array(
+				'slug' => 'practical_interior_express',
+				'name' => __( 'Practical Interior Express', 'mcp-ai-wpoos-pro' ),
+				'desc' => __( 'Interior vacuum, wipe-down &amp; glass', 'mcp-ai-wpoos-pro' ),
+				'icon' => '🧹',
+			),
+			array(
+				'slug' => 'popular_interior_express',
+				'name' => __( 'Popular Interior Express', 'mcp-ai-wpoos-pro' ),
+				'desc' => __( 'Exterior + interior combined service', 'mcp-ai-wpoos-pro' ),
+				'icon' => '✨',
+			),
+			array(
+				'slug' => 'prestige_interior_express',
+				'name' => __( 'Prestige Interior Express', 'mcp-ai-wpoos-pro' ),
+				'desc' => __( 'Full detail: leather, steam &amp; polish', 'mcp-ai-wpoos-pro' ),
+				'icon' => '👑',
+			),
+		);
+
+		// Add-on data for rendering.
+		$add_ons = array(
+			array( 'code' => 'soil_mud_sap_oil',         'label' => __( 'Soil / Mud / Sap', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'pet_hair_removal',          'label' => __( 'Pet Hair Removal', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'additional_interior_clean', 'label' => __( 'Extra Interior Clean', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'premium_hand_wash_upgrade', 'label' => __( 'Premium Hand Wash', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'rims_tire_dressing',        'label' => __( 'Rims &amp; Tire Dressing', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'trunk_bed_shampoo',         'label' => __( 'Trunk / Bed Shampoo', 'mcp-ai-wpoos-pro' ) ),
+			array( 'code' => 'carpet_seat_deodorizer',    'label' => __( 'Carpet &amp; Seat Deodorizer', 'mcp-ai-wpoos-pro' ) ),
+		);
+
+		ob_start();
+		?>
+		<div class="mcp-vce-app" role="application"<?php echo wp_kses_post( $style_attr ); ?>>
+
+			<!-- ── HEADER ───────────────────────────────────────────────── -->
+			<div class="mcp-vce-header" role="banner">
+				<h2 class="mcp-vce-header__title"><?php esc_html_e( 'Vehicle Cleaning Estimator', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<div class="mcp-vce-header__actions">
+					<button class="mcp-vce-btn-icon" data-vce-action="fullscreen" aria-label="<?php esc_attr_e( 'Full screen', 'mcp-ai-wpoos-pro' ); ?>" title="<?php esc_attr_e( 'Full screen', 'mcp-ai-wpoos-pro' ); ?>">⛶</button>
+					<button class="mcp-vce-btn-icon" data-vce-action="close-fullscreen" aria-label="<?php esc_attr_e( 'Exit full screen', 'mcp-ai-wpoos-pro' ); ?>" title="<?php esc_attr_e( 'Exit full screen', 'mcp-ai-wpoos-pro' ); ?>">✕</button>
+				</div>
+			</div>
+
+			<!-- ── PROGRESS BAR ─────────────────────────────────────────── -->
+			<nav class="mcp-vce-progress" aria-label="<?php esc_attr_e( 'Progress', 'mcp-ai-wpoos-pro' ); ?>">
+				<div class="mcp-vce-progress__step mcp-vce-progress__step--active" data-step="1">
+					<div class="mcp-vce-progress__dot" aria-hidden="true">1</div>
+					<span class="mcp-vce-progress__label"><?php esc_html_e( 'Photos', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="mcp-vce-progress__connector" aria-hidden="true"></div>
+				<div class="mcp-vce-progress__step" data-step="2">
+					<div class="mcp-vce-progress__dot" aria-hidden="true">2</div>
+					<span class="mcp-vce-progress__label"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="mcp-vce-progress__connector" aria-hidden="true"></div>
+				<div class="mcp-vce-progress__step" data-step="3">
+					<div class="mcp-vce-progress__dot" aria-hidden="true">3</div>
+					<span class="mcp-vce-progress__label"><?php esc_html_e( 'Message', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="mcp-vce-progress__connector" aria-hidden="true"></div>
+				<div class="mcp-vce-progress__step" data-step="4">
+					<div class="mcp-vce-progress__dot" aria-hidden="true">4</div>
+					<span class="mcp-vce-progress__label"><?php esc_html_e( 'Estimate', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+			</nav>
+
+			<!-- ── BODY ─────────────────────────────────────────────────── -->
+			<div class="mcp-vce-body" role="main">
+
+				<!-- Step 1: Photos -->
+				<div class="mcp-vce-step mcp-vce-step--active" data-step="1" aria-label="<?php esc_attr_e( 'Step 1: Upload Photos', 'mcp-ai-wpoos-pro' ); ?>">
+					<div class="mcp-vce-dropzone" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Upload vehicle photos', 'mcp-ai-wpoos-pro' ); ?>">
+						<input
+							type="file"
+							class="mcp-vce-file-input"
+							accept="image/*"
+							multiple
+							aria-label="<?php esc_attr_e( 'Select vehicle photos', 'mcp-ai-wpoos-pro' ); ?>"
+						/>
+						<!-- Car icon SVG -->
+						<svg class="mcp-vce-dropzone__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<path d="M10 34l5-14h34l5 14"/>
+							<rect x="6" y="34" width="52" height="16" rx="4"/>
+							<circle cx="18" cy="50" r="4"/>
+							<circle cx="46" cy="50" r="4"/>
+							<path d="M14 34h36"/>
+							<path d="M18 26h28"/>
+						</svg>
+						<p class="mcp-vce-dropzone__title"><?php echo esc_html( $placeholder_text ); ?></p>
+						<p class="mcp-vce-dropzone__sub"><?php esc_html_e( 'JPEG, PNG or WebP · Up to 10 photos', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<!-- Thumbnail strip (populated by JS) -->
+					<div class="mcp-vce-thumbs" aria-label="<?php esc_attr_e( 'Uploaded photos', 'mcp-ai-wpoos-pro' ); ?>" aria-live="polite"></div>
+
+					<button class="mcp-vce-skip-link" data-vce-action="skip-photos" type="button">
+						<?php esc_html_e( 'Continue without photos', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</div><!-- /step 1 -->
+
+				<?php if ( $show_package_selector ) : ?>
+				<!-- Step 2: Package + Add-ons -->
+				<div class="mcp-vce-step" data-step="2" aria-label="<?php esc_attr_e( 'Step 2: Choose a Package', 'mcp-ai-wpoos-pro' ); ?>">
+					<h3 class="mcp-vce-section-title"><?php esc_html_e( 'Choose a Package', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<div class="mcp-vce-packages" role="radiogroup" aria-label="<?php esc_attr_e( 'Wash packages', 'mcp-ai-wpoos-pro' ); ?>">
+						<?php foreach ( $packages as $pkg ) : ?>
+						<div
+							class="mcp-vce-pkg-card"
+							data-pkg="<?php echo esc_attr( $pkg['slug'] ); ?>"
+							role="radio"
+							aria-checked="false"
+							tabindex="0"
+						>
+							<span class="mcp-vce-pkg-card__name"><?php echo esc_html( $pkg['icon'] ); ?> <?php echo esc_html( $pkg['name'] ); ?></span>
+							<span class="mcp-vce-pkg-card__desc"><?php echo esc_html( $pkg['desc'] ); ?></span>
+						</div>
+						<?php endforeach; ?>
+					</div>
+
+					<?php if ( $show_addon_selector ) : ?>
+					<h3 class="mcp-vce-section-title"><?php esc_html_e( 'Optional Add-ons', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<div class="mcp-vce-addons" role="group" aria-label="<?php esc_attr_e( 'Add-on services', 'mcp-ai-wpoos-pro' ); ?>">
+						<?php foreach ( $add_ons as $addon ) : ?>
+						<button
+							class="mcp-vce-addon-chip"
+							data-addon="<?php echo esc_attr( $addon['code'] ); ?>"
+							type="button"
+							role="checkbox"
+							aria-checked="false"
+						>
+							<span class="mcp-vce-addon-chip__check" aria-hidden="true">✓</span>
+							<?php echo esc_html( $addon['label'] ); ?>
+						</button>
+						<?php endforeach; ?>
+					</div>
+					<?php endif; ?>
+				</div><!-- /step 2 -->
+				<?php else : ?>
+				<!-- Step 2 placeholder (no package selector) -->
+				<div class="mcp-vce-step" data-step="2" aria-hidden="true"></div>
+				<?php endif; ?>
+
+				<!-- Step 3: Message -->
+				<div class="mcp-vce-step" data-step="3" aria-label="<?php esc_attr_e( 'Step 3: Additional Notes', 'mcp-ai-wpoos-pro' ); ?>">
+					<h3 class="mcp-vce-section-title"><?php esc_html_e( 'Any additional notes?', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<textarea
+						class="mcp-vce-message-area"
+						placeholder="<?php esc_attr_e( 'E.g. "Interior is very dirty", "just a quick exterior", specific areas to focus on…', 'mcp-ai-wpoos-pro' ); ?>"
+						maxlength="1000"
+						aria-label="<?php esc_attr_e( 'Additional notes', 'mcp-ai-wpoos-pro' ); ?>"
+					></textarea>
+					<p class="mcp-vce-char-count" aria-live="polite">0 / 1000</p>
+				</div><!-- /step 3 -->
+
+				<!-- Step 4: Result -->
+				<div class="mcp-vce-step" data-step="4" aria-label="<?php esc_attr_e( 'Step 4: Your Estimate', 'mcp-ai-wpoos-pro' ); ?>">
+					<div class="mcp-vce-result-container" aria-live="polite"></div>
+
+					<div class="mcp-vce-result-actions">
+						<button class="mcp-vce-btn mcp-vce-btn--secondary" data-vce-action="start-over" type="button">
+							<?php esc_html_e( '← Start Over', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</div>
+				</div><!-- /step 4 -->
+
+			</div><!-- /.mcp-vce-body -->
+
+			<!-- ── ACTION BAR ───────────────────────────────────────────── -->
+			<div class="mcp-vce-action-bar" role="navigation" aria-label="<?php esc_attr_e( 'Navigation', 'mcp-ai-wpoos-pro' ); ?>">
+				<button class="mcp-vce-btn mcp-vce-btn--ghost" data-vce-action="back" type="button">
+					<?php esc_html_e( '← Back', 'mcp-ai-wpoos-pro' ); ?>
+				</button>
+				<!-- Step 1 continue (shown only after at least one image is ready) -->
+				<button class="mcp-vce-btn mcp-vce-btn--primary" data-vce-action="continue-to-packages" type="button" style="display:none">
+					<?php esc_html_e( 'Continue →', 'mcp-ai-wpoos-pro' ); ?>
+				</button>
+				<!-- Step 2 continue -->
+				<button class="mcp-vce-btn mcp-vce-btn--primary" data-vce-action="continue-to-message" type="button" disabled>
+					<?php esc_html_e( 'Continue →', 'mcp-ai-wpoos-pro' ); ?>
+				</button>
+				<!-- Step 3 submit -->
+				<button class="mcp-vce-btn mcp-vce-btn--primary" data-vce-action="submit" type="button">
+					<div class="mcp-vce-spinner" aria-hidden="true"></div>
+					<?php echo esc_html( $cta_label ); ?>
+				</button>
+			</div>
+
+		</div><!-- /.mcp-vce-app -->
+		<?php
+		return ob_get_clean();
 	}
 }
