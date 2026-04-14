@@ -1273,10 +1273,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		// If the property has an enum, filter by partial match.
 		if ( isset( $prop['enum'] ) && is_array( $prop['enum'] ) ) {
-			$matches = array();
+			$matches       = array();
+			$arg_value_lc  = strtolower( $arg_value );
 			foreach ( $prop['enum'] as $candidate ) {
 				$candidate_str = (string) $candidate;
-				if ( '' === $arg_value || 0 === strpos( strtolower( $candidate_str ), strtolower( $arg_value ) ) ) {
+				if ( '' === $arg_value || 0 === strpos( strtolower( $candidate_str ), $arg_value_lc ) ) {
 					$matches[] = $candidate_str;
 				}
 			}
@@ -1328,10 +1329,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				)
 			);
 
-			$matches = array();
+			$matches      = array();
+			$arg_value_lc = strtolower( $arg_value );
 			foreach ( $assistants as $assistant ) {
 				$slug = $assistant->post_name;
-				if ( '' === $arg_value || 0 === strpos( $slug, $arg_value ) ) {
+				if ( '' === $arg_value || 0 === strpos( strtolower( $slug ), $arg_value_lc ) ) {
 					$matches[] = $slug;
 				}
 			}
@@ -1503,7 +1505,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	protected function attach_session_header( $response, $session_id ) {
 		if ( empty( $session_id ) ) {
 			// Generate a new session ID on initialize or first request.
-			$session_id = 'sess_' . wp_generate_password( 24, false );
+			// Use wp_generate_password with no special chars for URL/header-safe IDs.
+			$session_id = 'sess_' . bin2hex( random_bytes( 16 ) );
 
 			// Store minimal session metadata as a transient (1 hour TTL).
 			set_transient(
