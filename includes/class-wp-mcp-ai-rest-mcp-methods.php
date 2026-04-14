@@ -38,10 +38,126 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		$message = json_decode( $body, true );
 
-		if ( null === $message || ! is_array( $message ) ) {
+		if ( null === $message ) {
 			return $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
 		}
 
+		// Handle session management via Mcp-Session-Id header.
+		$session_id = $request->get_header( 'Mcp-Session-Id' );
+
+		// JSON-RPC batching: if the decoded body is a sequential array, process each message.
+		if ( is_array( $message ) && isset( $message[0] ) ) {
+			return $this->handle_mcp_batch( $message, $request, $session_id );
+		}
+
+		if ( ! is_array( $message ) ) {
+			return $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
+		}
+
+		$response = $this->process_single_mcp_message( $message, $request );
+
+		// Attach session header to response if applicable.
+		if ( $response instanceof WP_REST_Response ) {
+			$this->attach_session_header( $response, $session_id );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Handle a JSON-RPC batch request per MCP 2024-11-05 specification.
+	 *
+	 * Processes an array of JSON-RPC messages and returns an array of responses.
+	 * Notifications (messages without an id) are processed but produce no response element.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array           $messages   Array of JSON-RPC message arrays.
+	 * @param WP_REST_Request $request    REST request instance.
+	 * @param string|null     $session_id Optional session identifier.
+	 * @return WP_REST_Response
+	 */
+	protected function handle_mcp_batch( array $messages, WP_REST_Request $request, $session_id ) {
+		if ( empty( $messages ) ) {
+			return $this->mcp_error_response( null, -32600, 'Invalid Request: Empty batch array' );
+		}
+
+		/**
+		 * Filter the maximum number of messages allowed in a single JSON-RPC batch.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param int $max_batch_size Maximum batch size. Default 20.
+		 */
+		$max_batch_size = apply_filters( 'wp_mcp_ai_max_batch_size', 20 );
+
+		if ( count( $messages ) > $max_batch_size ) {
+			return $this->mcp_error_response(
+				null,
+				-32600,
+				sprintf(
+					/* translators: %d: maximum batch size */
+					__( 'Invalid Request: Batch too large. Maximum %d messages allowed.', 'mcp-ai-wpoos' ),
+					$max_batch_size
+				)
+			);
+		}
+
+		$results = array();
+
+		foreach ( $messages as $msg ) {
+			if ( ! is_array( $msg ) ) {
+				$results[] = array(
+					'jsonrpc' => '2.0',
+					'id'      => null,
+					'error'   => array(
+						'code'    => -32600,
+						'message' => 'Invalid Request: Each batch element must be a JSON object',
+					),
+				);
+				continue;
+			}
+
+			$resp = $this->process_single_mcp_message( $msg, $request );
+
+			// Notifications return 202 with null data — skip them in batch results.
+			if ( $resp instanceof WP_REST_Response && 202 === $resp->get_status() ) {
+				continue;
+			}
+
+			if ( $resp instanceof WP_REST_Response ) {
+				$results[] = $resp->get_data();
+			}
+		}
+
+		// If all messages were notifications, return 202 with no body.
+		if ( empty( $results ) ) {
+			$response = new WP_REST_Response( null, 202 );
+			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+			$this->add_cors_headers( $response );
+			$this->attach_session_header( $response, $session_id );
+			return $response;
+		}
+
+		$response = new WP_REST_Response( $results, 200 );
+		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+		$this->add_cors_headers( $response );
+		$this->attach_session_header( $response, $session_id );
+		return $response;
+	}
+
+	/**
+	 * Process a single JSON-RPC message.
+	 *
+	 * Validates the message structure and routes it to the appropriate handler.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array           $message JSON-RPC message.
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response
+	 */
+	protected function process_single_mcp_message( array $message, WP_REST_Request $request ) {
 		// Validate JSON-RPC 2.0 structure.
 		if ( ! isset( $message['jsonrpc'] ) || '2.0' !== $message['jsonrpc'] ) {
 			return $this->mcp_error_response(
@@ -110,6 +226,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			case 'initialize':
 				return $this->mcp_initialize( $params, $request );
 
+			case 'ping':
+				return $this->mcp_ping();
+
 			case 'tools/list':
 				return $this->mcp_tools_list( $params, $request );
 
@@ -128,6 +247,15 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			case 'prompts/get':
 				return $this->mcp_prompts_get( $params, $request );
 
+			case 'completion/complete':
+				return $this->mcp_completion_complete( $params, $request );
+
+			case 'logging/setLevel':
+				return $this->mcp_logging_set_level( $params );
+
+			case 'notifications/cancelled':
+				return $this->mcp_notifications_cancelled( $params );
+
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_method_not_found',
@@ -140,7 +268,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 						'status'  => 404,
 						'actions' => array(
 							'check_method' => __( 'Verify the method name is spelled correctly and supported by this server.', 'mcp-ai-wpoos' ),
-							'list_methods' => __( 'Supported methods: initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get', 'mcp-ai-wpoos' ),
+							'list_methods' => __( 'Supported methods: initialize, ping, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get, completion/complete, logging/setLevel, notifications/cancelled', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -177,12 +305,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$response = array(
 			'protocolVersion' => '2024-11-05',
 			'capabilities'    => array(
-				'tools'     => array( 'listChanged' => true ),
-				'resources' => array(
+				'tools'       => array( 'listChanged' => true ),
+				'resources'   => array(
 					'subscribe'   => false,
 					'listChanged' => true,
 				),
-				'prompts'   => array( 'listChanged' => true ),
+				'prompts'     => array( 'listChanged' => true ),
+				'completions' => new stdClass(),
+				'logging'     => new stdClass(),
 			),
 			'serverInfo'      => array(
 				'name'    => 'NV oOS',
@@ -285,11 +415,19 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					continue;
 				}
 
-				$mcp_tools[] = array(
+				$tool_entry = array(
 					'name'        => $tool->get_slug(),
 					'description' => $tool->get_description(),
 					'inputSchema' => $schema,
 				);
+
+				// Add MCP annotations from capability flags (MCP 2024-11-05).
+				$annotations = $this->build_tool_annotations( $tool );
+				if ( ! empty( $annotations ) ) {
+					$tool_entry['annotations'] = $annotations;
+				}
+
+				$mcp_tools[] = $tool_entry;
 			} catch ( Exception $e ) {
 				// Log the error and skip this tool.
 				WP_MCP_AI_Logger::log_event(
@@ -1011,6 +1149,382 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$prompt_content = apply_filters( 'wp_mcp_ai_prompts_get', $prompt_content, $post, $arguments, $request );
 
 		return $prompt_content;
+	}
+
+	/**
+	 * Handle MCP ping request.
+	 *
+	 * Returns an empty result object per the MCP specification.
+	 * Used by clients to verify the server is alive and responsive.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return array Empty result object.
+	 */
+	protected function mcp_ping() {
+		return new stdClass();
+	}
+
+	/**
+	 * Handle MCP completion/complete request.
+	 *
+	 * Provides argument autocompletion for tool parameters and prompt arguments.
+	 * This enables MCP clients to offer tab-completion and suggestions.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array           $params  Method parameters including 'ref' and 'argument'.
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return array|WP_Error Completion result with values array.
+	 */
+	protected function mcp_completion_complete( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
+		if ( ! isset( $params['ref'] ) || ! is_array( $params['ref'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				__( 'Missing required parameter: ref. Must include type and name.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! isset( $params['argument'] ) || ! is_array( $params['argument'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				__( 'Missing required parameter: argument. Must include name and value.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$ref      = $params['ref'];
+		$argument = $params['argument'];
+
+		$ref_type = isset( $ref['type'] ) ? sanitize_text_field( $ref['type'] ) : '';
+		$ref_name = isset( $ref['name'] ) ? sanitize_text_field( $ref['name'] ) : '';
+		$arg_name = isset( $argument['name'] ) ? sanitize_text_field( $argument['name'] ) : '';
+		$arg_val  = isset( $argument['value'] ) ? sanitize_text_field( $argument['value'] ) : '';
+
+		$values  = array();
+		$has_more = false;
+
+		if ( 'ref/tool' === $ref_type ) {
+			$values = $this->complete_tool_argument( $ref_name, $arg_name, $arg_val );
+		} elseif ( 'ref/prompt' === $ref_type ) {
+			$values = $this->complete_prompt_argument( $ref_name, $arg_name, $arg_val );
+		}
+
+		// Cap returned values at 100 per MCP spec recommendation.
+		if ( count( $values ) > 100 ) {
+			$values   = array_slice( $values, 0, 100 );
+			$has_more = true;
+		}
+
+		/**
+		 * Filter the completion result before returning.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param array  $result   The completion result array.
+		 * @param array  $ref      The reference object (type, name).
+		 * @param array  $argument The argument object (name, value).
+		 * @param string $ref_type Resolved reference type.
+		 * @param string $ref_name Resolved reference name.
+		 */
+		$result = apply_filters(
+			'wp_mcp_ai_mcp_completion_complete',
+			array(
+				'completion' => array(
+					'values'  => $values,
+					'hasMore' => $has_more,
+					'total'   => count( $values ),
+				),
+			),
+			$ref,
+			$argument,
+			$ref_type,
+			$ref_name
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Complete a tool argument based on the tool's parameter schema.
+	 *
+	 * Examines enum values and generates suggestions matching the partial input.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $tool_name Tool slug.
+	 * @param string $arg_name  Argument name.
+	 * @param string $arg_value Partial value to complete.
+	 * @return array Array of completion value strings.
+	 */
+	protected function complete_tool_argument( $tool_name, $arg_name, $arg_value ) {
+		$tool = $this->registry->get_tool( $tool_name );
+		if ( ! $tool ) {
+			return array();
+		}
+
+		$schema = $tool->get_parameters_schema();
+		if ( ! is_array( $schema ) || ! isset( $schema['properties'][ $arg_name ] ) ) {
+			return array();
+		}
+
+		$prop = $schema['properties'][ $arg_name ];
+
+		// If the property has an enum, filter by partial match.
+		if ( isset( $prop['enum'] ) && is_array( $prop['enum'] ) ) {
+			$matches = array();
+			foreach ( $prop['enum'] as $candidate ) {
+				$candidate_str = (string) $candidate;
+				if ( '' === $arg_value || 0 === strpos( strtolower( $candidate_str ), strtolower( $arg_value ) ) ) {
+					$matches[] = $candidate_str;
+				}
+			}
+			return $matches;
+		}
+
+		// For boolean types, suggest true/false.
+		if ( isset( $prop['type'] ) && 'boolean' === $prop['type'] ) {
+			$booleans = array( 'true', 'false' );
+			if ( '' === $arg_value ) {
+				return $booleans;
+			}
+			return array_values(
+				array_filter(
+					$booleans,
+					function ( $b ) use ( $arg_value ) {
+						return 0 === strpos( $b, strtolower( $arg_value ) );
+					}
+				)
+			);
+		}
+
+		return array();
+	}
+
+	/**
+	 * Complete a prompt argument.
+	 *
+	 * For prompts (assistants), the only completable reference is the prompt name itself.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $prompt_name Prompt (assistant) slug.
+	 * @param string $arg_name    Argument name.
+	 * @param string $arg_value   Partial value to complete.
+	 * @return array Array of completion value strings.
+	 */
+	protected function complete_prompt_argument( $prompt_name, $arg_name, $arg_value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassAfterLastUsed -- Reserved for future argument completions.
+		// Currently prompts don't have completable arguments beyond the name itself.
+		// Return matching assistant slugs if arg_name is empty (completing the prompt name).
+		if ( empty( $arg_name ) || 'name' === $arg_name ) {
+			$assistants = get_posts(
+				array(
+					'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+					'post_status'    => 'publish',
+					'posts_per_page' => 100,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			$matches = array();
+			foreach ( $assistants as $assistant ) {
+				$slug = $assistant->post_name;
+				if ( '' === $arg_value || 0 === strpos( $slug, $arg_value ) ) {
+					$matches[] = $slug;
+				}
+			}
+			return $matches;
+		}
+
+		return array();
+	}
+
+	/**
+	 * Handle MCP logging/setLevel request.
+	 *
+	 * Allows MCP clients to set the server's logging level for the current session.
+	 * Accepts standard MCP log levels: debug, info, notice, warning, error, critical,
+	 * alert, emergency.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array $params Method parameters. Must include 'level'.
+	 * @return array|WP_Error Empty result on success.
+	 */
+	protected function mcp_logging_set_level( $params ) {
+		if ( ! isset( $params['level'] ) || ! is_string( $params['level'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				__( 'Missing required parameter: level', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$valid_levels = array( 'debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency' );
+		$level        = strtolower( sanitize_text_field( $params['level'] ) );
+
+		if ( ! in_array( $level, $valid_levels, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_params',
+				sprintf(
+					/* translators: %s: comma-separated list of valid log levels */
+					__( 'Invalid log level. Must be one of: %s', 'mcp-ai-wpoos' ),
+					implode( ', ', $valid_levels )
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		/**
+		 * Fires when an MCP client sets the logging level.
+		 *
+		 * Plugins can hook into this to adjust their logging verbosity.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param string $level The requested log level.
+		 */
+		do_action( 'wp_mcp_ai_mcp_logging_set_level', $level );
+
+		return new stdClass();
+	}
+
+	/**
+	 * Handle MCP notifications/cancelled notification.
+	 *
+	 * Processes a client's request to cancel a previously-issued request.
+	 * Per MCP spec, this is a notification (no response expected).
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param array $params Notification parameters. Should include 'requestId' and optionally 'reason'.
+	 * @return array Empty result (notification response handled by caller).
+	 */
+	protected function mcp_notifications_cancelled( $params ) {
+		$request_id = isset( $params['requestId'] ) ? sanitize_text_field( $params['requestId'] ) : '';
+		$reason     = isset( $params['reason'] ) ? sanitize_text_field( $params['reason'] ) : '';
+
+		/**
+		 * Fires when an MCP client cancels a request.
+		 *
+		 * Plugins can hook into this to abort long-running operations.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param string $request_id The ID of the request to cancel.
+		 * @param string $reason     Optional reason for cancellation.
+		 */
+		do_action( 'wp_mcp_ai_mcp_request_cancelled', $request_id, $reason );
+
+		if ( ! empty( $request_id ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'info',
+				'MCP request cancelled by client',
+				array(
+					'request_id' => $request_id,
+					'reason'     => $reason,
+				)
+			);
+		}
+
+		return new stdClass();
+	}
+
+	/**
+	 * Build MCP tool annotations from the tool's capability flags.
+	 *
+	 * Maps the plugin's WP_MCP_AI_Tool_Capability_Flags_Interface flags
+	 * to the MCP 2024-11-05 tool annotation format.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param object $tool Tool instance (may implement WP_MCP_AI_Tool_Capability_Flags_Interface).
+	 * @return array Annotation key-value pairs, empty if tool has no flags.
+	 */
+	protected function build_tool_annotations( $tool ) {
+		if ( ! ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) ) {
+			return array();
+		}
+
+		$flags = $tool->get_capability_flags();
+
+		if ( ! is_array( $flags ) || empty( $flags ) ) {
+			return array();
+		}
+
+		$annotations = array();
+
+		// Map capability flags to MCP annotation fields.
+		$annotations['readOnlyHint'] = in_array( 'read-only', $flags, true );
+
+		// destructiveHint: true if tool is write/state-changing and NOT marked read-only.
+		$is_write = in_array( 'write', $flags, true ) || in_array( 'state-changing', $flags, true );
+		if ( $is_write ) {
+			$annotations['destructiveHint'] = ! in_array( 'reversible', $flags, true );
+		}
+
+		// idempotentHint from idempotent flag.
+		if ( in_array( 'idempotent', $flags, true ) ) {
+			$annotations['idempotentHint'] = true;
+		}
+
+		// openWorldHint: true if tool calls external APIs.
+		if ( in_array( 'external-api', $flags, true ) || in_array( 'network-dependent', $flags, true ) ) {
+			$annotations['openWorldHint'] = true;
+		} elseif ( in_array( 'local-only', $flags, true ) ) {
+			$annotations['openWorldHint'] = false;
+		}
+
+		/**
+		 * Filter the MCP annotations for a tool.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param array  $annotations MCP annotation key-value pairs.
+		 * @param object $tool        Tool instance.
+		 * @param array  $flags       Raw capability flags array.
+		 */
+		return apply_filters( 'wp_mcp_ai_tool_annotations', $annotations, $tool, $flags );
+	}
+
+	/**
+	 * Attach Mcp-Session-Id header to a response.
+	 *
+	 * If no session ID was provided by the client, generates a new one.
+	 * Session state is stored as a WordPress transient for reconnection support.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param WP_REST_Response $response   Response object.
+	 * @param string|null      $session_id Existing session ID from client, or null for new session.
+	 */
+	protected function attach_session_header( $response, $session_id ) {
+		if ( empty( $session_id ) ) {
+			// Generate a new session ID on initialize or first request.
+			$session_id = 'sess_' . wp_generate_password( 24, false );
+
+			// Store minimal session metadata as a transient (1 hour TTL).
+			set_transient(
+				'wp_mcp_ai_session_' . $session_id,
+				array(
+					'created'   => time(),
+					'user_id'   => get_current_user_id(),
+					'last_seen' => time(),
+				),
+				HOUR_IN_SECONDS
+			);
+		} else {
+			// Update last_seen timestamp for existing session.
+			$session_data = get_transient( 'wp_mcp_ai_session_' . $session_id );
+			if ( is_array( $session_data ) ) {
+				$session_data['last_seen'] = time();
+				set_transient( 'wp_mcp_ai_session_' . $session_id, $session_data, HOUR_IN_SECONDS );
+			}
+		}
+
+		$response->header( 'Mcp-Session-Id', $session_id );
 	}
 
 	/**

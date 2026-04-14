@@ -38,10 +38,16 @@ POST /wp-json/mcp-ai/v1/mcp
 
 **Primary Transport:** JSON-RPC 2.0 protocol for executing MCP methods like:
 - `initialize` - Handshake and capability exchange
-- `tools/list` - List available tools
+- `ping` - Server liveness check
+- `tools/list` - List available tools (with annotations)
 - `tools/call` - Execute a tool
 - `resources/list` - List available resources
+- `resources/read` - Read resource content
 - `prompts/list` - List available prompts
+- `prompts/get` - Get prompt content
+- `completion/complete` - Argument autocompletion
+- `logging/setLevel` - Set server log verbosity
+- `notifications/cancelled` - Cancel a pending request
 
 **Use Case:** All MCP protocol operations (this is the recommended method for most operations).
 
@@ -622,16 +628,17 @@ The MCP specification now recommends **JSON-RPC over HTTP** as the primary trans
 |---------|--------|-------------|
 | **OAuth 2.1 Security** | ✅ Implemented | PKCE, token rotation, mandatory HTTPS |
 | **Streamable HTTP** | ✅ Supported | Better reconnection and bidirectional communication |
-| **JSON-RPC Batching** | ⚠️ Planned | Parallel request processing |
-| **Tool Annotations** | ⚠️ Planned | Metadata for read-only, destructive operations |
+| **JSON-RPC Batching** | ✅ Implemented | Parallel request processing (max 20 messages per batch) |
+| **Tool Annotations** | ✅ Implemented | Maps `WP_MCP_AI_Tool_Capability_Flags_Interface` to MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) |
 | **Progress Notifications** | ✅ Implemented | Descriptive status updates with messages |
-| **Multimodal Support** | ⚠️ Planned | Audio data streams alongside text/images |
-| **Completions** | ⚠️ Planned | Argument autocompletion |
-| **Session Management** | ⚠️ Planned | `Mcp-Session-Id` header support |
+| **Multimodal Support** | ✅ Implemented | Image, text, and embedded_resource content types in tool results |
+| **Completions** | ✅ Implemented | `completion/complete` method with enum/boolean autocompletion for tools, prompt name completion for prompts |
+| **Session Management** | ✅ Implemented | `Mcp-Session-Id` header with transient-backed session state (1 hour TTL) |
+| **Ping** | ✅ Implemented | `ping` method for liveness checking |
+| **Logging** | ✅ Implemented | `logging/setLevel` method for client-controlled log verbosity |
+| **Cancellation** | ✅ Implemented | `notifications/cancelled` handler with action hook for aborting operations |
 
-✅ = Fully implemented  
-⚠️ = Planned or partial implementation  
-❌ = Not applicable
+✅ = Fully implemented
 
 ## Upgrade Recommendations
 
