@@ -28,10 +28,16 @@ if ( $is_enabled && ! $is_base ) {
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-law-firm-settings-page.php';
 
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-law-firm-research-page.php';
-		WP_MCP_AI_Law_Firm_Research_Page::init();
+		$lf_settings = get_option( 'wp_mcp_ai_law_firm_settings', array() );
 
-		$lf_settings  = get_option( 'wp_mcp_ai_law_firm_settings', array() );
+		// Load Research & Add page if enabled (defaults to true).
+		$research_on = isset( $lf_settings['enable_research'] ) ? (bool) $lf_settings['enable_research'] : true;
+		if ( $research_on ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-law-firm-research-page.php';
+			WP_MCP_AI_Law_Firm_Research_Page::init();
+		}
+
+		// Load Firm Dashboard page if enabled (defaults to true).
 		$dashboard_on = isset( $lf_settings['enable_firm_dashboard'] ) ? (bool) $lf_settings['enable_firm_dashboard'] : true;
 		if ( $dashboard_on ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-law-firm-dashboard-page.php';
