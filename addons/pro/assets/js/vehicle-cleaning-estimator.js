@@ -589,7 +589,7 @@
 				}
 			} );
 
-			// Build a natural-language message including selected package/add-ons.
+			// Build a natural-language message including selected package/add-ons and context.
 			var messageParts = [];
 			if ( this.selectedPackage ) {
 				var pkg = PACKAGES.filter( function ( p ) { return p.slug === self.selectedPackage; } )[ 0 ];
@@ -606,34 +606,38 @@
 				messageParts.push( 'Include the following add-ons: ' + addonNames.join( ', ' ) + '.' );
 			}
 
+			// Include currency/tax context in the message so the assistant can format the estimate.
+			var currency = cfg().currency || 'CAD';
+			var taxRate  = cfg().taxRate  || 0;
+			messageParts.push( 'Currency: ' + currency + '. Tax rate: ' + ( taxRate * 100 ).toFixed( 0 ) + '%.' );
+
 			if ( userNote ) {
 				messageParts.push( userNote );
 			}
 
-			var message = messageParts.join( ' ' );
+			var messageText = messageParts.join( ' ' );
 
-			// Build request body.
-			var body = {
-				message     : message,
-				assistant_id: cfg().assistantId || '',
-				hint_tool   : 'vehicle_cleaning_estimate',
-				currency    : cfg().currency || 'CAD',
-				tax_rate    : cfg().taxRate || 0,
-			};
-
+			// Build the user message content.
+			// When images are attached, use an array of content segments so the vision
+			// model can see them.  The /chat endpoint accepts:
+			//   messages[].content  = string  (text-only)
+			//   messages[].content  = array   (multi-part: text + input_image segments)
+			var messageContent;
 			if ( attachmentIds.length ) {
-				body.images = attachmentIds;
-			}
-
-			if ( this.selectedPackage ) {
-				body.package = this.selectedPackage;
-			}
-
-			if ( this.selectedAddOns.length ) {
-				body.add_ons = this.selectedAddOns.map( function ( code ) {
-					return { code: code };
+				messageContent = [ { type: 'text', text: messageText } ];
+				attachmentIds.forEach( function ( id ) {
+					messageContent.push( { type: 'input_image', attachment_id: id } );
 				} );
+			} else {
+				messageContent = messageText;
 			}
+
+			// Build request body using the /chat endpoint's expected schema.
+			// `messages` is required (array of {role, content} objects).
+			var body = {
+				messages    : [ { role: 'user', content: messageContent } ],
+				assistant_id: cfg().assistantId || '',
+			};
 
 			var chatUrl = ( cfg().restUrl || '' ).replace( /\/$/, '' ) + '/chat';
 			var nonce   = cfg().nonce || '';
@@ -698,14 +702,46 @@
 				container.innerHTML = this._buildReceiptHtml( estimate );
 			} else {
 				// Graceful fallback: show raw assistant message as prose.
-				var replyText = '';
-				if ( apiResponse && apiResponse.reply ) {
-					replyText = apiResponse.reply;
-				} else if ( apiResponse && apiResponse.message ) {
-					replyText = apiResponse.message;
-				}
+				// The /chat endpoint returns OpenAI-shaped choices[].message.content.
+				var replyText = this._getReplyText( apiResponse );
 				container.innerHTML = '<div class="mcp-vce-result-prose">' + this._textToHtml( replyText ) + '</div>';
 			}
+		},
+
+		/**
+		 * Extract the assistant's plain-text reply from the API response.
+		 *
+		 * Supports both the OpenAI-shaped `choices[].message.content` format
+		 * returned by the /chat endpoint and older `reply` / `message` shapes.
+		 *
+		 * @param {Object} response
+		 * @return {string}
+		 */
+		_getReplyText: function ( response ) {
+			if ( ! response ) { return ''; }
+
+			// Primary: OpenAI format — choices[last].message.content.
+			if ( response.choices && response.choices.length ) {
+				var lastChoice = response.choices[ response.choices.length - 1 ];
+				if ( lastChoice && lastChoice.message ) {
+					var content = lastChoice.message.content;
+					if ( 'string' === typeof content ) {
+						return content;
+					}
+					// Content can be an array of segments; join text parts.
+					if ( Array.isArray( content ) ) {
+						return content
+							.filter( function ( s ) { return s && 'text' === s.type; } )
+							.map( function ( s ) { return s.text || ''; } )
+							.join( '\n' );
+					}
+				}
+			}
+
+			// Legacy fallbacks.
+			if ( 'string' === typeof response.reply )   { return response.reply; }
+			if ( 'string' === typeof response.message ) { return response.message; }
+			return '';
 		},
 
 		/**
@@ -744,8 +780,8 @@
 				}
 			}
 
-			// Last resort: scan reply text for embedded JSON block.
-			var replyText = ( response.reply || response.message || '' );
+			// Last resort: scan all choices' content for embedded JSON block.
+			var replyText = this._getReplyText( response );
 			var jsonMatch = replyText.match( /```json\s*([\s\S]*?)```/ );
 			if ( jsonMatch ) {
 				try {
