@@ -29,7 +29,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  * concurrency factors and bot-containment rate adjustment.
  * Optionally pulls live queue statistics from a configured WFM REST endpoint.
  *
- * @since 1.5.0
+ * @since 1.1.8
  */
 class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;

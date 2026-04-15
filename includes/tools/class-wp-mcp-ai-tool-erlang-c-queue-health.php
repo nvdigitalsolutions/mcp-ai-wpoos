@@ -28,7 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  * REST endpoint.  Triggers `wp_mcp_ai_queue_alert` when SLA is breached
  * and persists snapshots for trend analysis.
  *
- * @since 1.5.0
+ * @since 1.1.8
  */
 class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;

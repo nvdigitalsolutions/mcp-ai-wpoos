@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  * Computes: probability of waiting, average wait time, service-level
  * attainment, agent utilisation, and minimum agents required.
  *
- * @since 1.5.0
+ * @since 1.1.8
  */
 class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;

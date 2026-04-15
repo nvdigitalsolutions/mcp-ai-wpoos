@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Higher-level tools convert from natural units (e.g. calls/hour, minutes)
  * before calling this class.
  *
- * @since 1.5.0
+ * @since 1.1.8
  */
 class WP_MCP_AI_Erlang_C {
 

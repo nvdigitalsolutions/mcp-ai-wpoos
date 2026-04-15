@@ -26,7 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-erlang-c.php';
  * and applies the Erlang C formula to recommend the optimal number of
  * concurrent assistant sessions.  Admin-only (manage_options).
  *
- * @since 1.5.0
+ * @since 1.1.8
  */
 class WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
