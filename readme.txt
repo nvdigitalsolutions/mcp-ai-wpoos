@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -297,6 +297,13 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
 * `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
 * `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
+
+*Compliance*
+
+* Full re-audit of base plugin against all 13 WordPress.org Plugin Developer Guidelines — all pass
+* New compliance document `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline
+* Pro Addon External Services (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) documented in readme.txt, clearly marked as not present in base plugin
+* Version bumped to 1.1.8 across plugin header, constants, readme.txt, and CHANGELOG.md
 
 = 1.1.7 - April 11, 2026 =
 
