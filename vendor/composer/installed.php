@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/research-plugin-mpc-tools',
-        'version' => 'dev-copilot/research-plugin-mpc-tools',
-        'reference' => 'ee97a0e7ce8676ca65ec1623cf62090e25d412b0',
+        'pretty_version' => 'dev-copilot/add-companion-elementor-widget',
+        'version' => 'dev-copilot/add-companion-elementor-widget',
+        'reference' => '405e17392ee799d72fcb7a02b2ecc66d5159bfc4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/research-plugin-mpc-tools',
-            'version' => 'dev-copilot/research-plugin-mpc-tools',
-            'reference' => 'ee97a0e7ce8676ca65ec1623cf62090e25d412b0',
+            'pretty_version' => 'dev-copilot/add-companion-elementor-widget',
+            'version' => 'dev-copilot/add-companion-elementor-widget',
+            'reference' => '405e17392ee799d72fcb7a02b2ecc66d5159bfc4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

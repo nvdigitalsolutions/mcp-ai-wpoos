@@ -10,6 +10,7 @@
         restUrl: '',
         uploadEndpoint: '',
         prepareEndpoint: '',
+        messagesEndpoint: '',
         filesEndpoint: '',
         toolsEndpoint: '',
         transcriptsEndpoint: '',
@@ -22,7 +23,7 @@
 
     const globalConfig = Object.assign({}, defaultGlobalConfig, window.wpMcpAiChat || {});
 
-    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'filesEndpoint', 'toolsEndpoint', 'transcriptsEndpoint', 'nonce'].filter(
+    const missingGlobalConfigKeys = ['restUrl', 'uploadEndpoint', 'messagesEndpoint', 'filesEndpoint', 'toolsEndpoint', 'transcriptsEndpoint', 'nonce'].filter(
         function (key) {
             return !globalConfig[key];
         }
@@ -13279,6 +13280,23 @@
         });
     }
 
+    /**
+     * Resolve the chat-client endpoint for a given state.
+     * Priority: per-instance messagesEndpoint → global messagesEndpoint → restUrl + 'chat-client'.
+     *
+     * @param {Object} state Chat instance state.
+     * @return {string} The resolved endpoint URL.
+     */
+    function getMessagesEndpoint(state) {
+        if (state.config && state.config.messagesEndpoint) {
+            return state.config.messagesEndpoint;
+        }
+        if (globalConfig.messagesEndpoint) {
+            return globalConfig.messagesEndpoint;
+        }
+        return (globalConfig.restUrl || '').replace(/\/$/, '') + '/chat-client';
+    }
+
     function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
@@ -13378,7 +13396,7 @@
 
         // Non-streaming request (original implementation)
         return postJson(
-            state.config.messagesEndpoint,
+            getMessagesEndpoint(state),
             payload,
             buildJsonHeaders(state),
             { state: state }
@@ -13420,7 +13438,7 @@
 
         // Diagnostic logging (Separation of Concerns - delegated to logger utility)
         streamingLogger.logRequestStart({
-            endpoint: state.config.messagesEndpoint,
+            endpoint: getMessagesEndpoint(state),
             assistantId: payload.assistant_id,
             messageCount: payload.messages ? payload.messages.length : 0,
             streamEnabled: payload.stream,
@@ -13527,7 +13545,7 @@
         }
 
         return postJson(
-            state.config.messagesEndpoint,
+            getMessagesEndpoint(state),
             payload,
             headers,
             // streaming: true bypasses the Ky HTTP client in favour of native fetch.
@@ -14009,7 +14027,7 @@
                 if (!streamCompleted) {
                     // Diagnostic logging (Separation of Concerns)
                     streamingLogger.logFetchFailure(error, {
-                        endpoint: state.config.messagesEndpoint,
+                        endpoint: getMessagesEndpoint(state),
                         assistantId: payload.assistant_id,
                         streamCompleted: streamCompleted
                     });
@@ -14044,7 +14062,7 @@
                         delete nonStreamPayload.stream;
 
                         return postJson(
-                            state.config.messagesEndpoint,
+                            getMessagesEndpoint(state),
                             nonStreamPayload,
                             buildJsonHeaders(state),
                             { state: state }
