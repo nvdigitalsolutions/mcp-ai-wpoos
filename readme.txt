@@ -269,11 +269,34 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 220+ tools for content, media, research, and operations
+4. **Tool Registry** - 230+ tools for content, media, research, and operations
 5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.8 - April 15, 2026 =
+
+**Erlang C Queuing Theory Tools, Full Tool-Reference Audit**
+
+*Erlang C Workforce Management Tools*
+
+* 4 new tools in the base plugin (no Pro addon required) built on the Erlang C formula
+* `calculate_erlang_c` — general-purpose staffing solver: given arrival rate, average handle time, and target SLA returns agents needed, probability of waiting, avg wait time, and utilisation
+* `erlang_c_concurrency_advisor` — reads plugin session telemetry and returns a data-driven recommendation for the Max Concurrent Sessions setting
+* `erlang_c_staffing_advisor` — multi-channel staffing with chat concurrency multiplier, bot-deflection-rate adjustment, and optional NICE WFM / Genesys / Verint / Calabrio endpoint integration
+* `erlang_c_queue_health` — real-time SLA monitoring: polls a contact-centre REST endpoint, fires `wp_mcp_ai_queue_alert` action on breach, stores snapshots in JetEngine CCT
+* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/hooks-reference.md`
+* Shared helper class `WP_MCP_AI_Erlang_C` with `erlang_c()`, `avg_wait_time()`, `min_agents_for_service_level()`, and `service_level()` static methods
+
+*Documentation*
+
+* `docs/reference/tools/tool-reference.md` fully audited — all 230+ tools in `load_default_tools` (base + extended) now documented
+* 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
+* New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
+* `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
+* `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
+* `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
 
 = 1.1.7 - April 11, 2026 =
 
