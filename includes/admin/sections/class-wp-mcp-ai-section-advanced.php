@@ -2260,11 +2260,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 											esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ),
 											esc_html__( 'View all AI peers', 'mcp-ai-wpoos' )
 										);
-										printf(
-											/* translators: 1: message about unpublished peers, 2: link to view AI peers */
-											__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link passed as second parameter.
-											esc_html( $message ),
-											$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__.
+										echo wp_kses(
+											sprintf(
+												/* translators: 1: message about unpublished peers, 2: link to view AI peers */
+												__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+												esc_html( $message ),
+												$link
+											),
+											array( 'a' => array( 'href' => array() ) )
 										);
 										?>
 									</p>
@@ -2309,10 +2312,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<p>
 								<strong><?php esc_html_e( 'Directory Service Disabled', 'mcp-ai-wpoos' ); ?></strong><br>
 								<?php
-								printf(
-									/* translators: %s: link to federation mesh settings */
-									__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link.
-									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=federation_mesh' ) ) . '">' . esc_html__( 'Federation Mesh Settings', 'mcp-ai-wpoos' ) . '</a>'
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: link to federation mesh settings */
+										__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ),
+										'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=federation_mesh' ) ) . '">' . esc_html__( 'Federation Mesh Settings', 'mcp-ai-wpoos' ) . '</a>'
+									),
+									array( 'a' => array( 'href' => array() ) )
 								);
 								?>
 							</p>

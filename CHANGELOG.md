@@ -1,6 +1,27 @@
 # oOS – Changelog
 
 
+## [1.1.8] - 2026-04-15
+
+### April 15, 2026 — Erlang C Queuing Tools, Full Tool-Reference Audit, WordPress.org Compliance Re-Audit
+
+### Added
+- **Erlang C Workforce Management Tools** — 4 new base plugin tools (`calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`) with shared `WP_MCP_AI_Erlang_C` helper class
+- **`wp_mcp_ai_queue_alert` action hook** for SLA breach notifications with full parameter schema
+- **Tool Reference Audit** — `docs/reference/tools/tool-reference.md` fully audited with 14 new sections covering all 230+ base tools
+- **Feature guide** — `docs/features/erlang-c-staffing-tools.md` with industry standards, usage scenarios, and API reference
+- **Pro Addon External Services** documented in readme.txt (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) with Terms/Privacy links, clearly marked as not present in base plugin
+
+### Changed
+- **Version** bumped to 1.1.8 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md
+- **Production autoload classmap** regenerated with `composer install --no-dev --classmap-authoritative`
+
+### Compliance
+- **Full WordPress.org Plugin Guidelines re-audit** — all 13 guidelines pass
+- **New compliance document** `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline, code statistics, and file references
+- 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output escaping instances confirmed across the base plugin
+
+
 ## [1.1.7] - 2026-04-11
 
 ### April 7–14, 2026 — MCP Protocol Completion, MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening
