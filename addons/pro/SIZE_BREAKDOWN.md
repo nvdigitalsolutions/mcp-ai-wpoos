@@ -8,7 +8,7 @@
 **PHP Tool Files**: 610  
 **Toolkits**: 31 specialized toolkits  
 
-> **Note on Distribution ZIP**: The `.distignore` file excludes source maps, Facebook SDK, vendor test directories, sample PDFs, build artefacts, and dev config files from the distributed ZIP. The resulting ZIP is estimated at **~45–50 MB** compressed (see [Excluded from Distribution](#whats-excluded-from-distribution-zip) below for the full exclusion list).
+> **Note on Distribution ZIP**: The `.distignore` file excludes source maps, Facebook SDK, sharp native binaries, canvas native binaries, vendor test directories, sample PDFs, build artefacts, and dev config files from the distributed ZIP. The resulting ZIP is estimated at **~30–35 MB** compressed (see [Excluded from Distribution](#whats-excluded-from-distribution-zip) below for the full exclusion list).
 
 ---
 
@@ -42,6 +42,7 @@ The `.distignore` file removes the following before the ZIP is built:
 |----------|-------------|--------|
 | `*.js.map` / `*.css.map` | ~20 MB | Source maps — dev/debug only |
 | `assets/vendor/facebook-nodejs-business-sdk/` | 14 MB | Unused; tools call Graph API directly |
+| `assets/vendor/sharp/node_modules/@img/` | ~16 MB | Platform-specific Linux x64 native binaries |
 | `vendor/*/tests/`, `vendor/*/Tests/` etc. | ~5 MB | Vendor unit tests |
 | `vendor/*/docs/`, `vendor/*/examples/` etc. | ~2 MB | Vendor documentation |
 | `vendor/*/README*`, `vendor/*/CHANGELOG*` etc. | ~1 MB | Vendor metadata files |
@@ -51,7 +52,7 @@ The `.distignore` file removes the following before the ZIP is built:
 | `composer.json`, `composer.lock`, `package.json`, `package-lock.json` | ~520 KB | Dev tooling |
 | Sample/test `.pdf` files in vendor | ~52 files | Not needed at runtime |
 
-> **Sharp native binaries note**: The `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` directory contains `libvips-cpp.so.42` (~15.8 MB). This binary is Linux x64-specific and is **not** currently listed in `.distignore`. Consider adding `assets/vendor/sharp/node_modules/@img/` to `.distignore` to save ~16 MB in the distribution ZIP, requiring users who need image processing to run `npm install sharp` on their server.
+> **Sharp native binaries**: `@img/sharp-libvips-linux-x64` (`libvips-cpp.so.42`, ~16 MB) and `@img/sharp-linux-x64` (`sharp-linux-x64.node`, ~264 KB) are Linux x64-specific and are now **excluded from the distribution ZIP** via `.distignore` (`assets/vendor/sharp/node_modules/@img/`). Users who need image processing on a non-standard platform can run `npm install sharp` in the plugin directory.
 
 ---
 
@@ -242,7 +243,7 @@ Webpack-bundled Node.js scripts. Source maps are in the repo but **excluded from
 
 | Size | File | Distribution Status |
 |------|------|---------------------|
-| 15.8 MB | `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42` | ⚠️ Included — consider excluding (platform-specific binary) |
+| 15.8 MB | `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42` | ❌ Excluded (platform-specific Linux x64 binary) |
 | 7.2 MB | `bin/generate-pdf.bundle.js.map` | ❌ Excluded (source map) |
 | 4.8 MB | `bin/generate-pdf.bundle.js` | ✅ Included |
 | 4.8 MB | `bin/generate-word.bundle.js.map` | ❌ Excluded (source map) |
@@ -290,6 +291,7 @@ The `sharp` package provides high-performance image processing (resize, format c
 |--------------|--------------------------------|--------|
 | Source maps excluded (`*.js.map`, `*.css.map`) | ~20 MB | ✅ Done |
 | Facebook SDK excluded | ~14 MB | ✅ Done |
+| Sharp native binaries excluded (`@img/`) | ~16 MB | ✅ Done |
 | Canvas native binaries excluded (`canvas/build/`) | ~1 MB | ✅ Done |
 | Vendor test directories excluded | ~5 MB | ✅ Done |
 | Vendor docs/READMEs excluded | ~3 MB | ✅ Done |
@@ -300,7 +302,7 @@ The `sharp` package provides high-performance image processing (resize, format c
 
 | Optimization | Approx. Savings | Trade-off |
 |--------------|----------------|-----------|
-| Exclude sharp libvips binaries (`@img/`) | ~16 MB uncompressed | Users need `npm install sharp` on their server |
+| Exclude sharp libvips binaries (`@img/`) | ~16 MB uncompressed | ✅ Done |
 | Dynamic TCPDF font loading (ship a subset) | ~12 MB uncompressed | Requires internet access for additional fonts |
 | Code splitting for document bundles | ~3 MB compressed | More complex load logic |
 | Exclude Puppeteer Core | ~5 MB uncompressed | Removes headless Chrome PDF rendering |
