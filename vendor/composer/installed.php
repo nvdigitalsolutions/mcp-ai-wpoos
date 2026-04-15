@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-companion-elementor-widget',
         'version' => 'dev-copilot/add-companion-elementor-widget',
-        'reference' => 'bafe3140a681dfaa568049a39e5b5c3905036bf0',
+        'reference' => '9d3310ffd5b63adbaf5596693b3cf32633986377',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-companion-elementor-widget',
             'version' => 'dev-copilot/add-companion-elementor-widget',
-            'reference' => 'bafe3140a681dfaa568049a39e5b5c3905036bf0',
+            'reference' => '9d3310ffd5b63adbaf5596693b3cf32633986377',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
