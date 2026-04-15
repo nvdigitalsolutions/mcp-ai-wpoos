@@ -2,601 +2,564 @@
 
 ## Overview
 
-**Distributed ZIP File Size**: 33 MB (mcp-ai-wpoos-pro-1.1.2.zip)  
-**Uncompressed Size**: ~103 MB  
-**Number of Files**: ~6,500 files  
-**Compression Ratio**: 68% size reduction
-
-This document provides a detailed breakdown of what's actually included in the distributed pro plugin zip file.
+**Source Directory Size**: ~176 MB (apparent size on disk)  
+**Estimated Distributed ZIP**: ~39 MB  
+**Total Number of Files**: ~9,184 files  
+**PHP Files**: 3,738  
+**JS Files (non-map)**: 2,624  
+**JS Source Maps**: 63  
+**Font Files**: 100  
 
 > **Optimization History**:  
 > - v1.1.0: 54 MB (source maps, Facebook SDK included)
 > - v1.1.1: 87 MB (regression: canvas native binaries accidentally included)  
-> - **v1.1.2: 33 MB** (fixed: excluded canvas binaries, old pdf.js versions, source maps)
+> - v1.1.2: 33 MB (fixed: excluded canvas binaries, old pdf.js versions, source maps)
+> - **Current (~v1.2+): ~39 MB** (added sharp image processing, remotion video, pdfjs-dist, 31 toolkits, 605+ tools, 12 node microservices)
 >
-> **Latest Update (v1.1.2)**: Fixed size regression by excluding:
-> - Canvas native binaries (~181MB uncompressed, ~50MB compressed)
-> - Old pdf.js versions from pdf-parse (~21MB uncompressed, ~6MB compressed)
-> - pdfjs-dist source maps (~8MB uncompressed, ~3MB compressed)
-> - **Total savings: ~210MB uncompressed → ~59MB compressed**
+> **Growth since v1.1.2** is primarily due to:
+> - `sharp` image processing library (17 MB — includes 16 MB Linux native binary `libvips-cpp.so.42`)
+> - `@remotion`/`remotion` video generation (3.3 MB)
+> - `pdfjs-dist` standalone Mozilla PDF.js package (7 MB)
+> - Expanded `includes/` from 11 MB to 16 MB (new toolkits, MCP Apps, Vault, Healthcare, etc.)
+> - Expanded `bin/` from 11 MB to 27 MB (remotion bundle + source maps)
 
 ---
 
 ## What's In The ZIP File
 
-The 33 MB zip file contains:
+After `.distignore` exclusions, the ZIP contains approximately:
 
-| Directory | Uncompressed | Files | % of Total | Description |
+| Directory | Apparent Size | Files | % of Total | Description |
 |-----------|--------------|-------|------------|-------------|
-| `vendor` | 56 MB | ~2,400 | 54% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser, tesseract_ocr) |
-| `assets/vendor` | 35 MB | ~3,100 | 34% | Bundled NPM packages (JavaScript libraries - optimized) |
-| `includes` | 11 MB | ~900 | 11% | PHP source code (tools, admin UI, integrations, OCR service) |
-| `bin` | 684 KB | 7 | <1% | Webpack-bundled document generation scripts (PDF/Word/Excel) |
-| `node-services` | 60 KB | ~8 | <1% | Node.js microservices (PDF extraction, OCR, image preprocessing) |
-| `docs` | 804 KB | ~50 | <1% | Documentation files (including OCR guide) |
-| `build` | 244 KB | 8 | <1% | Build artifacts |
-| `examples` | 112 KB | ~15 | <1% | Example code and usage samples |
-| `scripts` | 52 KB | 5 | <1% | Build and maintenance scripts |
-| `services` | 48 KB | ~6 | <1% | Service definitions |
+| `assets/vendor` | 66 MB | ~2,800 | 48% | Bundled NPM packages (JS libraries) |
+| `vendor` | 65 MB | ~3,600 | 47% | PHP Composer dependencies (TCPDF, PHPOffice, dompdf, smalot/pdfparser, etc.) |
+| `includes` | 16 MB | ~1,065 | 12% | PHP source code (605+ tools, 31 toolkit init files, admin UI, MCP Apps, Vault) |
+| `bin` | ~10 MB | 7 | <1% | Webpack-bundled generation scripts (PDF/Word/Excel/Remotion), excl. maps |
+| `node-services` | 68 KB | 13 | <1% | Node.js microservices (OCR, PDF extract, image preprocess, FFmpeg, etc.) |
+| `docs` | 908 KB | ~50 | <1% | Documentation files |
+| `scripts` | 60 KB | 5 | <1% | Build and maintenance scripts |
+| `services` | 36 KB | ~6 | <1% | Service definitions (yfinance) |
 
-**Total Uncompressed**: 103 MB → **Compressed to 33 MB**
+**Excluded from ZIP** (~47 MB):
+- `assets/vendor/facebook-nodejs-business-sdk/` — 14 MB (CDN available if needed)
+- All `*.js.map` / `*.css.map` — 17.4 MB (development only)
+- `build/` directory — 1.1 MB
+- `vendor/*/tests/` directories — ~12 MB
+- `vendor/*/docs/` and `vendor/*/examples/` — ~2 MB
+- PDF sample files in vendor — ~1.7 MB
+
+**Total: ~176 MB source → ~129 MB after exclusions → ~39 MB compressed ZIP**
 
 ### What's Excluded (Not in Distribution ZIP)
 
-These files are excluded from the distribution to reduce size:
-- ✅ **Source maps** (*.js.map, *.css.map): ~31 MB uncompressed, ~12 MB compressed
-- ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
-- ✅ **Canvas native binaries**: ~181 MB uncompressed, ~50 MB compressed (requires system installation)
-- ✅ **Old pdf.js versions**: ~21 MB uncompressed, ~6 MB compressed (kept only v2.0.550)
-- ✅ **pdfjs-dist source maps**: ~8 MB uncompressed, ~3 MB compressed
-- ✅ **Test PDF samples**: ~1.7 MB uncompressed
-- ✅ **Vendor tests/docs**: ~15 MB uncompressed
+- ✅ **JavaScript/CSS source maps** (63 files, 17.4 MB uncompressed): Development only
+- ✅ **Facebook SDK** (`assets/vendor/facebook-nodejs-business-sdk/`, 14 MB): Tools use Graph API directly
+- ✅ **build/** directory (1.1 MB): TMA templates, workflow builder build artifacts
+- ✅ **Vendor tests/docs/examples** (~14 MB): PHPUnit test files, README, CHANGELOG files
+- ✅ **PDF sample files** (~1.7 MB): Test PDFs in vendor packages
 
-**Total excluded**: ~286 MB uncompressed → ~77 MB compressed savings
+#### ⚠️ Sharp Native Binaries (Not Yet Excluded)
 
-**Note**: Puppeteer Core (~8 MB uncompressed, ~2 MB compressed) is INCLUDED in the distribution for immediate browser automation functionality.
+`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42` is **15.5 MB** and is a Linux-specific native binary. It is **not currently excluded** by `.distignore`. This is similar to the canvas native binary issue fixed in v1.1.2.
 
-#### Why Canvas Binaries Are Excluded
-
-The `canvas` npm package includes native binary libraries (~181MB) for Linux:
-- `librsvg-2.so.2` (101MB), `libharfbuzz.so.0` (26MB), and 25+ other shared libraries
-- These are platform-specific and won't work on Windows/Mac
-- Canvas requires system-level installation: `apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev`
-- Used only for PDF OCR feature which requires Node.js environment setup
-- The OCR service has proper error handling when canvas is unavailable
-
-**For PDF OCR support**, users should:
-1. Install Node.js on their server
-2. Run `npm install canvas@2` in the plugin directory (use `canvas@2`; `canvas@3+` requires Node >=20.9.0 and won't install on Node 18.x or Node 20.x < 20.9.0)
-3. Install system dependencies as needed
-4. **On shared hosts (e.g. Cloudways)**: If you get `EACCES: permission denied` when creating `node_modules`, run `mkdir node_modules && chmod 775 node_modules` first, then retry `npm install canvas@2`
-
-#### Why Old pdf.js Versions Are Excluded
-
-The `pdf-parse` package bundled 4 versions of pdf.js for compatibility:
-- v1.9.426 (7.2 MB)
-- v1.10.88 (7.8 MB)  
-- v1.10.100 (6.1 MB)
-- v2.0.550 (2.1 MB) ← **kept**
-
-We keep only the latest version (v2.0.550) which has the best PDF parsing capabilities.
+**Recommendation**: Add `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` to `.distignore` to save ~16 MB. Sharp's JS wrapper will still load; users needing native acceleration can run `npm install sharp` in the plugin directory.
 
 ---
 
-## Top 20 Largest Files in Distribution (What Takes Up Space)
+## Top 20 Largest Files in Distribution
 
-Now that source maps and Facebook SDK are excluded, here's what remains:
+Excluding `.map` files and `facebook-nodejs-business-sdk`:
 
 | Size | File | Purpose |
 |------|------|---------|
-| 5.0 MB | bin/generate-pdf.bundle.js | PDF generation bundle (includes PDFKit) |
-| 3.3 MB | bin/generate-word.bundle.js | Word generation bundle (includes docx library) |
-| 2.6 MB | assets/vendor/pdfkit/js/pdfkit.standalone.js | PDFKit standalone for PDF creation |
-| 2.2 MB | bin/generate-excel.bundle.js | Excel generation bundle (includes ExcelJS) |
-| 1.9 MB | assets/vendor/exceljs/dist/exceljs.js | ExcelJS library for Excel files |
+| 15.5 MB | assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42 | Sharp Linux native binary (⚠️ not yet excluded) |
+| 4.9 MB | bin/generate-pdf.bundle.js | PDF generation bundle (includes PDFKit) |
+| 3.2 MB | bin/generate-word.bundle.js | Word generation bundle (includes docx library) |
+| 2.5 MB | assets/vendor/pdfkit/js/pdfkit.standalone.js | PDFKit standalone for PDF creation |
+| 2.2 MB | assets/vendor/pdfjs-dist/legacy/build/pdf.worker.mjs | Mozilla PDF.js worker (standalone) |
+| 2.1 MB | bin/generate-excel.bundle.js | Excel generation bundle (includes ExcelJS) |
+| 1.8 MB | assets/vendor/exceljs/dist/exceljs.js | ExcelJS library for Excel files |
 | 1.8 MB | vendor/tecnickcom/tcpdf/fonts/freeserif.z | TCPDF FreeSerif font (international characters) |
-| 1.8 MB | vendor/tecnickcom/tcpdf/fonts/dejavusans.z | TCPDF DejaVu Sans font (international characters) |
-| 1.4 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v2.0.550) | PDF.js worker v2.0.550 (latest) |
-| 1.4 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.10.100) | PDF.js worker v1.10.100 (compatibility) |
-| 1.3 MB | assets/vendor/pdf-parse/.../pdf.js (v2.0.550) | PDF.js core v2.0.550 |
-| 1.3 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.10.88) | PDF.js worker v1.10.88 (compatibility) |
-| 1.3 MB | assets/vendor/pdf-parse/.../pdf.js (v1.10.100) | PDF.js core v1.10.100 |
-| 1.2 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.9.426) | PDF.js worker v1.9.426 (compatibility) |
-| 1.2 MB | assets/vendor/pdf-parse/.../pdf.js (v1.10.88) | PDF.js core v1.10.88 |
-| 1.1 MB | assets/vendor/pdf-parse/.../pdf.js (v1.9.426) | PDF.js core v1.9.426 |
-| 931 KB | vendor/phpoffice/phpspreadsheet/.../OoxmlRelationships.php | PHPSpreadsheet OOXML relationships |
-| 845 KB | assets/vendor/cheerio/dist/browser/index.js | Cheerio for HTML parsing |
-| 836 KB | assets/vendor/exceljs/dist/exceljs.min.js | ExcelJS minified |
-| 804 KB | vendor/tecnickcom/tcpdf/tcpdf.php | TCPDF main library file |
-| 764 KB | vendor/phpoffice/phpspreadsheet/.../Style.php | PHPSpreadsheet styles |
+| 1.7 MB | assets/vendor/exceljs/dist/exceljs.bare.js | ExcelJS bare build |
+| 1.5 MB | vendor/tecnickcom/tcpdf/fonts/cid0kr.php | TCPDF Korean CID font |
+| 1.5 MB | vendor/tecnickcom/tcpdf/fonts/cid0jp.php | TCPDF Japanese CID font |
+| 1.5 MB | vendor/tecnickcom/tcpdf/fonts/cid0ct.php | TCPDF Traditional Chinese CID font |
+| 1.5 MB | vendor/tecnickcom/tcpdf/fonts/cid0cs.php | TCPDF Simplified Chinese CID font |
+| 1.5 MB | assets/vendor/pdf-parse/lib/pdf.js/v2.0.550/build/pdf.worker.js | PDF.js worker v2.0.550 |
+| 1.4 MB | assets/vendor/pdfjs-dist/legacy/build/pdf.worker.min.mjs | Mozilla PDF.js worker (minified) |
+| 0.9 MB | assets/vendor/exceljs/dist/exceljs.min.js | ExcelJS minified |
+| 0.9 MB | assets/vendor/pdfjs-dist/legacy/build/pdf.sandbox.mjs | PDF.js sandbox |
+| 0.9 MB | vendor/tecnickcom/tcpdf/tcpdf.php | TCPDF main library |
+| 0.8 MB | assets/vendor/pdfjs-dist/legacy/build/pdf.mjs | PDF.js core |
+| 0.8 MB | vendor/tecnickcom/tcpdf/fonts/freesans.z | TCPDF FreeSans font |
 
-**Note**: All source maps (*.js.map) and Facebook SDK files are now excluded from distribution.
-
-**OCR Dependencies**: The Tesseract OCR PHP wrapper (thiagoalessio/tesseract_ocr) is only 8KB and uses system-installed Tesseract binary. Node.js OCR packages (tesseract.js, pdfjs-dist, canvas) will be bundled in assets/vendor when copy-dependencies.js script is run.
-
-**Key Observation**: The top 30 files account for ~83 MB uncompressed (~22 MB compressed in zip)
+**Note**: All source maps (`.js.map`) and the Facebook SDK are excluded from distribution.
 
 ---
 
 ## File Type Analysis
 
-What types of files are in the zip:
+### Included in Distribution
 
-| File Type | Count | Uncompressed Size | % of Total | Notes |
-|-----------|-------|-------------------|------------|-------|
-| JavaScript Maps (.js.map) | 860 | 64 MB | 34% | Source maps for debugging (can be excluded) |
-| JavaScript (.js) | 1,885 | 48 MB | 25% | NPM packages and bundles |
-| PHP (.php) | 2,672 | 36 MB | 19% | Source code and vendor libraries |
-| Fonts (.ttf, .woff, .z) | 98 | 16 MB | 8% | TCPDF fonts for international PDFs |
-| JSON/Config | ~2,000 | 12 MB | 6% | Package manifests, locale files, cmaps |
-| Images (.png, .jpg, .svg) | 177 | <1 MB | <1% | Icons and UI assets |
-| Other | ~1,416 | 14 MB | 7% | Character maps, documentation, misc |
+| File Type | Count | Approximate Size | Notes |
+|-----------|-------|-----------------|-------|
+| JavaScript (.js) | ~2,624 | ~48 MB | NPM packages and bundles |
+| PHP (.php) | ~3,738 | ~17 MB | Source code and vendor libraries |
+| Fonts (.ttf, .woff, .woff2, .z) | ~100 | ~17 MB | TCPDF fonts for international PDFs |
+| JSON/Config | ~1,200 | ~5 MB | Package manifests, locale files |
+| Other | ~1,500 | ~42 MB | Native binaries (.so), archives, misc |
 
-**Total**: 9,108 files = 190 MB uncompressed
+### Excluded from Distribution
+
+| File Type | Count | Uncompressed | Reason |
+|-----------|-------|-------------|--------|
+| JS/CSS Source Maps (.js.map, .css.map) | 63 | 17.4 MB | Development only |
+| Facebook SDK | N/A | 14 MB | Unused; tools use Graph API directly |
+| Vendor test files | ~1,000 | ~12 MB | PHPUnit tests |
+| Vendor docs/examples | ~200 | ~2 MB | Documentation |
+| Build artifacts (build/) | ~25 | 1.1 MB | TMA templates, workflow builder |
+| Sample PDFs | ~15 | ~1.7 MB | Test files in vendor packages |
 
 ---
 
-## Assets/Vendor (NPM Packages) - 48 MB Uncompressed
+## Assets/Vendor (NPM Packages) — 66 MB Apparent
 
-JavaScript/Node.js libraries bundled in the zip for browser and Node.js usage:
+JavaScript/Node.js libraries bundled for browser and Node.js usage:
 
-### Document Generation & OCR (69 MB)
-| Package | Uncompressed | Purpose |
+### Image & Video Processing (21 MB)
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `pdf-parse` | 30 MB | PDF text extraction (4 pdfjs versions with international cmaps) |
-| `exceljs` | 16 MB | Excel spreadsheet generation and parsing (includes multiple source maps) |
-| `pdfkit` | 5.9 MB | PDF generation library |
-| `pdf-lib` | 6.6 MB | PDF manipulation and form filling |
-| `puppeteer-core` | 8.3 MB | Headless Chrome for PDF rendering |
-| **OCR Packages** (bundled when running copy-dependencies.js): |
-| `tesseract.js` | ~2.5 MB | Pure JavaScript OCR engine (WebAssembly-based) |
-| `pdfjs-dist` | ~8 MB | Mozilla PDF.js for PDF rendering to images |
-| `canvas` | ~1.5 MB | Node.js canvas for image manipulation |
+| `sharp` | 17 MB | High-performance image processing (includes Linux native binary) |
+| `@remotion` + `remotion` | 3.3 MB | Programmatic video generation |
 
-### Social Media & Marketing (30 MB)
-| Package | Uncompressed | Purpose |
+### Document Generation & OCR (27 MB)
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `facebook-nodejs-business-sdk` | 28 MB | Complete Facebook/Instagram Marketing API client |
+| `pdfjs-dist` | 7.0 MB | Mozilla PDF.js standalone (rendering to images for OCR) |
+| `exceljs` | 7.3 MB | Excel spreadsheet generation and parsing |
+| `pdfkit` | 3.9 MB | PDF generation library |
+| `pdf-lib` | 3.9 MB | PDF manipulation and form filling |
+| `puppeteer-core` + `@puppeteer` | 6.1 MB | Headless Chrome for PDF rendering |
+| `pdf-parse` | 2.1 MB | PDF text extraction (v2.0.550 only) |
+| `tesseract.js` | 332 KB | Pure JavaScript OCR engine (WebAssembly-based) |
+
+### Social Media & Marketing (16 MB)
+
+| Package | Apparent Size | Purpose |
+|---------|--------------|---------|
+| `facebook-nodejs-business-sdk` | 14 MB | Facebook/Instagram Marketing API (⛔ **excluded from ZIP**) |
 | `twitter-api-v2` | 2.1 MB | Twitter API v2 client |
-| `linkedin-api-client` | 272 KB | LinkedIn integration |
+| `linkedin-api-client` | 204 KB | LinkedIn integration |
 
 ### E-commerce & Payments (1.5 MB)
-| Package | Uncompressed | Purpose |
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
 | `stripe` | 1.5 MB | Stripe payment processing |
 | `woocommerce-rest-api` | 28 KB | WooCommerce integration |
 
-### Other Utilities (2 MB)
-| Package | Uncompressed | Purpose |
+### Communication & Utilities (3 MB)
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `cheerio` | 1.4 MB | HTML parsing |
+| `nodemailer` | 628 KB | Email sending |
+| `i18next` | 436 KB | Internationalization framework |
+| `cheerio` | 812 KB | HTML parsing |
 | `validator` | 1.2 MB | String validation |
-| `libphonenumber-js` | 780 KB | Phone number handling |
-| Plus 20+ smaller packages | <500 KB each | Various utilities |
+| `libphonenumber-js` | 780 KB | Phone number formatting |
+| `ical-generator` | 212 KB | iCalendar event generation |
+| `qrcode` | 172 KB | QR code generation |
+| `google-translate-api-x` | 60 KB | Translation API client |
+| `franc` | 20 KB | Language detection |
+| `mjml` | 16 KB | Email template rendering |
+
+### Media & File Processing (1 MB)
+
+| Package | Apparent Size | Purpose |
+|---------|--------------|---------|
+| `fluent-ffmpeg` | 164 KB | FFmpeg wrapper for video/audio |
+| `gif-encoder` | 60 KB | GIF generation |
+| `video-stitch` | 28 KB | Video concatenation |
+| `subtitle` | 72 KB | SRT/VTT subtitle parsing |
+
+### Data Utilities (<1 MB each)
+
+| Package | Approximate Size | Purpose |
+|---------|-----------------|---------|
+| `csv-parse` | 136 KB | CSV parsing |
+| `csv-stringify` | 80 KB | CSV generation |
+| `fast-csv` | 24 KB | Fast CSV processing |
+| `turndown` | 172 KB | HTML to Markdown conversion |
+| `regression` | 16 KB | Statistical regression |
+| `currency.js` | 12 KB | Currency formatting |
+| `iso-639-1` | 20 KB | ISO language codes |
+| `turf` | 60 KB | Geospatial analysis |
 
 ---
 
-## PHP Vendor (Composer) - 56 MB Uncompressed
+## PHP Vendor (Composer) — 65 MB Apparent
 
-PHP libraries included in the zip (tests/docs excluded via .distignore):
+PHP libraries managed by Composer:
 
-### PDF & Document Generation (48 MB)
-| Package | Uncompressed | Purpose |
+### PDF & Document Generation (55 MB)
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
 | `tecnickcom/tcpdf` | 29 MB | PDF generation (16 MB of fonts for international characters) |
-| `phpoffice/*` | 17 MB | Excel, Word, PowerPoint file handling |
-| `dompdf/dompdf` | 14 MB | HTML to PDF conversion |
+| `phpoffice/*` (phpspreadsheet, phpword, phppresentation) | 17 MB | Excel, Word, PowerPoint file handling |
+| `dompdf/dompdf` | 13 MB | HTML to PDF conversion |
 
-### OCR Support (8 KB)
-| Package | Uncompressed | Purpose |
+### Box Packing & Shipping (3 MB)
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `thiagoalessio/tesseract_ocr` | 8 KB | PHP wrapper for Tesseract OCR (requires system Tesseract binary) |
+| `dvdoug/boxpacker` | 3.0 MB | 3D bin-packing algorithm (shipping/logistics tools) |
 
 ### Utilities (8 MB)
-| Package | Uncompressed | Purpose |
+
+| Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `thecodingmachine/safe` | 8.5 MB | Type-safe PHP wrappers (excluded in distribution) |
-| `sabberworm/php-css-parser` | 1.3 MB | CSS parsing |
+| `thecodingmachine/safe` | 6.6 MB | Type-safe PHP wrappers |
+| `markbaker/matrix` + `markbaker/complex` | 1.1 MB | Math libraries (PHPSpreadsheet dependency) |
+| `masterminds/html5` | 1.0 MB | HTML5 parser (dompdf dependency) |
+| `sabberworm/php-css-parser` | 1.3 MB | CSS parsing (dompdf dependency) |
+| `maennchen/zipstream-php` | 524 KB | Streaming ZIP creation |
 | `smalot/pdfparser` | 476 KB | PHP PDF text extraction fallback |
 | `symfony/*` | 152 KB | mbstring polyfills |
+| `psr/*` | 112 KB | PHP standard interfaces |
+| `thiagoalessio/tesseract_ocr` | 380 KB | PHP wrapper for Tesseract OCR binary |
 
-**Note**: Tests, examples, and docs are excluded from the zip via build script, significantly reducing the vendor size from source (71 MB) to distribution (56 MB).
-
----
-
-## Bundled JavaScript (bin/) - 11 MB Uncompressed
-
-Webpack-bundled files for document generation (source maps excluded from distribution):
-
-| File | Uncompressed | Purpose | Compressed in ZIP |
-|------|--------------|---------|-------------------|
-| `generate-pdf.bundle.js` | 5.0 MB | PDF generation bundle | ~1.2 MB |
-| `generate-word.bundle.js` | 3.3 MB | Word generation bundle | ~800 KB |
-| `generate-excel.bundle.js` | 2.2 MB | Excel generation bundle | ~550 KB |
-| **Total** | **11 MB** | | **~2.6 MB in zip** |
-
-**Note**: Source maps (.map files) are excluded from distribution. They were 16 MB uncompressed (~4 MB compressed) and only needed for debugging.
+**Note**: Vendor `tests/`, `docs/`, and `examples/` directories are excluded via `.distignore`, reducing from ~65 MB source to ~51 MB in distribution.
 
 ---
 
-## File Type Analysis
+## Bundled JavaScript (bin/) — 27 MB Source, ~10 MB in Distribution
 
-| File Type | Uncompressed | Percentage | Status |
-|-----------|--------------|------------|--------|
-| JavaScript (.js) | 54 MB | 43% | Included - NPM packages and bundles |
-| PHP (.php) | 11 MB | 9% | Included - Source code and libraries |
-| Fonts (.ttf, .z, .woff) | 12 MB | 9% | Included - TCPDF fonts for international PDFs |
-| Character maps (.bcmap) | 15 MB | 12% | Included - PDF.js international character support |
-| Locale files (.properties) | 8 MB | 6% | Included - PDF.js multi-language support |
-| Other (JSON, XML, etc.) | 26 MB | 21% | Included - Various data files |
-| **Total Included** | **126 MB** | **100%** | **Compresses to 39 MB** |
+Webpack-bundled files for document and video generation:
 
-### Excluded from Distribution
+| File | Source Size | In ZIP (excl. maps) | Purpose |
+|------|------------|---------------------|---------|
+| `generate-pdf.bundle.js` | 4.9 MB | 4.9 MB | PDF generation bundle (includes PDFKit) |
+| `generate-word.bundle.js` | 3.3 MB | 3.3 MB | Word generation bundle (includes docx library) |
+| `generate-excel.bundle.js` | 2.1 MB | 2.1 MB | Excel generation bundle (includes ExcelJS) |
+| `remotion-render.bundle.js` | 4 KB | 4 KB | Remotion video render entry point |
+| `sharp-process.js` | 8 KB | 8 KB | Sharp image processing helper |
+| `bin/data/` | 656 KB | 656 KB | Generation data assets |
+| Source maps (`.map`) | 15.7 MB | ❌ excluded | Development/debugging only |
 
-| File Type | Uncompressed | Compressed Savings | Status |
-|-----------|--------------|-------------------|--------|
-| JavaScript Maps (.js.map, .css.map) | 31 MB | ~12 MB | ✅ Excluded |
-| Facebook SDK | 28 MB | ~5 MB | ✅ Excluded |
-| PDF samples (.pdf) | 1.7 MB | ~2 MB | ✅ Excluded |
-| **Total Excluded** | **~61 MB** | **~19 MB** | ✅ Excluded |
+---
+
+## Node.js Microservices (node-services/) — 68 KB
+
+Lightweight Node.js service files (not npm packages) called via PHP:
+
+| Service | Purpose |
+|---------|---------|
+| `ocr-service.js` | Tesseract.js OCR orchestration |
+| `pdf-extract-service.js` | PDF text extraction via pdf-parse |
+| `canvas-service.js` | Canvas/image manipulation |
+| `image-preprocess-service.js` | Image preprocessing for OCR |
+| `ffmpeg-service.js` | FFmpeg video/audio processing |
+| `lang-detect-service.js` | Language detection via franc |
+| `mjml-service.js` | MJML email template rendering |
+| `phone-format-service.js` | Phone number formatting |
+| `prettier-service.js` | Code formatting |
+| `qrcode-service.js` | QR code generation |
+| `translate-service.js` | Translation via google-translate-api-x |
+| `yfinance-client.js` | Yahoo Finance data client |
+
+---
+
+## PHP Source Code (includes/) — 16 MB
+
+### 605+ Pro Tools across 19 Toolkit Subdirectories
+
+The `includes/tools/` directory contains 608 PHP class files across:
+
+| Subdirectory | Description |
+|-------------|-------------|
+| `ai-tool-builder/` | AI Tool Builder toolkit tools |
+| `analytics/` | Analytics and reporting tools |
+| `architect-agent/` | Architect agent orchestration tools |
+| `architectural-design/` | Architectural design and drawing tools |
+| `calendar-booking/` | Calendar and appointment booking tools |
+| `cre-debt/` | Commercial real estate debt tools |
+| `crm/` | CRM and contact management tools |
+| `dj-management/` | DJ and event management tools |
+| `document-generation/` | PDF, Word, Excel generation tools |
+| `ecommerce/` | E-commerce and Shopify tools |
+| `financial-planning/` | Financial planning and analysis tools |
+| `image-production/` | Image generation and processing tools |
+| `law-firm/` | Law firm and legal document tools |
+| `multilingual/` | Translation and multilingual tools |
+| `regulatory-registration/` | Regulatory compliance tools |
+| `site-creator-toolkit/` | Site creation and templating tools |
+| `social-media/` | Social media management tools |
+| `vector-storage/` | Vector database tools |
+| `video-production/` | Video production and editing tools |
+
+Plus 193 root-level tool class files (orchestration, scheduling, templates, etc.)
+
+### 31 Toolkit Init Files
+
+| Toolkit | Purpose |
+|---------|---------|
+| `ai-tool-builder-toolkit` | AI-powered tool creation and management |
+| `analytics-toolkit` | Analytics and data reporting |
+| `architect-agent-toolkit` | Multi-agent orchestration |
+| `architectural-design-toolkit` | Architectural drawings and specifications |
+| `calendar-booking-toolkit` | Calendar, appointments, and scheduling |
+| `chat-channels-toolkit` | Multi-channel messaging (SMS, email, Slack) |
+| `cre-debt-toolkit` | Commercial real estate debt management |
+| `crm-toolkit` | Customer relationship management |
+| `dj-management-toolkit` | DJ sets, events, and jukebox management |
+| `document-generation-toolkit` | PDF, Word, Excel document creation |
+| `eca-management` | ECA (Extra-Curricular Activity) management |
+| `ecommerce-toolkit` | WooCommerce and Shopify integration |
+| `financial-planner-toolkit` | Financial planning and budgeting |
+| `google-chat-webhook` | Google Chat integration |
+| `health-wellness-management` | Health and wellness tracking |
+| `healthcare-imaging-toolkit` | DICOM imaging and medical records |
+| `image-production-toolkit` | Image generation and processing |
+| `jetengine-cpt-research` | JetEngine CPT research integration |
+| `law-firm-toolkit` | Legal document management |
+| `mcp-apps` | Per-assistant remote MCP server connections (max 10/assistant) |
+| `media-toolkit` | Media collections and templates |
+| `multilingual-toolkit` | Multi-language translation and detection |
+| `password-vault` | Encrypted password vault with Bitwarden sync |
+| `places-management` | Location and geospatial management |
+| `project-management` | Project, task, and milestone management |
+| `quiz-management` | Quiz creation and management |
+| `regulatory-registration-toolkit` | Regulatory compliance and registration |
+| `site-creator-toolkit` | Website templates and scaffolding |
+| `skills-manager` | AI skill library management |
+| `social-media-toolkit` | Social media automation (Facebook, Twitter, LinkedIn) |
+| `video-production-toolkit` | Video production and editing |
+
+### Other Key Components
+
+- **`includes/admin/`** — Pro admin UI panels
+- **`includes/mcp-apps/`** — 5 classes for per-assistant remote MCP server support
+- **`includes/vault/`** — 8 classes for encrypted password vault with Bitwarden sync
+- **`includes/rest/`** — Pro REST API controllers
+- **`includes/migrations/`** — Database migration scripts
+- **`includes/data-stores/`** — Data store factory and implementations
+- **`includes/bundled-skills/`** — Pre-built AI skill bundles
+- **`includes/research-add/`** — Research addon integrations
+
+---
+
+## Build Directory (build/) — 1.2 MB
+
+Five TMA (Template/App) build directories — **excluded from distribution ZIP**:
+
+| Directory | Size | Purpose |
+|-----------|------|---------|
+| `build/workflow-builder/` | 256 KB | Workflow builder UI |
+| `build/tma-template-builder/` | 236 KB | Template builder UI |
+| `build/tma-woo-shop/` | 228 KB | WooCommerce shop template |
+| `build/tma-shopify-jewelry/` | 224 KB | Shopify jewelry template |
+| `build/tma-shopify-shop/` | 216 KB | Shopify shop template |
 
 ---
 
 ## Optimization Opportunities
 
-### ✅ Implemented Optimizations (v1.1.2+)
+### ✅ Implemented (since v1.1.2)
 
-The following optimizations have been implemented in the build process:
+1. **✅ JS/CSS Source Maps Excluded** (−17.4 MB uncompressed)  
+   63 `.js.map` / `.css.map` files excluded. Only needed for debugging.
 
-1. **✅ JavaScript Source Maps Excluded** (-12 MB compressed, -31 MB uncompressed)
-   - All `*.js.map` and `*.css.map` files excluded from distribution
-   - Only needed for debugging in development
-   - Excluded 860 files
-   - **Status**: ✅ Implemented in build script
+2. **✅ Facebook SDK Excluded** (−14 MB uncompressed)  
+   `assets/vendor/facebook-nodejs-business-sdk/` excluded. Tools use Graph API directly.
 
-2. **✅ Facebook SDK Excluded** (-5 MB compressed, -28 MB uncompressed)
-   - `assets/vendor/facebook-nodejs-business-sdk/` excluded from distribution
-   - Facebook tools use direct Graph API calls (no SDK needed)
-   - CDN available if ever needed in future
-   - **Status**: ✅ Implemented in build script
+3. **✅ Sample PDF Files Excluded** (−1.7 MB uncompressed)  
+   Test PDFs in vendor packages excluded.
 
-3. **✅ Sample PDF Files Excluded** (-2 MB compressed, -1.7 MB uncompressed)
-   - Test PDFs in vendor packages excluded
-   - No impact on functionality
-   - **Status**: ✅ Implemented in build script
+4. **✅ Old pdf.js Versions Removed** from `pdf-parse`  
+   Only `v2.0.550` retained (previous versions v1.9.426, v1.10.88, v1.10.100 removed).
 
-**Total Optimization Impact**: 
-- **Before**: 54 MB compressed (205 MB uncompressed)
-- **After**: 39 MB compressed (126 MB uncompressed)
-- **Savings**: 15 MB compressed (28% reduction), 79 MB uncompressed (39% reduction)
+5. **✅ Canvas Native Binaries Excluded** (was −181 MB in v1.1.1)  
+   `assets/vendor/canvas/build/` excluded. Tiny JS stub (33 KB) retained.
 
-2. **✅ Sample PDF Files Excluded** (-2 MB compressed, -1.7 MB uncompressed)
-   - PDF samples in vendor test directories removed
-   - Sample documents in phpoffice/phpword tests
-   - Affects 52 files
-   - **Status**: Implemented in .distignore
+### ❌ Not Yet Implemented
 
-3. **✅ Facebook SDK Excluded** (-5 MB compressed, -28 MB uncompressed)
-   - Facebook SDK not used by any tools
-   - Tools use Graph API directly via HTTP
-   - Can be loaded from CDN if needed in future
-   - **Status**: Implemented in .distignore
+6. **⚠️ Sharp Native Binaries** (Save ~16 MB uncompressed, ~5 MB compressed)  
+   `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` is a 16 MB Linux binary.  
+   Add to `.distignore`: `assets/vendor/sharp/node_modules/@img/`  
+   Sharp's JS wrapper still loads; users needing native acceleration run `npm install sharp`.  
+   **Complexity**: Easy — one `.distignore` line.
 
-**Total Implemented Savings**: ~17 MB compressed (59 MB uncompressed)
-**New ZIP Size**: ~37 MB (from 54 MB) = **31% reduction**
+7. **Dynamic TCPDF Font Loading** (Save ~4 MB compressed)  
+   Ship minimal font set; download additional on demand.  
+   **Complexity**: High — requires infrastructure.
 
-### What's Excluded from ZIP (Already Optimized)
+8. **Code Splitting for Document Formats** (Save ~3 MB compressed)  
+   Load PDF/Word/Excel bundle only on demand.  
+   **Complexity**: Medium.
 
-The .distignore file excludes from the zip:
-- ✅ `node_modules/` - Not included (assets/vendor is pre-bundled)
-- ✅ `tests/` - Test files excluded
-- ✅ Vendor test directories - All test/demo/example folders removed
-- ✅ Vendor documentation - README, CHANGELOG files excluded
-- ✅ CI/CD configs - .github, .travis.yml excluded
-- ✅ Dev dependencies - composer.json, package.json excluded
-- ✅ **Source maps** - All .js.map files (NEW)
-- ✅ **PDF samples** - Test PDFs in vendor (NEW)
-- ✅ **Facebook SDK** - Unused 28 MB library (NEW)
-
-**These exclusions reduce the size from 214 MB (source) to 131 MB (zip contents) to ~37 MB (compressed).**
-
-### Future Optimization Options
-
-These optimizations are NOT YET implemented but could be considered:
-
-4. **Keep Only Latest PDF.js Version** (Save ~2 MB compressed, ~8 MB uncompressed)
-   - Currently includes 4 versions: v1.9, v1.10.88, v1.10.100, v2.0.550
-   - Keep only v2.0.550 (latest)
-   - **Trade-off**: May reduce compatibility with older/complex PDFs
-   - **Complexity**: Medium - requires testing
-   - **Status**: Not implemented (user opted to keep all versions)
-
-5. **Dynamic Font Loading for TCPDF** (Save ~4 MB compressed, ~12 MB uncompressed)
-   - Ship with minimal font set (Latin + common scripts)
-   - Download additional fonts on-demand
-   - **Trade-off**: Requires server configuration, internet access
-   - **Complexity**: High - requires infrastructure
-   - **Status**: Not implemented
-
-6. **Code Splitting for Document Formats** (Save ~3 MB compressed)
-   - Separate bundles: PDF-only, Word-only, Excel-only
-   - Load format-specific bundle on demand
-   - **Trade-off**: More complex loading logic
-   - **Complexity**: Medium - requires bundle loader
-   - **Status**: Not implemented
-
-7. **Remove Puppeteer Core** (Save ~2 MB compressed, ~8 MB uncompressed)
-   - Only needed for advanced PDF rendering
-   - Most users don't need headless Chrome
-   - **Trade-off**: Removes advanced PDF rendering capabilities
-   - **Complexity**: Easy - just exclude from copy script
-   - **Status**: Not implemented (kept in distribution for immediate functionality)
+9. **Optional Puppeteer Core** (Save ~2 MB compressed)  
+   Most users don't need headless Chrome. Document it as optional.  
+   **Complexity**: Easy.
 
 ### Maximum Optimization Potential
 
 | Optimization | ZIP Reduction | New Size | Status |
 |--------------|---------------|----------|--------|
-| **Current** | - | **54 MB** | Before optimizations |
-| ✅ Remove source maps | -12 MB | 42 MB | **DONE** |
-| ✅ Remove PDF samples | -2 MB | 40 MB | **DONE** |
-| ✅ Remove Facebook SDK | -5 MB | 35 MB | **DONE** |
-| **After implemented** | **-19 MB** | **~33 MB** | **CURRENT** |
-| Keep only latest PDF.js | -2 MB | 31 MB | Not done |
-| Dynamic TCPDF fonts | -4 MB | 27 MB | Not done |
-| Code splitting | -3 MB | 24 MB | Not done |
-| Optional Puppeteer | -2 MB | 22 MB | Not done (kept for functionality) |
-
-**Current size**: ~33 MB (39% reduction from 54 MB)
-**Maximum potential**: ~22 MB (59% reduction from 54 MB) if all optimizations applied
-
-**Current size**: ~37 MB (31% reduction from 54 MB)
-**Maximum potential**: ~24 MB (55% reduction from 54 MB) if all optimizations applied
+| **Current** | — | **~39 MB** | Baseline |
+| Exclude sharp native binary | −5 MB | ~34 MB | ⚠️ Recommended |
+| Dynamic TCPDF fonts | −4 MB | ~30 MB | Not done |
+| Code splitting | −3 MB | ~27 MB | Not done |
+| Optional Puppeteer | −2 MB | ~25 MB | Not done |
+| **Maximum potential** | **−14 MB** | **~25 MB** | If all applied |
 
 ---
 
-## Why Current Size Is Acceptable
+## Why Canvas / Sharp Binaries Are Excluded or Should Be
 
-### Compression is Excellent
-```
-Source directory: 214 MB (all files)
-Zip contents:     190 MB (after .distignore exclusions)  
-Distributed zip:   54 MB (70.65% compression)
-```
+Native binary libraries are platform-specific and cannot be bundled cross-platform:
 
-The 70% compression ratio is very effective because:
-- JavaScript source maps compress ~90% (highly repetitive)
-- Font files are already compressed (.z format)
-- Text files (JS, PHP, JSON) compress well
-- Bundled code has repeated patterns
+**Canvas** (`assets/vendor/canvas/build/` — excluded ✅):
+- Was 181 MB of Linux shared libraries
+- Requires system-level installation: `apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev`
+- For PDF OCR: `npm install canvas@2` in plugin directory
 
-### Comparison to Other WordPress Plugins
+**Sharp** (`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` — ⚠️ not yet excluded):
+- `libvips-cpp.so.42` alone is 15.5 MB
+- Platform-specific; won't work on Windows/macOS
+- For image processing: `npm install sharp` in plugin directory
 
-| Plugin | Zip Size | Features | Notes |
-|--------|----------|----------|-------|
-| **NV oOS Pro** | 54 MB | 350+ AI tools, document generation, social media, e-commerce | All-in-one, offline-capable |
-| WooCommerce + Extensions | 30-80 MB | E-commerce only | Requires multiple plugins |
-| Elementor Pro | 12-15 MB | Page builder only | No document generation |
-| WPBakery + Addons | 40-60 MB | Page builder + extensions | Multiple purchases needed |
-| Jetpack | 5-10 MB | Limited features | Requires Jetpack.com account + data sharing |
-| ACF Pro | 2 MB | Custom fields only | No AI, no document generation |
-| Gravity Forms | 4 MB | Form builder only | No document generation |
+---
 
-**Key differentiators:**
-- ✅ **Complete offline functionality** - No external API dependencies
-- ✅ **Privacy-focused** - All processing local, no data sent to external services
-- ✅ **Professional document generation** - PDF, Word, Excel with full feature sets
-- ✅ **International support** - 100+ languages out of the box
-- ✅ **Battle-tested libraries** - Industry-standard packages, not custom implementations
+## Feature Density
 
-### Feature Density
+With ~39 MB, the pro plugin provides:
 
-With 54 MB, you get:
-- 350+ AI-powered tools
-- 15+ specialized toolkits
-- Complete document generation (PDF, Word, Excel)
-- Social media marketing automation
-- E-commerce integrations
-- CRM functionality
-- Password vault with encryption
-- Video production tools
-- Analytics and reporting
-- Multi-language support
-
-**Per-tool size**: 54 MB ÷ 350 tools = **154 KB per tool**
+- **605+ AI-powered pro tools** (across 19 toolkit subdirectories + root tools)
+- **31 specialized toolkits** (was ~15 in v1.1.x)
+- Complete document generation (PDF, Word, Excel, HTML→PDF)
+- Video generation (Remotion-based)
+- Image processing (Sharp, canvas, image preprocessing)
+- Social media automation (Facebook, Twitter/X, LinkedIn)
+- E-commerce integrations (WooCommerce, Shopify, Stripe)
+- CRM + project management
+- Healthcare imaging (DICOM)
+- Password vault (encrypted, Bitwarden sync)
+- MCP Apps (per-assistant remote MCP server connections)
+- 12 Node.js microservices
+- Multi-language support (100+ languages)
+- **~64 KB per tool average** (~39 MB ÷ 605 tools)
 
 ---
 
 ## Distribution Size Over Time
 
-| Version | Zip Size | Change | Notes |
+| Version | ZIP Size | Change | Notes |
 |---------|----------|--------|-------|
-| 1.0.0 | ~35 MB | - | Initial release |
+| 1.0.0 | ~35 MB | — | Initial release |
 | 1.1.0 | ~48 MB | +13 MB | Added Facebook SDK, video tools |
-| 1.1.1 | **54 MB** | +6 MB | Added pdf-parse (30 MB uncompressed, 6 MB compressed) |
-
-**Recent increase explained:**
-- Added `pdf-parse` library for PDF text extraction (primary contributor)
-- Includes 4 versions of PDF.js with international character maps
-- Enables zero-configuration PDF extraction (no pdftotext binary required)
-- Trade-off: Size vs. convenience and reliability
+| 1.1.1 | ~54 MB | +6 MB | Added pdf-parse (30 MB uncompressed) |
+| 1.1.2 | ~33 MB | −21 MB | Fixed: excluded canvas binaries, old pdf.js, source maps, Facebook SDK |
+| **Current** | **~39 MB** | +6 MB | Added sharp, remotion, pdfjs-dist standalone, 31 toolkits (up from 15+), 605+ tools |
 
 ---
 
 ## Why These Dependencies?
 
 ### Document Generation Stack
-The pro plugin provides comprehensive document generation capabilities:
-- **PDF**: Create, extract text from, merge, watermark PDFs
-- **Word**: Generate .docx files with tables, images, styling
-- **Excel**: Create spreadsheets with formulas, charts, validation
-- **HTML to PDF**: Convert web content to printable documents
 
-This requires multiple libraries because:
-1. **pdf-parse** uses Mozilla's PDF.js (battle-tested, supports complex PDFs)
-2. **pdfkit** for creating PDFs from scratch (vector graphics support)
-3. **TCPDF** provides PHP fallback with international font support
-4. Multiple versions of pdfjs ensure compatibility with various PDF standards
+- **pdf-parse** (v2.0.550 only): Mozilla's PDF.js for complex PDF text extraction
+- **pdfjs-dist**: Standalone Mozilla PDF.js for rendering PDFs to images (OCR pipeline)
+- **pdfkit**: Create PDFs from scratch with vector graphics
+- **TCPDF**: PHP fallback with complete international font support
+- **dompdf**: HTML → PDF conversion
 
-### Social Media Integration
-The plugin integrates with major platforms for marketing automation:
-- Facebook/Instagram advertising and content management
-- Twitter/X post scheduling and analytics
-- LinkedIn profile and company page management
+### Image & Video Processing
+
+- **sharp**: High-performance image resizing, format conversion, background removal integration
+- **remotion/bin/remotion-render.bundle.js**: Programmatic video generation (React-based)
+- **canvas**: HTML5 canvas in Node.js for image manipulation and OCR preprocessing
+- **gif-encoder**: GIF generation
+
+### International Support
+
+- 100 font files (TCPDF) for 100+ languages
+- `cid0*.php` fonts for CJK (Chinese/Japanese/Korean)
+- `i18next` for JavaScript internationalization
 
 ### Why So Large?
-- **International Support**: Fonts and character maps for 100+ languages
-- **Browser Compatibility**: Pre-bundled dependencies work without npm install
-- **PHP Fallbacks**: Pure PHP alternatives when Node.js unavailable
-- **Complete Solution**: No external dependencies or API calls for core features
 
----
-
-## Distribution Size
-
-When distributed as a plugin zip file, compression provides ~4:1 ratio:
-
-```
-Uncompressed: 214 MB
-Compressed:   ~53 MB  (75% reduction)
-```
-
-Compression is very effective because:
-- JavaScript source maps compress extremely well (90% reduction)
-- Font files are already compressed (.z format)
-- Repeated code patterns in bundled JavaScript
-- Text-based files (PHP, JS, JSON) compress well
-
----
-
-## Comparison to Other Plugins
-
-For context, other popular WordPress plugins with similar functionality:
-
-| Plugin | Size | Features |
-|--------|------|----------|
-| **NV oOS Pro** | 53 MB | Document generation, social media, AI tools, e-commerce |
-| WooCommerce + Extensions | 30-100 MB | E-commerce only |
-| Elementor Pro | 15 MB | Page builder only (no document generation) |
-| WPBakery + Addons | 40-80 MB | Page builder + addons |
-| Jetpack | 5-15 MB | Limited features, requires external services |
-
-The pro plugin is larger because it:
-1. Bundles everything (no external dependencies)
-2. Works offline (all processing local)
-3. Provides 350+ AI tools across 15+ toolkits
-4. Includes complete document generation stack
-5. Supports international languages out of the box
+1. **International Support**: CJK fonts and character maps are inherently large
+2. **Browser Compatibility**: Pre-bundled dependencies — zero configuration after install
+3. **PHP Fallbacks**: Pure PHP alternatives when Node.js unavailable
+4. **Complete Solution**: No external API calls for core document generation features
+5. **Feature Breadth**: 31 toolkits covering healthcare, legal, real estate, social media, e-commerce, video, imaging
 
 ---
 
 ## Conclusion
 
-### The ~37 MB ZIP File Contains (After Optimizations):
+### The ~39 MB ZIP Contains (After Optimizations):
 
 **Top Contributors (Uncompressed in ZIP):**
-1. **JavaScript Libraries**: 48 MB (36%) - NPM packages (pdf-parse, ExcelJS, pdfkit, etc.)
-2. **PHP Code & Libraries**: 36 MB (27%) - Source + TCPDF, PHPOffice, Dompdf  
-3. **Fonts**: 16 MB (12%) - International character support for PDFs
-4. **PDF.js Workers**: 12 MB (9%) - 4 versions for compatibility
-5. **Document Bundles**: 10 MB (8%) - PDF/Word/Excel generation (without maps)
-6. **Other**: 9 MB (8%) - Config files, locales, character maps
+1. **JavaScript Libraries**: ~48 MB — NPM packages (sharp, pdfjs-dist, ExcelJS, pdfkit, remotion, etc.)
+2. **PHP Vendor**: ~51 MB — TCPDF, PHPOffice, dompdf, thecodingmachine/safe, boxpacker
+3. **PHP Source Code**: ~16 MB — 605+ tools, 31 toolkits, admin, MCP Apps, Vault
+4. **Fonts**: ~17 MB — TCPDF fonts for international PDF support
+5. **Document Bundles**: ~10 MB — PDF/Word/Excel/Remotion (without source maps)
 
 **What's Excluded (Not in ZIP):**
-- ❌ JavaScript source maps (31 MB) - Development only
-- ❌ Sample PDF files (1.7 MB) - Test files
-- ❌ Facebook SDK (28 MB) - Not used
-- ❌ Vendor tests/docs - Development files
+- ❌ JS/CSS source maps (17.4 MB) — Development only
+- ❌ Facebook SDK (14 MB) — Not used
+- ❌ Vendor tests/docs (~14 MB) — Development files
+- ❌ Build artifacts (1.1 MB) — TMA template builds
 
-**Compression Results:**
-- Source: 214 MB (all files)
-- After exclusions: 131 MB
-- Compressed ZIP: **~37 MB**
-- Compression ratio: 72% reduction (excellent)
+### Pending Quick Win:
 
-### Size is Justified Because:
-
-1. ✅ **Zero External Dependencies**
-   - Everything bundled and pre-configured
-   - Works immediately after installation
-   - No npm install or composer install needed
-
-2. ✅ **Complete Offline Functionality**
-   - All processing happens locally
-   - No API calls to external services
-   - No subscription services required
-
-3. ✅ **Privacy-Focused Architecture**
-   - User data never leaves their server
-   - No analytics or tracking
-   - GDPR/CCPA compliant by design
-
-4. ✅ **Professional-Grade Tools**
-   - Battle-tested libraries (TCPDF, PHPOffice, PDF.js)
-   - Industry-standard implementations
-   - Multiple fallback options for reliability
-
-5. ✅ **International Support**
-   - 100+ languages supported out of the box
-   - Complete character maps for non-Latin scripts
-   - No additional downloads needed
-
-6. ✅ **Feature Density**
-   - 350+ AI-powered tools
-   - 15+ specialized toolkits
-   - Document generation (PDF, Word, Excel)
-   - Social media automation
-   - E-commerce integrations
-   - **106 KB per tool average** (37 MB ÷ 350 tools)
-
-### Optimization Summary
-
-**Implemented (v1.1.2+):**
-- ✅ Source maps excluded: -12 MB
-- ✅ PDF samples excluded: -2 MB
-- ✅ Facebook SDK excluded: -5 MB
-- **Total savings**: -19 MB (31% reduction)
-- **Current size**: ~37 MB
-
-**Future Options Available:**
-- Keep only latest PDF.js: -2 MB → 35 MB
-- Dynamic fonts: -4 MB → 31 MB
-- Code splitting: -3 MB → 28 MB
-- Remove Puppeteer: -2 MB → 26 MB
-- **Maximum potential**: ~24 MB (55% total reduction)
-
-### Current Approach Prioritizes:
-
-1. **Reliability** - Multiple PDF.js versions ensure compatibility
-2. **Convenience** - Zero configuration after installation
-3. **Privacy** - No data sent to external services
-4. **Compatibility** - Works in wide range of environments
-5. **Features** - Complete feature set without compromise
-
-**The ~37 MB size delivers professional enterprise functionality with zero external dependencies and complete privacy protection, while excluding only development/debugging files.**
+Adding one line to `.distignore` to exclude the Sharp Linux native binary (`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/`) would reduce the ZIP by approximately **5 MB** (16 MB uncompressed → ~5 MB compressed).
 
 ---
 
 ## Quick Reference
 
 ```
-Pro Plugin Distribution Size: ~37 MB (optimized from 54 MB)
-├── JavaScript: 48 MB → 15 MB compressed (36% of uncompressed)
-├── PHP & Fonts: 52 MB → 15 MB compressed (40% of uncompressed)
-├── Bundles (no maps): 10 MB → 3 MB compressed (8% of uncompressed)
-├── Source Code: 8.4 MB → 2 MB compressed (6% of uncompressed)
-└── Other: 12 MB → 2 MB compressed (10% of uncompressed)
+Pro Plugin Distribution Size: ~39 MB
+Source Directory (apparent): 176 MB
+├── assets/vendor/: 66 MB → ~20 MB compressed (JS libraries)
+│   ├── sharp/: 17 MB (⚠️ includes 16 MB Linux native binary)
+│   ├── pdfjs-dist/: 7.0 MB
+│   ├── exceljs/: 7.3 MB
+│   ├── puppeteer-core+@puppeteer: 6.1 MB
+│   ├── pdfkit/: 3.9 MB
+│   ├── pdf-lib/: 3.9 MB
+│   ├── @remotion+remotion: 3.3 MB
+│   └── 40+ smaller packages
+├── vendor/: 65 MB → ~16 MB compressed (PHP composer)
+│   ├── tecnickcom/tcpdf: 29 MB
+│   ├── phpoffice/*: 17 MB
+│   ├── dompdf/: 13 MB
+│   └── 10+ smaller packages
+├── includes/: 16 MB → ~4 MB compressed (PHP source)
+│   └── 605+ tools, 31 toolkits
+├── bin/: 27 MB source → 10 MB in ZIP (no source maps)
+│   └── generate-pdf + generate-word + generate-excel + remotion
+├── docs/: 908 KB
+├── node-services/: 68 KB (12 microservices)
+└── scripts/: 60 KB
 
-Excluded from ZIP:
-├── Source maps: 31 MB (not needed in production)
-├── Facebook SDK: 28 MB (not used by tools)
-└── PDF samples: 1.7 MB (test files)
+Excluded from ZIP (~47 MB uncompressed):
+├── JS/CSS source maps: 17.4 MB
+├── Facebook SDK: 14 MB
+├── Vendor tests/docs: ~14 MB
+└── build/ dir: 1.1 MB
 
-Further optimization potential: ~37 MB → 24-28 MB (if all options applied)
+Tools: 605+ (across 31 toolkits)
+Node microservices: 12
 ```
 
-**Last Updated**: February 14, 2026  
-**Plugin Version**: 1.1.1 (with OCR support)  
-**Analysis Date**: Based on mcp-ai-wpoos-pro with .distignore optimizations  
-**Size**: 37 MB (optimized from 54 MB, 31% reduction)  
-**New Features**: OCR support for scanned PDFs (Tesseract.js, PDF.js, OpenAI/Gemini Vision APIs)
-
+**Last Updated**: April 15, 2026  
+**Plugin Version**: 1.0.0 (file) / ~v1.2 equivalent (feature set)  
+**Analysis Date**: Based on live addons/pro directory with .distignore applied  
+**Source Size**: ~176 MB apparent → ~39 MB estimated distribution ZIP
