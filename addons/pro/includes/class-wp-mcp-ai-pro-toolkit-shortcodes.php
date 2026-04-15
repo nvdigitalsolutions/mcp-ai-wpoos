@@ -1821,6 +1821,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 			'mcpVehicleCleaningEstimator',
 			array(
 				'restUrl'        => esc_url_raw( trailingslashit( rest_url( 'mcp-ai/v1' ) ) ),
+				'chatEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 				'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'assistantId'    => $assistant_id > 0 ? (string) $assistant_id : '',

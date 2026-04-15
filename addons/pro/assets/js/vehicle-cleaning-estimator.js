@@ -632,14 +632,17 @@
 				messageContent = messageText;
 			}
 
-			// Build request body using the /chat endpoint's expected schema.
+			// Build request body using the /chat-client endpoint's expected schema.
 			// `messages` is required (array of {role, content} objects).
 			var body = {
 				messages    : [ { role: 'user', content: messageContent } ],
 				assistant_id: cfg().assistantId || '',
 			};
 
-			var chatUrl = ( cfg().restUrl || '' ).replace( /\/$/, '' ) + '/chat';
+			// Use the pre-built chatEndpoint (resolves to /chat-client, matching all
+			// other browser-side widgets such as the chat bubble and professional selector).
+			// Fall back to constructing from restUrl for backward compatibility.
+			var chatUrl = cfg().chatEndpoint || ( cfg().restUrl || '' ).replace( /\/$/, '' ) + '/chat-client';
 			var nonce   = cfg().nonce || '';
 
 			this._setLoading( true );
@@ -648,6 +651,7 @@
 			var xhr = new XMLHttpRequest();
 			xhr.open( 'POST', chatUrl, true );
 			xhr.setRequestHeader( 'Content-Type', 'application/json' );
+			xhr.setRequestHeader( 'Accept', 'application/json' );
 			xhr.setRequestHeader( 'X-WP-Nonce', nonce );
 
 			xhr.onload = function () {
