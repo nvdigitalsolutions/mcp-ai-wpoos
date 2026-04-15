@@ -465,8 +465,8 @@ This section documents every automated review email received from the WordPress.
 | Metric | Count |
 |--------|-------|
 | **Total review emails received** | 4 (March 2, March 24, April 2, April 9) |
-| **Total issues flagged by reviewers** | 26 |
-| **Issues resolved** | 26 (100%) |
+| **Total issues flagged by reviewers** | 25 |
+| **Issues resolved** | 25 (100%) |
 | **Proactive fixes (not flagged)** | 40+ |
 | **Self-audit passes completed** | 5 (including this document) |
 | **Outstanding issues** | **0** |
