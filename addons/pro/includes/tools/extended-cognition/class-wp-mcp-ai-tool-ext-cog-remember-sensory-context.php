@@ -7,7 +7,7 @@
  * "Otto's notebook". The stored snapshot can be retrieved by the AI in
  * future turns to maintain continuity of sensory context across sessions.
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -20,14 +20,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
+class WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context {
 
 	/**
 	 * WordPress option key prefix for stored sensory memories.
 	 *
 	 * @var string
 	 */
-	const MEMORY_OPTION_PREFIX = 'nvoos_ext_cog_memory_';
+	const MEMORY_OPTION_PREFIX = 'wp_mcp_ai_ext_cog_memory_';
 
 	/**
 	 * Get tool slug.
@@ -101,7 +101,7 @@ class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! $this->current_user_can_use_sensors( $context ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'mcp-ai-wpoos' ) );
 		}
 
 		$label        = isset( $arguments['label'] ) ? sanitize_text_field( $arguments['label'] ) : '';
@@ -116,11 +116,11 @@ class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
 		$ttl_days     = isset( $arguments['ttl_days'] ) ? max( 1, min( 365, absint( $arguments['ttl_days'] ) ) ) : 30;
 
 		if ( empty( $label ) ) {
-			return new WP_Error( 'missing_label', __( 'A label is required to store a sensory memory.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'missing_label', __( 'A label is required to store a sensory memory.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Sanitize sensory_data: remove raw image data for storage if too large.
-		$settings       = NV_oOS_Ext_Cognition::get_settings();
+		$settings       = wp_mcp_ai_ext_cog_get_settings();
 		$max_size_bytes = absint( $settings['max_capture_size_kb'] ) * 1024;
 		$stored_data    = array();
 
@@ -220,7 +220,7 @@ class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
 			'stored_via' => $stored_via_core ? 'core_memory_system' : 'ext_cog_options',
 			'message'    => sprintf(
 				/* translators: %s: memory label */
-				__( 'Sensory memory "%s" stored successfully. Use this memory_id to retrieve or reference this context in future turns.', 'nvoos-ext-cognition' ),
+				__( 'Sensory memory "%s" stored successfully. Use this memory_id to retrieve or reference this context in future turns.', 'mcp-ai-wpoos' ),
 				$label
 			),
 		);
@@ -237,7 +237,7 @@ class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
 			return true;
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
 			return true;
 		}

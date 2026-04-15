@@ -13,7 +13,7 @@
  * 3. GET  /mcp-ai/v1/ext-cog/sensor-permissions
  *    Returns current per-sensor enabled state (informational).
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cognition_REST {
+class WP_MCP_AI_Ext_Cog_REST {
 
 	/**
 	 * REST namespace.
@@ -140,12 +140,12 @@ class NV_oOS_Ext_Cognition_REST {
 		}
 
 		// Guest access: check if enabled in settings.
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) ) {
 			return true;
 		}
 
-		return new WP_Error( 'rest_forbidden', __( 'Authentication required.', 'nvoos-ext-cognition' ), array( 'status' => 401 ) );
+		return new WP_Error( 'rest_forbidden', __( 'Authentication required.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 	}
 
 	/**
@@ -161,19 +161,19 @@ class NV_oOS_Ext_Cognition_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function get_sensor_queue( $request ) {
-		if ( ! nvoos_ext_cog_is_enabled() ) {
-			return new WP_Error( 'addon_disabled', __( 'Extended Cognition Toolkit is disabled.', 'nvoos-ext-cognition' ), array( 'status' => 503 ) );
+		if ( ! wp_mcp_ai_ext_cog_is_enabled() ) {
+			return new WP_Error( 'addon_disabled', __( 'Extended Cognition Toolkit is disabled.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
 		}
 
 		$session_id = $request->get_param( 'session_id' );
 		$user_id    = get_current_user_id();
-		$post_id    = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+		$post_id    = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
 
-		$requests = NV_oOS_Ext_Cognition_Sensor_Session::pop_requests( $post_id );
+		$requests = WP_MCP_AI_Ext_Cog_Sensor_Session::pop_requests( $post_id );
 
 		return rest_ensure_response(
 			array(
@@ -197,8 +197,8 @@ class NV_oOS_Ext_Cognition_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function receive_sensor_data( $request ) {
-		if ( ! nvoos_ext_cog_is_enabled() ) {
-			return new WP_Error( 'addon_disabled', __( 'Extended Cognition Toolkit is disabled.', 'nvoos-ext-cognition' ), array( 'status' => 503 ) );
+		if ( ! wp_mcp_ai_ext_cog_is_enabled() ) {
+			return new WP_Error( 'addon_disabled', __( 'Extended Cognition Toolkit is disabled.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
 		}
 
 		$session_id  = $request->get_param( 'session_id' );
@@ -207,17 +207,17 @@ class NV_oOS_Ext_Cognition_REST {
 		$data        = $request->get_param( 'data' );
 
 		if ( ! is_array( $data ) ) {
-			return new WP_Error( 'invalid_data', __( 'Data must be an object.', 'nvoos-ext-cognition' ), array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_data', __( 'Data must be an object.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Enforce payload size limit.
-		$settings       = NV_oOS_Ext_Cognition::get_settings();
+		$settings       = wp_mcp_ai_ext_cog_get_settings();
 		$max_size_bytes = absint( $settings['max_capture_size_kb'] ) * 1024;
 		$body           = $request->get_body();
 		if ( strlen( $body ) > self::MAX_PAYLOAD_BYTES ) {
 			return new WP_Error(
 				'payload_too_large',
-				__( 'Sensor data payload exceeds the maximum allowed size.', 'nvoos-ext-cognition' ),
+				__( 'Sensor data payload exceeds the maximum allowed size.', 'mcp-ai-wpoos' ),
 				array( 'status' => 413 )
 			);
 		}
@@ -225,12 +225,12 @@ class NV_oOS_Ext_Cognition_REST {
 		// Validate base64 image data if present.
 		if ( isset( $data['image_base64'] ) ) {
 			if ( ! self::validate_base64_image( $data['image_base64'], $max_size_bytes ) ) {
-				return new WP_Error( 'invalid_image', __( 'Invalid or oversized image data.', 'nvoos-ext-cognition' ), array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_image', __( 'Invalid or oversized image data.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 		}
 
 		$user_id = get_current_user_id();
-		$post_id = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+		$post_id = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
@@ -240,7 +240,7 @@ class NV_oOS_Ext_Cognition_REST {
 		$clean_data                = self::sanitize_sensor_data( $data, $sensor_type );
 		$clean_data['sensor_type'] = $sensor_type;
 
-		NV_oOS_Ext_Cognition_Sensor_Session::store_data( $post_id, $request_id, $clean_data );
+		WP_MCP_AI_Ext_Cog_Sensor_Session::store_data( $post_id, $request_id, $clean_data );
 
 		// Optionally save to media library if store=true was requested.
 		$attachment_id = null;
@@ -249,7 +249,7 @@ class NV_oOS_Ext_Cognition_REST {
 			if ( ! is_wp_error( $attachment_id ) ) {
 				// Update stored record with attachment ID.
 				$clean_data['attachment_id'] = $attachment_id;
-				NV_oOS_Ext_Cognition_Sensor_Session::store_data( $post_id, $request_id, $clean_data );
+				WP_MCP_AI_Ext_Cog_Sensor_Session::store_data( $post_id, $request_id, $clean_data );
 			}
 		}
 
@@ -275,7 +275,7 @@ class NV_oOS_Ext_Cognition_REST {
 	 * @return WP_REST_Response
 	 */
 	public static function get_sensor_permissions( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required WordPress REST API callback signature.
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 
 		return rest_ensure_response(
 			array(
@@ -421,7 +421,7 @@ class NV_oOS_Ext_Cognition_REST {
 	 */
 	private static function save_image_to_media( $base64, $sensor_type, $session_id ) {
 		if ( ! function_exists( 'wp_upload_dir' ) ) {
-			return new WP_Error( 'upload_unavailable', __( 'Media upload not available.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'upload_unavailable', __( 'Media upload not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Strip data URI prefix.
@@ -440,7 +440,7 @@ class NV_oOS_Ext_Cognition_REST {
 
 		$decoded = base64_decode( $raw, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		if ( false === $decoded ) {
-			return new WP_Error( 'decode_failed', __( 'Failed to decode image data.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'decode_failed', __( 'Failed to decode image data.', 'mcp-ai-wpoos' ) );
 		}
 
 		$upload_dir = wp_upload_dir();
@@ -451,7 +451,7 @@ class NV_oOS_Ext_Cognition_REST {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		if ( false === file_put_contents( $filepath, $decoded ) ) {
-			return new WP_Error( 'write_failed', __( 'Failed to write image file.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'write_failed', __( 'Failed to write image file.', 'mcp-ai-wpoos' ) );
 		}
 
 		$attachment = array(

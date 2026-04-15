@@ -7,7 +7,7 @@
  * DeviceMotionEvent (acceleration, rotation rate) to help the AI understand
  * the user's physical context — standing, lying down, walking, device tilt, etc.
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
+class WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context {
 
 	/**
 	 * Get tool slug.
@@ -78,13 +78,13 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! $this->current_user_can_use_sensors( $context ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'mcp-ai-wpoos' ) );
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 
 		if ( empty( $settings['sensor_motion'] ) ) {
-			return new WP_Error( 'sensor_disabled', __( 'The motion sensor is disabled in Extended Cognition settings.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'sensor_disabled', __( 'The motion sensor is disabled in Extended Cognition settings.', 'mcp-ai-wpoos' ) );
 		}
 
 		$session_id   = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
@@ -92,23 +92,23 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 		$timeout_ms   = isset( $arguments['timeout_ms'] ) ? absint( $arguments['timeout_ms'] ) : 5000;
 
 		if ( empty( $session_id ) ) {
-			return new WP_Error( 'missing_session', __( 'A session_id is required to route sensor requests to the browser.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'missing_session', __( 'A session_id is required to route sensor requests to the browser.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = get_current_user_id();
-		$post_id = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+		$post_id = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
 
 		$rate_limit = absint( $settings['rate_limit'] );
-		if ( ! NV_oOS_Ext_Cognition_Sensor_Session::check_rate_limit( $post_id, 'motion', $rate_limit ) ) {
-			return new WP_Error( 'rate_limited', __( 'Motion sensor rate limit exceeded. Please wait before requesting another reading.', 'nvoos-ext-cognition' ) );
+		if ( ! WP_MCP_AI_Ext_Cog_Sensor_Session::check_rate_limit( $post_id, 'motion', $rate_limit ) ) {
+			return new WP_Error( 'rate_limited', __( 'Motion sensor rate limit exceeded. Please wait before requesting another reading.', 'mcp-ai-wpoos' ) );
 		}
 
 		$request_id = wp_generate_uuid4();
-		NV_oOS_Ext_Cognition_Sensor_Session::push_request(
+		WP_MCP_AI_Ext_Cog_Sensor_Session::push_request(
 			$post_id,
 			array(
 				'type'         => 'get_motion_context',
@@ -123,7 +123,7 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 		$captured   = null;
 
 		while ( ( time() - $poll_start ) < $timeout_s ) {
-			$data = NV_oOS_Ext_Cognition_Sensor_Session::consume_data( $post_id, $request_id );
+			$data = WP_MCP_AI_Ext_Cog_Sensor_Session::consume_data( $post_id, $request_id );
 			if ( null !== $data ) {
 				$captured = $data;
 				break;
@@ -136,7 +136,7 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 				'capture_timeout',
 				sprintf(
 					/* translators: %d: timeout in seconds */
-					__( 'Motion context request timed out after %d seconds. Device motion events may not be available (desktop browsers or permission not granted).', 'nvoos-ext-cognition' ),
+					__( 'Motion context request timed out after %d seconds. Device motion events may not be available (desktop browsers or permission not granted).', 'mcp-ai-wpoos' ),
 					$timeout_s
 				)
 			);
@@ -165,7 +165,7 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 				'gamma' => isset( $captured['rot_gamma'] ) ? floatval( $captured['rot_gamma'] ) : null,
 			),
 			'activity_inference' => isset( $captured['activity_inference'] ) ? sanitize_text_field( $captured['activity_inference'] ) : '',
-			'message'            => __( 'Device motion context captured. alpha/beta/gamma are orientation angles in degrees. acceleration is in m/s².', 'nvoos-ext-cognition' ),
+			'message'            => __( 'Device motion context captured. alpha/beta/gamma are orientation angles in degrees. acceleration is in m/s².', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -180,7 +180,7 @@ class NV_oOS_Ext_Cog_Tool_Get_Motion_Context {
 			return true;
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
 			return true;
 		}

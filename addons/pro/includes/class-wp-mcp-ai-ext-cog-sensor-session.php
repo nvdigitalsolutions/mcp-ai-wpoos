@@ -5,7 +5,7 @@
  * Registers the `ext_cog_session` CPT for tracking active sensor sessions,
  * storing pending sensor requests, and persisting captured sensory snapshots.
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cognition_Sensor_Session {
+class WP_MCP_AI_Ext_Cog_Sensor_Session {
 
 	/**
 	 * Post type slug.
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'ext_cog_session';
+	const POST_TYPE = 'wp_mcp_ai_cog_session';
 
 	/**
 	 * Meta key for pending sensor requests queue.
@@ -68,16 +68,16 @@ class NV_oOS_Ext_Cognition_Sensor_Session {
 	 */
 	public static function register_post_type() {
 		$labels = array(
-			'name'               => _x( 'Sensor Sessions', 'post type general name', 'nvoos-ext-cognition' ),
-			'singular_name'      => _x( 'Sensor Session', 'post type singular name', 'nvoos-ext-cognition' ),
-			'menu_name'          => _x( 'Sensor Sessions', 'admin menu', 'nvoos-ext-cognition' ),
-			'add_new'            => __( 'New Session', 'nvoos-ext-cognition' ),
-			'add_new_item'       => __( 'Start New Session', 'nvoos-ext-cognition' ),
-			'edit_item'          => __( 'Edit Session', 'nvoos-ext-cognition' ),
-			'view_item'          => __( 'View Session', 'nvoos-ext-cognition' ),
-			'search_items'       => __( 'Search Sessions', 'nvoos-ext-cognition' ),
-			'not_found'          => __( 'No sessions found.', 'nvoos-ext-cognition' ),
-			'not_found_in_trash' => __( 'No sessions found in Trash.', 'nvoos-ext-cognition' ),
+			'name'               => _x( 'Sensor Sessions', 'post type general name', 'mcp-ai-wpoos' ),
+			'singular_name'      => _x( 'Sensor Session', 'post type singular name', 'mcp-ai-wpoos' ),
+			'menu_name'          => _x( 'Sensor Sessions', 'admin menu', 'mcp-ai-wpoos' ),
+			'add_new'            => __( 'New Session', 'mcp-ai-wpoos' ),
+			'add_new_item'       => __( 'Start New Session', 'mcp-ai-wpoos' ),
+			'edit_item'          => __( 'Edit Session', 'mcp-ai-wpoos' ),
+			'view_item'          => __( 'View Session', 'mcp-ai-wpoos' ),
+			'search_items'       => __( 'Search Sessions', 'mcp-ai-wpoos' ),
+			'not_found'          => __( 'No sessions found.', 'mcp-ai-wpoos' ),
+			'not_found_in_trash' => __( 'No sessions found in Trash.', 'mcp-ai-wpoos' ),
 		);
 
 		$args = array(
@@ -269,5 +269,4 @@ class NV_oOS_Ext_Cognition_Sensor_Session {
 	}
 }
 
-// Initialize CPT.
-NV_oOS_Ext_Cognition_Sensor_Session::init();
+WP_MCP_AI_Ext_Cog_Sensor_Session::init();

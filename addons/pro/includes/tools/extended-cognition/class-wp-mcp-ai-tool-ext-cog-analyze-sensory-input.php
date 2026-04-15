@@ -7,7 +7,7 @@
  * This is the highest-level tool in the extended cognition toolkit — it
  * embodies the complete active sensing loop: request → capture → analyse → return.
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
+class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input {
 
 	/**
 	 * Get tool slug.
@@ -92,11 +92,11 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! is_ssl() && ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-			return new WP_Error( 'https_required', __( 'Sensory analysis requires a secure (HTTPS) connection.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'https_required', __( 'Sensory analysis requires a secure (HTTPS) connection.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! $this->current_user_can_use_sensors( $context ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'mcp-ai-wpoos' ) );
 		}
 
 		$session_id      = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
@@ -105,11 +105,11 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 		$timeout_ms      = isset( $arguments['timeout_ms'] ) ? absint( $arguments['timeout_ms'] ) : 20000;
 
 		if ( empty( $session_id ) ) {
-			return new WP_Error( 'missing_session', __( 'A session_id is required.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'missing_session', __( 'A session_id is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $sensors ) ) {
-			return new WP_Error( 'missing_sensors', __( 'At least one sensor must be specified.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'missing_sensors', __( 'At least one sensor must be specified.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate sensors.
@@ -123,9 +123,9 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 			)
 		);
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		$user_id  = get_current_user_id();
-		$post_id  = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+		$post_id  = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
@@ -140,14 +140,14 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 			}
 
 			$rate_limit = absint( $settings['rate_limit'] );
-			if ( ! NV_oOS_Ext_Cognition_Sensor_Session::check_rate_limit( $post_id, $sensor, $rate_limit ) ) {
+			if ( ! WP_MCP_AI_Ext_Cog_Sensor_Session::check_rate_limit( $post_id, $sensor, $rate_limit ) ) {
 				continue;
 			}
 
 			$request_id             = wp_generate_uuid4();
 			$request_map[ $sensor ] = $request_id;
 
-			NV_oOS_Ext_Cognition_Sensor_Session::push_request(
+			WP_MCP_AI_Ext_Cog_Sensor_Session::push_request(
 				$post_id,
 				array(
 					'type'             => 'capture_' . ( 'camera' === $sensor ? 'visual' : $sensor ),
@@ -162,7 +162,7 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 		}
 
 		if ( empty( $request_map ) ) {
-			return new WP_Error( 'no_sensors_available', __( 'None of the requested sensors are enabled or available.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'no_sensors_available', __( 'None of the requested sensors are enabled or available.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Poll until all sensors respond or timeout.
@@ -177,7 +177,7 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 				if ( isset( $results[ $sensor ] ) ) {
 					continue;
 				}
-				$data = NV_oOS_Ext_Cognition_Sensor_Session::consume_data( $post_id, $request_id );
+				$data = WP_MCP_AI_Ext_Cog_Sensor_Session::consume_data( $post_id, $request_id );
 				if ( null !== $data ) {
 					$results[ $sensor ] = $data;
 					++$results_count;
@@ -234,11 +234,11 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 		if ( $analysis_prompt ) {
 			$output['message'] = sprintf(
 				/* translators: %s: analysis prompt */
-				__( 'Multi-modal sensory capture complete. Apply the following analysis: %s', 'nvoos-ext-cognition' ),
+				__( 'Multi-modal sensory capture complete. Apply the following analysis: %s', 'mcp-ai-wpoos' ),
 				$analysis_prompt
 			);
 		} else {
-			$output['message'] = __( 'Multi-modal sensory capture complete. Integrate the captured data to build comprehensive situational awareness.', 'nvoos-ext-cognition' );
+			$output['message'] = __( 'Multi-modal sensory capture complete. Integrate the captured data to build comprehensive situational awareness.', 'mcp-ai-wpoos' );
 		}
 
 		return $output;
@@ -255,7 +255,7 @@ class NV_oOS_Ext_Cog_Tool_Analyze_Sensory_Input {
 			return true;
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
 			return true;
 		}

@@ -7,7 +7,7 @@
  * this tool queries the stored permission snapshot and can request
  * the browser to (re)prompt for specific sensors.
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
+class WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions {
 
 	/**
 	 * Get tool slug.
@@ -79,15 +79,15 @@ class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Security: enforce HTTPS outside debug mode.
 		if ( ! is_ssl() && ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-			return new WP_Error( 'https_required', __( 'Extended Cognition sensors require a secure (HTTPS) connection.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'https_required', __( 'Extended Cognition sensors require a secure (HTTPS) connection.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Security: capability check.
 		if ( ! $this->current_user_can_use_sensors( $context ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'mcp-ai-wpoos' ) );
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		$action   = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'check';
 		$sensors  = isset( $arguments['sensors'] ) && is_array( $arguments['sensors'] )
 			? array_map( 'sanitize_text_field', $arguments['sensors'] )
@@ -106,18 +106,18 @@ class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
 			$session_id = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
 
 			if ( empty( $session_id ) ) {
-				return new WP_Error( 'missing_session', __( 'A session_id is required to route permission requests to the browser.', 'nvoos-ext-cognition' ) );
+				return new WP_Error( 'missing_session', __( 'A session_id is required to route permission requests to the browser.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Push a permission-request event to the browser via the sensor queue.
 			$user_id = get_current_user_id();
-			$post_id = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+			$post_id = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 			if ( is_wp_error( $post_id ) ) {
 				return $post_id;
 			}
 
-			NV_oOS_Ext_Cognition_Sensor_Session::push_request(
+			WP_MCP_AI_Ext_Cog_Sensor_Session::push_request(
 				$post_id,
 				array(
 					'type'    => 'permission_request',
@@ -129,7 +129,7 @@ class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
 				'success'          => true,
 				'action'           => 'request',
 				'sensors_targeted' => $enabled,
-				'message'          => __( 'Permission request dispatched to browser. The user will be prompted for each sensor.', 'nvoos-ext-cognition' ),
+				'message'          => __( 'Permission request dispatched to browser. The user will be prompted for each sensor.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -139,7 +139,7 @@ class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
 			$status[ $sensor ] = array(
 				'enabled_in_settings' => ! empty( $settings[ 'sensor_' . $sensor ] ),
 				'permission_state'    => 'unknown',
-				'note'                => __( 'Actual browser permission state is determined client-side. Call ext_cog_manage_sensor_permissions with action=request to prompt the user.', 'nvoos-ext-cognition' ),
+				'note'                => __( 'Actual browser permission state is determined client-side. Call ext_cog_manage_sensor_permissions with action=request to prompt the user.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -167,7 +167,7 @@ class NV_oOS_Ext_Cog_Tool_Manage_Sensor_Permissions {
 		}
 
 		// Guest access: must be explicitly enabled per assistant.
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
 			return true;
 		}

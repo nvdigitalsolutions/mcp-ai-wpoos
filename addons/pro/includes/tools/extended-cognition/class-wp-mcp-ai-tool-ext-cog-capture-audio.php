@@ -7,7 +7,7 @@
  * MediaRecorder + Web Speech API for transcription. The AI receives
  * a transcript and/or ambient classification (speech/music/noise/silence).
  *
- * @package NV_oOS_Ext_Cognition
+ * @package WP_MCP_AI_Pro
  * @since   1.0.0
  */
 
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class NV_oOS_Ext_Cog_Tool_Capture_Audio {
+class WP_MCP_AI_Tool_Ext_Cog_Capture_Audio {
 
 	/**
 	 * Get tool slug.
@@ -93,17 +93,17 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! is_ssl() && ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-			return new WP_Error( 'https_required', __( 'Audio capture requires a secure (HTTPS) connection.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'https_required', __( 'Audio capture requires a secure (HTTPS) connection.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! $this->current_user_can_use_sensors( $context ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to use sensory tools.', 'mcp-ai-wpoos' ) );
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 
 		if ( empty( $settings['sensor_microphone'] ) ) {
-			return new WP_Error( 'sensor_disabled', __( 'The microphone sensor is disabled in Extended Cognition settings.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'sensor_disabled', __( 'The microphone sensor is disabled in Extended Cognition settings.', 'mcp-ai-wpoos' ) );
 		}
 
 		$session_id       = isset( $arguments['session_id'] ) ? sanitize_text_field( $arguments['session_id'] ) : '';
@@ -114,23 +114,23 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 		$timeout_ms       = isset( $arguments['timeout_ms'] ) ? absint( $arguments['timeout_ms'] ) : 35000;
 
 		if ( empty( $session_id ) ) {
-			return new WP_Error( 'missing_session', __( 'A session_id is required to route sensor requests to the browser.', 'nvoos-ext-cognition' ) );
+			return new WP_Error( 'missing_session', __( 'A session_id is required to route sensor requests to the browser.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = get_current_user_id();
-		$post_id = NV_oOS_Ext_Cognition_Sensor_Session::get_or_create( $session_id, $user_id );
+		$post_id = WP_MCP_AI_Ext_Cog_Sensor_Session::get_or_create( $session_id, $user_id );
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
 
 		$rate_limit = absint( $settings['rate_limit'] );
-		if ( ! NV_oOS_Ext_Cognition_Sensor_Session::check_rate_limit( $post_id, 'microphone', $rate_limit ) ) {
-			return new WP_Error( 'rate_limited', __( 'Microphone capture rate limit exceeded. Please wait before requesting another recording.', 'nvoos-ext-cognition' ) );
+		if ( ! WP_MCP_AI_Ext_Cog_Sensor_Session::check_rate_limit( $post_id, 'microphone', $rate_limit ) ) {
+			return new WP_Error( 'rate_limited', __( 'Microphone capture rate limit exceeded. Please wait before requesting another recording.', 'mcp-ai-wpoos' ) );
 		}
 
 		$request_id = wp_generate_uuid4();
-		NV_oOS_Ext_Cognition_Sensor_Session::push_request(
+		WP_MCP_AI_Ext_Cog_Sensor_Session::push_request(
 			$post_id,
 			array(
 				'type'             => 'capture_audio',
@@ -148,7 +148,7 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 		$captured   = null;
 
 		while ( ( time() - $poll_start ) < $timeout_s ) {
-			$data = NV_oOS_Ext_Cognition_Sensor_Session::consume_data( $post_id, $request_id );
+			$data = WP_MCP_AI_Ext_Cog_Sensor_Session::consume_data( $post_id, $request_id );
 			if ( null !== $data ) {
 				$captured = $data;
 				break;
@@ -161,7 +161,7 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 				'capture_timeout',
 				sprintf(
 					/* translators: %d: timeout in seconds */
-					__( 'Audio capture timed out after %d seconds. Ensure the browser tab is open and microphone permission is granted.', 'nvoos-ext-cognition' ),
+					__( 'Audio capture timed out after %d seconds. Ensure the browser tab is open and microphone permission is granted.', 'mcp-ai-wpoos' ),
 					$timeout_s
 				)
 			);
@@ -176,7 +176,7 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 			'ambient_label'            => isset( $captured['ambient_label'] ) ? sanitize_text_field( $captured['ambient_label'] ) : 'unknown',
 			'language_detected'        => isset( $captured['language_detected'] ) ? sanitize_text_field( $captured['language_detected'] ) : '',
 			'transcription_confidence' => isset( $captured['transcription_confidence'] ) ? floatval( $captured['transcription_confidence'] ) : null,
-			'message'                  => __( 'Audio captured. Use the transcript to understand what was spoken and ambient_label for environmental context.', 'nvoos-ext-cognition' ),
+			'message'                  => __( 'Audio captured. Use the transcript to understand what was spoken and ambient_label for environmental context.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -191,7 +191,7 @@ class NV_oOS_Ext_Cog_Tool_Capture_Audio {
 			return true;
 		}
 
-		$settings = NV_oOS_Ext_Cognition::get_settings();
+		$settings = wp_mcp_ai_ext_cog_get_settings();
 		if ( ! empty( $settings['guest_access'] ) && ! empty( $context['guest_request'] ) ) {
 			return true;
 		}

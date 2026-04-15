@@ -592,6 +592,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
 		}
 
+		// Load Extended Cognition Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/extended-cognition-toolkit-init.php';
+		}
+
 		// ========================================================================
 		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
 		// ========================================================================
@@ -1502,6 +1507,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_LF_Competitive_Benchmarker'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		}
+
+		// Extended Cognition Toolkit.
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			$ext_cog_tools = array(
+				'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual'            => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'             => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen'            => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context'        => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input'     => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $ext_cog_tools );
 		}
 
 		/**
