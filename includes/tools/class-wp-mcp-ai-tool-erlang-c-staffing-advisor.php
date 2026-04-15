@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 							),
 							'bot_containment_rate' => array(
 								'type'        => 'number',
-								'description' => __( 'Fraction of contacts fully resolved by bots (0–1). E.g. 0.4 = 40 %% handled by AI without escalation. Default 0.', 'mcp-ai-wpoos' ),
+								'description' => __( 'Fraction of contacts fully resolved by bots (0–1). E.g. 0.4 = 40% handled by AI without escalation. Default 0.', 'mcp-ai-wpoos' ),
 								'minimum'     => 0,
 								'maximum'     => 0.99,
 							),
@@ -350,12 +350,12 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $code ) {
-			return array( 'error' => sprintf( 'WFM endpoint returned HTTP %d', $code ) );
+			return array( 'error' => sprintf( __( 'WFM endpoint returned HTTP %d.', 'mcp-ai-wpoos' ), $code ) );
 		}
 
 		$decoded = json_decode( $body, true );
 		if ( ! is_array( $decoded ) ) {
-			return array( 'error' => 'WFM endpoint returned non-JSON response.' );
+			return array( 'error' => __( 'WFM endpoint returned non-JSON response.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $decoded;

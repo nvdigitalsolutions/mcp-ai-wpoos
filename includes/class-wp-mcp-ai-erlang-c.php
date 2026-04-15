@@ -127,7 +127,7 @@ class WP_MCP_AI_Erlang_C {
 	 * @param float $traffic_intensity Erlangs.
 	 * @param int   $agents            Number of agents.
 	 * @param float $aht_seconds       Average handle time in seconds.
-	 * @return float Average wait time in seconds, or PHP_FLOAT_MAX when unstable.
+	 * @return float Average wait time in seconds, or PHP_FLOAT_MAX when unstable (N ≤ A).
 	 */
 	public static function avg_wait_time( $traffic_intensity, $agents, $aht_seconds ) {
 		$a = (float) $traffic_intensity;
