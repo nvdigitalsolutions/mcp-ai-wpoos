@@ -766,6 +766,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Law Firm Toolkit - Matter management, billing/trust, compliance, and research.
+				'enable_law_firm_toolkit'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Law Firm Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable law firm matter management, billing, trust accounting, and compliance tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 62 AI-powered legal tools across five modules: Matter Management (10), Billing &amp; Trust (10), Compliance &amp; Ethics (9), Client &amp; Communications (9), and Research &amp; Analytics (9). Includes 5 custom post types (Matters, Clients, Documents, Time Entries, Trust Transactions), a shared legal calculator, and dedicated admin pages (Settings, Dashboard, Research &amp; Add). This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// CRE Debt & Securitization Toolkit - Commercial real estate finance.
 				'enable_cre_debt_toolkit'                => array(
 					'type'           => 'checkbox',
@@ -852,7 +861,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -1047,6 +1056,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_chat_channels_toolkit'           => 84,   // 21 tools, multi-platform messaging integration.
 				'enable_site_creator_toolkit'            => 104,  // 26 tools, page/section/widget builders, AI automation.
 				'enable_regulatory_registration_toolkit' => 80,   // 15 tools, multi-country registration management.
+				'enable_law_firm_toolkit'                => 128,  // 62 tools, 5 CPTs, matter management, billing/trust, compliance.
 				'enable_cre_debt_toolkit'                => 144,  // 57 tools, CRE debt & securitization.
 				'enable_webchat_integration'             => 24,   // 6 tools, WebRTC rooms, message storage.
 			);
@@ -1176,6 +1186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_site_creator_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_regulatory_registration_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_law_firm_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_cre_debt_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_webchat_integration]"]'
 						);
