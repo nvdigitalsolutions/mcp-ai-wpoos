@@ -93,10 +93,12 @@ class WP_MCP_AI_Vehicle_Cleaning_Estimator_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant ID', 'mcp-ai-wpoos-pro' ),
-				'type'        => \Elementor\Controls_Manager::TEXT,
-				'placeholder' => __( 'e.g. 123', 'mcp-ai-wpoos-pro' ),
-				'description' => __( 'ID of the NV oOS assistant configured for vehicle cleaning estimates. Leave empty to use the site default.', 'mcp-ai-wpoos-pro' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos-pro' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'options'     => $this->get_assistant_options(),
+				'default'     => '',
+				'label_block' => true,
+				'description' => __( 'Select the NV oOS assistant configured for vehicle cleaning estimates. Leave empty to use the site default.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 
@@ -257,5 +259,64 @@ class WP_MCP_AI_Vehicle_Cleaning_Estimator_Widget extends \Elementor\Widget_Base
 
 		$shortcode = '[mcp_vehicle_cleaning_estimator ' . implode( ' ', $attributes ) . ']';
 		echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaping is handled within render_vehicle_cleaning_estimator() in class-wp-mcp-ai-pro-toolkit-shortcodes.php.
+	}
+
+	/**
+	 * Retrieve assistant options for the assistant dropdown control.
+	 *
+	 * @return array Associative array of assistant ID => title.
+	 */
+	protected function get_assistant_options() {
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			return WP_MCP_AI_Cache_Helper::get_elementor_options( array( $this, 'build_assistant_options' ) );
+		}
+
+		return $this->build_assistant_options();
+	}
+
+	/**
+	 * Build assistant options array (extracted for caching).
+	 *
+	 * @return array Assistant options for dropdown.
+	 */
+	public function build_assistant_options() {
+		$options = array( '' => __( 'Default Assistant', 'mcp-ai-wpoos-pro' ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $options;
+		}
+
+		// Check if the post type is registered before querying.
+		// During Elementor AJAX requests, the post type may not be registered yet.
+		if ( ! post_type_exists( WP_MCP_AI_Assistant_CPT::POST_TYPE ) ) {
+			return $options;
+		}
+
+		$assistants = get_posts(
+			array(
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'numberposts'            => -1,
+				'orderby'                => 'title',
+				'order'                  => 'ASC',
+				'suppress_filters'       => true,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		if ( ! is_array( $assistants ) || empty( $assistants ) ) {
+			return $options;
+		}
+
+		foreach ( $assistants as $assistant_id ) {
+			$title = get_the_title( $assistant_id );
+			if ( $title && ! is_wp_error( $title ) ) {
+				$options[ (string) $assistant_id ] = $title;
+			}
+		}
+
+		return $options;
 	}
 }
