@@ -288,9 +288,9 @@ class WP_MCP_AI_Fantasy_Football_Research_Page {
 								'search_content',
 								'semantic_content_search',
 							);
-							echo do_shortcode(
+							echo wp_kses_post( do_shortcode(
 								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $ff_tools ) ) . '" height="600" show_title="false"]'
-							);
+							) );
 						}
 						?>
 					</div>

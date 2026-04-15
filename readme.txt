@@ -1036,7 +1036,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Purpose:** Browser-native machine learning library enabling in-browser NLP tasks (summarisation, sentiment analysis, entity extraction, translation, semantic search) without sending data to a remote AI provider
 * **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
 * **When:** Only when the "Browser-Native AI Tasks (Transformers.js)" feature is explicitly enabled by the administrator (disabled by default)
-* **Service URL:** https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
+* **Service URL:** https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1
 * **Terms of Service:** https://www.jsdelivr.com/terms
 * **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
@@ -1272,7 +1272,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
 
 **Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
-* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
+* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1 — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
 * WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
 
 = GDPR Compliance =

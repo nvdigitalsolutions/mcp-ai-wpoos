@@ -1386,7 +1386,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			// the client. ignore_user_abort(true) prevents PHP from dying if nginx closes
 			// the upstream connection before inference finishes (fastcgi_read_timeout).
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical.
+				@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical. Bounded to 300s for WordPress.org compliance.
 			}
 			if ( function_exists( 'ignore_user_abort' ) ) {
 				ignore_user_abort( true );
