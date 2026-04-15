@@ -116,7 +116,7 @@
 				recognition.start();
 
 				setTimeout( function () {
-					try { recognition.stop(); } catch ( e ) {} // eslint-disable-line no-empty
+					try { recognition.stop(); } catch ( recognitionStopError ) { if ( window.console ) { console.debug( 'Speech recognition already stopped:', recognitionStopError ); } }
 				}, ( duration + 0.5 ) * 1000 );
 			} else {
 				// No speech recognition support.

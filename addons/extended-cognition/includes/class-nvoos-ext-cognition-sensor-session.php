@@ -108,15 +108,16 @@ class NV_oOS_Ext_Cognition_Sensor_Session {
 	 */
 	public static function get_or_create( $session_id, $user_id = 0 ) {
 		$session_id = sanitize_text_field( $session_id );
+		// Use post_name (indexed slug) for fast session lookup — avoids slow meta_key query.
+		$slug = sanitize_title( $session_id );
 
-		// Look for existing post.
+		// Look for existing post by post_name (indexed).
 		$existing = get_posts(
 			array(
 				'post_type'      => self::POST_TYPE,
 				'post_status'    => 'publish',
 				'posts_per_page' => 1,
-				'meta_key'       => '_ext_cog_session_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Required to look up session by ID; single-row lookup.
-				'meta_value'     => $session_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'name'           => $slug,
 				'fields'         => 'ids',
 			)
 		);
@@ -131,6 +132,7 @@ class NV_oOS_Ext_Cognition_Sensor_Session {
 				'post_type'   => self::POST_TYPE,
 				'post_status' => 'publish',
 				'post_title'  => $session_id,
+				'post_name'   => $slug,
 				'post_author' => absint( $user_id ),
 			)
 		);

@@ -136,7 +136,12 @@ class NV_oOS_Ext_Cog_Tool_Remember_Sensory_Context {
 			} elseif ( is_scalar( $value ) ) {
 				$stored_data[ $safe_key ] = sanitize_text_field( (string) $value );
 			} elseif ( is_array( $value ) ) {
-				$stored_data[ $safe_key ] = array_map( 'sanitize_text_field', array_map( 'strval', $value ) );
+				$stored_data[ $safe_key ] = array_map(
+					function ( $v ) {
+						return sanitize_text_field( (string) $v );
+					},
+					$value
+				);
 			}
 		}
 

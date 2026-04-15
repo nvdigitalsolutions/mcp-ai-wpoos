@@ -62,6 +62,8 @@ function nvoos_ext_cog_is_base_active() {
 /**
  * Check whether the Extended Cognition addon is fully ready.
  *
+ * "Ready" means the base plugin is active AND the addon is enabled in settings.
+ *
  * @since 1.0.0
  *
  * @return bool True when the addon is operational.
@@ -73,12 +75,15 @@ function nvoos_ext_cog_is_ready() {
 /**
  * Check whether the Extended Cognition Toolkit is enabled.
  *
+ * Convenience alias for nvoos_ext_cog_is_ready() used in REST and tool contexts
+ * where "enabled" is the conventional terminology.
+ *
  * @since 1.0.0
  *
  * @return bool True when the addon is active and enabled in settings.
  */
 function nvoos_ext_cog_is_enabled() {
-	return nvoos_ext_cog_is_base_active() && NV_oOS_Ext_Cognition::is_enabled();
+	return nvoos_ext_cog_is_ready();
 }
 
 // Boot the plugin.
