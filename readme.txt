@@ -1081,7 +1081,33 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
 * **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
 
+= Pro Addon External Services =
 
+The following services are **only** used by the separately installed **NV oOS Pro** addon. They are **not** present in the base plugin. They are documented here for completeness and transparency.
+
+**P1. Replicate API (AI Music Generation)**
+* **Purpose:** AI-powered music and audio generation via Replicate's hosted model inference
+* **Data Sent:** Music generation parameters (prompt, tempo, duration, genre), API key
+* **When:** When the AI music generation tool is used (Algorave addon, requires Pro)
+* **Service URL:** https://api.replicate.com/v1/predictions
+* **Terms of Service:** https://replicate.com/terms
+* **Privacy Policy:** https://replicate.com/privacy
+
+**P2. ESPN Fantasy Football API**
+* **Purpose:** Retrieve ESPN Fantasy Football league data, rosters, scores, and standings
+* **Data Sent:** League ID, season ID, team ID; SWID and ESPN_S2 authentication cookies for private leagues
+* **When:** When ESPN Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasy.espn.com/apis/v3/games/ffl/seasons
+* **Terms of Service:** https://www.espn.com/espn/news/story?page=terms-of-use
+* **Privacy Policy:** https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+
+**P3. Yahoo Fantasy Sports API**
+* **Purpose:** Retrieve Yahoo Fantasy Football league data, rosters, player stats, standings, and trade analysis
+* **Data Sent:** League key, player keys, OAuth2 access token (obtained via Yahoo OAuth2 — see service #38 above)
+* **When:** When Yahoo Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasysports.yahooapis.com/fantasy/v2/
+* **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
+* **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
 
 **What is sent to external services:**
 * User messages and chat conversations (AI providers only)
