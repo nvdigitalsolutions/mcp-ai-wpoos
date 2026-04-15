@@ -12,8 +12,9 @@
  * Localisation object (injected by PHP):
  *   window.mcpVehicleCleaningEstimator = {
  *     restUrl         : string,  // trailing-slash REST root, e.g. 'https://example.com/wp-json/mcp-ai/v1/'
+ *     chatEndpoint    : string,  // full /chat-client URL (same endpoint used by chat bubble & professional selector)
  *     uploadEndpoint  : string,  // 'https://example.com/wp-json/wp/v2/media'
- *     nonce           : string,  // wp_rest nonce
+ *     nonce           : string,  // wp_rest nonce (X-WP-Nonce header)
  *     assistantId     : string,  // post ID of the assistant
  *     currency        : string,  // 'CAD' | 'USD' | 'GBP' | 'EUR' | 'AUD'
  *     taxRate         : number,  // decimal, e.g. 0.13
@@ -619,7 +620,7 @@
 
 			// Build the user message content.
 			// When images are attached, use an array of content segments so the vision
-			// model can see them.  The /chat endpoint accepts:
+			// model can see them.  The /chat-client endpoint accepts:
 			//   messages[].content  = string  (text-only)
 			//   messages[].content  = array   (multi-part: text + input_image segments)
 			var messageContent;
@@ -693,7 +694,7 @@
 		 * Attempts to parse a structured JSON estimate from the tool_results
 		 * in the API response.  Falls back to rendering the raw reply text.
 		 *
-		 * @param {Object} apiResponse  The /chat endpoint response object.
+		 * @param {Object} apiResponse  The /chat-client endpoint response object.
 		 */
 		_renderResult: function ( apiResponse ) {
 			var container = this.$( '.mcp-vce-result-container' );
@@ -706,7 +707,7 @@
 				container.innerHTML = this._buildReceiptHtml( estimate );
 			} else {
 				// Graceful fallback: show raw assistant message as prose.
-				// The /chat endpoint returns OpenAI-shaped choices[].message.content.
+				// The /chat-client endpoint returns OpenAI-shaped choices[].message.content.
 				var replyText = this._getReplyText( apiResponse );
 				container.innerHTML = '<div class="mcp-vce-result-prose">' + this._textToHtml( replyText ) + '</div>';
 			}
@@ -716,7 +717,7 @@
 		 * Extract the assistant's plain-text reply from the API response.
 		 *
 		 * Supports both the OpenAI-shaped `choices[].message.content` format
-		 * returned by the /chat endpoint and older `reply` / `message` shapes.
+		 * returned by the /chat-client endpoint and older `reply` / `message` shapes.
 		 *
 		 * @param {Object} response
 		 * @return {string}
