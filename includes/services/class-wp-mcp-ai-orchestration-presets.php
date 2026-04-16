@@ -459,7 +459,7 @@ class WP_MCP_AI_Orchestration_Presets {
 			);
 		}
 
-		if ( preg_match( '/\b(optimi[zs]e|adaptive|self.?tun|learn|improv|evolv|tune|pso)\b/', $task_lower ) ) {
+		if ( preg_match( '/\b(optimi[zs]e|adaptive|self[\.\-]?tun|learn|improv|evolv|tune|pso)\b/', $task_lower ) ) {
 			$recommendations['pso_adaptive'] = array(
 				'confidence' => 0.8,
 				'reason'     => __( 'Task benefits from adaptive self-tuning optimization.', 'mcp-ai-wpoos' ),

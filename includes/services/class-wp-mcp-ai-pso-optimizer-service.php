@@ -122,6 +122,34 @@ class WP_MCP_AI_PSO_Optimizer_Service {
 	 */
 	const V_MAX = 0.5;
 
+	/**
+	 * Maximum tools per iteration used to normalise iteration efficiency to [0, 1].
+	 *
+	 * @var float
+	 */
+	const MAX_TOOLS_PER_ITERATION = 5.0;
+
+	/**
+	 * Base weight in the fitness function (always contributes).
+	 *
+	 * @var float
+	 */
+	const FITNESS_BASE_WEIGHT = 0.4;
+
+	/**
+	 * Weight of cache efficiency in the fitness function.
+	 *
+	 * @var float
+	 */
+	const FITNESS_CACHE_WEIGHT = 0.3;
+
+	/**
+	 * Weight of iteration efficiency in the fitness function.
+	 *
+	 * @var float
+	 */
+	const FITNESS_ITERATION_WEIGHT = 0.3;
+
 	// ------------------------------------------------------------------
 	// Dimension definitions — the search space.
 	// ------------------------------------------------------------------
@@ -403,10 +431,10 @@ class WP_MCP_AI_PSO_Optimizer_Service {
 			? ( $tool_executions / $iterations )
 			: 1.0;
 
-		// Normalise iteration score to [0, 1] range (cap at 5 tools/iteration).
-		$iteration_score = min( 1.0, $iteration_score / 5.0 );
+		// Normalise iteration score to [0, 1] range.
+		$iteration_score = min( 1.0, $iteration_score / self::MAX_TOOLS_PER_ITERATION );
 
-		$fitness = $speed_score * ( 0.4 + 0.3 * $cache_score + 0.3 * $iteration_score );
+		$fitness = $speed_score * ( self::FITNESS_BASE_WEIGHT + self::FITNESS_CACHE_WEIGHT * $cache_score + self::FITNESS_ITERATION_WEIGHT * $iteration_score );
 
 		/**
 		 * Filter the PSO fitness score.
@@ -803,8 +831,7 @@ class WP_MCP_AI_PSO_Optimizer_Service {
 	/**
 	 * Get total conversation count across all assistants.
 	 *
-	 * Uses the global best timestamp as a proxy when detailed counts
-	 * are unavailable, or sums per-assistant sample counters.
+	 * Sums per-assistant sample counters stored in post meta.
 	 *
 	 * @return int Total conversation count.
 	 */
@@ -820,22 +847,14 @@ class WP_MCP_AI_PSO_Optimizer_Service {
 
 		// Sum all sample counters across assistants.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Aggregate SUM across postmeta; no WP API for this.
-		$total = $wpdb->get_var(
+		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COALESCE(SUM(CAST(meta_value AS UNSIGNED)), 0) FROM {$wpdb->postmeta} WHERE meta_key = %s",
 				self::META_PREFIX . 'samples'
 			)
 		);
 
-		// Add estimate from previous update cycles.
-		$global = $this->get_global_best();
-		if ( ! empty( $global['updated_at'] ) ) {
-			// Rough estimate: each UPDATE_FREQUENCY batch counts as one cycle.
-			$cycles = (int) floor( ( time() - $global['updated_at'] ) / DAY_IN_SECONDS );
-			$total += $cycles * self::UPDATE_FREQUENCY;
-		}
-
-		$total = max( 0, (int) $total );
+		$total = max( 0, $total );
 
 		wp_cache_set( $cache_key, $total, 'wp_mcp_ai_pso', 300 );
 
