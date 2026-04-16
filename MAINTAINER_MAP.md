@@ -332,5 +332,5 @@ The full agent inventory, capabilities, and context-loading strategy are documen
 - [ ] Skim `includes/bootstrap/loader.php` — it loads every class in the right order
 - [ ] Skim `includes/class-wp-mcp-ai-plugin.php` — it wires the DI container
 - [ ] Run `composer run lint:base && composer run test` to confirm a green baseline
-- [ ] Add `define('WP_DEBUG', true);` in `wp-config.php` for verbose error logging
 - [ ] Read [`AGENTS.md`](AGENTS.md) to understand AI-assisted development workflows
+- [ ] Add `define('WP_DEBUG', true);` in `wp-config.php` for verbose error logging
