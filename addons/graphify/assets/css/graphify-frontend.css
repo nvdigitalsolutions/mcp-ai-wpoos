@@ -1,0 +1,69 @@
+/**
+ * NV oOS Graphify — Frontend Styles
+ *
+ * @package NV_oOS_Graphify
+ * @since   0.4.0
+ */
+
+.nvoos-graphify-frontend {
+	position: relative;
+	width: 100%;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	overflow: hidden;
+	margin: 20px 0;
+}
+
+.nvoos-graphify-canvas {
+	width: 100%;
+	height: 100%;
+	background: #1a1a2e;
+}
+
+/* Related content widget */
+.nvoos-graphify-related {
+	margin: 30px 0 15px;
+	padding: 20px;
+	background: #f9f9f9;
+	border: 1px solid #eee;
+	border-radius: 6px;
+}
+
+.nvoos-graphify-related h3 {
+	font-size: 18px;
+	margin: 0 0 12px;
+	padding-bottom: 8px;
+	border-bottom: 2px solid #00d4ff;
+	color: #333;
+}
+
+.nvoos-graphify-related ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.nvoos-graphify-related li {
+	padding: 6px 0;
+	border-bottom: 1px solid #eee;
+}
+
+.nvoos-graphify-related li:last-child {
+	border-bottom: none;
+}
+
+.nvoos-graphify-related a {
+	color: #0073aa;
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.nvoos-graphify-related a:hover {
+	color: #00d4ff;
+	text-decoration: underline;
+}
+
+/* Dark theme override */
+.nvoos-graphify-frontend[data-theme="dark"] .nvoos-graphify-canvas {
+	background: #0f0f1a;
+}
