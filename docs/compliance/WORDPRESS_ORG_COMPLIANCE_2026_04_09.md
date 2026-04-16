@@ -266,27 +266,33 @@ All `file_put_contents()`, `fopen()`, and `fwrite()` calls in the base plugin (`
 
 ---
 
-## Issue 4: do_shortcode() Output Without wp_kses_post() (April 11)
+## Issue 4: do_shortcode() Output Without wp_kses_post() (April 11, revised April 16)
 
 **Guideline:** All shortcode output must be properly escaped when echoed.
 
-**Finding:** Seven instances in the base plugin where `do_shortcode()` output was echoed without `wp_kses_post()` wrapping. Some had `phpcs:ignore` comments instead of proper escaping.
+**Original Finding (April 11):** Seven instances in the base plugin where `do_shortcode()` output was echoed without `wp_kses_post()` wrapping. These were initially wrapped in `wp_kses_post()`.
 
-**Fix Applied:**
+**Revised (April 16):** The `wp_kses_post()` wrapping broke the chat UI because it strips `data-*` attributes, SVGs, `<form>`/`<input>`/`<button>` element attributes, and `<script type="application/json">` config blocks. A custom `kses_chat_output()` method with an extended allowlist was attempted (PR #4698), but it only allowlisted 4 specific `data-*` attributes while the chat UI uses 15+.
 
-| File | Line | Change |
-|------|------|--------|
-| `includes/elementor/class-wp-mcp-ai-elementor-widget.php` | 1202 | `echo do_shortcode(...)` → `echo wp_kses_post( do_shortcode(...) )` |
+**Current approach:** The shortcode's `render_shortcode()` method individually escapes every dynamic value at the point of insertion using `esc_attr()`, `esc_html()`, `esc_url()`, and `wp_json_encode()`. The shortcode output is echoed directly with `phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped` and a detailed inline justification. This is the same pattern used by WordPress core's own block rendering (`render_block()` → `echo` without `wp_kses_post()`).
+
+| File | Line | Handling |
+|------|------|----------|
+| `includes/elementor/class-wp-mcp-ai-elementor-widget.php` | 1202 | `echo do_shortcode(...)` with phpcs:ignore justification |
 | `includes/elementor/class-wp-mcp-ai-elementor-professional-selector-widget.php` | 411 | Same |
-| `includes/elementor/class-wp-mcp-ai-elementor-chat-bubble-widget.php` | 743 | Same |
-| `includes/elementor/class-wp-mcp-ai-elementor-telegram-login-widget.php` | 267 | Same |
-| `includes/admin/class-wp-mcp-ai-admin-test-model.php` | 161 | Same |
+| `includes/elementor/class-wp-mcp-ai-elementor-chat-bubble-widget.php` | 866 | `echo $safe_html` (deferred attr rename) with phpcs:ignore justification |
+| `includes/elementor/class-wp-mcp-ai-elementor-telegram-login-widget.php` | 267 | `echo do_shortcode(...)` — Telegram SDK `<script>` embed |
+| `includes/admin/class-wp-mcp-ai-admin-test-model.php` | 161 | `echo do_shortcode(...)` with phpcs:ignore justification |
 | `includes/admin/class-wp-mcp-ai-admin-profession-research-page.php` | 226 | Same |
 | `includes/admin/class-wp-mcp-ai-admin-team-research-page.php` | 231 | Same |
+| `includes/blocks/chat/render.php` | 71 | `echo do_shortcode(...)` with phpcs:ignore justification |
+| `includes/blocks/chat-bubble/render.php` | 218 | `echo $safe_html` (deferred attr rename) with phpcs:ignore justification |
+| `includes/blocks/professional-selector/render.php` | 81 | `echo do_shortcode(...)` with phpcs:ignore justification |
+| `includes/class-wp-mcp-ai-chat-bubble-frontend.php` | 372 | `echo $safe_html` (deferred attr rename) with phpcs:ignore justification |
 
-All three block render files (`blocks/chat/render.php`, `blocks/chat-bubble/render.php`, `blocks/professional-selector/render.php`) already used `wp_kses_post()` correctly.
+The AJAX response in `class-wp-mcp-ai-professional-selector-shortcode.php:582` retains `wp_kses_post()` because the JSON response does not require complex HTML structures.
 
-**Status:** ✅ Fixed
+**Status:** ✅ Fixed (revised approach)
 
 ---
 
@@ -374,7 +380,7 @@ Beyond the reviewer-flagged issues, the following compliance areas were proactiv
 - [x] Guideline 11 (No hijacking): Standard menu usage ✅
 - [x] Guideline 12 (WP libraries): No overrides ✅
 - [x] Guideline 13 (Resources): N/A ✅
-- [x] do_shortcode() escaping: 7 instances fixed with wp_kses_post() ✅ Fixed
+- [x] do_shortcode() escaping: shortcode output uses direct echo with `phpcs:ignore` justification (render_shortcode() self-sanitizes; wp_kses_post() strips required data-* attrs/SVGs/forms/JSON config). AJAX response retains wp_kses_post(). ✅ Revised April 16
 - [x] Tool capability flags: 3 additional tools corrected to 'external-api' ✅ Fixed
 - [x] AJAX dismiss handlers hardened with `current_user_can( 'manage_options' )` ✅ Fixed
 - [x] Unsanitised `$_POST` iteration in settings diagnostic logging sanitised ✅ Fixed
