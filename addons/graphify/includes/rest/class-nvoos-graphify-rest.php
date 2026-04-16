@@ -291,10 +291,12 @@ class NV_oOS_Graphify_REST {
 		$page     = max( 1, $page );
 		$offset   = ( $page - 1 ) * $per_page;
 
-		$allowed_orderby = array( 'degree', 'label', 'created_at' );
-		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
-			$orderby = 'degree';
-		}
+		$orderby_map = array(
+			'degree'     => 'degree',
+			'label'      => 'label',
+			'created_at' => 'created_at',
+		);
+		$orderby_col = isset( $orderby_map[ $orderby ] ) ? $orderby_map[ $orderby ] : 'degree';
 
 		$order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
 
@@ -335,7 +337,7 @@ class NV_oOS_Graphify_REST {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$nodes = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$nodes_table} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT * FROM {$nodes_table} WHERE {$where_sql} ORDER BY {$orderby_col} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$query_values
 			)
 		);
