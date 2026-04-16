@@ -147,11 +147,11 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( $incremental ) {
 			global $wpdb;
 			$meta_table = NV_oOS_Graphify_Database::get_meta_table();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$since      = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT meta_value FROM {$meta_table} WHERE graph_id = %s AND meta_key = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$graph_id,
-					'last_built'
+					"SELECT last_built FROM {$meta_table} WHERE graph_id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$graph_id
 				)
 			);
 		}
@@ -167,8 +167,8 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$elapsed = round( microtime( true ) - $start_time, 2 );
 
-		$node_count = isset( $stats['node_count'] ) ? absint( $stats['node_count'] ) : 0;
-		$edge_count = isset( $stats['edge_count'] ) ? absint( $stats['edge_count'] ) : 0;
+		$node_count = isset( $stats['nodes_inserted'] ) ? absint( $stats['nodes_inserted'] ) : 0;
+		$edge_count = isset( $stats['edges_inserted'] ) ? absint( $stats['edges_inserted'] ) : 0;
 
 		return array(
 			'success' => true,

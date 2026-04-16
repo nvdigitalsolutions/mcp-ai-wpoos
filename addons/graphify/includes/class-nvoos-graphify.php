@@ -179,7 +179,7 @@ class NV_oOS_Graphify {
 		$tools = array(
 			'NV_oOS_Graphify_Tool_Build_Graph',
 			'NV_oOS_Graphify_Tool_Query_Graph',
-			'NV_oOS_Graphify_Tool_Graph_Status',
+			'NV_oOS_Graphify_Tool_Graph_Stats',
 		);
 
 		foreach ( $tools as $class ) {
@@ -215,8 +215,8 @@ class NV_oOS_Graphify {
 			require_once $dir . 'class-nvoos-graphify-tool-query-graph.php';
 		}
 
-		if ( file_exists( $dir . 'class-nvoos-graphify-tool-graph-status.php' ) ) {
-			require_once $dir . 'class-nvoos-graphify-tool-graph-status.php';
+		if ( file_exists( $dir . 'class-nvoos-graphify-tool-graph-stats.php' ) ) {
+			require_once $dir . 'class-nvoos-graphify-tool-graph-stats.php';
 		}
 	}
 

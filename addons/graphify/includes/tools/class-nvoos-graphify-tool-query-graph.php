@@ -283,7 +283,7 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$results = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT id FROM {$nodes_table} WHERE graph_id = %s AND ( {$where_likes} ) LIMIT 50",
+				"SELECT node_id FROM {$nodes_table} WHERE graph_id = %d AND ( {$where_likes} ) LIMIT 50",
 				$values
 			)
 		);
@@ -391,7 +391,7 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$results = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT CASE WHEN source_id = %s THEN target_id ELSE source_id END AS neighbor_id FROM {$edges_table} WHERE source_id = %s OR target_id = %s",
+				"SELECT CASE WHEN source_node_id = %s THEN target_node_id ELSE source_node_id END AS neighbor_id FROM {$edges_table} WHERE source_node_id = %s OR target_node_id = %s",
 				$node_id,
 				$node_id,
 				$node_id
@@ -419,10 +419,10 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		$placeholders = implode( ',', array_fill( 0, count( $node_ids ), '%s' ) );
 		$values       = array_merge( array( $graph_id ), $node_ids );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, label, node_type, source_url FROM {$nodes_table} WHERE graph_id = %s AND id IN ( {$placeholders} )",
+				"SELECT node_id, label, node_type, source_url, degree FROM {$nodes_table} WHERE graph_id = %d AND node_id IN ( {$placeholders} )",
 				$values
 			)
 		);
@@ -430,21 +430,12 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		$nodes = array();
 		if ( is_array( $rows ) ) {
 			foreach ( $rows as $row ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$degree = (int) $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT COUNT(*) FROM {$edges_table} WHERE source_id = %s OR target_id = %s",
-						$row->id,
-						$row->id
-					)
-				);
-
 				$nodes[] = array(
-					'id'         => $row->id,
+					'id'         => $row->node_id,
 					'label'      => $row->label,
 					'type'       => $row->node_type,
 					'source_url' => $row->source_url,
-					'degree'     => $degree,
+					'degree'     => (int) $row->degree,
 				);
 			}
 		}
@@ -473,7 +464,7 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT source_id, target_id, relation, confidence FROM {$edges_table} WHERE graph_id = %s AND source_id IN ( {$placeholders_source} ) AND target_id IN ( {$placeholders_target} )",
+				"SELECT source_node_id, target_node_id, relation, confidence FROM {$edges_table} WHERE graph_id = %d AND source_node_id IN ( {$placeholders_source} ) AND target_node_id IN ( {$placeholders_target} )",
 				$values
 			)
 		);
@@ -482,8 +473,8 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( is_array( $rows ) ) {
 			foreach ( $rows as $row ) {
 				$edges[] = array(
-					'source'     => $row->source_id,
-					'target'     => $row->target_id,
+					'source'     => $row->source_node_id,
+					'target'     => $row->target_node_id,
 					'relation'   => $row->relation,
 					'confidence' => $row->confidence,
 				);

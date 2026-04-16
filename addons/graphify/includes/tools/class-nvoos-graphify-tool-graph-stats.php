@@ -117,7 +117,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 		// Total node count.
 		$total_nodes = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$nodes_table} WHERE graph_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM {$nodes_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -125,7 +125,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 		// Total edge count.
 		$total_edges = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$edges_table} WHERE graph_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM {$edges_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -133,7 +133,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 		// Node counts grouped by type.
 		$node_type_rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT node_type, COUNT(*) AS cnt FROM {$nodes_table} WHERE graph_id = %s GROUP BY node_type", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT node_type, COUNT(*) AS cnt FROM {$nodes_table} WHERE graph_id = %d GROUP BY node_type", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -148,7 +148,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 		// Edge counts grouped by relation.
 		$edge_type_rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT relation, COUNT(*) AS cnt FROM {$edges_table} WHERE graph_id = %s GROUP BY relation", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT relation, COUNT(*) AS cnt FROM {$edges_table} WHERE graph_id = %d GROUP BY relation", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -163,7 +163,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 		// Edge counts grouped by confidence.
 		$confidence_rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT confidence, COUNT(*) AS cnt FROM {$edges_table} WHERE graph_id = %s GROUP BY confidence", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT confidence, COUNT(*) AS cnt FROM {$edges_table} WHERE graph_id = %d GROUP BY confidence", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -175,36 +175,18 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 		}
 
-		// Graph meta values.
-		$meta_rows = $wpdb->get_results(
+		// Graph meta (single row with direct columns).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$meta = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT meta_key, meta_value FROM {$meta_table} WHERE graph_id = %s AND meta_key IN (%s, %s, %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$graph_id,
-				'last_built',
-				'build_status',
-				'community_count'
+				"SELECT last_built, build_status, community_count FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$graph_id
 			)
 		);
 
-		$last_built      = '';
-		$status           = 'unknown';
-		$community_count = 0;
-
-		if ( is_array( $meta_rows ) ) {
-			foreach ( $meta_rows as $row ) {
-				switch ( $row->meta_key ) {
-					case 'last_built':
-						$last_built = $row->meta_value;
-						break;
-					case 'build_status':
-						$status = $row->meta_value;
-						break;
-					case 'community_count':
-						$community_count = (int) $row->meta_value;
-						break;
-				}
-			}
-		}
+		$last_built      = $meta ? $meta->last_built : '';
+		$status          = $meta ? $meta->build_status : 'idle';
+		$community_count = $meta ? (int) $meta->community_count : 0;
 
 		return array(
 			'success' => true,

@@ -38,6 +38,17 @@ define( 'NVOOS_GRAPHIFY_URL', plugin_dir_url( __FILE__ ) );
 // Load core classes.
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-database.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-detector.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-extractor-structural.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-builder.php';
+
+// Load REST controller.
+require_once NVOOS_GRAPHIFY_PATH . 'includes/rest/class-nvoos-graphify-rest.php';
+
+// Load admin settings (admin only).
+if ( is_admin() ) {
+	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-settings.php';
+}
 
 /**
  * Check whether the NV oOS base plugin is active.

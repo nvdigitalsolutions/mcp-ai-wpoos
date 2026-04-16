@@ -662,34 +662,25 @@ document.addEventListener('DOMContentLoaded', function() {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$community_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(DISTINCT community_id) FROM {$nodes_table} WHERE graph_id = %d AND community_id IS NOT NULL", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(DISTINCT community_id) FROM {$nodes_table} WHERE graph_id = %d AND community_id > 0", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$meta_rows = $wpdb->get_results(
+		$meta = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT meta_key, meta_value FROM {$meta_table} WHERE graph_id = %d AND meta_key IN (%s, %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$graph_id,
-				'last_built',
-				'build_status'
+				"SELECT last_built, build_status FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$graph_id
 			)
 		);
-
-		$meta = array();
-		if ( $meta_rows ) {
-			foreach ( $meta_rows as $row ) {
-				$meta[ $row->meta_key ] = $row->meta_value; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-			}
-		}
 
 		return array(
 			'node_count'      => $node_count,
 			'edge_count'      => $edge_count,
 			'community_count' => $community_count,
-			'last_built'      => isset( $meta['last_built'] ) ? sanitize_text_field( $meta['last_built'] ) : null,
-			'build_status'    => isset( $meta['build_status'] ) ? sanitize_text_field( $meta['build_status'] ) : 'idle',
+			'last_built'      => $meta ? sanitize_text_field( $meta->last_built ) : null,
+			'build_status'    => $meta ? sanitize_text_field( $meta->build_status ) : 'idle',
 		);
 	}
 }

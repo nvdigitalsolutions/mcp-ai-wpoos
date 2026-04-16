@@ -208,27 +208,21 @@ class NV_oOS_Graphify_REST {
 	public static function handle_get_graph( $request ) {
 		global $wpdb;
 
-		$graph_id   = NV_oOS_Graphify::get_graph_id();
-		$meta_table = NV_oOS_Graphify_Database::get_meta_table();
+		$graph_id    = NV_oOS_Graphify::get_graph_id();
+		$meta_table  = NV_oOS_Graphify_Database::get_meta_table();
+		$nodes_table = NV_oOS_Graphify_Database::get_nodes_table();
+		$edges_table = NV_oOS_Graphify_Database::get_edges_table();
 
+		// The meta table stores one row per graph_id with direct columns.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$meta_rows = $wpdb->get_results(
+		$meta = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT meta_key, meta_value FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT * FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
 
-		$meta = array();
-		if ( $meta_rows ) {
-			foreach ( $meta_rows as $row ) {
-				$meta[ $row->meta_key ] = $row->meta_value; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-			}
-		}
-
-		$nodes_table = NV_oOS_Graphify_Database::get_nodes_table();
-		$edges_table = NV_oOS_Graphify_Database::get_edges_table();
-
+		// Live counts from actual tables.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$node_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
@@ -248,7 +242,7 @@ class NV_oOS_Graphify_REST {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$community_count = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(DISTINCT community_id) FROM {$nodes_table} WHERE graph_id = %d AND community_id IS NOT NULL", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(DISTINCT community_id) FROM {$nodes_table} WHERE graph_id = %d AND community_id > 0", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id
 			)
 		);
@@ -258,8 +252,8 @@ class NV_oOS_Graphify_REST {
 			'node_count'      => $node_count,
 			'edge_count'      => $edge_count,
 			'community_count' => $community_count,
-			'last_built'      => isset( $meta['last_built'] ) ? sanitize_text_field( $meta['last_built'] ) : null,
-			'build_status'    => isset( $meta['build_status'] ) ? sanitize_text_field( $meta['build_status'] ) : 'idle',
+			'last_built'      => $meta ? $meta->last_built : null,
+			'build_status'    => $meta ? $meta->build_status : 'idle',
 		);
 
 		return new WP_REST_Response( $data, 200 );
@@ -390,7 +384,7 @@ class NV_oOS_Graphify_REST {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$edges = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT source_node_id, target_node_id, relation_type, weight
+				"SELECT source_node_id, target_node_id, relation, confidence, confidence_score
 				FROM {$edges_table}
 				WHERE graph_id = %d AND ( source_node_id = %s OR target_node_id = %s )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$graph_id,
@@ -409,10 +403,11 @@ class NV_oOS_Graphify_REST {
 
 				$neighbor_ids[]  = $neighbor;
 				$edge_list[]     = array(
-					'source'        => $edge->source_node_id,
-					'target'        => $edge->target_node_id,
-					'relation_type' => $edge->relation_type,
-					'weight'        => (float) $edge->weight,
+					'source'           => $edge->source_node_id,
+					'target'           => $edge->target_node_id,
+					'relation'         => $edge->relation,
+					'confidence'       => $edge->confidence,
+					'confidence_score' => (float) $edge->confidence_score,
 				);
 			}
 		}
@@ -469,7 +464,7 @@ class NV_oOS_Graphify_REST {
 		}
 
 		// Step 2: Extract structural data.
-		$extractor = new NV_oOS_Graphify_Extractor_Structural();
+		$extractor = new NV_oOS_Graphify_Extractor_Structural( $graph_id );
 		$extracted = $extractor->extract( $detected );
 
 		if ( is_wp_error( $extracted ) ) {
@@ -478,7 +473,7 @@ class NV_oOS_Graphify_REST {
 		}
 
 		// Step 3: Build graph.
-		$builder = new NV_oOS_Graphify_Builder();
+		$builder = new NV_oOS_Graphify_Builder( $graph_id );
 		$result  = $builder->build( $extracted, $mode );
 
 		if ( is_wp_error( $result ) ) {
@@ -553,30 +548,17 @@ class NV_oOS_Graphify_REST {
 	 * @return void
 	 */
 	private static function update_build_status( $graph_id, $status ) {
-		self::update_meta( $graph_id, 'build_status', sanitize_text_field( $status ) );
-	}
-
-	/**
-	 * Update or insert a meta value for the graph.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param int    $graph_id   The graph ID.
-	 * @param string $meta_key   The meta key.
-	 * @param string $meta_value The meta value.
-	 * @return void
-	 */
-	private static function update_meta( $graph_id, $meta_key, $meta_value ) {
 		global $wpdb;
 
 		$meta_table = NV_oOS_Graphify_Database::get_meta_table();
+		$status     = sanitize_text_field( $status );
 
+		// Check if a row exists for this graph.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$meta_table} WHERE graph_id = %d AND meta_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$graph_id,
-				$meta_key
+				"SELECT COUNT(*) FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$graph_id
 			)
 		);
 
@@ -584,26 +566,54 @@ class NV_oOS_Graphify_REST {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->update(
 				$meta_table,
-				array( 'meta_value' => $meta_value ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-				array(
-					'graph_id' => $graph_id,
-					'meta_key' => $meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-				),
+				array( 'build_status' => $status ),
+				array( 'graph_id' => $graph_id ),
 				array( '%s' ),
-				array( '%d', '%s' )
+				array( '%d' )
 			);
 		} else {
+			$site_id = is_multisite() ? get_current_blog_id() : 1;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->insert(
 				$meta_table,
 				array(
-					'graph_id'   => $graph_id,
-					'meta_key'   => $meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-					'meta_value' => $meta_value, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+					'graph_id'     => $graph_id,
+					'site_id'      => $site_id,
+					'build_status' => $status,
 				),
-				array( '%d', '%s', '%s' )
+				array( '%d', '%d', '%s' )
 			);
 		}
+	}
+
+	/**
+	 * Update meta column and last_built timestamp for the graph.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int    $graph_id   The graph ID.
+	 * @param string $column     The column name to update.
+	 * @param string $value      The value to set.
+	 * @return void
+	 */
+	private static function update_meta( $graph_id, $column, $value ) {
+		global $wpdb;
+
+		$meta_table     = NV_oOS_Graphify_Database::get_meta_table();
+		$allowed_fields = array( 'last_built', 'build_status', 'node_count', 'edge_count', 'community_count', 'settings' );
+
+		if ( ! in_array( $column, $allowed_fields, true ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$meta_table,
+			array( $column => $value ),
+			array( 'graph_id' => $graph_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
 	}
 
 	/**
@@ -612,7 +622,7 @@ class NV_oOS_Graphify_REST {
 	 * @since 1.0.0
 	 *
 	 * @param int $graph_id The graph ID.
-	 * @return string|null ISO 8601 timestamp or null.
+	 * @return string|null MySQL datetime or null.
 	 */
 	private static function get_last_built_time( $graph_id ) {
 		global $wpdb;
@@ -622,9 +632,8 @@ class NV_oOS_Graphify_REST {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$value = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT meta_value FROM {$meta_table} WHERE graph_id = %d AND meta_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$graph_id,
-				'last_built'
+				"SELECT last_built FROM {$meta_table} WHERE graph_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$graph_id
 			)
 		);
 
