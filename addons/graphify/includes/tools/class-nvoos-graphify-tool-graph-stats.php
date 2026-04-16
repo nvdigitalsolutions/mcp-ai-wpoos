@@ -5,7 +5,7 @@
  * Returns high-level statistics about the current knowledge graph.
  *
  * @package NVoOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Includes node count, edge count, community count, last-built timestamp,
  * build status, and a confidence breakdown of edge types.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * Get the tool slug.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_slug() {
@@ -35,7 +35,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get the human-readable tool name.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_name() {
@@ -45,7 +45,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get the LLM-facing description.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_description() {
@@ -55,7 +55,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get capability flags for the tool registry.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_capability_flags() {
@@ -65,7 +65,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get the JSON Schema for accepted parameters.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_parameters_schema() {
@@ -79,7 +79,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Execute the tool and return graph statistics.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @param  array $arguments Tool arguments (unused).
 	 * @param  array $context   Execution context.
 	 * @return array|WP_Error Graph statistics on success, WP_Error on failure.

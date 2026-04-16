@@ -5,7 +5,7 @@
  * Identifies knowledge gaps and missing content opportunities from the graph.
  *
  * @package NVoOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,14 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * NV_oOS_Graphify_Analyzer::get_seo_insights() to identify topics that are
  * referenced in the graph but lack dedicated content.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * Get the tool slug.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_slug() {
@@ -36,7 +36,7 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Get the human-readable tool name.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_name() {
@@ -46,7 +46,7 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Get the LLM-facing description.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_description() {
@@ -56,7 +56,7 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Get capability flags for the tool registry.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_capability_flags() {
@@ -66,7 +66,7 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Get the JSON Schema for accepted parameters.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_parameters_schema() {
@@ -86,7 +86,7 @@ class NV_oOS_Graphify_Tool_Content_Gaps implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Execute the content-gaps analysis.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @param  array $arguments Tool arguments.
 	 * @param  array $context   Execution context.
 	 * @return array|WP_Error Gap analysis on success, WP_Error on failure.

@@ -5,7 +5,7 @@
  * Finds the shortest path between two nodes in the knowledge graph.
  *
  * @package NVoOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,14 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * delegates to NV_oOS_Graphify_Analyzer::get_shortest_path() for the
  * actual BFS traversal with a configurable max-hop limit.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * Get the tool slug.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_slug() {
@@ -36,7 +36,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the human-readable tool name.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_name() {
@@ -46,7 +46,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the LLM-facing description.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_description() {
@@ -56,7 +56,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get capability flags for the tool registry.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_capability_flags() {
@@ -66,7 +66,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the JSON Schema for accepted parameters.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_parameters_schema() {
@@ -96,7 +96,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Execute the shortest-path computation.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @param  array $arguments Tool arguments.
 	 * @param  array $context   Execution context.
 	 * @return array|WP_Error Path details on success, WP_Error on failure.
@@ -152,7 +152,7 @@ class NV_oOS_Graphify_Tool_Shortest_Path implements WP_MCP_AI_Tool_Interface, WP
 	 * Tries an exact node_id match first, then falls back to a fuzzy label
 	 * LIKE search.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @param  string $identifier Node label or node_id.
 	 * @return string|WP_Error Resolved node_id on success, WP_Error on failure.
 	 */

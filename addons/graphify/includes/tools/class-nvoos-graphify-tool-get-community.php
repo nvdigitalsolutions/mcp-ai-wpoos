@@ -5,7 +5,7 @@
  * Retrieves all nodes belonging to a specific graph community.
  *
  * @package NVoOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns labels, types, degree counts, and source URLs for all nodes
  * assigned to the requested community ID.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * Get the tool slug.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_slug() {
@@ -35,7 +35,7 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the human-readable tool name.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_name() {
@@ -45,7 +45,7 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the LLM-facing description.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return string
 	 */
 	public function get_description() {
@@ -55,7 +55,7 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get capability flags for the tool registry.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_capability_flags() {
@@ -65,7 +65,7 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Get the JSON Schema for accepted parameters.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @return array
 	 */
 	public function get_parameters_schema() {
@@ -85,7 +85,7 @@ class NV_oOS_Graphify_Tool_Get_Community implements WP_MCP_AI_Tool_Interface, WP
 	/**
 	 * Execute the community lookup.
 	 *
-	 * @since  1.0.0
+	 * @since  0.1.0
 	 * @param  array $arguments Tool arguments.
 	 * @param  array $context   Execution context.
 	 * @return array|WP_Error Community node list on success, WP_Error on failure.
