@@ -107,26 +107,29 @@ class NV_oOS_Graphify_Tool_Build_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		$mode             = isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'full';
-		$content_types    = isset( $arguments['content_types'] ) ? array_map( 'sanitize_text_field', (array) $arguments['content_types'] ) : array();
 		$include_semantic = ! empty( $arguments['include_semantic'] );
 
 		if ( ! in_array( $mode, array( 'full', 'incremental' ), true ) ) {
 			return new WP_Error( 'invalid_mode', __( 'Mode must be "full" or "incremental".', 'nvoos-graphify' ) );
 		}
 
-		$builder = new NV_oOS_Graphify_Builder();
-
-		if ( ! empty( $content_types ) ) {
-			$builder->set_content_types( $content_types );
-		}
-
+		// Temporarily override semantic setting if requested.
 		if ( $include_semantic ) {
-			$builder->enable_semantic();
+			$settings                     = NV_oOS_Graphify::get_settings();
+			$settings['include_semantic'] = true;
+			update_option( NV_oOS_Graphify::OPTION_KEY, $settings );
 		}
 
-		$stats = ( 'full' === $mode )
-			? $builder->build_full()
-			: $builder->build_incremental();
+		// Override content_types if provided.
+		if ( ! empty( $arguments['content_types'] ) ) {
+			$content_types = array_map( 'sanitize_text_field', (array) $arguments['content_types'] );
+			$settings      = get_option( NV_oOS_Graphify::OPTION_KEY, array() );
+			$settings['content_types'] = $content_types;
+			update_option( NV_oOS_Graphify::OPTION_KEY, $settings );
+		}
+
+		$builder = new NV_oOS_Graphify_Builder();
+		$stats   = $builder->build_full();
 
 		if ( is_wp_error( $stats ) ) {
 			return $stats;
