@@ -465,4 +465,84 @@ class Test_PSO_Optimizer_Service extends WP_UnitTestCase {
 		// Position should have changed because there's personal and social pull.
 		$this->assertNotEquals( $before, $after );
 	}
+
+	// ------------------------------------------------------------------
+	// Orchestration Preset integration.
+	// ------------------------------------------------------------------
+
+	public function test_pso_adaptive_preset_exists() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+		$preset         = $presets_service->get_preset( 'pso_adaptive' );
+
+		$this->assertNotNull( $preset, 'pso_adaptive preset should exist' );
+		$this->assertArrayHasKey( 'name', $preset );
+		$this->assertArrayHasKey( 'settings', $preset );
+		$this->assertEquals( 'optimization', $preset['category'] );
+	}
+
+	public function test_pso_adaptive_preset_enables_optimizer() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+		$preset         = $presets_service->get_preset( 'pso_adaptive' );
+
+		$this->assertTrue( $preset['settings']['enable_pso_optimizer'] );
+		$this->assertArrayHasKey( 'pso_inertia_start', $preset['settings'] );
+		$this->assertArrayHasKey( 'pso_learning_rate_personal', $preset['settings'] );
+		$this->assertArrayHasKey( 'pso_learning_rate_social', $preset['settings'] );
+		$this->assertArrayHasKey( 'pso_update_frequency', $preset['settings'] );
+	}
+
+	public function test_pso_adaptive_preset_has_expected_defaults() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+		$preset         = $presets_service->get_preset( 'pso_adaptive' );
+		$settings       = $preset['settings'];
+
+		$this->assertEqualsWithDelta( 0.9, $settings['pso_inertia_start'], 0.001 );
+		$this->assertEqualsWithDelta( 0.4, $settings['pso_inertia_end'], 0.001 );
+		$this->assertEqualsWithDelta( 1.5, $settings['pso_learning_rate_personal'], 0.001 );
+		$this->assertEqualsWithDelta( 2.0, $settings['pso_learning_rate_social'], 0.001 );
+		$this->assertEquals( 10, $settings['pso_update_frequency'] );
+	}
+
+	public function test_recommend_preset_matches_pso_keywords() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+
+		$keywords = array( 'optimize performance', 'adaptive tuning', 'self-tuning system', 'improve over time', 'evolving strategy', 'tune parameters', 'enable pso' );
+
+		foreach ( $keywords as $keyword ) {
+			$result = $presets_service->recommend_preset_for_task( $keyword );
+			$this->assertArrayHasKey( 'pso_adaptive', $result['recommendations'], "Keyword '$keyword' should recommend pso_adaptive" );
+		}
+	}
+
+	public function test_recommend_preset_does_not_match_unrelated() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+		$result         = $presets_service->recommend_preset_for_task( 'write a blog post about cats' );
+
+		$this->assertArrayNotHasKey( 'pso_adaptive', $result['recommendations'] );
+	}
+
+	public function test_pso_adaptive_preset_can_be_applied() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-orchestration-presets.php';
+
+		$presets_service = new WP_MCP_AI_Orchestration_Presets();
+		$result         = $presets_service->apply_preset( 'pso_adaptive' );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['applied'] );
+		$this->assertEquals( 'pso_adaptive', $result['preset'] );
+		$this->assertTrue( $result['settings']['enable_pso_optimizer'] );
+
+		// Verify it was stored as the active preset.
+		$this->assertEquals( 'pso_adaptive', $presets_service->get_active_preset() );
+	}
 }
