@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/create-extended-cognition-toolkit',
+        'version' => 'dev-copilot/create-extended-cognition-toolkit',
+        'reference' => '232aadef100cc9e1d739a727c2097666ccd24752',
         'pretty_version' => 'dev-copilot/rebuild-assets-and-zips-yet-again',
         'version' => 'dev-copilot/rebuild-assets-and-zips-yet-again',
         'reference' => '953c717c75bcabc181ca9f18597bcb555de813e0',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/create-extended-cognition-toolkit',
+            'version' => 'dev-copilot/create-extended-cognition-toolkit',
+            'reference' => '232aadef100cc9e1d739a727c2097666ccd24752',
             'pretty_version' => 'dev-copilot/rebuild-assets-and-zips-yet-again',
             'version' => 'dev-copilot/rebuild-assets-and-zips-yet-again',
             'reference' => '953c717c75bcabc181ca9f18597bcb555de813e0',
