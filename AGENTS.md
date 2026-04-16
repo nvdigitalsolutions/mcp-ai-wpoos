@@ -1,0 +1,212 @@
+# AI Agents — Open Operator System (NV oOS)
+
+> This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
+>
+> Last reviewed: **April 2026** · Version: **1.0**
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code per-turn context (naming, security, architecture) |
+| [`MAINTAINER_MAP.md`](MAINTAINER_MAP.md) | Boot flow, directory map, build commands, canonical docs |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | PR process, quality gates, GSD × BMAD methodology |
+| [`CODEOWNERS`](CODEOWNERS) | Auto-review assignment per path |
+| [`SECURITY.md`](SECURITY.md) | Vulnerability disclosure policy |
+| [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | GitHub Copilot repo-level instructions |
+
+---
+
+## 1. Agent Inventory
+
+### External AI Coding Agents
+
+These are the AI assistants that human maintainers invoke when working on the repository.
+
+| Agent | Provider | Context File | Trigger | Scope |
+|-------|----------|-------------|---------|-------|
+| **Claude Code** | Anthropic | [`CLAUDE.md`](CLAUDE.md) | Manual / Copilot Coding Agent | Full codebase — code generation, review, refactoring, docs |
+| **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
+| **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
+
+### Internal BMAD Agents (GSD × BMAD Workflow)
+
+The NV oOS plugin itself includes an agentic multi-agent system for structured feature development. These agents run **inside** NV oOS assistants and follow the 10-phase GSD × BMAD methodology documented in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+| Agent ID | BMAD Role | NV oOS Assistant | Phases | YAML Definition |
+|----------|-----------|-----------------|--------|-----------------|
+| `nv-oos-analyst` | Analyst (Mary) | The Research Operative | 1 | [`.bmad/agents/nv-oos-analyst.yaml`](.bmad/agents/nv-oos-analyst.yaml) |
+| `nv-oos-product-manager` | Product Manager (John) | The Content Drafter | 2 | [`.bmad/agents/nv-oos-product-manager.yaml`](.bmad/agents/nv-oos-product-manager.yaml) |
+| `nv-oos-architect` | Architect (Winston) | The Unstructured Parser | 3 | [`.bmad/agents/nv-oos-architect.yaml`](.bmad/agents/nv-oos-architect.yaml) |
+| `nv-oos-scrum-master` | Scrum Master (Bob) | The Orchestrator | 0, 4, 7, 9 | [`.bmad/agents/nv-oos-scrum-master.yaml`](.bmad/agents/nv-oos-scrum-master.yaml) |
+| `nv-oos-developer` | Developer (Amelia) | The Publisher | 5 | [`.bmad/agents/nv-oos-developer.yaml`](.bmad/agents/nv-oos-developer.yaml) |
+| `nv-oos-qa-engineer` | QA Engineer (Quinn) | The SEO & Compliance Auditor | 6, 8 | [`.bmad/agents/nv-oos-qa-engineer.yaml`](.bmad/agents/nv-oos-qa-engineer.yaml) |
+
+Team composition and scale-adaptive usage are defined in [`.bmad/teams/feature-development.yaml`](.bmad/teams/feature-development.yaml).
+
+---
+
+## 2. Context-Loading Strategy
+
+All agents follow the **GSD 30% Rule**: context files should consume no more than 30% of the agent's context window.
+
+### Base context (always loaded)
+
+Every agent session loads these two files:
+
+| File | Content |
+|------|---------|
+| [`.context/conventions.md`](.context/conventions.md) | Naming conventions, PHP compatibility rules, code style |
+| [`.context/security-checklist.md`](.context/security-checklist.md) | Security requirements for all code changes |
+
+### Subsystem context (loaded per task)
+
+| File | Load When |
+|------|-----------|
+| [`.context/tool-registry.md`](.context/tool-registry.md) | Working on tool implementations |
+| [`.context/rest-api.md`](.context/rest-api.md) | Working on REST API endpoints |
+| [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
+| [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
+| [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
+
+### Feature context (loaded per active feature)
+
+Active features get a context file in `.context/active/[feature].md`. These are created at Phase 0, updated during development, and archived to `.context/archive/` at Phase 9.
+
+Template: [`.context/templates/active-feature-template.md`](.context/templates/)
+
+---
+
+## 3. Agent Capabilities and Limitations
+
+### Claude Code
+
+| Aspect | Details |
+|--------|---------|
+| **Strengths** | Full codebase reasoning, multi-file refactoring, test generation, architecture analysis |
+| **Context file** | `CLAUDE.md` — loaded automatically every turn |
+| **Limitations** | Cannot push to git directly; uses `report_progress` tool. Cannot access `.github/agents/` directory |
+| **PHP compat** | Must target PHP 7.4+ for base plugin, PHP 8.1+ for Pro addon |
+| **Security** | Must follow all rules in `.context/security-checklist.md` |
+
+### GitHub Copilot
+
+| Aspect | Details |
+|--------|---------|
+| **Strengths** | Fast inline completions, Copilot Chat for Q&A, PR review summaries |
+| **Context file** | `.github/copilot-instructions.md` — loaded per Copilot session |
+| **Limitations** | Shorter context window; best for single-file or small-scope changes |
+| **Configuration** | Follows `@wordpress/eslint-plugin` for JS, WPCS for PHP |
+
+### OpenAI Codex
+
+| Aspect | Details |
+|--------|---------|
+| **Strengths** | Sandboxed execution, can run builds and tests autonomously |
+| **Context file** | `.codex/startup.sh` — bootstrap script for Codex sandbox |
+| **Limitations** | Ephemeral sandbox; no persistent state between runs |
+
+### BMAD Agents
+
+| Aspect | Details |
+|--------|---------|
+| **Strengths** | Structured 10-phase workflow with phase gates; specialized per role |
+| **Context files** | Each agent loads role-specific context from `.bmad/agents/*.yaml` |
+| **Limitations** | Require NV oOS Pro tools for orchestration; depend on active NV oOS assistants |
+| **Coordination** | Orchestrator (Scrum Master) delegates to specialists via `delegate_to_agent` tool |
+
+---
+
+## 4. Inter-Agent Coordination
+
+### Avoiding duplication
+
+When multiple agents work on the same repository:
+
+1. **Check recent commits** before starting work — another agent may have already addressed part of the task.
+2. **Use conventional commits** (`feat(scope):`, `fix(scope):`, `docs(scope):`) so other agents can parse intent from `git log`.
+3. **Do not modify files another agent is actively editing** in the same PR.
+
+### Handoff protocol
+
+The BMAD workflow defines explicit phase gates (documented in [`.bmad/teams/feature-development.yaml`](.bmad/teams/feature-development.yaml)). Before an agent can start its phase, the previous phase's exit criteria must be met:
+
+| Transition | Gate Criteria |
+|------------|---------------|
+| Phase 0 → 1 | Base context loaded, feature context initialized |
+| Phase 1 → 2 | Project Brief complete and approved |
+| Phase 2 → 3 | PRD approved with all acceptance criteria |
+| Phase 3 → 4 | Architecture Specification reviewed |
+| Phase 4 → 5 | All stories broken down and sequenced |
+| Phase 5 → 6 | All story code committed with atomic commits |
+| Phase 6 → 7 | All acceptance criteria verified; lint + test + CodeQL pass |
+| Phase 7 → 8 | Version bumped, CHANGELOG updated, Git tag + Release published |
+| Phase 8 → 9 | No new errors in first 48 hours |
+
+### Scale-adaptive usage
+
+Not every change requires the full 10-phase workflow:
+
+| Change Size | Agents Involved | Phases |
+|------------|----------------|--------|
+| **Patch / Bug Fix** | Developer + QA | 5, 6, 7 |
+| **Small Feature** | Orchestrator, Developer, QA | 0, 4, 5, 6, 7, 9 |
+| **Medium Feature** | Orchestrator, Researcher, Developer, QA | 0, 1–7, 9 |
+| **Major Feature** | Full 6-agent team | 0–9 |
+
+---
+
+## 5. Security and Privacy
+
+### Data handling
+
+- **No secrets in prompts.** API keys, tokens, and credentials must never appear in agent context files or commit messages.
+- **No PII in agent output.** Sanitize any user data before including it in agent-visible context.
+- **Credential storage.** All API keys are stored in WordPress options (encrypted at rest) — never in source code.
+
+### Agent permissions
+
+| Agent | Can Write Code | Can Push to Git | Can Access Secrets |
+|-------|---------------|----------------|-------------------|
+| Claude Code | ✅ | Via `report_progress` only | ❌ |
+| GitHub Copilot | ✅ (suggestions) | Via human commit | ❌ |
+| OpenAI Codex | ✅ (sandbox) | Via sandbox workflow | ❌ |
+| BMAD Agents | ✅ (via NV oOS tools) | Via `manage_autonomous_session` | ❌ (tools check capabilities) |
+
+### Vulnerability reporting
+
+If an AI agent produces code with a security vulnerability, report it through the process described in [`SECURITY.md`](SECURITY.md). Do **not** open a public issue.
+
+---
+
+## 6. Updating Agent Configuration
+
+### When to update which file
+
+| Change | Files to Update |
+|--------|----------------|
+| New naming convention or security rule | `CLAUDE.md`, `.github/copilot-instructions.md`, `.context/conventions.md` |
+| New tool, hook, or REST endpoint | `CLAUDE.md` (architecture section) |
+| New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
+| New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
+| New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
+
+### Review cadence
+
+These files should be reviewed whenever:
+- A new AI coding agent is adopted
+- The project's coding standards change materially
+- A major version is released
+- Quarterly, at minimum
+
+---
+
+## 7. References
+
+- [GSD × BMAD Methodology Proposal](docs/proposals/GSD-BMAD-METHODOLOGY-PROPOSAL.md)
+- [Agent Memory Management Guide](docs/AGENT-MEMORY-COMPLETE-GUIDE.md)
+- [Developer Hooks Reference](docs/DEVELOPER_HOOKS_REFERENCE.md)
+- [Architecture Decision Record #1 — Module Boundaries](docs/ADR_001_module_boundaries.md)
+- [Context Engineering Files README](.context/README.md)
+- [BMAD Agent Definitions README](.bmad/README.md)
+- [GitHub CODEOWNERS Documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)

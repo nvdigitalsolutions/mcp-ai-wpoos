@@ -21,6 +21,14 @@
 /docs/ @nvdigitalsolutions
 *.md @nvdigitalsolutions
 
+# AI agent context files
+/CLAUDE.md @nvdigitalsolutions
+/AGENTS.md @nvdigitalsolutions
+/MAINTAINER_MAP.md @nvdigitalsolutions
+/.bmad/ @nvdigitalsolutions
+/.context/ @nvdigitalsolutions
+/.codex/ @nvdigitalsolutions
+
 # Configuration files
 /.github/ @nvdigitalsolutions
 /composer.json @nvdigitalsolutions

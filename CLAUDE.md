@@ -1,7 +1,19 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: April 2026.
+> Last reviewed: **April 2026** · Version: **2.1**
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| [`MAINTAINER_MAP.md`](MAINTAINER_MAP.md) | Boot flow, directory map, build commands, Pro vs Base, canonical docs |
+| [`AGENTS.md`](AGENTS.md) | Full AI agent inventory, BMAD roles, context-loading strategy |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | PR process, quality gates, GSD × BMAD methodology |
+| [`CODEOWNERS`](CODEOWNERS) | Auto-review assignment per path |
+| [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | GitHub Copilot repo-level context |
+
+---
 
 ## What This Is
 
@@ -262,3 +274,53 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+## Multi-Agent Ecosystem
+
+This repository is developed by multiple AI coding agents. You (Claude Code) are one of them.
+
+| Agent | Context File | Overlap with CLAUDE.md |
+|-------|-------------|----------------------|
+| **Claude Code** | This file (`CLAUDE.md`) | — |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | Shares coding standards, tool patterns |
+| **OpenAI Codex** | `.codex/startup.sh` | Sandbox bootstrap only |
+| **BMAD Agents** | `.bmad/agents/*.yaml` | Specialized workflow roles (6 agents) |
+
+**Key points for Claude Code sessions:**
+- Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
+- Load subsystem-specific context files (listed in "Context Engineering Files" above) only when working on that subsystem.
+- If a BMAD workflow is active, the orchestrator agent coordinates — follow the phase gates documented in `CONTRIBUTING.md`.
+- Do **not** duplicate work that another agent has already completed. Check `git log` for recent commits by other agents.
+
+Full agent inventory: [`AGENTS.md`](AGENTS.md)
+
+---
+
+## Troubleshooting
+
+### Common Claude Code pitfalls in this repo
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `str_contains()` lint failure | Base plugin requires PHP 7.4+ | Use `strpos( $haystack, $needle ) !== false` instead |
+| `match` expression lint failure | Base plugin requires PHP 7.4+ | Use `switch`/`case` instead |
+| Tool schema rejected by OpenAI | `'mixed'` type or missing `'items'` on arrays | Use `anyOf` for unions; always include `'items'` on arrays |
+| PHPCS error on `shell_exec()` | WordPress.org compliance | Use `proc_open()` for external processes |
+| Tests fail with "table not found" | Test DB not bootstrapped | Run `composer run test:install` first |
+| Pro tools missing at runtime | `WP_MCP_AI_BASE_VERSION` is `true` | Set to `false` or remove the constant |
+| Context window too large | Loading all `.context/` files | Load only the subsystem files you need (GSD 30% rule) |
+
+### Useful debug commands
+
+```bash
+# Check if plugin is active and which mode
+wp option get wp_mcp_ai_settings --format=json | grep -i version
+
+# List recently registered tools
+wp eval "echo count(WP_MCP_AI_Tool_Registry::get_instance()->get_tools());"
+
+# View recent plugin errors
+wp option get wp_mcp_ai_recent_errors --format=json
+```
