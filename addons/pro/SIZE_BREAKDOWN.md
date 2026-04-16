@@ -3,7 +3,7 @@
 ## Overview
 
 **Source Directory Size**: ~176 MB (apparent size on disk)  
-**Estimated Distributed ZIP**: ~39 MB  
+**Estimated Distributed ZIP**: ~34 MB  
 **Total Number of Files**: ~9,184 files  
 **PHP Files**: 3,738  
 **JS Files (non-map)**: 2,624  
@@ -14,10 +14,11 @@
 > - v1.1.0: 54 MB (source maps, Facebook SDK included)
 > - v1.1.1: 87 MB (regression: canvas native binaries accidentally included)  
 > - v1.1.2: 33 MB (fixed: excluded canvas binaries, old pdf.js versions, source maps)
-> - **Current (~v1.2+): ~39 MB** (added sharp image processing, remotion video, pdfjs-dist, 31 toolkits, 605+ tools, 12 node microservices)
+> - v1.1.8: ~34 MB (fixed: excluded sharp native binaries and C++ sources)
+> - **Current (~v1.2+): ~34 MB** (added sharp image processing, remotion video, pdfjs-dist, 31 toolkits, 605+ tools, 12 node microservices)
 >
 > **Growth since v1.1.2** is primarily due to:
-> - `sharp` image processing library (17 MB — includes 16 MB Linux native binary `libvips-cpp.so.42`)
+> - `sharp` image processing library (576 KB JS wrapper — native binaries excluded since v1.1.8)
 > - `@remotion`/`remotion` video generation (3.3 MB)
 > - `pdfjs-dist` standalone Mozilla PDF.js package (7 MB)
 > - Expanded `includes/` from 11 MB to 16 MB (new toolkits, MCP Apps, Vault, Healthcare, etc.)
@@ -48,7 +49,7 @@ After `.distignore` exclusions, the ZIP contains approximately:
 - `vendor/*/docs/` and `vendor/*/examples/` — ~2 MB
 - PDF sample files in vendor — ~1.7 MB
 
-**Total: ~176 MB source → ~129 MB after exclusions → ~39 MB compressed ZIP**
+**Total: ~176 MB source → ~113 MB after exclusions → ~34 MB compressed ZIP**
 
 ### What's Excluded (Not in Distribution ZIP)
 
@@ -57,12 +58,12 @@ After `.distignore` exclusions, the ZIP contains approximately:
 - ✅ **build/** directory (1.1 MB): TMA templates, workflow builder build artifacts
 - ✅ **Vendor tests/docs/examples** (~14 MB): PHPUnit test files, README, CHANGELOG files
 - ✅ **PDF sample files** (~1.7 MB): Test PDFs in vendor packages
+- ✅ **Sharp native binaries** (`assets/vendor/sharp/node_modules/@img/`, 16 MB): Platform-specific Linux binaries
+- ✅ **Sharp C++ sources** (`assets/vendor/sharp/src/`, 228 KB): Compile-time only; not needed at runtime
 
-#### ⚠️ Sharp Native Binaries (Not Yet Excluded)
+#### Sharp Native Binaries (Excluded ✅ — Fixed in v1.1.8)
 
-`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42` is **15.5 MB** and is a Linux-specific native binary. It is **not currently excluded** by `.distignore`. This is similar to the canvas native binary issue fixed in v1.1.2.
-
-**Recommendation**: Add `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` to `.distignore` to save ~16 MB. Sharp's JS wrapper will still load; users needing native acceleration can run `npm install sharp` in the plugin directory.
+`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42` was **15.5 MB** and is a Linux-specific native binary. This was excluded from build ZIPs in v1.1.8, similar to the canvas native binary fix in v1.1.2. Sharp's JS wrapper is still included; users needing native acceleration can run `npm install sharp` in the plugin directory.
 
 ---
 
@@ -72,7 +73,6 @@ Excluding `.map` files and `facebook-nodejs-business-sdk`:
 
 | Size | File | Purpose |
 |------|------|---------|
-| 15.5 MB | assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.42 | Sharp Linux native binary (⚠️ not yet excluded) |
 | 4.9 MB | bin/generate-pdf.bundle.js | PDF generation bundle (includes PDFKit) |
 | 3.2 MB | bin/generate-word.bundle.js | Word generation bundle (includes docx library) |
 | 2.5 MB | assets/vendor/pdfkit/js/pdfkit.standalone.js | PDFKit standalone for PDF creation |
@@ -130,7 +130,7 @@ JavaScript/Node.js libraries bundled for browser and Node.js usage:
 
 | Package | Apparent Size | Purpose |
 |---------|--------------|---------|
-| `sharp` | 17 MB | High-performance image processing (includes Linux native binary) |
+| `sharp` | 576 KB | High-performance image processing (JS wrapper only; native binaries excluded) |
 | `@remotion` + `remotion` | 3.3 MB | Programmatic video generation |
 
 ### Document Generation & OCR (27 MB)
@@ -384,13 +384,11 @@ Five TMA (Template/App) build directories — **excluded from distribution ZIP**
 5. **✅ Canvas Native Binaries Excluded** (was −181 MB in v1.1.1)  
    `assets/vendor/canvas/build/` excluded. Tiny JS stub (33 KB) retained.
 
-### ❌ Not Yet Implemented
+6. **✅ Sharp Native Binaries Excluded** (Save ~16 MB uncompressed, ~5 MB compressed — fixed in v1.1.8)  
+   `assets/vendor/sharp/node_modules/@img/` and `assets/vendor/sharp/src/` excluded from build ZIPs and `.distignore`.  
+   Sharp's JS wrapper (576 KB) still loads; users needing native acceleration run `npm install sharp`.
 
-6. **⚠️ Sharp Native Binaries** (Save ~16 MB uncompressed, ~5 MB compressed)  
-   `assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` is a 16 MB Linux binary.  
-   Add to `.distignore`: `assets/vendor/sharp/node_modules/@img/`  
-   Sharp's JS wrapper still loads; users needing native acceleration run `npm install sharp`.  
-   **Complexity**: Easy — one `.distignore` line.
+### ❌ Not Yet Implemented
 
 7. **Dynamic TCPDF Font Loading** (Save ~4 MB compressed)  
    Ship minimal font set; download additional on demand.  
@@ -408,12 +406,12 @@ Five TMA (Template/App) build directories — **excluded from distribution ZIP**
 
 | Optimization | ZIP Reduction | New Size | Status |
 |--------------|---------------|----------|--------|
-| **Current** | — | **~39 MB** | Baseline |
-| Exclude sharp native binary | −5 MB | ~34 MB | ⚠️ Recommended |
+| **Current** | — | **~34 MB** | Baseline |
+| Exclude sharp native binary | ✅ Done | ~34 MB | ✅ Fixed in v1.1.8 |
 | Dynamic TCPDF fonts | −4 MB | ~30 MB | Not done |
 | Code splitting | −3 MB | ~27 MB | Not done |
 | Optional Puppeteer | −2 MB | ~25 MB | Not done |
-| **Maximum potential** | **−14 MB** | **~25 MB** | If all applied |
+| **Maximum potential** | **−9 MB** | **~25 MB** | If all remaining applied |
 
 ---
 
@@ -426,7 +424,7 @@ Native binary libraries are platform-specific and cannot be bundled cross-platfo
 - Requires system-level installation: `apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev`
 - For PDF OCR: `npm install canvas@2` in plugin directory
 
-**Sharp** (`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` — ⚠️ not yet excluded):
+**Sharp** (`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/` — ✅ excluded since v1.1.8):
 - `libvips-cpp.so.42` alone is 15.5 MB
 - Platform-specific; won't work on Windows/macOS
 - For image processing: `npm install sharp` in plugin directory
@@ -435,7 +433,7 @@ Native binary libraries are platform-specific and cannot be bundled cross-platfo
 
 ## Feature Density
 
-With ~39 MB, the pro plugin provides:
+With ~34 MB, the pro plugin provides:
 
 - **605+ AI-powered pro tools** (across 19 toolkit subdirectories + root tools)
 - **31 specialized toolkits** (was ~15 in v1.1.x)
@@ -450,7 +448,7 @@ With ~39 MB, the pro plugin provides:
 - MCP Apps (per-assistant remote MCP server connections)
 - 12 Node.js microservices
 - Multi-language support (100+ languages)
-- **~64 KB per tool average** (~39 MB ÷ 605 tools)
+- **~56 KB per tool average** (~34 MB ÷ 605 tools)
 
 ---
 
@@ -462,7 +460,7 @@ With ~39 MB, the pro plugin provides:
 | 1.1.0 | ~48 MB | +13 MB | Added Facebook SDK, video tools |
 | 1.1.1 | ~54 MB | +6 MB | Added pdf-parse (30 MB uncompressed) |
 | 1.1.2 | ~33 MB | −21 MB | Fixed: excluded canvas binaries, old pdf.js, source maps, Facebook SDK |
-| **Current** | **~39 MB** | +6 MB | Added sharp, remotion, pdfjs-dist standalone, 31 toolkits (up from 15+), 605+ tools |
+| **Current** | **~34 MB** | +1 MB | Added sharp (JS wrapper only), remotion, pdfjs-dist standalone, 31 toolkits (up from 15+), 605+ tools; excluded sharp native binaries in v1.1.8 |
 
 ---
 
@@ -501,10 +499,10 @@ With ~39 MB, the pro plugin provides:
 
 ## Conclusion
 
-### The ~39 MB ZIP Contains (After Optimizations):
+### The ~34 MB ZIP Contains (After Optimizations):
 
 **Top Contributors (Uncompressed in ZIP):**
-1. **JavaScript Libraries**: ~48 MB — NPM packages (sharp, pdfjs-dist, ExcelJS, pdfkit, remotion, etc.)
+1. **JavaScript Libraries**: ~32 MB — NPM packages (sharp JS wrapper, pdfjs-dist, ExcelJS, pdfkit, remotion, etc.)
 2. **PHP Vendor**: ~51 MB — TCPDF, PHPOffice, dompdf, thecodingmachine/safe, boxpacker
 3. **PHP Source Code**: ~16 MB — 605+ tools, 31 toolkits, admin, MCP Apps, Vault
 4. **Fonts**: ~17 MB — TCPDF fonts for international PDF support
@@ -513,22 +511,23 @@ With ~39 MB, the pro plugin provides:
 **What's Excluded (Not in ZIP):**
 - ❌ JS/CSS source maps (17.4 MB) — Development only
 - ❌ Facebook SDK (14 MB) — Not used
+- ❌ Sharp native binaries (16 MB) — Platform-specific; excluded since v1.1.8
 - ❌ Vendor tests/docs (~14 MB) — Development files
 - ❌ Build artifacts (1.1 MB) — TMA template builds
 
-### Pending Quick Win:
+### Completed Optimization (v1.1.8):
 
-Adding one line to `.distignore` to exclude the Sharp Linux native binary (`assets/vendor/sharp/node_modules/@img/sharp-libvips-linux-x64/`) would reduce the ZIP by approximately **5 MB** (16 MB uncompressed → ~5 MB compressed).
+Sharp Linux native binaries (`assets/vendor/sharp/node_modules/@img/`) and C++ source files (`assets/vendor/sharp/src/`) are now excluded from build ZIPs, reducing the distribution by approximately **5 MB** (16 MB uncompressed → ~5 MB compressed savings).
 
 ---
 
 ## Quick Reference
 
 ```
-Pro Plugin Distribution Size: ~39 MB
+Pro Plugin Distribution Size: ~34 MB
 Source Directory (apparent): 176 MB
-├── assets/vendor/: 66 MB → ~20 MB compressed (JS libraries)
-│   ├── sharp/: 17 MB (⚠️ includes 16 MB Linux native binary)
+├── assets/vendor/: 66 MB → ~15 MB compressed (JS libraries)
+│   ├── sharp/: 576 KB (JS wrapper only; native binaries excluded ✅)
 │   ├── pdfjs-dist/: 7.0 MB
 │   ├── exceljs/: 7.3 MB
 │   ├── puppeteer-core+@puppeteer: 6.1 MB
@@ -549,8 +548,9 @@ Source Directory (apparent): 176 MB
 ├── node-services/: 68 KB (12 microservices)
 └── scripts/: 60 KB
 
-Excluded from ZIP (~47 MB uncompressed):
+Excluded from ZIP (~63 MB uncompressed):
 ├── JS/CSS source maps: 17.4 MB
+├── Sharp native binaries: 16 MB
 ├── Facebook SDK: 14 MB
 ├── Vendor tests/docs: ~14 MB
 └── build/ dir: 1.1 MB
@@ -559,7 +559,7 @@ Tools: 605+ (across 31 toolkits)
 Node microservices: 12
 ```
 
-**Last Updated**: April 15, 2026  
-**Plugin Version**: 1.0.0 (file) / ~v1.2 equivalent (feature set)  
-**Analysis Date**: Based on live addons/pro directory with .distignore applied  
-**Source Size**: ~176 MB apparent → ~39 MB estimated distribution ZIP
+**Last Updated**: April 16, 2026  
+**Plugin Version**: 1.1.8  
+**Analysis Date**: Based on live addons/pro directory with .distignore and build script exclusions applied  
+**Source Size**: ~176 MB apparent → ~34 MB estimated distribution ZIP

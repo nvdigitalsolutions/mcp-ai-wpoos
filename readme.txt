@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -269,11 +269,41 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 220+ tools for content, media, research, and operations
+4. **Tool Registry** - 230+ tools for content, media, research, and operations
 5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.8 - April 15, 2026 =
+
+**Erlang C Queuing Theory Tools, Full Tool-Reference Audit**
+
+*Erlang C Workforce Management Tools*
+
+* 4 new tools in the base plugin (no Pro addon required) built on the Erlang C formula
+* `calculate_erlang_c` — general-purpose staffing solver: given arrival rate, average handle time, and target SLA returns agents needed, probability of waiting, avg wait time, and utilisation
+* `erlang_c_concurrency_advisor` — reads plugin session telemetry and returns a data-driven recommendation for the Max Concurrent Sessions setting
+* `erlang_c_staffing_advisor` — multi-channel staffing with chat concurrency multiplier, bot-deflection-rate adjustment, and optional NICE WFM / Genesys / Verint / Calabrio endpoint integration
+* `erlang_c_queue_health` — real-time SLA monitoring: polls a contact-centre REST endpoint, fires `wp_mcp_ai_queue_alert` action on breach, stores snapshots in JetEngine CCT
+* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/hooks-reference.md`
+* Shared helper class `WP_MCP_AI_Erlang_C` with `erlang_c()`, `avg_wait_time()`, `min_agents_for_service_level()`, and `service_level()` static methods
+
+*Documentation*
+
+* `docs/reference/tools/tool-reference.md` fully audited — all 230+ tools in `load_default_tools` (base + extended) now documented
+* 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
+* New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
+* `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
+* `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
+* `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
+
+*Compliance*
+
+* Full re-audit of base plugin against all 13 WordPress.org Plugin Developer Guidelines — all pass
+* New compliance document `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline
+* Pro Addon External Services (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) documented in readme.txt, clearly marked as not present in base plugin
+* Version bumped to 1.1.8 across plugin header, constants, readme.txt, and CHANGELOG.md
 
 = 1.1.7 - April 11, 2026 =
 
@@ -1006,7 +1036,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Purpose:** Browser-native machine learning library enabling in-browser NLP tasks (summarisation, sentiment analysis, entity extraction, translation, semantic search) without sending data to a remote AI provider
 * **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
 * **When:** Only when the "Browser-Native AI Tasks (Transformers.js)" feature is explicitly enabled by the administrator (disabled by default)
-* **Service URL:** https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
+* **Service URL:** https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1
 * **Terms of Service:** https://www.jsdelivr.com/terms
 * **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
@@ -1058,7 +1088,33 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
 * **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
 
+= Pro Addon External Services =
 
+The following services are **only** used by the separately installed **NV oOS Pro** addon. They are **not** present in the base plugin. They are documented here for completeness and transparency.
+
+**P1. Replicate API (AI Music Generation)**
+* **Purpose:** AI-powered music and audio generation via Replicate's hosted model inference
+* **Data Sent:** Music generation parameters (prompt, tempo, duration, genre), API key
+* **When:** When the AI music generation tool is used (Algorave addon, requires Pro)
+* **Service URL:** https://api.replicate.com/v1/predictions
+* **Terms of Service:** https://replicate.com/terms
+* **Privacy Policy:** https://replicate.com/privacy
+
+**P2. ESPN Fantasy Football API**
+* **Purpose:** Retrieve ESPN Fantasy Football league data, rosters, scores, and standings
+* **Data Sent:** League ID, season ID, team ID; SWID and ESPN_S2 authentication cookies for private leagues
+* **When:** When ESPN Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasy.espn.com/apis/v3/games/ffl/seasons
+* **Terms of Service:** https://www.espn.com/espn/news/story?page=terms-of-use
+* **Privacy Policy:** https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+
+**P3. Yahoo Fantasy Sports API**
+* **Purpose:** Retrieve Yahoo Fantasy Football league data, rosters, player stats, standings, and trade analysis
+* **Data Sent:** League key, player keys, OAuth2 access token (obtained via Yahoo OAuth2 — see service #38 above)
+* **When:** When Yahoo Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasysports.yahooapis.com/fantasy/v2/
+* **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
+* **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
 
 **What is sent to external services:**
 * User messages and chat conversations (AI providers only)
@@ -1216,7 +1272,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
 
 **Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
-* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
+* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1 — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
 * WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
 
 = GDPR Compliance =

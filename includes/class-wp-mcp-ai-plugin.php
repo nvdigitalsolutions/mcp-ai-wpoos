@@ -267,7 +267,6 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( strpos( $action, 'elementor' ) === 0 ) {
 				$this->elementor_buffer_level = ob_get_level();
-				ob_start();
 				add_action( 'shutdown', array( $this, 'clean_elementor_output_buffer' ), 0 );
 			}
 		}

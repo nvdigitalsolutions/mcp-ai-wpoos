@@ -1,7 +1,7 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Document version:** 3.0 — 2026-04-11  
-**Plugin version:** 1.1.7
+**Document version:** 4.0 — 2026-04-15  
+**Plugin version:** 1.1.8
 
 This document records every issue raised by the WordPress.org plugin directory automated
 reviews and the exact code changes made to resolve each one.

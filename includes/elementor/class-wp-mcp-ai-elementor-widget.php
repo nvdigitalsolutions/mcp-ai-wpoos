@@ -1381,12 +1381,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		if ( $show_prompt ) {
 			$prompt_output = $this->format_text_block( $prompt );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $prompt_output ) {
 				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt">';
 				echo '<h4 class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-heading">' . esc_html__( 'System prompt', 'mcp-ai-wpoos' ) . '</h4>';
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-content">' . $prompt_output . '</div>';
+				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-content">' . wp_kses_post( $prompt_output ) . '</div>';
 				echo '</div>';
 			}
 		}
@@ -1537,10 +1535,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				if ( $show_descriptions ) {
 					$description_output = $this->format_text_block( $description );
 
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 					if ( '' !== $description_output ) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-						echo '<div class="wp-mcp-ai-chat-widget__assistant-tools-description">' . $description_output . '</div>';
+						echo '<div class="wp-mcp-ai-chat-widget__assistant-tools-description">' . wp_kses_post( $description_output ) . '</div>';
 					}
 				}
 
@@ -1648,10 +1644,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			if ( $show_desc ) {
 				$description_output = $this->format_text_block( $description );
 
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 				if ( '' !== $description_output ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-					echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts-description">' . $description_output . '</div>';
+					echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts-description">' . wp_kses_post( $description_output ) . '</div>';
 				}
 			}
 
