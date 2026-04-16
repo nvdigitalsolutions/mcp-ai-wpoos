@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_GRAPHIFY_VERSION', '0.1.0' );
+define( 'NVOOS_GRAPHIFY_VERSION', '0.5.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_GRAPHIFY_FILE', __FILE__ );
@@ -40,10 +40,20 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-database.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-detector.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-extractor-structural.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-extractor-semantic.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-builder.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-cluster.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-analyzer.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-report.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-export.php';
 
 // Load REST controller.
 require_once NVOOS_GRAPHIFY_PATH . 'includes/rest/class-nvoos-graphify-rest.php';
+
+// Load frontend components.
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-shortcode.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-schema.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-related.php';
 
 // Load admin settings (admin only).
 if ( is_admin() ) {

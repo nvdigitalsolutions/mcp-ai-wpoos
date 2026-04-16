@@ -180,6 +180,13 @@ class NV_oOS_Graphify {
 			'NV_oOS_Graphify_Tool_Build_Graph',
 			'NV_oOS_Graphify_Tool_Query_Graph',
 			'NV_oOS_Graphify_Tool_Graph_Stats',
+			'NV_oOS_Graphify_Tool_Get_Node',
+			'NV_oOS_Graphify_Tool_Get_Neighbors',
+			'NV_oOS_Graphify_Tool_Get_Community',
+			'NV_oOS_Graphify_Tool_God_Nodes',
+			'NV_oOS_Graphify_Tool_Shortest_Path',
+			'NV_oOS_Graphify_Tool_Suggest_Links',
+			'NV_oOS_Graphify_Tool_Content_Gaps',
 		);
 
 		foreach ( $tools as $class ) {
@@ -205,18 +212,24 @@ class NV_oOS_Graphify {
 		}
 		$loaded = true;
 
-		$dir = NVOOS_GRAPHIFY_PATH . 'includes/tools/';
+		$dir   = NVOOS_GRAPHIFY_PATH . 'includes/tools/';
+		$files = array(
+			'class-nvoos-graphify-tool-build-graph.php',
+			'class-nvoos-graphify-tool-query-graph.php',
+			'class-nvoos-graphify-tool-graph-stats.php',
+			'class-nvoos-graphify-tool-get-node.php',
+			'class-nvoos-graphify-tool-get-neighbors.php',
+			'class-nvoos-graphify-tool-get-community.php',
+			'class-nvoos-graphify-tool-god-nodes.php',
+			'class-nvoos-graphify-tool-shortest-path.php',
+			'class-nvoos-graphify-tool-suggest-links.php',
+			'class-nvoos-graphify-tool-content-gaps.php',
+		);
 
-		if ( file_exists( $dir . 'class-nvoos-graphify-tool-build-graph.php' ) ) {
-			require_once $dir . 'class-nvoos-graphify-tool-build-graph.php';
-		}
-
-		if ( file_exists( $dir . 'class-nvoos-graphify-tool-query-graph.php' ) ) {
-			require_once $dir . 'class-nvoos-graphify-tool-query-graph.php';
-		}
-
-		if ( file_exists( $dir . 'class-nvoos-graphify-tool-graph-stats.php' ) ) {
-			require_once $dir . 'class-nvoos-graphify-tool-graph-stats.php';
+		foreach ( $files as $file ) {
+			if ( file_exists( $dir . $file ) ) {
+				require_once $dir . $file;
+			}
 		}
 	}
 
