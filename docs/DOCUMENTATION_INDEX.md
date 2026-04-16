@@ -1,12 +1,16 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 15, 2026  
-**Plugin Version:** 1.1.8  
+**Last Updated:** April 16, 2026  
+**Plugin Version:** 1.2.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 16, 2026 UPDATE:** 🧠 **PSO ADAPTIVE OPTIMIZATION & ORCHESTRATION REFERENCE**
+> - **PSO Optimizer Service** (v1.2.0) — Particle Swarm Optimization for adaptive AI parameter tuning. 7-dimension search space, inertia decay, per-assistant particle state, global swarm convergence. New `pso_adaptive` workflow preset.
+> - **Comprehensive Orchestration Reference** (NEW) — [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) — Single authoritative reference for the entire orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings comparison matrices), PSO algorithm documentation, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data storage keys, admin UI, and service file index.
 
 > **📌 APRIL 15, 2026 UPDATE:** 📋 **ERLANG C TOOLS & FULL TOOL-REFERENCE AUDIT**
 > - **Erlang C Queuing Theory Tools** (v1.1.8) — 4 new workforce-management tools: `calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`. New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications.
@@ -1077,6 +1081,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [RESOURCE-MANAGEMENT.md](features/performance/RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md) | **NEW (Apr 2026):** Erlang C queuing theory tools — staffing calculator, concurrency advisor, multi-channel staffing advisor, real-time queue health monitoring, `wp_mcp_ai_queue_alert` hook | Admins/Developers |
 | [orchestration-budget-enforcement.md](architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
+| [ORCHESTRATION_REFERENCE.md](ORCHESTRATION_REFERENCE.md) | **NEW (Apr 2026):** Complete orchestration reference — 10 workflow presets, 13 resource presets, PSO optimizer, tool execution, load balancer, reasoning, multi-agent, health, budget, hooks, storage keys | Developers/Admins |
 | [assistant-storage-cpt-vs-cct.md](architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
