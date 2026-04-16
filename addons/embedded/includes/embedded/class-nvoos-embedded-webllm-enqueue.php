@@ -48,8 +48,8 @@ class WP_MCP_AI_WebLLM_Enqueue {
 	 * Registered early so other code can enqueue them if needed
 	 */
 	public static function register_scripts() {
-		$plugin_version = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.2.0';
-		$plugin_file    = defined( 'WP_MCP_AI_FILE' ) ? WP_MCP_AI_FILE : __FILE__;
+		$plugin_version = defined( 'NVOOS_EMBEDDED_VERSION' ) ? NVOOS_EMBEDDED_VERSION : '1.0.0';
+		$plugin_file    = defined( 'NVOOS_EMBEDDED_FILE' ) ? NVOOS_EMBEDDED_FILE : __FILE__;
 
 		// Core WebLLM loader (already exists, loads from CDN)
 		// This is already registered in WP_MCP_AI_Shortcode, but we check here for safety.
@@ -75,9 +75,10 @@ class WP_MCP_AI_WebLLM_Enqueue {
 		}
 
 		// NEW: Tool adapter (Phase 1 - thin wrapper, ~1.7KB minified).
+		$suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 		wp_register_script(
 			'wp-mcp-ai-webllm-tool-adapter',
-			plugins_url( 'assets/js/webllm-tool-adapter.min.js', $plugin_file ),
+			plugins_url( 'assets/js/webllm-tool-adapter' . $suffix, $plugin_file ),
 			array(),
 			$plugin_version,
 			true
@@ -86,7 +87,7 @@ class WP_MCP_AI_WebLLM_Enqueue {
 		// NEW: Function calling client (Phase 1 - thin wrapper, ~5.1KB minified).
 		wp_register_script(
 			'wp-mcp-ai-webllm-function-calling',
-			plugins_url( 'assets/js/webllm-function-calling-client.min.js', $plugin_file ),
+			plugins_url( 'assets/js/webllm-function-calling-client' . $suffix, $plugin_file ),
 			array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
 			$plugin_version,
 			true
