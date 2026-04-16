@@ -1,6 +1,19 @@
 # Maintainer Map — Open Operator System (NV oOS)
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
+>
+> Last reviewed: **April 2026**
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code context — loaded every turn by Claude Code sessions |
+| [`AGENTS.md`](AGENTS.md) | AI agent inventory — every coding agent, BMAD role, and context-loading strategy |
+| [`CODEOWNERS`](CODEOWNERS) | GitHub review assignment — auto-assigns reviewers per path |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contributor guide — setup, testing, PR process, GSD × BMAD methodology |
+| [`SECURITY.md`](SECURITY.md) | Vulnerability disclosure policy and IP notice |
+| [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | GitHub Copilot repo-level instructions |
 
 ---
 
@@ -288,6 +301,28 @@ The `docs/` directory contains **570+ files** (including implementation history,
 
 ---
 
+## 6. AI Agent Coordination
+
+This repository is developed with multiple AI coding agents. Each agent has a dedicated context file that tells it how to behave in this codebase.
+
+| Agent | Context File | Purpose |
+|-------|-------------|---------|
+| **Claude Code** | [`CLAUDE.md`](CLAUDE.md) | Loaded automatically every turn — naming, security, architecture patterns |
+| **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Repo-level instructions for Copilot chat and completions |
+| **OpenAI Codex** | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox bootstrap script |
+| **BMAD Agents** | [`.bmad/agents/*.yaml`](.bmad/agents/) | Six specialized roles for the GSD × BMAD workflow |
+
+The full agent inventory, capabilities, and context-loading strategy are documented in [`AGENTS.md`](AGENTS.md).
+
+### When to update agent context files
+
+- **New naming convention or security rule** → update `CLAUDE.md` + `.github/copilot-instructions.md` + `.context/conventions.md`
+- **New tool, hook, or REST endpoint** → update `CLAUDE.md` (architecture patterns section)
+- **New BMAD agent or workflow change** → update `.bmad/agents/` YAML + `AGENTS.md`
+- **New subsystem context** → add to `.context/` and reference from `AGENTS.md`
+
+---
+
 ## Quick orientation checklist for new maintainers
 
 - [ ] `composer install && npm install` to get all tooling
@@ -298,3 +333,4 @@ The `docs/` directory contains **570+ files** (including implementation history,
 - [ ] Skim `includes/class-wp-mcp-ai-plugin.php` — it wires the DI container
 - [ ] Run `composer run lint:base && composer run test` to confirm a green baseline
 - [ ] Add `define('WP_DEBUG', true);` in `wp-config.php` for verbose error logging
+- [ ] Read [`AGENTS.md`](AGENTS.md) to understand AI-assisted development workflows
