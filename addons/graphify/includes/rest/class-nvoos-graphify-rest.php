@@ -6,7 +6,7 @@
  * Knowledge Graph addon under the nvoos-graphify/v1 namespace.
  *
  * @package NV_oOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,14 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides REST API endpoints for querying, searching, and building
  * the knowledge graph.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_REST {
 
 	/**
 	 * REST namespace.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 * @var string
 	 */
 	const NAMESPACE = 'nvoos-graphify/v1';
@@ -34,7 +34,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Register all REST API routes.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -127,7 +127,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Get argument schema for the /nodes endpoint.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return array Argument definitions.
 	 */
@@ -176,7 +176,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Check if the current user has read permission.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool True if the user can read.
@@ -188,7 +188,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Check if the current user has admin permission.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool True if the user can manage options.
@@ -200,7 +200,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Handle GET /graph — return graph metadata and stats.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object or error.
@@ -262,7 +262,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Handle GET /nodes — list nodes with pagination and filters.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object or error.
@@ -350,7 +350,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Handle GET /nodes/{node_id} — get a single node with its neighbors.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object or error.
@@ -440,7 +440,7 @@ class NV_oOS_Graphify_REST {
 	 *
 	 * Runs Detector → Extractor → Builder in sequence.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object or error.
@@ -500,7 +500,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Handle GET /search — search nodes by label.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error Response object or error.
@@ -541,7 +541,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Update the build status in the graph meta table.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param int    $graph_id The graph ID.
 	 * @param string $status   The build status.
@@ -589,7 +589,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Update meta column and last_built timestamp for the graph.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param int    $graph_id   The graph ID.
 	 * @param string $column     The column name to update.
@@ -619,7 +619,7 @@ class NV_oOS_Graphify_REST {
 	/**
 	 * Get the last built timestamp from graph meta.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param int $graph_id The graph ID.
 	 * @return string|null MySQL datetime or null.

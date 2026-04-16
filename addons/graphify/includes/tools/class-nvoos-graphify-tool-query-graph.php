@@ -7,7 +7,7 @@
  * human-readable summary.
  *
  * @package NV_oOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  * @author  NV Digital Solutions
  */
 
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * returning the relevant subgraph as structured context for AI
  * reasoning about site architecture and content relationships.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
@@ -111,7 +111,7 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return array Tool definition with metadata.
 	 */

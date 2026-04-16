@@ -6,7 +6,7 @@
  * type breakdown, community count, and content type distribution.
  *
  * @package NV_oOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  * @author  NV Digital Solutions
  */
 
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Queries the graph tables and returns aggregated metrics without
  * modifying any data. Results are cacheable.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
@@ -70,7 +70,7 @@ class NV_oOS_Graphify_Tool_Graph_Stats implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Get extended tool definition including toolkit metadata.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return array Tool definition with metadata.
 	 */

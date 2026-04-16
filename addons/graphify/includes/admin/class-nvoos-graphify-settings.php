@@ -6,7 +6,7 @@
  * using the WordPress Settings API, and displays graph overview stats.
  *
  * @package NV_oOS_Graphify
- * @since   1.0.0
+ * @since   0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,14 +18,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Admin settings page for the Graphify Knowledge Graph addon.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 class NV_oOS_Graphify_Settings {
 
 	/**
 	 * Admin page hook suffix.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 * @var string
 	 */
 	private static $hook_suffix = '';
@@ -33,7 +33,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Initialize hooks.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -46,7 +46,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Add the Graphify submenu page under the main NV oOS menu.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -64,7 +64,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Register settings, sections, and fields.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -171,7 +171,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Sanitize and validate settings input.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param array $input Raw input from the settings form.
 	 * @return array Sanitized settings.
@@ -220,7 +220,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Enqueue admin CSS and inline JS on the Graphify settings page.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param string $hook_suffix The current admin page hook suffix.
 	 * @return void
@@ -244,7 +244,7 @@ class NV_oOS_Graphify_Settings {
 	/**
 	 * Get inline JavaScript for the rebuild button.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return string JavaScript code.
 	 */
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the General section description.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the Build Settings section description.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the Display section description.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Enable Graphify" checkbox field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Content Types" checkbox group.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Include Taxonomies" checkbox field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Include Authors" checkbox field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Include Media" checkbox field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Auto-Rebuild Trigger" radio buttons.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Rebuild Schedule" select field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the "Max Nodes Display" number field.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Render the full Graphify settings page.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @return void
 	 */
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	/**
 	 * Get graph overview stats from the database.
 	 *
-	 * @since 1.0.0
+	 * @since 0.1.0
 	 *
 	 * @param int $graph_id The graph ID.
 	 * @return array Stats with keys: node_count, edge_count, community_count, last_built, build_status.
