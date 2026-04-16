@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/nvoos-graphify-addon-scaffold',
         'version' => 'dev-copilot/nvoos-graphify-addon-scaffold',
-        'reference' => 'eb8bce6fc1d972e60a3d6cd2de26f5e6f2976ad6',
+        'reference' => '7eb649ded31904b40d079bac7a891f76ed5abe6b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/nvoos-graphify-addon-scaffold',
             'version' => 'dev-copilot/nvoos-graphify-addon-scaffold',
-            'reference' => 'eb8bce6fc1d972e60a3d6cd2de26f5e6f2976ad6',
+            'reference' => '7eb649ded31904b40d079bac7a891f76ed5abe6b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

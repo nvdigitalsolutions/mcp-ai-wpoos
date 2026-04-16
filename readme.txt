@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -270,6 +270,26 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.8 - April 16, 2026 =
+
+**Graphify Knowledge Graph Addon & Production Classmap**
+
+* New addon: NV oOS Graphify — WordPress-native knowledge graph builder
+* 3 custom database tables (`nvoos_graph_nodes`, `nvoos_graph_edges`, `nvoos_graph_meta`) for graph-traversal-efficient storage
+* Structural extractor — deterministic edges from internal links, taxonomy assignments, authorship, featured images
+* Semantic extractor — keyword-frequency concept nodes, `discusses_topic` and `semantically_similar_to` edges
+* Graph builder with merge, deduplication, and confidence-based edge precedence
+* Louvain community detection in PHP with connected-components fallback for small graphs
+* Analyzer — god nodes, cross-community connections, knowledge gaps, BFS shortest path, natural language subgraph queries
+* 10 new AI tools: `graphify_build_graph`, `graphify_graph_stats`, `graphify_query_graph`, `graphify_get_node`, `graphify_get_neighbors`, `graphify_get_community`, `graphify_god_nodes`, `graphify_shortest_path`, `graphify_suggest_links`, `graphify_content_gaps`
+* REST API at `nvoos-graphify/v1` — 10 endpoints for graph data, communities, reports, and export
+* Admin dashboard with stat cards, build trigger, and report summary
+* Cytoscape.js interactive graph explorer with 10-color community palette, force-directed layout, search, and node-info sidebar
+* Settings page — content types, auto-rebuild mode, visualization config, community algorithm
+* Incremental rebuild via WP Cron on `save_post`, `delete_post`, and `set_object_terms` hooks
+* Integration hooks: `nvoos_graphify_graph_built`, `nvoos_graphify_node_extracted`, `nvoos_graphify_edge_extracted`
+* Production classmap regenerated via `composer install --no-dev --classmap-authoritative` — repo can be cloned directly as a production plugin without running composer
 
 = 1.1.7 - April 9, 2026 =
 

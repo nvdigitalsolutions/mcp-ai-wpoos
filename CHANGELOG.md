@@ -1,6 +1,40 @@
 # oOS – Changelog
 
 
+## [1.1.8] - 2026-04-16
+
+### Graphify Knowledge Graph Addon & Production Classmap
+
+### Added
+- **NV oOS Graphify Addon** — WordPress-native knowledge graph builder (26 files, ~8.7k lines)
+  - 3 custom database tables (`nvoos_graph_nodes`, `nvoos_graph_edges`, `nvoos_graph_meta`) via `dbDelta()` for graph-traversal-efficient storage
+  - Confidence-tagged edges: `EXTRACTED` (1.0), `INFERRED` (variable), `AMBIGUOUS`
+  - **Structural extractor** — deterministic edges from internal links (`url_to_postid`), taxonomy assignments, authorship, featured images
+  - **Semantic extractor** — keyword-frequency concept nodes, `discusses_topic` / `semantically_similar_to` edges
+  - **Builder** — merges, deduplicates (confidence precedence), persists via `$wpdb->replace()`
+  - **Louvain community detection** in PHP with connected-components fallback for small graphs, oversized community splitting (>25%)
+  - **Analyzer** — god nodes, surprising cross-community connections, knowledge gaps, BFS shortest path, NL subgraph queries
+  - **Report generator** — markdown/HTML summaries of graph structure, communities, and insights
+- **10 New AI Tools** for knowledge graph operations:
+  - `graphify_build_graph` (write, async, long-running)
+  - `graphify_graph_stats` / `graphify_query_graph` (read-only, cacheable)
+  - `graphify_get_node` / `graphify_get_neighbors` / `graphify_get_community` (read-only, cacheable)
+  - `graphify_god_nodes` / `graphify_shortest_path` (read-only, cacheable)
+  - `graphify_suggest_links` / `graphify_content_gaps` (read-only)
+- **Graphify REST API** (`nvoos-graphify/v1`) — 10 endpoints: `GET /graph`, `/nodes`, `/nodes/{id}`, `/edges`, `/communities`, `/communities/{id}`, `/report`, `/export/{format}`, `/search`, `POST /build`
+- **Graphify Admin UI**:
+  - Dashboard with stat cards, build trigger, and report summary
+  - Cytoscape.js interactive explorer with 10-color community palette, force-directed layout, search, node-info sidebar
+  - Settings page (content types, auto-rebuild mode, visualization config, community algorithm)
+- **Graphify Automation**:
+  - `save_post` / `delete_post` / `set_object_terms` → incremental rebuild via WP Cron
+  - Configurable scheduled full rebuilds (daily/weekly)
+  - Integration hooks: `nvoos_graphify_graph_built`, `nvoos_graphify_node_extracted`, `nvoos_graphify_edge_extracted`
+
+### Changed
+- **Production classmap** — regenerated via `composer install --no-dev --classmap-authoritative`; dev dependencies removed from classmap, authoritative flag set so the repo can be cloned as a production plugin without running composer
+
+
 ## [1.1.7] - 2026-04-09
 
 ### WordPress.org Plugin Directory Compliance — April 9, 2026
