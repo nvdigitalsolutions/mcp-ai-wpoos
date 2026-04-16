@@ -219,9 +219,10 @@ class NV_oOS_Embedded {
 
 		// Tool adapter.
 		if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
+			$tool_adapter_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 			wp_register_script(
 				'wp-mcp-ai-webllm-tool-adapter',
-				NVOOS_EMBEDDED_URL . 'assets/js/webllm-tool-adapter.min.js',
+				NVOOS_EMBEDDED_URL . 'assets/js/webllm-tool-adapter' . $tool_adapter_suffix,
 				array(),
 				$version,
 				true
@@ -230,9 +231,10 @@ class NV_oOS_Embedded {
 
 		// Function calling client.
 		if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
+			$fc_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
 			wp_register_script(
 				'wp-mcp-ai-webllm-function-calling',
-				NVOOS_EMBEDDED_URL . 'assets/js/webllm-function-calling-client.min.js',
+				NVOOS_EMBEDDED_URL . 'assets/js/webllm-function-calling-client' . $fc_suffix,
 				array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
 				$version,
 				true
