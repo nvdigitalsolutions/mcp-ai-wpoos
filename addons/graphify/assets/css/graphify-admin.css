@@ -1,0 +1,111 @@
+/**
+ * NV oOS Graphify — Admin Styles
+ *
+ * Dark-themed admin CSS matching Graphify's #0f0f1a aesthetic.
+ *
+ * @package NV_oOS_Graphify
+ * @since   1.0.0
+ */
+
+/* Graph Overview card */
+.nvoos-graphify-overview {
+	background: #1a1a2e;
+	border: 1px solid #2d2d44;
+	border-radius: 8px;
+	padding: 20px;
+	margin: 20px 0;
+	color: #e0e0e0;
+}
+
+.nvoos-graphify-overview h2 {
+	color: #00d4ff;
+	margin-top: 0;
+	font-size: 18px;
+}
+
+/* Stats grid */
+.nvoos-graphify-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 15px;
+	margin: 15px 0;
+}
+
+.nvoos-graphify-stat-card {
+	background: #0f0f1a;
+	border: 1px solid #2d2d44;
+	border-radius: 6px;
+	padding: 15px;
+	text-align: center;
+}
+
+.nvoos-graphify-stat-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #00d4ff;
+	display: block;
+}
+
+.nvoos-graphify-stat-label {
+	font-size: 12px;
+	color: #888;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-top: 5px;
+	display: block;
+}
+
+/* Build button */
+.nvoos-graphify-build-btn {
+	background: #00d4ff;
+	color: #0f0f1a;
+	border: none;
+	padding: 10px 24px;
+	border-radius: 4px;
+	font-weight: 600;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.nvoos-graphify-build-btn:hover {
+	background: #00b8e6;
+}
+
+.nvoos-graphify-build-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Status badge */
+.nvoos-graphify-status {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.nvoos-graphify-status--idle {
+	background: #2d2d44;
+	color: #888;
+}
+
+.nvoos-graphify-status--building {
+	background: #1a3a2e;
+	color: #00ff88;
+}
+
+.nvoos-graphify-status--complete {
+	background: #1a2e3a;
+	color: #00d4ff;
+}
+
+.nvoos-graphify-status--error {
+	background: #3a1a1a;
+	color: #ff4444;
+}
+
+/* Settings form adjustments on graphify page */
+.nvoos-graphify-wrap .form-table th {
+	width: 250px;
+}
