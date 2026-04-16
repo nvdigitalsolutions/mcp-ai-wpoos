@@ -224,6 +224,19 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 }
 
 // ---------------------------------------------------------------------------
+// Graphify Knowledge Graph subsystem
+// ---------------------------------------------------------------------------
+
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-database.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-detector.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-extractor-structural.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-builder.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-cluster.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-analyzer.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-query.php';
+require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify.php';
+
+// ---------------------------------------------------------------------------
 // Orchestration, tools, validators, and repositories
 // ---------------------------------------------------------------------------
 

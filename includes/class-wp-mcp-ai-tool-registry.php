@@ -1373,6 +1373,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Erlang C queuing-theory tools (Base).
 				'WP_MCP_AI_Tool_Calculate_Erlang_C'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-calculate-erlang-c.php',
 				'WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-erlang-c-concurrency-advisor.php',
+				// Knowledge Graph (Graphify) tools.
+				'WP_MCP_AI_Tool_Graphify_Build'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphify-build.php',
+				'WP_MCP_AI_Tool_Graphify_Stats'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphify-stats.php',
+				'WP_MCP_AI_Tool_Graphify_Query'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphify-query.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.

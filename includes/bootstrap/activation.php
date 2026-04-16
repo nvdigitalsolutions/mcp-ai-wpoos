@@ -277,6 +277,12 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			$audit = new WP_MCP_AI_Slash_Command_Audit();
 			$audit->create_table();
 		}
+
+		// Create Graphify knowledge graph tables.
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-database.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-database.php';
+			WP_MCP_AI_Graphify_Database::create_tables();
+		}
 	}
 }
 
@@ -384,6 +390,14 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		$settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
+
+		// Drop Graphify knowledge graph tables.
+		if ( class_exists( 'WP_MCP_AI_Graphify_Database' ) ) {
+			WP_MCP_AI_Graphify_Database::drop_tables();
+		} elseif ( file_exists( WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-database.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/graphify/class-wp-mcp-ai-graphify-database.php';
+			WP_MCP_AI_Graphify_Database::drop_tables();
+		}
 
 		/**
 		 * Fires after Open Operator System completes its uninstall cleanup routines.
