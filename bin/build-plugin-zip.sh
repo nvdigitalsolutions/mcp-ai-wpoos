@@ -494,6 +494,8 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
             --exclude 'assets/vendor/canvas' \
+            --exclude 'assets/vendor/sharp/node_modules/@img' \
+            --exclude 'assets/vendor/sharp/src' \
             --exclude 'assets/vendor/chart.js' \
             --exclude 'assets/vendor/katex' \
             --exclude 'assets/vendor/d3' \
@@ -545,11 +547,12 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/*/Makefile'
         
         echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB)"
-        echo "✓ Excluded packages requiring system dependencies: canvas (requires libvips/Cairo for PDF OCR)"
+        echo "✓ Excluded packages requiring system dependencies: canvas (requires libvips/Cairo for PDF OCR), sharp native binaries (@img/sharp-libvips-linux-x64)"
         echo "✓ Excluded CDN packages: chart.js (~420KB), katex (~3.1MB), d3 (~864KB), axios (~1.6MB), mathjs (~17MB), prettier (~500KB)"
         echo "ℹ️  Note: Excluded packages are kept in git repo but not in ZIP distribution"
         echo "ℹ️  Note: CDN packages load from jsDelivr with automatic fallback"
         echo "ℹ️  Note: Canvas requires system-level installation for PDF OCR; install via npm when needed"
+        echo "ℹ️  Note: Sharp native binaries excluded (~16 MB); JS wrapper included — run npm install sharp for native acceleration"
         echo "ℹ️  Note: Other vendor packages (~40+ NPM packages including puppeteer-core) are included for immediate functionality"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
@@ -737,6 +740,16 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '*.tar.gz' \
         --exclude '.distignore' \
         --exclude 'assets/examples' \
+        --exclude 'addons/pro/assets/vendor/facebook-nodejs-business-sdk' \
+        --exclude 'addons/pro/assets/vendor/canvas' \
+        --exclude 'addons/pro/assets/vendor/sharp/node_modules/@img' \
+        --exclude 'addons/pro/assets/vendor/sharp/src' \
+        --exclude 'addons/pro/assets/vendor/chart.js' \
+        --exclude 'addons/pro/assets/vendor/katex' \
+        --exclude 'addons/pro/assets/vendor/d3' \
+        --exclude 'addons/pro/assets/vendor/axios' \
+        --exclude 'addons/pro/assets/vendor/mathjs' \
+        --exclude 'addons/pro/assets/vendor/prettier' \
         --exclude 'mcp-ai-wpoos-base.php' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
