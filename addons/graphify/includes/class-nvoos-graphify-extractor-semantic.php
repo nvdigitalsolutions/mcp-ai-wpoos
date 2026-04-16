@@ -82,7 +82,7 @@ class NV_oOS_Graphify_Extractor_Semantic {
 		$post_concepts = array(); // post_id => array of keywords.
 
 		foreach ( $posts as $post ) {
-			$text     = sanitize_text_field( $post->post_title ) . ' ' . wp_strip_all_tags( $post->post_content );
+			$text     = wp_strip_all_tags( $post->post_title ) . ' ' . wp_strip_all_tags( $post->post_content );
 			$keywords = $this->extract_keywords( $text, self::DEFAULT_TOP_N );
 
 			if ( empty( $keywords ) ) {
