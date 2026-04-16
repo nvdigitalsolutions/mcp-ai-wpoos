@@ -228,9 +228,10 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 								<?php
 								// Render chat interface with team-related tools.
 								// Includes search, web research, and content management tools.
-								echo wp_kses_post( do_shortcode(
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- kses_chat_output() uses wp_kses_post() with SVG + form element + data-attribute support for the chat UI.
+								echo WP_MCP_AI_Shortcode::kses_chat_output( do_shortcode(
 									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools,create_agent_team"]'
-								) ); // wp_kses_post() escapes shortcode output to prevent XSS.
+								) );
 								?>
 							</div>
 						<?php else : ?>

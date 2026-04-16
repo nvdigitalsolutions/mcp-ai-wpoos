@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/apply-formula-to-plugin',
-        'version' => 'dev-copilot/apply-formula-to-plugin',
-        'reference' => 'bcdffc40abebe691025bd9a3b93416b7204747e3',
+        'pretty_version' => 'dev-copilot/fix-elementor-buttons',
+        'version' => 'dev-copilot/fix-elementor-buttons',
+        'reference' => '5369014b6a27aeacceac8064dc2d85041aa804ca',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/apply-formula-to-plugin',
-            'version' => 'dev-copilot/apply-formula-to-plugin',
-            'reference' => 'bcdffc40abebe691025bd9a3b93416b7204747e3',
+            'pretty_version' => 'dev-copilot/fix-elementor-buttons',
+            'version' => 'dev-copilot/fix-elementor-buttons',
+            'reference' => '5369014b6a27aeacceac8064dc2d85041aa804ca',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
