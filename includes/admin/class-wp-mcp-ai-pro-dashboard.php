@@ -824,7 +824,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Get current tab from URL parameter, sanitize and validate immediately.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; immediately validated against an allowlist on the next line.
-			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'iso27001';
+			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'iso27001';
 
 			// Validate tab - ensure it's in the valid tabs list.
 			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {

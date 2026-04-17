@@ -1177,7 +1177,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Render section fields.
 		 */
 		public function render() {
-			$active_view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
+			$active_view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
 
 			?>
 <div class="wp-mcp-ai-orchestration-section">
@@ -2108,7 +2108,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Get the submitted view from the hidden field in the form.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
-			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
 
 			// If no valid view submitted, return empty to preserve all existing settings.
 			if ( ! isset( $view_groups[ $submitted_view ] ) ) {

@@ -147,13 +147,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
-			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) ) : '';
 
 			// FALLBACK: Also check the legacy 'subtab' field for backward compatibility.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			if ( empty( $submitted_subtab ) && isset( $_POST['subtab'] ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
-				$submitted_subtab = sanitize_key( $_POST['subtab'] );
+				$submitted_subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			}
 
 			// ADDITIONAL FALLBACK: If still empty but we have settings data in POST,

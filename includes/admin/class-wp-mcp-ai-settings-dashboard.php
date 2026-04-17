@@ -418,8 +418,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
-			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( wp_unslash( $_POST['active_tab'] ) ) : '';
+			$active_view     = isset( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
 			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['save_all_tabs'] ) );
 
 			// DEBUG: Log checkbox values in posted data.
@@ -461,7 +461,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 258 via check_admin_referer().
 			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
-				$active_subtab = sanitize_key( $_POST['subtab'] );
+				$active_subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			}
 
 			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
@@ -479,7 +479,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Check for 'connection' parameter (used in Integrations section).
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
-			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( $_POST['connection'] ) : '';
+			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( wp_unslash( $_POST['connection'] ) ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -943,7 +943,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Redirect back to the same tab that was being edited.
 			// Check if a custom redirect page is specified (e.g., for simple settings page).
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
-			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( $_POST['redirect_page'] ) : self::PAGE_SLUG;
+			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( wp_unslash( $_POST['redirect_page'] ) ) : self::PAGE_SLUG;
 
 			$redirect_args = array(
 				'page'    => $redirect_page,
@@ -1219,7 +1219,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		private function get_active_tab() {
 			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for tab display.
-			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
 				$active_tab = 'general';

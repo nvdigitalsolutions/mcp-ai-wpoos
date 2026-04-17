@@ -41,7 +41,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			}
 
 			// Verify nonce.
-			if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), 'wp_mcp_ai_rotate_master_key' ) ) {
+			if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['_wpnonce'] ) ), 'wp_mcp_ai_rotate_master_key' ) ) {
 				wp_die(
 					esc_html__( 'Security check failed. Please try again.', 'mcp-ai-wpoos' ),
 					esc_html__( 'Security Error', 'mcp-ai-wpoos' ),

@@ -87,7 +87,7 @@ class WP_MCP_AI_Admin_Profession_Settings {
 		}
 
 		// Get active tab.
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
 
 		// Get post type for links.
 		$post_type = class_exists( 'WP_MCP_AI_Profession_CPT' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';

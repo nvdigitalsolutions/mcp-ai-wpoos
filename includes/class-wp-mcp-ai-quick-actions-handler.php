@@ -91,7 +91,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 		check_ajax_referer( 'wp_mcp_ai_quick_action', 'nonce' );
 
 		// Get tool slug.
-		$tool_slug = isset( $_POST['tool'] ) ? sanitize_key( $_POST['tool'] ) : '';
+		$tool_slug = isset( $_POST['tool'] ) ? sanitize_key( wp_unslash( $_POST['tool'] ) ) : '';
 		if ( empty( $tool_slug ) ) {
 			wp_send_json_error( __( 'No tool specified.', 'mcp-ai-wpoos' ) );
 		}

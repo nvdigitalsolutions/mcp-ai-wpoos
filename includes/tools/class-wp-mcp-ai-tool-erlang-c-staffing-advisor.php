@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 	public function get_capability_flags() {
 		return array(
 			'read-only',           // No state changes.
-			'local-only',          // Math is local; WFM fetch is optional.
+			'external-api',        // Optional WFM endpoint fetch via wp_remote_get().
 			'requires-capability', // Requires edit_posts.
 		);
 	}

@@ -85,7 +85,7 @@ class WP_MCP_AI_Model_Manager_Ajax {
 
 		// Validate inputs.
 		$model_id = isset( $_POST['model_id'] ) ? sanitize_text_field( wp_unslash( $_POST['model_id'] ) ) : '';
-		$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 
 		if ( empty( $model_id ) || empty( $provider ) ) {
 			wp_send_json_error( __( 'Model ID and provider are required.', 'mcp-ai-wpoos' ) );

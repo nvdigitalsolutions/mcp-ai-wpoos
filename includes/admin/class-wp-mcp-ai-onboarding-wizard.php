@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 			// Do not show the notice on the wizard page itself.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading page parameter only for display logic.
-			$current_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+			$current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 			if ( self::PAGE_SLUG === $current_page ) {
 				return;
 			}
@@ -1162,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		private function handle_save_provider_step() {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
-			$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
+			$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 			// API keys are typically alphanumeric with hyphens, dashes, and underscores.
 			// Using sanitize_text_field + wp_unslash is the standard WordPress approach.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().

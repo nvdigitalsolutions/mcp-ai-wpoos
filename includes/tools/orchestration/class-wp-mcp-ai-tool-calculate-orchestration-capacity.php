@@ -266,8 +266,10 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		$count      = 0; // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.IncorrectWarning -- Alignment intentional for readability within this assignment block.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Orchestration capacity calculation requires live counts; cached values would cause incorrect scheduling decisions.
 		$transients = $wpdb->get_col(
-			"SELECT option_name FROM {$wpdb->options} 
-			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
+			)
 		);
 
 		foreach ( $transients as $transient ) {
@@ -293,8 +295,10 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		// Get all sessions from last 24 hours.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Orchestration capacity calculation requires live counts; cached values would cause incorrect scheduling decisions.
 		$transients = $wpdb->get_col(
-			"SELECT option_name FROM {$wpdb->options} 
-			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
+			$wpdb->prepare(
+				"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
+			)
 		);
 
 		$sessions        = array();
