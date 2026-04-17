@@ -3324,7 +3324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				: array();
 
 			// Get force-sync setting from request.
-			$force_sync = isset( $_POST['force_sync'] ) && 'true' === $_POST['force_sync'];
+			$force_sync = isset( $_POST['force_sync'] ) && 'true' === sanitize_text_field( wp_unslash( $_POST['force_sync'] ) );
 
 			// Save settings.
 			$flags_saved = WP_MCP_AI_Tool_Settings_Manager::update_capability_flags( $tool_slug, $flags );

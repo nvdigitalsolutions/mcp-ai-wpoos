@@ -112,7 +112,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 
 			<?php
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
-			if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) :
+			if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
