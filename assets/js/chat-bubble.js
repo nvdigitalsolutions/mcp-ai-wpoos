@@ -142,6 +142,12 @@
 			return;
 		}
 
+		// Ensure the hidden panel is inert so focus cannot enter it and
+		// assistive technology ignores it while it is visually hidden.
+		if ( ! this.panel.hasAttribute( 'inert' ) ) {
+			this.panel.setAttribute( 'inert', '' );
+		}
+
 		this._promoteToBody();
 		this._bindEvents();
 		this._restoreState();
@@ -329,6 +335,7 @@
 		this.isOpen = true;
 		this.root.classList.add( CLASSES.OPEN );
 		this.trigger.setAttribute( 'aria-expanded', 'true' );
+		this.panel.removeAttribute( 'inert' );
 		this.panel.setAttribute( 'aria-hidden', 'false' );
 
 		// On mobile, prevent body scroll while panel is open.
@@ -359,14 +366,20 @@
 		this.isOpen = false;
 		this.root.classList.remove( CLASSES.OPEN );
 		this.trigger.setAttribute( 'aria-expanded', 'false' );
+
+		// Move focus out of the panel BEFORE hiding it so the browser
+		// does not block aria-hidden on an element with a focused
+		// descendant (WAI-ARIA §6.5.3).
+		this.trigger.focus();
+
 		this.panel.setAttribute( 'aria-hidden', 'true' );
+		this.panel.setAttribute( 'inert', '' );
 
 		if ( isMobileViewport() ) {
 			document.body.style.overflow = '';
 		}
 
 		this._persistState();
-		this.trigger.focus();
 
 		fireEvent( this.root, EVENTS.CLOSE, { bubbleId: this.bubbleId } );
 	};

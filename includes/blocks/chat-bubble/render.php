@@ -174,7 +174,7 @@ if ( '' !== $bubble_tooltip ) {
 	echo '<span class="wp-mcp-ai-chat-bubble__tooltip">' . esc_html( $bubble_tooltip ) . '</span>';
 }
 
-echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true">';
+echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true" inert>';
 
 echo '<div class="wp-mcp-ai-chat-bubble__panel-header">';
 echo '<span class="wp-mcp-ai-chat-bubble__panel-title">' . esc_html( $panel_title ) . '</span>';

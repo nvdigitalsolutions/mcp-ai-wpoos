@@ -837,7 +837,7 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 			echo '<span class="wp-mcp-ai-chat-bubble__tooltip">' . esc_html( $tooltip ) . '</span>';
 		}
 
-		echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true">';
+		echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true" inert>';
 
 		echo '<div class="wp-mcp-ai-chat-bubble__panel-header">';
 		echo '<span class="wp-mcp-ai-chat-bubble__panel-title">' . esc_html( $panel_title ) . '</span>';
