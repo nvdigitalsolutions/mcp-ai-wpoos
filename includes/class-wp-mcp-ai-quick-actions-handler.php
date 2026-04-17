@@ -104,7 +104,12 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			wp_send_json_error( __( 'Invalid tool specified.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Check capabilities if tool requires them.
+		// Require at minimum a logged-in user with 'read' capability.
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( __( 'You do not have permission to execute this tool.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Check tool-specific capabilities if declared.
 		if ( method_exists( $tool, 'get_required_capability' ) ) {
 			$required_cap = $tool->get_required_capability();
 			if ( ! empty( $required_cap ) && ! current_user_can( $required_cap ) ) {
