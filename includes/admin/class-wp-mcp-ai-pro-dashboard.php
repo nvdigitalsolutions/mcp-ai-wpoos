@@ -2761,8 +2761,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<span class="wp-mcp-ai-last-updated">
 					<?php
 					printf(
-						/* translators: %s: Timestamp */
-						esc_html__( 'Last updated: %s', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: %s: Timestamp wrapped in <span> tag. */
+							__( 'Last updated: %s', 'mcp-ai-wpoos' ),
+							array( 'span' => array( 'id' => array() ) )
+						),
 						'<span id="wp-mcp-ai-last-update-time">' . esc_html( current_time( 'H:i:s' ) ) . '</span>'
 					);
 					?>
@@ -3052,8 +3055,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<p class="description" style="margin-top: 20px;">
 					<?php
 					printf(
-						/* translators: 1: Total risks count, 2: Link to risk assessment document */
-						esc_html__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: 1: Total risks count, 2: Link to risk assessment document */
+							__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
+							array( 'a' => array( 'href' => array(), 'target' => array() ) )
+						),
 						count( $risks ),
 						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
 					);

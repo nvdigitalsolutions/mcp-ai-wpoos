@@ -3968,8 +3968,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<p class="description">
 				<?php
 				if ( ! empty( $settings['gmail_user_email'] ) ) {
-					/* translators: %s: Gmail email address. */
-					printf( esc_html__( 'A refresh token is stored for %s.', 'mcp-ai-wpoos' ), '<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>' );
+					/* translators: %s: Gmail email address wrapped in <code> tags. */
+					printf(
+						wp_kses(
+							/* translators: %s: Gmail email address wrapped in <code> tags. */
+							__( 'A refresh token is stored for %s.', 'mcp-ai-wpoos' ),
+							array( 'code' => array() )
+						),
+						'<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>'
+					);
 				} else {
 					esc_html_e( 'A Gmail refresh token is already stored for this site.', 'mcp-ai-wpoos' );
 				}
