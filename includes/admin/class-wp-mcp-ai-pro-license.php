@@ -378,7 +378,10 @@ class WP_MCP_AI_Pro_License {
 						<?php
 						printf(
 							/* translators: %s: plan name */
-							esc_html__( 'Plan: %s', 'mcp-ai-wpoos' ),
+							wp_kses(
+								__( 'Plan: %s', 'mcp-ai-wpoos' ),
+								array( 'strong' => array() )
+							),
 							'<strong>' . esc_html( ucfirst( $plan ) ) . '</strong>'
 						);
 						?>

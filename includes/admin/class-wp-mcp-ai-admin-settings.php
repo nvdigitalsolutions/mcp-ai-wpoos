@@ -5006,14 +5006,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 							printf(
 								/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-								esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+								wp_kses(
+									__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+									array( 'code' => array() )
+								),
 								'<code>' . esc_html( $log_file_path ) . '</code>',
 								esc_html( $log_size_display )
 							);
 						} else {
 							printf(
 								/* translators: %s: Path to the PHP error log. */
-								esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+								wp_kses(
+									__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+									array( 'code' => array() )
+								),
 								'<code>' . esc_html( $log_file_path ) . '</code>'
 							);
 						}
