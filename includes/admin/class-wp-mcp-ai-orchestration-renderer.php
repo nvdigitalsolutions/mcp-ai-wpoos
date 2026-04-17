@@ -862,7 +862,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 */
 		private static function render_workflow_category( $category_key, $presets, $category_meta, $active_preset ) {
 			$meta  = isset( $category_meta[ $category_key ] ) ? $category_meta[ $category_key ] : array();
-			$label = isset( $meta['label'] ) ? $meta['label'] : ucfirst( str_replace( '_', ' ', $category_key ) );
+			$label = isset( $meta['label'] ) ? $meta['label'] : __( 'General', 'mcp-ai-wpoos' );
 			$icon  = isset( $meta['icon'] ) ? $meta['icon'] : 'dashicons-category';
 			$desc  = isset( $meta['desc'] ) ? $meta['desc'] : '';
 			?>
@@ -961,12 +961,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							<?php else : ?>
 								<button type="button" class="button button-secondary apply-workflow-preset"
 									data-preset="<?php echo esc_attr( $preset_id ); ?>"
-									aria-label="
-									<?php
-									/* translators: %s: preset name */
-									echo esc_attr( sprintf( __( 'Apply %s workflow preset', 'mcp-ai-wpoos' ), $preset['name'] ) );
-									?>
-									">
+									aria-label="<?php /* translators: %s: preset name */ echo esc_attr( sprintf( __( 'Apply %s workflow preset', 'mcp-ai-wpoos' ), $preset['name'] ) ); ?>">
 									<?php esc_html_e( 'Apply', 'mcp-ai-wpoos' ); ?>
 								</button>
 							<?php endif; ?>
