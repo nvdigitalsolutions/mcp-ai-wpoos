@@ -215,7 +215,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_create' ),
 					'callback'            => array( $this, 'handle_assistant_create' ),
 					'args'                => array(
 						'title'         => array(
