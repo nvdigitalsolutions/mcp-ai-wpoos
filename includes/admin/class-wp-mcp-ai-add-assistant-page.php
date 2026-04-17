@@ -272,7 +272,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 		}
 
 		// Get form data.
-		$profession_id = isset( $_POST['profession_id'] ) ? absint( $_POST['profession_id'] ) : 0;
+		$profession_id = isset( $_POST['profession_id'] ) ? absint( wp_unslash( $_POST['profession_id'] ) ) : 0;
 		$title         = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
 		$provider      = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 

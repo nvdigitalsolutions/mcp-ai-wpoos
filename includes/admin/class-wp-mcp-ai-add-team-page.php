@@ -257,7 +257,7 @@ class WP_MCP_AI_Add_Team_Page {
 		}
 
 		// Get team ID.
-		$team_id = isset( $_POST['team_id'] ) ? absint( $_POST['team_id'] ) : 0;
+		$team_id = isset( $_POST['team_id'] ) ? absint( wp_unslash( $_POST['team_id'] ) ) : 0;
 
 		// Validate team ID.
 		if ( ! $team_id || 'mcp_ai_team' !== get_post_type( $team_id ) ) {

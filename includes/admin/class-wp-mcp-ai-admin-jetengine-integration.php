@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 			$settings['enable_jetengine_tools']             = isset( $_POST['enable_jetengine_tools'] ) ? true : false;
 			$settings['jetengine_mcp_enabled']              = isset( $_POST['jetengine_mcp_enabled'] ) ? true : false;
 			$settings['jetengine_mcp_context_injection']    = isset( $_POST['jetengine_mcp_context_injection'] ) ? true : false;
-			$settings['jetengine_mcp_cache_ttl']            = isset( $_POST['jetengine_mcp_cache_ttl'] ) ? absint( $_POST['jetengine_mcp_cache_ttl'] ) : 300;
+			$settings['jetengine_mcp_cache_ttl']            = isset( $_POST['jetengine_mcp_cache_ttl'] ) ? absint( wp_unslash( $_POST['jetengine_mcp_cache_ttl'] ) ) : 300;
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

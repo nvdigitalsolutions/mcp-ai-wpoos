@@ -2712,8 +2712,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			}
 
 			// Get and sanitize form values.
-			$attachment_id      = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
-			$max_pages          = isset( $_POST['max_pages'] ) ? min( 5, max( 1, absint( $_POST['max_pages'] ) ) ) : 5;
+			$attachment_id      = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
+			$max_pages          = isset( $_POST['max_pages'] ) ? min( 5, max( 1, absint( wp_unslash( $_POST['max_pages'] ) ) ) ) : 5;
 			$page_status_raw    = isset( $_POST['page_status'] ) ? sanitize_text_field( wp_unslash( $_POST['page_status'] ) ) : 'draft';
 			$page_status        = in_array( $page_status_raw, array( 'draft', 'publish' ), true ) ? $page_status_raw : 'draft';
 			$set_front_page     = ! empty( sanitize_text_field( wp_unslash( $_POST['set_front_page'] ?? '' ) ) );

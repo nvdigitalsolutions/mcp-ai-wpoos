@@ -126,7 +126,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 
 		// Handle media library selection.
 		if ( isset( $_POST['media_id'] ) ) {
-			$media_id   = absint( $_POST['media_id'] );
+			$media_id   = absint( wp_unslash( $_POST['media_id'] ) );
 			$attachment = get_post( $media_id );
 
 			if ( ! $attachment || 'attachment' !== $attachment->post_type ) {

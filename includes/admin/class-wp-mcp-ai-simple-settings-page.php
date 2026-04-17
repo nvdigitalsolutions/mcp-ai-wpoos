@@ -94,7 +94,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
-					$saved_count = isset( $_GET['saved'] ) ? absint( $_GET['saved'] ) : 0;
+					$saved_count = isset( $_GET['saved'] ) ? absint( wp_unslash( $_GET['saved'] ) ) : 0;
 					?>
 					<div class="notice notice-success is-dismissible">
 						<p>

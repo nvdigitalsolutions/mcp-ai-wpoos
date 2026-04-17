@@ -230,7 +230,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			);
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Step is display-only for localization.
-			$current_step = isset( $_GET['step'] ) ? absint( $_GET['step'] ) : 1;
+			$current_step = isset( $_GET['step'] ) ? absint( wp_unslash( $_GET['step'] ) ) : 1;
 			$next_step    = min( $current_step + 1, self::TOTAL_STEPS );
 
 			wp_localize_script(
@@ -274,7 +274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			}
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Step is display-only; each step's form has its own nonce.
-			$step = isset( $_GET['step'] ) ? absint( $_GET['step'] ) : 1;
+			$step = isset( $_GET['step'] ) ? absint( wp_unslash( $_GET['step'] ) ) : 1;
 			$step = max( 1, min( self::TOTAL_STEPS, $step ) );
 
 			?>
@@ -1133,7 +1133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			$step = isset( $_POST['step'] ) ? absint( $_POST['step'] ) : 0;
+			$step = isset( $_POST['step'] ) ? absint( wp_unslash( $_POST['step'] ) ) : 0;
 
 			if ( 2 === $step ) {
 				$this->handle_save_provider_step();
