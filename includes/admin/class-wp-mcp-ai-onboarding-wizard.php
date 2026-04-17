@@ -335,8 +335,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<nav class="wp-mcp-ai-wizard-steps" aria-label="<?php esc_attr_e( 'Setup progress', 'mcp-ai-wpoos' ); ?>">
 					<ol class="wp-mcp-ai-wizard-steps-list">
 						<?php foreach ( $steps as $num => $label ) : ?>
-							<li class="wp-mcp-ai-wizard-step <?php echo $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ); ?>"
-								<?php echo $num === $current_step ? 'aria-current="step"' : ''; ?>>
+							<li class="wp-mcp-ai-wizard-step <?php echo esc_attr( $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ) ); ?>"
+								<?php echo $num === $current_step ? 'aria-current="step"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static literal attribute string. ?>>
 								<span class="wp-mcp-ai-wizard-step-indicator" aria-hidden="true">
 									<?php if ( $num < $current_step ) : ?>
 										<span class="dashicons dashicons-yes"></span>
@@ -361,7 +361,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 								</span>
 							</li>
 							<?php if ( $num < self::TOTAL_STEPS ) : ?>
-								<li class="wp-mcp-ai-wizard-step-connector <?php echo $num < $current_step ? 'is-complete' : ''; ?>" aria-hidden="true"></li>
+								<li class="wp-mcp-ai-wizard-step-connector <?php echo esc_attr( $num < $current_step ? 'is-complete' : '' ); ?>" aria-hidden="true"></li>
 							<?php endif; ?>
 						<?php endforeach; ?>
 					</ol>
@@ -526,10 +526,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						<button type="button"
 								role="tab"
 								id="wp-mcp-ai-tab-<?php echo esc_attr( $key ); ?>"
-								class="wp-mcp-ai-provider-tab <?php echo $key === $first_key ? 'is-active' : ''; ?>"
-								aria-selected="<?php echo $key === $first_key ? 'true' : 'false'; ?>"
+								class="wp-mcp-ai-provider-tab <?php echo esc_attr( $key === $first_key ? 'is-active' : '' ); ?>"
+								aria-selected="<?php echo esc_attr( $key === $first_key ? 'true' : 'false' ); ?>"
 								aria-controls="wp-mcp-ai-panel-<?php echo esc_attr( $key ); ?>"
-								tabindex="<?php echo $key === $first_key ? '0' : '-1'; ?>"
+								tabindex="<?php echo esc_attr( $key === $first_key ? '0' : '-1' ); ?>"
 								data-provider="<?php echo esc_attr( $key ); ?>">
 							<?php if ( ! empty( $provider['icon_img'] ) ) : ?>
 								<img src="<?php echo esc_url( $provider['icon_img'] ); ?>"
@@ -1021,8 +1021,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				</div>
 
 				<div class="wp-mcp-ai-wizard-summary">
-					<div class="wp-mcp-ai-summary-item <?php echo $has_api_key ? 'is-done' : 'is-skipped'; ?>">
-						<span class="dashicons <?php echo $has_api_key ? 'dashicons-yes-alt' : 'dashicons-warning'; ?>"></span>
+					<div class="wp-mcp-ai-summary-item <?php echo esc_attr( $has_api_key ? 'is-done' : 'is-skipped' ); ?>">
+						<span class="dashicons <?php echo esc_attr( $has_api_key ? 'dashicons-yes-alt' : 'dashicons-warning' ); ?>"></span>
 						<?php if ( $has_api_key ) : ?>
 							<?php esc_html_e( 'AI provider connected', 'mcp-ai-wpoos' ); ?>
 						<?php else : ?>
