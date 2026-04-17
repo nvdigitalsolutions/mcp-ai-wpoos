@@ -1537,7 +1537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Validate file type using WordPress function (more secure than client MIME type).
-			$filetype = wp_check_filetype( $file['name'], array( 'json' => 'application/json' ) );
+			$filetype = wp_check_filetype( sanitize_file_name( $file['name'] ), array( 'json' => 'application/json' ) );
 			if ( 'json' !== $filetype['ext'] || 'application/json' !== $filetype['type'] ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos' ) ) );
 			}
