@@ -66,7 +66,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 * @return array List of script handles this widget depends on.
 	 */
 	public function get_script_depends() {
-		return array( 'chartjs' );
+		return array( 'wp-mcp-ai-chartjs' );
 	}
 
 	/**

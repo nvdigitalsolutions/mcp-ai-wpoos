@@ -499,26 +499,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Use Chart.js Helper for consistent registration across the plugin.
-			// Calling register_chart_js() + wp_enqueue_script('chartjs') instead of
+			// Calling register_chart_js() + wp_enqueue_script('wp-mcp-ai-chartjs') instead of
 			// enqueue_chart_js() avoids loading unnecessary Token Manager files
 			// (analytics-dashboard.css, token-manager-charts.js) on the Pro Dashboard.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
 				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
-				wp_enqueue_script( 'chartjs' );
+				wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 			} else {
 				// Fallback: Register and enqueue Chart.js directly if helper class not available.
 				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 				$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
 				wp_register_script(
-					'chartjs',
+					'wp-mcp-ai-chartjs',
 					$chart_js_url,
 					array(),
 					file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
 					true
 				);
 
-				wp_enqueue_script( 'chartjs' );
+				wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 			}
 
 			// Get chart data - ensure it's properly structured.
@@ -545,7 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-dashboard',
 				WP_MCP_AI_URL . 'assets/js/pro-dashboard.js',
-				array( 'jquery', 'chartjs' ),
+				array( 'jquery', 'wp-mcp-ai-chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
 			);

@@ -134,7 +134,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			// Test 8: Check if scripts are registered.
 			global $wp_scripts;
 			if ( isset( $wp_scripts ) ) {
-				$chartjs_registered       = isset( $wp_scripts->registered['chartjs'] );
+				$chartjs_registered       = isset( $wp_scripts->registered['wp-mcp-ai-chartjs'] );
 				$pro_dashboard_registered = isset( $wp_scripts->registered['wp-mcp-ai-pro-dashboard'] );
 
 				$results['tests']['scripts_registered'] = array(
@@ -145,7 +145,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 						$chartjs_registered ? 'registered' : 'not registered',
 						$pro_dashboard_registered ? 'registered' : 'not registered'
 					),
-					'chartjs'       => $chartjs_registered,
+					'wp-mcp-ai-chartjs'       => $chartjs_registered,
 					'pro_dashboard' => $pro_dashboard_registered,
 				);
 			}
