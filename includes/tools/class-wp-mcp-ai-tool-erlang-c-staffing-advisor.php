@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 	public function get_capability_flags() {
 		return array(
 			'read-only',           // No state changes.
-			'local-only',          // Math is local; WFM fetch is optional.
+			'external-api',        // Optional WFM endpoint fetch via wp_remote_get().
 			'requires-capability', // Requires edit_posts.
 		);
 	}
@@ -350,6 +350,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $code ) {
+			/* translators: %d: HTTP status code returned by the WFM endpoint */
 			return array( 'error' => sprintf( __( 'WFM endpoint returned HTTP %d.', 'mcp-ai-wpoos' ), $code ) );
 		}
 

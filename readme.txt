@@ -1088,6 +1088,30 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
 * **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
 
+**46. Workforce Management (WFM) Endpoints (User-Configured)**
+* **Purpose:** Optional real-time queue data for Erlang C staffing and queue-health tools (supports NICE WFM, Genesys, Verint, Calabrio, or any contact-centre REST API)
+* **Data Sent:** HTTP GET request with optional Bearer token; no user or site data is transmitted
+* **When:** When the `erlang_c_staffing_advisor` or `erlang_c_queue_health` tools are used with a WFM endpoint configured
+* **Service URL:** User-configured via tool arguments (no default endpoint; disabled unless explicitly provided)
+* **Terms of Service:** Per the user's WFM vendor agreement
+* **Privacy Policy:** Per the user's WFM vendor agreement
+
+**47. Agent-to-Agent (A2A) Protocol — Remote Agent Discovery & Task Delegation**
+* **Purpose:** Discover and communicate with remote A2A-compatible agents via the Google A2A open protocol
+* **Data Sent:** HTTP GET to `{agent_url}/.well-known/agent.json` for discovery; JSON-RPC task payloads (task description, context) for delegation
+* **When:** When a site administrator configures remote agents and the AI assistant delegates tasks via A2A
+* **Service URL:** User-configured remote agent URLs (no default endpoint; disabled unless explicitly configured)
+* **Terms of Service:** https://google.github.io/A2A/ (Apache-2.0 protocol specification)
+* **Privacy Policy:** Per the remote agent operator's privacy policy
+
+**48. Mesh Router — Peer-to-Peer Agent Communication**
+* **Purpose:** Distribute AI workload across multiple NV oOS instances configured as mesh peers
+* **Data Sent:** JSON-RPC requests containing task payloads and routing metadata to configured peer endpoints
+* **When:** When mesh routing is enabled and peer endpoints are configured by the site administrator
+* **Service URL:** User-configured peer NV oOS instance URLs (no default; disabled unless explicitly configured)
+* **Terms of Service:** N/A — communication between self-hosted NV oOS instances operated by the same organisation
+* **Privacy Policy:** N/A — data stays within the operator's own infrastructure
+
 = Pro Addon External Services =
 
 The following services are **only** used by the separately installed **NV oOS Pro** addon. They are **not** present in the base plugin. They are documented here for completeness and transparency.

@@ -471,7 +471,7 @@ class WP_MCP_AI_Optional_Components {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
 		}
 
-		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : '';
+		$component = isset( $_POST['component'] ) ? sanitize_key( wp_unslash( $_POST['component'] ) ) : '';
 
 		if ( ! in_array( $component, array( 'vectorizer', 'knowledge_base' ), true ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid component' ) );

@@ -449,27 +449,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
-				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				$subtab = sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) );
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['connection'] ) ) {
 				// Legacy parameter for backwards compatibility.
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
-				$subtab = sanitize_key( $_POST['connection'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['connection'] ) );
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['connection'] ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-				$subtab = sanitize_key( $_GET['connection'] );
+				$subtab = sanitize_key( wp_unslash( $_GET['connection'] ) );
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
 				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
-				$subtab = sanitize_key( $_POST['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				// Only use 'subtab' if it's one of our integration subtabs.
 
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-				$potential_subtab = sanitize_key( $_GET['subtab'] );
+				$potential_subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
 				if ( isset( $subtab_groups[ $potential_subtab ] ) ) {
 					$subtab = $potential_subtab;
 				}
@@ -2000,7 +2000,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		public function render_wrapper() {
 			// Only render this section when the 'connections' subtab is active in Tools.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-			$current_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
+			$current_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : '';
 
 			// This section is embedded within Tools > Connections subtab.
 			// Don't render if we're not in the connections subtab.
@@ -2037,9 +2037,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							// Otherwise link directly to the integration subtab.
 
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
-							$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'tools';
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
-							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
+							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : '';
 
 							$url_args = array(
 								'page' => 'wp-mcp-ai-dashboard',

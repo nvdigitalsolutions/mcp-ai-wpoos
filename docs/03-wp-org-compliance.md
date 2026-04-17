@@ -1,10 +1,59 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Document version:** 4.0 — 2026-04-15  
+**Document version:** 5.0 — 2026-04-17  
 **Plugin version:** 1.1.8
 
 This document records every issue raised by the WordPress.org plugin directory automated
 reviews and the exact code changes made to resolve each one.
+
+---
+
+# Pre-Submission Self-Audit — April 17, 2026
+
+**Audit type:** Complete codebase review against all 13 WordPress.org Plugin Developer Guidelines  
+**Plugin version:** 1.1.8  
+**Full audit report:** [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) § Review 7
+
+---
+
+## SA-1. Missing `wp_unslash()` on 64 `sanitize_key()` calls
+
+All 64 instances of `sanitize_key( $_GET['key'] )` or `sanitize_key( $_POST['key'] )` across
+30 PHP files were missing `wp_unslash()`. While `sanitize_key()` strips special characters
+(making practical risk minimal), WordPress.org Guideline 13 requires `wp_unslash()` on all
+superglobal reads.
+
+**Fix:** All 64 instances changed to `sanitize_key( wp_unslash( $_POST['field'] ) )`.
+
+## SA-2. Unescaped URL output in trait-wp-mcp-ai-tool-content-media.php
+
+`wp_get_attachment_image_url()` output was used in `<img src>` without `esc_url()`.
+
+| File | Line | Fix |
+|------|------|-----|
+| `includes/tools/trait-wp-mcp-ai-tool-content-media.php` | 219 | Added `esc_url()` |
+
+## SA-3. Erlang C tool capability flags incorrect
+
+| Tool | Issue | Fix |
+|------|-------|-----|
+| `class-wp-mcp-ai-tool-erlang-c-staffing-advisor.php` | `'local-only'` but uses `wp_remote_get()` for WFM | → `'external-api'` |
+| `class-wp-mcp-ai-tool-erlang-c-queue-health.php` | No `'external-api'` but uses `wp_remote_get()` for WFM | Added `'external-api'` |
+
+## SA-4. Hardcoded DB queries upgraded to `$wpdb->prepare()`
+
+| File | Lines | Change |
+|------|-------|--------|
+| `class-wp-mcp-ai-tool-calculate-orchestration-capacity.php` | 269, 296 | LIKE → `$wpdb->prepare()` + `$wpdb->esc_like()` |
+| `class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php` | 129 | Status literal → `$wpdb->prepare()` |
+
+## SA-5. Undocumented external services added to readme.txt
+
+| Service # | Service |
+|-----------|---------|
+| 46 | Workforce Management (WFM) Endpoints |
+| 47 | Agent-to-Agent (A2A) Protocol |
+| 48 | Mesh Router Peer Communication |
 
 ---
 
