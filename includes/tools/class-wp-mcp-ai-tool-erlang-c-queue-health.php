@@ -152,6 +152,7 @@ class WP_MCP_AI_Tool_Erlang_C_Queue_Health implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'write',               // Persists snapshots to options.
 			'state-changing',      // Writes snapshot data.
+			'external-api',        // Optional WFM endpoint fetch via wp_remote_get().
 			'requires-capability', // Requires manage_options.
 		);
 	}

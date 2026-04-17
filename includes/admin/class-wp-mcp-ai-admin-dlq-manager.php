@@ -103,7 +103,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 		check_admin_referer( 'wp_mcp_ai_dlq_bulk_action' );
 
-		$action   = isset( $_POST['action'] ) ? sanitize_key( $_POST['action'] ) : '';
+		$action   = isset( $_POST['action'] ) ? sanitize_key( wp_unslash( $_POST['action'] ) ) : '';
 		$item_ids = isset( $_POST['dlq_items'] ) ? array_map( 'sanitize_key', wp_unslash( $_POST['dlq_items'] ) ) : array();
 
 		if ( empty( $action ) || empty( $item_ids ) ) {
@@ -159,8 +159,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'mcp-ai-wpoos' ) );
 		}
 
-		$item_id    = isset( $_GET['item_id'] ) ? sanitize_key( $_GET['item_id'] ) : '';
-		$dlq_action = isset( $_GET['dlq_action'] ) ? sanitize_key( $_GET['dlq_action'] ) : '';
+		$item_id    = isset( $_GET['item_id'] ) ? sanitize_key( wp_unslash( $_GET['item_id'] ) ) : '';
+		$dlq_action = isset( $_GET['dlq_action'] ) ? sanitize_key( wp_unslash( $_GET['dlq_action'] ) ) : '';
 
 		if ( '' === $item_id || '' === $dlq_action ) {
 			wp_die( esc_html__( 'Missing parameters.', 'mcp-ai-wpoos' ) );
@@ -206,8 +206,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 		// Get filter parameters.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameters for filtering.
-		$filter_type      = isset( $_GET['filter_type'] ) ? sanitize_key( $_GET['filter_type'] ) : '';
-		$filter_dismissed = isset( $_GET['filter_dismissed'] ) ? sanitize_key( $_GET['filter_dismissed'] ) : '';
+		$filter_type      = isset( $_GET['filter_type'] ) ? sanitize_key( wp_unslash( $_GET['filter_type'] ) ) : '';
+		$filter_dismissed = isset( $_GET['filter_dismissed'] ) ? sanitize_key( wp_unslash( $_GET['filter_dismissed'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		// Build filters array.
@@ -254,7 +254,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	protected function render_notices() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameters for notices.
 		if ( isset( $_GET['success'] ) && '1' === sanitize_key( wp_unslash( $_GET['success'] ) ) ) {
-			$action = isset( $_GET['action_result'] ) ? sanitize_key( $_GET['action_result'] ) : '';
+			$action = isset( $_GET['action_result'] ) ? sanitize_key( wp_unslash( $_GET['action_result'] ) ) : '';
 			?>
 			<div class="notice notice-success is-dismissible">
 				<p>
@@ -279,7 +279,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		}
 
 		if ( isset( $_GET['bulk_action'] ) ) {
-			$action    = sanitize_key( $_GET['bulk_action'] );
+			$action    = sanitize_key( wp_unslash( $_GET['bulk_action'] ) );
 			$processed = isset( $_GET['processed'] ) ? absint( $_GET['processed'] ) : 0;
 			$errors    = isset( $_GET['errors'] ) ? absint( $_GET['errors'] ) : 0;
 			?>
@@ -299,7 +299,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		}
 
 		if ( isset( $_GET['error'] ) ) {
-			$error = sanitize_key( $_GET['error'] );
+			$error = sanitize_key( wp_unslash( $_GET['error'] ) );
 			?>
 			<div class="notice notice-error is-dismissible">
 				<p><?php esc_html_e( 'An error occurred. Please try again.', 'mcp-ai-wpoos' ); ?></p>
