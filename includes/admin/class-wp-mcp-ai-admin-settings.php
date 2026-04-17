@@ -3518,7 +3518,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				)
 			);
 
-			echo '<div class="notice notice-warning"><p>' . wp_kses(
+			echo '<div class="notice notice-warning is-dismissible"><p>' . wp_kses(
 				$message,
 				array(
 					'a' => array(

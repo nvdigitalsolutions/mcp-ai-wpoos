@@ -311,7 +311,7 @@ if ( ! function_exists( 'wp_mcp_ai_check_upload_limits_notice' ) ) {
 			$recommended_format = size_format( $recommended_size );
 
 			?>
-			<div class="notice notice-warning">
+			<div class="notice notice-warning is-dismissible">
 				<p>
 					<strong><?php esc_html_e( 'NV oOS Pro Plugin Upload Limit Warning', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
