@@ -2003,7 +2003,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'Orchestration Configuration Presets', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Choose a preset configuration optimized for your expected usage pattern. Presets automatically configure context window limits, health monitoring thresholds, budget allocation, and predictive settings across all AI providers.', 'mcp-ai-wpoos' ) . '</p>';
 
-			// Render presets selector.
+			// Render resource presets selector (balanced, conservative, etc.).
 			if ( isset( $fields['configuration_presets'] ) ) {
 				echo wp_kses_post( $fields['configuration_presets']['content'] );
 			}
@@ -2012,6 +2012,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			if ( isset( $fields['orchestration_preset'] ) ) {
 				$current_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'auto' );
 				echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( $current_preset ) . '" />';
+			}
+
+			// Render workflow presets section (orchestration patterns, research, swarm, etc.).
+			if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+				echo WP_MCP_AI_Orchestration_Renderer::render_workflow_presets_section();
 			}
 
 			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.

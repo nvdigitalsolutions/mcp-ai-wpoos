@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-orchestration-swarm-feature',
+        'version' => 'dev-copilot/add-orchestration-swarm-feature',
+        'reference' => 'bdd241ee97fb1bb2f6c02d60d6da25ba3e7f3cd0',
         'pretty_version' => 'dev-copilot/review-base-plugin-guidelines-again',
         'version' => 'dev-copilot/review-base-plugin-guidelines-again',
         'reference' => '114597c8c5141230672e714c2aff9b423443eab7',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-orchestration-swarm-feature',
+            'version' => 'dev-copilot/add-orchestration-swarm-feature',
+            'reference' => 'bdd241ee97fb1bb2f6c02d60d6da25ba3e7f3cd0',
             'pretty_version' => 'dev-copilot/review-base-plugin-guidelines-again',
             'version' => 'dev-copilot/review-base-plugin-guidelines-again',
             'reference' => '114597c8c5141230672e714c2aff9b423443eab7',

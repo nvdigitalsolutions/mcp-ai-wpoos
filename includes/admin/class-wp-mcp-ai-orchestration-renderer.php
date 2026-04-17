@@ -700,5 +700,276 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				);
 			}
 		}
+
+		/**
+		 * Render workflow presets organized by category.
+		 *
+		 * Displays orchestration workflow presets (research, code generation,
+		 * swarm pattern, etc.) grouped into category sections for the presets view.
+		 *
+		 * @return string HTML output or fallback on error.
+		 * @throws Exception If orchestration presets service is not available.
+		 */
+		public static function render_workflow_presets_section() {
+			try {
+				if ( ! class_exists( 'WP_MCP_AI_Orchestration_Presets' ) ) {
+					throw new Exception( 'Orchestration Presets service not available' );
+				}
+
+				$service = new WP_MCP_AI_Orchestration_Presets();
+				$presets = $service->get_presets();
+
+				if ( ! is_array( $presets ) || empty( $presets ) ) {
+					throw new Exception( 'No workflow presets available' );
+				}
+
+				$active_preset = $service->get_active_preset();
+
+				// Group presets by category.
+				$categories = array();
+				foreach ( $presets as $preset_id => $preset ) {
+					if ( ! is_array( $preset ) || ! isset( $preset['name'] ) ) {
+						continue;
+					}
+					$category = isset( $preset['category'] ) ? $preset['category'] : 'general';
+
+					if ( ! isset( $categories[ $category ] ) ) {
+						$categories[ $category ] = array();
+					}
+					$categories[ $category ][ $preset_id ] = $preset;
+				}
+
+				// Category display metadata.
+				$category_meta = array(
+					'orchestration' => array(
+						'label' => __( 'Orchestration Patterns', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-networking',
+						'desc'  => __( 'Multi-agent workflow patterns for complex task orchestration.', 'mcp-ai-wpoos' ),
+					),
+					'research'      => array(
+						'label' => __( 'Research & Analysis', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-search',
+						'desc'  => __( 'Presets optimized for research, data gathering, and analysis tasks.', 'mcp-ai-wpoos' ),
+					),
+					'development'   => array(
+						'label' => __( 'Development', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-editor-code',
+						'desc'  => __( 'Presets tuned for code generation and development workflows.', 'mcp-ai-wpoos' ),
+					),
+					'collaboration' => array(
+						'label' => __( 'Collaboration', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-groups',
+						'desc'  => __( 'Multi-agent collaboration and team-based task execution.', 'mcp-ai-wpoos' ),
+					),
+					'performance'   => array(
+						'label' => __( 'Performance', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-performance',
+						'desc'  => __( 'Speed and throughput optimized configurations.', 'mcp-ai-wpoos' ),
+					),
+					'quality'       => array(
+						'label' => __( 'Quality', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-awards',
+						'desc'  => __( 'Maximum quality output with validation and verification.', 'mcp-ai-wpoos' ),
+					),
+					'optimization'  => array(
+						'label' => __( 'Optimization', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-chart-line',
+						'desc'  => __( 'Self-tuning and adaptive optimization presets.', 'mcp-ai-wpoos' ),
+					),
+					'custom'        => array(
+						'label' => __( 'Custom Presets', 'mcp-ai-wpoos' ),
+						'icon'  => 'dashicons-admin-generic',
+						'desc'  => __( 'User-created custom workflow presets.', 'mcp-ai-wpoos' ),
+					),
+				);
+
+				// Define the category display order.
+				$category_order = array( 'orchestration', 'research', 'development', 'collaboration', 'performance', 'quality', 'optimization', 'custom' );
+
+				ob_start();
+				?>
+				<div class="wp-mcp-ai-workflow-presets-section">
+					<h3><?php esc_html_e( 'Workflow Presets', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'Workflow presets configure orchestration behavior, agent roles, tool routing, and execution patterns. Select a preset to optimize the AI orchestration layer for your use case.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<?php if ( $active_preset ) : ?>
+						<div class="wp-mcp-ai-current-preset-indicator" style="margin-bottom: 20px;">
+							<span class="dashicons dashicons-yes-alt"></span>
+							<strong><?php esc_html_e( 'Active Workflow Preset:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="current-preset-name">
+								<?php
+								$active_data = $service->get_preset( $active_preset );
+								echo esc_html( $active_data ? $active_data['name'] : $active_preset );
+								?>
+							</span>
+						</div>
+					<?php endif; ?>
+
+					<?php
+					// Render categories in defined order, then any remaining.
+					$rendered = array();
+					foreach ( $category_order as $cat_key ) {
+						if ( isset( $categories[ $cat_key ] ) ) {
+							self::render_workflow_category( $cat_key, $categories[ $cat_key ], $category_meta, $active_preset );
+							$rendered[] = $cat_key;
+						}
+					}
+
+					// Render any categories not in the predefined order.
+					foreach ( $categories as $cat_key => $cat_presets ) {
+						if ( ! in_array( $cat_key, $rendered, true ) ) {
+							self::render_workflow_category( $cat_key, $cat_presets, $category_meta, $active_preset );
+						}
+					}
+					?>
+				</div>
+				<?php
+				return ob_get_clean();
+
+			} catch ( Exception $e ) {
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Workflow presets rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_workflow_presets_section',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
+
+				return sprintf(
+					'<div class="notice notice-warning inline"><p>%s</p></div>',
+					esc_html__( 'Workflow presets temporarily unavailable.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		/**
+		 * Render a single workflow preset category section.
+		 *
+		 * @param string      $category_key  Category identifier.
+		 * @param array       $presets        Presets in this category.
+		 * @param array       $category_meta  Category display metadata.
+		 * @param string|null $active_preset  Currently active preset key.
+		 */
+		private static function render_workflow_category( $category_key, $presets, $category_meta, $active_preset ) {
+			$meta  = isset( $category_meta[ $category_key ] ) ? $category_meta[ $category_key ] : array();
+			$label = isset( $meta['label'] ) ? $meta['label'] : __( 'General', 'mcp-ai-wpoos' );
+			$icon  = isset( $meta['icon'] ) ? $meta['icon'] : 'dashicons-category';
+			$desc  = isset( $meta['desc'] ) ? $meta['desc'] : '';
+			?>
+			<div class="wp-mcp-ai-workflow-category" data-category="<?php echo esc_attr( $category_key ); ?>">
+				<div class="wp-mcp-ai-workflow-category__header">
+					<span class="dashicons <?php echo esc_attr( $icon ); ?>"></span>
+					<h4><?php echo esc_html( $label ); ?></h4>
+					<?php if ( $desc ) : ?>
+						<p class="description"><?php echo esc_html( $desc ); ?></p>
+					<?php endif; ?>
+				</div>
+				<div class="wp-mcp-ai-presets-grid">
+					<?php foreach ( $presets as $preset_id => $preset ) : ?>
+						<?php
+						$is_active  = ( $preset_id === $active_preset );
+						$is_custom  = ! empty( $preset['custom'] );
+						$card_class = $is_active ? 'active' : '';
+						if ( $is_custom ) {
+							$card_class .= ' custom';
+						}
+						?>
+						<div class="preset-card <?php echo esc_attr( $card_class ); ?>"
+							data-preset="<?php echo esc_attr( $preset_id ); ?>"
+							data-preset-type="workflow">
+							<div class="preset-header">
+								<h4><?php echo esc_html( $preset['name'] ); ?></h4>
+								<?php if ( $is_custom ) : ?>
+									<span class="preset-badge custom"><?php esc_html_e( 'CUSTOM', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</div>
+							<p class="preset-description">
+								<?php echo esc_html( isset( $preset['description'] ) ? $preset['description'] : '' ); ?>
+							</p>
+							<?php if ( ! empty( $preset['settings'] ) ) : ?>
+								<div class="preset-settings-preview">
+									<?php
+									$settings = $preset['settings'];
+									// Show relevant workflow settings.
+									if ( ! empty( $settings['enable_agent_teams'] ) ) :
+										?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-groups"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Agent Teams:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( ! empty( $settings['reasoning_mode'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-lightbulb"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Reasoning:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php echo esc_html( ucfirst( $settings['reasoning_mode'] ) ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( isset( $settings['max_team_size'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-networking"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Max Team Size:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php echo esc_html( $settings['max_team_size'] ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( isset( $settings['max_delegation_depth'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-randomize"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Delegation Depth:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php echo esc_html( $settings['max_delegation_depth'] ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( ! empty( $settings['parallel_execution'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-controls-repeat"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Parallel Execution:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php echo esc_html( ucfirst( $settings['parallel_execution'] ) ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( ! empty( $settings['result_aggregation'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-editor-table"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Aggregation:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value"><?php echo esc_html( ucfirst( str_replace( '-', ' ', $settings['result_aggregation'] ) ) ); ?></span>
+										</div>
+									<?php endif; ?>
+									<?php if ( ! empty( $settings['tool_preferences'] ) && is_array( $settings['tool_preferences'] ) ) : ?>
+										<div class="preset-setting-item">
+											<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+											<span class="preset-setting-label"><?php esc_html_e( 'Key Tools:', 'mcp-ai-wpoos' ); ?></span>
+											<span class="preset-setting-value">
+												<?php echo esc_html( count( $settings['tool_preferences'] ) ); ?>
+												<?php esc_html_e( 'configured', 'mcp-ai-wpoos' ); ?>
+											</span>
+										</div>
+									<?php endif; ?>
+								</div>
+							<?php endif; ?>
+							<?php if ( $is_active ) : ?>
+								<div class="preset-status"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
+							<?php else : ?>
+								<button type="button" class="button button-secondary apply-workflow-preset"
+									data-preset="<?php echo esc_attr( $preset_id ); ?>"
+									aria-label="<?php /* translators: %s: preset name */ echo esc_attr( sprintf( __( 'Apply %s workflow preset', 'mcp-ai-wpoos' ), $preset['name'] ) ); ?>">
+									<?php esc_html_e( 'Apply', 'mcp-ai-wpoos' ); ?>
+								</button>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+			<?php
+		}
 	}
 }
