@@ -95,7 +95,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		$provider       = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : 'openai';
 		$model          = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4';
 		$temperature    = isset( $_POST['temperature'] ) ? floatval( $_POST['temperature'] ) : 0.7;
-		$async          = isset( $_POST['async'] ) && '1' === $_POST['async'];
+		$async          = isset( $_POST['async'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['async'] ) );
 
 		// Validate required fields.
 		if ( empty( $title ) || empty( $professions ) || empty( $regions ) ) {
