@@ -443,7 +443,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	public function handle_get_professional_config() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
 
-		$professional_id = isset( $_POST['professional_id'] ) ? absint( $_POST['professional_id'] ) : 0;
+		$professional_id = isset( $_POST['professional_id'] ) ? absint( wp_unslash( $_POST['professional_id'] ) ) : 0;
 
 		if ( ! $professional_id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid professional ID.', 'mcp-ai-wpoos' ) ) );

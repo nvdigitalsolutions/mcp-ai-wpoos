@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 			$settings['enable_jetengine_tools']             = isset( $_POST['enable_jetengine_tools'] ) ? true : false;
 			$settings['jetengine_mcp_enabled']              = isset( $_POST['jetengine_mcp_enabled'] ) ? true : false;
 			$settings['jetengine_mcp_context_injection']    = isset( $_POST['jetengine_mcp_context_injection'] ) ? true : false;
-			$settings['jetengine_mcp_cache_ttl']            = isset( $_POST['jetengine_mcp_cache_ttl'] ) ? absint( $_POST['jetengine_mcp_cache_ttl'] ) : 300;
+			$settings['jetengine_mcp_cache_ttl']            = isset( $_POST['jetengine_mcp_cache_ttl'] ) ? absint( wp_unslash( $_POST['jetengine_mcp_cache_ttl'] ) ) : 300;
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -176,27 +176,62 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 								<tr>
 									<td><code>jetengine_create_post_type</code></td>
 									<td><?php esc_html_e( 'Create custom post types dynamically', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>jetengine_create_taxonomy</code></td>
 									<td><?php esc_html_e( 'Create custom taxonomies', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>jetengine_query_cct</code></td>
 									<td><?php esc_html_e( 'Query Custom Content Types efficiently', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>jetengine_create_cct_item</code></td>
 									<td><?php esc_html_e( 'Create CCT entries programmatically', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>jetengine_update_cct_item</code></td>
 									<td><?php esc_html_e( 'Update existing CCT items', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 							</tbody>
 						</table>

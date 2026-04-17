@@ -475,14 +475,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 								printf(
 									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-									esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>',
 									esc_html( $log_size_display )
 								);
 							} else {
 								printf(
 									/* translators: %s: Path to the PHP error log. */
-									esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>'
 								);
 							}
@@ -897,7 +903,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php
 						printf(
 							/* translators: %s: Link to professions page */
-							esc_html__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
+							wp_kses(
+								__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
+								array( 'a' => array( 'href' => array() ) )
+							),
 							'<a href="' . esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'Agent Orchestration', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>

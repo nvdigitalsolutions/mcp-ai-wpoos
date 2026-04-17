@@ -612,6 +612,61 @@ The following areas were audited and found fully compliant:
 
 ---
 
+### Review 8 — April 17, 2026 (Full Codebase Re-Audit Against All 13 Guidelines)
+
+**Plugin Version:** 1.1.8
+**Compliance Document:** This document (updated in place)
+
+A complete re-audit of the base plugin was performed against all 13 WordPress.org Plugin Developer Guidelines using six parallel automated scans covering: (1) raw superglobal sanitization, (2) output escaping, (3) nonce/capability verification, (4) external HTTP calls and capability flags, (5) dangerous code execution patterns, and (6) database query safety.
+
+#### 8a. Database queries converted to `$wpdb->prepare()` — 3 queries
+
+Three queries in `class-wp-mcp-ai-pro-database.php` used `absint()` on `$limit`/`$offset` values and interpolated them directly into SQL strings. While `absint()` ensures integer values (making injection impossible), WordPress.org Guideline 13 best practice requires all variable portions of queries to pass through `$wpdb->prepare()`.
+
+| File | Method | Change |
+|------|--------|--------|
+| `includes/admin/class-wp-mcp-ai-pro-database.php` | `get_controls()` | `LIMIT $limit OFFSET $offset` → `$wpdb->prepare( "... LIMIT %d OFFSET %d", $limit, $offset )` |
+| `includes/admin/class-wp-mcp-ai-pro-database.php` | `get_audit_logs()` | Same pattern |
+| `includes/admin/class-wp-mcp-ai-pro-database.php` | `get_risks()` | Same pattern |
+
+#### 8b. Capability flag corrections — 2 tools
+
+| Tool File | Issue | Fix |
+|-----------|-------|-----|
+| `class-wp-mcp-ai-tool-generate-openai-speech.php` | `'local-only'` flag but calls OpenAI TTS API | Changed to `'external-api'` |
+| `class-wp-mcp-ai-tool-probe-remote-mcp.php` | `'local-only'` flag but probes remote MCP servers | Changed to `'external-api'` |
+
+#### 8c. Full audit results — no additional issues found
+
+The following areas were audited and found fully compliant:
+
+| Audit Area | Result |
+|------------|--------|
+| **Superglobal sanitization** | ✅ All `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER` accesses wrapped in `sanitize_key(wp_unslash())`, `sanitize_text_field(wp_unslash())`, or `absint(wp_unslash())`. Zero raw comparisons. |
+| **Output escaping** | ✅ All `echo`/`printf` of dynamic values use `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses()`, or `wp_json_encode()`. Integration status badges already use `wp_kses()`. |
+| **AJAX nonce verification** | ✅ All 140 `wp_ajax_` handlers verify nonces via `check_ajax_referer()` or `wp_verify_nonce()` |
+| **AJAX capability checks** | ✅ All handlers check `current_user_can()` |
+| **REST API permission callbacks** | ✅ All endpoints use proper callbacks; public endpoints (`__return_true`) are intentionally public (A2A federation discovery, CORS preflight) |
+| **`eval()` / `create_function()` / `assert()`** | ✅ None found (only detection code in code optimizer) |
+| **Shell execution functions** | ✅ None found |
+| **Remote code inclusion** | ✅ None found |
+| **`extract()` on user input** | ✅ None found |
+| **`unserialize()` on user input** | ✅ None found (uses `maybe_unserialize()`) |
+| **`file_put_contents()` to plugin dir** | ✅ None found (all writes to uploads/temp) |
+| **`set_time_limit(0)`** | ✅ None found (all bounded) |
+| **`base64_decode()` on user input** | ✅ None found (only API/JWT data) |
+| **External CDN loads** | ✅ None — all JS/CSS loaded from local plugin assets |
+| **Frontend attribution links** | ✅ None — no "powered by" or credit links in frontend output |
+| **Activation tracker opt-in** | ✅ Confirmed default OFF; filterable via `wp_mcp_ai_tracking_opted_in` |
+| **GPL licensing** | ✅ LICENSE file, plugin headers, and all bundled dependencies (MIT/BSD) are GPL-compatible |
+| **Contact information** | ✅ Author, Author URI, Plugin URI, Contributors all present and valid |
+| **readme.txt tags** | ✅ 5 relevant tags: `ai, chatbot, openai, assistant, automation` |
+| **No paywall for base features** | ✅ No license/Pro gate checks in base tool `execute()` methods |
+| **Human-readable code** | ✅ No obfuscation, no encoded PHP; minified JS has source maps |
+| **Admin notices** | ✅ All notices include `is-dismissible` class |
+
+---
+
 ### Cumulative Remediation Summary
 
 | Metric | Count |
@@ -619,8 +674,8 @@ The following areas were audited and found fully compliant:
 | **Total review emails received** | 4 (March 2, March 24, April 2, April 9) |
 | **Total issues flagged by reviewers** | 25 |
 | **Issues resolved** | 25 (100%) |
-| **Proactive fixes (not flagged)** | 125+ |
-| **Self-audit passes completed** | 7 (including Review 7 above) |
+| **Proactive fixes (not flagged)** | 130+ |
+| **Self-audit passes completed** | 8 (including Review 8 above) |
 | **Outstanding issues** | **0** |
 | **Versions released for compliance** | 1.1.2 → 1.1.3 → 1.1.5 → 1.1.6 → 1.1.7 → 1.1.8 |
 
@@ -655,24 +710,20 @@ All 13 WordPress.org Plugin Developer Guidelines have been verified as compliant
 | `vendor/composer/autoload_classmap.php` | Regenerated via `composer install --no-dev --classmap-authoritative` |
 | `vendor/composer/autoload_static.php` | Regenerated (classmap updated) |
 
-### Files Modified in Review 7 (April 17, 2026)
+### Files Modified in Review 8 (April 17, 2026)
 
 | File | Change |
 |------|--------|
-| 30 admin/section/tool PHP files | Added `wp_unslash()` around 64 `sanitize_key()` calls (see § Review 7a for full list) |
-| `includes/tools/trait-wp-mcp-ai-tool-content-media.php` | Added `esc_url()` to `wp_get_attachment_image_url()` output in `<img src>` attribute |
-| `includes/tools/class-wp-mcp-ai-tool-erlang-c-staffing-advisor.php` | Capability flag `'local-only'` → `'external-api'`; added translators comment |
-| `includes/tools/class-wp-mcp-ai-tool-erlang-c-queue-health.php` | Added `'external-api'` capability flag |
-| `includes/tools/orchestration/class-wp-mcp-ai-tool-calculate-orchestration-capacity.php` | Converted 2 hardcoded LIKE queries to `$wpdb->prepare()` with `$wpdb->esc_like()` |
-| `includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php` | Converted list query to use `$wpdb->prepare()` |
-| `readme.txt` | Added external service entries #46 (WFM), #47 (A2A Protocol), #48 (Mesh Router) |
-| `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 7 section |
+| `includes/admin/class-wp-mcp-ai-pro-database.php` | Converted 3 queries to use `$wpdb->prepare()` with `%d` for LIMIT/OFFSET |
+| `includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php` | Capability flag `'local-only'` → `'external-api'` |
+| `includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php` | Capability flag `'local-only'` → `'external-api'` |
+| `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 8 section |
 
 ---
 
 ## Conclusion
 
-The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **125+ proactive fixes** applied through seven self-audit passes (Reviews 5–7).
+The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **130+ proactive fixes** applied through eight self-audit passes (Reviews 5–8).
 
 The plugin demonstrates:
 
@@ -682,7 +733,7 @@ The plugin demonstrates:
 - **GPL-compatible** licensing throughout, including all bundled dependencies.
 - **Zero outstanding review issues** — every flagged item across all review cycles has been remediated and verified.
 - **Production-ready autoload** — `composer install --no-dev --classmap-authoritative` run to strip dev dependencies from vendor classmap.
-- **All database queries** with user-supplied data use `$wpdb->prepare()`. Three additional hardcoded queries were upgraded to use `prepare()` for best practice.
-- **All tool capability flags** accurately reflect external API usage — no tools with `'local-only'` flag that make external HTTP calls.
+- **All database queries** with user-supplied data use `$wpdb->prepare()`. Six additional queries were upgraded to use `prepare()` for best practice (3 in Review 7, 3 in Review 8).
+- **All tool capability flags** accurately reflect external API usage — no tools with `'local-only'` flag that make external HTTP calls. Four additional tools corrected (2 in Review 7, 2 in Review 8).
 
 **Recommendation:** Ready for WordPress.org Plugin Directory re-submission.

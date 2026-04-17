@@ -412,7 +412,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 
 		// Save memory files.
 		if ( isset( $_POST['wp_mcp_ai_profession_memory_files'] ) ) {
-			$memory_files = array_map( 'absint', (array) $_POST['wp_mcp_ai_profession_memory_files'] );
+			$memory_files = array_map( 'absint', wp_unslash( (array) $_POST['wp_mcp_ai_profession_memory_files'] ) );
 			$memory_files = array_filter( $memory_files ); // Remove zeros.
 			$memory_files = array_values( array_unique( $memory_files ) ); // Remove duplicates and reindex.
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );

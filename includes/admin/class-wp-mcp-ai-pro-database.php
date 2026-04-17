@@ -308,7 +308,8 @@ class WP_MCP_AI_Pro_Database {
 		$limit        = absint( $args['limit'] );
 		$offset       = absint( $args['offset'] );
 
-		$sql = "SELECT * FROM $controls_table WHERE $where_clause ORDER BY control_id LIMIT $limit OFFSET $offset";
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $controls_table from $wpdb->prefix; $where_clause built from $wpdb->prepare() calls above.
+		$sql = $wpdb->prepare( "SELECT * FROM $controls_table WHERE $where_clause ORDER BY control_id LIMIT %d OFFSET %d", $limit, $offset );
 
 		return $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dynamic SQL construction for compliance checks
 	}
@@ -499,7 +500,8 @@ class WP_MCP_AI_Pro_Database {
 		$limit        = absint( $args['limit'] );
 		$offset       = absint( $args['offset'] );
 
-		$sql = "SELECT * FROM $audit_table WHERE $where_clause ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $audit_table from $wpdb->prefix; $where_clause built from $wpdb->prepare() calls above.
+		$sql = $wpdb->prepare( "SELECT * FROM $audit_table WHERE $where_clause ORDER BY created_at DESC LIMIT %d OFFSET %d", $limit, $offset );
 
 		return $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dynamic SQL construction for compliance checks
 	}
@@ -542,7 +544,8 @@ class WP_MCP_AI_Pro_Database {
 		$limit        = absint( $args['limit'] );
 		$offset       = absint( $args['offset'] );
 
-		$sql = "SELECT * FROM $risks_table WHERE $where_clause ORDER BY risk_score DESC, risk_id LIMIT $limit OFFSET $offset";
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $risks_table from $wpdb->prefix; $where_clause built from $wpdb->prepare() calls above.
+		$sql = $wpdb->prepare( "SELECT * FROM $risks_table WHERE $where_clause ORDER BY risk_score DESC, risk_id LIMIT %d OFFSET %d", $limit, $offset );
 
 		return $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dynamic SQL construction for compliance checks
 	}

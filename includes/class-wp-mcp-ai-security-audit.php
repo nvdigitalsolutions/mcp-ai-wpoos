@@ -515,7 +515,7 @@ class WP_MCP_AI_Security_Audit {
 
 		// Save controls reviewed.
 		if ( isset( $_POST['wp_mcp_ai_controls_reviewed'] ) ) {
-			update_post_meta( $post_id, '_wp_mcp_ai_controls_reviewed', absint( $_POST['wp_mcp_ai_controls_reviewed'] ) );
+			update_post_meta( $post_id, '_wp_mcp_ai_controls_reviewed', absint( wp_unslash( $_POST['wp_mcp_ai_controls_reviewed'] ) ) );
 		}
 
 		// Save findings.

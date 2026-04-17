@@ -157,8 +157,11 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 					<?php
 					printf(
 						/* translators: %s: code snippet for wp-config.php */
-						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
-						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
+						wp_kses(
+							__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
+							array( 'code' => array() )
+						),
+						'<code>' . esc_html( "define( 'WP_MCP_AI_SKIP_SECURITY_CHECK', true );" ) . '</code>'
 					);
 					?>
 				</em>

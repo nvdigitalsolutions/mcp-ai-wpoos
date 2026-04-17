@@ -172,27 +172,62 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_WooCommerce_Integration' ) ) {
 								<tr>
 									<td><code>woo_create_product</code></td>
 									<td><?php esc_html_e( 'Create new products with full metadata', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>woo_update_product</code></td>
 									<td><?php esc_html_e( 'Update existing product details and pricing', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>woo_query_orders</code></td>
 									<td><?php esc_html_e( 'Search and analyze order data', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $analytics_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$analytics_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>woo_get_analytics</code></td>
 									<td><?php esc_html_e( 'Retrieve sales metrics and revenue reports', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $analytics_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$analytics_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 								<tr>
 									<td><code>woo_manage_inventory</code></td>
 									<td><?php esc_html_e( 'Track and update product stock levels', 'mcp-ai-wpoos' ); ?></td>
-									<td><?php echo $tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>'; ?></td>
+									<td>
+									<?php
+									echo wp_kses(
+										$tools_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Active', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>',
+										array( 'span' => array( 'style' => array() ) )
+									);
+									?>
+								</td>
 								</tr>
 							</tbody>
 						</table>

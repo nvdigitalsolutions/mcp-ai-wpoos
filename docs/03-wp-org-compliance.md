@@ -1,6 +1,6 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Document version:** 5.0 — 2026-04-17  
+**Document version:** 6.0 — 2026-04-17  
 **Plugin version:** 1.1.8
 
 This document records every issue raised by the WordPress.org plugin directory automated
@@ -12,7 +12,7 @@ reviews and the exact code changes made to resolve each one.
 
 **Audit type:** Complete codebase review against all 13 WordPress.org Plugin Developer Guidelines  
 **Plugin version:** 1.1.8  
-**Full audit report:** [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) § Review 7
+**Full audit report:** [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) § Review 8
 
 ---
 

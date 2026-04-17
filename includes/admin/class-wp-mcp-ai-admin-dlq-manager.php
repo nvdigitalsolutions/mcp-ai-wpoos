@@ -280,8 +280,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 		if ( isset( $_GET['bulk_action'] ) ) {
 			$action    = sanitize_key( wp_unslash( $_GET['bulk_action'] ) );
-			$processed = isset( $_GET['processed'] ) ? absint( $_GET['processed'] ) : 0;
-			$errors    = isset( $_GET['errors'] ) ? absint( $_GET['errors'] ) : 0;
+			$processed = isset( $_GET['processed'] ) ? absint( wp_unslash( $_GET['processed'] ) ) : 0;
+			$errors    = isset( $_GET['errors'] ) ? absint( wp_unslash( $_GET['errors'] ) ) : 0;
 			?>
 			<div class="notice notice-info is-dismissible">
 				<p>
