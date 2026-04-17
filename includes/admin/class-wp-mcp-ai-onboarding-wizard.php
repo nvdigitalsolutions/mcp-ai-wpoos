@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 					<ol class="wp-mcp-ai-wizard-steps-list">
 						<?php foreach ( $steps as $num => $label ) : ?>
 							<li class="wp-mcp-ai-wizard-step <?php echo esc_attr( $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ) ); ?>"
-								<?php echo $num === $current_step ? 'aria-current="step"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static literal attribute string. ?>>
+								<?php echo esc_attr( $num === $current_step ? 'aria-current="step"' : '' ); ?>>
 								<span class="wp-mcp-ai-wizard-step-indicator" aria-hidden="true">
 									<?php if ( $num < $current_step ) : ?>
 										<span class="dashicons dashicons-yes"></span>
