@@ -349,6 +349,14 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 	/**
 	 * Uninstall the plugin on a single site.
 	 *
+	 * Performs comprehensive cleanup of all plugin data when the user has
+	 * opted in via the "Delete data on uninstall" setting. This includes:
+	 * - All custom post types and their metadata
+	 * - All plugin options and transients
+	 * - All custom database tables
+	 * - All scheduled cron events
+	 * - All user metadata created by the plugin
+	 *
 	 * @return void
 	 */
 	function wp_mcp_ai_uninstall_single_site() {
@@ -364,42 +372,145 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 			return;
 		}
 
+		global $wpdb;
+
 		/**
 		 * Fires before Open Operator System performs its uninstall cleanup routines.
 		 */
 		do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
 
-		$assistant_ids = get_posts(
-			array(
-				'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'    => 'any',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
-			)
+		$summary = array(
+			'posts_deleted'   => 0,
+			'options_deleted' => false,
+			'tables_dropped'  => 0,
+			'crons_cleared'   => 0,
 		);
 
-		if ( ! empty( $assistant_ids ) ) {
-			foreach ( $assistant_ids as $assistant_id ) {
-				wp_delete_post( $assistant_id, true );
+		/*
+		 * 1. Delete all custom post types and their metadata.
+		 *
+		 * The plugin registers up to four CPTs. We delete all posts
+		 * of each type, including associated post meta and term relationships.
+		 */
+		$post_types = array(
+			'mcp_ai_assistant',
+			'mcp_ai_profession',
+			'mcp_ai_team',
+			'mcp_ai_audit',
+		);
+
+		foreach ( $post_types as $post_type ) {
+			$post_ids = get_posts(
+				array(
+					'post_type'      => $post_type,
+					'post_status'    => 'any',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+				)
+			);
+
+			if ( ! empty( $post_ids ) ) {
+				foreach ( $post_ids as $post_id ) {
+					wp_delete_post( $post_id, true );
+				}
+				$summary['posts_deleted'] += count( $post_ids );
 			}
 		}
 
-		$settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
-		delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
-		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
+		/*
+		 * 2. Delete all plugin options.
+		 *
+		 * Uses a wildcard query to remove every option prefixed with
+		 * wp_mcp_ai_ — this covers settings, API keys, flags, and
+		 * internal state that individual delete_option() calls might miss.
+		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk cleanup during uninstall; no single-option API exists for wildcard deletion.
+		$summary['options_deleted'] = $wpdb->query(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wp\_mcp\_ai\_%'"
+		);
+
+		/*
+		 * 3. Delete all plugin transients.
+		 *
+		 * Transients are stored as options with special prefixes.
+		 * We remove both the value and the timeout entries.
+		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk cleanup during uninstall; no single-transient API exists for wildcard deletion.
+		$wpdb->query(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_wp\_mcp\_ai\_%' OR option_name LIKE '\_transient\_timeout\_wp\_mcp\_ai\_%'"
+		);
+
+		/*
+		 * 4. Drop custom database tables.
+		 *
+		 * The base plugin creates up to three tables. We drop them
+		 * all, tolerating non-existence via IF EXISTS.
+		 */
+		$tables = array(
+			$wpdb->prefix . 'mcp_ai_slash_command_audit',
+			$wpdb->prefix . 'mcp_ai_job_queue',
+			$wpdb->prefix . 'mcp_ai_hourly_token_usage',
+		);
+
+		foreach ( $tables as $table ) {
+			$table_name = esc_sql( $table );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DDL required for custom plugin table cleanup; table name is escaped with esc_sql() and derived from $wpdb->prefix constant.
+			if ( false !== $wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ) ) {
+				++$summary['tables_dropped'];
+			}
+		}
+
+		/*
+		 * 5. Unschedule all plugin cron events.
+		 *
+		 * Every cron hook registered by the plugin is cleared here.
+		 * wp_clear_scheduled_hook() removes all events for a given hook.
+		 */
+		$cron_hooks = array(
+			'wp_mcp_ai_cleanup_gemini_files',
+			'wp_mcp_ai_cleanup_openai_files',
+			'wp_mcp_ai_process_job_queue',
+			'wp_mcp_ai_cleanup_job_queue',
+			'wp_mcp_ai_asset_discovery',
+			'wp_mcp_ai_annual_training_reminder',
+			'wp_mcp_ai_dlq_cleanup',
+			'wp_mcp_ai_hourly_forecast_check',
+			'wp_mcp_ai_cleanup_slash_audit',
+			'wp_mcp_ai_supplier_review',
+			'wp_mcp_ai_dependency_scan',
+			'wp_mcp_ai_check_model_pricing',
+			'wp_mcp_ai_verify_peers',
+			'wp_mcp_ai_prune_expired_contexts',
+			'wp_mcp_ai_cleanup_async_results',
+			'wp_mcp_ai_cleanup_old_errors',
+			'wp_mcp_ai_cleanup_job_cache',
+			'wp_mcp_ai_quarterly_audit',
+			'wp_mcp_ai_cleanup_token_tracking',
+			'wp_mcp_ai_check_license',
+		);
+
+		foreach ( $cron_hooks as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+			++$summary['crons_cleared'];
+		}
+
+		/*
+		 * 6. Delete all plugin user metadata.
+		 *
+		 * Removes per-user preferences, permissions, and dismissed
+		 * notice flags created by the plugin.
+		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk cleanup during uninstall; no single-user-meta API exists for wildcard deletion across all users.
+		$wpdb->query(
+			"DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'wp\_mcp\_ai\_%'"
+		);
 
 		/**
 		 * Fires after Open Operator System completes its uninstall cleanup routines.
 		 *
 		 * @param array $summary Summary of cleanup actions performed.
 		 */
-		do_action(
-			'wp_mcp_ai_after_uninstall_cleanup',
-			array(
-				'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
-				'settings_deleted'   => (bool) $settings_deleted,
-			)
-		);
+		do_action( 'wp_mcp_ai_after_uninstall_cleanup', $summary );
 	}
 }
 
