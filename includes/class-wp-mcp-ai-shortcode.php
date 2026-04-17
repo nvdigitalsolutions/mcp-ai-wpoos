@@ -1336,7 +1336,7 @@ class WP_MCP_AI_Shortcode {
 					<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
 					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
 					<input type="file" class="wp-mcp-ai-chat__translate-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
-					<button type="button" class="wp-mcp-ai-chat__translate" aria-label="<?php echo esc_attr__( 'Translate audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<button type="button" class="wp-mcp-ai-chat__translate" aria-label="<?php echo esc_attr__( 'Translate audio', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7l1.62-4.33L19.12 17h-3.24z"></path>
 						</svg>
@@ -1349,7 +1349,7 @@ class WP_MCP_AI_Shortcode {
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Voice chat', 'mcp-ai-wpoos' ); ?></span>
 					</button>
-					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
 							<path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>

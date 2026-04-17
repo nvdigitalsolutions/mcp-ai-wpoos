@@ -123,7 +123,7 @@ $severity_colors = array(
 		wp_enqueue_script(
 			'wp-mcp-ai-analytics-anomalies',
 			WP_MCP_AI_URL . 'assets/js/admin/widgets/analytics-anomalies.js',
-			array( 'jquery', 'chartjs' ),
+			array( 'jquery', 'wp-mcp-ai-chartjs' ),
 			WP_MCP_AI_VERSION,
 			true
 		);
