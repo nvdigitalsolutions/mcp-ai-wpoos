@@ -1063,7 +1063,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tools manager styles if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'tools' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$tools_css = $this->get_asset_file( 'assets/css/tools-manager.css' );
 				wp_enqueue_style(
 					'wp-mcp-ai-tools-manager',
@@ -1093,7 +1093,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tools manager scripts if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'tools' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$tools_js = $this->get_asset_file( 'assets/js/tools-manager.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tools-manager',
@@ -1106,7 +1106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue admin settings scripts if on providers tab (for embedded model management).
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'providers' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'providers' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$admin_settings_js = $this->get_asset_file( 'assets/js/admin-settings.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-admin-settings',
@@ -1119,7 +1119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tool orchestration scripts if on orchestration tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'orchestration' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'orchestration' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$orchestration_js = $this->get_asset_file( 'assets/js/admin-tool-orchestration.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tool-orchestration',
@@ -1133,7 +1133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'performance_monitoring' === $_GET['subtab'] ) {
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'performance_monitoring' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
 				$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-performance-admin',
@@ -1156,7 +1156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue mesh peer test scripts if on advanced tab with federation_mesh subtab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'federation_mesh' === $_GET['subtab'] ) {
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'federation_mesh' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
 				$mesh_test_js = $this->get_asset_file( 'assets/js/mesh-peer-test.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-mesh-peer-test',

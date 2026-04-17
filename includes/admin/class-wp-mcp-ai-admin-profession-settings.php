@@ -251,7 +251,7 @@ class WP_MCP_AI_Admin_Profession_Settings {
 				<?php esc_html_e( 'Configure global default settings for all AI Professions. These settings provide baseline values that cascade to all professions, but can be overridden at the individual profession level via metaboxes.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
-			<?php if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query param set by WordPress after options save; no state change occurs here. ?>
+			<?php if ( isset( $_GET['settings-updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['settings-updated'] ) ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query param set by WordPress after options save; no state change occurs here. ?>
 				<div class="notice notice-success inline">
 					<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
 				</div>

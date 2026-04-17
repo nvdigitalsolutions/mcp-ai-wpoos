@@ -253,7 +253,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	 */
 	protected function render_notices() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only query parameters for notices.
-		if ( isset( $_GET['success'] ) && '1' === $_GET['success'] ) {
+		if ( isset( $_GET['success'] ) && '1' === sanitize_key( wp_unslash( $_GET['success'] ) ) ) {
 			$action = isset( $_GET['action_result'] ) ? sanitize_key( $_GET['action_result'] ) : '';
 			?>
 			<div class="notice notice-success is-dismissible">

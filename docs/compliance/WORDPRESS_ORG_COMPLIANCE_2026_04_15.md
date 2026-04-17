@@ -476,6 +476,37 @@ This section documents every automated review email received from the WordPress.
 
 ---
 
+### Review 6 — April 17, 2026 (Pre-Submission Final Sanitization Sweep)
+
+**Plugin Version:** 1.1.8
+**Compliance Document:** This document (updated in place)
+
+A comprehensive automated code audit discovered **12 instances** of raw `$_GET` and `$_POST` superglobal values used in direct string or boolean comparisons without `sanitize_key()`, `sanitize_text_field()`, or `wp_unslash()` wrapping. While these were all read-only comparisons (no values stored or echoed), WordPress.org Guideline 13 requires all superglobal access to be sanitized.
+
+| # | File | Line | Variable | Fix Applied |
+|---|------|------|----------|-------------|
+| 1 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 423 | `$_POST['save_all_tabs']` | Wrapped in `sanitize_text_field( wp_unslash() )` |
+| 2 | `includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php` | 98 | `$_POST['async']` | Wrapped in `sanitize_text_field( wp_unslash() )` |
+| 3 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1066 | `$_GET['tab']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 4 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1096 | `$_GET['tab']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 5 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1109 | `$_GET['tab']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 6 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1122 | `$_GET['tab']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 7 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1136 | `$_GET['tab']`, `$_GET['subtab']` | Both wrapped in `sanitize_key( wp_unslash() )` |
+| 8 | `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | 1159 | `$_GET['tab']`, `$_GET['subtab']` | Both wrapped in `sanitize_key( wp_unslash() )` |
+| 9 | `includes/admin/class-wp-mcp-ai-simple-settings-page.php` | 95 | `$_GET['updated']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 10 | `includes/admin/class-wp-mcp-ai-admin-plugins-integration.php` | 115 | `$_GET['updated']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 11 | `includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php` | 204 | `$_GET['updated']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 12 | `includes/admin/class-wp-mcp-ai-admin-dlq-manager.php` | 256 | `$_GET['success']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 13 | `includes/admin/class-wp-mcp-ai-admin-profession-settings.php` | 254 | `$_GET['settings-updated']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 14 | `includes/admin/class-wp-mcp-ai-admin-team-settings.php` | 259 | `$_GET['settings-updated']` | Wrapped in `sanitize_key( wp_unslash() )` |
+| 15 | `includes/admin/class-wp-mcp-ai-auth0-setup.php` | 376 | `$_POST['enabled']` | Wrapped in `sanitize_text_field( wp_unslash() )` |
+| 16 | `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | 2719–2720 | `$_POST['set_front_page']`, `$_POST['overwrite_existing']` | Wrapped in `sanitize_text_field( wp_unslash() )` |
+
+**Additional actions:**
+- Ran `composer install --no-dev --classmap-authoritative` to regenerate production autoload classmap without dev dependencies.
+
+---
+
 ### Cumulative Remediation Summary
 
 | Metric | Count |
@@ -483,8 +514,8 @@ This section documents every automated review email received from the WordPress.
 | **Total review emails received** | 4 (March 2, March 24, April 2, April 9) |
 | **Total issues flagged by reviewers** | 25 |
 | **Issues resolved** | 25 (100%) |
-| **Proactive fixes (not flagged)** | 40+ |
-| **Self-audit passes completed** | 5 (including this document) |
+| **Proactive fixes (not flagged)** | 55+ |
+| **Self-audit passes completed** | 6 (including Review 6 above) |
 | **Outstanding issues** | **0** |
 | **Versions released for compliance** | 1.1.2 → 1.1.3 → 1.1.5 → 1.1.6 → 1.1.7 → 1.1.8 |
 
@@ -502,18 +533,36 @@ All 13 WordPress.org Plugin Developer Guidelines have been verified as compliant
 | `CHANGELOG.md` | v1.1.8 entry added |
 | `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document |
 
+### Files Modified in Review 6 (April 17, 2026)
+
+| File | Change |
+|------|--------|
+| `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | Sanitized `$_POST['save_all_tabs']` and 6× `$_GET['tab']`/`$_GET['subtab']` comparisons |
+| `includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php` | Sanitized `$_POST['async']` comparison |
+| `includes/admin/class-wp-mcp-ai-simple-settings-page.php` | Sanitized `$_GET['updated']` comparison |
+| `includes/admin/class-wp-mcp-ai-admin-plugins-integration.php` | Sanitized `$_GET['updated']` comparison |
+| `includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php` | Sanitized `$_GET['updated']` comparison |
+| `includes/admin/class-wp-mcp-ai-admin-dlq-manager.php` | Sanitized `$_GET['success']` comparison |
+| `includes/admin/class-wp-mcp-ai-admin-profession-settings.php` | Sanitized `$_GET['settings-updated']` comparison |
+| `includes/admin/class-wp-mcp-ai-admin-team-settings.php` | Sanitized `$_GET['settings-updated']` comparison |
+| `includes/admin/class-wp-mcp-ai-auth0-setup.php` | Sanitized `$_POST['enabled']` boolean check |
+| `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | Sanitized `$_POST['set_front_page']` and `$_POST['overwrite_existing']` boolean checks |
+| `vendor/composer/autoload_classmap.php` | Regenerated via `composer install --no-dev --classmap-authoritative` |
+| `vendor/composer/autoload_static.php` | Regenerated (classmap updated) |
+
 ---
 
 ## Conclusion
 
-The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **40+ proactive fixes** applied through self-audits.
+The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **55+ proactive fixes** applied through self-audits (including the 16 sanitization fixes from Review 6).
 
 The plugin demonstrates:
 
-- **Strong security posture** with comprehensive input sanitization (200+ instances), output escaping (500+ instances), nonce verification (147 instances), and capability checks (333 instances).
+- **Strong security posture** with comprehensive input sanitization (200+ instances), output escaping (500+ instances), nonce verification (147 instances), and capability checks (333 instances). **Zero raw superglobal comparisons** remain — every `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, and `$_COOKIE` access is sanitized.
 - **Complete transparency** with 45 base external services + 3 Pro addon services individually documented with ToS and Privacy links in readme.txt.
 - **No anti-patterns** — no obfuscated code, no remote code execution, no unbounded time limits, no "powered by" links, no user tracking without consent, no paywall for basic features.
 - **GPL-compatible** licensing throughout, including all bundled dependencies.
 - **Zero outstanding review issues** — every flagged item across all review cycles has been remediated and verified.
+- **Production-ready autoload** — `composer install --no-dev --classmap-authoritative` run to strip dev dependencies from vendor classmap.
 
-**Recommendation:** Ready for WordPress.org Plugin Directory submission.
+**Recommendation:** Ready for WordPress.org Plugin Directory re-submission.
