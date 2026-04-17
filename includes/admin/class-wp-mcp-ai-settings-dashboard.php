@@ -465,10 +465,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 417 via check_admin_referer().
 			if ( empty( $active_subtab ) ) {
-				foreach ( $_POST as $key => $value ) {
+				$unslashed_post = wp_unslash( $_POST );
+				foreach ( $unslashed_post as $raw_key => $value ) {
+					$key = sanitize_key( $raw_key );
 					if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-						$active_subtab = sanitize_key( $value );
+						$active_subtab = sanitize_key( wp_unslash( $value ) );
 						break; // Use the first subtab found.
 					}
 				}
