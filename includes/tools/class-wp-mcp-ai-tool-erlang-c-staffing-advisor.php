@@ -350,6 +350,7 @@ class WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor implements WP_MCP_AI_Tool_Interfa
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $code ) {
+			/* translators: %d: HTTP status code returned by the WFM endpoint */
 			return array( 'error' => sprintf( __( 'WFM endpoint returned HTTP %d.', 'mcp-ai-wpoos' ), $code ) );
 		}
 
