@@ -147,7 +147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					continue;
 				}
 
-				printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $message ) );
+				printf( '<div class="notice notice-info is-dismissible"><p>%s</p></div>', esc_html( $message ) );
 			}
 		}
 

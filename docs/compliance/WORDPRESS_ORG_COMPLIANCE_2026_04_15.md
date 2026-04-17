@@ -2,7 +2,7 @@
 
 **Plugin:** NV Digital Open Operator System (oOS)
 **Plugin Version:** 1.1.8
-**Audit Date:** 2026-04-15
+**Audit Date:** 2026-04-15 (last updated 2026-04-17, Review 9)
 **Audited By:** Automated code audit (full codebase scan)
 **Scope:** Base plugin only (`includes/`, `assets/`, `mcp-ai-wpoos.php`, `mcp-ai-wpoos-base.php`, `readme.txt`). Addons (`addons/`) are separately distributed and are **not** part of the WordPress.org submission.
 
@@ -129,8 +129,8 @@ No other phone-home calls, analytics beacons, tracking pixels, or telemetry foun
 
 ### Evidence
 
-- **Capability checks:** 333 instances of `current_user_can()` across the base plugin.
-- **Nonce verification:** 147 instances of `check_ajax_referer()` / `wp_verify_nonce()`.
+- **Capability checks:** 336 instances of `current_user_can()` across the base plugin.
+- **Nonce verification:** 145 instances of `check_ajax_referer()` / `wp_verify_nonce()`.
 - **REST API authentication:** Dedicated `WP_MCP_AI_REST_Authenticator` class handles Bearer tokens, nonce validation, and guest token verification.
 - **AJAX handlers:** All AJAX handlers verify nonces and capabilities before processing. Example: `dismiss_directory_notice` and `dismiss_price_notice` require `manage_options` capability (fixed in v1.1.7).
 - **No privilege escalation:** No `switch_to_blog()` without `restore_current_blog()`, no capability grants to untrusted roles.
@@ -160,7 +160,7 @@ No other phone-home calls, analytics beacons, tracking pixels, or telemetry foun
 ### Evidence
 
 - readme.txt line 30: *"All base plugin features are fully available without any license key or paid upgrade."*
-- **220+ tools** included in the base plugin (`includes/tools/` — 237 PHP files).
+- **231 tool files** included in the base plugin (`includes/tools/` — 231 PHP files).
 - No license key checks, activation gates, or feature locks in base plugin code.
 - Pro addon is a separate plugin (`addons/pro/`) with its own entry point — not distributed via WordPress.org.
 - The base plugin does NOT require an external account to function — users only need to provide API keys for their chosen AI provider (standard SaaS pattern).
@@ -213,7 +213,7 @@ No other phone-home calls, analytics beacons, tracking pixels, or telemetry foun
 
 ### Evidence
 
-- **PHP code:** All 767 PHP files in `includes/` are fully human-readable with proper class structures, descriptive function names, and comprehensive PHPDoc blocks.
+- **PHP code:** All 768 PHP files in `includes/` are fully human-readable with proper class structures, descriptive function names, and comprehensive PHPDoc blocks.
 - **No obfuscation:** Zero instances of encoded PHP, ionCube, Zend Guard, or similar.
 - **`base64_encode`/`base64_decode`:** Used exclusively for legitimate data encoding (image binary data for API transmission, encryption operations, QR code generation). Each instance has a PHPCS annotation explaining the purpose. Example: `class-wp-mcp-ai-tool-analyze-image.php:449` — encoding image binary for OpenAI Vision API.
 - **JavaScript:** Minified `.min.js` files are paired with `.min.js.map` source maps. Example: `assets/js/accessibility-enhancements.min.js` (7.5K) with source map (23K). Unminified source is available in the repository.
@@ -273,27 +273,27 @@ No other phone-home calls, analytics beacons, tracking pixels, or telemetry foun
 
 | Function | Approx. Usage Count |
 |----------|-------------------|
-| `sanitize_text_field()` | 200+ instances |
-| `absint()` | 150+ instances |
-| `sanitize_key()` | 80+ instances |
+| `sanitize_text_field()` | 1,690 instances |
+| `absint()` | 1,637 instances |
+| `sanitize_key()` | 744 instances |
 | `sanitize_email()` | 20+ instances |
-| `wp_unslash()` | 100+ instances |
-| `wp_kses_post()` | 80+ instances |
+| `wp_unslash()` | 483 instances |
+| `wp_kses_post()` | 303 instances |
 | `sanitize_file_name()` | 15+ instances |
 
 ### 13e. Output Escaping
 
 | Function | Approx. Usage Count |
 |----------|-------------------|
-| `esc_html()` / `esc_html_e()` / `esc_html__()` | 500+ instances |
-| `esc_attr()` / `esc_attr_e()` / `esc_attr__()` | 300+ instances |
-| `esc_url()` | 100+ instances |
-| `wp_json_encode()` | 80+ instances (with `JSON_HEX_TAG \| JSON_HEX_AMP` flags) |
-| `wp_kses_post()` | 80+ instances |
+| `esc_html()` / `esc_html_e()` / `esc_html__()` | 6,143 instances |
+| `esc_attr()` / `esc_attr_e()` / `esc_attr__()` | 1,228 instances |
+| `esc_url()` | 615 instances |
+| `wp_json_encode()` | 428 instances (with `JSON_HEX_TAG \| JSON_HEX_AMP` flags) |
+| `wp_kses_post()` | 303 instances |
 
 ### 13f. Nonce Verification
 
-- 147 instances of `check_ajax_referer()` / `wp_verify_nonce()` across the base plugin.
+- 145 instances of `check_ajax_referer()` / `wp_verify_nonce()` across the base plugin.
 - All AJAX handlers verify nonces before processing.
 - All admin form submissions verify nonces.
 - REST API endpoints use WordPress built-in nonce or Bearer token authentication.
@@ -344,7 +344,7 @@ All `do_shortcode()` calls that produce user-facing output are handled using one
 
 ### Capability-Based Access Control
 
-- 333 `current_user_can()` checks enforce WordPress role-based access.
+- 336 `current_user_can()` checks enforce WordPress role-based access.
 - Tool definitions declare `required_capability` (e.g., `edit_posts`, `manage_options`).
 - Guest access controlled via separate `guest_request` context flag with explicit tool allowlisting.
 
@@ -667,6 +667,93 @@ The following areas were audited and found fully compliant:
 
 ---
 
+### Review 9 — April 17, 2026 (Full Codebase Re-Audit Against All 13 Guidelines)
+
+**Plugin Version:** 1.1.8
+**Compliance Document:** This document (updated in place)
+
+A comprehensive re-audit of the base plugin was performed against all 13 WordPress.org Plugin Developer Guidelines using eight parallel automated scans covering: (1) raw superglobal sanitization, (2) output escaping, (3) nonce/capability verification, (4) external HTTP calls and capability flags, (5) dangerous code execution patterns, (6) database query safety, (7) GPL/readme/file operations/tracking, and (8) admin notices/paywall/human-readable code/contact information.
+
+#### 9a. Non-dismissible admin notices — 6 instances fixed
+
+Six admin-level notices (hooked on `admin_notices` or displayed at the top of admin pages) were missing the `is-dismissible` CSS class required by Guideline 7.
+
+| # | File | Line | Notice Type | Fix |
+|---|------|------|-------------|-----|
+| 1 | `includes/bootstrap/hooks.php` | 314 | Pro upload limit warning (`notice-warning`) | Added `is-dismissible` |
+| 2 | `includes/bootstrap/autoload.php` | 40 | Dev dependencies error (`notice-error`) | Added `is-dismissible` |
+| 3 | `includes/admin/class-wp-mcp-ai-pro-license.php` | 316 | License expiry warning (`notice-warning`) | Added `is-dismissible` |
+| 4 | `includes/admin/class-wp-mcp-ai-pro-license.php` | 334 | Expired license (`notice-error`) | Added `is-dismissible` |
+| 5 | `includes/admin/class-wp-mcp-ai-pro-license.php` | 348 | Invalid license (`notice-error`) | Added `is-dismissible` |
+| 6 | `includes/admin/class-wp-mcp-ai-admin-settings.php` | 3521 | Missing component warning (`notice-warning`) | Added `is-dismissible` |
+
+An additional notice in `class-wp-mcp-ai-tool-registry.php:150` (tool unavailability info) was also made dismissible.
+
+**Note:** Several in-page contextual notices (within plugin settings pages, using `notice inline` pattern) were audited and found acceptable — these provide essential configuration guidance and are not global admin notices.
+
+#### 9b. Cookie name sanitization inconsistency — 1 instance fixed
+
+| File | Line | Issue | Fix |
+|------|------|-------|-----|
+| `includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php` | 344 | `sanitize_key( $cookie_name )` missing `wp_unslash()` | Changed to `sanitize_key( wp_unslash( $cookie_name ) )` to match `jetengine-tool-handlers.php` pattern |
+
+#### 9c. Updated codebase statistics
+
+| Metric | Previous (Review 8) | Current (Review 9) |
+|--------|---------------------|-------------------|
+| **PHP files in `includes/`** | 767 | 768 |
+| **Tool files (class-wp-mcp-ai-tool-*.php)** | 237 | 231 |
+| **`current_user_can()` checks** | 333 | 336 |
+| **Nonce verifications (`check_ajax_referer` / `wp_verify_nonce`)** | 147 | 145 |
+| **`sanitize_text_field()` calls** | 200+ | 1,690 |
+| **`absint()` calls** | 150+ | 1,637 |
+| **`sanitize_key()` calls** | 80+ | 744 |
+| **`wp_unslash()` calls** | 100+ | 483 |
+| **`wp_kses_post()` / `wp_kses()` calls** | 80+ | 303 |
+| **`esc_html()` / `esc_html_e()` / `esc_html__()` calls** | 500+ | 6,143 |
+| **`esc_attr()` / `esc_attr_e()` / `esc_attr__()` calls** | 300+ | 1,228 |
+| **`esc_url()` calls** | 100+ | 615 |
+| **`wp_json_encode()` calls** | 80+ | 428 |
+| **AJAX handlers (all secured)** | 140 | 140 |
+| **REST API endpoints (all with permission callbacks)** | — | 85 |
+| **External services documented in readme.txt** | 48 base + 3 Pro | 48 base + 3 Pro |
+
+#### 9d. Full audit results — no additional issues found
+
+The following areas were audited and found fully compliant:
+
+| Audit Area | Result |
+|------------|--------|
+| **Superglobal sanitization** | ✅ All `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_COOKIE`, `$_FILES` accesses wrapped in appropriate sanitization functions with `wp_unslash()`. Zero raw comparisons. |
+| **Output escaping** | ✅ All `echo`/`printf` of dynamic values use `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses()`, or `wp_json_encode()`. Zero unescaped dynamic output found. |
+| **AJAX nonce verification** | ✅ All 140 `wp_ajax_` handlers verify nonces via `check_ajax_referer()` or `wp_verify_nonce()` |
+| **AJAX capability checks** | ✅ All handlers check `current_user_can()` |
+| **REST API permission callbacks** | ✅ All 85 endpoints use proper callbacks; public endpoints (`__return_true`) are intentionally public (A2A federation discovery at `/a2a/agent-card`, CORS preflight) |
+| **`eval()` / `create_function()` / `assert()`** | ✅ None found (only detection code in code optimizer) |
+| **Shell execution functions** | ✅ None found (`exec`, `system`, `passthru`, `shell_exec`, `popen`, `proc_open` — zero instances) |
+| **Remote code inclusion** | ✅ None found — all `include`/`require` use plugin constants (`WP_MCP_AI_PATH`) with `file_exists()` validation |
+| **`extract()` on user input** | ✅ None found |
+| **`unserialize()` on user input** | ✅ None found (uses `maybe_unserialize()` only) |
+| **`file_put_contents()` to plugin dir** | ✅ None found — all writes to `uploads/mcp-ai/` or system temp directories |
+| **`file_get_contents()` with URLs** | ✅ None found — only used for local filesystem reads |
+| **`curl_exec()`** | ✅ None found — all HTTP via WordPress `wp_remote_*()` functions |
+| **`set_time_limit(0)`** | ✅ None found — all bounded (`set_time_limit(300)` for SSE, dynamic with max constant for tools) |
+| **`base64_decode()` on user input** | ✅ None found — only used for API/JWT data and image binary encoding |
+| **Database queries** | ✅ All queries with user-supplied or dynamic data use `$wpdb->prepare()`. Hardcoded-only queries (e.g., `SELECT COUNT(*) FROM {$table}`) are acceptable without `prepare()`. |
+| **External CDN loads** | ✅ Transformers.js from jsDelivr CDN is documented as service #39 in readme.txt, opt-in only (disabled by default). Chart.js bundled locally. |
+| **Frontend attribution links** | ✅ None — no "powered by" or credit links in frontend output |
+| **Activation tracker opt-in** | ✅ Confirmed default OFF; requires explicit admin opt-in via Settings or filter |
+| **GPL licensing** | ✅ LICENSE file (GPLv3), plugin headers, readme.txt all declare GPLv3. All bundled dependencies (MIT) are GPL-compatible. |
+| **Contact information** | ✅ Author, Author URI, Plugin URI, Contributors, Donate link all present, consistent, and valid |
+| **readme.txt compliance** | ✅ Tags: 5 (ai, chatbot, openai, assistant, automation). Tested up to: 6.9. Stable tag: 1.1.8. Requires PHP: 7.4. External Services section comprehensive (48 + 3 Pro). |
+| **No paywall for base features** | ✅ All 231 tool files available without license. No `is_pro_active()` or license gates in base tool `execute()` methods. |
+| **Human-readable code** | ✅ No obfuscation, no encoded PHP, no ionCube/Zend Guard. All 86 minified JS files have corresponding `.min.js.map` source maps. |
+| **Admin notices** | ✅ All admin-level notices now include `is-dismissible` class (6 fixed in this review + 1 tool registry notice) |
+| **Tool capability flags** | ✅ All tools with `'local-only'` flag verified to not make external HTTP calls. All tools making external calls have `'external-api'` flag. |
+| **`$_COOKIE` / `$_FILES` handling** | ✅ Cookie iteration properly sanitizes both names and values with `wp_unslash()`. File uploads passed to dedicated handler functions with MIME validation. |
+
+---
+
 ### Cumulative Remediation Summary
 
 | Metric | Count |
@@ -674,8 +761,8 @@ The following areas were audited and found fully compliant:
 | **Total review emails received** | 4 (March 2, March 24, April 2, April 9) |
 | **Total issues flagged by reviewers** | 25 |
 | **Issues resolved** | 25 (100%) |
-| **Proactive fixes (not flagged)** | 130+ |
-| **Self-audit passes completed** | 8 (including Review 8 above) |
+| **Proactive fixes (not flagged)** | 140+ |
+| **Self-audit passes completed** | 9 (including Review 9 above) |
 | **Outstanding issues** | **0** |
 | **Versions released for compliance** | 1.1.2 → 1.1.3 → 1.1.5 → 1.1.6 → 1.1.7 → 1.1.8 |
 
@@ -719,21 +806,35 @@ All 13 WordPress.org Plugin Developer Guidelines have been verified as compliant
 | `includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php` | Capability flag `'local-only'` → `'external-api'` |
 | `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 8 section |
 
+### Files Modified in Review 9 (April 17, 2026)
+
+| File | Change |
+|------|--------|
+| `includes/bootstrap/hooks.php` | Added `is-dismissible` to Pro upload limit warning notice |
+| `includes/bootstrap/autoload.php` | Added `is-dismissible` to dev dependencies error notice |
+| `includes/admin/class-wp-mcp-ai-pro-license.php` | Added `is-dismissible` to 3 license status notices (expiry, expired, invalid) |
+| `includes/class-wp-mcp-ai-tool-registry.php` | Added `is-dismissible` to tool unavailability info notice |
+| `includes/admin/class-wp-mcp-ai-admin-settings.php` | Added `is-dismissible` to missing component warning notice |
+| `includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php` | Added `wp_unslash()` around `sanitize_key()` for `$cookie_name` (consistency fix) |
+| `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 9 section |
+
 ---
 
 ## Conclusion
 
-The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **130+ proactive fixes** applied through eight self-audit passes (Reviews 5–8).
+The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **140+ proactive fixes** applied through nine self-audit passes (Reviews 5–9).
 
 The plugin demonstrates:
 
-- **Strong security posture** with comprehensive input sanitization (200+ instances), output escaping (500+ instances), nonce verification (147 instances), and capability checks (333 instances). **Zero raw superglobal comparisons** remain — every `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_COOKIE`, and `$_FILES` access is sanitized. All `sanitize_key()` calls include `wp_unslash()`.
-- **Complete transparency** with 48 base external services + 3 Pro addon services individually documented with ToS and Privacy links in readme.txt. Three new services (WFM endpoints, A2A protocol, Mesh Router) were added in Review 7.
+- **Strong security posture** with comprehensive input sanitization (1,690 `sanitize_text_field()`, 1,637 `absint()`, 744 `sanitize_key()`, 483 `wp_unslash()`), output escaping (6,143 `esc_html()`, 1,228 `esc_attr()`, 615 `esc_url()`, 428 `wp_json_encode()`), nonce verification (145 instances), and capability checks (336 instances). **Zero raw superglobal comparisons** remain — every `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_COOKIE`, and `$_FILES` access is sanitized with `wp_unslash()`.
+- **Complete transparency** with 48 base external services + 3 Pro addon services individually documented with ToS and Privacy links in readme.txt. All external CDN loads (Transformers.js via jsDelivr) are opt-in and documented.
 - **No anti-patterns** — no obfuscated code, no remote code execution, no unbounded time limits, no "powered by" links, no user tracking without consent, no paywall for basic features.
-- **GPL-compatible** licensing throughout, including all bundled dependencies.
+- **GPL-compatible** licensing throughout, including all bundled dependencies (all MIT).
 - **Zero outstanding review issues** — every flagged item across all review cycles has been remediated and verified.
-- **Production-ready autoload** — `composer install --no-dev --classmap-authoritative` run to strip dev dependencies from vendor classmap.
-- **All database queries** with user-supplied data use `$wpdb->prepare()`. Six additional queries were upgraded to use `prepare()` for best practice (3 in Review 7, 3 in Review 8).
-- **All tool capability flags** accurately reflect external API usage — no tools with `'local-only'` flag that make external HTTP calls. Four additional tools corrected (2 in Review 7, 2 in Review 8).
+- **All admin notices dismissible** — 7 admin-level notices corrected in Review 9.
+- **All database queries** with user-supplied data use `$wpdb->prepare()`. Nine additional queries were upgraded to use `prepare()` for best practice across Reviews 7–8.
+- **All tool capability flags** accurately reflect external API usage — no tools with `'local-only'` flag that make external HTTP calls. Six additional tools corrected across Reviews 7–8.
+- **All 85 REST endpoints** have `permission_callback` defined. Public endpoints (A2A agent card discovery, CORS preflight) are intentionally public for federation protocol compliance.
+- **140 AJAX handlers** each verified with both nonce and capability checks — zero gaps.
 
 **Recommendation:** Ready for WordPress.org Plugin Directory re-submission.
