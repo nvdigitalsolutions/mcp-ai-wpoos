@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-elementor-buttons',
-        'version' => 'dev-copilot/fix-elementor-buttons',
-        'reference' => '5369014b6a27aeacceac8064dc2d85041aa804ca',
+        'pretty_version' => 'dev-copilot/fix-chat-client-ui-blocking',
+        'version' => 'dev-copilot/fix-chat-client-ui-blocking',
+        'reference' => '2d62433b8ad1de7b3eeebc7d32102c16df6ec5e4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-elementor-buttons',
-            'version' => 'dev-copilot/fix-elementor-buttons',
-            'reference' => '5369014b6a27aeacceac8064dc2d85041aa804ca',
+            'pretty_version' => 'dev-copilot/fix-chat-client-ui-blocking',
+            'version' => 'dev-copilot/fix-chat-client-ui-blocking',
+            'reference' => '2d62433b8ad1de7b3eeebc7d32102c16df6ec5e4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

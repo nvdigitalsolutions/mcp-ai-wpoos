@@ -208,24 +208,22 @@
 	}
 }
 
-/* Loading spinner styles */
+/* Loading spinner styles — CSS animation avoids wp-admin image path issues on front-end pages */
 .wp-mcp-ai-professional-selector .spinner {
-	background: url("../../wp-admin/images/spinner.gif") no-repeat;
-	background-size: 20px 20px;
-	display: inline-block;
-	opacity: 0.7;
-	filter: alpha(opacity=70);
+	display: none;
 	width: 20px;
 	height: 20px;
 	margin: 0;
 	vertical-align: middle;
+	border: 3px solid rgba(0, 0, 0, 0.1);
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: wp-mcp-ai-ps-spinner 0.6s linear infinite;
 }
 
-@media print,
-	(-webkit-min-device-pixel-ratio: 1.25),
-	(min-resolution: 120dpi) {
-	.wp-mcp-ai-professional-selector .spinner {
-		background-image: url("../../wp-admin/images/spinner-2x.gif");
+@keyframes wp-mcp-ai-ps-spinner {
+	to {
+		transform: rotate(360deg);
 	}
 }
 
