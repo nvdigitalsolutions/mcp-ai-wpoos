@@ -1592,7 +1592,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								?>
 							</p>
 							<p style="margin: 0;">
-								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 									<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 								</a>
 								<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
@@ -2834,7 +2834,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 				</p>
 				<p style="margin: 0;">
-					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
