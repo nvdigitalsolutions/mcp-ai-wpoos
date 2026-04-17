@@ -182,10 +182,19 @@ class WP_MCP_AI_Admin_Test_Model {
 				<p>
 					<?php
 					printf(
-						/* translators: %1$s: Link to documentation, %2$s: Link to create profession */
-						esc_html__(
-							'For more information about configuring professions and models, see our %1$s. If you haven\'t created any professions yet, %2$s.',
-							'mcp-ai-wpoos'
+						wp_kses(
+							/* translators: %1$s: Link to documentation, %2$s: Link to create profession */
+							__(
+								'For more information about configuring professions and models, see our %1$s. If you haven\'t created any professions yet, %2$s.',
+								'mcp-ai-wpoos'
+							),
+							array(
+								'a' => array(
+									'href'   => array(),
+									'target' => array(),
+									'rel'    => array(),
+								),
+							)
 						),
 						'<a href="https://nvdigital.solutions/docs/mcp-ai-wpoos/" target="_blank" rel="noopener noreferrer">' . esc_html__( 'documentation', 'mcp-ai-wpoos' ) . '</a>',
 						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create your first profession', 'mcp-ai-wpoos' ) . '</a>'

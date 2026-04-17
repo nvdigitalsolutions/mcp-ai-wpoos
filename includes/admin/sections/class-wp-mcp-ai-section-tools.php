@@ -1257,8 +1257,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<?php if ( $github_username ) : ?>
 									<?php
 									printf(
-										/* translators: %s: GitHub username */
-										esc_html__( 'as %s', 'mcp-ai-wpoos' ),
+										wp_kses(
+											/* translators: %s: GitHub username wrapped in <code> tags. */
+											__( 'as %s', 'mcp-ai-wpoos' ),
+											array( 'code' => array() )
+										),
 										'<code>' . esc_html( $github_username ) . '</code>'
 									);
 									?>
@@ -1356,8 +1359,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<li>
 								<?php
 								printf(
-									/* translators: %s: Callback URL */
-									esc_html__( 'Set Authorization callback URL to: %s', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: Callback URL wrapped in <code> tags. */
+										__( 'Set Authorization callback URL to: %s', 'mcp-ai-wpoos' ),
+										array(
+											'code' => array(),
+											'br'   => array(),
+										)
+									),
 									'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_github_oauth_callback' ) ) . '</code>'
 								);
 								?>

@@ -2,7 +2,7 @@
 
 **Plugin:** NV Digital Open Operator System (oOS)
 **Plugin Version:** 1.1.8
-**Audit Date:** 2026-04-15 (last updated 2026-04-17, Review 10)
+**Audit Date:** 2026-04-15 (last updated 2026-04-17, Review 11)
 **Audited By:** Automated code audit (full codebase scan)
 **Scope:** Base plugin only (`includes/`, `assets/`, `mcp-ai-wpoos.php`, `mcp-ai-wpoos-base.php`, `readme.txt`). Addons (`addons/`) are separately distributed and are **not** part of the WordPress.org submission.
 
@@ -829,6 +829,91 @@ The following areas were audited and found fully compliant:
 
 ---
 
+### Review 11 — April 17, 2026 (Full Codebase Re-Audit Against All 13 Guidelines)
+
+**Plugin Version:** 1.1.8
+**Compliance Document:** This document (updated in place)
+
+A comprehensive re-audit of the base plugin was performed against all 13 WordPress.org Plugin Developer Guidelines using six parallel automated scans covering: (1) raw superglobal sanitization, (2) output escaping, (3) nonce/capability/REST permission verification, (4) external HTTP calls and dangerous code patterns, (5) GPL/readme/admin notices/paywall/file operations, and (6) database query safety and script/style handle prefix compliance.
+
+#### 11a. Unprefixed script handles — 2 handles renamed
+
+Two slash-command script handles used the `mcp-ai-*` prefix instead of the plugin-standard `wp-mcp-ai-*` prefix, risking collision with other plugins.
+
+| # | Handle (old) | Handle (new) | Files affected |
+|---|-------------|-------------|----------------|
+| 1 | `mcp-ai-command-autocomplete` | `wp-mcp-ai-command-autocomplete` | `slash-commands-init.php` (2 refs) |
+| 2 | `mcp-ai-slash-commands` | `wp-mcp-ai-slash-commands` | `slash-commands-init.php` (3 refs), `class-wp-mcp-ai-shortcode.php` (2 refs) |
+
+**Note:** The admin menu slug `mcp-ai-slash-commands` in `class-wp-mcp-ai-admin-slash-commands-dashboard.php` (lines 69, 81) is a WordPress admin page identifier, not a script handle — it was correctly left unchanged.
+
+#### 11b. Over-escaping display bugs — 14 instances fixed across 8 files
+
+Fourteen instances of `printf( esc_html__( '...%s...', 'mcp-ai-wpoos' ), '<code>...</code>' )` or similar patterns were found where `esc_html__()` entity-encoded the HTML tags passed as `%s` arguments. This caused `<code>`, `<a>`, `<span>`, and `<br>` tags to render as literal text (`&lt;code&gt;`) instead of styled markup.
+
+**Not a security vulnerability** (over-escaped, not under-escaped), but a **functional display bug** in admin UI.
+
+**Fix:** Changed `esc_html__()` → `wp_kses( __(), $allowed_tags )` with a minimal tag allowlist specific to each instance.
+
+| # | File | Line | Tags allowed |
+|---|------|------|--------------|
+| 1 | `includes/admin/class-wp-mcp-ai-admin-settings.php` | 3972 | `code` |
+| 2 | `includes/admin/class-wp-mcp-ai-admin-test-model.php` | 186 | `a[href,target,rel]` |
+| 3 | `includes/admin/class-wp-mcp-ai-pro-dashboard.php` | 2765 | `span[id]` |
+| 4 | `includes/admin/class-wp-mcp-ai-pro-dashboard.php` | 3056 | `a[href,target]` |
+| 5 | `includes/admin/sections/class-wp-mcp-ai-section-general.php` | 633 | `code` |
+| 6 | `includes/admin/sections/class-wp-mcp-ai-section-general.php` | 640 | `code` |
+| 7 | `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | 1261 | `code` |
+| 8 | `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | 1360 | `code`, `br` |
+| 9 | `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` | 2069 | `a[href]` |
+| 10 | `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` | 2119 | `code` |
+| 11 | `includes/class-wp-mcp-ai-federation-settings.php` | 119 | `code` |
+| 12 | `includes/class-wp-mcp-ai-federation-settings.php` | 154 | `code` |
+| 13 | `includes/class-wp-mcp-ai-nefarious-usage-monitor.php` | 633 | `a[href]` |
+| 14 | `includes/class-wp-mcp-ai-nefarious-usage-monitor.php` | 658 | `a[href]` |
+
+#### 11c. Full audit results — no additional issues found
+
+The following areas were audited and found fully compliant:
+
+| Audit Area | Result |
+|------------|--------|
+| **Superglobal sanitization** | ✅ All `$_GET`, `$_POST`, `$_REQUEST`, `$_SERVER`, `$_COOKIE`, `$_FILES` accesses wrapped in appropriate sanitization functions with `wp_unslash()`. Zero raw comparisons. |
+| **Output escaping** | ✅ All `echo`/`printf` of dynamic values use `esc_html()`, `esc_attr()`, `esc_url()`, `wp_kses()`, or `wp_json_encode()`. 14 over-escaping display bugs fixed in 11b. |
+| **AJAX nonce verification** | ✅ All 140 `wp_ajax_` handlers verify nonces via `check_ajax_referer()` or `wp_verify_nonce()` |
+| **AJAX capability checks** | ✅ All admin handlers check `current_user_can()`. Three `wp_ajax_nopriv_` handlers (`get_professional_config`, `get_models_for_provider`, `render_professional_chat`) are intentionally public — they serve the professional selector shortcode on the frontend and verify nonces for CSRF protection. |
+| **REST API permission callbacks** | ✅ All 85 endpoints use proper callbacks; public endpoints (`__return_true`) are intentionally public (A2A federation discovery at `/a2a/agent-card`, CORS preflight) |
+| **`eval()` / `create_function()` / `assert()`** | ✅ None found (only detection code in code optimizer) |
+| **Shell execution functions** | ✅ None found (`exec`, `system`, `passthru`, `shell_exec`, `popen`, `proc_open` — zero instances) |
+| **Remote code inclusion** | ✅ None found — all `include`/`require` use plugin constants (`WP_MCP_AI_PATH`) with `file_exists()` validation |
+| **`extract()` on user input** | ✅ None found |
+| **`unserialize()` on user input** | ✅ None found (uses `maybe_unserialize()` only) |
+| **`file_put_contents()` to plugin dir** | ✅ None found — all writes to `uploads/mcp-ai/` or system temp directories |
+| **`file_get_contents()` with URLs** | ✅ None found — only used for local filesystem reads |
+| **`curl_exec()`** | ✅ None found — all HTTP via WordPress `wp_remote_*()` functions |
+| **`set_time_limit(0)`** | ✅ None found — all bounded (`set_time_limit(300)` for SSE, dynamic with max constant for tools) |
+| **`base64_decode()` on user input** | ✅ None found — only used for API/JWT data and image binary encoding |
+| **Database queries** | ✅ All queries with user-supplied or dynamic data use `$wpdb->prepare()`. Hardcoded-only queries (e.g., `SELECT COUNT(*) FROM {$table}`) are acceptable without `prepare()`. |
+| **External CDN loads** | ✅ Transformers.js and WebLLM CDN files excluded from WordPress.org distribution via `.distignore`. Chart.js bundled locally. |
+| **Frontend attribution links** | ✅ None — no "powered by" or credit links in frontend output |
+| **Activation tracker opt-in** | ✅ Confirmed default OFF; requires explicit admin opt-in via Settings or filter |
+| **GPL licensing** | ✅ LICENSE file (GPLv3), plugin headers, readme.txt all declare GPLv3. All bundled dependencies (MIT) are GPL-compatible. |
+| **Contact information** | ✅ Author, Author URI, Plugin URI, Contributors, Donate link all present, consistent, and valid |
+| **readme.txt compliance** | ✅ Tags: 5 (ai, chatbot, openai, assistant, automation). Tested up to: 6.9. Stable tag: 1.1.8. Requires PHP: 7.4. External Services section comprehensive (48 + 3 Pro). All required sections present (Description, Installation, FAQ, Screenshots, Changelog, Privacy Policy). |
+| **No paywall for base features** | ✅ All 231 tool files available without license. No `is_pro_active()` or license gates in base tool `execute()` methods. |
+| **Human-readable code** | ✅ No obfuscation, no encoded PHP, no ionCube/Zend Guard. All minified JS files have corresponding `.min.js.map` source maps. |
+| **Admin notices** | ✅ All global admin notices include `is-dismissible` class. |
+| **Tool capability flags** | ✅ All tools with `'local-only'` flag verified to not make external HTTP calls. All tools making external calls have `'external-api'` flag. |
+| **`$_COOKIE` / `$_FILES` handling** | ✅ Cookie iteration properly sanitizes both names and values with `wp_unslash()`. File uploads passed to dedicated handler functions with `sanitize_file_name()` and MIME validation. |
+| **`wp_redirect()` / `wp_safe_redirect()`** | ✅ All redirect calls followed by `exit;` or `die;`. |
+| **HEREDOC / NOWDOC usage** | ✅ None found — plugin uses string concatenation throughout. |
+| **Script/style handle prefixes** | ✅ All handles now use `wp-mcp-ai-*` prefix (2 additional handles fixed in 11a). WordPress core handles (`jquery`, `wp-element`, `wp-components`) used as dependencies are acceptable. |
+| **Function/class/constant prefixes** | ✅ All global functions use `wp_mcp_ai_*` prefix. All classes use `WP_MCP_AI_*` prefix. |
+| **ABSPATH guard** | ✅ All 768 PHP files in `includes/` and both root PHP entry points have `if ( ! defined( 'ABSPATH' ) ) { exit; }` guard. |
+| **Version consistency** | ✅ `readme.txt` Stable tag (1.1.8) matches `mcp-ai-wpoos.php` Version header (1.1.8) and `WP_MCP_AI_VERSION` constant (1.1.8). |
+
+---
+
 ### Cumulative Remediation Summary
 
 | Metric | Count |
@@ -836,8 +921,8 @@ The following areas were audited and found fully compliant:
 | **Total review emails received** | 4 (March 2, March 24, April 2, April 9) |
 | **Total issues flagged by reviewers** | 25 |
 | **Issues resolved** | 25 (100%) |
-| **Proactive fixes (not flagged)** | 145+ |
-| **Self-audit passes completed** | 10 (including Review 10 above) |
+| **Proactive fixes (not flagged)** | 160+ |
+| **Self-audit passes completed** | 11 (including Review 11 below) |
 | **Outstanding issues** | **0** |
 | **Versions released for compliance** | 1.1.2 → 1.1.3 → 1.1.5 → 1.1.6 → 1.1.7 → 1.1.8 |
 
@@ -910,11 +995,27 @@ All 13 WordPress.org Plugin Developer Guidelines have been verified as compliant
 | `includes/elementor/class-wp-mcp-ai-elementor-performance-trends-widget.php` | Updated `'chartjs'` → `'wp-mcp-ai-chartjs'` (1 reference) |
 | `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 10 section |
 
+### Files Modified in Review 11 (April 17, 2026)
+
+| File | Change |
+|------|--------|
+| `includes/slash-commands/slash-commands-init.php` | Renamed script handles `'mcp-ai-command-autocomplete'` → `'wp-mcp-ai-command-autocomplete'` and `'mcp-ai-slash-commands'` → `'wp-mcp-ai-slash-commands'` (5 references) |
+| `includes/class-wp-mcp-ai-shortcode.php` | Updated `'mcp-ai-slash-commands'` → `'wp-mcp-ai-slash-commands'` (2 references) |
+| `includes/admin/class-wp-mcp-ai-admin-settings.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<code>` tag in printf (1 instance) |
+| `includes/admin/class-wp-mcp-ai-admin-test-model.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<a>` tags in printf (1 instance) |
+| `includes/admin/class-wp-mcp-ai-pro-dashboard.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<span>` and `<a>` tags in printf (2 instances) |
+| `includes/admin/sections/class-wp-mcp-ai-section-general.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<code>` tag in printf (2 instances) |
+| `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<code>` and `<br>` tags in printf (2 instances) |
+| `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<a>` and `<code>` tags in printf (2 instances) |
+| `includes/class-wp-mcp-ai-federation-settings.php` | Fixed over-escaping: `esc_html__()` → `wp_kses( __(), ... )` for `<code>` tag in printf (2 instances) |
+| `includes/class-wp-mcp-ai-nefarious-usage-monitor.php` | Fixed over-escaping: `esc_html()` / `esc_html__()` → `wp_kses()` for `<a>` tags in printf (2 instances) |
+| `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` | This document — added Review 11 section |
+
 ---
 
 ## Conclusion
 
-The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **145+ proactive fixes** applied through ten self-audit passes (Reviews 5–10).
+The NV Digital Open Operator System (oOS) base plugin v1.1.8 is **fully compliant** with all 13 WordPress.org Plugin Developer Guidelines. All issues raised across **four WordPress.org automated review emails** (March 2, March 24, April 2, and April 9, 2026) have been **fully resolved**, with an additional **160+ proactive fixes** applied through eleven self-audit passes (Reviews 5–11).
 
 The plugin demonstrates:
 
@@ -928,7 +1029,7 @@ The plugin demonstrates:
 - **All tool capability flags** accurately reflect external API usage — no tools with `'local-only'` flag that make external HTTP calls. Six additional tools corrected across Reviews 7–8.
 - **All 85 REST endpoints** have `permission_callback` defined. Public endpoints (A2A agent card discovery, CORS preflight) are intentionally public for federation protocol compliance.
 - **140 AJAX handlers** each verified with both nonce and capability checks — zero gaps.
-- **All script/style handles** use the `wp-mcp-ai-*` prefix — 1 generic handle (`chartjs`) corrected in Review 10.
+- **All script/style handles** use the `wp-mcp-ai-*` prefix — 1 generic handle (`chartjs`) corrected in Review 10, 2 additional handles (`mcp-ai-slash-commands`, `mcp-ai-command-autocomplete`) corrected in Review 11.
 - **All `wp_redirect()` / `wp_safe_redirect()` calls** followed by `exit;` — no redirect-without-exit patterns.
 - **Zero HEREDOC/NOWDOC usage** — plugin uses string concatenation throughout.
 - **100% ABSPATH guard coverage** — all 768 PHP files in `includes/` and both root entry points protected.

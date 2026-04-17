@@ -2065,8 +2065,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<span class="description" style="margin-left: 10px;">
 									<?php
 									printf(
-										/* translators: %s: URL to tools settings */
-										esc_html__( 'Enable mesh computing in %s', 'mcp-ai-wpoos' ),
+										wp_kses(
+											/* translators: %s: Link to tools settings page. */
+											__( 'Enable mesh computing in %s', 'mcp-ai-wpoos' ),
+											array( 'a' => array( 'href' => array() ) )
+										),
 										'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) ) . '">' . esc_html__( 'Tools & Features', 'mcp-ai-wpoos' ) . '</a>'
 									);
 									?>
@@ -2115,8 +2118,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( '2. On the peer site that wants to connect to this instance, go to Advanced → Federation & Mesh', 'mcp-ai-wpoos' ); ?><br>
 								<?php
 								printf(
-									/* translators: %s: JSON example */
-									esc_html__( '3. Add this site to their "Mesh Peer Sites Configuration" JSON with format: %s', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: JSON example wrapped in <code> tags. */
+										__( '3. Add this site to their "Mesh Peer Sites Configuration" JSON with format: %s', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>{"url":"' . esc_html( get_site_url() ) . '","api_key":"[paste key here]","name":"' . esc_html( get_bloginfo( 'name' ) ) . '","enabled":true}</code>'
 								);
 								?>

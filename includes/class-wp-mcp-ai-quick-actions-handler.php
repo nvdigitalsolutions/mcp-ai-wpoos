@@ -193,8 +193,8 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			'application/pdf',
 		);
 
-		$file_type = wp_check_filetype( $file['name'] );
-		$mime_type = $file['type'];
+		$file_type = wp_check_filetype( sanitize_file_name( $file['name'] ) );
+		$mime_type = ! empty( $file_type['type'] ) ? $file_type['type'] : sanitize_mime_type( $file['type'] );
 
 		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
 			return new WP_Error( 'invalid_file_type', __( 'File type not allowed.', 'mcp-ai-wpoos' ) );
