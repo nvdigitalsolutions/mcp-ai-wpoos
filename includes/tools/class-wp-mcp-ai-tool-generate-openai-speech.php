@@ -710,7 +710,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Calls OpenAI TTS API.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}
