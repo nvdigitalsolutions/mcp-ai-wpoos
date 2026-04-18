@@ -35,7 +35,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 	public static function enqueue_scripts( $hook ) {
 		// Only load on the assistant list page.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for script enqueue.
-		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== $_GET['post_type'] ) {
+		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== sanitize_key( wp_unslash( $_GET['post_type'] ) ) ) {
 			return;
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
@@ -250,7 +250,8 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 		$description = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
 		$provider    = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 		$model       = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
-		$temperature = isset( $_POST['temperature'] ) && '' !== $_POST['temperature'] ? floatval( $_POST['temperature'] ) : '';
+		$raw_temp    = isset( $_POST['temperature'] ) ? sanitize_text_field( wp_unslash( $_POST['temperature'] ) ) : '';
+		$temperature = '' !== $raw_temp ? floatval( $raw_temp ) : '';
 
 		// Validate required fields.
 		if ( empty( $title ) ) {

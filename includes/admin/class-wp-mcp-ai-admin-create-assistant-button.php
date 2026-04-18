@@ -37,7 +37,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 	public static function enqueue_scripts( $hook ) {
 		// Only load on the assistant list page.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for script enqueue.
-		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== $_GET['post_type'] ) {
+		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== sanitize_key( wp_unslash( $_GET['post_type'] ) ) ) {
 			return;
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
@@ -94,8 +94,8 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		$industry_focus = isset( $_POST['industry_focus'] ) ? sanitize_text_field( wp_unslash( $_POST['industry_focus'] ) ) : '';
 		$provider       = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : 'openai';
 		$model          = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'gpt-4';
-		$temperature    = isset( $_POST['temperature'] ) ? floatval( $_POST['temperature'] ) : 0.7;
-		$async          = isset( $_POST['async'] ) && '1' === $_POST['async'];
+		$temperature    = isset( $_POST['temperature'] ) ? floatval( wp_unslash( $_POST['temperature'] ) ) : 0.7;
+		$async          = isset( $_POST['async'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['async'] ) );
 
 		// Validate required fields.
 		if ( empty( $title ) || empty( $professions ) || empty( $regions ) ) {
@@ -313,7 +313,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 
 		// Validate file type.
 		$allowed_types = array( 'txt', 'md', 'pdf', 'doc', 'docx' );
-		$file_name     = isset( $_FILES['file']['name'] ) ? sanitize_file_name( $_FILES['file']['name'] ) : '';
+		$file_name     = isset( $_FILES['file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['file']['name'] ) ) : '';
 		$file_ext      = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
 
 		if ( ! in_array( $file_ext, $allowed_types, true ) ) {

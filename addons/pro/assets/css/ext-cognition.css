@@ -1,0 +1,182 @@
+/**
+ * Extended Cognition Toolkit — Styles
+ *
+ * Minimal styles for the GDPR consent overlay and status indicators
+ * injected by the sensor bridge.
+ *
+ * @package NV_oOS_Ext_Cognition
+ * @since   1.0.0
+ */
+
+/* ---------------------------------------------------------------
+   Sensor status badge
+   Shown in the chat UI to indicate when a sensor is active.
+--------------------------------------------------------------- */
+.nvoos-ext-cog-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	vertical-align: middle;
+	transition: opacity 0.2s ease;
+}
+
+.nvoos-ext-cog-badge--camera {
+	background: #1a1a2e;
+	color: #4fc3f7;
+	border: 1px solid #4fc3f7;
+}
+
+.nvoos-ext-cog-badge--microphone {
+	background: #1a2e1a;
+	color: #81c784;
+	border: 1px solid #81c784;
+}
+
+.nvoos-ext-cog-badge--screen {
+	background: #2e1a1a;
+	color: #ff8a65;
+	border: 1px solid #ff8a65;
+}
+
+.nvoos-ext-cog-badge--motion {
+	background: #1a1a1a;
+	color: #ce93d8;
+	border: 1px solid #ce93d8;
+}
+
+.nvoos-ext-cog-badge--active {
+	opacity: 1;
+}
+
+.nvoos-ext-cog-badge--idle {
+	opacity: 0.45;
+}
+
+/* Pulse animation for active capture. */
+@keyframes nvoos-ext-cog-pulse {
+	0%   { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.5); }
+	70%  { box-shadow: 0 0 0 6px rgba(79, 195, 247, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); }
+}
+
+.nvoos-ext-cog-badge--capturing {
+	animation: nvoos-ext-cog-pulse 1.2s infinite;
+}
+
+/* ---------------------------------------------------------------
+   Sensor toolbar
+   Optional row of sensor badges injected above the chat input.
+--------------------------------------------------------------- */
+.nvoos-ext-cog-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.07);
+	margin-top: 6px;
+}
+
+.nvoos-ext-cog-toolbar__label {
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #888;
+	margin-right: 4px;
+}
+
+/* ---------------------------------------------------------------
+   GDPR consent overlay (browser-native confirm is used by default,
+   but this class can be used for a custom overlay if preferred).
+--------------------------------------------------------------- */
+.nvoos-ext-cog-consent {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 99999;
+	background: #1e1e2e;
+	color: #cdd6f4;
+	border: 1px solid #45475a;
+	border-radius: 10px;
+	padding: 16px 20px;
+	max-width: 480px;
+	width: calc(100% - 32px);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.nvoos-ext-cog-consent__title {
+	font-weight: 700;
+	font-size: 14px;
+	margin-bottom: 6px;
+	color: #cba6f7;
+}
+
+.nvoos-ext-cog-consent__actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+	justify-content: flex-end;
+}
+
+.nvoos-ext-cog-consent__btn {
+	padding: 6px 16px;
+	border-radius: 6px;
+	border: none;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	transition: opacity 0.15s;
+}
+
+.nvoos-ext-cog-consent__btn:hover {
+	opacity: 0.85;
+}
+
+.nvoos-ext-cog-consent__btn--allow {
+	background: #cba6f7;
+	color: #1e1e2e;
+}
+
+.nvoos-ext-cog-consent__btn--deny {
+	background: transparent;
+	color: #cdd6f4;
+	border: 1px solid #45475a;
+}
+
+/* ---------------------------------------------------------------
+   Capture loading spinner (shown in chat message while waiting).
+--------------------------------------------------------------- */
+.nvoos-ext-cog-loading {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	color: #888;
+	padding: 6px 0;
+}
+
+@keyframes nvoos-ext-cog-spin {
+	to { transform: rotate(360deg); }
+}
+
+.nvoos-ext-cog-loading__spinner {
+	width: 14px;
+	height: 14px;
+	border: 2px solid rgba(255, 255, 255, 0.15);
+	border-top-color: #4fc3f7;
+	border-radius: 50%;
+	animation: nvoos-ext-cog-spin 0.7s linear infinite;
+	flex-shrink: 0;
+}

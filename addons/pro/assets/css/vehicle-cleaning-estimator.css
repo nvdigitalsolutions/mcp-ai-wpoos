@@ -1,0 +1,801 @@
+/**
+ * Vehicle Cleaning Estimator Widget — Frontend Styles
+ *
+ * PWA-style interactive quote widget for car-wash / detailing estimates.
+ * Supports both embedded (in-container) and full-screen overlay modes.
+ *
+ * CSS custom properties (overridable via Elementor or custom CSS):
+ *   --mce-primary   : Brand accent colour  (default #0073aa)
+ *   --mce-bg        : App background       (default #ffffff)
+ *   --mce-radius    : Border radius         (default 12px)
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.1.0
+ */
+
+/* ──────────────────────────────────────────────────────────────
+   1.  CSS CUSTOM PROPERTIES
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-app {
+	--mce-primary    : #0073aa;
+	--mce-primary-dk : #005a87;
+	--mce-bg         : #ffffff;
+	--mce-surface    : #f7f8fa;
+	--mce-border     : #e2e6ea;
+	--mce-text       : #1e2228;
+	--mce-muted      : #6b7280;
+	--mce-success    : #22c55e;
+	--mce-danger     : #ef4444;
+	--mce-radius     : 12px;
+	--mce-radius-sm  : 8px;
+	--mce-shadow     : 0 4px 20px rgba(0, 0, 0, 0.08);
+	--mce-transition : 0.2s ease;
+	--mce-font       : -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   2.  APP SHELL
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-app {
+	position         : relative;
+	display          : flex;
+	flex-direction   : column;
+	min-height       : calc(100vh - 80px);
+	background       : var(--mce-bg);
+	border-radius    : var(--mce-radius);
+	box-shadow       : var(--mce-shadow);
+	overflow         : hidden;
+	font-family      : var(--mce-font);
+	color            : var(--mce-text);
+	-webkit-font-smoothing : antialiased;
+}
+
+/* Full-screen overlay mode (toggled by JS) */
+.mcp-vce-app.mcp-vce-app--fullscreen {
+	position  : fixed;
+	inset     : 0;
+	z-index   : 9999;
+	min-height: 100vh;
+	border-radius : 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   3.  HEADER / TOOLBAR
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-header {
+	display          : flex;
+	align-items      : center;
+	justify-content  : space-between;
+	padding          : 16px 20px;
+	background       : var(--mce-primary);
+	color            : #fff;
+	flex-shrink      : 0;
+}
+
+.mcp-vce-header__title {
+	font-size        : 1.1rem;
+	font-weight      : 600;
+	margin           : 0;
+	line-height      : 1.3;
+}
+
+.mcp-vce-header__actions {
+	display          : flex;
+	gap              : 8px;
+	align-items      : center;
+}
+
+.mcp-vce-btn-icon {
+	display          : flex;
+	align-items      : center;
+	justify-content  : center;
+	width            : 36px;
+	height           : 36px;
+	border           : none;
+	background       : rgba(255, 255, 255, 0.18);
+	color            : #fff;
+	border-radius    : 50%;
+	cursor           : pointer;
+	transition       : background var(--mce-transition);
+	font-size        : 1rem;
+	line-height      : 1;
+}
+
+.mcp-vce-btn-icon:hover {
+	background       : rgba(255, 255, 255, 0.32);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   4.  PROGRESS BAR
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-progress {
+	display          : flex;
+	align-items      : center;
+	padding          : 12px 20px;
+	background       : var(--mce-surface);
+	border-bottom    : 1px solid var(--mce-border);
+	gap              : 4px;
+	flex-shrink      : 0;
+}
+
+.mcp-vce-progress__step {
+	display          : flex;
+	align-items      : center;
+	gap              : 4px;
+	flex             : 1;
+}
+
+.mcp-vce-progress__dot {
+	width            : 28px;
+	height           : 28px;
+	border-radius    : 50%;
+	background       : var(--mce-border);
+	color            : var(--mce-muted);
+	font-size        : 0.75rem;
+	font-weight      : 600;
+	display          : flex;
+	align-items      : center;
+	justify-content  : center;
+	transition       : background var(--mce-transition), color var(--mce-transition);
+	flex-shrink      : 0;
+}
+
+.mcp-vce-progress__step--active .mcp-vce-progress__dot {
+	background       : var(--mce-primary);
+	color            : #fff;
+}
+
+.mcp-vce-progress__step--done .mcp-vce-progress__dot {
+	background       : var(--mce-success);
+	color            : #fff;
+}
+
+.mcp-vce-progress__label {
+	font-size        : 0.72rem;
+	color            : var(--mce-muted);
+	white-space      : nowrap;
+	overflow         : hidden;
+	text-overflow    : ellipsis;
+}
+
+.mcp-vce-progress__step--active .mcp-vce-progress__label,
+.mcp-vce-progress__step--done  .mcp-vce-progress__label {
+	color            : var(--mce-text);
+}
+
+.mcp-vce-progress__connector {
+	flex             : 1;
+	height           : 2px;
+	background       : var(--mce-border);
+	border-radius    : 2px;
+	max-width        : 40px;
+}
+
+.mcp-vce-progress__step--done ~ .mcp-vce-progress__connector {
+	background       : var(--mce-success);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   5.  BODY / SCROLL CONTAINER
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-body {
+	flex             : 1;
+	overflow-y       : auto;
+	-webkit-overflow-scrolling : touch;
+}
+
+/* Steps are hidden/shown by JS via data-step attribute on .mcp-vce-body */
+.mcp-vce-step {
+	display          : none;
+	padding          : 24px 20px;
+}
+
+.mcp-vce-step--active {
+	display          : block;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   6.  STEP 1 — DROP ZONE
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-dropzone {
+	position         : relative;
+	min-height       : 50vh;
+	border           : 2px dashed var(--mce-border);
+	border-radius    : var(--mce-radius);
+	background       : var(--mce-surface);
+	display          : flex;
+	flex-direction   : column;
+	align-items      : center;
+	justify-content  : center;
+	gap              : 16px;
+	cursor           : pointer;
+	transition       : border-color var(--mce-transition), background var(--mce-transition);
+	text-align       : center;
+	padding          : 32px 24px;
+}
+
+.mcp-vce-dropzone:hover,
+.mcp-vce-dropzone.mcp-vce-dropzone--drag-over {
+	border-color     : var(--mce-primary);
+	background       : rgba(0, 115, 170, 0.04);
+}
+
+.mcp-vce-dropzone__icon {
+	width            : 80px;
+	height           : 80px;
+	color            : var(--mce-primary);
+	opacity          : 0.85;
+}
+
+.mcp-vce-dropzone__title {
+	font-size        : 1.15rem;
+	font-weight      : 600;
+	color            : var(--mce-text);
+	margin           : 0;
+}
+
+.mcp-vce-dropzone__sub {
+	font-size        : 0.875rem;
+	color            : var(--mce-muted);
+	margin           : 0;
+}
+
+/* Hidden real file input */
+.mcp-vce-file-input {
+	position         : absolute;
+	inset            : 0;
+	opacity          : 0;
+	width            : 100%;
+	height           : 100%;
+	cursor           : pointer;
+}
+
+/* Skip link */
+.mcp-vce-skip-link {
+	display          : block;
+	margin-top       : 12px;
+	font-size        : 0.875rem;
+	color            : var(--mce-muted);
+	text-decoration  : underline;
+	cursor           : pointer;
+	background       : none;
+	border           : none;
+	padding          : 0;
+}
+
+.mcp-vce-skip-link:hover {
+	color            : var(--mce-primary);
+}
+
+/* Thumbnail strip */
+.mcp-vce-thumbs {
+	display          : flex;
+	flex-wrap        : wrap;
+	gap              : 10px;
+	margin-top       : 16px;
+}
+
+.mcp-vce-thumb {
+	position         : relative;
+	width            : 88px;
+	height           : 88px;
+	border-radius    : var(--mce-radius-sm);
+	overflow         : hidden;
+	border           : 2px solid var(--mce-border);
+	background       : var(--mce-surface);
+}
+
+.mcp-vce-thumb img {
+	width            : 100%;
+	height           : 100%;
+	object-fit       : cover;
+	display          : block;
+}
+
+.mcp-vce-thumb--uploading::after {
+	content          : '';
+	position         : absolute;
+	inset            : 0;
+	background       : rgba(255, 255, 255, 0.6);
+}
+
+.mcp-vce-thumb__spinner {
+	position         : absolute;
+	inset            : 0;
+	display          : flex;
+	align-items      : center;
+	justify-content  : center;
+}
+
+.mcp-vce-thumb__remove {
+	position         : absolute;
+	top              : 4px;
+	right            : 4px;
+	width            : 22px;
+	height           : 22px;
+	border-radius    : 50%;
+	background       : rgba(0, 0, 0, 0.55);
+	color            : #fff;
+	border           : none;
+	cursor           : pointer;
+	font-size        : 0.75rem;
+	display          : flex;
+	align-items      : center;
+	justify-content  : center;
+	line-height      : 1;
+	transition       : background var(--mce-transition);
+}
+
+.mcp-vce-thumb__remove:hover {
+	background       : var(--mce-danger);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   7.  STEP 2 — PACKAGE + ADD-ONS
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-section-title {
+	font-size        : 1rem;
+	font-weight      : 600;
+	margin           : 0 0 12px;
+	color            : var(--mce-text);
+}
+
+/* Package grid */
+.mcp-vce-packages {
+	display          : grid;
+	grid-template-columns : 1fr 1fr;
+	gap              : 10px;
+	margin-bottom    : 24px;
+}
+
+.mcp-vce-pkg-card {
+	border           : 2px solid var(--mce-border);
+	border-radius    : var(--mce-radius-sm);
+	padding          : 14px 12px;
+	cursor           : pointer;
+	transition       : border-color var(--mce-transition), background var(--mce-transition), transform var(--mce-transition);
+	background       : var(--mce-bg);
+	text-align       : left;
+	display          : flex;
+	flex-direction   : column;
+	gap              : 4px;
+}
+
+.mcp-vce-pkg-card:hover {
+	border-color     : var(--mce-primary);
+	transform        : translateY(-2px);
+}
+
+.mcp-vce-pkg-card--selected {
+	border-color     : var(--mce-primary);
+	background       : rgba(0, 115, 170, 0.06);
+}
+
+.mcp-vce-pkg-card__name {
+	font-weight      : 600;
+	font-size        : 0.875rem;
+	color            : var(--mce-text);
+}
+
+.mcp-vce-pkg-card__desc {
+	font-size        : 0.75rem;
+	color            : var(--mce-muted);
+	line-height      : 1.4;
+}
+
+.mcp-vce-pkg-card__price {
+	font-size        : 0.8rem;
+	font-weight      : 600;
+	color            : var(--mce-primary);
+	margin-top       : 4px;
+}
+
+/* Add-ons */
+.mcp-vce-addons {
+	display          : flex;
+	flex-wrap        : wrap;
+	gap              : 8px;
+	margin-top       : 4px;
+}
+
+.mcp-vce-addon-chip {
+	display          : inline-flex;
+	align-items      : center;
+	gap              : 5px;
+	padding          : 6px 12px;
+	border           : 1px solid var(--mce-border);
+	border-radius    : 20px;
+	font-size        : 0.8rem;
+	cursor           : pointer;
+	background       : var(--mce-bg);
+	color            : var(--mce-muted);
+	transition       : border-color var(--mce-transition), background var(--mce-transition), color var(--mce-transition);
+	-webkit-user-select : none;
+	user-select      : none;
+}
+
+.mcp-vce-addon-chip:hover {
+	border-color     : var(--mce-primary);
+	color            : var(--mce-primary);
+}
+
+.mcp-vce-addon-chip--selected {
+	border-color     : var(--mce-primary);
+	background       : var(--mce-primary);
+	color            : #fff;
+}
+
+.mcp-vce-addon-chip__check {
+	font-size        : 0.7rem;
+	display          : none;
+}
+
+.mcp-vce-addon-chip--selected .mcp-vce-addon-chip__check {
+	display          : inline;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   8.  STEP 3 — MESSAGE
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-message-area {
+	width            : 100%;
+	min-height       : 140px;
+	padding          : 14px;
+	border           : 1.5px solid var(--mce-border);
+	border-radius    : var(--mce-radius-sm);
+	font-family      : var(--mce-font);
+	font-size        : 0.95rem;
+	line-height      : 1.5;
+	color            : var(--mce-text);
+	background       : var(--mce-bg);
+	resize           : vertical;
+	transition       : border-color var(--mce-transition);
+	box-sizing       : border-box;
+}
+
+.mcp-vce-message-area:focus {
+	outline          : none;
+	border-color     : var(--mce-primary);
+}
+
+.mcp-vce-char-count {
+	font-size        : 0.75rem;
+	color            : var(--mce-muted);
+	text-align       : right;
+	margin-top       : 4px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   9.  STICKY ACTION BAR
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-action-bar {
+	display          : flex;
+	align-items      : center;
+	gap              : 10px;
+	padding          : 14px 20px;
+	border-top       : 1px solid var(--mce-border);
+	background       : var(--mce-bg);
+	flex-shrink      : 0;
+}
+
+.mcp-vce-btn {
+	display          : inline-flex;
+	align-items      : center;
+	justify-content  : center;
+	gap              : 6px;
+	padding          : 10px 22px;
+	border           : none;
+	border-radius    : var(--mce-radius-sm);
+	font-size        : 0.9rem;
+	font-weight      : 600;
+	cursor           : pointer;
+	transition       : background var(--mce-transition), opacity var(--mce-transition), transform var(--mce-transition);
+	font-family      : var(--mce-font);
+	line-height      : 1;
+	text-decoration  : none;
+}
+
+.mcp-vce-btn:active {
+	transform        : scale(0.97);
+}
+
+.mcp-vce-btn--primary {
+	background       : var(--mce-primary);
+	color            : #fff;
+	flex             : 1;
+}
+
+.mcp-vce-btn--primary:hover {
+	background       : var(--mce-primary-dk);
+}
+
+.mcp-vce-btn--primary:disabled {
+	opacity          : 0.6;
+	cursor           : not-allowed;
+	transform        : none;
+}
+
+.mcp-vce-btn--secondary {
+	background       : var(--mce-surface);
+	color            : var(--mce-text);
+	border           : 1px solid var(--mce-border);
+}
+
+.mcp-vce-btn--secondary:hover {
+	background       : var(--mce-border);
+}
+
+.mcp-vce-btn--ghost {
+	background       : transparent;
+	color            : var(--mce-muted);
+	padding-left     : 8px;
+	padding-right    : 8px;
+}
+
+.mcp-vce-btn--ghost:hover {
+	color            : var(--mce-text);
+}
+
+/* Spinner */
+.mcp-vce-spinner {
+	width            : 18px;
+	height           : 18px;
+	border           : 2px solid rgba(255, 255, 255, 0.4);
+	border-top-color : #fff;
+	border-radius    : 50%;
+	animation        : mce-spin 0.7s linear infinite;
+	display          : none;
+}
+
+.mcp-vce-spinner--visible {
+	display          : block;
+}
+
+@keyframes mce-spin {
+	to { transform   : rotate(360deg); }
+}
+
+/* Small inline spinner (for thumbnails) */
+.mcp-vce-spinner--sm {
+	width            : 14px;
+	height           : 14px;
+	border-color     : rgba(0, 0, 0, 0.2);
+	border-top-color : var(--mce-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   10. STEP 4 — ESTIMATE RESULT
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-result-card {
+	background       : var(--mce-bg);
+	border           : 1px solid var(--mce-border);
+	border-radius    : var(--mce-radius);
+	overflow         : hidden;
+}
+
+.mcp-vce-result-card__header {
+	background       : var(--mce-primary);
+	color            : #fff;
+	padding          : 16px 20px;
+	display          : flex;
+	align-items      : center;
+	gap              : 10px;
+}
+
+.mcp-vce-result-card__header svg {
+	width            : 24px;
+	height           : 24px;
+	flex-shrink      : 0;
+}
+
+.mcp-vce-result-card__title {
+	font-size        : 1rem;
+	font-weight      : 600;
+	margin           : 0;
+}
+
+.mcp-vce-result-card__sub {
+	font-size        : 0.8rem;
+	opacity          : 0.85;
+	margin           : 2px 0 0;
+}
+
+/* Vehicle info banner */
+.mcp-vce-vehicle-banner {
+	padding          : 12px 20px;
+	background       : var(--mce-surface);
+	border-bottom    : 1px solid var(--mce-border);
+	display          : flex;
+	align-items      : center;
+	gap              : 10px;
+	font-size        : 0.875rem;
+	color            : var(--mce-muted);
+}
+
+.mcp-vce-vehicle-banner__tier {
+	font-weight      : 600;
+	color            : var(--mce-text);
+}
+
+.mcp-vce-vehicle-banner__confidence {
+	margin-left      : auto;
+	font-size        : 0.75rem;
+	padding          : 2px 8px;
+	border-radius    : 20px;
+	background       : var(--mce-border);
+}
+
+/* Line items */
+.mcp-vce-line-items {
+	padding          : 8px 0;
+}
+
+.mcp-vce-line-item {
+	display          : flex;
+	justify-content  : space-between;
+	align-items      : flex-start;
+	padding          : 10px 20px;
+	font-size        : 0.875rem;
+	gap              : 8px;
+}
+
+.mcp-vce-line-item + .mcp-vce-line-item {
+	border-top       : 1px solid var(--mce-border);
+}
+
+.mcp-vce-line-item__label {
+	color            : var(--mce-text);
+	flex             : 1;
+}
+
+.mcp-vce-line-item__label small {
+	display          : block;
+	color            : var(--mce-muted);
+	font-size        : 0.75rem;
+	margin-top       : 2px;
+}
+
+.mcp-vce-line-item__amount {
+	font-weight      : 500;
+	white-space      : nowrap;
+}
+
+/* Totals section */
+.mcp-vce-totals {
+	border-top       : 2px solid var(--mce-border);
+	padding          : 8px 0;
+}
+
+.mcp-vce-total-row {
+	display          : flex;
+	justify-content  : space-between;
+	padding          : 8px 20px;
+	font-size        : 0.875rem;
+	color            : var(--mce-muted);
+}
+
+.mcp-vce-total-row--grand {
+	font-size        : 1.1rem;
+	font-weight      : 700;
+	color            : var(--mce-text);
+	padding-top      : 12px;
+	padding-bottom   : 12px;
+}
+
+.mcp-vce-total-row__amount {
+	font-weight      : 600;
+}
+
+.mcp-vce-total-row--grand .mcp-vce-total-row__amount {
+	color            : var(--mce-primary);
+	font-size        : 1.25rem;
+}
+
+/* Notes / disclaimer */
+.mcp-vce-estimate-note {
+	padding          : 12px 20px;
+	background       : var(--mce-surface);
+	border-top       : 1px solid var(--mce-border);
+	font-size        : 0.75rem;
+	color            : var(--mce-muted);
+	line-height      : 1.4;
+}
+
+/* Fallback prose (when JSON parse fails) */
+.mcp-vce-result-prose {
+	padding          : 20px;
+	font-size        : 0.9rem;
+	line-height      : 1.6;
+	color            : var(--mce-text);
+}
+
+.mcp-vce-result-prose p + p {
+	margin-top       : 0.75em;
+}
+
+/* Result CTA row */
+.mcp-vce-result-actions {
+	display          : flex;
+	gap              : 10px;
+	padding          : 16px 20px;
+	border-top       : 1px solid var(--mce-border);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   11. ERROR / EMPTY STATES
+   ────────────────────────────────────────────────────────────── */
+.mcp-vce-error-bar {
+	display          : flex;
+	align-items      : center;
+	gap              : 8px;
+	padding          : 10px 16px;
+	background       : #fef2f2;
+	border           : 1px solid #fca5a5;
+	border-radius    : var(--mce-radius-sm);
+	color            : #dc2626;
+	font-size        : 0.875rem;
+	margin-top       : 12px;
+}
+
+.mcp-vce-error-bar svg {
+	flex-shrink      : 0;
+	width            : 16px;
+	height           : 16px;
+}
+
+.mcp-vce-notice {
+	padding          : 12px 16px;
+	background       : #eff6ff;
+	border           : 1px solid #93c5fd;
+	border-radius    : var(--mce-radius-sm);
+	font-size        : 0.875rem;
+	color            : #1d4ed8;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   12. RESPONSIVE — TWO-PANEL LAYOUT ≥768px
+   ────────────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+	.mcp-vce-step--two-panel {
+		display          : grid;
+		grid-template-columns : 1fr 1fr;
+		gap              : 24px;
+		align-items      : start;
+	}
+
+	.mcp-vce-packages {
+		grid-template-columns : 1fr 1fr;
+	}
+
+	.mcp-vce-dropzone {
+		min-height       : 320px;
+	}
+}
+
+@media (min-width: 1024px) {
+	.mcp-vce-packages {
+		grid-template-columns : repeat(4, 1fr);
+	}
+}
+
+/* ──────────────────────────────────────────────────────────────
+   13. PRINT STYLES (estimate receipt)
+   ────────────────────────────────────────────────────────────── */
+@media print {
+	.mcp-vce-header,
+	.mcp-vce-progress,
+	.mcp-vce-action-bar,
+	.mcp-vce-result-actions,
+	.mcp-vce-step:not(.mcp-vce-step--active) {
+		display          : none !important;
+	}
+
+	.mcp-vce-app {
+		box-shadow       : none;
+		min-height       : auto;
+	}
+
+	.mcp-vce-result-card {
+		border           : 1px solid #ccc;
+	}
+}

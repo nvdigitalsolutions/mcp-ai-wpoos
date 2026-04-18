@@ -213,10 +213,8 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		if ( ! empty( $description ) ) {
 			$description_output = $this->format_text_block( $description );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $description_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-				echo '<div class="wp-mcp-ai-user-files__description">' . $description_output . '</div>';
+				echo '<div class="wp-mcp-ai-user-files__description">' . wp_kses_post( $description_output ) . '</div>';
 			}
 		}
 

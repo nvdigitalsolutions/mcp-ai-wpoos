@@ -37,7 +37,7 @@ if ( $has_dev_deps && ! $putenv_available ) {
 		function wp_mcp_ai_dev_deps_error_notice() {
 			$message = '<strong>Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.';
 			printf(
-				'<div class="notice notice-error"><p>%s</p></div>',
+				'<div class="notice notice-error is-dismissible"><p>%s</p></div>',
 				wp_kses_post( $message )
 			);
 		}

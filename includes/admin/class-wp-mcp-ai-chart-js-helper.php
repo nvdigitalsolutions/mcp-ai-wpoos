@@ -82,7 +82,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		}
 
 		// Check if we're on the token manager or orchestration tab.
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter used to control asset enqueuing; not a state-changing operation.
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter used to control asset enqueuing; not a state-changing operation.
 
 		// Enqueue on token_manager and orchestration tabs.
 		if ( 'token_manager' === $active_tab || 'orchestration' === $active_tab ) {
@@ -101,7 +101,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 
 		// Register Chart.js library so widgets can depend on it.
 		wp_register_script(
-			'chartjs',
+			'wp-mcp-ai-chartjs',
 			$chart_js_url,
 			array(),
 			file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : self::CHART_JS_VERSION,
@@ -117,7 +117,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		self::register_chart_js();
 
 		// Then enqueue.
-		wp_enqueue_script( 'chartjs' );
+		wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 
 		// Enqueue analytics dashboard CSS.
 		$analytics_css_path = WP_MCP_AI_PATH . 'assets/css/analytics-dashboard.css';
@@ -136,7 +136,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			wp_enqueue_script(
 				'wp-mcp-ai-token-charts',
 				WP_MCP_AI_URL . 'assets/js/token-manager-charts.js',
-				array( 'jquery', 'chartjs' ),
+				array( 'jquery', 'wp-mcp-ai-chartjs' ),
 				filemtime( $charts_path ),
 				true
 			);

@@ -93,6 +93,7 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 			'ai-tool-builder-schemas',
 			'media-templates',
 			'media-collections',
+			'vehicle-cleaning-estimator',
 		);
 
 		foreach ( $block_dirs as $block_dir ) {

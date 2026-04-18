@@ -61,7 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
 				$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
-				$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+				$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( wp_unslash( $_GET['tool_group'] ) ) : '';
 
 				// Apply filters to tools if filter bar component is available.
 				if ( ! empty( $search ) && class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {

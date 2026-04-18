@@ -344,7 +344,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 
 		// Save agent role.
 		if ( isset( $_POST['wp_mcp_ai_agent_role'] ) ) {
-			$agent_role = sanitize_key( $_POST['wp_mcp_ai_agent_role'] );
+			$agent_role = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_agent_role'] ) );
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $agent_role );
 		}
 

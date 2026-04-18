@@ -171,8 +171,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 				<p class="description">
 					<?php
 					printf(
-						/* translators: %s: Link to Pro Dashboard */
-						esc_html__( 'View the charts on the %s to see your changes.', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: %s: Link to Pro Dashboard */
+							__( 'View the charts on the %s to see your changes.', 'mcp-ai-wpoos' ),
+							array( 'a' => array( 'href' => array() ) )
+						),
 						'<a href="' . esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard' ) ) . '">' . esc_html__( 'Pro Dashboard', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>

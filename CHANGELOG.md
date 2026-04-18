@@ -1,25 +1,65 @@
 # oOS – Changelog
 
 
-## [1.1.7] - 2026-04-09
+## [1.1.8] - 2026-04-15
 
-### WordPress.org Plugin Directory Compliance — April 9, 2026
+### April 15, 2026 — Erlang C Queuing Tools, Full Tool-Reference Audit, WordPress.org Compliance Re-Audit
 
-Addresses all issues from the WordPress.org automated review (Review ID: P0TDX269399HGN) plus a proactive audit of similar issues across the entire base plugin.
+### Added
+- **Erlang C Workforce Management Tools** — 4 new base plugin tools (`calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`) with shared `WP_MCP_AI_Erlang_C` helper class
+- **`wp_mcp_ai_queue_alert` action hook** for SLA breach notifications with full parameter schema
+- **Tool Reference Audit** — `docs/reference/tools/tool-reference.md` fully audited with 14 new sections covering all 230+ base tools
+- **Feature guide** — `docs/features/erlang-c-staffing-tools.md` with industry standards, usage scenarios, and API reference
+- **Pro Addon External Services** documented in readme.txt (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) with Terms/Privacy links, clearly marked as not present in base plugin
+
+### Changed
+- **Version** bumped to 1.1.8 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md
+- **Production autoload classmap** regenerated with `composer install --no-dev --classmap-authoritative`
+
+### Compliance
+- **Full WordPress.org Plugin Guidelines re-audit** — all 13 guidelines pass
+- **New compliance document** `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline, code statistics, and file references
+- 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output escaping instances confirmed across the base plugin
+
+
+## [1.1.7] - 2026-04-11
+
+### April 7–14, 2026 — MCP Protocol Completion, MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening
+
+Major additions including full MCP 2024-11-05 protocol compliance (all 11 methods), per-assistant remote MCP server connections, a complete CRE Debt & Securitization pro toolkit, expanded profession/team knowledge bases, and multiple rounds of WordPress.org compliance hardening.
+
+### Added
+- **MCP Protocol 2024-11-05 Completion (April 14, 2026)** (PR #4681): Full MCP 2024-11-05 spec compliance — all 11 protocol methods now implemented. New methods: `resources/read` (read resource content by URI with MIME-typed text/blob responses, `wp_mcp_ai_mcp_resources_read_contents` filter), `prompts/get` (full prompt with system instructions and argument values, `wp_mcp_ai_mcp_prompts_get_response` filter), `ping` (server liveness check), `completion/complete` (argument autocompletion for tools enum/boolean and prompt slug matching), `logging/setLevel` (client-controlled log verbosity, 8 standard levels, `wp_mcp_ai_mcp_logging_set_level` action), `notifications/cancelled` (request cancellation, `wp_mcp_ai_mcp_request_cancelled` action). JSON-RPC batching (max 20 messages, `wp_mcp_ai_max_batch_size` filter). Tool annotations mapping `WP_MCP_AI_Tool_Capability_Flags_Interface` to MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). `Mcp-Session-Id` session management with transient-backed state (1h TTL). Comprehensive test suites: `test-mcp-resources-read.php`, `test-mcp-prompts-get.php`, `test-mcp-protocol-completion.php`.
+- **MCP Apps — Per-Assistant Remote MCP Server Connections (April 10, 2026)** (PR #4646, SEP-1865): Each assistant can connect to up to 10 remote MCP servers as "apps". JSON-RPC 2.0 client over Streamable HTTP transport (`initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`). Tool bridge wraps each remote tool as local `WP_MCP_AI_Tool_Interface` with `mcp_app_{label}_{tool}` slug. REST endpoints: `POST /mcp-apps/test`, `POST /mcp-apps/discover`, `GET /mcp-apps/{id}`. Admin metabox with repeater-style UI (label, server URL, auth, timeout, SSL verify). Transient-cached discovery (5min TTL). Remote tools registered via `wp_mcp_ai_register_tools` at priority 50.
+- **CRE Debt & Securitization Pro Toolkit — 57 Tools (April 10–11, 2026)** (PRs #4647, #4650): Complete commercial real estate debt toolkit across five modules: Originations (11), Underwriting (13), CMBS/Securitization (10), Debt Fund (11), Asset Management (12). Shared `WP_MCP_AI_CRE_Debt_Calculator` with amortization, DSCR/LTV/debt yield, NPV, IRR, DCF, loan sizing, equity waterfall, defeasance/yield maintenance. CPT/CCT infrastructure with Chart.js admin dashboard. Settings toggle: `enable_cre_debt_toolkit`. All outputs include `ANALYSIS ONLY — Not investment advice.`
+- **36 Pro Toolkit Professions + 17 Teams (April 11, 2026)** (PR #4652): 5 new profession knowledge bases (`pro-cre-debt.json`, `pro-financial-services.json`, `pro-digital-media.json`, `pro-business-operations.json`, `pro-specialized-services.json`) mapping 36 new roles to 275+ pro toolkit tool slugs. 2 new team configs (`cre-debt-teams.json` with 7 teams, `pro-toolkit-teams.json` with 10 teams). Total professions: 296 (was 259). Total teams: 100.
+- **Compliance document** — `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_09.md` with full remediation details for all reviewer-flagged issues plus proactive audit results (PRs #4642, #4645, #4654, #4658)
 
 ### Fixed
+- **AJAX capability checks (April 11, 2026)** (PR #4658) — `dismiss_directory_notice` and `dismiss_price_notice` handlers now require `manage_options` capability in addition to nonce verification
+- **$_POST sanitisation (April 11, 2026)** (PR #4658) — Raw `$_POST` iteration in diagnostic logging now applies `sanitize_key()` on keys and `sanitize_text_field( wp_unslash() )` on values
 - **404 URLs in readme.txt** — Trade.gov privacy URL and Mailjet terms URL corrected to working endpoints
 - **Capability flag mismatches** — 13 base tools incorrectly declaring `'local-only'` while making external HTTP requests corrected to `'external-api'` (GDACS, NHC, Auth0, Crawl4AI, OpenAI, Cloudflare, Varnish, ReliefWeb, Query Remote Site, Store Agent Context, WooCommerce Product, Image Base)
 - **CLI assistant export path** — `--file` parameter restricted to bare filename; all exports write exclusively to `uploads/mcp-ai/exports/` with `sanitize_file_name( basename() )`
 - **sync-docs file write** — Removed `file_put_contents()` branch that wrote auto-fixed content to plugin/theme directories; auto-fix now only applies to post-type docs via `wp_update_post()`
-- **Capability flag comments clarified** — 2 URL-returning tools (`open-openai-logs`, `open-openai-usage`) and 2 loopback tools (`invoke-jetengine-route`, `trigger-all-import`) kept `'local-only'` with accurate comments
+- **Vision tool ParseError** — Missing closing class braces in vision-object-localization and vision-product-search tools
+- **Algorave AudioContext resume (April 10, 2026)** (PR #4644) — Synchronous `getAudioContext().resume()` within user-gesture handler before any async operations fixes silent playback
+- **Algorave channelCount=0 proxy (April 11, 2026)** (PRs #4648, #4655) — Data descriptor for `maxChannelCount` on proxy clamped to [1,32], verification + accessor fallback, eager `initializeAudioOutput()` after proxy install
+- **Algorave visualizer analyser connection (April 8–9, 2026)** (PRs #4633, #4636, #4637, #4639) — AnalyserNode connection timing fixed; analyser connects to correct audio output node
+- **Algorave async aliasBank (April 8, 2026)** (PR #4632) — CDN redirect and unhandled rejection fixes for sample loading
+- **Research product JSON parse (April 9, 2026)** (PR #4640) — Fixed JSON parse error from invalid template and missing `response_format`
 
-### Added
-- **Compliance document** — `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_09.md` with full remediation details for all 3 reviewer-flagged issues plus proactive audit results
+### Security
+- **nodemailer** updated to 8.0.5 — SMTP CRLF injection fix (PR #4643)
+- **basic-ftp** updated to 5.2.1 — CRLF command injection fix (PR #4634)
+- **mathjs, langsmith** updated for security vulnerabilities (PR #4649)
 
 ### Changed
 - **Production classmap** — `composer install --no-dev --classmap-authoritative` for optimized autoloading
-- **Compliance docs updated** — `WORDPRESS_ORG_COMPLIANCE_COMPLETE.md`, `README.md`, `03-wp-org-compliance.md` updated with v1.1.7 release history and combined results
+- **Assistant tool presets** — Updated with new pro toolkit tool slugs and CRE debt tools (PR #4657)
+- **All 30+ distribution ZIPs rebuilt** for v1.1.7 (PRs #4653, #4656)
+- **CLAUDE.md excluded** from plugin ZIP builds via `.distignore` (PR #4651)
+- **Compliance docs updated** — `WORDPRESS_ORG_COMPLIANCE_COMPLETE.md`, `README.md`, `03-wp-org-compliance.md` updated with v1.1.7 release history
 
 
 ## [1.1.6] - 2026-04-06

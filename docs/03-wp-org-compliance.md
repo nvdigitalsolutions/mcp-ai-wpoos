@@ -1,10 +1,59 @@
 # WP.org Plugin Directory Compliance Verification
 
-**Document version:** 3.0 — 2026-04-11  
-**Plugin version:** 1.1.7
+**Document version:** 6.0 — 2026-04-17  
+**Plugin version:** 1.1.8
 
 This document records every issue raised by the WordPress.org plugin directory automated
 reviews and the exact code changes made to resolve each one.
+
+---
+
+# Pre-Submission Self-Audit — April 17, 2026
+
+**Audit type:** Complete codebase review against all 13 WordPress.org Plugin Developer Guidelines  
+**Plugin version:** 1.1.8  
+**Full audit report:** [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) § Review 8
+
+---
+
+## SA-1. Missing `wp_unslash()` on 64 `sanitize_key()` calls
+
+All 64 instances of `sanitize_key( $_GET['key'] )` or `sanitize_key( $_POST['key'] )` across
+30 PHP files were missing `wp_unslash()`. While `sanitize_key()` strips special characters
+(making practical risk minimal), WordPress.org Guideline 13 requires `wp_unslash()` on all
+superglobal reads.
+
+**Fix:** All 64 instances changed to `sanitize_key( wp_unslash( $_POST['field'] ) )`.
+
+## SA-2. Unescaped URL output in trait-wp-mcp-ai-tool-content-media.php
+
+`wp_get_attachment_image_url()` output was used in `<img src>` without `esc_url()`.
+
+| File | Line | Fix |
+|------|------|-----|
+| `includes/tools/trait-wp-mcp-ai-tool-content-media.php` | 219 | Added `esc_url()` |
+
+## SA-3. Erlang C tool capability flags incorrect
+
+| Tool | Issue | Fix |
+|------|-------|-----|
+| `class-wp-mcp-ai-tool-erlang-c-staffing-advisor.php` | `'local-only'` but uses `wp_remote_get()` for WFM | → `'external-api'` |
+| `class-wp-mcp-ai-tool-erlang-c-queue-health.php` | No `'external-api'` but uses `wp_remote_get()` for WFM | Added `'external-api'` |
+
+## SA-4. Hardcoded DB queries upgraded to `$wpdb->prepare()`
+
+| File | Lines | Change |
+|------|-------|--------|
+| `class-wp-mcp-ai-tool-calculate-orchestration-capacity.php` | 269, 296 | LIKE → `$wpdb->prepare()` + `$wpdb->esc_like()` |
+| `class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php` | 129 | Status literal → `$wpdb->prepare()` |
+
+## SA-5. Undocumented external services added to readme.txt
+
+| Service # | Service |
+|-----------|---------|
+| 46 | Workforce Management (WFM) Endpoints |
+| 47 | Agent-to-Agent (A2A) Protocol |
+| 48 | Mesh Router Peer Communication |
 
 ---
 
@@ -165,8 +214,16 @@ XSS vector.
 |------|------|--------|
 | `class-wp-mcp-ai-professional-selector-shortcode.php` | 582 | `'html' => $html` → `'html' => wp_kses_post( $html )` |
 
-All other `do_shortcode()` calls in the base plugin were verified as properly escaped
-(`wp_kses_post()`, `wp_strip_all_tags()`).
+All other `do_shortcode()` calls that output to the page use the shortcode pattern where
+`render_shortcode()` individually escapes every dynamic value at the point of insertion using
+`esc_attr()`, `esc_html()`, `esc_url()`, and `wp_json_encode()`. These outputs are echoed
+directly (without `wp_kses_post()`) because the chat UI requires complex HTML structures —
+`data-*` attributes, SVGs, `<form>`/`<input>`/`<button>` elements, and
+`<script type="application/json">` config blocks — that `wp_kses_post()` strips. Each `echo`
+is annotated with `phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped` and a
+detailed justification comment explaining the escaping strategy. See
+[`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` § 13g](compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md)
+for the full file-by-file breakdown.
 
 ### R2-4b. Missing `get_capability_flags()` on tools with external HTTP calls
 
@@ -255,6 +312,7 @@ The following areas were audited and confirmed clean (no issues found):
 - [x] sync-docs file write to plugin directories removed
 - [x] Full audit of all file write operations — all write to uploads/temp/stdout
 - [x] `do_shortcode()` output in AJAX response wrapped in `wp_kses_post()` (R2-4a)
+- [x] Page-output `do_shortcode()` calls use direct echo with `phpcs:ignore` + justification (shortcode self-sanitizes; `wp_kses_post()` strips required `data-*` attrs, SVGs, form elements, JSON config) — see compliance doc § 13g
 - [x] Two tools missing `get_capability_flags()` with `'external-api'` — added (R2-4b)
 - [x] `trigger-all-import` capability flag corrected to `'external-api'` (R2-4c)
 - [x] Crawl4AI and Varnish added to readme.txt External Services section (R2-4d)

@@ -132,20 +132,20 @@ const builds = [
 		outfile: 'assets/js/tools-manager.min.js',
 		...commonOptions,
 	},
-	// WebLLM enhancement files (Phase 1)
+	// WebLLM enhancement files (Phase 1) — moved to embedded addon
 	{
-		entryPoints: ['assets/js/webllm-tool-adapter.js'],
-		outfile: 'assets/js/webllm-tool-adapter.min.js',
+		entryPoints: ['addons/embedded/assets/js/webllm-tool-adapter.js'],
+		outfile: 'addons/embedded/assets/js/webllm-tool-adapter.min.js',
 		...commonOptions,
 	},
 	{
-		entryPoints: ['assets/js/webllm-function-calling-client.js'],
-		outfile: 'assets/js/webllm-function-calling-client.min.js',
+		entryPoints: ['addons/embedded/assets/js/webllm-function-calling-client.js'],
+		outfile: 'addons/embedded/assets/js/webllm-function-calling-client.min.js',
 		...commonOptions,
 	},
 	{
-		entryPoints: ['assets/js/webllm-multimodal-client.js'],
-		outfile: 'assets/js/webllm-multimodal-client.min.js',
+		entryPoints: ['addons/embedded/assets/js/webllm-multimodal-client.js'],
+		outfile: 'addons/embedded/assets/js/webllm-multimodal-client.min.js',
 		...commonOptions,
 	},
 	// Transformers.js files (Phase 2)
@@ -385,8 +385,8 @@ const builds = [
 		...commonOptions,
 	},
 	{
-		entryPoints: ['assets/js/embedded-llm-client.js'],
-		outfile: 'assets/js/embedded-llm-client.min.js',
+		entryPoints: ['addons/embedded/assets/js/embedded-llm-client.js'],
+		outfile: 'addons/embedded/assets/js/embedded-llm-client.min.js',
 		...commonOptions,
 	},
 	{
@@ -415,8 +415,8 @@ const builds = [
 		...commonOptions,
 	},
 	{
-		entryPoints: ['assets/js/webllm-loader.js'],
-		outfile: 'assets/js/webllm-loader.min.js',
+		entryPoints: ['addons/embedded/assets/js/webllm-loader.js'],
+		outfile: 'addons/embedded/assets/js/webllm-loader.min.js',
 		...commonOptions,
 	},
 

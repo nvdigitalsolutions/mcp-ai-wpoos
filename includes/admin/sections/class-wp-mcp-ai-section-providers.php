@@ -104,6 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
+					'claude-mythos-preview'      => 'Claude Mythos Preview (Most Capable)',
 					'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 (Recommended)',
 					'claude-opus-4-6'            => 'Claude Opus 4.6 (Flagship)',
 					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
@@ -403,11 +404,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'        => true,
 				),
 				'high_token_fallback_model'          => array(
-					'type'        => 'text',
-					'label'       => __( 'High Token Fallback Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Model to use when token limit is exceeded. Should be a model with higher token capacity than your default. Examples: gemini-2.5-flash (1M tokens), gpt-4o (128k tokens). This setting works across all providers.', 'mcp-ai-wpoos' ),
+					'type'        => 'select',
+					'label'       => __( 'High Token Fallback Model (Global)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Global fallback model used when a provider-specific fallback is not configured. Should be a model with higher token capacity than your default. This setting applies when no per-provider fallback is set.', 'mcp-ai-wpoos' ),
+					'options'     => array_merge(
+						array( '' => __( '— Select Model —', 'mcp-ai-wpoos' ) ),
+						$openai_models,
+						$anthropic_models,
+						$gemini_models
+					),
 					'default'     => 'gemini-2.5-flash',
-					'placeholder' => 'gemini-2.5-flash',
+				),
+				'openai_fallback_model'              => array(
+					'type'        => 'select',
+					'label'       => __( 'OpenAI Fallback Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default fallback model for OpenAI. When an OpenAI model exceeds its token limit, the system switches to this model. Leave empty to use the global fallback.', 'mcp-ai-wpoos' ),
+					'options'     => array_merge(
+						array( '' => __( '— Use Global Fallback —', 'mcp-ai-wpoos' ) ),
+						$openai_models
+					),
+					'default'     => '',
 				),
 
 				// OpenAI Caching Settings.
@@ -489,6 +505,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'sanitize'    => 'absint',
 				),
 
+				'anthropic_fallback_model'           => array(
+					'type'        => 'select',
+					'label'       => __( 'Anthropic Fallback Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default fallback model for Anthropic. When a Claude model exceeds its token limit, the system switches to this model. Leave empty to use the global fallback.', 'mcp-ai-wpoos' ),
+					'options'     => array_merge(
+						array( '' => __( '— Use Global Fallback —', 'mcp-ai-wpoos' ) ),
+						$anthropic_models
+					),
+					'default'     => '',
+				),
+
 				// Anthropic Caching Settings.
 				'enable_anthropic_api_caching'       => array(
 					'type'           => 'checkbox',
@@ -549,6 +576,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Pro is the flagship model with best performance. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'mcp-ai-wpoos' ),
 					'options'     => $gemini_models,
 					'default'     => 'gemini-2.5-flash',
+				),
+				'gemini_fallback_model'              => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Fallback Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default fallback model for Gemini. When a Gemini model exceeds its token limit, the system switches to this model. Leave empty to use the global fallback.', 'mcp-ai-wpoos' ),
+					'options'     => array_merge(
+						array( '' => __( '— Use Global Fallback —', 'mcp-ai-wpoos' ) ),
+						$gemini_models
+					),
+					'default'     => '',
 				),
 				'gemini_thinking_budget_tokens'      => array(
 					'type'        => 'number',
@@ -1075,19 +1112,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key_type', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_project_id', 'openai_base_url', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
+					'fields' => array( 'enable_openai', 'openai_api_key_type', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_project_id', 'openai_base_url', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'openai_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key_type', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl', 'anthropic_base_url' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key_type', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'anthropic_fallback_model', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl', 'anthropic_base_url' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key_type', 'gemini_api_key', 'default_gemini_model', 'gemini_fallback_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice', 'gemini_base_url' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
@@ -1173,12 +1210,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
-				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				$subtab = sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) );
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
-				$subtab = sanitize_key( $_POST['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			} elseif ( isset( $_GET['subtab'] ) ) {
-				$subtab = sanitize_key( $_GET['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
 			}
 			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 

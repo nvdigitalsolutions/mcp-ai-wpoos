@@ -342,12 +342,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
-				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				$subtab = sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) );
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
-				$subtab = sanitize_key( $_POST['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			} elseif ( isset( $_GET['subtab'] ) ) {
-				$subtab = sanitize_key( $_GET['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
 			}
 			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
@@ -629,15 +629,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 								}
 
 								printf(
-									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-									esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: 1: Path to the PHP error log wrapped in <code> tags. 2: Human readable size. */
+										__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>',
 									esc_html( $log_size_display )
 								);
 							} else {
 								printf(
-									/* translators: %s: Path to the PHP error log. */
-									esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: Path to the PHP error log wrapped in <code> tags. */
+										__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>'
 								);
 							}

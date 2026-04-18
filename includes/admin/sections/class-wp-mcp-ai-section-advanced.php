@@ -254,12 +254,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
-				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				$subtab = sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) );
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
-				$subtab = sanitize_key( $_POST['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			} elseif ( isset( $_GET['subtab'] ) ) {
-				$subtab = sanitize_key( $_GET['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
 			}
 			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
@@ -474,15 +474,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								}
 
 								printf(
-									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-									esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: 1: Path to the PHP error log. 2: Human readable size. */
+										__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>',
 									esc_html( $log_size_display )
 								);
 							} else {
 								printf(
-									/* translators: %s: Path to the PHP error log. */
-									esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: Path to the PHP error log. */
+										__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>' . esc_html( $log_file_path ) . '</code>'
 								);
 							}
@@ -896,8 +902,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					<p class="description" style="margin: 10px 0 0 0;">
 						<?php
 						printf(
-							/* translators: %s: Link to professions page */
-							esc_html__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
+							wp_kses(
+								/* translators: %s: Link to professions page */
+								__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
+								array( 'a' => array( 'href' => array() ) )
+							),
 							'<a href="' . esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'Agent Orchestration', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
@@ -2056,8 +2065,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<span class="description" style="margin-left: 10px;">
 									<?php
 									printf(
-										/* translators: %s: URL to tools settings */
-										esc_html__( 'Enable mesh computing in %s', 'mcp-ai-wpoos' ),
+										wp_kses(
+											/* translators: %s: Link to tools settings page. */
+											__( 'Enable mesh computing in %s', 'mcp-ai-wpoos' ),
+											array( 'a' => array( 'href' => array() ) )
+										),
 										'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) ) . '">' . esc_html__( 'Tools & Features', 'mcp-ai-wpoos' ) . '</a>'
 									);
 									?>
@@ -2106,8 +2118,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( '2. On the peer site that wants to connect to this instance, go to Advanced → Federation & Mesh', 'mcp-ai-wpoos' ); ?><br>
 								<?php
 								printf(
-									/* translators: %s: JSON example */
-									esc_html__( '3. Add this site to their "Mesh Peer Sites Configuration" JSON with format: %s', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: JSON example wrapped in <code> tags. */
+										__( '3. Add this site to their "Mesh Peer Sites Configuration" JSON with format: %s', 'mcp-ai-wpoos' ),
+										array( 'code' => array() )
+									),
 									'<code>{"url":"' . esc_html( get_site_url() ) . '","api_key":"[paste key here]","name":"' . esc_html( get_bloginfo( 'name' ) ) . '","enabled":true}</code>'
 								);
 								?>
@@ -2260,11 +2275,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 											esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ),
 											esc_html__( 'View all AI peers', 'mcp-ai-wpoos' )
 										);
-										printf(
-											/* translators: 1: message about unpublished peers, 2: link to view AI peers */
-											__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link passed as second parameter.
-											esc_html( $message ),
-											$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__.
+										echo wp_kses(
+											sprintf(
+												/* translators: 1: message about unpublished peers, 2: link to view AI peers */
+												__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+												esc_html( $message ),
+												$link
+											),
+											array( 'a' => array( 'href' => array() ) )
 										);
 										?>
 									</p>
@@ -2309,10 +2327,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<p>
 								<strong><?php esc_html_e( 'Directory Service Disabled', 'mcp-ai-wpoos' ); ?></strong><br>
 								<?php
-								printf(
-									/* translators: %s: link to federation mesh settings */
-									__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link.
-									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=federation_mesh' ) ) . '">' . esc_html__( 'Federation Mesh Settings', 'mcp-ai-wpoos' ) . '</a>'
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: link to federation mesh settings */
+										__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ),
+										'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=federation_mesh' ) ) . '">' . esc_html__( 'Federation Mesh Settings', 'mcp-ai-wpoos' ) . '</a>'
+									),
+									array( 'a' => array( 'href' => array() ) )
 								);
 								?>
 							</p>

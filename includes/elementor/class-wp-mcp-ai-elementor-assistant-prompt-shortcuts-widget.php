@@ -254,10 +254,8 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			if ( $show_descriptions ) {
 				$description_output = $this->format_text_block( $description );
 
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 				if ( '' !== $description_output ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-					echo '<div class="wp-mcp-ai-assistant-prompt-shortcuts__description">' . $description_output . '</div>';
+					echo '<div class="wp-mcp-ai-assistant-prompt-shortcuts__description">' . wp_kses_post( $description_output ) . '</div>';
 				}
 			}
 

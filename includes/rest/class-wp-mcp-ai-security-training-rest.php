@@ -226,7 +226,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @return bool True if user has permission, false otherwise.
 	 */
 	public function check_user_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
-		return is_user_logged_in();
+		return current_user_can( 'read' );
 	}
 
 	/**

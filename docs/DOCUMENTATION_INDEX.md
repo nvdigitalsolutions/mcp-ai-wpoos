@@ -1,12 +1,23 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 8, 2026  
-**Plugin Version:** 1.1.6  
+**Last Updated:** April 16, 2026  
+**Plugin Version:** 1.2.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 16, 2026 UPDATE:** 🧠 **PSO ADAPTIVE OPTIMIZATION & ORCHESTRATION REFERENCE**
+> - **PSO Optimizer Service** (v1.2.0) — Particle Swarm Optimization for adaptive AI parameter tuning. 7-dimension search space, inertia decay, per-assistant particle state, global swarm convergence. New `pso_adaptive` workflow preset.
+> - **Comprehensive Orchestration Reference** (NEW) — [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) — Single authoritative reference for the entire orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings comparison matrices), PSO algorithm documentation, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data storage keys, admin UI, and service file index.
+
+> **📌 APRIL 15, 2026 UPDATE:** 📋 **ERLANG C TOOLS & FULL TOOL-REFERENCE AUDIT**
+> - **Erlang C Queuing Theory Tools** (v1.1.8) — 4 new workforce-management tools: `calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`. New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications.
+> - **New Feature Doc**: [features/erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md)
+> - **tool-reference.md fully audited** — All 230+ tools in `load_default_tools` (base + extended) now documented. Added 14 new sections: OpenAI file/model management, embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI, Yahoo Fantasy Football toolkit, Newsletter integration, WP All Import/Export, Flowhub, PayHere, and Erlang C tools.
+> - **hooks-reference.md** — Added `wp_mcp_ai_queue_alert` action with full parameter schema and usage examples.
+> - **QUICK_REFERENCE.md** — Updated to v1.1.8 with new Recent Updates section.
 
 > **📌 APRIL 8, 2026 UPDATE:** 📐 **ARCHITECTURE REFRESH & REQUEST FLOW WALKTHROUGH**
 > - **Architecture Overview Refreshed** – Updated from Dec 2025 (3 providers, 133 tools) to current state: **9 providers**, **837 tool classes** (227 base + 610 pro), **34 REST controllers** (16 base + 18 pro), **64 service classes**, accurate directory structure with file counts, v1.1.6 version history entry.
@@ -1074,7 +1085,9 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
 | [ORCHESTRATION-DASHBOARD-FINDINGS.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
 | [RESOURCE-MANAGEMENT.md](features/performance/RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
+| [erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md) | **NEW (Apr 2026):** Erlang C queuing theory tools — staffing calculator, concurrency advisor, multi-channel staffing advisor, real-time queue health monitoring, `wp_mcp_ai_queue_alert` hook | Admins/Developers |
 | [orchestration-budget-enforcement.md](architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
+| [ORCHESTRATION_REFERENCE.md](ORCHESTRATION_REFERENCE.md) | **NEW (Apr 2026):** Complete orchestration reference — 10 workflow presets, 13 resource presets, PSO optimizer, tool execution, load balancer, reasoning, multi-agent, health, budget, hooks, storage keys | Developers/Admins |
 | [assistant-storage-cpt-vs-cct.md](architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |

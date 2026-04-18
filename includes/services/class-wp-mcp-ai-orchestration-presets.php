@@ -43,7 +43,7 @@ class WP_MCP_AI_Orchestration_Presets {
 	 */
 	public function get_presets() {
 		$built_in_presets = array(
-			'research'          => array(
+			'research'            => array(
 				'name'        => __( 'Research & Analysis', 'mcp-ai-wpoos' ),
 				'description' => __( 'Optimized for multi-source research and synthesis. Uses agent teams and reasoning mode.', 'mcp-ai-wpoos' ),
 				'category'    => 'research',
@@ -58,7 +58,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'max_delegation_depth' => 3,
 				),
 			),
-			'code_generation'   => array(
+			'code_generation'     => array(
 				'name'        => __( 'Code Generation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Enhanced for coding tasks with validation and security scanning. Activates reasoning mode automatically.', 'mcp-ai-wpoos' ),
 				'category'    => 'development',
@@ -72,7 +72,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'temperature'          => 0.3,
 				),
 			),
-			'multi_agent'       => array(
+			'multi_agent'         => array(
 				'name'        => __( 'Multi-Agent Collaboration', 'mcp-ai-wpoos' ),
 				'description' => __( 'Team-based approach for complex tasks requiring multiple perspectives and validation.', 'mcp-ai-wpoos' ),
 				'category'    => 'collaboration',
@@ -86,7 +86,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'max_team_size'      => 5,
 				),
 			),
-			'speed_optimized'   => array(
+			'speed_optimized'     => array(
 				'name'        => __( 'Speed Optimized', 'mcp-ai-wpoos' ),
 				'description' => __( 'Fastest response time with standard quality. Maximizes caching and parallel execution.', 'mcp-ai-wpoos' ),
 				'category'    => 'performance',
@@ -100,7 +100,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'temperature'        => 0.7,
 				),
 			),
-			'quality_optimized' => array(
+			'quality_optimized'   => array(
 				'name'        => __( 'Quality Optimized', 'mcp-ai-wpoos' ),
 				'description' => __( 'Highest quality output with reasoning, validation, and multi-step verification.', 'mcp-ai-wpoos' ),
 				'category'    => 'quality',
@@ -131,7 +131,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'max_loop_iterations'       => 50,
 				),
 			),
-			'supervisor_pattern' => array(
+			'supervisor_pattern'  => array(
 				'name'        => __( 'Supervisor Pattern', 'mcp-ai-wpoos' ),
 				'description' => __( 'Central supervisor agent assigns, tracks, and aggregates sub-agent work. Best for quality control with single coordination point.', 'mcp-ai-wpoos' ),
 				'category'    => 'orchestration',
@@ -147,21 +147,21 @@ class WP_MCP_AI_Orchestration_Presets {
 					'max_delegation_depth' => 3,
 				),
 			),
-			'pipeline_pattern'   => array(
+			'pipeline_pattern'    => array(
 				'name'        => __( 'Pipeline Pattern', 'mcp-ai-wpoos' ),
 				'description' => __( 'Sequential agent assembly line where each step refines output. Best for structured multi-step processing with clear stage boundaries.', 'mcp-ai-wpoos' ),
 				'category'    => 'orchestration',
 				'settings'    => array(
-					'enable_agent_teams'    => true,
-					'pipeline_mode'         => true,
-					'sequential_execution'  => true,
-					'stage_validation'      => true,
-					'enable_caching'        => true,
-					'tool_preferences'      => array( 'execute_workflow', 'create_task_plan', 'detect_completion_indicators', 'extract_structured_data' ),
-					'max_pipeline_stages'   => 10,
+					'enable_agent_teams'   => true,
+					'pipeline_mode'        => true,
+					'sequential_execution' => true,
+					'stage_validation'     => true,
+					'enable_caching'       => true,
+					'tool_preferences'     => array( 'execute_workflow', 'create_task_plan', 'detect_completion_indicators', 'extract_structured_data' ),
+					'max_pipeline_stages'  => 10,
 				),
 			),
-			'swarm_pattern'      => array(
+			'swarm_pattern'       => array(
 				'name'        => __( 'Swarm Pattern', 'mcp-ai-wpoos' ),
 				'description' => __( 'Autonomous parallel agents work independently for search, analysis, and data collection. Results are aggregated at completion.', 'mcp-ai-wpoos' ),
 				'category'    => 'orchestration',
@@ -174,6 +174,22 @@ class WP_MCP_AI_Orchestration_Presets {
 					'tool_preferences'     => array( 'create_agent_team', 'delegate_to_agent', 'aggregate_agent_results', 'web_search', 'deep_research', 'aggregate_research_data' ),
 					'max_team_size'        => 10,
 					'max_delegation_depth' => 2,
+				),
+			),
+			'pso_adaptive'        => array(
+				'name'        => __( 'Adaptive Optimization (PSO)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Self-tuning orchestration that learns from each conversation. Uses Particle Swarm Optimization to adaptively improve model selection, iteration limits, tool routing, and cost-quality balance over time.', 'mcp-ai-wpoos' ),
+				'category'    => 'optimization',
+				'settings'    => array(
+					'enable_pso_optimizer'       => true,
+					'pso_inertia_start'          => 0.9,
+					'pso_inertia_end'            => 0.4,
+					'pso_learning_rate_personal' => 1.5,
+					'pso_learning_rate_social'   => 2.0,
+					'pso_update_frequency'       => 10,
+					'enable_caching'             => true,
+					'enable_prediction'          => true,
+					'load_balancing'             => 'adaptive',
 				),
 			),
 		);
@@ -440,6 +456,13 @@ class WP_MCP_AI_Orchestration_Presets {
 			$recommendations['swarm_pattern'] = array(
 				'confidence' => 0.75,
 				'reason'     => __( 'Task benefits from parallel autonomous agents.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( preg_match( '/\b(optimi[zs]e|adaptive|self[\.\-]?tun|learn|improv|evolv|tune|pso)\b/', $task_lower ) ) {
+			$recommendations['pso_adaptive'] = array(
+				'confidence' => 0.8,
+				'reason'     => __( 'Task benefits from adaptive self-tuning optimization.', 'mcp-ai-wpoos' ),
 			);
 		}
 

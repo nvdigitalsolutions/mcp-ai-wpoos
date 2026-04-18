@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-9th-apr-compliance-document',
-        'version' => 'dev-copilot/update-9th-apr-compliance-document',
-        'reference' => '60b394c87147057dfc08860f887afe48b74eceee',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-exclude-md-files',
+        'version' => 'dev-copilot/rebuild-all-zips-exclude-md-files',
+        'reference' => '311a872f138b227e4dd934d081832e92fc6d6eae',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-9th-apr-compliance-document',
-            'version' => 'dev-copilot/update-9th-apr-compliance-document',
-            'reference' => '60b394c87147057dfc08860f887afe48b74eceee',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-exclude-md-files',
+            'version' => 'dev-copilot/rebuild-all-zips-exclude-md-files',
+            'reference' => '311a872f138b227e4dd934d081832e92fc6d6eae',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

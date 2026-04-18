@@ -341,7 +341,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 			foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 				$args['cookies'][] = new WP_Http_Cookie(
 					array(
-						'name'  => sanitize_key( $cookie_name ),
+						'name'  => sanitize_key( wp_unslash( $cookie_name ) ),
 						'value' => is_array( $cookie_value ) ? '' : sanitize_text_field( wp_unslash( $cookie_value ) ),
 					)
 				);

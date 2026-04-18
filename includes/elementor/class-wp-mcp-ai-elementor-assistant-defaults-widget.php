@@ -204,8 +204,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			if ( '' !== $prompt_output ) {
 				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt">';
 				echo '<h4 class="wp-mcp-ai-assistant-defaults__system-prompt-heading">' . esc_html__( 'System prompt', 'mcp-ai-wpoos' ) . '</h4>';
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt-content">' . $prompt_output . '</div>';
+				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt-content">' . wp_kses_post( $prompt_output ) . '</div>';
 				echo '</div>';
 			}
 		}

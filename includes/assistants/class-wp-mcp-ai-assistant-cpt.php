@@ -394,7 +394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						$defaults_json = '[]';
 					}
 
-					echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-group="' . esc_attr( $group_name ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
+					echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-group="' . esc_attr( $group_name ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . esc_attr( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
 					echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-badge">';

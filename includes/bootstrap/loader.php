@@ -196,7 +196,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-shortcode.php';
 
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
+// WebLLM enqueue has been moved to the NV oOS Embedded addon.
+// The require was: WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php'.
 
 // Excluded from WordPress.org deployment due to CDN dependencies.
 if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php' ) ) {
@@ -307,6 +308,9 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
 require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-assistant-builder-blocks.php';
+
+// Global chat bubble frontend (settings-driven, no widget needed).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-bubble-frontend.php';
 
 // ---------------------------------------------------------------------------
 // Clean output buffer

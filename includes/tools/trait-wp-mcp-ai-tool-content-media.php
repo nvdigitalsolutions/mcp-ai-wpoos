@@ -216,7 +216,7 @@ trait WP_MCP_AI_Tool_Content_Media {
 		// Generate WordPress-style image block.
 		$html  = '<!-- wp:image -->' . "\n";
 		$html .= '<figure class="wp-block-image">';
-		$html .= '<img src="' . $url . '" alt="' . $alt . '" class="wp-image-' . ( is_numeric( $source ) ? $source : '' ) . '"/>';
+		$html .= '<img src="' . esc_url( $url ) . '" alt="' . $alt . '" class="wp-image-' . ( is_numeric( $source ) ? $source : '' ) . '"/>';
 
 		if ( ! empty( $caption ) ) {
 			$html .= '<figcaption>' . $caption . '</figcaption>';

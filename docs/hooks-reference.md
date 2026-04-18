@@ -21,6 +21,7 @@
 11. [Email & Newsletter Hooks](#email--newsletter-hooks)
 12. [Crawler & Search Hooks](#crawler--search-hooks)
 13. [Video Generation Hooks](#video-generation-hooks)
+14. [Erlang C & Queue Operations Hooks](#erlang-c--queue-operations-hooks)
 
 ---
 
@@ -781,6 +782,40 @@ Fires when a Veo video generation completes.
 
 ---
 
+## Erlang C & Queue Operations Hooks
+
+### Action: `wp_mcp_ai_queue_alert`
+
+Fires when the `erlang_c_queue_health` tool detects that the live service-level percentage has dropped below the configured threshold. Use this to send Slack/Teams notifications, trigger auto-scaling, or log SLA-breach events.
+
+**Parameters:**
+- `array $snapshot` — Current queue snapshot including:
+  - `float $snapshot['service_level_pct']` — Achieved service level (0–100).
+  - `int $snapshot['agents_available']` — Current available agents.
+  - `int $snapshot['queue_depth']` — Current calls/chats waiting.
+  - `float $snapshot['avg_wait_time_seconds']` — Predicted average wait.
+  - `float $snapshot['threshold_pct']` — The SLA threshold that was breached.
+  - `int $snapshot['assistant_id']` — Assistant post ID that triggered the check.
+
+**Fired in:** `class-wp-mcp-ai-tool-erlang-c-queue-health.php` (when `service_level_pct < threshold_pct`)
+
+**Example:**
+```php
+add_action( 'wp_mcp_ai_queue_alert', function( $snapshot ) {
+    $msg = sprintf(
+        'Queue SLA alert: %.0f%% (threshold %.0f%%). Queue depth: %d. Avg wait: %.0fs.',
+        $snapshot['service_level_pct'],
+        $snapshot['threshold_pct'],
+        $snapshot['queue_depth'],
+        $snapshot['avg_wait_time_seconds']
+    );
+    // Send to Slack, Teams, PagerDuty, etc.
+    wp_remote_post( get_option( 'my_slack_webhook' ), array( 'body' => wp_json_encode( array( 'text' => $msg ) ) ) );
+}, 10, 1 );
+```
+
+---
+
 ## Quick Reference: Common Patterns
 
 ### Injecting Context Into Every Chat Request
@@ -859,5 +894,5 @@ grep -rn "apply_filters( 'wp_mcp_ai_" includes/
 
 ---
 
-**Total hooks:** 80+ actions, 460+ filters across the base plugin.
+**Total hooks:** 80+ actions, 460+ filters across the base plugin. Includes `wp_mcp_ai_queue_alert` (Erlang C SLA breach) added in v1.1.8.
 For Pro-specific hooks, see the Pro addon documentation.

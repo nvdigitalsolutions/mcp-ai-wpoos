@@ -147,7 +147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					continue;
 				}
 
-				printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $message ) );
+				printf( '<div class="notice notice-info is-dismissible"><p>%s</p></div>', esc_html( $message ) );
 			}
 		}
 
@@ -881,6 +881,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'huggingface_dataset_is_valid'       => 'external-tools',
 				'huggingface_dataset_filter'         => 'external-tools',
 				'huggingface_recommended_datasets'   => 'external-tools',
+				// Erlang C queuing-theory and workforce tools.
+				'calculate_erlang_c'                 => 'wordpress-core',
+				'erlang_c_concurrency_advisor'       => 'wordpress-core',
+				'erlang_c_staffing_advisor'          => 'external-tools',
+				'erlang_c_queue_health'              => 'external-tools',
 			);
 
 			// Fantasy Football tool mappings are now handled by the Pro addon.
@@ -1365,6 +1370,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
 				// Excel and Spreadsheet Tools - AI-powered formula generation.
 				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
+				// Erlang C queuing-theory tools (Base).
+				'WP_MCP_AI_Tool_Calculate_Erlang_C'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-calculate-erlang-c.php',
+				'WP_MCP_AI_Tool_Erlang_C_Concurrency_Advisor' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-erlang-c-concurrency-advisor.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
@@ -1418,6 +1426,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
 				// Advanced graphic editing tool.
 				'WP_MCP_AI_Tool_Graphic_Editor_Plus'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php',
+				// Erlang C contact-centre tools (Extended — optional WFM endpoint integration).
+				'WP_MCP_AI_Tool_Erlang_C_Staffing_Advisor' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-erlang-c-staffing-advisor.php',
+				'WP_MCP_AI_Tool_Erlang_C_Queue_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-erlang-c-queue-health.php',
 				// Project Management tools moved to Pro addon.
 			);
 

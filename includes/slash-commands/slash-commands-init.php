@@ -550,7 +550,7 @@ function wp_mcp_ai_get_slash_commands( $filter_by_capability = false ) {
 function wp_mcp_ai_register_slash_command_scripts() {
 	// Register autocomplete script.
 	wp_register_script(
-		'mcp-ai-command-autocomplete',
+		'wp-mcp-ai-command-autocomplete',
 		WP_MCP_AI_URL . 'assets/js/command-autocomplete.js',
 		array(),
 		WP_MCP_AI_VERSION,
@@ -559,9 +559,9 @@ function wp_mcp_ai_register_slash_command_scripts() {
 
 	// Register slash commands integration script.
 	wp_register_script(
-		'mcp-ai-slash-commands',
+		'wp-mcp-ai-slash-commands',
 		WP_MCP_AI_URL . 'assets/js/slash-commands.js',
-		array( 'mcp-ai-command-autocomplete' ),
+		array( 'wp-mcp-ai-command-autocomplete' ),
 		WP_MCP_AI_VERSION,
 		true
 	);
@@ -582,7 +582,7 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	$slash_command_list_endpoint = $rest_url_base . 'slash-command/list';
 
 	wp_localize_script(
-		'mcp-ai-slash-commands',
+		'wp-mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
 			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $rest_url_base ) ),

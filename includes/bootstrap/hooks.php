@@ -311,15 +311,18 @@ if ( ! function_exists( 'wp_mcp_ai_check_upload_limits_notice' ) ) {
 			$recommended_format = size_format( $recommended_size );
 
 			?>
-			<div class="notice notice-warning">
+			<div class="notice notice-warning is-dismissible">
 				<p>
 					<strong><?php esc_html_e( 'NV oOS Pro Plugin Upload Limit Warning', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
 				<p>
 					<?php
 					printf(
-						/* translators: 1: current limit, 2: recommended limit */
-						esc_html__( 'Your server\'s PHP upload limit is currently %1$s. To upload the NV oOS Pro plugin (approximately 50MB), you need at least %2$s.', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: 1: current limit, 2: recommended limit */
+							__( 'Your server\'s PHP upload limit is currently %1$s. To upload the NV oOS Pro plugin (approximately 50MB), you need at least %2$s.', 'mcp-ai-wpoos' ),
+							array( 'strong' => array() )
+						),
 						'<strong>' . esc_html( $current_limit ) . '</strong>',
 						'<strong>' . esc_html( $recommended_format ) . '</strong>'
 					);

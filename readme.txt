@@ -5,11 +5,11 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 200+ built-in tools.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 220+ built-in tools.
 
 == Description ==
 
@@ -19,7 +19,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 200+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 220+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
 **Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
@@ -52,7 +52,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 **AI Assistant Management**
 * Create unlimited AI assistants with custom system prompts
 * Per-assistant model configuration (temperature, max tokens)
-* 182 pre-built profession templates across 12 industry categories
+* 296 pre-built profession templates across 17 industry categories
 * One-click team deployments for coordinated AI workflows
 * 16 pre-built Agent Skills (document editing, design, MCP server building, testing, and more) included in the base plugin — auto-installed on activation, fully customisable
 
@@ -85,9 +85,13 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Chat history persistence (24h localStorage)
 * Sub-agent panel with live workflow tracking
 
-**MCP Server (Model Context Protocol)**
-* Full JSON-RPC 2.0 implementation
+**MCP Server (Model Context Protocol 2024-11-05)**
+* Full JSON-RPC 2.0 implementation with batching support (up to 20 messages per batch)
 * Connect Claude Desktop, LM Studio, and other MCP clients
+* All 11 MCP methods: `initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `prompts/list`, `prompts/get`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`
+* Tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`)
+* Argument autocompletion for tools and prompts
+* Session management via `Mcp-Session-Id` header (1h TTL)
 * REST API endpoints for remote integration
 * SSE streaming for real-time responses
 
@@ -265,23 +269,99 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 200+ tools for content, media, research, and operations
-5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
+4. **Tool Registry** - 230+ tools for content, media, research, and operations
+5. **Profession Templates** - 296 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
 
-= 1.1.7 - April 9, 2026 =
+= 1.1.8 - April 15, 2026 =
 
-**WordPress.org Plugin Directory Compliance — April 9, 2026**
+**Erlang C Queuing Theory Tools, Full Tool-Reference Audit**
+
+*Erlang C Workforce Management Tools*
+
+* 4 new tools in the base plugin (no Pro addon required) built on the Erlang C formula
+* `calculate_erlang_c` — general-purpose staffing solver: given arrival rate, average handle time, and target SLA returns agents needed, probability of waiting, avg wait time, and utilisation
+* `erlang_c_concurrency_advisor` — reads plugin session telemetry and returns a data-driven recommendation for the Max Concurrent Sessions setting
+* `erlang_c_staffing_advisor` — multi-channel staffing with chat concurrency multiplier, bot-deflection-rate adjustment, and optional NICE WFM / Genesys / Verint / Calabrio endpoint integration
+* `erlang_c_queue_health` — real-time SLA monitoring: polls a contact-centre REST endpoint, fires `wp_mcp_ai_queue_alert` action on breach, stores snapshots in JetEngine CCT
+* New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications — full parameter schema documented in `docs/hooks-reference.md`
+* Shared helper class `WP_MCP_AI_Erlang_C` with `erlang_c()`, `avg_wait_time()`, `min_agents_for_service_level()`, and `service_level()` static methods
+
+*Documentation*
+
+* `docs/reference/tools/tool-reference.md` fully audited — all 230+ tools in `load_default_tools` (base + extended) now documented
+* 14 new sections added to tool-reference.md: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queuing tools
+* New feature guide `docs/features/erlang-c-staffing-tools.md` with industry standards table, usage scenarios, and helper class API reference
+* `docs/hooks-reference.md` — added `wp_mcp_ai_queue_alert` section with full `$snapshot` schema and Slack/webhook usage example
+* `docs/QUICK_REFERENCE.md` — updated to v1.1.8 with Erlang C in Recent Updates
+* `docs/DOCUMENTATION_INDEX.md` — added April 15 update block and new feature doc entry
+
+*Compliance*
+
+* Full re-audit of base plugin against all 13 WordPress.org Plugin Developer Guidelines — all pass
+* New compliance document `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md` with detailed evidence for each guideline
+* Pro Addon External Services (P1–P3: Replicate, ESPN Fantasy, Yahoo Fantasy) documented in readme.txt, clearly marked as not present in base plugin
+* Version bumped to 1.1.8 across plugin header, constants, readme.txt, and CHANGELOG.md
+
+= 1.1.7 - April 11, 2026 =
+
+**MCP Protocol Completion, MCP Apps, CRE Debt Toolkit, Pro Professions/Teams, Compliance Hardening**
+
+*MCP Protocol 2024-11-05 Completion (April 14)*
+
+* Full MCP 2024-11-05 spec compliance — all 11 protocol methods now implemented
+* `resources/read` — read resource content by URI with MIME-typed responses (text or blob)
+* `prompts/get` — get full prompt content with system instructions and argument values
+* `ping` — server liveness check
+* `completion/complete` — argument autocompletion (enum/boolean for tools, slug matching for prompts)
+* `logging/setLevel` — client-controlled log verbosity (8 standard levels, action hook: `wp_mcp_ai_mcp_logging_set_level`)
+* `notifications/cancelled` — request cancellation handler (action hook: `wp_mcp_ai_mcp_request_cancelled`)
+* JSON-RPC batching — process up to 20 messages per batch (configurable via `wp_mcp_ai_max_batch_size` filter)
+* Tool annotations — maps `WP_MCP_AI_Tool_Capability_Flags_Interface` to MCP hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`)
+* `Mcp-Session-Id` session management — transient-backed session state with 1 hour TTL
+* Comprehensive test suite for all new methods (`test-mcp-protocol-completion.php`)
+
+*New Features*
+
+* MCP Apps (SEP-1865) — Per-assistant remote MCP server connections (up to 10 per assistant) with JSON-RPC 2.0 tool bridging, transient-cached discovery, admin metabox, and REST endpoints
+* CRE Debt & Securitization Pro Toolkit — 57 new tools across 5 modules (Originations, Underwriting, CMBS, Debt Fund, Asset Management) with shared financial calculator engine
+* CRE Debt CPT/CCT infrastructure with Chart.js admin dashboard
+* 36 new pro toolkit professions across 5 knowledge bases (CRE debt, financial services, digital media, business operations, specialized services)
+* 17 new team configurations including 7 CRE debt lifecycle teams and 10 cross-functional pro toolkit teams
+* Total professions: 296 (was 259). Total teams: 100
+* Assistant tool presets updated with new pro toolkit tool slugs
+
+*WordPress.org Compliance (April 9–11)*
 
 * Fixed 2 broken URLs in readme.txt External Services section (Trade.gov, Mailjet)
 * Corrected 13 base tool capability flags from `local-only` to `external-api` (tools making external HTTP calls)
 * Restricted CLI assistant export to dedicated uploads subdirectory (`uploads/mcp-ai/exports/`)
 * Removed sync-docs file write to plugin/theme directories
-* Clarified capability flag comments on 4 tools (2 URL-returning, 2 loopback)
+* AJAX capability checks added — `dismiss_directory_notice` and `dismiss_price_notice` require `manage_options`
+* $_POST sanitisation hardened — `sanitize_key()` on keys and `sanitize_text_field( wp_unslash() )` on values
+* Missing closing class braces fixed in vision-object-localization and vision-product-search tools
 * Full proactive audit passed — ABSPATH guards, text domain, CDN scripts, obfuscation, redirects, nonces, SQL, sanitization
+
+*Algorave Audio Fixes (April 8–11)*
+
+* AudioContext synchronous resume within user-gesture handler before async operations
+* channelCount=0 proxy fix — data descriptor for maxChannelCount clamped to [1,32] with eager initializeAudioOutput
+* Visualizer AnalyserNode connection timing fixed across 5 PRs
+* Async aliasBank CDN redirect and unhandled rejection fixes
+
+*Security*
+
+* nodemailer updated to 8.0.5 (SMTP CRLF injection fix)
+* basic-ftp updated to 5.2.1 (CRLF command injection fix)
+* mathjs and langsmith updated for security vulnerabilities
+
+*Build*
+
 * Production classmap regenerated via `composer install --no-dev --classmap-authoritative`
+* All 30+ distribution ZIPs rebuilt for v1.1.7
+* CLAUDE.md excluded from plugin ZIP builds
 
 = 1.1.6 - April 2026 (Updated April 6) =
 
@@ -550,7 +630,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
   * Influencer Identification - Discover brand influencers based on reach and engagement criteria
 * **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
 * **Cloudflare Image Models** - Added support for Flux-2 Dev, Leonardo Lucid Origin, and Phoenix 1.0 models
-* **200+ Profession Orchestration** - Intelligent agent role assignment via WP-CLI commands
+* **296 Profession Orchestration** - Intelligent agent role assignment via WP-CLI commands
 
 **Bug Fixes**
 
@@ -579,7 +659,7 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * Multi-provider support: OpenAI, Gemini, NVIDIA NIM, Ollama, LM Studio
 * Full MCP (Model Context Protocol) server implementation
 * Modern chat interface with streaming responses
-* 182 profession templates across 12 industry categories
+* 296 profession templates across 17 industry categories
 * Comprehensive REST API
 * SSE (Server-Sent Events) streaming support
 * Rate limiting and usage tracking
@@ -956,7 +1036,7 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Purpose:** Browser-native machine learning library enabling in-browser NLP tasks (summarisation, sentiment analysis, entity extraction, translation, semantic search) without sending data to a remote AI provider
 * **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
 * **When:** Only when the "Browser-Native AI Tasks (Transformers.js)" feature is explicitly enabled by the administrator (disabled by default)
-* **Service URL:** https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
+* **Service URL:** https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1
 * **Terms of Service:** https://www.jsdelivr.com/terms
 * **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
@@ -1008,7 +1088,57 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://varnish-cache.org/intro/index.html (BSD-2-Clause)
 * **Privacy Policy:** N/A — self-hosted infrastructure; no data leaves your server by default
 
+**46. Workforce Management (WFM) Endpoints (User-Configured)**
+* **Purpose:** Optional real-time queue data for Erlang C staffing and queue-health tools (supports NICE WFM, Genesys, Verint, Calabrio, or any contact-centre REST API)
+* **Data Sent:** HTTP GET request with optional Bearer token; no user or site data is transmitted
+* **When:** When the `erlang_c_staffing_advisor` or `erlang_c_queue_health` tools are used with a WFM endpoint configured
+* **Service URL:** User-configured via tool arguments (no default endpoint; disabled unless explicitly provided)
+* **Terms of Service:** Per the user's WFM vendor agreement
+* **Privacy Policy:** Per the user's WFM vendor agreement
 
+**47. Agent-to-Agent (A2A) Protocol — Remote Agent Discovery & Task Delegation**
+* **Purpose:** Discover and communicate with remote A2A-compatible agents via the Google A2A open protocol
+* **Data Sent:** HTTP GET to `{agent_url}/.well-known/agent.json` for discovery; JSON-RPC task payloads (task description, context) for delegation
+* **When:** When a site administrator configures remote agents and the AI assistant delegates tasks via A2A
+* **Service URL:** User-configured remote agent URLs (no default endpoint; disabled unless explicitly configured)
+* **Terms of Service:** https://google.github.io/A2A/ (Apache-2.0 protocol specification)
+* **Privacy Policy:** Per the remote agent operator's privacy policy
+
+**48. Mesh Router — Peer-to-Peer Agent Communication**
+* **Purpose:** Distribute AI workload across multiple NV oOS instances configured as mesh peers
+* **Data Sent:** JSON-RPC requests containing task payloads and routing metadata to configured peer endpoints
+* **When:** When mesh routing is enabled and peer endpoints are configured by the site administrator
+* **Service URL:** User-configured peer NV oOS instance URLs (no default; disabled unless explicitly configured)
+* **Terms of Service:** N/A — communication between self-hosted NV oOS instances operated by the same organisation
+* **Privacy Policy:** N/A — data stays within the operator's own infrastructure
+
+= Pro Addon External Services =
+
+The following services are **only** used by the separately installed **NV oOS Pro** addon. They are **not** present in the base plugin. They are documented here for completeness and transparency.
+
+**P1. Replicate API (AI Music Generation)**
+* **Purpose:** AI-powered music and audio generation via Replicate's hosted model inference
+* **Data Sent:** Music generation parameters (prompt, tempo, duration, genre), API key
+* **When:** When the AI music generation tool is used (Algorave addon, requires Pro)
+* **Service URL:** https://api.replicate.com/v1/predictions
+* **Terms of Service:** https://replicate.com/terms
+* **Privacy Policy:** https://replicate.com/privacy
+
+**P2. ESPN Fantasy Football API**
+* **Purpose:** Retrieve ESPN Fantasy Football league data, rosters, scores, and standings
+* **Data Sent:** League ID, season ID, team ID; SWID and ESPN_S2 authentication cookies for private leagues
+* **When:** When ESPN Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasy.espn.com/apis/v3/games/ffl/seasons
+* **Terms of Service:** https://www.espn.com/espn/news/story?page=terms-of-use
+* **Privacy Policy:** https://privacy.thewaltdisneycompany.com/en/current-privacy-policy/
+
+**P3. Yahoo Fantasy Sports API**
+* **Purpose:** Retrieve Yahoo Fantasy Football league data, rosters, player stats, standings, and trade analysis
+* **Data Sent:** League key, player keys, OAuth2 access token (obtained via Yahoo OAuth2 — see service #38 above)
+* **When:** When Yahoo Fantasy Football tools are used (Fantasy Football addon, requires Pro)
+* **Service URL:** https://fantasysports.yahooapis.com/fantasy/v2/
+* **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
+* **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
 
 **What is sent to external services:**
 * User messages and chat conversations (AI providers only)
@@ -1166,7 +1296,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
 
 **Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
-* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
+* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1 — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
 * WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
 
 = GDPR Compliance =

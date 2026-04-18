@@ -418,9 +418,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
-			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
-			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
+			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( wp_unslash( $_POST['active_tab'] ) ) : '';
+			$active_view     = isset( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
+			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['save_all_tabs'] ) );
 
 			// DEBUG: Log checkbox values in posted data.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -461,14 +461,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 258 via check_admin_referer().
 			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
-				$active_subtab = sanitize_key( $_POST['subtab'] );
+				$active_subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			}
 
 			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 417 via check_admin_referer().
 			if ( empty( $active_subtab ) ) {
-				foreach ( $_POST as $key => $value ) {
+				$unslashed_post = wp_unslash( $_POST );
+				foreach ( $unslashed_post as $raw_key => $value ) {
+					$key = sanitize_key( $raw_key );
 					if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-						$active_subtab = sanitize_key( $value );
+						$active_subtab = sanitize_key( wp_unslash( $value ) );
 						break; // Use the first subtab found.
 					}
 				}
@@ -476,7 +479,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Check for 'connection' parameter (used in Integrations section).
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
-			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( $_POST['connection'] ) : '';
+			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( wp_unslash( $_POST['connection'] ) ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -940,7 +943,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Redirect back to the same tab that was being edited.
 			// Check if a custom redirect page is specified (e.g., for simple settings page).
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
-			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( $_POST['redirect_page'] ) : self::PAGE_SLUG;
+			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( wp_unslash( $_POST['redirect_page'] ) ) : self::PAGE_SLUG;
 
 			$redirect_args = array(
 				'page'    => $redirect_page,
@@ -1060,7 +1063,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tools manager styles if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'tools' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$tools_css = $this->get_asset_file( 'assets/css/tools-manager.css' );
 				wp_enqueue_style(
 					'wp-mcp-ai-tools-manager',
@@ -1090,7 +1093,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tools manager scripts if on tools tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'tools' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$tools_js = $this->get_asset_file( 'assets/js/tools-manager.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tools-manager',
@@ -1103,7 +1106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue admin settings scripts if on providers tab (for embedded model management).
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'providers' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'providers' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$admin_settings_js = $this->get_asset_file( 'assets/js/admin-settings.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-admin-settings',
@@ -1116,7 +1119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue tool orchestration scripts if on orchestration tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'orchestration' === $_GET['tab'] ) {
+			if ( isset( $_GET['tab'] ) && 'orchestration' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ) {
 				$orchestration_js = $this->get_asset_file( 'assets/js/admin-tool-orchestration.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-tool-orchestration',
@@ -1130,7 +1133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'performance_monitoring' === $_GET['subtab'] ) {
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'performance_monitoring' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
 				$performance_js = $this->get_asset_file( 'assets/js/performance-admin.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-performance-admin',
@@ -1153,7 +1156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Enqueue mesh peer test scripts if on advanced tab with federation_mesh subtab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'federation_mesh' === $_GET['subtab'] ) {
+			if ( isset( $_GET['tab'] ) && 'advanced' === sanitize_key( wp_unslash( $_GET['tab'] ) ) && isset( $_GET['subtab'] ) && 'federation_mesh' === sanitize_key( wp_unslash( $_GET['subtab'] ) ) ) {
 				$mesh_test_js = $this->get_asset_file( 'assets/js/mesh-peer-test.js' );
 				wp_enqueue_script(
 					'wp-mcp-ai-mesh-peer-test',
@@ -1216,7 +1219,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		private function get_active_tab() {
 			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for tab display.
-			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
 				$active_tab = 'general';
@@ -1534,7 +1537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Validate file type using WordPress function (more secure than client MIME type).
-			$filetype = wp_check_filetype( $file['name'], array( 'json' => 'application/json' ) );
+			$filetype = wp_check_filetype( sanitize_file_name( $file['name'] ), array( 'json' => 'application/json' ) );
 			if ( 'json' !== $filetype['ext'] || 'application/json' !== $filetype['type'] ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos' ) ) );
 			}

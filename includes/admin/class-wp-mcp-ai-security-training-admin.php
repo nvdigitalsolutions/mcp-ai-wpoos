@@ -123,7 +123,7 @@ class WP_MCP_AI_Security_Training_Admin {
 		}
 
 		if ( isset( $_POST['training_duration'] ) ) {
-			update_post_meta( $post_id, '_training_duration', absint( $_POST['training_duration'] ) );
+			update_post_meta( $post_id, '_training_duration', absint( wp_unslash( $_POST['training_duration'] ) ) );
 		}
 
 		$mandatory = isset( $_POST['training_mandatory'] ) ? '1' : '0';

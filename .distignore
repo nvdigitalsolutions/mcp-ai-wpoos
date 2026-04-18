@@ -105,7 +105,13 @@ Thumbs.db
 *.node
 *.dll
 *.so
+*.so.*
 *.dylib
+
+# Platform-specific native binaries (sharp, canvas)
+# Sharp's JS wrapper still loads; users needing native acceleration can run: npm install sharp
+assets/vendor/sharp/node_modules/@img/
+assets/vendor/sharp/src/
 
 # Environment files
 .env

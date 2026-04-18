@@ -234,7 +234,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 			return;
 		}
 
-		$count = isset( $_POST['count'] ) ? absint( $_POST['count'] ) : 0;
+		$count = isset( $_POST['count'] ) ? absint( wp_unslash( $_POST['count'] ) ) : 0;
 		update_user_meta( get_current_user_id(), 'wp_mcp_ai_dismissed_price_notice', $count );
 		wp_send_json_success();
 	}

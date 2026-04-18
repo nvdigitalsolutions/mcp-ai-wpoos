@@ -898,13 +898,13 @@ vision_object_localization = experimental
 vision_product_search = experimental
 
 # BUG (7 tools)
-excel_data_export = bug
-get_import_duty = bug
-get_profession_stats = bug
-pro_document_ocr = bug
-probe_chat = bug
-probe_remote_mcp = bug
-update_option = bug
+excel_data_export = dev
+get_import_duty = dev
+get_profession_stats = dev
+pro_document_ocr = dev
+probe_chat = dev
+probe_remote_mcp = dev
+update_option = dev
 
 # ========================================
 # PRACTICAL SETTINGS & RECOMMENDATIONS

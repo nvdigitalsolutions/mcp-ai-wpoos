@@ -719,8 +719,8 @@ class WP_MCP_AI_Analytics_Engine {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
 			$transcripts = $wpdb->get_results( $wpdb->prepare( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} WHERE cct_author_id = %d ORDER BY request_started_at ASC", $user_id ) );
 		} else {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables.
-			$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} ORDER BY request_started_at ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- No user-supplied values; table name escaped via esc_sql().
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $safe_table is escaped with esc_sql() and validated above; WP_Query does not support CCT tables. No user-supplied values; table name escaped via esc_sql().
+			$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$safe_table} ORDER BY request_started_at ASC" );
 		}
 
 		if ( empty( $transcripts ) ) {
