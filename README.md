@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.7  
-**Release Date:** 2026-04-14 (April 2026 — Full MCP 2024-11-05 compliance, MCP Apps per-assistant remote server connections, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams, WordPress.org compliance hardening, Algorave audio fixes)  
-**Latest Updates:** April 2026 - Full MCP 2024-11-05 protocol compliance (all 11 methods: initialize, ping, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get, completion/complete, logging/setLevel, notifications/cancelled), JSON-RPC batching, tool annotations, session management, MCP Apps: per-assistant remote MCP server connections with tool bridging (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org compliance hardening, Algorave audio fixes, security dependency updates  
+**Version:** 1.1.8  
+**Release Date:** 2026-04-15 (April 2026 — Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit; v1.1.7: Full MCP 2024-11-05 compliance, MCP Apps, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams)  
+**Latest Updates:** April 2026 (v1.1.8) — 4 Erlang C base-plugin tools (`calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`), `wp_mcp_ai_queue_alert` action hook, full tool-reference audit (all 230+ base tools documented across 14 new sections), WordPress.org re-audit (all 13 guidelines pass). Prior release (v1.1.7): Full MCP 2024-11-05 protocol compliance (all 11 methods), JSON-RPC batching, tool annotations, session management, MCP Apps per-assistant remote server connections (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org compliance hardening, Algorave audio fixes, security dependency updates  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (March–April 2026)](#-latest-updates-marchapril-2026)
+- [🆕 Latest Updates (v1.1.8 — April 2026)](#-latest-updates-v118--april-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -273,7 +273,29 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (March–April 2026)
+## 🆕 Latest Updates (v1.1.8 — April 2026)
+
+### Erlang C Workforce Management Tools (April 15, 2026) ⭐ **NEW**
+
+**4 base-plugin tools that apply the Erlang C teletraffic formula to contact-centre staffing, AI session capacity planning, and real-time SLA monitoring** — no Pro addon or external dependencies required. See [`docs/features/erlang-c-staffing-tools.md`](docs/features/erlang-c-staffing-tools.md).
+
+- ✅ **`calculate_erlang_c`** — General staffing solver. Given arrival rate and average handle time, returns minimum agents needed to meet a service-level target, plus probability of waiting, average wait time, and utilisation.
+- ✅ **`erlang_c_concurrency_advisor`** — Reads the plugin's own session telemetry (arrival rate + transcript-duration averages) and returns a data-driven recommendation for the **Max Concurrent Sessions** setting.
+- ✅ **`erlang_c_staffing_advisor`** — Multi-channel planner covering voice, chat, email, and bot-deflection queues. Integrates with WFM endpoints via `wp_mcp_ai_erlang_c_wfm_export` filter.
+- ✅ **`erlang_c_queue_health`** — Real-time SLA monitoring. Fires the **`wp_mcp_ai_queue_alert`** action hook when a queue breaches its SLA threshold, enabling custom alerting integrations.
+- ✅ **Shared `WP_MCP_AI_Erlang_C` class** at `includes/class-wp-mcp-ai-erlang-c.php` — pure-PHP Erlang C implementation usable by custom tools without external libraries.
+
+### Full Tool-Reference Audit (April 15, 2026)
+
+**`docs/reference/tools/tool-reference.md` now documents all 230+ tools in `load_default_tools`**, with 14 new sections covering previously-undocumented tool groups:
+
+OpenAI file/model management · text embeddings & vector stores · multi-agent orchestration · agent memory management · reasoning & code analysis · deep research · browser-native AI (client-side NLP) · Yahoo Fantasy Football toolkit · Newsletter plugin integration · WP All Import/Export integration · Flowhub cannabis dispensary · PayHere payment gateway · Erlang C queue tools.
+
+### WordPress.org Compliance Re-Audit (April 15, 2026) 🔒
+
+All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`.
+
+---
 
 ### MCP Apps — Per-Assistant Remote MCP Server Connections (April 10, 2026) ⭐ **NEW**
 
