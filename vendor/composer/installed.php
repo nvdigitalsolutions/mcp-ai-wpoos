@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/full-codebase-reaudit',
         'version' => 'dev-copilot/full-codebase-reaudit',
-        'reference' => 'ae9c3ff472f67480de3ed48ddc4dcdf668d4e885',
+        'reference' => '883c1f027402c7b91de01a7cf3650c6c2ccf1082',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/full-codebase-reaudit',
             'version' => 'dev-copilot/full-codebase-reaudit',
-            'reference' => 'ae9c3ff472f67480de3ed48ddc4dcdf668d4e885',
+            'reference' => '883c1f027402c7b91de01a7cf3650c6c2ccf1082',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
