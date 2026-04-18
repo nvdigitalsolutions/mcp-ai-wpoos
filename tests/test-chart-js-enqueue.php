@@ -24,7 +24,7 @@ class Test_Chart_JS_Enqueue extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai-dashboard' );
 
 		// Chart.js should be enqueued.
-		$this->assertTrue( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should be enqueued on token_manager tab' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should be enqueued on token_manager tab' );
 
 		// Clean up.
 		unset( $_GET['tab'] );
@@ -41,7 +41,7 @@ class Test_Chart_JS_Enqueue extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai-dashboard' );
 
 		// Chart.js should be enqueued.
-		$this->assertTrue( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should be enqueued on orchestration tab' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should be enqueued on orchestration tab' );
 
 		// Clean up.
 		unset( $_GET['tab'] );
@@ -58,7 +58,7 @@ class Test_Chart_JS_Enqueue extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai-dashboard' );
 
 		// Chart.js should NOT be enqueued.
-		$this->assertFalse( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should not be enqueued on general tab' );
+		$this->assertFalse( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should not be enqueued on general tab' );
 
 		// Clean up.
 		unset( $_GET['tab'] );
@@ -75,7 +75,7 @@ class Test_Chart_JS_Enqueue extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' );
 
 		// Chart.js should NOT be enqueued.
-		$this->assertFalse( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should not be enqueued on password vault page' );
+		$this->assertFalse( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should not be enqueued on password vault page' );
 
 		// Clean up.
 		unset( $_GET['tab'] );
@@ -89,6 +89,6 @@ class Test_Chart_JS_Enqueue extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'edit.php' );
 
 		// Chart.js should NOT be enqueued.
-		$this->assertFalse( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should not be enqueued on other pages' );
+		$this->assertFalse( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should not be enqueued on other pages' );
 	}
 }
