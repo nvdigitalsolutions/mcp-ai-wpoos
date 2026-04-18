@@ -175,7 +175,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 			WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
 		} elseif ( file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' ) ) {
 			wp_enqueue_script(
-				'chartjs',
+				'wp-mcp-ai-chartjs',
 				WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js',
 				array(),
 				filemtime( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' ),
@@ -189,7 +189,7 @@ class WP_MCP_AI_Section_Schedule_Manager extends WP_MCP_AI_Settings_Section {
 		wp_enqueue_script(
 			'wp-mcp-ai-schedule-manager',
 			WP_MCP_AI_PRO_URL . 'assets/js/schedule-manager.js',
-			array( 'jquery', 'wp-util', 'chartjs' ),
+			array( 'jquery', 'wp-util', 'wp-mcp-ai-chartjs' ),
 			$js_version,
 			true
 		);
