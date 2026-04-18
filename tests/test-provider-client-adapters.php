@@ -496,8 +496,6 @@ class Test_Provider_Client_Adapters extends WP_UnitTestCase {
 
 	/**
 	 * Every adapter should return a non-empty, lowercase string slug.
-	 *
-	 * @dataProvider provider_slug_data
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider( 'provider_slug_data' )]
 	public function test_all_slugs_are_non_empty_strings( $adapter_class ) {

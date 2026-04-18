@@ -110,8 +110,6 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	/**
 	 * Test each AJAX action individually for better error reporting.
 	 *
-	 * @dataProvider ajax_actions_provider
-	 *
 	 * @param string $action The AJAX action to test.
 	 */
 	#[\PHPUnit\Framework\Attributes\DataProvider( 'ajax_actions_provider' )]
