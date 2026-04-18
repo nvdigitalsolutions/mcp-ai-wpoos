@@ -198,9 +198,9 @@ $shortcode_output = do_shortcode( $shortcode );
  */
 $inline_configs = array();
 if ( isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
-	foreach ( $GLOBALS['wp_mcp_ai_chat_configs'] as $id => $cfg ) {
-		if ( ! in_array( $id, $configs_before, true ) ) {
-			$inline_configs[ $id ] = $cfg;
+	foreach ( $GLOBALS['wp_mcp_ai_chat_configs'] as $config_id => $cfg ) {
+		if ( ! in_array( $config_id, $configs_before, true ) ) {
+			$inline_configs[ $config_id ] = $cfg;
 		}
 	}
 }
@@ -234,8 +234,8 @@ if ( ! empty( $inline_configs ) ) {
 	echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
 	// JSON_HEX_TAG prevents </script> breakout; JSON_HEX_AMP prevents HTML entity injection.
 	$json_flags = JSON_HEX_TAG | JSON_HEX_AMP;
-	foreach ( $inline_configs as $id => $cfg ) {
-		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
+	foreach ( $inline_configs as $config_id => $cfg ) {
+		echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $config_id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
 	}
 	echo '</script>';
 }

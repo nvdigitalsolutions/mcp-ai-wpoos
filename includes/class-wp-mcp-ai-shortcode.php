@@ -1495,7 +1495,7 @@ class WP_MCP_AI_Shortcode {
 			// - HTML attributes: esc_attr(), esc_attr__(), esc_attr_e()
 			// - URLs: esc_url(), esc_url_raw()
 			// - Post content: wp_kses_post() (line where $assistant_content is echoed)
-			// - JSON config: wp_json_encode() via wp_add_inline_script()
+			// - JSON config: wp_json_encode() via wp_add_inline_script().
 			return ob_get_clean();
 
 		} catch ( Exception $e ) {

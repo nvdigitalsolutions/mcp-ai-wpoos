@@ -171,8 +171,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 				<p class="description">
 					<?php
 					printf(
-						/* translators: %s: Link to Pro Dashboard */
 						wp_kses(
+							/* translators: %s: Link to Pro Dashboard */
 							__( 'View the charts on the %s to see your changes.', 'mcp-ai-wpoos' ),
 							array( 'a' => array( 'href' => array() ) )
 						),
