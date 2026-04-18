@@ -184,10 +184,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 				$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 				if ( file_exists( $chart_js_path ) ) {
-					wp_register_script( 'chartjs', $chart_js_url, array(), (string) filemtime( $chart_js_path ), true );
+					wp_register_script( 'wp-mcp-ai-chartjs', $chart_js_url, array(), (string) filemtime( $chart_js_path ), true );
 				}
 			}
-			wp_enqueue_script( 'chartjs' );
+			wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 
 			// Pre-compute stats once here so render_dashboard_page() can reuse them
 			// without an extra set of DB queries, and so we can embed the data as an
@@ -196,13 +196,13 @@ class WP_MCP_AI_Chat_Channels_Menu {
 
 			// Inline data block – runs *before* chart.js (position 'before').
 			wp_add_inline_script(
-				'chartjs',
+				'wp-mcp-ai-chartjs',
 				'var wpMcpAiDashStats = ' . wp_json_encode( $this->dashboard_stats ) . ';',
 				'before'
 			);
 
 			// Chart initialisation – runs *after* chart.js has loaded (default position).
-			wp_add_inline_script( 'chartjs', $this->build_chart_init_script() );
+			wp_add_inline_script( 'wp-mcp-ai-chartjs', $this->build_chart_init_script() );
 		}
 
 		// Inbox JS (also powers the dashboard stats fetch).
@@ -595,7 +595,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	 * Build the JavaScript chart-initialisation snippet for the Dashboard.
 	 *
 	 * The snippet reads data from the global `wpMcpAiDashStats` variable that is
-	 * injected as an inline-before block on the `chartjs` script handle, so by
+	 * injected as an inline-before block on the `wp-mcp-ai-chartjs` script handle, so by
 	 * the time this code executes (in the footer, after Chart.js) the variable
 	 * and the `Chart` constructor are both available.
 	 *

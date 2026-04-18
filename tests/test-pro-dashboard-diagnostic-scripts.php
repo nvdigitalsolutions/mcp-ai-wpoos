@@ -27,9 +27,9 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'toplevel_page_nvoos-pro-dashboard' );
 
 		// Check that scripts are registered and enqueued.
-		$this->assertTrue( wp_script_is( 'chartjs', 'registered' ), 'Chart.js should be registered on main dashboard' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'registered' ), 'Chart.js should be registered on main dashboard' );
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-pro-dashboard', 'registered' ), 'Pro Dashboard script should be registered on main dashboard' );
-		$this->assertTrue( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should be enqueued on main dashboard' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should be enqueued on main dashboard' );
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-pro-dashboard', 'enqueued' ), 'Pro Dashboard script should be enqueued on main dashboard' );
 	}
 
@@ -48,9 +48,9 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'nv-oos-pro_page_nvoos-pro-dashboard-diagnostic' );
 
 		// Check that scripts are registered and enqueued on diagnostic page.
-		$this->assertTrue( wp_script_is( 'chartjs', 'registered' ), 'Chart.js should be registered on diagnostic page' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'registered' ), 'Chart.js should be registered on diagnostic page' );
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-pro-dashboard', 'registered' ), 'Pro Dashboard script should be registered on diagnostic page' );
-		$this->assertTrue( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should be enqueued on diagnostic page' );
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should be enqueued on diagnostic page' );
 		$this->assertTrue( wp_script_is( 'wp-mcp-ai-pro-dashboard', 'enqueued' ), 'Pro Dashboard script should be enqueued on diagnostic page' );
 	}
 
@@ -69,7 +69,7 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		do_action( 'admin_enqueue_scripts', 'edit.php' );
 
 		// Check that scripts are not enqueued on unrelated pages.
-		$this->assertFalse( wp_script_is( 'chartjs', 'enqueued' ), 'Chart.js should not be enqueued on unrelated pages' );
+		$this->assertFalse( wp_script_is( 'wp-mcp-ai-chartjs', 'enqueued' ), 'Chart.js should not be enqueued on unrelated pages' );
 		$this->assertFalse( wp_script_is( 'wp-mcp-ai-pro-dashboard', 'enqueued' ), 'Pro Dashboard script should not be enqueued on unrelated pages' );
 	}
 
@@ -94,7 +94,7 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		$scripts_test = $results['tests']['scripts_registered'];
 
 		// Both scripts should be registered now.
-		$this->assertTrue( $scripts_test['chartjs'], 'Chart.js should be detected as registered by diagnostic' );
+		$this->assertTrue( $scripts_test['wp-mcp-ai-chartjs'], 'Chart.js should be detected as registered by diagnostic' );
 		$this->assertTrue( $scripts_test['pro_dashboard'], 'Pro Dashboard script should be detected as registered by diagnostic' );
 		$this->assertEquals( 'pass', $scripts_test['status'], 'Scripts registration test should pass' );
 	}
@@ -114,7 +114,7 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		global $wp_scripts;
 
 		// Check Chart.js has no dependencies (it's standalone).
-		$chartjs = $wp_scripts->registered['chartjs'];
+		$chartjs = $wp_scripts->registered['wp-mcp-ai-chartjs'];
 		$this->assertEmpty( $chartjs->deps, 'Chart.js should have no dependencies' );
 	}
 
@@ -135,7 +135,7 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		// Check Pro Dashboard script has correct dependencies.
 		$pro_dashboard = $wp_scripts->registered['wp-mcp-ai-pro-dashboard'];
 		$this->assertContains( 'jquery', $pro_dashboard->deps, 'Pro Dashboard script should depend on jQuery' );
-		$this->assertContains( 'chartjs', $pro_dashboard->deps, 'Pro Dashboard script should depend on Chart.js' );
+		$this->assertContains( 'wp-mcp-ai-chartjs', $pro_dashboard->deps, 'Pro Dashboard script should depend on Chart.js' );
 	}
 
 	/**
@@ -153,7 +153,7 @@ class Test_Pro_Dashboard_Diagnostic_Scripts extends WP_UnitTestCase {
 		global $wp_scripts;
 
 		// Check Chart.js has a version.
-		$this->assertNotEmpty( $wp_scripts->registered['chartjs']->ver, 'Chart.js should have a version' );
+		$this->assertNotEmpty( $wp_scripts->registered['wp-mcp-ai-chartjs']->ver, 'Chart.js should have a version' );
 
 		// Check Pro Dashboard script has a version.
 		$this->assertNotEmpty( $wp_scripts->registered['wp-mcp-ai-pro-dashboard']->ver, 'Pro Dashboard script should have a version' );
