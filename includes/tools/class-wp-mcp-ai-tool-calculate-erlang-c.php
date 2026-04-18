@@ -189,7 +189,7 @@ class WP_MCP_AI_Tool_Calculate_Erlang_C implements WP_MCP_AI_Tool_Interface, WP_
 		$target_sl_fraction = min( 0.999, max( 0.001, $target_sl_pct / 100.0 ) );
 
 		// If num_agents provided, compute metrics for that agent count.
-		if ( isset( $arguments['num_agents'] ) && $arguments['num_agents'] !== null ) {
+		if ( isset( $arguments['num_agents'] ) && null !== $arguments['num_agents'] ) {
 			$agents = max( 1, (int) $arguments['num_agents'] );
 
 			$prob_wait  = WP_MCP_AI_Erlang_C::probability_wait( $traffic_intensity, $agents );

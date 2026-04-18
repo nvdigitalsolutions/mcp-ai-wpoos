@@ -197,7 +197,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-shortcode.php';
 
 // WebLLM enqueue has been moved to the NV oOS Embedded addon.
-// require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
+// The require was: WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php'.
 
 // Excluded from WordPress.org deployment due to CDN dependencies.
 if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php' ) ) {

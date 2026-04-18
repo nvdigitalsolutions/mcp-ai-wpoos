@@ -3058,7 +3058,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						wp_kses(
 							/* translators: 1: Total risks count, 2: Link to risk assessment document */
 							__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
-							array( 'a' => array( 'href' => array(), 'target' => array() ) )
+							array(
+								'a' => array(
+									'href' => array(),
+									'target' => array(),
+								),
+							)
 						),
 						count( $risks ),
 						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'

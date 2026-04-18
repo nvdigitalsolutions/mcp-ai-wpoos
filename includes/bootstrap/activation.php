@@ -156,8 +156,8 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 				<em>
 					<?php
 					printf(
-						/* translators: %s: code snippet for wp-config.php */
 						wp_kses(
+							/* translators: %s: code snippet for wp-config.php */
 							__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
 							array( 'code' => array() )
 						),

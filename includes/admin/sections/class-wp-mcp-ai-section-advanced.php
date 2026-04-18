@@ -474,8 +474,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								}
 
 								printf(
-									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
 									wp_kses(
+										/* translators: 1: Path to the PHP error log. 2: Human readable size. */
 										__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
 										array( 'code' => array() )
 									),
@@ -484,8 +484,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								);
 							} else {
 								printf(
-									/* translators: %s: Path to the PHP error log. */
 									wp_kses(
+										/* translators: %s: Path to the PHP error log. */
 										__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
 										array( 'code' => array() )
 									),
@@ -902,8 +902,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					<p class="description" style="margin: 10px 0 0 0;">
 						<?php
 						printf(
-							/* translators: %s: Link to professions page */
 							wp_kses(
+								/* translators: %s: Link to professions page */
 								__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
 								array( 'a' => array( 'href' => array() ) )
 							),

@@ -546,8 +546,8 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<p class="description">
 							<?php
 							printf(
-								/* translators: %s: formatted max tokens number */
 								wp_kses(
+									/* translators: %s: formatted max tokens number */
 									__( 'The %s token Context Window limit represents the total budget for each complete AI interaction. This budget includes:', 'mcp-ai-wpoos' ),
 									array( 'strong' => array() )
 								),
@@ -594,8 +594,8 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							$doc_path = WP_MCP_AI_PATH . 'docs/reference/technical/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
 							if ( file_exists( $doc_path ) ) {
 								printf(
-									/* translators: 1: Documentation link opening tag, 2: closing link tag, 3: Token Manager link opening tag, 4: closing link tag */
 									wp_kses(
+										/* translators: 1: Documentation link opening tag, 2: closing link tag, 3: Token Manager link opening tag, 4: closing link tag */
 										__( '%1$sLearn more about context windows%2$s or visit the %3$sToken Manager%4$s for detailed analytics.', 'mcp-ai-wpoos' ),
 										array( 'a' => array( 'href' => array() ) )
 									),
@@ -606,8 +606,8 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								);
 							} else {
 								printf(
-									/* translators: 1: Token Manager link, 2: closing link tag */
 									wp_kses(
+										/* translators: 1: Token Manager link, 2: closing link tag */
 										__( 'For more detailed token tracking and analytics, visit the %1$sToken Manager%2$s.', 'mcp-ai-wpoos' ),
 										array( 'a' => array( 'href' => array() ) )
 									),

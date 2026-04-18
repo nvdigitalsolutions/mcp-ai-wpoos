@@ -620,8 +620,17 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<!-- Server-Side LLM (llama.cpp / GGUF) -->
 					<?php
 					$embedded_client   = class_exists( 'WP_MCP_AI_Embedded_Client' ) ? new WP_MCP_AI_Embedded_Client() : null;
-					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array( 'found' => false, 'path' => '', 'platform' => '', 'message' => '' );
-					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array( 'found' => false, 'libs' => array(), 'bin_dir' => '' );
+					$server_binary     = $embedded_client ? $embedded_client->get_binary_status() : array(
+						'found' => false,
+						'path' => '',
+						'platform' => '',
+						'message' => '',
+					);
+					$shared_libs       = $embedded_client ? $embedded_client->get_shared_libs_status() : array(
+						'found' => false,
+						'libs' => array(),
+						'bin_dir' => '',
+					);
 					$downloaded_models = $embedded_client ? $embedded_client->get_downloaded_models() : array();
 					$available_models  = $embedded_client ? $embedded_client->get_available_models() : array();
 					$server_model_slug = isset( $settings['embedded_server_model'] ) ? $settings['embedded_server_model'] : '';
