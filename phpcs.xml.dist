@@ -29,6 +29,8 @@
 <!-- class-wp-mcp-ai-plugin.php contains the WP_MCP_AI singleton; the '-plugin' suffix
      clarifies the file role. Class rename would break existing hooks and the autoloader. -->
 <exclude-pattern>class-wp-mcp-ai-plugin\.php$</exclude-pattern>
+<!-- Test files that intentionally contain multiple stub/test classes -->
+<exclude-pattern>test-provider-client-adapters\.php$</exclude-pattern>
 </rule>
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
