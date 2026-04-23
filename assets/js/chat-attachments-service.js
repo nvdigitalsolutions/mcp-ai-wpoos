@@ -121,14 +121,14 @@
          * @return {Object} Object with `icon` and `label` properties.
          */
         getFileTypeInfo: function(attachment) {
-            var fallback = { icon: '\uD83D\uDCC4', label: 'File' }; // 📄
+            const fallback = { icon: '\uD83D\uDCC4', label: 'File' }; // 📄
 
             if (!attachment) {
                 return fallback;
             }
 
-            var mime = (attachment.type || attachment.mime || attachment.mime_type || '').toLowerCase();
-            var ext = this.getFileExtension(attachment.name || attachment.file_name || '');
+            const mime = (attachment.type || attachment.mime || attachment.mime_type || '').toLowerCase();
+            const ext = this.getFileExtension(attachment.name || attachment.file_name || '');
 
             // Image types
             if (mime.indexOf('image/') === 0 || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif', 'ico', 'tiff', 'tif', 'avif'].indexOf(ext) !== -1) {
@@ -261,19 +261,19 @@
             }
 
             // Fallback to file extension check
-            var name = attachment.name || attachment.file_name || attachment.label || '';
+            const name = attachment.name || attachment.file_name || attachment.label || '';
             if (name) {
-                var ext = this.getFileExtension(name);
-                var audioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi'];
+                const ext = this.getFileExtension(name);
+                const audioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi'];
                 return audioExtensions.indexOf(ext) !== -1;
             }
 
             // Check URL for audio extensions
-            var url = attachment.url || '';
+            const url = attachment.url || '';
             if (url && typeof url === 'string') {
-                var urlPath = url.toLowerCase().split('?')[0].split('#')[0];
-                var audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma'];
-                for (var i = 0; i < audioExts.length; i++) {
+                const urlPath = url.toLowerCase().split('?')[0].split('#')[0];
+                const audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma'];
+                for (let i = 0; i < audioExts.length; i++) {
                     if (urlPath.lastIndexOf(audioExts[i]) === urlPath.length - audioExts[i].length) {
                         return true;
                     }

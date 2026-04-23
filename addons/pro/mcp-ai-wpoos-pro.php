@@ -336,10 +336,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
 
-		// Load the server-side Embedded LLM client (llama.cpp / GGUF inference).
-		// This is a Pro-only feature; the base plugin's language model router uses
-		// class_exists() to detect its presence before instantiating it.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-embedded-client.php';
+		// Embedded LLM client has been moved to the standalone NV oOS Embedded addon.
+		// The base plugin's language model router uses the wp_mcp_ai_embedded_chat_completion
+		// filter which the Embedded addon hooks into.
 
 		// Load CPT meta schema registry — exposes custom meta field definitions for all
 		// pro-managed CPTs via the wp_mcp_ai_post_type_meta_schema filter so the
@@ -382,11 +381,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
 
-			// Load WebLLM Advanced Features settings page (Phase 1).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
+			// WebLLM settings page has been moved to the NV oOS Embedded addon.
 
-			// Load Embedded Model AJAX handlers (Pro-only: download/delete/list GGUF models and llama-cli binary).
-			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-embedded-model-ajax.php';
+			// Embedded Model AJAX handlers have been moved to the NV oOS Embedded addon.
 
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
@@ -403,38 +400,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
-		// Load WebChat integration system if enabled.
-		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
-			WP_MCP_AI_WebChat_CPT::init();
-			// Load JetEngine WebChat Messages CCT if JetEngine is active.
-			if ( function_exists( 'jet_engine' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
-				WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
-			}
-			// Load WebChat Self-Hosted Signaling REST Controller.
-			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-webchat-signaling-rest-controller.php';
-			add_action( 'rest_api_init', function() {
-				$controller = new WP_MCP_AI_WebChat_Signaling_REST_Controller();
-				$controller->register_routes();
-			} );
-			// Load WebChat Settings page.
-			if ( is_admin() ) {
-				// Check if not in base version.
-				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-				if ( ! $is_base ) {
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
-				}
-			}
-		}
-
-		// Load Fantasy Football toolkit if enabled.
-		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football-toolkit-init.php';
-		}
+		// WebChat integration has been moved to the NV oOS Embedded addon.
+		// The Embedded addon handles WebChat CPT, signaling REST, JetEngine CCT, and settings.
 
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
+
+		// Load MCP Apps subsystem (remote MCP server connections per assistant).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/mcp-apps-init.php';
 
 		// Load Product Research & Add page if WooCommerce tools enabled.
 		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) && is_admin() ) {
@@ -574,6 +547,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
 		}
 
+		// Load CRE Debt & Securitization Toolkit if enabled (Pro feature).
+		// Provides CPTs (Loans, Properties), portfolio dashboard, and research pages.
+		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/cre-debt-toolkit-init.php';
+		}
+
+		// Load Law Firm Toolkit if enabled (Pro feature).
+		// Provides CPTs (Matters, Clients, Documents, Time Entries, Trust Txns),
+		// firm dashboard, and research pages.
+		if ( ! empty( $settings['enable_law_firm_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/law-firm-toolkit-init.php';
+		}
+
 		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
@@ -604,6 +590,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Google Chat Webhook Controller for Google Chat bot events.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+		}
+
+		// Load Extended Cognition Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/extended-cognition-toolkit-init.php';
 		}
 
 		// ========================================================================
@@ -714,6 +705,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Create_Remotion_Video'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
+			// Validate Image for Product Placement tool.
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Product' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-product.php',
+			// Validate Image for Vehicle Estimate tool.
+			'WP_MCP_AI_Pro_Tool_Validate_Image_For_Vehicle' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php',
 			// Product Price Lookup tool.
 			'WP_MCP_AI_Pro_Tool_Lookup_Product_Price'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php',
 			// Listing image download tools (Google Maps, Facebook, Instagram).
@@ -915,31 +910,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
 
-		// Add Fantasy Football tools if enabled.
-		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
-			$ff_tools = array(
-				// Yahoo Fantasy Sports API tools.
-				'WP_MCP_AI_Tool_Yahoo_FF_Auth'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Roster'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
-				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
-				// ESPN Fantasy Football API tools.
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_League'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-league.php',
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-teams.php',
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-roster.php',
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-standings.php',
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-analyze-lineup.php',
-				'WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-sync-league.php',
-				// AI-powered FF tools.
-				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
-				'WP_MCP_AI_Tool_FF_Create_League_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
-				'WP_MCP_AI_Tool_FF_Player_Research'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
-			);
-			$pro_tools  = array_merge( $pro_tools, $ff_tools );
-		}
-
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
@@ -1082,6 +1052,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Pro_Tool_JetEngine' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			);
 			$pro_tools       = array_merge( $pro_tools, $jetengine_tools );
+
+			// JetEngine 3.8+ MCP Server tools.
+			$jetengine_mcp_tools = array(
+				'WP_MCP_AI_Pro_Tool_JetEngine_MCP_Bridge'         => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Post_Type'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-post-type.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Taxonomy'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-taxonomy.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Create_Meta_Field'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-meta-field.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Manage_Relations'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-manage-relations.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Site_Context'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-site-context.php',
+				'WP_MCP_AI_Pro_Tool_JetEngine_Prompts'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-prompts.php',
+			);
+			$pro_tools           = array_merge( $pro_tools, $jetengine_mcp_tools );
 		}
 
 		// Add Elementor tools if enabled.
@@ -1382,6 +1364,165 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}
 
+		// Add CRE Debt & Securitization toolkit tools if enabled.
+		if ( ! empty( $settings['enable_cre_debt_toolkit'] ) ) {
+			$cre_debt_toolkit_tools = array(
+				// Originations module (11 tools).
+				'WP_MCP_AI_Tool_CRE_Deal_Pipeline_Manager'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-pipeline-manager.php',
+				'WP_MCP_AI_Tool_CRE_Borrower_Profile_Analyzer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-borrower-profile-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Quote_Generator'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-loan-quote-generator.php',
+				'WP_MCP_AI_Tool_CRE_Market_Comp_Analyzer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-market-comp-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Deal_Screening_Calculator'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-deal-screening-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Origination_Volume_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-origination-volume-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Rate_Lock_Manager'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-rate-lock-manager.php',
+				'WP_MCP_AI_Tool_CRE_Broker_Relationship_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-broker-relationship-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Term_Sheet_Comparator'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-term-sheet-comparator.php',
+				'WP_MCP_AI_Tool_CRE_Execution_Strategy_Advisor'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-execution-strategy-advisor.php',
+				'WP_MCP_AI_Tool_CRE_Closing_Checklist_Manager'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/originations/class-wp-mcp-ai-tool-cre-closing-checklist-manager.php',
+				// Underwriting module (13 tools).
+				'WP_MCP_AI_Tool_CRE_DCF_Modeler'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-dcf-modeler.php',
+				'WP_MCP_AI_Tool_CRE_NOI_Calculator'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-noi-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Sizer'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-loan-sizer.php',
+				'WP_MCP_AI_Tool_CRE_Amortization_Scheduler'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-amortization-scheduler.php',
+				'WP_MCP_AI_Tool_CRE_Debt_Yield_Analyzer'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-debt-yield-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Cap_Rate_Sensitivity'        => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-cap-rate-sensitivity.php',
+				'WP_MCP_AI_Tool_CRE_Rent_Roll_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-rent-roll-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Operating_Expense_Benchmarker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-operating-expense-benchmarker.php',
+				'WP_MCP_AI_Tool_CRE_Stress_Test_Modeler'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-stress-test-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Leverage_Return_Analyzer'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-leverage-return-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Property_Valuation_Engine'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-property-valuation-engine.php',
+				'WP_MCP_AI_Tool_CRE_Environmental_Risk_Scorer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-environmental-risk-scorer.php',
+				'WP_MCP_AI_Tool_CRE_Underwriting_Memo_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/underwriting/class-wp-mcp-ai-tool-cre-underwriting-memo-generator.php',
+				// CMBS / Securitization module (10 tools).
+				'WP_MCP_AI_Tool_CMBS_Deal_Structurer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-deal-structurer.php',
+				'WP_MCP_AI_Tool_CMBS_Bond_Cash_Flow_Modeler'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-bond-cash-flow-modeler.php',
+				'WP_MCP_AI_Tool_CMBS_Pool_Analyzer'              => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-pool-analyzer.php',
+				'WP_MCP_AI_Tool_CMBS_Surveillance_Monitor'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-surveillance-monitor.php',
+				'WP_MCP_AI_Tool_CMBS_Special_Servicing_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-special-servicing-tracker.php',
+				'WP_MCP_AI_Tool_CRE_CLO_Modeler'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cre-clo-modeler.php',
+				'WP_MCP_AI_Tool_CMBS_Defeasance_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-defeasance-calculator.php',
+				'WP_MCP_AI_Tool_CMBS_Rating_Agency_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-rating-agency-analyzer.php',
+				'WP_MCP_AI_Tool_CMBS_Investor_Reporting_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-investor-reporting-generator.php',
+				'WP_MCP_AI_Tool_CMBS_Maturity_Risk_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/cmbs/class-wp-mcp-ai-tool-cmbs-maturity-risk-analyzer.php',
+				// Debt Fund Management module (11 tools).
+				'WP_MCP_AI_Tool_CRE_Fund_Portfolio_Dashboard'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-portfolio-dashboard.php',
+				'WP_MCP_AI_Tool_CRE_Debt_Waterfall_Modeler'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-debt-waterfall-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Return_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-return-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Credit_Risk_Scorer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-credit-risk-scorer.php',
+				'WP_MCP_AI_Tool_CRE_Concentration_Limit_Monitor' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-concentration-limit-monitor.php',
+				'WP_MCP_AI_Tool_CRE_Warehouse_Line_Manager'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-warehouse-line-manager.php',
+				'WP_MCP_AI_Tool_CRE_LP_Report_Generator'         => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-lp-report-generator.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Capital_Call_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-capital-call-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Liquidity_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-liquidity-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Covenant_Compliance_Checker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-covenant-compliance-checker.php',
+				'WP_MCP_AI_Tool_CRE_Fund_Scenario_Modeler'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/debt-fund/class-wp-mcp-ai-tool-cre-fund-scenario-modeler.php',
+				// Asset Management module (12 tools).
+				'WP_MCP_AI_Tool_CRE_Property_Budget_Manager'     => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-budget-manager.php',
+				'WP_MCP_AI_Tool_CRE_Lease_Expiration_Manager'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-lease-expiration-manager.php',
+				'WP_MCP_AI_Tool_CRE_Capex_Reserve_Planner'       => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-capex-reserve-planner.php',
+				'WP_MCP_AI_Tool_CRE_Tenant_Credit_Analyzer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-tenant-credit-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Hold_Sell_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-hold-sell-analyzer.php',
+				'WP_MCP_AI_Tool_CRE_Property_Performance_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-property-performance-tracker.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Surveillance_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-surveillance-dashboard.php',
+				'WP_MCP_AI_Tool_CRE_Watchlist_Manager'           => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-watchlist-manager.php',
+				'WP_MCP_AI_Tool_CRE_Workout_Scenario_Modeler'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-workout-scenario-modeler.php',
+				'WP_MCP_AI_Tool_CRE_Loan_Modification_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-loan-modification-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Servicing_Fee_Calculator'    => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-servicing-fee-calculator.php',
+				'WP_MCP_AI_Tool_CRE_Asset_Disposition_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/cre-debt/asset-management/class-wp-mcp-ai-tool-cre-asset-disposition-analyzer.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $cre_debt_toolkit_tools );
+		}
+
+		// Add Law Firm toolkit tools if enabled (62 tools across 7 modules).
+		if ( ! empty( $settings['enable_law_firm_toolkit'] ) ) {
+			$law_firm_toolkit_tools = array(
+				// Client Intake & Management module (8 tools).
+				'WP_MCP_AI_Tool_LF_Client_Intake_Processor'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-intake-processor.php',
+				'WP_MCP_AI_Tool_LF_Conflict_Of_Interest_Checker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-conflict-of-interest-checker.php',
+				'WP_MCP_AI_Tool_LF_Client_Profile_Analyzer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-profile-analyzer.php',
+				'WP_MCP_AI_Tool_LF_Lead_Scoring_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-lead-scoring-calculator.php',
+				'WP_MCP_AI_Tool_LF_Engagement_Letter_Generator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-engagement-letter-generator.php',
+				'WP_MCP_AI_Tool_LF_Client_Communication_Logger'  => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-communication-logger.php',
+				'WP_MCP_AI_Tool_LF_Referral_Source_Tracker'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-referral-source-tracker.php',
+				'WP_MCP_AI_Tool_LF_Client_Portal_Manager'        => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/intake-management/class-wp-mcp-ai-tool-lf-client-portal-manager.php',
+				// Matter & Case Management module (10 tools).
+				'WP_MCP_AI_Tool_LF_Matter_Pipeline_Manager'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-pipeline-manager.php',
+				'WP_MCP_AI_Tool_LF_Statute_Of_Limitations_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-statute-of-limitations-calculator.php',
+				'WP_MCP_AI_Tool_LF_Court_Deadline_Tracker'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-court-deadline-tracker.php',
+				'WP_MCP_AI_Tool_LF_Case_Timeline_Generator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-timeline-generator.php',
+				'WP_MCP_AI_Tool_LF_Task_Assignment_Manager'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-task-assignment-manager.php',
+				'WP_MCP_AI_Tool_LF_Calendar_Rule_Calculator'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-calendar-rule-calculator.php',
+				'WP_MCP_AI_Tool_LF_Opposing_Counsel_Tracker'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-opposing-counsel-tracker.php',
+				'WP_MCP_AI_Tool_LF_Case_Outcome_Predictor'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-outcome-predictor.php',
+				'WP_MCP_AI_Tool_LF_Matter_Budget_Manager'        => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-matter-budget-manager.php',
+				'WP_MCP_AI_Tool_LF_Case_Status_Dashboard'        => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/matter-management/class-wp-mcp-ai-tool-lf-case-status-dashboard.php',
+				// Document Automation module (10 tools).
+				'WP_MCP_AI_Tool_LF_Document_Drafter'             => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-drafter.php',
+				'WP_MCP_AI_Tool_LF_Contract_Reviewer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-contract-reviewer.php',
+				'WP_MCP_AI_Tool_LF_Clause_Library_Manager'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-clause-library-manager.php',
+				'WP_MCP_AI_Tool_LF_Redline_Comparator'           => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-redline-comparator.php',
+				'WP_MCP_AI_Tool_LF_Pleading_Generator'           => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-pleading-generator.php',
+				'WP_MCP_AI_Tool_LF_Discovery_Request_Builder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-discovery-request-builder.php',
+				'WP_MCP_AI_Tool_LF_Document_Version_Tracker'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-version-tracker.php',
+				'WP_MCP_AI_Tool_LF_Legal_Citation_Checker'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-legal-citation-checker.php',
+				'WP_MCP_AI_Tool_LF_Brief_Outline_Generator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-brief-outline-generator.php',
+				'WP_MCP_AI_Tool_LF_Document_Template_Manager'    => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/document-automation/class-wp-mcp-ai-tool-lf-document-template-manager.php',
+				// Billing & Trust Accounting module (10 tools).
+				'WP_MCP_AI_Tool_LF_Time_Entry_Recorder'          => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-time-entry-recorder.php',
+				'WP_MCP_AI_Tool_LF_Invoice_Generator'            => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-invoice-generator.php',
+				'WP_MCP_AI_Tool_LF_Trust_Account_Manager'        => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-account-manager.php',
+				'WP_MCP_AI_Tool_LF_Trust_Reconciliation_Tool'    => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-trust-reconciliation-tool.php',
+				'WP_MCP_AI_Tool_LF_Fee_Calculator'               => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-fee-calculator.php',
+				'WP_MCP_AI_Tool_LF_Billing_Compliance_Checker'   => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-billing-compliance-checker.php',
+				'WP_MCP_AI_Tool_LF_Accounts_Receivable_Tracker'  => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-accounts-receivable-tracker.php',
+				'WP_MCP_AI_Tool_LF_Retainer_Balance_Monitor'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-retainer-balance-monitor.php',
+				'WP_MCP_AI_Tool_LF_Expense_Reimbursement_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-expense-reimbursement-tracker.php',
+				'WP_MCP_AI_Tool_LF_Profitability_Analyzer'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/billing-trust/class-wp-mcp-ai-tool-lf-profitability-analyzer.php',
+				// Compliance & Ethics module (8 tools).
+				'WP_MCP_AI_Tool_LF_Ethics_Rule_Checker'          => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-ethics-rule-checker.php',
+				'WP_MCP_AI_Tool_LF_Bar_Deadline_Monitor'         => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-bar-deadline-monitor.php',
+				'WP_MCP_AI_Tool_LF_CLE_Credit_Tracker'           => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-cle-credit-tracker.php',
+				'WP_MCP_AI_Tool_LF_Malpractice_Risk_Scorer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-malpractice-risk-scorer.php',
+				'WP_MCP_AI_Tool_LF_Data_Privacy_Compliance_Checker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-data-privacy-compliance-checker.php',
+				'WP_MCP_AI_Tool_LF_Client_Confidentiality_Auditor' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-client-confidentiality-auditor.php',
+				'WP_MCP_AI_Tool_LF_Regulatory_Change_Monitor'    => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-regulatory-change-monitor.php',
+				'WP_MCP_AI_Tool_LF_AI_Usage_Disclosure_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/compliance-ethics/class-wp-mcp-ai-tool-lf-ai-usage-disclosure-generator.php',
+				// Litigation Support module (8 tools).
+				'WP_MCP_AI_Tool_LF_Ediscovery_Document_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-ediscovery-document-analyzer.php',
+				'WP_MCP_AI_Tool_LF_Deposition_Summary_Generator' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-deposition-summary-generator.php',
+				'WP_MCP_AI_Tool_LF_Evidence_Catalog_Manager'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-evidence-catalog-manager.php',
+				'WP_MCP_AI_Tool_LF_Jury_Instruction_Drafter'     => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-jury-instruction-drafter.php',
+				'WP_MCP_AI_Tool_LF_Settlement_Value_Calculator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-settlement-value-calculator.php',
+				'WP_MCP_AI_Tool_LF_Damages_Calculator'           => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-damages-calculator.php',
+				'WP_MCP_AI_Tool_LF_Expert_Witness_Tracker'       => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-expert-witness-tracker.php',
+				'WP_MCP_AI_Tool_LF_Trial_Preparation_Checklist'  => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/litigation-support/class-wp-mcp-ai-tool-lf-trial-preparation-checklist.php',
+				// Legal Research & Analytics module (8 tools).
+				'WP_MCP_AI_Tool_LF_Legal_Research_Assistant'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-legal-research-assistant.php',
+				'WP_MCP_AI_Tool_LF_Case_Law_Analyzer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-case-law-analyzer.php',
+				'WP_MCP_AI_Tool_LF_Firm_Performance_Dashboard'   => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-firm-performance-dashboard.php',
+				'WP_MCP_AI_Tool_LF_Matter_Analytics_Generator'   => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-matter-analytics-generator.php',
+				'WP_MCP_AI_Tool_LF_Revenue_Forecaster'           => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-revenue-forecaster.php',
+				'WP_MCP_AI_Tool_LF_Attorney_Utilization_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-attorney-utilization-tracker.php',
+				'WP_MCP_AI_Tool_LF_Client_Satisfaction_Analyzer' => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-client-satisfaction-analyzer.php',
+				'WP_MCP_AI_Tool_LF_Competitive_Benchmarker'      => WP_MCP_AI_PRO_PATH . 'includes/tools/law-firm/research-analytics/class-wp-mcp-ai-tool-lf-competitive-benchmarker.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $law_firm_toolkit_tools );
+		}
+
+		// Extended Cognition Toolkit.
+		if ( ! empty( $settings['enable_extended_cognition_toolkit'] ) ) {
+			$ext_cog_tools = array(
+				'WP_MCP_AI_Tool_Ext_Cog_Manage_Sensor_Permissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-manage-sensor-permissions.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Visual'            => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-visual.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Audio'             => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-audio.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Capture_Screen'            => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-capture-screen.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Get_Motion_Context'        => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-get-motion-context.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input'     => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-analyze-sensory-input.php',
+				'WP_MCP_AI_Tool_Ext_Cog_Remember_Sensory_Context'  => WP_MCP_AI_PRO_PATH . 'includes/tools/extended-cognition/class-wp-mcp-ai-tool-ext-cog-remember-sensory-context.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $ext_cog_tools );
+		}
+
 		/**
 		 * Filter the list of Pro tools to register.
 		 *
@@ -1576,6 +1717,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'check_jukebox_status'            => 'external-tools',
 			// Product Actualization - Requires external APIs (OpenAI, Gemini).
 			'product_actualization'           => 'external-tools',
+			// Validate Image for Product Placement - Requires OpenAI Vision API.
+			'validate_image_for_product'      => 'external-tools',
+			// Validate Image for Vehicle Estimate - Requires OpenAI Vision API.
+			'validate_image_for_vehicle'      => 'external-tools',
 			// Product Price Lookup - Requires external APIs (Crawl4AI, Google Vision).
 			'lookup_product_price'            => 'external-tools',
 			// Listing image download tools - Require external API credentials.
@@ -1589,6 +1734,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
+			'jetengine_mcp'                   => 'wordpress-plugins',
+			'jetengine_create_post_type'      => 'wordpress-plugins',
+			'jetengine_create_taxonomy'       => 'wordpress-plugins',
+			'jetengine_create_meta_field'     => 'wordpress-plugins',
+			'jetengine_manage_relations'      => 'wordpress-plugins',
+			'jetengine_site_context'          => 'wordpress-plugins',
+			'jetengine_prompts'               => 'wordpress-plugins',
 			// Toolkit CPT - generic CRUD/search for pro toolkit Custom Post Types.
 			'toolkit_cpt'                     => 'wordpress-core',
 			// Elementor tools - Require Elementor plugin.
@@ -1695,19 +1847,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['search_upwork_jobs']    = 'wordpress-core';
 			$pro_tools['score_upwork_job']      = 'wordpress-core';
 			$pro_tools['draft_upwork_proposal'] = 'wordpress-core';
-		}
-
-		// Add Fantasy Football tool mappings if enabled.
-		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
-			$pro_tools['yahoo_ff_auth']              = 'external-tools';
-			$pro_tools['yahoo_ff_get_leagues']       = 'external-tools';
-			$pro_tools['yahoo_ff_get_roster']        = 'external-tools';
-			$pro_tools['yahoo_ff_get_player_stats']  = 'external-tools';
-			$pro_tools['yahoo_ff_trade_analyzer']    = 'external-tools';
-			$pro_tools['yahoo_ff_league_standings']  = 'external-tools';
-			$pro_tools['ff_generate_team_logo']      = 'external-tools';
-			$pro_tools['ff_create_league_report']    = 'external-tools';
-			$pro_tools['ff_player_research']         = 'external-tools';
 		}
 
 		// Add project management tool mappings if enabled.
@@ -1926,6 +2065,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_customers';
 			$categories['medium_resource']['tools'][] = 'woo_coupons';
 			$categories['medium_resource']['tools'][] = 'jetengine';
+			$categories['medium_resource']['tools'][] = 'jetengine_mcp';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_post_type';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_taxonomy';
+			$categories['medium_resource']['tools'][] = 'jetengine_create_meta_field';
+			$categories['medium_resource']['tools'][] = 'jetengine_manage_relations';
+			$categories['medium_resource']['tools'][] = 'jetengine_site_context';
+			$categories['medium_resource']['tools'][] = 'jetengine_prompts';
 			$categories['medium_resource']['tools'][] = 'elementor';
 		}
 

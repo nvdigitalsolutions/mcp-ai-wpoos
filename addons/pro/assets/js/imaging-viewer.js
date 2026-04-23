@@ -6,15 +6,20 @@
  *
  * Architecture:
  *  - All data fetched via WP REST API (signed nonce auth).
- *  - Cornerstone3D loaded from esm.sh CDN via dynamic ES module import.
- *  - Versions are pinned in this file and in class-wp-mcp-ai-imaging-admin-page.php.
+ *  - Cornerstone3D loaded from local vendor bundles (preferred) or esm.sh CDN
+ *    fallback via dynamic ES module import.
+ *  - Module URLs are resolved server-side and passed to JS via wpMcpAiImaging.cornerstone.
+ *  - Versions are pinned in class-wp-mcp-ai-imaging-admin-page.php.
  *  - No PHI is written to the DOM; study labels use de-identified IDs.
  *
- * CDN strategy:
- *  Three packages are loaded from esm.sh with `?external=` so that the CDN
- *  emits bare specifiers for shared dependencies.  An importmap (injected by
- *  PHP in admin_head) maps those bare specifiers back to the same pinned URLs,
- *  ensuring all three packages share a single @cornerstonejs/core instance.
+ * Loading strategy:
+ *  When vendored ESM bundles are present (built by bin/vendor-cornerstone.js),
+ *  the viewer loads entirely from local files with zero CDN dependency.
+ *  Otherwise, three packages are loaded from esm.sh with `?external=` so that
+ *  the CDN emits bare specifiers for shared dependencies.  An importmap
+ *  (injected by PHP in admin_head) maps those bare specifiers back to the
+ *  correct URLs, ensuring all three packages share a single @cornerstonejs/core
+ *  instance regardless of source.
  *
  * @package WP_MCP_AI_Pro
  * @author    NV Digital Solutions
@@ -843,7 +848,9 @@
 	/**
 	 * Load a series into the Cornerstone3D viewport.
 	 *
-	 * Cornerstone3D is loaded asynchronously from CDN on first use.
+	 * Cornerstone3D is loaded asynchronously on first use — from local vendor
+	 * bundles when available, otherwise from the esm.sh CDN.  The URLs are
+	 * resolved server-side and passed via wpMcpAiImaging.cornerstone.
 	 *
 	 * @param {object} series Series object from manifest.
 	 */
@@ -883,22 +890,36 @@
 			viewport.appendChild( overlay );
 		}
 
-		// Dynamically import Cornerstone3D packages from pinned CDN versions.
+		// Dynamically import Cornerstone3D packages.
 		//
-		// The `?external=` query parameters tell esm.sh NOT to bundle the listed
-		// packages into the generated module, leaving them as bare ES specifiers.
-		// Combined with the importmap (injected by PHP in admin_head), this ensures
-		// all three packages share a SINGLE @cornerstonejs/core module instance.
-		// Without this, each package may load its own private copy of the core,
-		// the wadouri image-loader never gets registered in our RenderingEngine,
-		// and the canvas stays solid black with no error.
+		// Module URLs are resolved server-side by PHP and passed via the
+		// wpMcpAiImaging.cornerstone config object.  When vendored ESM bundles
+		// are present (built by bin/vendor-cornerstone.js), the imports resolve
+		// to local files with zero CDN dependency.  Otherwise, the URLs point to
+		// pinned esm.sh CDN versions with `?external=` query parameters that
+		// cause esm.sh to emit bare specifiers.  In both cases, the importmap
+		// (injected by PHP in admin_head) ensures all three packages share a
+		// SINGLE @cornerstonejs/core module instance.
 		//
-		// NOTE: Versions are pinned here and in class-wp-mcp-ai-imaging-admin-page.php.
-		// Both must be updated together when upgrading Cornerstone3D.
+		// NOTE: When using the CDN fallback, versions are pinned in
+		// class-wp-mcp-ai-imaging-admin-page.php.  Both the PHP constants and
+		// the resolve_cornerstone_urls() method must be updated together when
+		// upgrading Cornerstone3D.
+		// Resolve Cornerstone3D module URLs from the PHP config.
+		// The URLs are provided by resolve_cornerstone_urls() which prefers local
+		// vendor bundles when available.  The inline fallback values below are a
+		// defensive safety net for edge cases where wp_localize_script data is
+		// missing or malformed — they mirror the CDN constants in the PHP class
+		// and must be updated together when upgrading Cornerstone3D.
+		var csCfg = cfg.cornerstone || {};
+		var coreUrl = csCfg.coreUrl || 'https://esm.sh/@cornerstonejs/core@1.86.1';
+		var toolsUrl = csCfg.toolsUrl || 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core';
+		var dicomLoaderUrl = csCfg.dicomLoaderUrl || 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser,xmlbuilder2';
+
 		Promise.all( [
-			import( 'https://esm.sh/@cornerstonejs/core@1.86.1' ),
-			import( 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core' ),
-			import( 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser,xmlbuilder2' ),
+			import( coreUrl ),
+			import( toolsUrl ),
+			import( dicomLoaderUrl ),
 		] )
 			.then( function ( modules ) {
 				return bootCornerstone( modules[ 0 ], modules[ 1 ], modules[ 2 ], imageIds );

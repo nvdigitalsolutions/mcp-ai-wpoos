@@ -272,11 +272,20 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 
 				case 'embedded':
 					// Server-side embedded LLM using GGUF models via llama.cpp.
-					// Requires Pro addon and a downloaded GGUF model.
-					if ( null === $this->embedded_client ) {
-						return new WP_Error( 'embedded_client_unavailable', __( 'Server-side embedded LLM requires the Pro addon.', 'mcp-ai-wpoos' ) );
+					// Delegates to the Embedded addon (or Pro addon) via filter.
+					// Falls back to direct instantiation when the class is available.
+					$result = apply_filters( 'wp_mcp_ai_embedded_chat_completion', null, $messages, $options );
+					if ( null !== $result ) {
+						return $result;
 					}
-					return $this->embedded_client->create_chat_completion( $messages, $options );
+					// Legacy fallback: direct instantiation when class is loaded by Pro addon.
+					if ( null !== $this->embedded_client ) {
+						return $this->embedded_client->create_chat_completion( $messages, $options );
+					}
+					return new WP_Error(
+						'embedded_client_unavailable',
+						__( 'Embedded LLM requires the NV oOS Embedded addon or Pro addon.', 'mcp-ai-wpoos' )
+					);
 
 				case 'openai':
 				default:

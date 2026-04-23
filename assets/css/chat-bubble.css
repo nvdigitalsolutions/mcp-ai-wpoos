@@ -46,6 +46,10 @@
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 	line-height: 1.4;
 	box-sizing: border-box;
+	/* Ensure the bubble is always visible – third-party themes, animation
+	   libraries, or competing chat widgets must not hide the wrapper. */
+	opacity: 1;
+	visibility: visible;
 }
 
 .wp-mcp-ai-chat-bubble *,
@@ -390,8 +394,10 @@
 	left: 0;
 }
 
-/* Panel open state */
-.wp-mcp-ai-chat-bubble--open .wp-mcp-ai-chat-bubble__panel {
+/* Panel open state – specificity intentionally boosted to 030 so it
+   always wins over the [aria-hidden] attribute selectors (020) and
+   any broad third-party CSS that might target the panel. */
+.wp-mcp-ai-chat-bubble.wp-mcp-ai-chat-bubble--open .wp-mcp-ai-chat-bubble__panel {
 	opacity: 1;
 	visibility: visible;
 	transform: translateY(0);
@@ -651,7 +657,7 @@
 	visibility: hidden;
 }
 
-.wp-mcp-ai-chat-bubble__panel[aria-hidden="false"] {
+.wp-mcp-ai-chat-bubble.wp-mcp-ai-chat-bubble--open .wp-mcp-ai-chat-bubble__panel[aria-hidden="false"] {
 	opacity: 1;
 	visibility: visible;
 }
@@ -701,7 +707,7 @@
 		transform: translateY(-20px);
 	}
 
-	.wp-mcp-ai-chat-bubble--open .wp-mcp-ai-chat-bubble__panel {
+	.wp-mcp-ai-chat-bubble.wp-mcp-ai-chat-bubble--open .wp-mcp-ai-chat-bubble__panel {
 		transform: translateY(0);
 	}
 

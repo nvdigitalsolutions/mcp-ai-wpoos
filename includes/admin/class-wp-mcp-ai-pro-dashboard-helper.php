@@ -88,7 +88,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 			$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
 			wp_register_script(
-				'chartjs',
+				'wp-mcp-ai-chartjs',
 				$chart_js_url,
 				array(),
 				file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
@@ -134,7 +134,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 			wp_register_script(
 				'wp-mcp-ai-pro-dashboard',
 				WP_MCP_AI_URL . 'assets/js/pro-dashboard.js',
-				array( 'jquery', 'chartjs' ),
+				array( 'jquery', 'wp-mcp-ai-chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
 			);
@@ -154,7 +154,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 		self::register_pro_dashboard_assets();
 
 		// Enqueue Chart.js.
-		wp_enqueue_script( 'chartjs' );
+		wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 
 		// Enqueue responsive utilities CSS.
 		wp_enqueue_style( 'wp-mcp-ai-responsive-utilities' );

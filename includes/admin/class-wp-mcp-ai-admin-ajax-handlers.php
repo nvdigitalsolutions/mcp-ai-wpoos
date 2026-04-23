@@ -1733,7 +1733,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get user ID from request.
-			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : get_current_user_id();
+			$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : get_current_user_id();
 
 			if ( ! $user_id ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid user ID.', 'mcp-ai-wpoos' ) ) );
@@ -2003,10 +2003,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Get filters from request.
 			$filters = array();
-			if ( isset( $_POST['tier'] ) && '' !== $_POST['tier'] ) {
+			if ( isset( $_POST['tier'] ) && '' !== sanitize_key( wp_unslash( $_POST['tier'] ) ) ) {
 				$filters['tier'] = sanitize_key( wp_unslash( $_POST['tier'] ) );
 			}
-			if ( isset( $_POST['tool'] ) && '' !== $_POST['tool'] ) {
+			if ( isset( $_POST['tool'] ) && '' !== sanitize_key( wp_unslash( $_POST['tool'] ) ) ) {
 				$filters['tool'] = sanitize_key( wp_unslash( $_POST['tool'] ) );
 			}
 
@@ -2048,7 +2048,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get user IDs from request.
-			$user_ids = isset( $_POST['user_ids'] ) ? array_map( 'absint', (array) $_POST['user_ids'] ) : array();
+			$user_ids = isset( $_POST['user_ids'] ) ? array_map( 'absint', wp_unslash( (array) $_POST['user_ids'] ) ) : array();
 
 			if ( empty( $user_ids ) ) {
 				wp_send_json_error( array( 'message' => __( 'No users selected.', 'mcp-ai-wpoos' ) ) );
@@ -2216,7 +2216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get days parameter.
-			$days = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : 7;
+			$days = isset( $_POST['days'] ) ? absint( wp_unslash( $_POST['days'] ) ) : 7;
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
@@ -2279,9 +2279,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get parameters.
-			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
-			$days    = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : 7;
-			$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+			$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+			$days    = isset( $_POST['days'] ) ? absint( wp_unslash( $_POST['days'] ) ) : 7;
+			$limit   = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 10;
 
 			$data = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data(
 				array(
@@ -2317,7 +2317,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get parameters.
-			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+			$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 
 			$data = WP_MCP_AI_Chart_JS_Helper::get_provider_distribution_data(
 				array(
@@ -2351,8 +2351,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get parameters.
-			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
-			$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+			$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+			$limit   = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 10;
 
 			$data = WP_MCP_AI_Chart_JS_Helper::get_model_distribution_data(
 				array(
@@ -3324,7 +3324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				: array();
 
 			// Get force-sync setting from request.
-			$force_sync = isset( $_POST['force_sync'] ) && 'true' === $_POST['force_sync'];
+			$force_sync = isset( $_POST['force_sync'] ) && 'true' === sanitize_text_field( wp_unslash( $_POST['force_sync'] ) );
 
 			// Save settings.
 			$flags_saved = WP_MCP_AI_Tool_Settings_Manager::update_capability_flags( $tool_slug, $flags );

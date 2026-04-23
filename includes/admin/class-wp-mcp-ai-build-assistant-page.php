@@ -342,7 +342,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 		// Last resort: check page query parameter (with sanitization).
 		// This is a read-only check for admin page routing, not user input processing.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page check.
-		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		return 'wp-mcp-ai-build-assistant' === $page;
 	}
 
@@ -353,7 +353,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 */
 	private function get_active_tab() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'manual';
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'manual';
 
 		$valid_tabs = array( 'manual', 'prompt', 'configuration', 'advanced' );
 		if ( ! in_array( $tab, $valid_tabs, true ) ) {

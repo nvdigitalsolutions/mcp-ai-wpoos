@@ -9,7 +9,7 @@
  * @since   1.1.5
  */
 
-import { createRoot } from '@wordpress/element';
+import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles/woo-shop.css';
 

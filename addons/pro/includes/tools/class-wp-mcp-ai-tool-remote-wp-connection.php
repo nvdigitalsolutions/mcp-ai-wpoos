@@ -250,23 +250,43 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$action  = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_connections';
+
+		// Telegram Mini App storefront contexts (e.g. the e-commerce template)
+		// create users with the subscriber role which lacks edit_posts.  Allow
+		// read-only WooCommerce and order-creation operations with just the
+		// "read" capability so the storefront works for all TMA visitors.
+		$is_tma                  = isset( $context['source'] ) && 'telegram_mini_app' === $context['source'];
+		$tma_storefront_actions  = array(
+			'list_connections',
+			'get_wc_products',
+			'get_wc_product',
+			'get_wc_product_variations',
+			'get_wc_categories',
+			'get_wc_orders',
+			'get_wc_order',
+			'create_wc_order',
+		);
+		$required_cap = ( $is_tma && in_array( $action, $tma_storefront_actions, true ) )
+			? 'read'
+			: 'edit_posts';
 
 		// Check user permissions.
-		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
+		if ( ! $user_id || ! user_can( $user_id, $required_cap ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access remote WordPress sites.', 'mcp-ai-wpoos-pro' )
+				__( 'You do not have permission to access remote WordPress sites.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
 			);
 		}
-
-		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_connections';
 
 		// Check rate limiting (except for list_connections which is lightweight).
 		if ( 'list_connections' !== $action ) {
@@ -304,7 +324,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter with one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					$action,
 					$connection_list
-				)
+				),
+				array( 'status' => 400 )
 			);
 		}
 
@@ -330,7 +351,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					__( 'Invalid connection ID "%1$s".%2$s Use one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					$connection_id,
 					$connection_list
-				)
+				),
+				array( 'status' => 404 )
 			);
 		}
 
@@ -341,7 +363,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					/* translators: %s: connection name */
 					__( 'Connection "%s" is disabled. Please ask the user to enable it in the WordPress admin under NV oOS → Remote Sites.', 'mcp-ai-wpoos-pro' ),
 					isset( $connection['name'] ) ? $connection['name'] : $connection_id
-				)
+				),
+				array( 'status' => 403 )
 			);
 		}
 
@@ -353,7 +376,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					/* translators: %s: connection name */
 					__( 'Connection "%s" is not enabled for this assistant. Please ask the user to enable it in the assistant editor under Remote Site Connections metabox.', 'mcp-ai-wpoos-pro' ),
 					isset( $connection['name'] ) ? $connection['name'] : $connection_id
-				)
+				),
+				array( 'status' => 403 )
 			);
 		}
 
@@ -1596,7 +1620,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					/* translators: %d: maximum requests allowed per minute */
 					__( 'Remote site request rate limit exceeded. Maximum %d requests per minute allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_minute
-				)
+				),
+				array( 'status' => 429 )
 			);
 		}
 

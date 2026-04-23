@@ -169,7 +169,7 @@ class WP_MCP_AI_Request_Context {
 		}
 
 		if ( '' === $scheme && isset( $_SERVER['SERVER_PORT'] ) ) {
-			$port = absint( $_SERVER['SERVER_PORT'] );
+			$port = absint( wp_unslash( $_SERVER['SERVER_PORT'] ) );
 
 			if ( 443 === $port ) {
 				$scheme = 'https';

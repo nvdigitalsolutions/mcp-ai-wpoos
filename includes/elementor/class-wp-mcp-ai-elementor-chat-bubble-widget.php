@@ -678,9 +678,60 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 
 	/**
 	 * Render the widget on the front-end.
+	 *
+	 * The bubble is always rendered inline so that:
+	 *
+	 *  1. Elementor can detect the widget output and fire the
+	 *     `frontend/element_ready` hook for JavaScript init.
+	 *  2. There are no timing issues with wp_footer priorities when
+	 *     the widget is placed in header, footer, or popup templates.
+	 *  3. Script and style enqueue calls take effect at the normal
+	 *     template-rendering stage.
+	 *
+	 * The companion JavaScript (`chat-bubble.js`) automatically promotes
+	 * the bubble element to `document.body` via `_promoteToBody()` on
+	 * the live front-end, escaping ancestor stacking-context traps
+	 * (overflow:hidden, transforms, z-index) created by Elementor
+	 * sections, columns, and header/footer templates.
+	 *
+	 * **Placement guidance — Elementor Theme Builder:**
+	 *
+	 *  - **Site-Wide Footer** (recommended): Place the widget in a
+	 *    footer template with display conditions set to "Entire Site."
+	 *    The footer renders on every page and the widget is promoted
+	 *    to `<body>` by JavaScript.  The footer location renders
+	 *    before `wp_footer`, so all scripts and inline configs are
+	 *    guaranteed to be available.
+	 *
+	 *  - **Site-Wide Header**: Also works well.  The header renders
+	 *    even earlier than the footer, so there are no timing issues.
+	 *
+	 *  - **Individual pages / Single templates**: Works for page-
+	 *    specific chat bubbles.  The widget appears only on pages
+	 *    matching the template's display conditions.
+	 *
+	 *  - **Popups**: Supported but not recommended.  Popups render
+	 *    dynamically and the fixed-position bubble may conflict with
+	 *    the popup's own positioning.
+	 *
+	 * @see assets/js/chat-bubble.js BubbleInstance._promoteToBody()
 	 */
 	protected function render() {
 		$settings = $this->get_settings_for_display();
+
+		/*
+		 * Explicitly enqueue bubble assets so they are loaded regardless of
+		 * Elementor's Improved Asset Loading optimization.  The Gutenberg
+		 * chat-bubble block already does this (see blocks/chat-bubble/render.php);
+		 * without these calls the bubble JS/CSS may never reach the page when
+		 * Elementor skips get_script_depends() handles during its optimization pass.
+		 *
+		 * The main chat script (WP_MCP_AI_Shortcode::SCRIPT_HANDLE) and its
+		 * localization are enqueued inside the shortcode's render_shortcode()
+		 * method via do_shortcode() below, so we only need the bubble pair here.
+		 */
+		wp_enqueue_script( 'wp-mcp-ai-chat-bubble' );
+		wp_enqueue_style( 'wp-mcp-ai-chat-bubble-style' );
 
 		$bubble_id = 'wp-mcp-ai-bubble-' . $this->get_id();
 		$position  = sanitize_key( isset( $settings['bubble_position'] ) ? $settings['bubble_position'] : 'bottom-right' );
@@ -702,6 +753,64 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		$panel_title = isset( $settings['panel_title'] ) ? $settings['panel_title'] : __( 'Chat with AI', 'mcp-ai-wpoos' );
 		$tooltip     = isset( $settings['bubble_tooltip'] ) ? trim( $settings['bubble_tooltip'] ) : '';
 
+		/*
+		 * Capture configs registered before the shortcode runs so we can
+		 * identify the new entry created by this specific do_shortcode() call.
+		 */
+		$configs_before = isset( $GLOBALS['wp_mcp_ai_chat_configs'] )
+			? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] )
+			: array();
+
+		/*
+		 * Process the shortcode now so that scripts and inline config
+		 * are enqueued at the normal time.
+		 */
+		$shortcode_html = do_shortcode( $shortcode );
+
+		/*
+		 * Identify the new chat instance config added by the shortcode.
+		 *
+		 * The shortcode stores its configuration in $GLOBALS['wp_mcp_ai_chat_configs']
+		 * AND calls wp_add_inline_script() to inject it before the chat JS.
+		 * However, Elementor's Improved Asset Loading, script deferral, and
+		 * dynamic widget re-rendering can prevent wp_add_inline_script() from
+		 * actually printing the config.  By extracting the config here we can
+		 * output it as a reliable inline <script> tag directly in the widget
+		 * markup — the same approach used by the admin "Test Assistant" page.
+		 */
+		$inline_configs = array();
+		if ( isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+			foreach ( $GLOBALS['wp_mcp_ai_chat_configs'] as $id => $cfg ) {
+				if ( ! in_array( $id, $configs_before, true ) ) {
+					$inline_configs[ $id ] = $cfg;
+				}
+			}
+		}
+
+		/*
+		 * Render bubble HTML inline.  On the live front-end the JS
+		 * _promoteToBody() call moves it to document.body automatically,
+		 * escaping any ancestor stacking-context traps.
+		 */
+		$this->render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $inline_configs );
+	}
+
+	/**
+	 * Output the bubble HTML structure.
+	 *
+	 * Extracted from render() so both the inline (editor) and footer
+	 * (front-end) code-paths share the same markup.
+	 *
+	 * @param string $classes        CSS class string.
+	 * @param string $data_attrs     Pre-escaped data-attribute string.
+	 * @param string $css_vars       Inline CSS custom properties string.
+	 * @param string $panel_title    Panel dialog title.
+	 * @param string $tooltip        Optional bubble tooltip text.
+	 * @param array  $settings       Widget settings.
+	 * @param string $shortcode_html Pre-rendered shortcode output.
+	 * @param array  $inline_configs Chat instance configs to output inline.
+	 */
+	protected function render_bubble_html( $classes, $data_attrs, $css_vars, $panel_title, $tooltip, $settings, $shortcode_html, $inline_configs = array() ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $data_attrs built with esc_attr().
 		echo '<div class="' . esc_attr( $classes ) . '" ' . $data_attrs . ' style="' . esc_attr( $css_vars ) . '">';
 
@@ -728,7 +837,7 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 			echo '<span class="wp-mcp-ai-chat-bubble__tooltip">' . esc_html( $tooltip ) . '</span>';
 		}
 
-		echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true">';
+		echo '<div class="wp-mcp-ai-chat-bubble__panel" role="dialog" aria-label="' . esc_attr( $panel_title ) . '" aria-hidden="true" inert>';
 
 		echo '<div class="wp-mcp-ai-chat-bubble__panel-header">';
 		echo '<span class="wp-mcp-ai-chat-bubble__panel-title">' . esc_html( $panel_title ) . '</span>';
@@ -740,10 +849,49 @@ class WP_MCP_AI_Elementor_Chat_Bubble_Widget extends \Elementor\Widget_Base {
 		echo '</div>';
 
 		echo '<div class="wp-mcp-ai-chat-bubble__panel-body">';
-		echo do_shortcode( $shortcode ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode() output is controlled by the shortcode callback and is not raw user input.
+
+		/*
+		 * Defer chat initialisation: replace the discovery attribute with a
+		 * deferred variant so chat.js does not initialise the container on
+		 * its DOMContentLoaded pass (when the panel is still hidden).
+		 * The companion chat-bubble.js _lazyInitChat() renames the attribute
+		 * back to data-wp-mcp-ai-chat right before calling init(), ensuring
+		 * the chat is only bootstrapped once the bubble panel is opened.
+		 *
+		 * The regex uses a negative look-ahead to avoid matching
+		 * data-wp-mcp-ai-chat-initialized or similar longer attributes.
+		 */
+		$safe_html = $shortcode_html;
+		$safe_html = preg_replace( '/data-wp-mcp-ai-chat(?![-\w])/', 'data-wp-mcp-ai-chat-deferred', $safe_html );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is generated by WP_MCP_AI_Shortcode::render_shortcode() which individually escapes all values with esc_attr()/esc_html(). wp_kses_post() strips data-* attributes, SVGs, form elements, and <script type="application/json"> config blocks that the chat UI requires. The regex only renames a data attribute for lazy init.
+		echo $safe_html;
+
 		echo '</div>';
 
 		echo '</div>';
+
+		/*
+		 * Output the chat instance config as an inline <script> tag.
+		 *
+		 * This guarantees the config is available in window.wpMcpAiChatInstances
+		 * regardless of whether wp_add_inline_script() (used inside the
+		 * shortcode) actually prints — Elementor's Improved Asset Loading,
+		 * script deferral, and dynamic widget re-rendering can all prevent
+		 * the WordPress inline-script queue from executing.
+		 *
+		 * This is the same approach used by the admin "Test Assistant" page
+		 * (assets/js/admin-test-assistant.js) which builds the config inline.
+		 */
+		if ( ! empty( $inline_configs ) ) {
+			echo '<script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline config must live in the widget markup for reliable delivery; the main chat script is already enqueued via get_script_depends() and wp_enqueue_script().
+			echo 'window.wpMcpAiChatInstances=window.wpMcpAiChatInstances||{};';
+			// JSON_HEX_TAG prevents </script> breakout; JSON_HEX_AMP prevents HTML entity injection.
+			$json_flags = JSON_HEX_TAG | JSON_HEX_AMP;
+			foreach ( $inline_configs as $id => $cfg ) {
+				echo 'window.wpMcpAiChatInstances[' . wp_json_encode( $id, $json_flags ) . ']=' . wp_json_encode( $cfg, $json_flags ) . ';';
+			}
+			echo '</script>';
+		}
 
 		echo '</div>';
 	}

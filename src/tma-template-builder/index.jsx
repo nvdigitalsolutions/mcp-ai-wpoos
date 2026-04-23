@@ -12,7 +12,7 @@
  * @since   1.1.3
  */
 
-import { createRoot } from '@wordpress/element';
+import { createRoot } from 'react-dom/client';
 import { TMATemplateBuilder } from './components/TMATemplateBuilder';
 import './styles/tma-template-builder.css';
 

@@ -141,7 +141,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'dj_management'           => $this->get_dj_management_commands(),
 				'document_generation'     => $this->get_document_generation_commands(),
 				'ecommerce_pro'           => $this->get_ecommerce_pro_commands(),
-				'fantasy_football'        => $this->get_fantasy_football_commands(),
 				'financial_planner'       => $this->get_financial_planner_commands(),
 				'image_production'        => $this->get_image_production_commands(),
 				'media_pro'               => $this->get_media_pro_commands(),
@@ -1888,7 +1887,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'video/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'video/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -1988,7 +1987,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'audio/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'audio/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -2199,7 +2198,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$mime_type = get_post_mime_type( $attachment_id );
-		if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+		if ( 0 !== strpos( $mime_type, 'image/' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'invalid_media_type',
@@ -4314,30 +4313,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	}
 
 	/**
-	 * Get Fantasy Football toolkit commands.
-	 *
-	 * @since 1.3.0
-	 * @return array Command definitions.
-	 */
-	protected function get_fantasy_football_commands() {
-		$commands      = array();
-		$command_names = array( 'player-analyze', 'draft-strategy', 'draft-mock', 'waiver-recommend', 'trade-analyze', 'lineup-optimize', 'matchup-preview', 'injury-track', 'projection-update', 'league-standings', 'stats-compare', 'sleeper-identify' );
-		foreach ( $command_names as $name ) {
-			$commands[] = array(
-				'name'   => $name,
-				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
-					// translators: %s is the slash command name.
-					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
-					'capability'  => 'edit_posts',
-					'toolkit'     => 'fantasy_football',
-				),
-			);
-		}
-		return $commands;
-	}
-
-	/**
 	 * Get Financial Planner toolkit commands.
 	 *
 	 * @since 1.3.0
@@ -6097,7 +6072,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			// Verify it's an image.
 			$mime_type = get_post_mime_type( $attachment_id );
-			if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+			if ( 0 !== strpos( $mime_type, 'image/' ) ) {
 				return $this->error_response(
 					new WP_Error(
 						'E002',

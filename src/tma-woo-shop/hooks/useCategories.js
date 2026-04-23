@@ -5,12 +5,16 @@
  * API or remote_wp_connection depending on the configured data source.
  * Results are cached in module scope for the lifetime of the Mini App session.
  *
+ * Data loading is deferred until `authReady` (from TMAContext) is `true` so
+ * that tool-execution requests carry the TMA session token.
+ *
  * @package WP_MCP_AI
  * @since   1.1.5
  */
 
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect } from 'react';
 import { wooFetch } from '../api/client';
+import { useTMA } from '../context/TMAContext';
 
 /** @type {object[]|null} Simple module-level cache. */
 let cached = null;
@@ -19,12 +23,13 @@ let cached = null;
  * @return {{ categories:object[], loading:boolean, error:string|null }}
  */
 export function useCategories() {
+	const { authReady } = useTMA();
 	const [ categories, setCategories ] = useState( cached ?? [] );
 	const [ loading, setLoading ] = useState( ! cached );
 	const [ error, setError ] = useState( null );
 
 	useEffect( () => {
-		if ( cached ) {
+		if ( cached || ! authReady ) {
 			return;
 		}
 		let cancelled = false;
@@ -49,7 +54,7 @@ export function useCategories() {
 		return () => {
 			cancelled = true;
 		};
-	}, [] );
+	}, [ authReady ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	return { categories, loading, error };
 }

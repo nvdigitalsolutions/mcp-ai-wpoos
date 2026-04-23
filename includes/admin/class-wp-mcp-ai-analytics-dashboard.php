@@ -138,7 +138,7 @@ class WP_MCP_AI_Analytics_Dashboard {
 			wp_enqueue_script(
 				'wp-mcp-ai-analytics-dashboard',
 				WP_MCP_AI_URL . 'assets/js/analytics-dashboard.js',
-				array( 'jquery', 'chartjs' ),
+				array( 'jquery', 'wp-mcp-ai-chartjs' ),
 				filemtime( $dashboard_js_path ),
 				true
 			);

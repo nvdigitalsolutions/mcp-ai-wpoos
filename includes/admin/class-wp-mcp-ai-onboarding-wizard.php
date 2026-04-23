@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 
 			// Do not show the notice on the wizard page itself.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading page parameter only for display logic.
-			$current_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+			$current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 			if ( self::PAGE_SLUG === $current_page ) {
 				return;
 			}
@@ -230,7 +230,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			);
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Step is display-only for localization.
-			$current_step = isset( $_GET['step'] ) ? absint( $_GET['step'] ) : 1;
+			$current_step = isset( $_GET['step'] ) ? absint( wp_unslash( $_GET['step'] ) ) : 1;
 			$next_step    = min( $current_step + 1, self::TOTAL_STEPS );
 
 			wp_localize_script(
@@ -274,7 +274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 			}
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Step is display-only; each step's form has its own nonce.
-			$step = isset( $_GET['step'] ) ? absint( $_GET['step'] ) : 1;
+			$step = isset( $_GET['step'] ) ? absint( wp_unslash( $_GET['step'] ) ) : 1;
 			$step = max( 1, min( self::TOTAL_STEPS, $step ) );
 
 			?>
@@ -335,8 +335,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				<nav class="wp-mcp-ai-wizard-steps" aria-label="<?php esc_attr_e( 'Setup progress', 'mcp-ai-wpoos' ); ?>">
 					<ol class="wp-mcp-ai-wizard-steps-list">
 						<?php foreach ( $steps as $num => $label ) : ?>
-							<li class="wp-mcp-ai-wizard-step <?php echo $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ); ?>"
-								<?php echo $num === $current_step ? 'aria-current="step"' : ''; ?>>
+							<li class="wp-mcp-ai-wizard-step <?php echo esc_attr( $num < $current_step ? 'is-complete' : ( $num === $current_step ? 'is-active' : 'is-pending' ) ); ?>"
+								<?php echo esc_attr( $num === $current_step ? 'aria-current="step"' : '' ); ?>>
 								<span class="wp-mcp-ai-wizard-step-indicator" aria-hidden="true">
 									<?php if ( $num < $current_step ) : ?>
 										<span class="dashicons dashicons-yes"></span>
@@ -361,7 +361,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 								</span>
 							</li>
 							<?php if ( $num < self::TOTAL_STEPS ) : ?>
-								<li class="wp-mcp-ai-wizard-step-connector <?php echo $num < $current_step ? 'is-complete' : ''; ?>" aria-hidden="true"></li>
+								<li class="wp-mcp-ai-wizard-step-connector <?php echo esc_attr( $num < $current_step ? 'is-complete' : '' ); ?>" aria-hidden="true"></li>
 							<?php endif; ?>
 						<?php endforeach; ?>
 					</ol>
@@ -526,10 +526,10 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 						<button type="button"
 								role="tab"
 								id="wp-mcp-ai-tab-<?php echo esc_attr( $key ); ?>"
-								class="wp-mcp-ai-provider-tab <?php echo $key === $first_key ? 'is-active' : ''; ?>"
-								aria-selected="<?php echo $key === $first_key ? 'true' : 'false'; ?>"
+								class="wp-mcp-ai-provider-tab <?php echo esc_attr( $key === $first_key ? 'is-active' : '' ); ?>"
+								aria-selected="<?php echo esc_attr( $key === $first_key ? 'true' : 'false' ); ?>"
 								aria-controls="wp-mcp-ai-panel-<?php echo esc_attr( $key ); ?>"
-								tabindex="<?php echo $key === $first_key ? '0' : '-1'; ?>"
+								tabindex="<?php echo esc_attr( $key === $first_key ? '0' : '-1' ); ?>"
 								data-provider="<?php echo esc_attr( $key ); ?>">
 							<?php if ( ! empty( $provider['icon_img'] ) ) : ?>
 								<img src="<?php echo esc_url( $provider['icon_img'] ); ?>"
@@ -1021,8 +1021,8 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				</div>
 
 				<div class="wp-mcp-ai-wizard-summary">
-					<div class="wp-mcp-ai-summary-item <?php echo $has_api_key ? 'is-done' : 'is-skipped'; ?>">
-						<span class="dashicons <?php echo $has_api_key ? 'dashicons-yes-alt' : 'dashicons-warning'; ?>"></span>
+					<div class="wp-mcp-ai-summary-item <?php echo esc_attr( $has_api_key ? 'is-done' : 'is-skipped' ); ?>">
+						<span class="dashicons <?php echo esc_attr( $has_api_key ? 'dashicons-yes-alt' : 'dashicons-warning' ); ?>"></span>
 						<?php if ( $has_api_key ) : ?>
 							<?php esc_html_e( 'AI provider connected', 'mcp-ai-wpoos' ); ?>
 						<?php else : ?>
@@ -1133,7 +1133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			$step = isset( $_POST['step'] ) ? absint( $_POST['step'] ) : 0;
+			$step = isset( $_POST['step'] ) ? absint( wp_unslash( $_POST['step'] ) ) : 0;
 
 			if ( 2 === $step ) {
 				$this->handle_save_provider_step();
@@ -1162,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 		 */
 		private function handle_save_provider_step() {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().
-			$provider = isset( $_POST['provider'] ) ? sanitize_key( $_POST['provider'] ) : '';
+			$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 			// API keys are typically alphanumeric with hyphens, dashes, and underscores.
 			// Using sanitize_text_field + wp_unslash is the standard WordPress approach.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified in the calling ajax_save_step() method via check_ajax_referer().

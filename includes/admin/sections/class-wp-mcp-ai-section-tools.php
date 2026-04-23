@@ -757,20 +757,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 15 regulatory registration tools for managing product registrations, compliance documents, regulatory requirements, and multi-country submissions (Sri Lanka NMRA, UAE, Saudi SFDA, Qatar, Kuwait, Oman, India). This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_fantasy_football'                => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable fantasy football tools and management', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Enables 9 tools for managing fantasy football teams, analyzing trades, researching players, and generating league reports. Requires Yahoo Fantasy Sports API credentials configured in the Fantasy Football Settings page. Includes OAuth authentication, roster management, player statistics, trade analysis, and AI-powered team logo generation.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
-
 				// Chat Channels Toolkit - Multi-platform messaging integration.
 				'enable_chat_channels_toolkit'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Chat Channels Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable multi-platform messaging integration (Pro Version only)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enables 21 specialized tools for managing communications across Telegram, WhatsApp, Slack, Discord, Microsoft Teams, and Facebook Messenger. Provides enterprise-grade chat channel integration for unified multi-platform messaging. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Law Firm Toolkit - Matter management, billing/trust, compliance, and research.
+				'enable_law_firm_toolkit'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Law Firm Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable law firm matter management, billing, trust accounting, and compliance tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 62 AI-powered legal tools across five modules: Matter Management (10), Billing &amp; Trust (10), Compliance &amp; Ethics (9), Client &amp; Communications (9), and Research &amp; Analytics (9). Includes 5 custom post types (Matters, Clients, Documents, Time Entries, Trust Transactions), a shared legal calculator, and dedicated admin pages (Settings, Dashboard, Research &amp; Add). This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// CRE Debt & Securitization Toolkit - Commercial real estate finance.
+				'enable_cre_debt_toolkit'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable CRE Debt & Securitization Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable commercial real estate debt and securitization tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 57 AI-powered CRE debt tools across five modules: Originations (11), Underwriting (13), CMBS/Securitization (10), Debt Fund Management (11), and Asset Management (12). Aligned with CREFC, MBA/CMB, ARGUS, CCIM, and CFA/CAIA standards. ANALYSIS ONLY - Not investment advice. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 
@@ -851,7 +861,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -928,12 +938,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
-				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				$subtab = sanitize_key( wp_unslash( $_POST[ $subtab_field_name ] ) );
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
-				$subtab = sanitize_key( $_POST['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_POST['subtab'] ) );
 			} elseif ( isset( $_GET['subtab'] ) ) {
-				$subtab = sanitize_key( $_GET['subtab'] );
+				$subtab = sanitize_key( wp_unslash( $_GET['subtab'] ) );
 			}
 			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
@@ -1046,8 +1056,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_chat_channels_toolkit'           => 84,   // 21 tools, multi-platform messaging integration.
 				'enable_site_creator_toolkit'            => 104,  // 26 tools, page/section/widget builders, AI automation.
 				'enable_regulatory_registration_toolkit' => 80,   // 15 tools, multi-country registration management.
+				'enable_law_firm_toolkit'                => 128,  // 62 tools, 5 CPTs, matter management, billing/trust, compliance.
+				'enable_cre_debt_toolkit'                => 144,  // 57 tools, CRE debt & securitization.
 				'enable_webchat_integration'             => 24,   // 6 tools, WebRTC rooms, message storage.
-				'enable_fantasy_football'                => 40,   // 9 tools, Yahoo Fantasy Sports API integration.
 			);
 		}
 
@@ -1175,8 +1186,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_site_creator_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_regulatory_registration_toolkit]"],' +
-							'input[name="wp_mcp_ai_settings[enable_webchat_integration]"],' +
-							'input[name="wp_mcp_ai_settings[enable_fantasy_football]"]'
+							'input[name="wp_mcp_ai_settings[enable_law_firm_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_cre_debt_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_webchat_integration]"]'
 						);
 
 						function updateToolkitMemory() {
@@ -1245,8 +1257,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<?php if ( $github_username ) : ?>
 									<?php
 									printf(
-										/* translators: %s: GitHub username */
-										esc_html__( 'as %s', 'mcp-ai-wpoos' ),
+										wp_kses(
+											/* translators: %s: GitHub username wrapped in <code> tags. */
+											__( 'as %s', 'mcp-ai-wpoos' ),
+											array( 'code' => array() )
+										),
 										'<code>' . esc_html( $github_username ) . '</code>'
 									);
 									?>
@@ -1344,8 +1359,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<li>
 								<?php
 								printf(
-									/* translators: %s: Callback URL */
-									esc_html__( 'Set Authorization callback URL to: %s', 'mcp-ai-wpoos' ),
+									wp_kses(
+										/* translators: %s: Callback URL wrapped in <code> tags. */
+										__( 'Set Authorization callback URL to: %s', 'mcp-ai-wpoos' ),
+										array(
+											'code' => array(),
+											'br'   => array(),
+										)
+									),
 									'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_github_oauth_callback' ) ) . '</code>'
 								);
 								?>
@@ -1571,7 +1592,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								?>
 							</p>
 							<p style="margin: 0;">
-								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 									<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 								</a>
 								<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
@@ -2034,7 +2055,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
 			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( wp_unslash( $_GET['tool_group'] ) ) : '';
 
 			?>
 			<div class="wp-mcp-ai-tools-manager">
@@ -2700,12 +2721,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			}
 
 			// Get and sanitize form values.
-			$attachment_id      = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
-			$max_pages          = isset( $_POST['max_pages'] ) ? min( 5, max( 1, absint( $_POST['max_pages'] ) ) ) : 5;
+			$attachment_id      = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
+			$max_pages          = isset( $_POST['max_pages'] ) ? min( 5, max( 1, absint( wp_unslash( $_POST['max_pages'] ) ) ) ) : 5;
 			$page_status_raw    = isset( $_POST['page_status'] ) ? sanitize_text_field( wp_unslash( $_POST['page_status'] ) ) : 'draft';
 			$page_status        = in_array( $page_status_raw, array( 'draft', 'publish' ), true ) ? $page_status_raw : 'draft';
-			$set_front_page     = ! empty( $_POST['set_front_page'] );
-			$overwrite_existing = ! empty( $_POST['overwrite_existing'] );
+			$set_front_page     = ! empty( sanitize_text_field( wp_unslash( $_POST['set_front_page'] ?? '' ) ) );
+			$overwrite_existing = ! empty( sanitize_text_field( wp_unslash( $_POST['overwrite_existing'] ?? '' ) ) );
 			$action_type        = isset( $_POST['action_type'] ) ? sanitize_text_field( wp_unslash( $_POST['action_type'] ) ) : '';
 			$dry_run            = 'test' === $action_type;
 
@@ -2813,7 +2834,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 				</p>
 				<p style="margin: 0;">
-					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">

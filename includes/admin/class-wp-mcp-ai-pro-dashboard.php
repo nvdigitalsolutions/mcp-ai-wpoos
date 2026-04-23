@@ -499,26 +499,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Use Chart.js Helper for consistent registration across the plugin.
-			// Calling register_chart_js() + wp_enqueue_script('chartjs') instead of
+			// Calling register_chart_js() + wp_enqueue_script('wp-mcp-ai-chartjs') instead of
 			// enqueue_chart_js() avoids loading unnecessary Token Manager files
 			// (analytics-dashboard.css, token-manager-charts.js) on the Pro Dashboard.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
 				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
-				wp_enqueue_script( 'chartjs' );
+				wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 			} else {
 				// Fallback: Register and enqueue Chart.js directly if helper class not available.
 				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 				$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
 				wp_register_script(
-					'chartjs',
+					'wp-mcp-ai-chartjs',
 					$chart_js_url,
 					array(),
 					file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
 					true
 				);
 
-				wp_enqueue_script( 'chartjs' );
+				wp_enqueue_script( 'wp-mcp-ai-chartjs' );
 			}
 
 			// Get chart data - ensure it's properly structured.
@@ -545,7 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-dashboard',
 				WP_MCP_AI_URL . 'assets/js/pro-dashboard.js',
-				array( 'jquery', 'chartjs' ),
+				array( 'jquery', 'wp-mcp-ai-chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
 			);
@@ -824,7 +824,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Get current tab from URL parameter, sanitize and validate immediately.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; immediately validated against an allowlist on the next line.
-			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'iso27001';
+			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'iso27001';
 
 			// Validate tab - ensure it's in the valid tabs list.
 			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
@@ -2761,8 +2761,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<span class="wp-mcp-ai-last-updated">
 					<?php
 					printf(
-						/* translators: %s: Timestamp */
-						esc_html__( 'Last updated: %s', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: %s: Timestamp wrapped in <span> tag. */
+							__( 'Last updated: %s', 'mcp-ai-wpoos' ),
+							array( 'span' => array( 'id' => array() ) )
+						),
 						'<span id="wp-mcp-ai-last-update-time">' . esc_html( current_time( 'H:i:s' ) ) . '</span>'
 					);
 					?>
@@ -3052,8 +3055,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<p class="description" style="margin-top: 20px;">
 					<?php
 					printf(
-						/* translators: 1: Total risks count, 2: Link to risk assessment document */
-						esc_html__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
+						wp_kses(
+							/* translators: 1: Total risks count, 2: Link to risk assessment document */
+							__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
+							array(
+								'a' => array(
+									'href' => array(),
+									'target' => array(),
+								),
+							)
+						),
 						count( $risks ),
 						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
 					);

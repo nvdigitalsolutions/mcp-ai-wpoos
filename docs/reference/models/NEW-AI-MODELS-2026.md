@@ -55,6 +55,19 @@ Additional capability-specific lanes exist for vision, image generation, speech-
 | **Video Generation** | `veo-2.0-generate-001` | Stable | Stable video generation with fewer restrictions |
 | **Video (Preview)** | `veo-3.1-generate-preview` | Latest | Latest with audio and 1080p support |
 
+#### Google Gemma 4 (Open Source, Apache 2.0 — April 2026)
+
+All Gemma 4 variants are multimodal (text, image, video) and available via Gemini API, Ollama, NVIDIA NIM, LM Studio, Hugging Face, and Cloudflare Workers AI:
+
+| Model | Parameters | Context Window | Modalities | Target |
+|-------|-----------|----------------|------------|--------|
+| `gemma-4-31b-it` | 31B (dense) | 256K | Text, Image, Video | Server/workstation |
+| `gemma-4-26b-it` | 26B MoE (3.8B active) | 256K | Text, Image, Video | Consumer GPU |
+| `gemma-4-e4b-it` | ~4B | 128K | Text, Image, Audio, Video | Edge/mobile |
+| `gemma-4-e2b-it` | ~2B | 128K | Text, Image, Audio, Video | Edge/mobile |
+
+Fallback chain: `gemma-4-31b-it` → `gemma-4-26b-it` → `gemma-4-e4b-it` → `gemma-4-e2b-it`.
+
 ### Cloudflare Workers AI
 
 | Capability | Default Model | Lane | Notes |

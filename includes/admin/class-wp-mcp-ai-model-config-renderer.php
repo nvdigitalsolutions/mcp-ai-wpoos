@@ -468,7 +468,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 					type: 'POST',
 					data: {
 						action: 'wp_mcp_ai_save_model_config',
-						nonce: wpMcpAi.nonce,
+						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_admin' ) ); ?>',
 						model: modelId,
 						config: config
 					},
@@ -695,7 +695,14 @@ class WP_MCP_AI_Model_Config_Renderer {
 				return $capability_flags;
 			}
 
-			// Gemma models (text-only).
+			// Gemma 4 models (multimodal).
+			if ( strpos( $model_id, 'gemma-4' ) !== false || strpos( $model_id, 'gemma4' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
+			// Gemma 2/3 models (text-only via Gemini API).
 			if ( strpos( $model_id, 'gemma' ) !== false ) {
 				return $capability_flags;
 			}

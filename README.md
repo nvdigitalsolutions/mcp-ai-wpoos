@@ -11,10 +11,10 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.6  
-**Release Date:** 2026-04-02 (April 2026 — WordPress.org compliance final pass, NVIDIA NIM onboarding wizard, vehicle estimation tools, Shopify auto-resolve, QuickBooks Desktop sync)  
-**Latest Updates:** March–April 2026 - Vehicle estimation tools (VIN decode, repair & cleaning estimates), Shopify connection auto-resolve, QuickBooks Desktop sync via QODBC, listing image download tools (Google Maps/Facebook/Instagram), Webhook Status admin page, Transformers.js v3.8.1 with WebGPU & Qwen3 models, 15 new schedule presets, Medical Vitals dashboard enhancements, registration product research page rebuild, copyright/license attribution across all source files, Telegram webhook 403 fixes, chat channels inbox reliability improvements, security vulnerability patches  
-**MCP Specification:** 2024-11-05  
+**Version:** 1.1.8  
+**Release Date:** 2026-04-15 (April 2026 — Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit; v1.1.7: Full MCP 2024-11-05 compliance, MCP Apps, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams)  
+**Latest Updates:** April 2026 (v1.1.8) — 4 Erlang C base-plugin tools (`calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`), `wp_mcp_ai_queue_alert` action hook, full tool-reference audit (all 230+ base tools documented across 14 new sections), WordPress.org re-audit (all 13 guidelines pass). Prior release (v1.1.7): Full MCP 2024-11-05 protocol compliance (all 11 methods), JSON-RPC batching, tool annotations, session management, MCP Apps per-assistant remote server connections (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org compliance hardening, Algorave audio fixes, security dependency updates  
+**MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (March–April 2026)](#-latest-updates-marchapril-2026)
+- [🆕 Latest Updates (v1.1.8 — April 2026)](#-latest-updates-v118--april-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -106,9 +106,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
-The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **368 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **533 built-in tools**.
+The plugin works standalone with **224 base tools** and optionally extends through the **Pro addon**, which adds **651 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Shopify, QuickBooks Desktop, Yahoo Fantasy Sports, ESPN Fantasy, ECA management, CRE Debt & Securitization) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **875 built-in tools**.
 
-> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 533 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, and more.
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (224 tools) works standalone. The full version requires the Pro addon and provides 875 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, vehicle estimation, image validation, JetEngine MCP, A2A agent delegation, CRE Debt & Securitization, MCP Apps, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -154,6 +154,12 @@ The orchestration layer makes NV oOS unique in the WordPress ecosystem by solvin
 
 NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
+- **9 language-model providers** — OpenAI, Gemini, Anthropic, NVIDIA NIM, Hugging Face, Cloudflare, Ollama, LM Studio, Embedded
+- **875 tool classes** (224 base + 651 pro) registered through a singleton Tool Registry
+- **34 REST controllers** (16 base + 18 pro) under the `mcp-ai/v1` namespace
+- **64 service classes** powering orchestration, budgets, and workflows
+- **5 authentication methods** — WordPress nonce, assistant credentials, mesh keys, Auth0 JWT, guest tokens
+
 > **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
 ### Core Orchestration Layer: Overcoming PHP's Limitations
@@ -184,7 +190,7 @@ Building upon the core orchestration layer, NV oOS now includes a **sophisticate
 - **Team Composition** - Automated team assembly based on task requirements and profession expertise
 - **Coordinated Workflows** - Multi-step workflows with agent delegation, result aggregation, and validation
 - **Team CPT Integration** - Persistent team configurations with orchestration modes (single/sequential/parallel/swarm)
-- **Profession-Based Discovery** - 200+ professions auto-assigned agent roles via intelligent seeding
+- **Profession-Based Discovery** - 296 professions auto-assigned agent roles via intelligent seeding across 17 knowledge bases
 
 **Example Multi-Agent Workflow:**
 ```php
@@ -267,7 +273,231 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (March–April 2026)
+## 🆕 Latest Updates (v1.1.8 — April 2026)
+
+### Erlang C Workforce Management Tools (April 15, 2026) ⭐ **NEW**
+
+**4 base-plugin tools that apply the Erlang C teletraffic formula to contact-centre staffing, AI session capacity planning, and real-time SLA monitoring** — no Pro addon or external dependencies required. See [`docs/features/erlang-c-staffing-tools.md`](docs/features/erlang-c-staffing-tools.md).
+
+- ✅ **`calculate_erlang_c`** — General staffing solver. Given arrival rate and average handle time, returns minimum agents needed to meet a service-level target, plus probability of waiting, average wait time, and utilisation.
+- ✅ **`erlang_c_concurrency_advisor`** — Reads the plugin's own session telemetry (arrival rate + transcript-duration averages) and returns a data-driven recommendation for the **Max Concurrent Sessions** setting.
+- ✅ **`erlang_c_staffing_advisor`** — Multi-channel planner covering voice, chat, email, and bot-deflection queues. Integrates with WFM endpoints via `wp_mcp_ai_erlang_c_wfm_export` filter.
+- ✅ **`erlang_c_queue_health`** — Real-time SLA monitoring. Fires the **`wp_mcp_ai_queue_alert`** action hook when a queue breaches its SLA threshold, enabling custom alerting integrations.
+- ✅ **Shared `WP_MCP_AI_Erlang_C` class** at `includes/class-wp-mcp-ai-erlang-c.php` — pure-PHP Erlang C implementation usable by custom tools without external libraries.
+
+### Full Tool-Reference Audit (April 15, 2026)
+
+**`docs/reference/tools/tool-reference.md` now documents all 230+ tools in `load_default_tools`**, with 14 new sections covering previously-undocumented tool groups:
+
+OpenAI file/model management · text embeddings & vector stores · multi-agent orchestration · agent memory management · reasoning & code analysis · deep research · browser-native AI (client-side NLP) · Yahoo Fantasy Football toolkit · Newsletter plugin integration · WP All Import/Export integration · Flowhub cannabis dispensary · PayHere payment gateway · Erlang C queue tools.
+
+### WordPress.org Compliance Re-Audit (April 15, 2026) 🔒
+
+All 13 WordPress.org Plugin Guidelines pass. Compliance evidence — 333 capability checks, 147 nonce verifications, 200+ sanitization instances, 500+ output-escaping instances — is catalogued in `docs/compliance/WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`.
+
+---
+
+### MCP Apps — Per-Assistant Remote MCP Server Connections (April 10, 2026) ⭐ **NEW**
+
+**Each assistant can now connect to up to 10 remote MCP servers as "apps", discovering and bridging external tools into the local tool registry at chat time** (PR #4646, SEP-1865).
+
+- ✅ **`WP_MCP_AI_MCP_App_Client`** — JSON-RPC 2.0 client over Streamable HTTP transport. Implements `initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read` per MCP 2025-03-26 spec.
+- ✅ **`WP_MCP_AI_MCP_App_Registry`** — Singleton managing per-assistant app configs in `_wp_mcp_ai_mcp_apps` post meta. Transient-cached tool discovery (5min TTL). Max 10 apps per assistant.
+- ✅ **`WP_MCP_AI_MCP_App_Tool_Bridge`** — Wraps each remote tool as a local `WP_MCP_AI_Tool_Interface` with `mcp_app_{label}_{tool}` slug. Extracts `ui://` resource URIs from `_meta.ui.resourceUri`.
+- ✅ **REST endpoints**: `POST /mcp-apps/test`, `POST /mcp-apps/discover`, `GET /mcp-apps/{id}`.
+- ✅ **Admin metabox** — Repeater-style UI on assistant editor: label, server URL, auth (none/bearer/header), timeout, SSL verify.
+- ✅ Remote tools registered via `wp_mcp_ai_register_tools` at priority 50 when `assistant_id` is present in request context.
+
+### CRE Debt & Securitization Pro Toolkit — 57 Tools (April 10–11, 2026) ⭐ **NEW**
+
+**Complete commercial real estate debt toolkit with 57 tools across five modules, shared financial calculator engine, and admin dashboard with Chart.js** (PRs #4647, #4650).
+
+- ✅ **Shared Calculator** (`WP_MCP_AI_CRE_Debt_Calculator`) — Static methods for amortization (IO/P&I/balloon), DSCR/LTV/debt yield, NPV, IRR (Newton's method), DCF with terminal value, multi-constraint loan sizing, equity waterfall, defeasance/yield maintenance.
+- ✅ **Originations** (11 tools) — Deal pipeline CRUD, borrower profiling, quote generation, deal screening (100-pt scoring), rate locks, broker tracking, execution strategy, closing checklists.
+- ✅ **Underwriting** (13 tools) — DCF, NOI, loan sizing, amortization, debt yield stress testing, cap rate sensitivity, rent roll analysis, opex benchmarking, leverage/return, 3-approach valuation, environmental risk, memo generation.
+- ✅ **CMBS/Securitization** (10 tools) — Tranche sizing/subordination, bond cash flow (CDR/CPR/severity), pool analysis, surveillance, special servicing, CRE CLO (OC/IC tests), defeasance, rating agency methodology, CREFC Annex A reporting.
+- ✅ **Debt Fund** (11 tools) — Portfolio dashboard (AUM/WA metrics), waterfall (pref/catch-up/promote), fund returns (IRR/MOIC/DPI/RVPI/TVPI), credit risk (PD/LGD/EL), concentration limits, warehouse lines, LP reporting.
+- ✅ **Asset Management** (12 tools) — Property budgeting, lease rollover, capex reserves, tenant credit, hold/sell analysis, performance tracking, loan surveillance, watchlist management, workout scenarios.
+- ✅ **CPT/CCT Infrastructure** — Custom Post Types for deals/loans, CCT for pipeline metrics, Chart.js dashboard with deal pipeline visualization.
+- ✅ **Settings toggle**: `enable_cre_debt_toolkit` in admin settings. All outputs include `ANALYSIS ONLY — Not investment advice.`
+
+### 36 Pro Toolkit Professions + 17 Teams (April 11, 2026) ⭐ **NEW**
+
+**All 275+ pro toolkit tools across 15 toolkits now have dedicated profession and team mappings** (PR #4652). Total professions: **296** (was 259). Total teams: **100**.
+
+- ✅ **`pro-cre-debt.json`** — 8 CRE debt roles (originator, underwriter, CMBS analyst, debt fund manager, asset manager, capital markets analyst, special servicer, compliance officer).
+- ✅ **`pro-financial-services.json`** — 6 roles covering 32 financial planning tools.
+- ✅ **`pro-digital-media.json`** — 7 roles spanning image, video, social, and document toolkit tools.
+- ✅ **`pro-business-operations.json`** — 7 roles covering ecommerce, CRM, analytics, calendar/booking toolkits.
+- ✅ **`pro-specialized-services.json`** — 8 roles for regulatory, multilingual, site creator, AI tool builder, architect, DJ management.
+- ✅ **`cre-debt-teams.json`** — 7 teams with orchestration workflows (sequential/parallel/hybrid/swarm).
+- ✅ **`pro-toolkit-teams.json`** — 10 cross-functional teams (wealth advisory, media production, ecommerce growth, website launch, global registration, etc.).
+
+### WordPress.org Compliance Hardening (April 9–11, 2026) 🔒
+
+**Multiple compliance passes addressing WordPress.org automated review findings** (PRs #4642, #4645, #4654, #4658).
+
+- ✅ **AJAX capability checks** — `dismiss_directory_notice` and `dismiss_price_notice` handlers now require `manage_options` capability.
+- ✅ **$_POST sanitisation** — Raw `$_POST` iteration in diagnostic logging now applies `sanitize_key()` on keys and `sanitize_text_field( wp_unslash() )` on values.
+- ✅ **Capability flag corrections** — 13 base tools corrected from `local-only` to `external-api` (tools making external HTTP requests).
+- ✅ **CLI export path** — `--file` parameter restricted to bare filename; all exports to `uploads/mcp-ai/exports/` with `sanitize_file_name( basename() )`.
+- ✅ **Vision tool fixes** — Missing closing class braces in vision-object-localization and vision-product-search tools (ParseError fix).
+- ✅ **404 URLs fixed** — Trade.gov privacy URL and Mailjet terms URL corrected to working endpoints.
+
+### Algorave Audio & Visualizer Fixes (April 8–11, 2026) 🔧
+
+**Multiple critical audio fixes for the Algorave addon** (PRs #4632, #4633, #4636, #4637, #4639, #4644, #4648, #4655).
+
+- ✅ **AudioContext resume** — Synchronous `getAudioContext().resume()` within user-gesture handler before any async operations.
+- ✅ **channelCount=0 proxy fix** — Data descriptor (value+writable) for `maxChannelCount` on proxy, clamped to [1,32]. Verification + accessor fallback. Eager `initializeAudioOutput()` call after proxy install.
+- ✅ **Visualizer analyser connection** — AnalyserNode connection timing fixed across 5 PRs. Analyser now connects to correct audio output node.
+- ✅ **Async aliasBank** — CDN redirect and unhandled rejection fixes for sample loading.
+
+### Security Dependency Updates (April 8–11, 2026) 🔒
+
+- ✅ **nodemailer** → 8.0.5 (SMTP CRLF injection fix) (PR #4643)
+- ✅ **basic-ftp** → 5.2.1 (CRLF command injection fix) (PR #4634)
+- ✅ **mathjs, langsmith** → latest (security vulnerability fixes) (PR #4649)
+
+### JetEngine 3.8 MCP Server Integration (April 6, 2026) ⭐ **NEW**
+
+**Bridges NV oOS into JetEngine 3.8's native MCP Server via JSON-RPC 2.0 with 7 new Pro tools for AI-powered site structure management** (PR #4608).
+
+- ✅ **`WP_MCP_AI_JetEngine_MCP_Client`** — JSON-RPC 2.0 client with dual transport: `rest_do_request()` for same-site, `wp_remote_post()` for remote/multisite. Transient-based caching (configurable TTL, default 300s).
+- ✅ **7 new Pro tools**: `jetengine_mcp` (bridge — discover/call any JetEngine MCP tool), `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field` (16 field types), `jetengine_manage_relations` (1:1, 1:N, M:N), `jetengine_site_context`, `jetengine_prompts`.
+- ✅ **MCP-first dispatch** — existing `WP_MCP_AI_JetEngine_Tool_Handlers::dispatch()` now tries MCP first with silent REST v2 fallback. `invoke_jetengine_route` gains `prefer_mcp` parameter.
+- ✅ **Resource & prompt integration** — site structure auto-injected into AI prompts via `wp_mcp_ai_build_system_context` hook.
+- ✅ **Admin UI** — MCP Server status panel (connection state, endpoint, tool count). 3 new settings: `jetengine_mcp_enabled`, `jetengine_mcp_cache_ttl`, `jetengine_mcp_context_injection`.
+- ✅ **5 new test files** covering client, bridge/tools, resources, prompts, and integration.
+
+### Agent-to-Agent (A2A) Protocol Integration (April 4, 2026) ⭐ **NEW**
+
+**Full A2A protocol implementation — makes NV oOS assistants discoverable, addressable, and interoperable with any A2A-compliant agent** (PR #4578).
+
+- ✅ **Agent Card & Discovery** — `/.well-known/agent.json` via rewrite rules + per-assistant cards at `GET /mcp-ai/v1/a2a/agent-card/{id}`. Builds A2A-compliant cards from assistant CPT metadata (tools → skills, auth → securitySchemes).
+- ✅ **A2A Server** — JSON-RPC 2.0 dispatch for `message/send`, `message/stream`, `tasks/get`, `tasks/list`, `tasks/cancel`, push notification CRUD. State machine: `submitted → working → input-required → completed/failed/canceled/rejected`.
+- ✅ **A2A Client** — discovers remote agents, sends JSON-RPC with bearer/apiKey auth, caches Agent Cards (1h TTL).
+- ✅ **`delegate_to_a2a_agent` tool** — discovery → send → poll lifecycle for cross-agent delegation.
+- ✅ **Push Notifications** — per-task webhook registration with exponential backoff (3 retries).
+- ✅ **Admin UI** — settings for server/client enable, exposed assistants, push notifications, outbound auth. Gated by `enable_a2a_server` — zero overhead when disabled.
+- ✅ **60+ unit tests** covering Agent Card generation, task state machine, message translation, push notifications, webhook handling, client utilities.
+
+### Agent Command Center Dashboard (April 4, 2026) ⭐ **NEW**
+
+**Unified agent management dashboard with 7 tabs for real-time monitoring, analytics, and agent strategy** (PR #4575).
+
+- ✅ **Overview** — KPI cards (agents online, active tasks, pending approvals, tokens today, uptime %), agent cards with live online/idle/offline status dots, real-time activity feed.
+- ✅ **Activity Log** — Filterable event stream (type/agent/timeframe/search) backed by `wp_mcp_ai_agent_activity_log` option (capped 1,000 events).
+- ✅ **Active Tasks** — Sessions table with progress bars, workflow table from transients.
+- ✅ **Approvals** — Human-in-the-loop approval cards with severity levels, approve/reject actions.
+- ✅ **Analytics** — Chart.js 4.4.7: dual-axis usage timeline, token consumption doughnut, tool distribution bar, response time trends. Per-agent metrics aggregated from real hook data (PR #4593).
+- ✅ **Uptime & Health** — System health card checking cron/DB/REST API/SSE, 30-day uptime bar chart.
+- ✅ **Strategy** — Composite efficiency score (utilization, reliability, efficiency, coverage), recommendation engine, capacity gauges.
+
+### Floating Chat Bubble Widget — Elementor + Gutenberg (April 3, 2026) ⭐ **NEW**
+
+**Configurable floating chat bubble that opens a chat panel powered by the `[mcp_ai_chat]` shortcode** (PR #4566).
+
+- ✅ **Elementor widget** — 5 control sections: Chat Settings, Bubble Settings (position/size/animation/tooltip/badge/auto-open), Panel Settings (title/width/height), Bubble Style, Panel Style.
+- ✅ **Gutenberg block** — Dynamic block with 20 attributes, server-side render, `mcp-ai-wpoos` textdomain.
+- ✅ **Assets** — BEM-structured CSS with 4 position variants, 3 sizes, bounce/pulse animations, notification badge, full-screen mobile (<480px), dark mode, `prefers-reduced-motion`, WCAG focus states. Vanilla JS IIFE with multi-instance registry, keyboard nav (Escape/Enter/Space), auto-open delay, sessionStorage persistence.
+
+### Anthropic & Gemini Provider — Subscription Tier Support (April 3, 2026) ⭐ **NEW**
+
+**Centralized request headers, custom base URLs, and API key type selectors for Anthropic and Gemini providers** (PR #4567).
+
+- ✅ **Anthropic** — `build_request_headers()`, `resolve_endpoint()`, `get_base_url()`. Settings: `anthropic_api_key_type` (standard/team/enterprise), `anthropic_base_url`. Filter: `wp_mcp_ai_anthropic_request_headers`.
+- ✅ **Gemini** — `build_request_headers()`, `resolve_endpoint()`, `get_custom_base_url()`. Settings: `gemini_api_key_type` (standard/business/enterprise), `gemini_base_url`. Filter: `wp_mcp_ai_gemini_request_headers`.
+- ✅ **20 tests** covering header building, endpoint resolution, settings persistence, and filter hooks.
+
+### ECA Pro Toolkit Enhancement — 24 New Tools (April 3, 2026) ⭐ **NEW**
+
+**Comprehensive enhancement with 24 new tools across 8 categories plus 4 upgraded existing tools** (PR #4568).
+
+- ✅ **Attendance & Participation** (3): `mark_eca_attendance`, `get_eca_attendance_report`, `get_student_participation_summary`.
+- ✅ **Waitlist & Enrollment** (3): `manage_eca_waitlist`, `withdraw_student_eca`, `bulk_enroll_students`.
+- ✅ **Scheduling & Conflicts** (3): `check_eca_conflicts`, `set_eca_schedule`, `get_eca_timetable`.
+- ✅ **Notifications** (3): `send_eca_notification`, `configure_eca_notifications`, `send_eca_parent_report`.
+- ✅ **Reporting & Analytics** (3): `generate_eca_analytics`, `generate_eca_participation_report`, `export_eca_data`.
+- ✅ **Integration** (3): `sync_eca_enrollments_from_isams`, `sync_ecas_to_isams`, `sync_ecas_from_socs`.
+- ✅ **Workflow & Lifecycle** (3): `manage_eca_term`, `create_eca_workflow_rule`, `import_ecas_csv`.
+- ✅ **4 upgraded tools**: `get_eca`, `update_eca`, `delete_eca`, `list_ecas` with consistent fields, audit trails, and N+1 query fixes.
+
+### Image Validation Tools — Product & Vehicle (April 4, 2026) ⭐ **NEW**
+
+**AI Vision–powered image validation with industry-standard weighted quality ratings (0–100, A–F)** (PR #4585).
+
+- ✅ **`validate_image_for_product`** — Two-pass validation (technical + AI vision) for 9 product types (watch, bracelet, ring, earring, necklace, glasses, hat, bag, general). 10-category weighted rating derived from VTO industry benchmarks.
+- ✅ **`validate_image_for_vehicle`** — Supports cleaning and repair estimate types with separate weight profiles. Coverage completeness scoring tracks required/recommended views. Weights derived from Qapter/Solera, Ravin AI, CCC ONE protocols.
+- ✅ **29 tests** covering schema, constants, auth, registration, views, and weights.
+
+### Enterprise TMA Templates (April 4, 2026) ⭐ **NEW**
+
+**5 inline Telegram Mini App templates upgraded to enterprise quality with standardized 5-tab architecture** (PR #4586).
+
+- ✅ **E-Commerce** (166→758 lines) — Products with stock/sale badges, localStorage cart with qty controls, order history with Chart.js spending chart, AI Shopping Assistant, Settings.
+- ✅ **CRM** (135→697 lines) — Contact list with search, horizontal-scroll kanban pipeline, Chart.js deal breakdown, AI Sales Coach, Settings.
+- ✅ **Analytics** (111→649 lines) — KPIs with trend indicators, 7/14/30/90d period selector, content stats, traffic charts, AI Insights, Settings.
+- ✅ **Booking** (204→741 lines) — Calendar/slot/form/confirm flow + Upcoming/History views, Chart.js bookings chart, AI scheduling assistant, Settings.
+- ✅ **AI Chat** (136→560 lines) — Enhanced chat with markdown, Tools tab (browse/search available tools), Settings.
+
+### New Shopify Shop TMA & Shopify Jewelry Fixes (April 5, 2026) ⭐ **NEW**
+
+**New general-purpose Shopify e-commerce mini app + critical fixes to existing Shopify Jewelry TMA** (PR #4602).
+
+- ✅ **`tma-shopify-shop`** (24 files) — Catalog with collection filters, debounced search, skeleton loading. Product detail with variant selector & image gallery. Cart with `useReducer` + sessionStorage. Checkout via AI assistant. Orders with status badges. Full AI chat interface.
+- ✅ **Shopify Jewelry fixes** — `executeTool()` corrected from `{tool}` to `{slug}`, `extractProducts()`/`extractOrders()` fixed for `raw?.result?.products` response shape, `TMAContext.jsx` now calls `validateInitData()` with `authReady` gate.
+
+### Per-Connection TMA URL Routing for Multi-Bot Telegram (April 5, 2026) ⭐ **NEW**
+
+**Each Telegram bot gets its own Mini App URL — fixes HMAC validation failures in multi-bot setups** (PR #4588).
+
+- ✅ Per-connection endpoints: `GET /wp-json/mcp-ai/v1/telegram-mini-app/{connection_id}` and all 11 sub-endpoints mirrored.
+- ✅ Admin UI updated to show per-connection Mini App URLs.
+- ✅ Global endpoint unchanged — single-bot setups unaffected.
+
+### Agent Workflow Presets + Chat UI Sub-Agent Panel (April 4, 2026) ⭐ **NEW**
+
+**5 new multi-agent orchestration presets and real-time sub-agent visibility in the chat UI** (PR #4580).
+
+- ✅ **5 new presets**: `agent_supervisor`, `agent_pipeline`, `agent_swarm`, `agent_hierarchical`, `agent_review_qa` — aligned with standard multi-agent patterns.
+- ✅ **Chat UI agent team panel** — Collapsible panel with agent cards (status dots, role, current task), workflow tracker (progress bar + ordered step list), delegation notices for `delegate_to_agent`/`delegate_to_a2a_agent`.
+
+### Security Hardening (April 4, 2026) 🔒
+
+**SQL query hardening, guest token expiration fix, output escaping improvements** (PR #4574).
+
+- ✅ **SQL hardening** — `$wpdb->dbname` interpolation replaced with `$wpdb->prepare('%s', DB_NAME)`. `esc_sql()` on table names in 5 files. Pre-prepared `$where` fragment elimination.
+- ✅ **Guest token TTL** — `guest_token_lifetime` setting now wired to actual token system. Absolute max TTL (7 days) prevents indefinite renewal.
+- ✅ **Output escaping** — Shortcode `echo $assistant_content` → `echo wp_kses_post($assistant_content)`. Removed `urldecode()` after `sanitize_text_field()`.
+- ✅ **Security hardening proposal** — `docs/proposals/SECURITY_HARDENING_PROPOSAL.md` with P1–P3 roadmap.
+
+### Schedule Preset Install Overrides (April 5, 2026) 🔧 **UPDATED**
+
+**`assistant_run` and `channel_broadcast` presets can now receive site-specific values at install time** (PR #4603).
+
+- ✅ `install_preset()` accepts optional 3rd param `$overrides` (e.g., `assistant_id`, `credentials`).
+- ✅ Frontend prompts for assistant selection or credentials JSON on install.
+- ✅ 4 new tests for both types with and without overrides.
+
+### Bug Fixes & Reliability Improvements (April 2–6, 2026) 🔧
+
+- ✅ **`execute()` signature compatibility** (PR #4609): Fixed all 7 JetEngine MCP tool classes — added `= array()` defaults to match `WP_MCP_AI_Tool_Interface`.
+- ✅ **Analytics tab real data** (PR #4593): Hook name mismatch (`wp_mcp_ai_tool_executed` → `wp_mcp_ai_after_tool_execution`) fixed. Per-agent metric tracking now aggregates real data instead of hardcoded zeros.
+- ✅ **Activity log timestamp parsing** (PR #4579): Fixed empty activity tab in Agent Command Center.
+- ✅ **Chart.js height bug** (PR #4576): Fixed chart rendering in Command Center analytics.
+- ✅ **TMA React imports** (PRs #4596, #4598): React SPAs import from `react` directly instead of `@wordpress/element` to prevent crashes in Telegram WebView.
+- ✅ **TMA e-commerce auth race condition** (PR #4590): Fixed woo-shop crash due to missing auth flow.
+- ✅ **TMA session auth & param routing** (PR #4599): Fixed session authentication and remote connection parameter routing.
+- ✅ **TMA haptic feedback API** (PRs #4592, #4595): Fixed haptic API misuse and tools/execute 500 errors.
+- ✅ **Shopify data source config** (PRs #4605, #4606): Toggle visibility and save persistence for Shopify data source picker.
+- ✅ **Shopify TMA white screen** (PR #4607): Fixed white screen in Shopify TMA templates.
+- ✅ **TMA subscriber permissions** (PR #4604): TMA subscriber users can now access remote WooCommerce products.
+- ✅ **Dashboard default page** (PR #4591): Dashboard is now the default page for ECA section.
+- ✅ **Task plans in Command Center** (PR #4583): Fixed missing task plans from tasks tab.
+- ✅ **Model pricing auto-update** (PR #4565): Fixed for models missing from CCT database.
+- ✅ **Lodash security vulnerabilities** (PR #4564): Fixed in pro addon.
+- ✅ **JS lint** (PR #4600): Re-applied JS lint fixes with audit-informed unused var handling.
 
 ### Vehicle Estimation Tools — VIN Decode, Repair & Cleaning Estimates (March 31, 2026) ⭐ **NEW**
 
@@ -820,7 +1050,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - `aggregate_agent_results` - Combine results from multiple agents with configurable strategies
 - **Profession CPT Integration** - 8 new orchestration meta fields for agent roles, capabilities, task patterns, and performance metrics
 - **Team CPT Integration** - 3 new orchestration meta fields for execution modes (single/sequential/parallel/swarm), workflow templates (JSON), and aggregation strategies
-- **Orchestration Seeder** - Intelligent agent role assignment for 200+ professions with WP-CLI commands (`wp profession seed-orchestration`, `wp profession orchestration-stats`)
+- **Orchestration Seeder** - Intelligent agent role assignment for 296 professions with WP-CLI commands (`wp profession seed-orchestration`, `wp profession orchestration-stats`)
 - **Multi-Agent Workflows** - Predefined team templates for research, content, e-commerce, and development workflows
 - **Implementation Status** - 85-90% complete with comprehensive test suite (12 PHPUnit tests, 9 integration tests)
 - **Documentation** - Complete documentation suite (55.3KB across 6 files):
@@ -954,7 +1184,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
   - Screenshot capture guide
   
 - **[Pro Settings & Toolkits](docs/guides/admin/pro-settings-toolkits.md)** ⭐ **NEW**
-  - All 8 Pro toolkits documented (200+ tools)
+  - All 8 Pro toolkits documented (650+ tools)
   - Media Toolkit, Document Generation, Project Management
   - Places, ECA, Health & Wellness, Cloudways, AI CPT Management
   - Enable/configure instructions and performance considerations
@@ -1141,12 +1371,16 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 ### Integrations, security & controls
 - 🔧 Tool Registry for registering PHP functions callable by the AI
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
+- 🔌 **JetEngine 3.8 MCP Server Bridge** ⭐ **NEW** - JSON-RPC 2.0 client bridges NV oOS into JetEngine's native MCP Server with 7 new Pro tools for CPT/taxonomy/meta field creation, relations management, site context grounding, and prompt template access. MCP-first dispatch with REST v2 fallback.
+- 🤝 **Agent-to-Agent (A2A) Protocol** ⭐ **NEW** - Full A2A protocol making NV oOS assistants discoverable and interoperable with any A2A-compliant agent. `/.well-known/agent.json` discovery, JSON-RPC 2.0 server with task state machine, A2A client for remote agent delegation, push notification webhooks.
+- 📊 **Agent Command Center** ⭐ **NEW** - Unified agent management dashboard with 7 tabs: Overview (KPI cards, live status), Activity Log, Active Tasks, Approvals (human-in-the-loop), Analytics (Chart.js with real per-agent metrics), Uptime & Health, and Strategy (efficiency scoring with recommendations).
+- 💬 **Floating Chat Bubble** ⭐ **NEW** - Configurable floating chat bubble widget for Elementor and Gutenberg. 4 position variants, 3 sizes, bounce/pulse animations, dark mode, WCAG focus states, sessionStorage persistence.
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
 - 🔐 Secure REST API endpoints
 - 🔑 **Root Security Key** - Optional wp-config.php constant that can be enabled during emergency shutdown to require authentication before re-initializing the plugin. Provides an additional layer of protection against unauthorized reactivation after security incidents.【F:docs/root-security-key.md†L1-L511】【F:includes/class-wp-mcp-ai-root-security-key.php†L1-L360】
 - 🛰 Assistant directory endpoint that advertises MCP tool/resource capabilities and negotiates Server-Sent Events handshakes for clients such as LM Studio or Claude Desktop.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1772】
 - 📝 Full JSON-RPC 2.0 MCP endpoint (`/mcp`) for standards-compliant remote client communication
-- 🔑 Configurable API credentials and defaults for OpenAI and Gemini
+- 🔑 Configurable API credentials and defaults for OpenAI, Gemini, and Anthropic (with subscription tier support for Team/Enterprise plans and custom base URLs)
 - 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/mcp-server-authentication.md†L22-L46】
 - 🌐 **Mesh networking** for distributed compute pooling across multiple WordPress sites. Server-to-server architecture enables anonymous and authenticated users to benefit from shared AI resources, budget pooling, and workload distribution across 100+ trusted peer sites. Backend assistants coordinate mesh operations via secure inter-site keys while maintaining user attribution and audit trails for compliance.【F:docs/mesh-compute-pooling.md†L1-L615】【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】
 - 🔗 **Federation & Discovery** - Decentralized AI capability network allowing WordPress sites to publish their capabilities via well-known endpoints (`/.well-known/ai-peer`) and discover peer sites through directory services. Supports peer registration, health verification, search & ranking by capability/region/policy, and automatic cron-based health monitoring. Enable federation to join the network or run your own directory service for private peer discovery.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
@@ -1176,7 +1410,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - 🔒 **Security** - File size validation (max 5MB), MIME type checking, JSON validation, and comprehensive input sanitization【F:includes/admin/class-wp-mcp-ai-settings-dashboard.php†L970-L1030】
 - 📊 **Automatic Backups** - Every save operation creates a timestamped backup (keeps last 5) for emergency recovery【F:includes/admin/class-wp-mcp-ai-settings-dashboard.php†L285-L295】
 - 🛡️ **Data Protection** - 3-layer protection (section filtering, merge strategy, sensitive key filtering) prevents accidental data loss when saving from tabs/subtabs【F:docs/guides/admin/settings-management.md†L230-L280】
-- 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (200+ tools) including Project Management, Document Generation, Health & Wellness, and more【F:docs/guides/admin/pro-settings-toolkits.md†L1-L650】
+- 📖 **Pro Toolkits** - Enable and configure 8 specialized Pro toolkits (650+ tools) including Project Management, Document Generation, Health & Wellness, CRE Debt & Securitization, and more【F:docs/guides/admin/pro-settings-toolkits.md†L1-L650】
 
 ➡️ **Complete Documentation:** [Settings Management Guide](docs/guides/admin/settings-management.md) | [Quick Reference](docs/SETTINGS_MANAGEMENT_QUICK_REFERENCE.md) | [Visual UI Guide](docs/visual-guides/settings-management-ui.md) | [Pro Toolkits Guide](docs/guides/admin/pro-settings-toolkits.md)
 
@@ -1409,6 +1643,7 @@ This file-based approach allows quick status updates without code changes, makin
 NV oOS ships multiple ways to embed assistants on the front end:
 
 - **Classic chat shortcode** – `[mcp_ai_chat]` renders the bundled interface with attachment uploads, tool invocation feedback, and optional guest access via `allow_guests="true"`. When guest mode is enabled, the shortcode provisions a temporary token and injects it into the JavaScript bootstrap so visitors without WordPress accounts can continue chatting while still respecting capability checks and attachment safety limits.【F:includes/class-wp-mcp-ai-shortcode.php†L132-L258】【F:includes/class-wp-mcp-ai-shortcode.php†L188-L226】
+- **Floating chat bubble** ⭐ **NEW** – A configurable floating button that sits at a screen corner and opens a chat panel powered by the `[mcp_ai_chat]` shortcode. Available as both an **Elementor widget** and a **Gutenberg block**. Supports 4 position variants, 3 sizes, auto-open delay, session persistence, dark mode, and WCAG keyboard navigation.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-bubble-widget.php†L1-L200】【F:includes/blocks/chat-bubble/block.json†L1-L50】
 - **[Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor) widgets** – Drop the chat UI anywhere Elementor is active, pair it with intro/FAQ blocks, and surface dashboard telemetry without custom code. The chat widget mirrors the shortcode controls (including `allow_guests`), and companion widgets expose onboarding content, usage timers, provider quick links, and activity feeds for operational views.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-elementor-integration.php†L48-L98】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L140】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L226】【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L167】
 
 Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing the chat shortcode and [Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor) widget to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
@@ -1538,11 +1773,11 @@ composer install --no-dev
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
-2. You now have the **complete version** with all 533 tools (165 base + 368 Pro)
+2. You now have the **complete version** with all 875 tools (224 base + 651 Pro)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
-- ✅ All 533 built-in tools ready to use
+- ✅ All 875 built-in tools ready to use
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -1572,7 +1807,7 @@ composer install --no-dev
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ 165 base tools (more with optional third-party plugins)
+- ✅ 224 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
@@ -1604,7 +1839,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, 165 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, 224 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -1770,11 +2005,13 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 ### 📖 Documentation Hub
 - **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 550+ documentation files
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 1,600+ documentation files
+- **[Architecture Overview](docs/architecture/ARCHITECTURE.md)** - System architecture (9 providers, 875 tool classes, 34 REST controllers)
+- **[Request Flow Walkthrough](docs/architecture/REQUEST-FLOW-WALKTHROUGH.md)** - End-to-end chat request lifecycle trace
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
 
 ### Essential References
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 398 tools documented (141 base + 257 Pro)
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 875 tools documented (224 base + 651 Pro)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
 
@@ -2002,6 +2239,7 @@ Sites running [Elementor](https://be.elementor.com/visit/?bta=229888&brand=eleme
 
 ### Chat surfaces and companion blocks
 - **NV oOS Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
+- **NV oOS Chat Bubble** ⭐ **NEW** – Floating chat bubble that sits at a configurable screen corner and opens a chat panel powered by the existing `[mcp_ai_chat]` shortcode. Also available as a **Gutenberg block** (`wp:mcp-ai-wpoos/chat-bubble`). 5 control sections: Chat Settings, Bubble Settings (position/size/animation/tooltip/badge/auto-open), Panel Settings, Bubble Style, Panel Style. BEM CSS with 4 positions, 3 sizes, bounce/pulse animations, dark mode, full-screen mobile (<480px), `prefers-reduced-motion`, WCAG focus states. Public API at `window.wpMcpAiChatBubble`.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-bubble-widget.php†L1-L200】【F:includes/blocks/chat-bubble/block.json†L1-L50】
 - **NV oOS Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
 - **NV oOS Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
 - **NV oOS Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
@@ -2633,17 +2871,20 @@ For complete SSE implementation details, configuration options, and troubleshoot
 NV oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
 
 **MCP Version:** 2024-11-05  
-**Compliance:** OAuth 2.1, Streamable HTTP transport, Progress notifications
+**Compliance:** Full MCP 2024-11-05 — all 11 protocol methods, OAuth 2.1, Streamable HTTP, JSON-RPC batching, tool annotations, session management
 
 ### What's New in MCP 2024-11-05
 
-The latest specification includes significant enhancements:
+The latest specification is **fully implemented**:
 - **OAuth 2.1 Security**: PKCE, token rotation, mandatory HTTPS
 - **Streamable HTTP Transport**: Better reconnection and bidirectional communication
+- **JSON-RPC Batching**: Efficient parallel task processing (up to 20 messages per batch)
+- **Tool Annotations**: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` metadata
 - **Progress Notifications**: Descriptive status updates during tool execution
-- **Tool Annotations**: Metadata for read-only, destructive operations
-- **Session Management**: State recovery via `Mcp-Session-Id` header
-- **JSON-RPC Batching**: Efficient parallel task processing
+- **Completions**: Argument autocompletion for tools and prompts
+- **Session Management**: State recovery via `Mcp-Session-Id` header (1h TTL)
+- **Logging**: Client-controlled log verbosity via `logging/setLevel`
+- **Cancellation**: Request cancellation via `notifications/cancelled`
 
 ### Endpoint URL
 
@@ -2666,11 +2907,17 @@ All requests must use standard JSON-RPC 2.0 format:
 
 ### Supported Methods
 
-- **`initialize`** - Initialize MCP connection and retrieve server capabilities (with 2024-11-05 enhancements)
+- **`initialize`** - Initialize MCP connection and retrieve server capabilities
+- **`ping`** - Server liveness check
 - **`tools/list`** - List available tools with annotations for the authenticated assistant
 - **`tools/call`** - Execute a specific tool with progress notifications support
 - **`resources/list`** - List available resources (knowledge files, etc.) with metadata
+- **`resources/read`** - Read resource content by URI with MIME-typed responses
 - **`prompts/list`** - List available prompt shortcuts
+- **`prompts/get`** - Get full prompt content with system instructions and argument values
+- **`completion/complete`** - Argument autocompletion (enum/boolean for tools, slug matching for prompts)
+- **`logging/setLevel`** - Client-controlled log verbosity (8 standard levels)
+- **`notifications/cancelled`** - Cancel a pending request
 
 ### Authentication (OAuth 2.1 Enhanced)
 
@@ -3413,7 +3660,7 @@ Each hook receives sanitized data and respects the current user's permissions an
 Start with the comprehensive documentation before seeking additional support:
 
 1. **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast answers to common questions and tasks
-2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 32 documentation files
+2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 1,600+ documentation files
 3. **[Troubleshooting Guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)** - Solutions to common issues
 4. **[REST API Reference](docs/reference/api/rest-api.md)** - Complete API documentation
 

@@ -107,6 +107,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-cont
 // Load context compression service (RAG enhancements).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-context-compression-service.php';
 
+// Load PSO optimizer service (Particle Swarm Optimization for AI orchestration).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-pso-optimizer-service.php';
+
 // Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-balancer.php';
@@ -422,6 +425,25 @@ function wp_mcp_ai_get_vector_context_service() {
  */
 function wp_mcp_ai_get_context_compression_service() {
 	return WP_MCP_AI_Context_Compression_Service::get_instance();
+}
+
+/**
+ * Get PSO optimizer service instance
+ *
+ * Helper function to get the Particle Swarm Optimization service for
+ * adaptive AI orchestration parameter tuning.
+ *
+ * @since 1.2.0
+ * @return WP_MCP_AI_PSO_Optimizer_Service PSO optimizer service instance.
+ */
+function wp_mcp_ai_get_pso_optimizer_service() {
+	static $service = null;
+
+	if ( null === $service ) {
+		$service = new WP_MCP_AI_PSO_Optimizer_Service();
+	}
+
+	return $service;
 }
 
 /**

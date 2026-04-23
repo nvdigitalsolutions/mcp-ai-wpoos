@@ -1029,7 +1029,23 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'deprecated',
 			),
 
-			// Anthropic Models (February 2026).
+			// Anthropic Models (April 2026).
+			// Claude Mythos (Capybara tier) - Most capable model.
+			// Gated research preview. 1M context, 128K output.
+			'claude-mythos-preview'                        => array(
+				'name'           => 'Claude Mythos Preview (Most Capable)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'max_output'     => 128000,
+				'fallback_model' => 'claude-opus-4-6',
+				'cost_per_1k'    => 0.020,
+				'status'         => 'active',
+			),
+
 			// Claude 4.6 series (multimodal - vision capable) - Latest.
 			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
 			// Context window: 1M tokens (beta) for 4.6 models.
@@ -1495,7 +1511,56 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.00125,
 				'status'         => 'deprecated',
 			),
-			// Gemma models (Google's open models - text-only).
+			// Gemma 4 models (Google's latest open models - multimodal, Apache 2.0, April 2026).
+			'gemma-4-31b-it'                               => array(
+				'name'           => 'Gemma 4 31B Dense (Multimodal)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 10000,
+				'context_window' => 262144,
+				'fallback_model' => 'gemma-4-26b-it',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'gemma-4-26b-it'                               => array(
+				'name'           => 'Gemma 4 26B MoE (Multimodal)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 10000,
+				'context_window' => 262144,
+				'fallback_model' => 'gemma-4-e4b-it',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'gemma-4-e4b-it'                               => array(
+				'name'           => 'Gemma 4 E4B (Multimodal, Edge)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 10000,
+				'context_window' => 131072,
+				'fallback_model' => 'gemma-4-e2b-it',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'gemma-4-e2b-it'                               => array(
+				'name'           => 'Gemma 4 E2B (Multimodal, Edge)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 10000,
+				'context_window' => 131072,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			// Gemma 2 models (Google's open models - text-only, legacy).
 			'gemma-2-27b-it'                               => array(
 				'name'           => 'Gemma 2 27B (Instruct)',
 				'provider'       => 'gemini',
@@ -1779,7 +1844,32 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
-			// Google Gemma models.
+			// Google Gemma 4 models (multimodal, Apache 2.0).
+			'google/gemma-4-31b-it'                        => array(
+				'name'           => 'Gemma 4 31B Dense (Multimodal)',
+				'provider'       => 'lm_studio',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 262144,
+				'fallback_model' => 'google/gemma-4-26b-it',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'google/gemma-4-26b-it'                        => array(
+				'name'           => 'Gemma 4 26B MoE (Multimodal)',
+				'provider'       => 'lm_studio',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 262144,
+				'fallback_model' => 'google/gemma-3-12b-it',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			// Google Gemma 3 models.
 			'google/gemma-3-12b-it'                        => array(
 				'name'           => 'Gemma 3 12B Instruct',
 				'provider'       => 'lm_studio',
@@ -2140,6 +2230,18 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
+			'gemma4'                                       => array(
+				'name'           => 'Gemma 4',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 262144,
+				'fallback_model' => 'gemma3',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
 			'gemma2'                                       => array(
 				'name'           => 'Gemma 2',
 				'provider'       => 'ollama',
@@ -2228,6 +2330,18 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Text Generation Models.
+			'@cf/google/gemma-4-26b-it'                    => array(
+				'name'           => 'Gemma 4 26B MoE (Multimodal)',
+				'provider'       => 'cloudflare',
+				'tpm'            => 300000,
+				'rpm'            => 600,
+				'tpd'            => 10000000,
+				'rpd'            => 10000,
+				'context_window' => 262144,
+				'fallback_model' => '@cf/google/gemma-3-12b-it',
+				'cost_per_1k'    => 0.0004,
+				'status'         => 'active',
+			),
 			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
 				'name'           => 'Gemma SEA Lion V4 27B IT',
 				'provider'       => 'cloudflare',
@@ -2958,6 +3072,56 @@ class WP_MCP_AI_Model_Config {
 				'context_window' => 262144,
 				'fallback_model' => 'qwen/qwen3-32b',
 				'cost_per_1k'    => 0.002,
+				'status'         => 'active',
+			),
+
+			// ── Google Gemma 4 Models (Multimodal, Apache 2.0) ───
+			'google/gemma-4-31b-it'                         => array(
+				'name'           => 'Gemma 4 31B Dense (Multimodal)',
+				'provider'       => 'nvidia',
+				'tpm'            => 100000,
+				'rpm'            => 1000,
+				'tpd'            => 5000000,
+				'rpd'            => 10000,
+				'context_window' => 262144,
+				'fallback_model' => 'google/gemma-4-26b-it',
+				'cost_per_1k'    => 0.0003,
+				'status'         => 'active',
+			),
+			'google/gemma-4-26b-it'                         => array(
+				'name'           => 'Gemma 4 26B MoE (Multimodal)',
+				'provider'       => 'nvidia',
+				'tpm'            => 150000,
+				'rpm'            => 1500,
+				'tpd'            => 7500000,
+				'rpd'            => 15000,
+				'context_window' => 262144,
+				'fallback_model' => 'google/gemma-3-27b-it',
+				'cost_per_1k'    => 0.00015,
+				'status'         => 'active',
+			),
+			'google/gemma-4-e4b-it'                         => array(
+				'name'           => 'Gemma 4 E4B (Multimodal, Edge)',
+				'provider'       => 'nvidia',
+				'tpm'            => 200000,
+				'rpm'            => 2000,
+				'tpd'            => 10000000,
+				'rpd'            => 20000,
+				'context_window' => 131072,
+				'fallback_model' => 'google/gemma-4-e2b-it',
+				'cost_per_1k'    => 0.00008,
+				'status'         => 'active',
+			),
+			'google/gemma-4-e2b-it'                         => array(
+				'name'           => 'Gemma 4 E2B (Multimodal, Edge)',
+				'provider'       => 'nvidia',
+				'tpm'            => 250000,
+				'rpm'            => 2500,
+				'tpd'            => 12000000,
+				'rpd'            => 25000,
+				'context_window' => 131072,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.00004,
 				'status'         => 'active',
 			),
 

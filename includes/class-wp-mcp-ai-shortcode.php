@@ -133,61 +133,15 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
-		// Register embedded LLM client scripts (always register, enqueue conditionally).
-		// This prevents conflicts when multiple widgets with different providers are on the same page.
+		// Register embedded LLM client scripts via the Embedded addon (or Pro addon).
+		// The addon provides the actual script files and handles registration.
 		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-			$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
-			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
-			$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
-			$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
-
-			// Register WebLLM loader (loads WebLLM library dynamically).
-			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
-				wp_register_script(
-					'webllm-loader',
-					$webllm_loader_path,
-					array(),
-					$webllm_loader_version,
-					true
-				);
-			}
-
-			// Register embedded LLM client (depends on WebLLM loader).
-			if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-embedded-llm-client',
-					$embedded_script_path,
-					array( 'webllm-loader' ),
-					$embedded_script_version,
-					true
-				);
-			}
-
-			// Register enhanced WebLLM scripts for tool calling and knowledge support.
-			$tool_adapter_path        = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
-			$tool_adapter_version     = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
-			$function_calling_path    = WP_MCP_AI_URL . 'assets/js/webllm-function-calling-client.min.js';
-			$function_calling_version = $this->get_asset_version( 'assets/js/webllm-function-calling-client.min.js' );
-
-			if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-webllm-tool-adapter',
-					$tool_adapter_path,
-					array(),
-					$tool_adapter_version,
-					true
-				);
-			}
-
-			if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
-				wp_register_script(
-					'wp-mcp-ai-webllm-function-calling',
-					$function_calling_path,
-					array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
-					$function_calling_version,
-					true
-				);
-			}
+			/**
+			 * Fires to let the Embedded addon register its WebLLM scripts.
+			 *
+			 * @since 2.3.0
+			 */
+			do_action( 'wp_mcp_ai_register_embedded_scripts' );
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -244,6 +198,7 @@ class WP_MCP_AI_Shortcode {
 					'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 					'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 					'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
+					'messagesEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
@@ -283,6 +238,7 @@ class WP_MCP_AI_Shortcode {
 				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
+				'messagesEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
@@ -391,7 +347,11 @@ class WP_MCP_AI_Shortcode {
 	 * @return bool True if embedded provider is available, false otherwise.
 	 */
 	protected function is_embedded_provider_available( $provider ) {
-		return 'embedded' === $provider && defined( 'WP_MCP_AI_PRO_VERSION' );
+		if ( 'embedded' !== $provider ) {
+			return false;
+		}
+		// Check via filter (Embedded addon or Pro addon can provide embedded support).
+		return (bool) apply_filters( 'wp_mcp_ai_is_embedded_provider_available', defined( 'WP_MCP_AI_PRO_VERSION' ) );
 	}
 
 	/**
@@ -590,6 +550,7 @@ class WP_MCP_AI_Shortcode {
 				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
+				'messagesEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
@@ -867,8 +828,7 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$is_embedded_server_model = 'embedded' === $assistant_provider
 				&& ! empty( $assistant_model )
-				&& class_exists( 'WP_MCP_AI_Embedded_Client' )
-				&& WP_MCP_AI_Embedded_Client::is_server_model_slug( $assistant_model );
+				&& apply_filters( 'wp_mcp_ai_is_embedded_server_model', false, $assistant_model );
 			$needs_embedded_provider  = $this->is_embedded_provider_available( $assistant_provider ) && ! $is_embedded_server_model;
 
 			// Parse additional_tools from the shortcode attribute early so it can be used for:
@@ -895,19 +855,18 @@ class WP_MCP_AI_Shortcode {
 			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
-				// Enqueue embedded provider scripts.
-				// WordPress ensures these are only loaded once even if called multiple times.
-				wp_enqueue_script( 'webllm-loader' );
-				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
-
-				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
-				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
-
-				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
-					// Enqueue tool adapter and function calling client for enhanced capabilities.
-					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
-					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
-				}
+				/**
+				 * Fires to enqueue embedded provider scripts (WebLLM loader, client, tool adapter).
+				 * The Embedded addon handles the actual enqueue from its own assets.
+				 *
+				 * @since 2.3.0
+				 *
+				 * @param bool $needs_embedded    Whether embedded provider scripts are needed.
+				 * @param bool $has_tools         Whether the assistant has tools configured.
+				 * @param bool $has_system_prompt Whether the assistant has a system prompt.
+				 * @param bool $has_knowledge     Whether the assistant has knowledge files.
+				 */
+				do_action( 'wp_mcp_ai_enqueue_embedded_scripts', $needs_embedded_provider, $has_tools, $has_system_prompt, $has_knowledge );
 			}
 
 			// Enqueue chat script (always with same dependencies - no conditional changes).
@@ -916,8 +875,8 @@ class WP_MCP_AI_Shortcode {
 			wp_enqueue_style( self::STYLE_HANDLE );
 
 			// Enqueue slash commands integration if available.
-			if ( wp_script_is( 'mcp-ai-slash-commands', 'registered' ) ) {
-				wp_enqueue_script( 'mcp-ai-slash-commands' );
+			if ( wp_script_is( 'wp-mcp-ai-slash-commands', 'registered' ) ) {
+				wp_enqueue_script( 'wp-mcp-ai-slash-commands' );
 			}
 
 			$instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
@@ -1330,6 +1289,33 @@ class WP_MCP_AI_Shortcode {
 				</button>
 			</div>
 			<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
+			<div class="wp-mcp-ai-chat__agent-panel" role="complementary" aria-label="<?php echo esc_attr__( 'Agent team activity', 'mcp-ai-wpoos' ); ?>" hidden>
+				<div class="wp-mcp-ai-chat__agent-panel-header">
+					<button type="button" class="wp-mcp-ai-chat__agent-panel-toggle" aria-expanded="false">
+						<svg class="wp-mcp-ai-chat__agent-panel-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+							<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+						</svg>
+						<span class="wp-mcp-ai-chat__agent-panel-title"><?php esc_html_e( 'Agent Team', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-chat__agent-panel-count" aria-label="<?php echo esc_attr__( 'Active agents', 'mcp-ai-wpoos' ); ?>">0</span>
+						<svg class="wp-mcp-ai-chat__agent-panel-chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
+						</svg>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-chat__agent-panel-body" hidden>
+					<div class="wp-mcp-ai-chat__agent-cards" role="list" aria-label="<?php echo esc_attr__( 'Sub-agents', 'mcp-ai-wpoos' ); ?>"></div>
+					<div class="wp-mcp-ai-chat__workflow-tracker" role="status" aria-label="<?php echo esc_attr__( 'Workflow progress', 'mcp-ai-wpoos' ); ?>" hidden>
+						<div class="wp-mcp-ai-chat__workflow-tracker-header">
+							<span class="wp-mcp-ai-chat__workflow-tracker-title"><?php esc_html_e( 'Workflow Progress', 'mcp-ai-wpoos' ); ?></span>
+							<span class="wp-mcp-ai-chat__workflow-tracker-progress">0%</span>
+						</div>
+						<div class="wp-mcp-ai-chat__workflow-tracker-bar">
+							<div class="wp-mcp-ai-chat__workflow-tracker-fill"></div>
+						</div>
+						<ol class="wp-mcp-ai-chat__workflow-tracker-steps" aria-label="<?php echo esc_attr__( 'Workflow steps', 'mcp-ai-wpoos' ); ?>"></ol>
+					</div>
+				</div>
+			</div>
 			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
@@ -1350,7 +1336,7 @@ class WP_MCP_AI_Shortcode {
 					<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
 					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
 					<input type="file" class="wp-mcp-ai-chat__translate-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
-					<button type="button" class="wp-mcp-ai-chat__translate" aria-label="<?php echo esc_attr__( 'Translate audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<button type="button" class="wp-mcp-ai-chat__translate" aria-label="<?php echo esc_attr__( 'Translate audio', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7l1.62-4.33L19.12 17h-3.24z"></path>
 						</svg>
@@ -1363,7 +1349,7 @@ class WP_MCP_AI_Shortcode {
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Voice chat', 'mcp-ai-wpoos' ); ?></span>
 					</button>
-					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
 							<path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>
@@ -1504,6 +1490,12 @@ class WP_MCP_AI_Shortcode {
 			</section>
 		</div>
 			<?php
+			// All dynamic values in this output buffer are escaped:
+			// - User-facing text: esc_html(), esc_html_e(), esc_html__()
+			// - HTML attributes: esc_attr(), esc_attr__(), esc_attr_e()
+			// - URLs: esc_url(), esc_url_raw()
+			// - Post content: wp_kses_post() (line where $assistant_content is echoed)
+			// - JSON config: wp_json_encode() via wp_add_inline_script().
 			return ob_get_clean();
 
 		} catch ( Exception $e ) {
@@ -1524,6 +1516,257 @@ class WP_MCP_AI_Shortcode {
 				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'mcp-ai-wpoos' ) .
 				'</div>';
 		}
+	}
+
+	/**
+	 * ---------------------------------------------------------------
+	 * Footer chat-bubble rendering
+	 *
+	 * Elementor widgets and Gutenberg blocks render the chat-bubble
+	 * shell via wp_footer so the markup is a direct child of <body>.
+	 * This avoids:
+	 *  1. Stacking-context / overflow:hidden traps in page-builder
+	 *     sections (Elementor header/footer templates especially).
+	 *  2. wp_kses_post() stripping data-* attributes that chat.js
+	 *     relies on for initialisation.
+	 *  3. Script-timing issues when the header template renders
+	 *     after footer scripts have already been printed.
+	 * ------------------------------------------------------------- */
+
+	/**
+	 * Queued chat-bubble HTML fragments for footer rendering.
+	 *
+	 * @var string[]
+	 */
+	private static $footer_bubbles = array();
+
+	/**
+	 * Whether the wp_footer hook has been registered.
+	 *
+	 * @var bool
+	 */
+	private static $footer_hook_registered = false;
+
+	/**
+	 * Queue a fully-built chat-bubble HTML fragment for rendering
+	 * inside wp_footer.
+	 *
+	 * Used by the Gutenberg chat-bubble block.  The Elementor widget
+	 * renders inline and does not use this mechanism (JS promotes
+	 * the element to document.body instead).
+	 *
+	 * The HTML should already be properly escaped at the call-site
+	 * (esc_attr, esc_html, sanitize_hex_color, etc.).
+	 *
+	 * @param string $html Complete bubble HTML.
+	 */
+	public static function queue_footer_bubble( $html ) {
+		self::$footer_bubbles[] = $html;
+
+		if ( ! self::$footer_hook_registered ) {
+			// Priority 5: render before footer scripts (priority 20) so the
+			// DOM is present when chat.js and chat-bubble.js auto-initialise.
+			add_action( 'wp_footer', array( __CLASS__, 'render_footer_bubbles' ), 5 );
+			self::$footer_hook_registered = true;
+		}
+	}
+
+	/**
+	 * Output all queued chat-bubble fragments.
+	 *
+	 * Hooked to `wp_footer` at priority 5.
+	 *
+	 * Because the bubble HTML is injected after DOMContentLoaded, the
+	 * chat-bubble.js auto-initialiser may have already run its global
+	 * scan.  An inline script is appended to re-trigger initialisation
+	 * so the newly-injected bubbles receive event listeners.
+	 */
+	public static function render_footer_bubbles() {
+		if ( empty( self::$footer_bubbles ) ) {
+			return;
+		}
+
+		foreach ( self::$footer_bubbles as $html ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML pre-escaped by callers using esc_attr(), esc_html(), sanitize_hex_color(), and wp_kses_post().
+			echo $html;
+		}
+
+		// Re-trigger bubble init AND chat init for the just-injected markup.
+		// chat-bubble.js exposes window.wpMcpAiChatBubble.init().
+		// chat.js exposes window.wpMcpAiChatInit.init().
+		// wp_get_inline_script_tag() (WP 5.7+) adds the CSP nonce automatically.
+		$reinit_js = 'if(window.wpMcpAiChatInit&&window.wpMcpAiChatInit.init){window.wpMcpAiChatInit.init();}'
+			. 'if(window.wpMcpAiChatBubble&&window.wpMcpAiChatBubble.init){window.wpMcpAiChatBubble.init();}';
+
+		if ( function_exists( 'wp_get_inline_script_tag' ) ) {
+			echo wp_get_inline_script_tag( $reinit_js ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_get_inline_script_tag() escapes and adds CSP nonce.
+		} else {
+			echo '<script>' . $reinit_js . '</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript,WordPress.Security.EscapeOutput.OutputNotEscaped -- Fallback for WP < 5.7; content is a static string.
+		}
+
+		self::$footer_bubbles = array();
+	}
+
+	/**
+	 * Sanitise shortcode output while preserving elements the chat UI needs.
+	 *
+	 * WordPress's wp_kses_post() strips data-* attributes and SVG elements
+	 * by default.  The chat interface relies on:
+	 *
+	 *  - `data-wp-mcp-ai-chat` and `data-template` for JS initialisation.
+	 *  - SVG icons inside action buttons (send, attach, transcribe, etc.).
+	 *  - Form element attributes (`required`, `placeholder`, `accept`,
+	 *    `multiple`, `aria-controls`, `aria-label`, `hidden`).
+	 *
+	 * This wrapper temporarily extends the kses allow-list with the
+	 * specific tags and attributes the chat UI needs, then removes the
+	 * filter.  Only safe, presentation-only SVG elements are allowed —
+	 * script, foreignObject, and event-handler attributes are NOT added.
+	 *
+	 * @param string $html Raw shortcode output.
+	 * @return string Sanitised HTML with required elements intact.
+	 */
+	public static function kses_chat_output( $html ) {
+		$filter = function ( $tags, $context ) {
+			if ( 'post' !== $context ) {
+				return $tags;
+			}
+
+			// Data attributes the chat JS needs on container elements.
+			$extra_attrs = array(
+				'data-wp-mcp-ai-chat'        => true,
+				'data-template'              => true,
+				'data-wp-mcp-ai-initialized' => true,
+				'data-instance-id'           => true,
+				'hidden'                     => true,
+				'aria-controls'              => true,
+				'aria-label'                 => true,
+				'aria-expanded'              => true,
+				'aria-hidden'                => true,
+				'aria-live'                  => true,
+				'required'                   => true,
+				'placeholder'                => true,
+			);
+
+			foreach ( $tags as $tag => $attrs ) {
+				if ( is_array( $attrs ) ) {
+					$tags[ $tag ] = array_merge( $attrs, $extra_attrs );
+				}
+			}
+
+			// Additional form element attributes.
+			if ( isset( $tags['input'] ) && is_array( $tags['input'] ) ) {
+				$tags['input']['accept']   = true;
+				$tags['input']['multiple'] = true;
+			}
+
+			if ( isset( $tags['textarea'] ) && is_array( $tags['textarea'] ) ) {
+				$tags['textarea']['required']    = true;
+				$tags['textarea']['placeholder'] = true;
+			}
+
+			// Safe SVG elements for chat UI icons (no script, foreignObject,
+			// or event-handler attributes).
+			//
+			// Note: WordPress kses normalises attribute names to lowercase, so
+			// `viewBox` in HTML becomes `viewbox` after kses processing.  Most
+			// browsers tolerate lowercase `viewbox` in inline SVG; for strict
+			// SVG compliance the icons would need to live outside kses.
+			$svg_global = array(
+				'class'       => true,
+				'id'          => true,
+				'style'       => true,
+				'aria-hidden' => true,
+				'focusable'   => true,
+				'role'        => true,
+			);
+
+			$tags['svg'] = array_merge(
+				$svg_global,
+				array(
+					'xmlns'        => true,
+					'width'        => true,
+					'height'       => true,
+					'viewbox'      => true, // Lowercase – kses normalises viewBox → viewbox.
+					'fill'         => true,
+					'stroke'       => true,
+					'stroke-width' => true, // SVG attribute is hyphenated (stroke-width).
+				)
+			);
+
+			$tags['path'] = array(
+				'd'               => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['circle'] = array(
+				'cx'   => true,
+				'cy'   => true,
+				'r'    => true,
+				'fill' => true,
+				'class' => true,
+			);
+
+			$tags['line'] = array(
+				'x1'              => true,
+				'y1'              => true,
+				'x2'              => true,
+				'y2'              => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['rect'] = array(
+				'x'      => true,
+				'y'      => true,
+				'width'  => true,
+				'height' => true,
+				'rx'     => true,
+				'ry'     => true,
+				'fill'   => true,
+				'stroke' => true,
+				'class'  => true,
+			);
+
+			$tags['g'] = array(
+				'fill'      => true,
+				'transform' => true,
+				'class'     => true,
+			);
+
+			$tags['polyline'] = array(
+				'points'          => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+				'class'           => true,
+			);
+
+			$tags['polygon'] = array(
+				'points' => true,
+				'fill'   => true,
+				'stroke' => true,
+				'class'  => true,
+			);
+
+			return $tags;
+		};
+
+		add_filter( 'wp_kses_allowed_html', $filter, 99, 2 );
+		$safe = wp_kses_post( $html );
+		remove_filter( 'wp_kses_allowed_html', $filter, 99 );
+
+		return $safe;
 	}
 
 	/**

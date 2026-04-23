@@ -313,7 +313,7 @@ class WP_MCP_AI_Pro_License {
 
 			if ( $days_until_expiry > 0 && $days_until_expiry <= 30 ) {
 				?>
-				<div class="notice notice-warning">
+				<div class="notice notice-warning is-dismissible">
 					<p>
 						<?php
 						printf(
@@ -331,7 +331,7 @@ class WP_MCP_AI_Pro_License {
 		// Expired license notice.
 		if ( 'expired' === $license_status ) {
 			?>
-			<div class="notice notice-error">
+			<div class="notice notice-error is-dismissible">
 				<p>
 					<?php esc_html_e( 'Your NV oOS Pro license has expired. Pro features are disabled. Please renew your license.', 'mcp-ai-wpoos' ); ?>
 					<a href="<?php echo esc_url( apply_filters( 'wp_mcp_ai_pro_upgrade_url', 'https://nvdigitalsolutions.com/renew' ) ); ?>" class="button button-primary" style="margin-left: 10px;">
@@ -345,7 +345,7 @@ class WP_MCP_AI_Pro_License {
 		// Invalid license notice.
 		if ( 'invalid' === $license_status ) {
 			?>
-			<div class="notice notice-error">
+			<div class="notice notice-error is-dismissible">
 				<p>
 					<?php esc_html_e( 'Your NV oOS Pro license is invalid. Pro features are disabled.', 'mcp-ai-wpoos' ); ?>
 				</p>
@@ -377,8 +377,11 @@ class WP_MCP_AI_Pro_License {
 						<strong><?php esc_html_e( 'Pro License Active', 'mcp-ai-wpoos' ); ?></strong><br>
 						<?php
 						printf(
-							/* translators: %s: plan name */
-							esc_html__( 'Plan: %s', 'mcp-ai-wpoos' ),
+							wp_kses(
+								/* translators: %s: plan name */
+								__( 'Plan: %s', 'mcp-ai-wpoos' ),
+								array( 'strong' => array() )
+							),
 							'<strong>' . esc_html( ucfirst( $plan ) ) . '</strong>'
 						);
 						?>

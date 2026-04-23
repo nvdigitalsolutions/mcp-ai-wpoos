@@ -339,6 +339,53 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load compact command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-compact.php';
+
+	// Register /compact command.
+	$compact_command = new WP_MCP_AI_Slash_Command_Compact();
+	$wp_mcp_ai_slash_command_handler->register(
+		'compact',
+		array(
+			'handler'     => array( $compact_command, 'execute' ),
+			'description' => __( 'Proactive context compaction — summarize conversation history to free token budget', 'mcp-ai-wpoos' ),
+			'usage'       => '/compact [--strategy=<summarize|trim-tools|keep-recent|full>] [--keep=<number>]',
+			'capability'  => 'read',
+			'parameters'  => array(
+				'--strategy' => array(
+					'description' => __( 'Compaction strategy: summarize (default), trim-tools, keep-recent, full', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--keep'     => array(
+					'description' => __( 'Number of recent messages to preserve (default: 6)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load context command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-context.php';
+
+	// Register /context command.
+	$context_command = new WP_MCP_AI_Slash_Command_Context();
+	$wp_mcp_ai_slash_command_handler->register(
+		'context',
+		array(
+			'handler'     => array( $context_command, 'execute' ),
+			'description' => __( 'Show context budget status — token usage, message count, and capacity remaining', 'mcp-ai-wpoos' ),
+			'usage'       => '/context [--verbose|-v]',
+			'capability'  => 'read',
+			'aliases'     => array( 'ctx' ),
+			'parameters'  => array(
+				'--verbose' => array(
+					'description' => __( 'Show detailed token breakdown', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
@@ -503,7 +550,7 @@ function wp_mcp_ai_get_slash_commands( $filter_by_capability = false ) {
 function wp_mcp_ai_register_slash_command_scripts() {
 	// Register autocomplete script.
 	wp_register_script(
-		'mcp-ai-command-autocomplete',
+		'wp-mcp-ai-command-autocomplete',
 		WP_MCP_AI_URL . 'assets/js/command-autocomplete.js',
 		array(),
 		WP_MCP_AI_VERSION,
@@ -512,9 +559,9 @@ function wp_mcp_ai_register_slash_command_scripts() {
 
 	// Register slash commands integration script.
 	wp_register_script(
-		'mcp-ai-slash-commands',
+		'wp-mcp-ai-slash-commands',
 		WP_MCP_AI_URL . 'assets/js/slash-commands.js',
-		array( 'mcp-ai-command-autocomplete' ),
+		array( 'wp-mcp-ai-command-autocomplete' ),
 		WP_MCP_AI_VERSION,
 		true
 	);
@@ -535,7 +582,7 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	$slash_command_list_endpoint = $rest_url_base . 'slash-command/list';
 
 	wp_localize_script(
-		'mcp-ai-slash-commands',
+		'wp-mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
 			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $rest_url_base ) ),

@@ -288,6 +288,9 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 		}
 
 		// Apply fixes if any were made.
+		// WordPress.org compliance: only auto-fix post-type docs (stored in the database).
+		// File-type docs (README files in plugin/theme folders) are read-only because
+		// plugin folders are deleted on upgrade and writing to them violates directory guidelines.
 		if ( ! empty( $fixed ) && $options['auto_fix'] && 'post' === $doc['type'] ) {
 			wp_update_post(
 				array(
@@ -295,8 +298,6 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 					'post_content' => $doc['content'],
 				)
 			);
-		} elseif ( ! empty( $fixed ) && $options['auto_fix'] && 'file' === $doc['type'] ) {
-			file_put_contents( $doc['path'], $doc['content'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
 
 		return array(

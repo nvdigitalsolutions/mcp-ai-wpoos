@@ -196,7 +196,7 @@ export const WithPreviewPane = () => {
 				config={ { ...BASE_CONFIG, activeTemplate: previewSlug, previewBaseUrl: previewUrl } }
 			/>
 			<p style={ { marginTop: '12px', color: '#999', fontSize: '12px' } }>
-				💡 Click "👁 Preview" on any card to toggle the live iframe preview pane.
+				💡 Click &quot;👁 Preview&quot; on any card to toggle the live iframe preview pane.
 				Set a Preview base URL above to load the live Mini App.
 			</p>
 		</div>

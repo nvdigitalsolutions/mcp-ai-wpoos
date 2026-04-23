@@ -292,7 +292,7 @@ class WP_MCP_AI_Model_Selector {
 	 *
 	 * Returns the model configured in settings for handling high token volumes,
 	 * or a sensible default if not configured. Checks per-model settings first,
-	 * then falls back to global settings.
+	 * then provider-specific fallback, then global settings.
 	 *
 	 * @param string $original_model Optional. The model that needs a fallback.
 	 * @return string Model identifier for high-capacity fallback.
@@ -313,8 +313,89 @@ class WP_MCP_AI_Model_Selector {
 			}
 		}
 
+		// Third, try provider-specific fallback based on the original model's provider.
+		if ( ! empty( $original_model ) ) {
+			$provider_fallback = self::get_provider_fallback_model( $original_model, $settings );
+			if ( ! empty( $provider_fallback ) ) {
+				return sanitize_text_field( $provider_fallback );
+			}
+		}
+
 		// Fall back to global settings.
 		// Use configured high-capacity fallback model if available.
+		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
+			return sanitize_text_field( $settings['high_token_fallback_model'] );
+		}
+
+		// Default to gemini-2.5-flash which has high token capacity.
+		return 'gemini-2.5-flash';
+	}
+
+	/**
+	 * Get provider-specific fallback model based on the original model's provider.
+	 *
+	 * Detects the provider from the model ID and returns the corresponding
+	 * provider-specific fallback model from settings.
+	 *
+	 * @param string $model    The model identifier.
+	 * @param array  $settings Plugin settings array.
+	 * @return string Provider-specific fallback model, or empty string if not configured.
+	 */
+	private static function get_provider_fallback_model( $model, $settings ) {
+		$model_lower = strtolower( $model );
+
+		// Detect provider from model ID and check provider-specific fallback.
+		// OpenAI models: gpt-*, o1-*, o3-*, o4-*, chatgpt-*.
+		if ( false !== strpos( $model_lower, 'gpt' ) || false !== strpos( $model_lower, 'o1' ) || false !== strpos( $model_lower, 'o3' ) || false !== strpos( $model_lower, 'o4' ) ) {
+			return isset( $settings['openai_fallback_model'] ) ? $settings['openai_fallback_model'] : '';
+		}
+
+		// Anthropic models: claude-*.
+		if ( false !== strpos( $model_lower, 'claude' ) ) {
+			return isset( $settings['anthropic_fallback_model'] ) ? $settings['anthropic_fallback_model'] : '';
+		}
+
+		// Gemini models: gemini-*, gemma-*.
+		if ( false !== strpos( $model_lower, 'gemini' ) || false !== strpos( $model_lower, 'gemma' ) ) {
+			return isset( $settings['gemini_fallback_model'] ) ? $settings['gemini_fallback_model'] : '';
+		}
+
+		// Try Model Config for provider detection as a fallback.
+		if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+			$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+			if ( $model_config && ! empty( $model_config['provider'] ) ) {
+				$provider    = sanitize_key( $model_config['provider'] );
+				$setting_key = $provider . '_fallback_model';
+				return isset( $settings[ $setting_key ] ) ? $settings[ $setting_key ] : '';
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolve the best fallback model for a given model.
+	 *
+	 * Public wrapper that checks provider-specific fallback first, then global.
+	 * Used by the REST API to determine which model to switch to when token
+	 * limits are exceeded.
+	 *
+	 * @param string $model    The model that needs a fallback.
+	 * @param array  $settings Optional. Plugin settings array. If empty, settings are loaded.
+	 * @return string The resolved fallback model identifier.
+	 */
+	public static function resolve_fallback_model( $model, $settings = array() ) {
+		if ( empty( $settings ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		}
+
+		// Try provider-specific fallback first.
+		$provider_fallback = self::get_provider_fallback_model( $model, $settings );
+		if ( ! empty( $provider_fallback ) ) {
+			return sanitize_text_field( $provider_fallback );
+		}
+
+		// Fall back to global setting.
 		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
 		}

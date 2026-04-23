@@ -66,6 +66,7 @@ const baseCssFiles = [
 
 // Pro addon CSS files (addons/pro/assets/css/)
 const proCssFiles = [
+	'addons/pro/assets/css/agent-command-center.css',
 	'addons/pro/assets/css/admin-health-wellness-management.css',
 	'addons/pro/assets/css/admin-pm-ai-assistant.css',
 	'addons/pro/assets/css/admin-project-management.css',

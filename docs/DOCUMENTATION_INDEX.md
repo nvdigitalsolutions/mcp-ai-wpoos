@@ -1,12 +1,46 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 1, 2026  
-**Plugin Version:** 1.1.6  
+**Last Updated:** April 16, 2026  
+**Plugin Version:** 1.2.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 570+ files across docs/, root, and archive directories
+**Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 16, 2026 UPDATE:** 🧠 **PSO ADAPTIVE OPTIMIZATION & ORCHESTRATION REFERENCE**
+> - **PSO Optimizer Service** (v1.2.0) — Particle Swarm Optimization for adaptive AI parameter tuning. 7-dimension search space, inertia decay, per-assistant particle state, global swarm convergence. New `pso_adaptive` workflow preset.
+> - **Comprehensive Orchestration Reference** (NEW) — [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) — Single authoritative reference for the entire orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings comparison matrices), PSO algorithm documentation, tool execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data storage keys, admin UI, and service file index.
+
+> **📌 APRIL 15, 2026 UPDATE:** 📋 **ERLANG C TOOLS & FULL TOOL-REFERENCE AUDIT**
+> - **Erlang C Queuing Theory Tools** (v1.1.8) — 4 new workforce-management tools: `calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`. New `wp_mcp_ai_queue_alert` action hook for SLA breach notifications.
+> - **New Feature Doc**: [features/erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md)
+> - **tool-reference.md fully audited** — All 230+ tools in `load_default_tools` (base + extended) now documented. Added 14 new sections: OpenAI file/model management, embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI, Yahoo Fantasy Football toolkit, Newsletter integration, WP All Import/Export, Flowhub, PayHere, and Erlang C tools.
+> - **hooks-reference.md** — Added `wp_mcp_ai_queue_alert` action with full parameter schema and usage examples.
+> - **QUICK_REFERENCE.md** — Updated to v1.1.8 with new Recent Updates section.
+
+> **📌 APRIL 8, 2026 UPDATE:** 📐 **ARCHITECTURE REFRESH & REQUEST FLOW WALKTHROUGH**
+> - **Architecture Overview Refreshed** – Updated from Dec 2025 (3 providers, 133 tools) to current state: **9 providers**, **837 tool classes** (227 base + 610 pro), **34 REST controllers** (16 base + 18 pro), **64 service classes**, accurate directory structure with file counts, v1.1.6 version history entry.
+> - **Request Flow Walkthrough** (NEW) – End-to-end trace of a chat message through every layer: `sendChat()` → `POST /chat-client` → Authentication (5 methods) → Assistant resolution → SSE setup → Language Model Router (9 providers) → Agentic loop (up to 15 iterations) → Token budget validation (auto-model switch) → SSE events → Frontend render. Covers provider routing table, agentic loop mechanics, tool execution internals, SSE event types, key source file reference, and hooks in the request path.
+> - **README.md** – Architecture section updated with current statistics; documentation section fixed stale tool/doc counts, added walkthrough link.
+> - **See**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md), [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md)
+
+> **📌 APRIL 2–6, 2026 UPDATE:** 🤝 **A2A PROTOCOL, JETENGINE MCP, AGENT COMMAND CENTER, CHAT BUBBLE, IMAGE VALIDATION**
+> - **JetEngine 3.8 MCP Server Integration** (PR #4608) – JSON-RPC 2.0 client bridging into JetEngine's native MCP Server. 7 new Pro tools: `jetengine_mcp`, `jetengine_create_post_type`, `jetengine_create_taxonomy`, `jetengine_create_meta_field`, `jetengine_manage_relations`, `jetengine_site_context`, `jetengine_prompts`. MCP-first dispatch with REST v2 fallback.
+> - **Agent-to-Agent (A2A) Protocol** (PR #4578) – Full A2A implementation: `/.well-known/agent.json` discovery, JSON-RPC 2.0 server with task state machine, A2A client, `delegate_to_a2a_agent` tool, push notification webhooks. 60+ tests.
+> - **Agent Command Center** (PR #4575) – 7-tab Pro dashboard: Overview, Activity Log, Active Tasks, Approvals, Analytics (Chart.js), Uptime & Health, Strategy. Real per-agent metrics (PR #4593).
+> - **Floating Chat Bubble Widget** (PR #4566) – Elementor widget + Gutenberg block. 4 positions, 3 sizes, dark mode, WCAG focus states, `window.wpMcpAiChatBubble` API.
+> - **Anthropic & Gemini Subscription Tiers** (PR #4567) – Centralized headers/endpoints, custom base URLs, API key type selectors (standard/team/enterprise). Filter hooks for header injection.
+> - **ECA Pro Toolkit — 24 New Tools** (PR #4568) – Attendance, waitlist, scheduling, notifications, analytics, integration, workflow tools. 4 existing tools upgraded.
+> - **Image Validation Tools** (PR #4585) – `validate_image_for_product` (9 product types) and `validate_image_for_vehicle` (cleaning/repair). AI Vision–powered, industry-standard A–F ratings.
+> - **Agent Workflow Presets** (PR #4580) – 5 new presets: supervisor, pipeline, swarm, hierarchical, review QA. Chat UI sub-agent panel with agent cards and workflow tracker.
+> - **Enterprise TMA Templates** (PR #4586) – 5 inline templates upgraded to 5-tab architecture (E-Commerce, CRM, Analytics, Booking, AI Chat).
+> - **Shopify Shop TMA** (PR #4602) – New React SPA with catalog, cart, checkout, orders, and AI chat. Critical fixes to Shopify Jewelry TMA.
+> - **Per-Connection TMA URLs** (PR #4588) – Multi-bot Telegram support via `/telegram-mini-app/{connection_id}`.
+> - **Security** – SQL hardening (PR #4574), guest token TTL fix, output escaping, lodash vulnerability patch (PR #4564).
+> - **Bug Fixes** – `execute()` signatures (PR #4609), analytics hooks (PR #4593), TMA auth/imports/white screen (PRs #4590-#4607), model pricing (PR #4565).
+> - **Tool Count** – 166 base + 402 pro = **568 total tools** (was 533).
+> - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 29–31, 2026 UPDATE:** 🚗 **VEHICLE ESTIMATION TOOLS, SHOPIFY AUTO-RESOLVE, QUICKBOOKS DESKTOP, IMAGE DOWNLOADS, WEBHOOK STATUS**
 > - **Vehicle Estimation Tools** – 3 always-available Pro tools (`vin_decode`, `vehicle_repair_estimate`, `vehicle_cleaning_estimate`). VIN decode via NHTSA vPIC, image-to-repair-estimate pipeline, car wash package pricing engine.
@@ -823,12 +857,12 @@ Cloud AI inference via NVIDIA's optimized model platform with 40+ models:
   - API key generation via build.nvidia.com
   - Getting Started wizard and Settings page configuration
   - Self-hosted NIM container support
-  - Available models catalog (Llama, Mistral, Nemotron, Gemma, Qwen, DeepSeek)
+  - Available models catalog (Llama, Mistral, Nemotron, Gemma 4/3/2, Qwen, DeepSeek)
   - Troubleshooting common issues
 
 **Key Features:**
 - OpenAI-compatible API interface
-- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma, Qwen, DeepSeek R1)
+- 40+ optimized models (Llama 3.x, Mistral, Nemotron, Gemma 4/3/2, Qwen, DeepSeek R1)
 - Cloud inference via `integrate.api.nvidia.com` or self-hosted NIM containers
 - Integrated with provider priority and fallback system
 - Getting Started wizard support for first-time setup
@@ -1032,6 +1066,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | **UPDATED (Apr 2026):** High-level architecture overview — 9 providers, 837 tool classes, 34 REST controllers, 64 services, full directory structure with file counts | Everyone |
+| [REQUEST-FLOW-WALKTHROUGH.md](architecture/REQUEST-FLOW-WALKTHROUGH.md) | **NEW (Apr 2026):** End-to-end chat request lifecycle trace — authentication → assistant → SSE → provider routing → agentic loop → tool execution → token budget → response | Everyone |
 | [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](visual-guides/workflow/AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
@@ -1043,7 +1079,9 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
 | [ORCHESTRATION-DASHBOARD-FINDINGS.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
 | [RESOURCE-MANAGEMENT.md](features/performance/RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
+| [erlang-c-staffing-tools.md](features/erlang-c-staffing-tools.md) | **NEW (Apr 2026):** Erlang C queuing theory tools — staffing calculator, concurrency advisor, multi-channel staffing advisor, real-time queue health monitoring, `wp_mcp_ai_queue_alert` hook | Admins/Developers |
 | [orchestration-budget-enforcement.md](architecture/orchestration/orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
+| [ORCHESTRATION_REFERENCE.md](ORCHESTRATION_REFERENCE.md) | **NEW (Apr 2026):** Complete orchestration reference — 10 workflow presets, 13 resource presets, PSO optimizer, tool execution, load balancer, reasoning, multi-agent, health, budget, hooks, storage keys | Developers/Admins |
 | [assistant-storage-cpt-vs-cct.md](architecture/integrations/assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](getting-started/first-steps/assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |

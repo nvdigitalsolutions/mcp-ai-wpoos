@@ -1,0 +1,69 @@
+/**
+ * Algorave Visualizer Styles
+ *
+ * Styles for the audio visualization canvas.
+ *
+ * @package NV_oOS_Algorave
+ * @since   1.0.0
+ */
+
+/* Visualizer container */
+.algorave-visualizer {
+	position: relative;
+	width: 100%;
+	height: 200px;
+	background: #0a0a0a;
+	border-top: 1px solid #222;
+	overflow: hidden;
+}
+
+.algorave-visualizer canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Fullscreen mode */
+.algorave-visualizer.is-fullscreen {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	height: 100vh;
+}
+
+/* Visualizer controls overlay */
+.algorave-visualizer-controls {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	display: flex;
+	gap: 4px;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+}
+
+.algorave-visualizer:hover .algorave-visualizer-controls {
+	opacity: 1;
+}
+
+.algorave-visualizer-controls button {
+	padding: 4px 8px;
+	background: rgba(0, 0, 0, 0.7);
+	border: 1px solid #333;
+	border-radius: 4px;
+	color: #888;
+	font-size: 11px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.algorave-visualizer-controls button:hover {
+	color: #fff;
+	border-color: #555;
+}
+
+.algorave-visualizer-controls button.is-active {
+	color: #00ff88;
+	border-color: #00ff8866;
+	background: rgba(0, 255, 136, 0.1);
+}

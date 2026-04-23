@@ -678,9 +678,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	 * Ensure embedded-llm-client script is enqueued before chat script when provider is embedded.
 	 */
 	public function test_embedded_provider_script_loading_order() {
-		// Skip if base version (embedded provider not available).
-		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
-			$this->markTestSkipped( 'Embedded provider is only available in Pro version.' );
+		// Skip if neither Embedded addon nor Pro addon is active.
+		if ( ! class_exists( 'NV_oOS_Embedded' ) && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Embedded provider requires the NV oOS Embedded addon or Pro addon.' );
 		}
 
 		// Create an assistant with embedded provider.

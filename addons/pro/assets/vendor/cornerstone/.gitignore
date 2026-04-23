@@ -1,0 +1,5 @@
+# Vendored Cornerstone3D ESM bundles — built by bin/vendor-cornerstone.js.
+# These are NOT committed to git; they are generated during the build pipeline
+# and included in the pro addon ZIP distribution.
+*.esm.js
+vendor-meta.json

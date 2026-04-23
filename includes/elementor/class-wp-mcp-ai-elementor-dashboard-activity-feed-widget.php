@@ -155,10 +155,8 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		if ( ! empty( $description ) ) {
 			$description_output = $this->format_text_block( $description );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $description_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
-				echo '<div class="wp-mcp-ai-activity-feed__description">' . $description_output . '</div>';
+				echo '<div class="wp-mcp-ai-activity-feed__description">' . wp_kses_post( $description_output ) . '</div>';
 			}
 		}
 
@@ -212,7 +210,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 			if ( '' !== $context_markup ) {
 				echo '<details class="wp-mcp-ai-activity-feed__context">';
 				echo '<summary>' . esc_html__( 'View context', 'mcp-ai-wpoos' ) . '</summary>';
-				echo $context_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $context_markup is produced by format_context() which applies esc_html() to all dynamic values inside a <pre> element.
+				echo wp_kses_post( $context_markup );
 				echo '</details>';
 			}
 			echo '</li>';

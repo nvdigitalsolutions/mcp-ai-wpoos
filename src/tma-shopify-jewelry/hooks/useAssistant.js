@@ -8,7 +8,7 @@
  * @since   1.2.0
  */
 
-import { useState, useCallback } from '@wordpress/element';
+import { useState, useCallback } from 'react';
 import { sendChat } from '../api/client';
 
 /** @typedef {{ role:'user'|'assistant', content:string }} Message */

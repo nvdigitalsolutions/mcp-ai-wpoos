@@ -91,7 +91,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 		check_ajax_referer( 'wp_mcp_ai_quick_action', 'nonce' );
 
 		// Get tool slug.
-		$tool_slug = isset( $_POST['tool'] ) ? sanitize_key( $_POST['tool'] ) : '';
+		$tool_slug = isset( $_POST['tool'] ) ? sanitize_key( wp_unslash( $_POST['tool'] ) ) : '';
 		if ( empty( $tool_slug ) ) {
 			wp_send_json_error( __( 'No tool specified.', 'mcp-ai-wpoos' ) );
 		}
@@ -104,7 +104,12 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			wp_send_json_error( __( 'Invalid tool specified.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Check capabilities if tool requires them.
+		// Require at minimum a logged-in user with 'read' capability.
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( __( 'You do not have permission to execute this tool.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Check tool-specific capabilities if declared.
 		if ( method_exists( $tool, 'get_required_capability' ) ) {
 			$required_cap = $tool->get_required_capability();
 			if ( ! empty( $required_cap ) && ! current_user_can( $required_cap ) ) {
@@ -126,7 +131,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 
 		// Handle media library selection.
 		if ( isset( $_POST['media_id'] ) ) {
-			$media_id   = absint( $_POST['media_id'] );
+			$media_id   = absint( wp_unslash( $_POST['media_id'] ) );
 			$attachment = get_post( $media_id );
 
 			if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
@@ -188,8 +193,8 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			'application/pdf',
 		);
 
-		$file_type = wp_check_filetype( $file['name'] );
-		$mime_type = $file['type'];
+		$file_type = wp_check_filetype( sanitize_file_name( $file['name'] ) );
+		$mime_type = ! empty( $file_type['type'] ) ? $file_type['type'] : sanitize_mime_type( $file['type'] );
 
 		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
 			return new WP_Error( 'invalid_file_type', __( 'File type not allowed.', 'mcp-ai-wpoos' ) );

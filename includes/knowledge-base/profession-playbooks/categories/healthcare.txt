@@ -11,7 +11,7 @@ Author: NV Digital Solutions
 Website: https://nvdigitalsolutions.com
 
 1) Context
-   - Symptoms, timing, severity, relevant history (only what’s needed).
+   - Symptoms, timing, severity, relevant history (only what's needed).
 2) Safety screen
    - Identify red flags that warrant urgent care.
 3) Education

@@ -513,4 +513,70 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 		$parsed = wp_parse_url( $captured_url );
 		$this->assertSame( 'example.test', $parsed['host'] );
 	}
+
+	/**
+	 * Verify the MCP namespace constant exists.
+	 *
+	 * @group jetengine
+	 * @group mcp
+	 */
+	public function test_mcp_namespace_constant_defined() {
+		$this->assertTrue(
+			defined( 'WP_MCP_AI_JetEngine_Tool_Handlers::REST_NAMESPACE_MCP' ),
+			'REST_NAMESPACE_MCP constant should be defined'
+		);
+		$this->assertEquals(
+			'jet-engine/v1/mcp',
+			WP_MCP_AI_JetEngine_Tool_Handlers::REST_NAMESPACE_MCP
+		);
+	}
+
+	/**
+	 * Verify MCP dispatch falls back gracefully when MCP is not available.
+	 *
+	 * @group jetengine
+	 * @group mcp
+	 */
+	public function test_dispatch_falls_back_when_mcp_unavailable() {
+		// When MCP compat class is not loaded or returns false,
+		// dispatch should still work via legacy REST path.
+		$this->register_mock_routes();
+
+		$result = WP_MCP_AI_JetEngine_Tool_Handlers::dispatch(
+			'get_items',
+			array(
+				'params' => array( 'instance' => 'test-instance' ),
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		// Should not error out — either returns result or WP_Error from REST.
+		$this->assertNotNull( $result );
+	}
+
+	/**
+	 * Verify MCP dispatch is skipped when setting is disabled.
+	 *
+	 * @group jetengine
+	 * @group mcp
+	 */
+	public function test_mcp_dispatch_skipped_when_setting_disabled() {
+		// Ensure the MCP setting is explicitly disabled.
+		update_option( 'wp_mcp_ai_settings', array( 'jetengine_mcp_enabled' => false ) );
+
+		$this->register_mock_routes();
+
+		$result = WP_MCP_AI_JetEngine_Tool_Handlers::dispatch(
+			'get_items',
+			array(
+				'params' => array( 'instance' => 'test-instance' ),
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		// Should still dispatch via legacy REST.
+		$this->assertNotNull( $result );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }

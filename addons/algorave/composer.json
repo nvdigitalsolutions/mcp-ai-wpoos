@@ -1,0 +1,17 @@
+{
+	"name": "nvdigitalsolutions/nvoos-algorave",
+	"description": "Algorave live coding music extension for NV oOS — server-side MIDI generation and pattern storage",
+	"type": "wordpress-plugin",
+	"license": "GPL-3.0-or-later",
+	"require": {
+		"php": ">=7.4"
+	},
+	"suggest": {
+		"motranslator/motranslator": "For translation support"
+	},
+	"autoload": {
+		"classmap": [
+			"includes/"
+		]
+	}
+}

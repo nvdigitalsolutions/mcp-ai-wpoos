@@ -902,7 +902,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+		$limit   = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 10;
 		$history = $this->get_execution_history( $limit );
 
 		wp_send_json_success(

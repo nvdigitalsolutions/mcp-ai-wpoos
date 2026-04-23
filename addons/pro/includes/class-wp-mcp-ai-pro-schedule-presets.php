@@ -157,12 +157,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 * by {@see WP_MCP_AI_Pro_Schedule_Manager::create_schedule()}, and
 		 * creates the schedule entry.
 		 *
+		 * The optional `$overrides` array allows callers to supply values that
+		 * are not part of the static preset definition but are required by the
+		 * Schedule Manager at creation time.  Supported keys:
+		 *
+		 *  - `assistant_id`  (int)   – injected into `assistant_config` for
+		 *                               `assistant_run`-type presets.
+		 *  - `credentials`   (array) – injected into `broadcast_config` for
+		 *                               `channel_broadcast`-type presets.
+		 *
 		 * @since  1.0.0
 		 * @param  string $preset_id The unique preset identifier.
 		 * @param  int    $user_id   WordPress user ID performing the install.
+		 * @param  array  $overrides Optional runtime values to merge into the
+		 *                           schedule data (e.g. assistant_id, credentials).
 		 * @return string|\WP_Error  Schedule ID on success, WP_Error on failure.
 		 */
-		public static function install_preset( $preset_id, $user_id ) {
+		public static function install_preset( $preset_id, $user_id, array $overrides = array() ) {
 			$preset = self::get_preset( $preset_id );
 
 			if ( null === $preset ) {
@@ -188,7 +199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 				);
 			}
 
-			$schedule_data = self::build_schedule_data( $preset );
+			$schedule_data = self::build_schedule_data( $preset, $overrides );
 
 			return WP_MCP_AI_Pro_Schedule_Manager::create_schedule( $schedule_data, $user_id );
 		}
@@ -201,11 +212,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 		 * Convert a preset definition into the data array expected by the
 		 * Schedule Manager's create_schedule() method.
 		 *
+		 * Runtime overrides (supplied by the user at install time) are merged
+		 * into the type-specific configuration so that values the preset
+		 * intentionally omits (e.g. assistant_id, channel credentials) can be
+		 * provided without hard-coding them into the preset definition.
+		 *
 		 * @since  1.0.0
-		 * @param  array $preset Preset definition.
+		 * @param  array $preset    Preset definition.
+		 * @param  array $overrides Optional runtime values. Recognised keys:
+		 *                          `assistant_id` (int), `credentials` (array).
 		 * @return array Schedule data suitable for create_schedule().
 		 */
-		private static function build_schedule_data( array $preset ) {
+		private static function build_schedule_data( array $preset, array $overrides = array() ) {
 			$data = array(
 				'name'          => isset( $preset['name'] ) ? $preset['name'] : '',
 				'description'   => isset( $preset['description'] ) ? $preset['description'] : '',
@@ -234,11 +252,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 					if ( isset( $schedule_data['assistant_config'] ) ) {
 						$data['assistant_config'] = $schedule_data['assistant_config'];
 					}
+					// Merge assistant_id from overrides when the preset omits it.
+					if ( ! empty( $overrides['assistant_id'] ) ) {
+						if ( ! isset( $data['assistant_config'] ) ) {
+							$data['assistant_config'] = array();
+						}
+						$data['assistant_config']['assistant_id'] = absint( $overrides['assistant_id'] );
+					}
 					break;
 
 				case 'channel_broadcast':
 					if ( isset( $schedule_data['broadcast_config'] ) ) {
 						$data['broadcast_config'] = $schedule_data['broadcast_config'];
+					}
+					// Merge credentials from overrides when the preset omits them.
+					if ( ! empty( $overrides['credentials'] ) && is_array( $overrides['credentials'] ) ) {
+						if ( ! isset( $data['broadcast_config'] ) ) {
+							$data['broadcast_config'] = array();
+						}
+						$data['broadcast_config']['credentials'] = $overrides['credentials'];
 					}
 					break;
 

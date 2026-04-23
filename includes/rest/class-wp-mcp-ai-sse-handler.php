@@ -77,9 +77,9 @@ class WP_MCP_AI_SSE_Handler {
 
 			// Do NOT send the Connection header. It is a hop-by-hop header that:
 			// - Is forbidden by RFC 7540 §8.1.2.2 in HTTP/2, causing ERR_HTTP2_PROTOCOL_ERROR
-			//   in browsers. PHP runs behind a reverse proxy (Nginx, Apache, Cloudways, etc.)
-			//   so SERVER_PROTOCOL always reflects the backend HTTP/1.1 connection, not the
-			//   actual client protocol. We cannot reliably detect HTTP/2 from PHP.
+			// in browsers. PHP runs behind a reverse proxy (Nginx, Apache, Cloudways, etc.)
+			// so SERVER_PROTOCOL always reflects the backend HTTP/1.1 connection, not the
+			// actual client protocol. We cannot reliably detect HTTP/2 from PHP.
 			// - Is redundant in HTTP/1.1 (persistent connections are the default since RFC 2616).
 			header_remove( 'Connection' );
 			header_remove( 'Transfer-Encoding' );

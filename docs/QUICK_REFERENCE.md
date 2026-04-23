@@ -1,11 +1,19 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.6  
-**Last Updated:** March 28, 2026
+**Version:** 1.1.8  
+**Last Updated:** April 15, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (March 2026)
+## 🆕 Recent Updates (April 2026)
+
+- **Erlang C Queuing Theory Tools** ⭐ NEW (v1.1.8) – 4 workforce-management tools built on the Erlang C formula. `calculate_erlang_c` (general staffing solver), `erlang_c_concurrency_advisor` (AI session tuning), `erlang_c_staffing_advisor` (multi-channel with bot-deflection and WFM endpoint), `erlang_c_queue_health` (real-time SLA monitoring with `wp_mcp_ai_queue_alert` action hook). All four ship in the base plugin with no external dependencies. See [`docs/features/erlang-c-staffing-tools.md`](features/erlang-c-staffing-tools.md).
+- **tool-reference.md fully updated** – All 230+ tools in `load_default_tools` (base + extended) are now documented. Added 14 new sections covering: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queue tools.
+- **MCP Protocol Completion** ⭐ (v1.1.7) – Full MCP 2024-11-05 spec compliance: `resources/read`, `prompts/get`, `ping`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`, JSON-RPC batching (up to 20 messages), tool annotations, `Mcp-Session-Id` management.
+- **MCP Apps (SEP-1865)** ⭐ (v1.1.7) – Per-assistant remote MCP server connections (up to 10) with JSON-RPC 2.0 tool bridging, transient-cached discovery, admin metabox.
+- **CRE Debt & Securitization Pro Toolkit** ⭐ (v1.1.7) – 57 new tools across 5 modules (Originations, Underwriting, CMBS, Debt Fund, Asset Management). 36 new professions, 17 new team configurations.
+
+### Previous Updates (April 2026 — v1.1.6)
 
 - **Getting Started Wizard** ⭐ NEW – 4-step onboarding wizard with 8 use-case presets (Content Creator, Customer Support, E-commerce, SEO & Research, Developer Copilot, Media & Creative Studio, Site Administrator, General Purpose). Selecting a preset creates a fully-configured assistant with tools, system prompt, and tuned temperature — working out of the box. WCAG 2.1 accessible with keyboard navigation. Access via **NV oOS → Getting Started**.
 - **Quick Tool Selection Presets** ⭐ NEW – All 760 tools now covered across 61 one-click presets on the assistant CPT edit page. New `📋 Registration & Compliance` preset (44 tools). Expanded 20+ existing presets with Shopify, full cross-platform messaging, tool scaffolding, cloud storage, site builder sections, appointment management, and more.
@@ -591,7 +599,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 533 tools detailed (165 base + 368 pro)
+- [Tool Reference](reference/tools/tool-reference.md) - All 568 tools detailed (166 base + 402 pro)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 

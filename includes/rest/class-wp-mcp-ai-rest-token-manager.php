@@ -354,26 +354,19 @@ class WP_MCP_AI_REST_Token_Manager {
 	 * @return bool|WP_Error True if user can access, WP_Error otherwise.
 	 */
 	public static function check_user_access( $request ) {
-		// Verify nonce for logged-in users.
+		// WordPress REST API already verifies the X-WP-Nonce for cookie-based
+		// auth via `rest_cookie_check_errors`. If the nonce is missing or invalid
+		// the current user is set to 0 automatically. Manual nonce verification
+		// here would break bearer-token and Application Password authentication,
+		// which are inherently CSRF-safe (they require custom headers).
 		$current_user_id = get_current_user_id();
-		if ( $current_user_id ) {
-			$nonce = $request->get_header( 'X-WP-Nonce' );
 
-			if ( empty( $nonce ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
-					array( 'status' => 401 )
-				);
-			}
-
-			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-				return new WP_Error(
-					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
-					array( 'status' => 403 )
-				);
-			}
+		if ( ! $current_user_id ) {
+			return new WP_Error(
+				'rest_not_logged_in',
+				__( 'You must be authenticated to access this resource.', 'mcp-ai-wpoos' ),
+				array( 'status' => 401 )
+			);
 		}
 
 		$user_id = absint( $request['id'] );
@@ -396,28 +389,10 @@ class WP_MCP_AI_REST_Token_Manager {
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool|WP_Error True if user is admin, WP_Error otherwise.
 	 */
-	public static function check_admin_access( $request ) {
-		// Verify nonce for logged-in users.
-		if ( is_user_logged_in() ) {
-			$nonce = $request->get_header( 'X-WP-Nonce' );
-
-			if ( empty( $nonce ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
-					array( 'status' => 401 )
-				);
-			}
-
-			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-				return new WP_Error(
-					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
-					array( 'status' => 403 )
-				);
-			}
-		}
-
+	public static function check_admin_access( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
+		// WordPress REST API already verifies the X-WP-Nonce for cookie-based
+		// auth via `rest_cookie_check_errors`. Manual nonce verification here
+		// would break bearer-token and Application Password authentication.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',

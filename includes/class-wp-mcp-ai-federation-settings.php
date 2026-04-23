@@ -115,8 +115,11 @@ class WP_MCP_AI_Federation_Settings {
 		<p class="description">
 			<?php
 			printf(
-				/* translators: %s: well-known URL */
-				esc_html__( 'When enabled, your site will publish capabilities at: %s', 'mcp-ai-wpoos' ),
+				wp_kses(
+					/* translators: %s: well-known URL wrapped in <code> tags. */
+					__( 'When enabled, your site will publish capabilities at: %s', 'mcp-ai-wpoos' ),
+					array( 'code' => array() )
+				),
 				'<code>' . esc_html( trailingslashit( get_site_url() ) . '.well-known/ai-peer' ) . '</code>'
 			);
 			?>
@@ -150,8 +153,11 @@ class WP_MCP_AI_Federation_Settings {
 			<p class="description" style="margin-top: 10px;">
 				<?php
 				printf(
-					/* translators: %s: directory API URL */
-					esc_html__( 'Directory API available at: %s', 'mcp-ai-wpoos' ),
+					wp_kses(
+						/* translators: %s: directory API URL wrapped in <code> tags. */
+						__( 'Directory API available at: %s', 'mcp-ai-wpoos' ),
+						array( 'code' => array() )
+					),
 					'<code>' . esc_html( rest_url( 'ai-dir/v1' ) ) . '</code>'
 				);
 				?>

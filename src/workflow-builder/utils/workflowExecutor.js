@@ -309,9 +309,9 @@ export class WorkflowExecutor {
 	 * Execute tool node
 	 */
 	async executeTool( node ) {
-		const { tool_name, arguments: toolArgs } = node.data.config || {};
+		const { tool_name: toolName, arguments: toolArgs } = node.data.config || {};
 		
-		if ( ! tool_name ) {
+		if ( ! toolName ) {
 			throw new Error( __( 'Tool node missing tool_name', 'mcp-ai-wpoos' ) );
 		}
 
@@ -325,7 +325,7 @@ export class WorkflowExecutor {
 				action: 'wp_mcp_ai_execute_workflow_node',
 				nonce: window.mcpAiWorkflowBuilder?.nonce || '',
 				node_type: 'tool',
-				tool_name,
+				tool_name: toolName,
 				tool_arguments: toolArgs || '{}',
 				context: JSON.stringify( this.state.results ),
 			} ),
@@ -344,7 +344,7 @@ export class WorkflowExecutor {
 	 * Execute agent node
 	 */
 	async executeAgent( node ) {
-		const { agent_id, prompt } = node.data.config || {};
+		const { agent_id: agentId, prompt } = node.data.config || {};
 		
 		if ( ! prompt ) {
 			throw new Error( __( 'Agent node missing prompt', 'mcp-ai-wpoos' ) );
@@ -360,7 +360,7 @@ export class WorkflowExecutor {
 				action: 'wp_mcp_ai_execute_workflow_node',
 				nonce: window.mcpAiWorkflowBuilder?.nonce || '',
 				node_type: 'agent',
-				agent_id: agent_id || 'default',
+				agent_id: agentId || 'default',
 				prompt,
 				context: JSON.stringify( this.state.results ),
 			} ),

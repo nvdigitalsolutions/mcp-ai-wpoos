@@ -165,7 +165,7 @@
 			// Preset install (delegated).
 			$( document ).on( 'click', '[data-preset-install]', function ( e ) {
 				e.preventDefault();
-				self.installPreset( $( this ).data( 'preset-install' ), $( this ) );
+				self.installPreset( $( this ).data( 'preset-install' ), $( this ), $( this ).data( 'preset-type' ) || 'task' );
 			} );
 		},
 
@@ -1287,7 +1287,7 @@
 				if ( tags ) {
 					html += '<div class="wp-mcp-ai-sm-preset-tags">' + tags + '</div>';
 				}
-				html += '<button type="button" class="button button-primary button-small" data-preset-install="' + self.esc( preset.id ) + '">';
+				html += '<button type="button" class="button button-primary button-small" data-preset-install="' + self.esc( preset.id ) + '" data-preset-type="' + self.esc( preset.schedule_type || 'task' ) + '">';
 				html += self.esc( str.presetInstall || 'Install' );
 				html += '</button>';
 				html += '</div>';
@@ -1309,11 +1309,75 @@
 			return map[ type ] || type;
 		},
 
-		/** Install a preset */
-		installPreset: function ( presetId, $btn ) {
+		/**
+		 * Install a preset.
+		 *
+		 * For assistant_run presets the user is prompted to select an
+		 * assistant.  For channel_broadcast presets the user is prompted to
+		 * provide channel credentials JSON.  The collected values are sent
+		 * as overrides alongside the preset_id.
+		 *
+		 * @param {string}  presetId  Preset identifier.
+		 * @param {jQuery}  $btn      The install button element.
+		 * @param {string}  type      Schedule type of the preset.
+		 */
+		installPreset: function ( presetId, $btn, type ) {
 			const self = this;
 			const str  = wpMcpAiScheduleManager.strings;
+			const data = { preset_id: presetId };
 
+			// --- Assistant Run: prompt for assistant selection ---------------
+			if ( 'assistant_run' === type ) {
+				const assistants = wpMcpAiScheduleManager.assistants || [];
+				if ( ! assistants.length ) {
+					// eslint-disable-next-line no-alert
+					alert( str.presetNoAssistants || 'No assistants found. Please create an assistant first.' );
+					return;
+				}
+				let prompt = ( str.presetSelectAssistant || 'Select an assistant for this schedule:' ) + '\n\n';
+				$.each( assistants, function ( i, ast ) {
+					prompt += ( i + 1 ) + ') ' + ast.title + ' (ID: ' + ast.id + ')\n';
+				} );
+				prompt += '\nEnter the assistant ID:';
+
+				// eslint-disable-next-line no-alert
+				const input = window.prompt( prompt );
+				if ( null === input ) {
+					return; // User cancelled.
+				}
+				const assistantId = parseInt( input.trim(), 10 );
+				const validIds    = assistants.map( function ( a ) { return a.id; } );
+				if ( ! assistantId || assistantId <= 0 || -1 === $.inArray( assistantId, validIds ) ) {
+					// eslint-disable-next-line no-alert
+					alert( str.presetInvalidAssistant || 'Please enter a valid assistant ID from the list above.' );
+					return;
+				}
+				data.assistant_id = assistantId;
+			}
+
+			// --- Channel Broadcast: prompt for credentials JSON -------------
+			if ( 'channel_broadcast' === type ) {
+				// eslint-disable-next-line no-alert
+				const credsInput = window.prompt(
+					str.presetEnterCredentials || 'Enter channel credentials JSON for this broadcast schedule:'
+				);
+				if ( null === credsInput ) {
+					return; // User cancelled.
+				}
+				const trimmed = credsInput.trim();
+				if ( trimmed ) {
+					try {
+						JSON.parse( trimmed );
+					} catch ( e ) {
+						// eslint-disable-next-line no-alert
+						alert( str.presetInvalidJson || 'Invalid JSON. Please enter valid channel credentials.' );
+						return;
+					}
+					data.credentials = trimmed;
+				}
+			}
+
+			// --- Confirm and send ------------------------------------------
 			// eslint-disable-next-line no-alert
 			if ( ! window.confirm( str.presetConfirmInstall || 'Install this schedule preset?' ) ) {
 				return;
@@ -1321,7 +1385,7 @@
 
 			$btn.prop( 'disabled', true ).text( str.presetInstalling || 'Installing…' );
 
-			this.ajax( 'wp_mcp_ai_sm_install_preset', { preset_id: presetId }, function ( err ) {
+			this.ajax( 'wp_mcp_ai_sm_install_preset', data, function ( err ) {
 				if ( err ) {
 					// eslint-disable-next-line no-alert
 					alert( err );

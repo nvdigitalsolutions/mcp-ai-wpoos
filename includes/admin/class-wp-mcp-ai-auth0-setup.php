@@ -373,7 +373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			}
 
 			// Get enabled state from request.
-			$enabled = ! empty( $_POST['enabled'] );
+			$enabled = ! empty( sanitize_text_field( wp_unslash( $_POST['enabled'] ?? '' ) ) );
 
 			// Update settings.
 			$settings                               = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );

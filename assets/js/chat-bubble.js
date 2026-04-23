@@ -131,6 +131,7 @@
 		this.isOpen        = false;
 		this.chatInited    = false;
 		this.autoOpenTimer = null;
+		this.promoted      = false;
 
 		this.trigger    = rootEl.querySelector( '.' + CLASSES.TRIGGER );
 		this.panel      = rootEl.querySelector( '.' + CLASSES.PANEL );
@@ -141,10 +142,47 @@
 			return;
 		}
 
+		// Ensure the hidden panel is inert so focus cannot enter it and
+		// assistive technology ignores it while it is visually hidden.
+		if ( ! this.panel.hasAttribute( 'inert' ) ) {
+			this.panel.setAttribute( 'inert', '' );
+		}
+
+		this._promoteToBody();
 		this._bindEvents();
 		this._restoreState();
 		this._scheduleAutoOpen();
 	}
+
+	/**
+	 * Move the bubble element to document.body so it escapes any
+	 * ancestor stacking-context created by page-builders (Elementor
+	 * sections/columns often set transforms, z-index, or overflow
+	 * that trap position:fixed children and block click events).
+	 *
+	 * Skipped inside the Elementor editor where the element must
+	 * stay in-place for the visual builder to work, and skipped when
+	 * the element is already a direct child of body.
+	 */
+	BubbleInstance.prototype._promoteToBody = function() {
+		// Already a direct child of body – nothing to do.
+		if ( this.root.parentNode === document.body ) {
+			return;
+		}
+
+		// Inside the Elementor visual editor the widget must remain
+		// within its container so the builder can manage it.
+		if (
+			window.elementorFrontend &&
+			typeof window.elementorFrontend.isEditMode === 'function' &&
+			window.elementorFrontend.isEditMode()
+		) {
+			return;
+		}
+
+		document.body.appendChild( this.root );
+		this.promoted = true;
+	};
 
 	/**
 	 * Bind DOM event listeners.
@@ -240,12 +278,25 @@
 	 * The shortcode HTML is already rendered inside the panel; this
 	 * triggers `wpMcpAiChatInit.init()` once so the chat becomes
 	 * interactive only when the user first opens the bubble.
+	 *
+	 * Chat containers inside the bubble panel use the attribute
+	 * `data-wp-mcp-ai-chat-deferred` instead of `data-wp-mcp-ai-chat`
+	 * so that the main chat.js DOMContentLoaded pass does not
+	 * initialise them prematurely while the panel is hidden.  We
+	 * activate those containers here, right before calling init().
 	 */
 	BubbleInstance.prototype._lazyInitChat = function() {
 		if ( this.chatInited ) {
 			return;
 		}
 		this.chatInited = true;
+
+		// Activate deferred chat containers so chat.js can discover them.
+		const deferred = this.panel.querySelectorAll( '[data-wp-mcp-ai-chat-deferred]' );
+		for ( let i = 0; i < deferred.length; i++ ) {
+			deferred[ i ].setAttribute( 'data-wp-mcp-ai-chat', '' );
+			deferred[ i ].removeAttribute( 'data-wp-mcp-ai-chat-deferred' );
+		}
 
 		if (
 			window.wpMcpAiChatInit &&
@@ -284,6 +335,7 @@
 		this.isOpen = true;
 		this.root.classList.add( CLASSES.OPEN );
 		this.trigger.setAttribute( 'aria-expanded', 'true' );
+		this.panel.removeAttribute( 'inert' );
 		this.panel.setAttribute( 'aria-hidden', 'false' );
 
 		// On mobile, prevent body scroll while panel is open.
@@ -314,14 +366,20 @@
 		this.isOpen = false;
 		this.root.classList.remove( CLASSES.OPEN );
 		this.trigger.setAttribute( 'aria-expanded', 'false' );
+
+		// Move focus out of the panel BEFORE hiding it so the browser
+		// does not block aria-hidden on an element with a focused
+		// descendant (WAI-ARIA §6.5.3).
+		this.trigger.focus();
+
 		this.panel.setAttribute( 'aria-hidden', 'true' );
+		this.panel.setAttribute( 'inert', '' );
 
 		if ( isMobileViewport() ) {
 			document.body.style.overflow = '';
 		}
 
 		this._persistState();
-		this.trigger.focus();
 
 		fireEvent( this.root, EVENTS.CLOSE, { bubbleId: this.bubbleId } );
 	};
@@ -367,6 +425,11 @@
 		if ( this.autoOpenTimer ) {
 			clearTimeout( this.autoOpenTimer );
 		}
+
+		// Remove the DOM element if it was promoted to body.
+		if ( this.promoted && this.root.parentNode ) {
+			this.root.parentNode.removeChild( this.root );
+		}
 	};
 
 	/* ---------------------------------------------------------------
@@ -388,18 +451,45 @@
 	 * ------------------------------------------------------------- */
 
 	/**
-	 * Discover and initialise all chat-bubble elements on the page.
+	 * Discover and initialise chat-bubble elements on the page.
+	 *
+	 * When called without arguments the entire document is scanned.
+	 * When a scope element is provided (e.g. from Elementor's
+	 * `frontend/element_ready` callback) only that subtree is scanned,
+	 * allowing bubbles rendered in Elementor Pro headers, footers, and
+	 * popups to be initialised after the initial DOMContentLoaded pass.
+	 *
+	 * @param {HTMLElement} [scope] Optional container to search within.
 	 */
-	function init() {
-		const roots = document.querySelectorAll( '.' + CLASSES.ROOT );
+	function init( scope ) {
+		let roots;
+		const container = scope || document;
+
+		// When Elementor passes the widget wrapper it may or may not be the
+		// root element itself – handle both cases.
+		if ( scope instanceof HTMLElement && scope.classList.contains( CLASSES.ROOT ) ) {
+			roots = [ scope ];
+		} else if ( container.querySelectorAll ) {
+			roots = container.querySelectorAll( '.' + CLASSES.ROOT );
+		} else {
+			roots = [];
+		}
 
 		for ( let i = 0; i < roots.length; i++ ) {
 			const root = roots[ i ];
 			const id   = root.getAttribute( 'data-bubble-id' ) || 'default-' + i;
 
-			// Prevent double-init.
 			if ( instances[ id ] ) {
-				continue;
+				// Same DOM node – already initialised, skip.
+				if ( instances[ id ].root === root ) {
+					continue;
+				}
+
+				// DOM node was replaced (Elementor re-render) – destroy stale instance.
+				if ( typeof instances[ id ].destroy === 'function' ) {
+					instances[ id ].destroy();
+				}
+				delete instances[ id ];
 			}
 
 			instances[ id ] = new BubbleInstance( root );
@@ -411,6 +501,19 @@
 	 * ------------------------------------------------------------- */
 
 	window.wpMcpAiChatBubble = {
+
+		/**
+		 * Re-run bubble initialisation.
+		 *
+		 * Call with no arguments to scan the full document or pass a
+		 * container element to limit the scan (useful after injecting
+		 * new bubble markup via AJAX or page-builder re-renders).
+		 *
+		 * @param {HTMLElement} [scope] Optional subtree to scan.
+		 */
+		init: function( scope ) {
+			init( scope );
+		},
 
 		/**
 		 * Open a specific bubble by ID.
@@ -463,6 +566,36 @@
 	};
 
 	/* ---------------------------------------------------------------
+	 * Elementor Integration
+	 *
+	 * Elementor Pro header/footer/popup templates inject widget HTML
+	 * dynamically.  Without hooking into `frontend/element_ready` the
+	 * bubble buttons will never receive event listeners.
+	 *
+	 * @see https://developers.elementor.com/docs/addons/frontend-hooks/
+	 * ------------------------------------------------------------- */
+
+	/**
+	 * Register the Elementor widget-ready handler.
+	 */
+	function registerElementorHandler() {
+		if (
+			window.elementorFrontend &&
+			window.elementorFrontend.hooks &&
+			window.elementorFrontend.hooks.addAction
+		) {
+			window.elementorFrontend.hooks.addAction(
+				'frontend/element_ready/wp_mcp_ai_chat_bubble.default',
+				function( $element ) {
+					if ( $element && $element[ 0 ] ) {
+						init( $element[ 0 ] );
+					}
+				}
+			);
+		}
+	}
+
+	/* ---------------------------------------------------------------
 	 * Bootstrap
 	 * ------------------------------------------------------------- */
 
@@ -470,6 +603,15 @@
 		document.addEventListener( 'DOMContentLoaded', init );
 	} else {
 		init();
+	}
+
+	// Elementor: register immediately if elementorFrontend is already loaded.
+	registerElementorHandler();
+
+	// Elementor: if elementorFrontend hasn't loaded yet, wait for its init event.
+	// The `elementor/frontend/init` event is fired via jQuery on `window`.
+	if ( window.jQuery ) {
+		window.jQuery( window ).on( 'elementor/frontend/init', registerElementorHandler );
 	}
 
 } )();

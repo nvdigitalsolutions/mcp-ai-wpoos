@@ -27,6 +27,7 @@ composer.phar
 /build/nvdigital-open-operator-system-oos-pro/
 /build/nvdigital-open-operator-system-oos-complete/
 /build/nvdigital-open-operator-system-oos-core/
+/build/.tmp-addon-zips/
 # Ignore all generated files in build/ (ZIPs, docs, etc.)
 /build/WORDPRESS_ORG_SUBMISSION_README.md
 
@@ -179,6 +180,10 @@ composer.phar
 
 # Keep the TMA standalone markdown renderer which is served directly to Telegram WebView.
 !addons/pro/assets/js/tma-markdown.min.js
+
+# Keep Embedded addon compiled JS assets (generated from source JS by esbuild).
+!addons/embedded/assets/js/*.min.js
+!addons/embedded/assets/js/*.min.js.map
 
 # Keep Pro addon compiled JS assets (generated from source JS by esbuild).
 !addons/pro/assets/js/*.min.js

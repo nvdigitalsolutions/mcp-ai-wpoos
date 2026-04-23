@@ -1,6 +1,6 @@
 Category Playbook — Advisory
 
-What “good” looks like
+What "good" looks like
 - Advice is grounded in context and constraints.
 - Recommendations include tradeoffs and next steps.
 - Risks and dependencies are made explicit.

@@ -10,7 +10,7 @@
  * @since   1.1.5
  */
 
-import { useState } from '@wordpress/element';
+import { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useTMA } from '../context/TMAContext';
 import { useNav } from '../context/NavContext';
@@ -136,7 +136,7 @@ export default function CheckoutPage() {
 				<div className="tma-woo-empty-state__icon">🎉</div>
 				<h2 className="tma-woo-empty-state__title">Order Placed!</h2>
 				<p className="tma-woo-empty-state__text">
-					Order #{ success.id } has been received. We'll be in touch soon.
+					Order #{ success.id } has been received. We&apos;ll be in touch soon.
 				</p>
 				<button
 					className="tma-woo-btn tma-woo-btn--primary"

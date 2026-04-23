@@ -1177,7 +1177,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Render section fields.
 		 */
 		public function render() {
-			$active_view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
+			$active_view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
 
 			?>
 <div class="wp-mcp-ai-orchestration-section">
@@ -2003,7 +2003,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'Orchestration Configuration Presets', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Choose a preset configuration optimized for your expected usage pattern. Presets automatically configure context window limits, health monitoring thresholds, budget allocation, and predictive settings across all AI providers.', 'mcp-ai-wpoos' ) . '</p>';
 
-			// Render presets selector.
+			// Render resource presets selector (balanced, conservative, etc.).
 			if ( isset( $fields['configuration_presets'] ) ) {
 				echo wp_kses_post( $fields['configuration_presets']['content'] );
 			}
@@ -2012,6 +2012,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			if ( isset( $fields['orchestration_preset'] ) ) {
 				$current_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'auto' );
 				echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( $current_preset ) . '" />';
+			}
+
+			// Render workflow presets section (orchestration patterns, research, swarm, etc.).
+			if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+				echo WP_MCP_AI_Orchestration_Renderer::render_workflow_presets_section();
 			}
 
 			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
@@ -2108,7 +2114,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Get the submitted view from the hidden field in the form.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
-			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( wp_unslash( $_POST['view'] ) ) : '';
 
 			// If no valid view submitted, return empty to preserve all existing settings.
 			if ( ! isset( $view_groups[ $submitted_view ] ) ) {
@@ -4806,7 +4812,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					?>
 				</p>
 				<p style="margin: 0;">
-					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">

@@ -39,16 +39,18 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 		 * Verify the webhook request is from Mailjet.
 		 *
 		 * @param WP_REST_Request $request The request object.
-		 * @return bool True if verified.
+		 * @return bool|WP_Error True if verified, WP_Error if not configured or invalid.
 		 */
 		public function verify_webhook_request( $request ) {
-			// Always allow webhook requests if no secret is configured.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			$secret   = isset( $settings['mailjet_webhook_secret'] ) ? trim( $settings['mailjet_webhook_secret'] ) : '';
 
 			if ( '' === $secret ) {
-				// No secret configured, accept all requests.
-				return true;
+				return new WP_Error(
+					'rest_mailjet_not_configured',
+					__( 'Mailjet webhook secret is not configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
 			}
 
 			// Verify signature if secret is configured.

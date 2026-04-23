@@ -1,0 +1,60 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/vehicle-cleaning-estimator",
+	"title": "Vehicle Cleaning Estimator",
+	"category": "mcp-ai-toolkits",
+	"description": "Interactive AI-powered car-wash / detailing quote widget. Accepts vehicle photos and returns a full line-item estimate.",
+	"keywords": [
+		"vehicle",
+		"car wash",
+		"cleaning",
+		"estimate",
+		"quote",
+		"detailing",
+		"mcp"
+	],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"assistant_id": {
+			"type": "string",
+			"default": ""
+		},
+		"primary_color": {
+			"type": "string",
+			"default": ""
+		},
+		"show_package_selector": {
+			"type": "boolean",
+			"default": true
+		},
+		"show_addon_selector": {
+			"type": "boolean",
+			"default": true
+		},
+		"currency": {
+			"type": "string",
+			"default": "CAD"
+		},
+		"tax_rate": {
+			"type": "number",
+			"default": 0
+		},
+		"placeholder_text": {
+			"type": "string",
+			"default": ""
+		},
+		"cta_label": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"align": ["wide", "full"],
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}

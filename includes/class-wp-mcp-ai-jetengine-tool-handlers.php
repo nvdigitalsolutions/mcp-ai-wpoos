@@ -21,8 +21,9 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  * Translate MCP tool payloads into JetEngine REST requests.
  */
 class WP_MCP_AI_JetEngine_Tool_Handlers {
-	const REST_NAMESPACE = 'jet-engine/v2';
-	const PROXY_HEADER   = 'X-WP-MCP-AI-Proxy';
+	const REST_NAMESPACE     = 'jet-engine/v2';
+	const REST_NAMESPACE_MCP = 'jet-engine/v1/mcp';
+	const PROXY_HEADER       = 'X-WP-MCP-AI-Proxy';
 
 	/**
 	 * Suppress doing_it_wrong notices for JetEngine mock routes during automated tests.
@@ -314,6 +315,10 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	/**
 	 * Dispatch a JetEngine operation using the provided payload and context.
 	 *
+	 * When JetEngine 3.8+ MCP Server is available and the operation has an
+	 * MCP equivalent, the request is routed through the MCP client. Otherwise
+	 * falls back to the legacy REST v2 endpoint dispatch.
+	 *
 	 * @param string $operation Operation identifier.
 	 * @param array  $payload   Data describing the request.
 	 * @param array  $context   Execution context including `user_id`.
@@ -326,6 +331,12 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 				'wp_mcp_ai_jetengine_missing',
 				__( 'JetEngine is not active on this site.', 'mcp-ai-wpoos' )
 			);
+		}
+
+		// Try MCP dispatch for JetEngine 3.8+ when available and preferred.
+		$mcp_result = self::maybe_dispatch_via_mcp( $operation, $payload, $context );
+		if ( null !== $mcp_result ) {
+			return $mcp_result;
 		}
 
 		$config = self::get_operation_config( $operation );
@@ -396,6 +407,76 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		}
 
 		return self::dispatch_remote( $route, $config['method'], $params, $context );
+	}
+
+	/**
+	 * Mapping of legacy operation slugs to JetEngine MCP tool names.
+	 *
+	 * Only operations with clear MCP equivalents are mapped. Returns null
+	 * for operations that have no MCP counterpart.
+	 *
+	 * @var array<string, string>
+	 */
+	private static $mcp_operation_map = array(
+		'add_item'  => 'create_post_type',
+		'get_items' => 'get_post_types',
+	);
+
+	/**
+	 * Attempt to dispatch an operation via JetEngine's MCP server.
+	 *
+	 * Returns null when MCP is not available or the operation does not have
+	 * an MCP equivalent, allowing the caller to fall back to legacy REST.
+	 *
+	 * @param string $operation Operation identifier.
+	 * @param array  $payload   Request data.
+	 * @param array  $context   Execution context.
+	 * @return array|WP_Error|null Result from MCP, or null to fall back.
+	 */
+	protected static function maybe_dispatch_via_mcp( $operation, array $payload, array $context ) {
+		// Check if MCP is available and enabled.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			return null;
+		}
+
+		if ( ! WP_MCP_AI_JetEngine_Compat::has_mcp_server() ) {
+			return null;
+		}
+
+		// Check user preference — MCP must be enabled in settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['jetengine_mcp_enabled'] ) ) {
+			return null;
+		}
+
+		// Check if this operation has an MCP equivalent.
+		if ( ! isset( self::$mcp_operation_map[ $operation ] ) ) {
+			return null;
+		}
+
+		// Load the MCP client.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_MCP_Client' ) ) {
+			$client_file = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-mcp-client.php'
+				: '';
+			if ( empty( $client_file ) || ! file_exists( $client_file ) ) {
+				return null;
+			}
+			require_once $client_file;
+		}
+
+		$mcp_tool = self::$mcp_operation_map[ $operation ];
+		$params   = isset( $payload['params'] ) && is_array( $payload['params'] ) ? $payload['params'] : array();
+
+		$client = new WP_MCP_AI_JetEngine_MCP_Client();
+		$result = $client->tools_call( $mcp_tool, $params );
+
+		if ( is_wp_error( $result ) ) {
+			// MCP failed — fall back to legacy REST silently.
+			return null;
+		}
+
+		return self::normalise_success( $result, 200, array(), 'mcp' );
 	}
 
 	/**
@@ -524,8 +605,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 				$args['cookies'][] = new WP_Http_Cookie(
 					array(
-						'name'  => sanitize_text_field( $cookie_name ),
-						'value' => sanitize_text_field( $cookie_value ),
+						'name'  => sanitize_text_field( wp_unslash( $cookie_name ) ),
+						'value' => sanitize_text_field( wp_unslash( $cookie_value ) ),
 					)
 				);
 			}

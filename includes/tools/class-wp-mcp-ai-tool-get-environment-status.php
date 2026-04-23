@@ -234,12 +234,41 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 
 		$default_provider = isset( $plugin['default_provider'] ) ? $plugin['default_provider'] : '';
 
-		if ( 'openai' === $default_provider && empty( $settings['openai_api_key'] ) ) {
-			$warnings[] = __( 'OpenAI is the default provider but no API key is configured.', 'mcp-ai-wpoos' );
+		$provider_key_map = array(
+			'openai'     => 'openai_api_key',
+			'anthropic'  => 'anthropic_api_key',
+			'gemini'     => 'gemini_api_key',
+			'huggingface' => 'huggingface_api_key',
+			'nvidia'     => 'nvidia_api_key',
+			'cloudflare' => 'cloudflare_api_token',
+		);
+
+		$provider_endpoint_map = array(
+			'ollama'    => 'ollama_endpoint_url',
+			'lm_studio' => 'lm_studio_endpoint_url',
+		);
+
+		$provider_labels = array(
+			'openai'      => 'OpenAI',
+			'anthropic'   => 'Anthropic',
+			'gemini'      => 'Gemini',
+			'huggingface' => 'Hugging Face',
+			'nvidia'      => 'NVIDIA',
+			'cloudflare'  => 'Cloudflare',
+			'ollama'      => 'Ollama',
+			'lm_studio'   => 'LM Studio',
+		);
+
+		if ( isset( $provider_key_map[ $default_provider ] ) && empty( $settings[ $provider_key_map[ $default_provider ] ] ) ) {
+			$label = isset( $provider_labels[ $default_provider ] ) ? $provider_labels[ $default_provider ] : $default_provider;
+			/* translators: %s: AI provider name (e.g. OpenAI, Anthropic). */
+			$warnings[] = sprintf( __( '%s is the default provider but no API key is configured.', 'mcp-ai-wpoos' ), $label );
 		}
 
-		if ( 'gemini' === $default_provider && empty( $settings['gemini_api_key'] ) ) {
-			$warnings[] = __( 'Gemini is the default provider but no API key is configured.', 'mcp-ai-wpoos' );
+		if ( isset( $provider_endpoint_map[ $default_provider ] ) && empty( $settings[ $provider_endpoint_map[ $default_provider ] ] ) ) {
+			$label = isset( $provider_labels[ $default_provider ] ) ? $provider_labels[ $default_provider ] : $default_provider;
+			/* translators: %s: AI provider name (e.g. Ollama, LM Studio). */
+			$warnings[] = sprintf( __( '%s is the default provider but no endpoint URL is configured.', 'mcp-ai-wpoos' ), $label );
 		}
 
 		if ( empty( $assistants['total_assistants'] ) ) {

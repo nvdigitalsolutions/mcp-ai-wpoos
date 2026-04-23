@@ -629,8 +629,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 					<p>
 						<?php
 						printf(
-							/* translators: %s: Settings page URL */
-							esc_html__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'mcp-ai-wpoos' ),
+							wp_kses(
+								/* translators: %s: Link to settings page. */
+								__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'mcp-ai-wpoos' ),
+								array( 'a' => array( 'href' => array() ) )
+							),
 							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
@@ -654,8 +657,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 						<p>
 							<?php
 							printf(
-								/* translators: 1: Number of violations, 2: Settings page URL */
-								esc_html( _n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'mcp-ai-wpoos' ) ),
+								wp_kses(
+									/* translators: 1: Number of violations, 2: Link to settings page. */
+									_n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'mcp-ai-wpoos' ),
+									array( 'a' => array( 'href' => array() ) )
+								),
 								absint( $recent_violations ),
 								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'View details', 'mcp-ai-wpoos' ) . '</a>'
 							);

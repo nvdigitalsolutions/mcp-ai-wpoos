@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			$current_user_id = get_current_user_id();
-			$active_view     = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'per_user'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
+			$active_view     = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : 'per_user'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
 
 			?>
 			<div class="wp-mcp-ai-token-manager">
@@ -375,7 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
 			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
-			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( wp_unslash( $_GET['tool_group'] ) ) : '';
 
 			?>
 		<h3><?php esc_html_e( 'Token Limits by Tool', 'mcp-ai-wpoos' ); ?></h3>
@@ -1690,7 +1690,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Render analytics view with sub-tabs.
 		 */
 		private function render_analytics_view() {
-			$analytics_tab = isset( $_GET['analytics_tab'] ) ? sanitize_key( $_GET['analytics_tab'] ) : 'trends'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only analytics sub-tab navigation parameter; not a state-changing operation.
+			$analytics_tab = isset( $_GET['analytics_tab'] ) ? sanitize_key( wp_unslash( $_GET['analytics_tab'] ) ) : 'trends'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only analytics sub-tab navigation parameter; not a state-changing operation.
 
 			// Enqueue Chart.js for analytics charts.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
@@ -1868,7 +1868,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					?>
 				</p>
 				<p style="margin: 0;">
-					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
+					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-secondary" style="margin-right: 10px;">
 						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">

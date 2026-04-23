@@ -266,7 +266,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( $_POST['workflow'] ) : '';
+		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( wp_unslash( $_POST['workflow'] ) ) : '';
 
 		if ( empty( $workflow_slug ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow slug required.', 'mcp-ai-wpoos' ) ) );
@@ -298,7 +298,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( $_POST['workflow'] ) : '';
+		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( wp_unslash( $_POST['workflow'] ) ) : '';
 		$params        = isset( $_POST['params'] ) ? json_decode( wp_unslash( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string decoded from raw POST; all values are sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
 		$params        = is_array( $params ) ? wp_mcp_ai_sanitize_recursive( $params ) : array();
 

@@ -234,12 +234,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 				'enable_regulatory_registration_toolkit' => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_law_firm_toolkit'                => __( 'Law Firm Toolkit', 'mcp-ai-wpoos' ),
 				'enable_webchat_integration'             => __( 'WebChat Integration', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'               => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
-				'enable_fantasy_football'                => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
 				'enable_healthcare_imaging'              => __( 'Healthcare Imaging Viewer', 'mcp-ai-wpoos' ),
 			);
 
@@ -842,26 +842,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'sync_with_sfda tool', 'mcp-ai-wpoos' ),
 						__( 'validate_excel_import tool', 'mcp-ai-wpoos' ),
 						__( 'configure_email_notifications tool', 'mcp-ai-wpoos' ),
-					),
-				),
-				'fantasy_football'                => array(
-					'name'          => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Yahoo Fantasy Sports integration with team management, player research, trade analysis, and league reporting.', 'mcp-ai-wpoos' ),
-					'enabled'       => ! empty( $settings['enable_fantasy_football'] ),
-					'category'      => 'sports',
-					'php_functions' => array(),
-					'npm_packages'  => array(),
-					'tools_count'   => 9,
-					'tools'         => array(
-						__( 'yahoo_ff_auth tool', 'mcp-ai-wpoos' ),
-						__( 'yahoo_ff_get_leagues tool', 'mcp-ai-wpoos' ),
-						__( 'yahoo_ff_get_roster tool', 'mcp-ai-wpoos' ),
-						__( 'yahoo_ff_get_player_stats tool', 'mcp-ai-wpoos' ),
-						__( 'yahoo_ff_league_standings tool', 'mcp-ai-wpoos' ),
-						__( 'yahoo_ff_trade_analyzer tool', 'mcp-ai-wpoos' ),
-						__( 'ff_player_research tool', 'mcp-ai-wpoos' ),
-						__( 'ff_create_league_report tool', 'mcp-ai-wpoos' ),
-						__( 'ff_generate_team_logo tool', 'mcp-ai-wpoos' ),
 					),
 				),
 			);
@@ -1624,10 +1604,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for client-side WebLLM (loaded via CDN, not bundled).
 			// This package is used in embedded-llm-client.js which loads it from CDN at runtime.
+			// The file was moved to the NV oOS Embedded addon.
 			if ( '@mlc-ai/web-llm' === $package ) {
-				// Check if the client-side embedded LLM JavaScript file exists.
-				$embedded_client_path = WP_MCP_AI_PATH . 'assets/js/embedded-llm-client.js';
-				return file_exists( $embedded_client_path );
+				// Check if the Embedded addon is active (provides embedded-llm-client.js).
+				if ( defined( 'NVOOS_EMBEDDED_PATH' ) ) {
+					return file_exists( NVOOS_EMBEDDED_PATH . 'assets/js/embedded-llm-client.js' );
+				}
+				return false;
 			}
 
 			// Check for Cornerstone3D packages (loaded via CDN by imaging-viewer.js).

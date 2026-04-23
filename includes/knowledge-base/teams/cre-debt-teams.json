@@ -1,0 +1,271 @@
+{
+  "teams": [
+    {
+      "title": "CRE Loan Origination Team",
+      "slug": "cre_loan_origination_team",
+      "description": "End-to-end commercial real estate loan origination team responsible for sourcing, underwriting, and closing new debt transactions. Ensures every deal meets credit standards and regulatory requirements before funding.",
+      "members": [
+        "cre_loan_originator",
+        "cre_underwriter",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential origination pipeline from deal sourcing through credit approval to compliance sign-off",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_loan_originator",
+            "task": "Source and screen new CRE loan opportunities, collect borrower financials, prepare initial term sheets, and negotiate preliminary deal terms",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cre_underwriter",
+            "task": "Perform full credit analysis including property valuation, cash flow modeling, debt service coverage assessment, and risk rating assignment",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "cre_compliance_officer",
+            "task": "Review loan documentation for regulatory compliance, verify KYC/AML requirements, validate lending limits, and issue final compliance approval",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "CMBS Securitization Team",
+      "slug": "cmbs_securitization_team",
+      "description": "Specialized team for structuring and executing commercial mortgage-backed securities transactions. Manages the full securitization lifecycle from loan pool assembly through bond issuance and regulatory filing.",
+      "members": [
+        "cre_underwriter",
+        "cmbs_structuring_analyst",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential securitization pipeline from loan pool preparation through tranche structuring to regulatory review",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_underwriter",
+            "task": "Prepare and validate the loan pool by reviewing individual loan credit quality, standardizing documentation, and performing aggregate pool-level risk analysis",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cmbs_structuring_analyst",
+            "task": "Design bond tranche waterfall structure, model cash flow scenarios and stress tests, determine credit enhancement levels, and coordinate with rating agencies",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "cre_compliance_officer",
+            "task": "Review securitization offering documents for SEC and Regulation AB compliance, verify risk retention requirements, and ensure investor disclosure standards are met",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "CRE Debt Fund Operations Team",
+      "slug": "cre_debt_fund_operations_team",
+      "description": "Parallel operations team managing the day-to-day activities of a commercial real estate debt fund. Coordinates portfolio management, asset-level performance tracking, and fund-level compliance reporting simultaneously.",
+      "members": [
+        "cre_debt_fund_manager",
+        "cre_asset_manager",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel operations with fund management and asset monitoring running simultaneously, compliance overlaying both streams",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_debt_fund_manager",
+            "task": "Manage fund-level portfolio allocation, track deployment targets, monitor leverage ratios, and prepare investor reporting packages",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "cre_asset_manager",
+            "task": "Monitor individual loan performance, track borrower covenant compliance, review property-level operating statements, and flag watchlist credits",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "cre_compliance_officer",
+            "task": "Oversee fund regulatory compliance, validate investor reporting accuracy, ensure lending facility covenant adherence, and manage audit preparation",
+            "dependencies": []
+          }
+        ]
+      }
+    },
+    {
+      "title": "CRE Asset Surveillance Team",
+      "slug": "cre_asset_surveillance_team",
+      "description": "Dedicated surveillance team responsible for ongoing monitoring of CRE loan portfolios, early detection of credit deterioration, and management of distressed assets through workout or resolution.",
+      "members": [
+        "cre_asset_manager",
+        "cre_special_servicer",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential surveillance pipeline from ongoing monitoring through distressed asset handling to compliance audit",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_asset_manager",
+            "task": "Conduct ongoing portfolio surveillance, analyze borrower financial statements, monitor occupancy and cash flow trends, and escalate deteriorating credits to special servicing",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cre_special_servicer",
+            "task": "Evaluate distressed loan resolution strategies including modifications, forbearance, foreclosure, or note sales, and execute the optimal recovery path",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "cre_compliance_officer",
+            "task": "Audit workout documentation for regulatory compliance, verify loss mitigation procedures follow servicer guidelines, and validate loss reserve adequacy",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "CRE Deal Execution Team",
+      "slug": "cre_deal_execution_team",
+      "description": "Full-cycle deal execution team that takes a CRE debt transaction from initial sourcing through underwriting, structuring, and capital markets distribution. Optimized for large or complex transactions requiring multi-disciplinary coordination.",
+      "members": [
+        "cre_loan_originator",
+        "cre_underwriter",
+        "cmbs_structuring_analyst",
+        "cre_capital_markets_analyst"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential deal pipeline from origination through underwriting, structuring, and capital markets placement",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_loan_originator",
+            "task": "Source the transaction, negotiate terms with the borrower, structure the initial loan proposal, and prepare the deal package for credit review",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cre_underwriter",
+            "task": "Perform detailed credit underwriting including property appraisal review, environmental assessment, cash flow projections, and risk-adjusted return analysis",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "cmbs_structuring_analyst",
+            "task": "Evaluate securitization eligibility, model tranche structures and pricing, assess credit enhancement requirements, and prepare structuring memoranda",
+            "dependencies": [1, 2]
+          },
+          {
+            "step": 4,
+            "agent": "cre_capital_markets_analyst",
+            "task": "Analyze market conditions, price the debt offering, coordinate investor roadshow materials, manage book-building, and execute secondary market distribution",
+            "dependencies": [1, 2, 3]
+          }
+        ]
+      }
+    },
+    {
+      "title": "CRE Workout & Restructuring Team",
+      "slug": "cre_workout_restructuring_team",
+      "description": "Hybrid workout team that combines parallel distressed asset assessment with sequential decision-making for loan restructuring and fund-level impact analysis. Handles complex situations requiring rapid evaluation and coordinated resolution.",
+      "members": [
+        "cre_special_servicer",
+        "cre_asset_manager",
+        "cre_debt_fund_manager",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.2,
+      "orchestration_mode": "hybrid",
+      "workflow": {
+        "description": "Hybrid workflow: parallel distressed assessment by special servicer and asset manager, then sequential fund evaluation and compliance review",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cre_special_servicer",
+            "task": "Assess workout and restructuring options including loan modification terms, discounted payoff scenarios, receivership, and foreclosure timelines",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "cre_asset_manager",
+            "task": "Analyze current property performance, updated appraisals, tenant rollover risk, and market comparable data to determine recovery value estimates",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cre_debt_fund_manager",
+            "task": "Evaluate fund-level impact of workout scenarios, model reserve requirements, assess portfolio concentration effects, and determine optimal resolution strategy",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "cre_compliance_officer",
+            "task": "Review proposed restructuring for regulatory compliance, validate investor notification requirements, ensure fair lending standards, and approve final workout terms",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "CRE Full-Stack Debt Platform Team",
+      "slug": "cre_full_stack_debt_platform_team",
+      "description": "Comprehensive swarm-mode team deploying all CRE debt disciplines simultaneously for complex, multi-faceted engagements. All agents collaborate in real-time to provide holistic analysis across origination, underwriting, structuring, fund management, asset surveillance, capital markets, workouts, and compliance.",
+      "members": [
+        "cre_loan_originator",
+        "cre_underwriter",
+        "cmbs_structuring_analyst",
+        "cre_debt_fund_manager",
+        "cre_asset_manager",
+        "cre_capital_markets_analyst",
+        "cre_special_servicer",
+        "cre_compliance_officer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4.1",
+      "default_temperature": 0.3,
+      "orchestration_mode": "swarm",
+      "result_aggregation": "consensus",
+      "workflow": {
+        "description": "Swarm mode with all agents collaborating simultaneously for comprehensive CRE debt platform analysis and consensus-driven recommendations",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "all",
+            "task": "All agents collaborate simultaneously: originator evaluates deal flow, underwriter assesses credit, structurer models securities, fund manager analyzes portfolio fit, asset manager reviews performance data, capital markets analyst gauges investor demand, special servicer flags risk scenarios, and compliance officer ensures regulatory alignment — converging on a unified recommendation",
+            "dependencies": []
+          }
+        ]
+      }
+    }
+  ]
+}

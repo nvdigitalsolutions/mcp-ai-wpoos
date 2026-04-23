@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - January 23, 2026  
-**Tool Count:** 398 unique tools (141 base/extended + 257 Pro addon)  
-**Last Updated:** January 23, 2026
+**Status:** ✅ UPDATED - April 2026  
+**Tool Count:** 230+ base/extended tools registered in `load_default_tools`; 400+ total including Pro addon  
+**Last Updated:** April 15, 2026
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
@@ -81,6 +81,11 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Search Attachments** (`search_attachments`) scans the Media Library with optional keyword or MIME filters and returns download URLs for files that pass `WP_MCP_AI_Message_Attachments::user_can_access_attachment()`, keeping private knowledge assets hidden from unauthorised requests.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 - **Create or Update Post** (`save_post`) creates new posts or updates existing entries with capability-aware validation, Gutenberg block normalisation, slug overrides, and edit links so assistants can collaborate on publishing workflows safely.【F:includes/tools/class-wp-mcp-ai-tool-save-post.php†L15-L268】
 - **Create WooCommerce Product Draft** (`create_woo_product`) builds draft WooCommerce products from merchandising data, applying brand metadata, pricing, descriptions, and optional sideloaded imagery before saving the product for further editing.【F:includes/tools/class-wp-mcp-ai-tool-create-woo-product.php†L15-L258】
+- **Get Post** (`get_post`) retrieves a single WordPress post by ID, including its content, metadata, and taxonomy terms. Requires `read` capability; enforces multisite membership.【F:includes/tools/class-wp-mcp-ai-tool-get-post.php†L17-L150】
+- **Delete Post** (`delete_post`) deletes a WordPress post by ID. By default moves the post to the trash; set `force_delete` to `true` to permanently remove it. Requires `delete_posts` capability.【F:includes/tools/class-wp-mcp-ai-tool-delete-post.php†L17-L150】
+- **Get Post Type Schema** (`get_post_type_schema`) returns the schema of a registered WordPress post type: labels, capabilities, supported features, registered taxonomies, available statuses, and (when the Pro addon is active) the custom meta field definitions used by each Pro CPT toolkit.【F:includes/tools/class-wp-mcp-ai-tool-get-post-type-schema.php†L17-L200】
+- **Create Term** (`create_term`) creates a new taxonomy term (category, tag, or custom taxonomy) with optional parent, description, and metadata. Supports hierarchical taxonomies and term metadata.【F:includes/tools/class-wp-mcp-ai-tool-create-term.php†L17-L150】
+- **Update Term** (`update_term`) updates an existing taxonomy term with new properties, parent relationships, and metadata.【F:includes/tools/class-wp-mcp-ai-tool-update-term.php†L17-L150】
 - **Get Rank Math SEO Overview** (`get_rankmath_seo`) inspects Rank Math SEO settings for a post, returning focus keywords, SEO scores, robots directives, schema configuration, and accessibility helpers when the Rank Math plugin is active. **Pro Enhancement**: When Rank Math Pro is installed, automatically includes Content AI suggestions, Analytics data (impressions, clicks, CTR, position, top keywords), Link Counter (internal/external links), Image SEO scores, enhanced Video Schema, Local SEO data, and advanced Schema Templates. The tool detects Pro availability and enriches the response with `pro_features` object containing all Pro-specific data without requiring any configuration changes.【F:includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php†L15-L489】
 
 ## Media generation and transcription
@@ -94,6 +99,9 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Generate Veo Video** (`generate_veo_video`) generates realistic videos from text descriptions using Google's Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached. Supports async mode for long-running video generation tasks.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php†L17-L300】
 - **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
 - **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
+- **Edit OpenAI Image** (`edit_openai_image`) edits an existing image using OpenAI's DALL-E image editing API. Accepts an image attachment ID and an optional mask attachment ID to specify which areas to modify, then saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php†L17-L200】
+- **Create Image Variation** (`create_image_variation`) creates variations of an existing image using OpenAI's DALL-E API. Accepts a source image attachment ID and returns one or more variations saved to the Media Library. Useful for generating alternative versions of logos, illustrations, or product shots.【F:includes/tools/class-wp-mcp-ai-tool-create-image-variation.php†L17-L200】
+- **Generate Cloudflare AI Image** (`generate_cloudflareai_image`) creates an image with Cloudflare Workers AI using any of the configured Workers AI image-generation models and stores the result in the Media Library. No OpenAI or Gemini key required.【F:includes/tools/class-wp-mcp-ai-tool-generate-cloudflareai-image.php†L17-L200】
 - **Generate Architectural Drawing** (`generate_architectural_drawing`) **[PRO]** creates professional architectural drawings for construction and design projects. Supports 10 drawing types (floor_plan, elevation, section, detail, site_plan, reflected_ceiling_plan, roof_plan, 3d_axonometric, isometric, construction_detail) and 6 presentation styles (technical, sketched, rendered, line_drawing, annotated, schematic). Includes dimensional specifications (width, depth, height), architectural scale notation (1/4"=1'-0", 1:100, 1:50), material lists and callouts, and building code compliance (IBC, IRC, NBC, Eurocode). Dual AI providers (OpenAI DALL-E/GPT-Image-1.5 and Gemini) with automatic SVG vectorization using the vectorize_image tool. Perfect for architects, structural engineers, and construction professionals needing technical drawings with accurate dimensions and material specifications.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】
 
 ## Content Safety & Moderation
@@ -177,6 +185,8 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 - **Extract Video Frames** (`extract_video_frames`) extracts specific frames from a video file at given timestamps or intervals. Useful for detailed analysis of specific moments or creating thumbnails.【F:includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php†L17-L150】
 - **Get Video Metadata** (`get_video_metadata`) retrieves detailed technical metadata about a video file including duration, dimensions, format, codecs, bitrate, and frame rate.【F:includes/tools/class-wp-mcp-ai-tool-get-video-metadata.php†L17-L150】
 - **Analyze Comment Content** (`analyze_comment_content`) analyzes comment content for spam, toxicity, and moderation concerns using AI to assist with comment moderation.【F:includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php†L17-L150】
+- **Analyze Image** (`analyze_image`) analyzes images using AI vision capabilities from OpenAI, Anthropic, or Gemini. Supports detailed image description, object detection, OCR text extraction, and visual question answering. Automatically selects the best available provider.【F:includes/tools/class-wp-mcp-ai-tool-analyze-image.php†L17-L250】
+- **Extract Image Text** (`extract_image_text`) extracts all visible text from images using AI OCR capabilities from OpenAI, Anthropic, or Gemini. Supports documents, screenshots, handwriting, and complex layouts with multi-provider fallback.【F:includes/tools/class-wp-mcp-ai-tool-extract-image-text.php†L17-L200】
 
 ## Data visualization
 
@@ -248,6 +258,9 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 - **Get QuickBooks Report 🌟** (`quickbooks_report`) requests Profit and Loss, Balance Sheet, or any supported QuickBooks Online report using the configured company ID and bearer token. Optional `start_date`, `end_date`, `accounting_method`, and `minor_version` arguments provide fine-grained control while enforcing multisite membership and a filterable capability requirement before contacting the QuickBooks API. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-quickbooks-report.php†L15-L214】
 - **Lookup Import Duty 🌟** (`get_import_duty`) calls the ITA Tariff Rates API to locate tariff lines for HS codes or free-form descriptions, returning duty percentages, effective dates, and commodity notes for supported countries. **Pro tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-import-duty.php†L15-L152】
 - **Google Analytics Report** (`google_analytics_report`) exchanges configured OAuth credentials for an Analytics Data API token, then runs GA4 reports with metrics, dimensions, ordering, and aggregation controls tailored to the assistant request.【F:includes/tools/class-wp-mcp-ai-tool-get-google-analytics-report.php†L15-L158】
+- **Search Google Drive** (`search_drive`) searches Google Drive and returns matching files and folders with names, types, and metadata. Supports simple text queries (e.g., `"report"`) or advanced Drive query syntax. Automatically excludes trashed items. Requires Google Drive OAuth credentials.【F:includes/tools/class-wp-mcp-ai-tool-search-drive.php†L17-L200】
+- **OpenAI Usage Analytics** (`openai_usage_analytics`) provides analytics on OpenAI API usage including total requests, tokens used, and estimated costs. Helps monitor and optimize API usage. Requires `manage_options` capability.【F:includes/tools/class-wp-mcp-ai-tool-openai-usage-analytics.php†L17-L200】
+- **Analyze File Suitability** (`analyze_file_suitability`) analyzes if a WordPress attachment file is suitable for OpenAI processing. Checks file size, format compatibility, and provides actionable recommendations before upload.【F:includes/tools/class-wp-mcp-ai-tool-analyze-file-suitability.php†L17-L200】
 - **Google Business Insights 🌟** (`get_google_business_insights`) issues Business Profile insights requests with metric selections, time ranges, and timezone hints, returning normalised totals for the specified location resource. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-google-business-insights.php†L15-L149】
 - **Meta Social Insights 🌟** (`get_facebook_instagram_insights`) pulls Facebook Page or Instagram business analytics through the Graph API, supporting custom metric sets, aggregation periods, and optional since/until boundaries. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-facebook-instagram-insights.php†L15-L146】
 - **LinkedIn Insights 🌟** (`get_linkedin_insights`) requests organisational share statistics from the LinkedIn Marketing API with optional timeframe start/end values and granularity controls to track campaign performance. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-linkedin-insights.php†L15-L138】
@@ -270,6 +283,13 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 
 - **List JetEngine REST Routes** (`list_jetengine_rest_routes`) returns metadata about JetEngine’s REST namespace, including method, callback, and capability guidance for each bundled route. Access is limited to users with `manage_options` permissions.【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】
 - **Invoke JetEngine REST Route** (`invoke_jetengine_route`) proxies CRUD operations to JetEngine controllers using the authenticated user context, validates required identifiers and instance keys, and supports REST or HTTP fallbacks when routes are unavailable.【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】【F:includes/class-wp-mcp-ai-jetengine-tool-handlers.php†L12-L213】 When the helper falls back to an HTTP request it forwards all cookies from the operator's session to the JetEngine endpoint so hosts with strict cookie policies can account for the behaviour in their governance controls.【F:includes/class-wp-mcp-ai-jetengine-tool-handlers.php†L330-L367】
+- **JetEngine MCP Bridge** (`jetengine_mcp`) discovers and proxies JetEngine 3.8+ MCP Server tools. Actions: discover_tools, call_tool, get_site_context. Requires `manage_options`. Risk level: elevated.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-mcp-bridge.php†L1-L50】
+- **JetEngine Create Post Type** (`jetengine_create_post_type`) creates custom post types via JetEngine MCP with validated slug/labels/settings. Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-post-type.php†L1-L50】
+- **JetEngine Create Taxonomy** (`jetengine_create_taxonomy`) creates custom taxonomies via JetEngine MCP with hierarchy and attachment configuration. Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-taxonomy.php†L1-L50】
+- **JetEngine Create Meta Field** (`jetengine_create_meta_field`) adds meta fields to post types, taxonomies, or users via JetEngine MCP. Supports 16 field types. Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-create-meta-field.php†L1-L50】
+- **JetEngine Manage Relations** (`jetengine_manage_relations`) lists and creates JetEngine relations (one-to-one, one-to-many, many-to-many). Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-manage-relations.php†L1-L50】
+- **JetEngine Site Context** (`jetengine_site_context`) retrieves comprehensive site structure from JetEngine MCP for AI grounding. Read-only. Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-site-context.php†L1-L50】
+- **JetEngine Prompts** (`jetengine_prompts`) discovers and renders JetEngine MCP prompt templates. Actions: list, get. Requires `manage_options`.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine-prompts.php†L1-L50】
 
 ## Operational helpers
 
@@ -336,6 +356,7 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 
 - **Geocode Address** (`geocode_address`) converts addresses to geographic coordinates (latitude/longitude) or coordinates to addresses using Google Maps Geocoding API. Requires a Google Maps API key.【F:includes/tools/class-wp-mcp-ai-tool-geocode-address.php†L17-L150】
 - **Search Places** (`search_places`) searches for businesses, landmarks, and points of interest using Google Maps Places API. Supports nearby search and text search with AI-powered contextual results. Requires a Google Maps API key.【F:includes/tools/class-wp-mcp-ai-tool-search-places.php†L17-L200】
+- **Gemini Geospatial Query** (`gemini_geospatial_query`) asks location-based questions using Gemini AI with Google Maps grounding. Returns AI-generated answers about places, directions, and local information with map context tokens for visualization. Requires a Gemini API key.【F:includes/tools/class-wp-mcp-ai-tool-gemini-geospatial-query.php†L17-L200】
 
 ## GitHub integration tools 🌟
 
@@ -369,5 +390,167 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 
 - **Lookup Product Price** (`lookup_product_price`) provides multi-source product price discovery and comparison. Works like Google Lens Shopping, Amazon Visual Search, and browser price comparison extensions. Accepts product images via Google Cloud Vision identification. Processes documents (invoices/quotes) in PDF, Word, Excel, TXT, CSV formats with LLM-powered line item extraction. Supports single URLs or batch URLs for multi-retailer price comparison. Extracts pricing from Schema.org structured data, CSS selectors, or regex patterns. Supports multiple retailers (Amazon, Walmart, eBay, Target) with extensible filter system. Returns normalized pricing data including currency, availability, and timestamps. Requires Crawl4AI integration. Optional Google Cloud Vision for image recognition. See comprehensive guide: [Product Price Lookup Guide](../../guides/user/assistants/PRODUCT-PRICE-LOOKUP-GUIDE.md).【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php†L17-L400】
 
+
+Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
+
+---
+
+## OpenAI file and model management
+
+- **List OpenAI Files** (`list_openai_files`) lists files uploaded to OpenAI. Use this to audit uploaded files, find files by purpose (`assistants`, `fine-tune`), check file quotas, or clean up old/unused files. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-list-openai-files.php†L17-L200】
+- **Get OpenAI File Details** (`get_openai_file_details`) retrieves detailed metadata about a specific OpenAI file. Use this to verify file upload success, check file processing status, get file size and format info, or debug file-related issues.【F:includes/tools/class-wp-mcp-ai-tool-get-openai-file-details.php†L17-L150】
+- **List Available Models** (`list_available_models`) lists all OpenAI models available to the configured API key. Supports filtering by capability type (chat, embedding, image, audio) and optionally includes deprecated models. Use this for dynamic model selection or capability discovery.【F:includes/tools/class-wp-mcp-ai-tool-list-available-models.php†L17-L200】
+- **Get Model Information** (`get_model_information`) retrieves detailed information about a specific OpenAI model including context length, capabilities, and availability. Useful for verifying a model exists before using it in an agentic workflow.【F:includes/tools/class-wp-mcp-ai-tool-get-model-information.php†L17-L150】
+- **Research Model** (`research_model`) researches an AI model's specifications and capabilities using AI to extract information from provider documentation and APIs. Returns configuration data needed for orchestration layer integration.【F:includes/tools/class-wp-mcp-ai-tool-research-model.php†L17-L200】
+- **Add Model Config** (`add_model_config`) adds or updates an AI model configuration in the orchestration layer. Takes model specification data and stores it for use in model selection and orchestration. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-add-model-config.php†L17-L200】
+- **Discover New Models** (`discover_new_models`) discovers newly released AI models from providers by querying their APIs. Compares discovered models against existing configurations and recommends new models to add. Optionally auto-researches specifications for newly found models.【F:includes/tools/class-wp-mcp-ai-tool-discover-new-models.php†L17-L200】
+
+---
+
+## Text embeddings and vector stores
+
+- **Create Text Embeddings** (`create_text_embeddings`) generates vector embeddings for text using OpenAI's embedding models. Use for semantic search preparation, content similarity comparison, text classification, recommendation systems, or vector database population. Supports single strings or arrays of texts (up to 8191 tokens each).【F:includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php†L17-L200】
+- **Semantic Content Search** (`semantic_content_search`) performs semantic search across WordPress content and health records using vector embeddings. Automatically uses the embedding service that matches the assistant's AI provider (OpenAI or Gemini). Can also search a configured OpenAI vector store in addition to local content.【F:includes/tools/class-wp-mcp-ai-tool-semantic-content-search.php†L17-L200】
+- **Suggest Best Model** (`suggest_best_model`) recommends the best OpenAI model for a given task based on requirements. Supports requirement flags including `speed`, `quality`, `cost`, `vision`, and `function_calling` for cost and performance optimization.【F:includes/tools/class-wp-mcp-ai-tool-suggest-best-model.php†L17-L200】
+- **Batch Embed Content** (`batch_embed_content`) generates embeddings for multiple posts or pages in batch. Use this to prepare semantic search, index a content library, build recommendation systems, or initialize vector databases. Supports filtering by specific post IDs or post types.【F:includes/tools/class-wp-mcp-ai-tool-batch-embed-content.php†L17-L200】
+- **Create Vector Store** (`create_vector_store`) creates a new OpenAI vector store for knowledge retrieval and semantic search (RAG). Optionally accepts an initial list of OpenAI file IDs to populate the store. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-create-vector-store.php†L17-L200】
+- **List Vector Stores** (`list_vector_stores`) lists all OpenAI vector stores with optional filtering and pagination. Use this to discover available knowledge bases. Requires `read` capability.【F:includes/tools/class-wp-mcp-ai-tool-list-vector-stores.php†L17-L150】
+- **Get Vector Store** (`get_vector_store`) retrieves detailed information about a specific OpenAI vector store including file counts, status, and metadata. When no ID is supplied, uses the assistant's configured vector store.【F:includes/tools/class-wp-mcp-ai-tool-get-vector-store.php†L17-L150】
+- **Manage Vector Store Files** (`manage_vector_store_files`) adds, removes, or lists files in an OpenAI vector store. Manages the knowledge base contents for RAG applications. Best file formats: PDF, TXT, DOCX, MD, JSON, HTML. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-manage-vector-store-files.php†L17-L200】
+
+---
+
+## Multi-agent orchestration
+
+- **Create Agent Team** (`create_agent_team`) creates a specialized multi-agent team for complex tasks. Teams consist of a planner (task decomposition), executors (specialized work), and optionally a critic (validation). The system selects appropriate professions based on task requirements.【F:includes/tools/class-wp-mcp-ai-tool-create-agent-team.php†L17-L200】
+- **Delegate to Agent** (`delegate_to_agent`) delegates a subtask to a specialized agent. The agent will use its expertise and tools to complete the task. Use this for complex workflows where different specialists handle different aspects of the work.【F:includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php†L17-L200】
+- **Delegate to A2A Agent** (`delegate_to_a2a_agent`) delegates a task to a remote A2A-compliant agent. Discovers the agent via the `/.well-known/agent.json` endpoint, sends a message, and returns the result. Use this when the task requires capabilities available only on an external agent.【F:includes/tools/class-wp-mcp-ai-tool-delegate-to-a2a-agent.php†L17-L200】
+- **Aggregate Agent Results** (`aggregate_agent_results`) combines results from multiple agents using various aggregation strategies. Use this after receiving outputs from multiple specialized agents to synthesize a unified result.【F:includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php†L17-L200】
+- **Execute Workflow** (`execute_workflow`) creates and executes an enhanced multi-agent workflow with advanced features: parallel execution, dependency management, automatic retries, and state persistence. Use for complex tasks that benefit from coordinated multi-agent execution.【F:includes/tools/class-wp-mcp-ai-tool-execute-workflow.php†L17-L300】
+- **Check Workflow Health** (`check_workflow_health`) checks the health status of workflows to detect if they are stuck in `initialized` state. Provides recommendations for fixing workflow issues including WP-Cron/async processing problems.【F:includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php†L17-L200】
+
+---
+
+## Agent memory management
+
+- **Store Agent Context** (`store_agent_context`) stores important context, learnings, or information for an agent to remember. Supports automatic content ingestion from Vector Stores, WordPress posts/pages, and URLs. Context can be retrieved later using `retrieve_agent_memory`.【F:includes/tools/class-wp-mcp-ai-tool-store-agent-context.php†L17-L300】
+- **Retrieve Agent Memory** (`retrieve_agent_memory`) retrieves previously stored agent context and memory. Search by context ID for exact retrieval, or by agent ID, type, tags, and natural-language query for semantic search. Returns relevant contexts ranked by relevance and importance.【F:includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php†L17-L250】
+- **Prioritize Context** (`prioritize_context`) prioritizes and filters context items to fit within a token budget. Ranks contexts by relevance to the current task, importance level, and recency. Returns an optimized subset of contexts that maximizes value while respecting token limits.【F:includes/tools/class-wp-mcp-ai-tool-prioritize-context.php†L17-L200】
+- **Semantic Context Search** (`semantic_context_search`) searches agent contexts using semantic similarity based on vector embeddings. More accurate than keyword matching for understanding context relevance. Requires OpenAI API key for embedding generation.【F:includes/tools/class-wp-mcp-ai-tool-semantic-context-search.php†L17-L200】
+- **Manage Context Lifecycle** (`manage_context_lifecycle`) provides advanced context lifecycle management: refresh TTL, apply compression, merge related contexts, update memory content, delete specific contexts, and manage retention policies. Implements RAG best practices for memory lifecycle.【F:includes/tools/class-wp-mcp-ai-tool-manage-context-lifecycle.php†L17-L300】
+- **Batch Manage Memory** (`batch_manage_memory`) performs bulk operations on agent memory contexts: bulk update tags/importance, bulk delete, export to JSON, import from JSON, and batch tag management. Optimized for managing large-scale memory systems.【F:includes/tools/class-wp-mcp-ai-tool-batch-manage-memory.php†L17-L250】
+- **Memory Audit Trail** (`memory_audit_trail`) tracks and manages memory version history with full audit trail. View change history, compare versions, rollback to previous states, and maintain compliance records for all memory modifications.【F:includes/tools/class-wp-mcp-ai-tool-memory-audit-trail.php†L17-L250】
+
+---
+
+## Reasoning and code analysis
+
+- **Enable Reasoning Mode** (`enable_reasoning_mode`) activates enhanced reasoning mode for complex multi-step tasks. Analyzes task complexity across 5 indicators (multi-step, logical complexity, code generation, domain expertise, verification needs) and configures chain-of-thought prompting, lower temperature, and verification steps when the reasoning score exceeds a 0.7 threshold.【F:includes/tools/class-wp-mcp-ai-tool-enable-reasoning-mode.php†L17-L200】
+- **Analyze Code Sequence** (`analyze_code_sequence`) analyzes and optimizes PHP code sequences. Performs syntax validation, WordPress Coding Standards checking, security scanning (eval, SQL injection, XSS, file inclusion), and provides improvement suggestions with line-level annotations.【F:includes/tools/class-wp-mcp-ai-tool-analyze-code-sequence.php†L17-L300】
+- **Validate Reasoning Chain** (`validate_reasoning_chain`) validates logical reasoning chains for coherence and consistency. Checks step-by-step progression, verifies premises, identifies logical gaps, and ensures conclusions follow from reasoning. Returns a validation report with coherence score, consistency check, and identified issues.【F:includes/tools/class-wp-mcp-ai-tool-validate-reasoning-chain.php†L17-L200】
+
+---
+
+## Deep research
+
+- **Deep Research** (`deep_research`) performs comprehensive deep research on any topic using multi-step web search and AI analysis. Works with all supported AI providers (OpenAI, Gemini, Anthropic, Cloudflare, HuggingFace, Ollama). Generates detailed research reports with findings and citations. Configure a dedicated research model via **Settings → NV oOS → `deep_research_model`**. Marked as a Pro-level tool in terms of capability; available in the base plugin.【F:includes/tools/class-wp-mcp-ai-tool-deep-research.php†L17-L400】
+
+---
+
+## Browser-native AI (client-side NLP)
+
+These tools run directly in the visitor's browser using the Web AI API (navigator.ml) without any server round-trip or API key. They require a Chromium-based browser with the experimental Web AI feature flag enabled.
+
+- **Client Summarize Text** (`client_summarize_text`) generates a concise summary of the provided text using browser-native AI. Best for summarizing articles, documents, or long content without server costs.【F:includes/tools/class-wp-mcp-ai-tool-client-summarize-text.php†L17-L150】
+- **Client Analyze Sentiment** (`client_analyze_sentiment`) analyzes the sentiment (positive or negative) of text using browser-native AI. Processes instantly without server round-trip.【F:includes/tools/class-wp-mcp-ai-tool-client-analyze-sentiment.php†L17-L100】
+- **Client Extract Entities** (`client_extract_entities`) extracts named entities (people, places, organizations, etc.) from text using browser-native AI. Processes instantly without server round-trip.【F:includes/tools/class-wp-mcp-ai-tool-client-extract-entities.php†L17-L150】
+- **Client Translate Text** (`client_translate_text`) translates text between 200+ languages using browser-native AI. Processes instantly without server round-trip. Supports all major world languages.【F:includes/tools/class-wp-mcp-ai-tool-client-translate-text.php†L17-L150】
+- **Client Question Answering** (`client_question_answering`) extracts answers to questions from provided context using browser-native AI. Processes instantly without server round-trip.【F:includes/tools/class-wp-mcp-ai-tool-client-question-answering.php†L17-L150】
+- **Client Semantic Search** (`client_semantic_search`) generates 384-dimensional text embeddings for semantic search using browser-native AI. Processes instantly without server round-trip, creating vectors suitable for cosine-similarity matching.【F:includes/tools/class-wp-mcp-ai-tool-client-semantic-search.php†L17-L150】
+
+---
+
+## Yahoo Fantasy Football toolkit
+
+These tools require the Fantasy Football addon (`addons/fantasy-football/`) and Yahoo Fantasy Sports API credentials.
+
+- **Yahoo FF Auth** (`yahoo_ff_auth`) initiates Yahoo Fantasy Sports API OAuth authentication. Generates an authorization URL for users to grant access to their fantasy football leagues. Returns OAuth status and stores credentials for subsequent tool calls.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php†L17-L200】
+- **Yahoo FF Get Leagues** (`yahoo_ff_get_leagues`) retrieves the user's fantasy football leagues from Yahoo Fantasy Sports. Returns league details including name, ID, season, scoring type, and standings.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php†L17-L150】
+- **Yahoo FF Get Roster** (`yahoo_ff_get_roster`) retrieves a team roster from a Yahoo Fantasy Football league. Returns player details, positions, and current lineup status.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php†L17-L150】
+- **Yahoo FF Get Player Stats** (`yahoo_ff_get_player_stats`) retrieves player statistics from Yahoo Fantasy Sports API including weekly and season stats with fantasy point totals.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php†L17-L150】
+- **Yahoo FF Trade Analyzer** (`yahoo_ff_trade_analyzer`) analyzes fantasy football trade proposals by comparing player statistics and projections. Generates visual comparison charts showing fantasy points, trends, and trade value assessment.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php†L17-L200】
+- **Yahoo FF League Standings** (`yahoo_ff_league_standings`) retrieves league standings from Yahoo Fantasy Football and generates interactive visualizations showing team rankings, points scored, and win-loss records.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php†L17-L200】
+- **FF Generate Team Logo** (`ff_generate_team_logo`) generates a custom team logo for a fantasy football team using AI image generation. Creates professional, sports-themed logos based on team name and preferences.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php†L17-L200】
+- **FF Create League Report** (`ff_create_league_report`) creates a comprehensive league report with standings, team statistics, and analysis. Generates a formatted HTML or PDF document with charts and insights.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php†L17-L250】
+- **FF Player Research** (`ff_player_research`) researches fantasy football players by name, position, or team. Compares statistics, views injury reports, checks expert rankings, and can add players to a watchlist.【F:addons/fantasy-football/includes/tools/class-wp-mcp-ai-tool-ff-player-research.php†L17-L200】
+
+---
+
+## Newsletter plugin integration
+
+These tools require the [Newsletter plugin](https://wordpress.org/plugins/newsletter/) to be active.
+
+- **Newsletter Add Subscriber** (`newsletter_add_subscriber`) adds a new email subscriber to the Newsletter plugin. Supports name, list assignments, and custom fields.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-add-subscriber.php†L17-L150】
+- **Newsletter Get Subscribers** (`newsletter_get_subscribers`) retrieves Newsletter plugin subscribers with optional filtering by status, list, and search query. Returns paginated subscriber records.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscribers.php†L17-L150】
+- **Newsletter Unsubscribe** (`newsletter_unsubscribe`) unsubscribes or removes a subscriber from the Newsletter plugin by email or subscriber ID.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-unsubscribe.php†L17-L100】
+- **Newsletter Get Subscriber Stats** (`newsletter_get_subscriber_stats`) provides a statistical overview of Newsletter plugin subscribers including counts by status and lists.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php†L17-L150】
+- **Newsletter Create Email** (`newsletter_create_email`) creates a new newsletter email campaign with subject, content, and scheduling settings.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-create-email.php†L17-L200】
+- **Newsletter Get Emails** (`newsletter_get_emails`) retrieves newsletter email campaigns with optional filtering by status and search. Returns paginated campaign records.【F:includes/tools/class-wp-mcp-ai-tool-newsletter-get-emails.php†L17-L150】
+
+---
+
+## WP All Import / WP All Export integration
+
+These tools require the [WP All Import](https://wordpress.org/plugins/wp-all-import/) or [WP All Export](https://wordpress.org/plugins/wp-all-export/) plugins to be active.
+
+- **List All Export Templates** (`list_all_export_templates`) returns a list of WP All Export templates configured on the site. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-list-all-export-templates.php†L17-L100】
+- **Trigger All Export** (`trigger_all_export`) triggers a WP All Export template to execute and generate an export file. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-trigger-all-export.php†L17-L150】
+- **List All Import Templates** (`list_all_import_templates`) returns a list of WP All Import templates configured on the site. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php†L17-L100】
+- **Trigger All Import** (`trigger_all_import`) triggers a WP All Import template to execute and import data. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php†L17-L150】
+- **Get All Import Status** (`get_all_import_status`) gets the status and progress of a running WP All Import operation including percentage complete and records processed.【F:includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php†L17-L100】
+
+---
+
+## Flowhub cannabis dispensary integration
+
+These tools require a Flowhub API key configured in **Settings → NV oOS → Integrations → Flowhub**.
+
+- **Flowhub Get Inventory** (`flowhub_get_inventory`) retrieves cannabis inventory data from Flowhub including packages, quantities, locations, and product details. Supports filtering by room and pagination.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-get-inventory.php†L17-L200】
+- **Flowhub Get Orders** (`flowhub_get_orders`) retrieves order and transaction data from Flowhub including sales, returns, customer details, and order status. Supports filtering and pagination.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-get-orders.php†L17-L200】
+- **Flowhub Create Order** (`flowhub_create_order`) creates a new order/transaction in Flowhub. Supports sales orders with customer information, line items, payment details, and compliance tracking.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-create-order.php†L17-L200】
+- **Flowhub Get Customers** (`flowhub_get_customers`) retrieves customer profiles from Flowhub including contact information, purchase history, loyalty data, and medical cannabis credentials. Supports search and pagination.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-get-customers.php†L17-L200】
+- **Flowhub Manage Customer** (`flowhub_manage_customer`) creates or updates customer profiles in Flowhub. Supports managing contact information, medical cannabis credentials, loyalty data, and preferences.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-manage-customer.php†L17-L200】
+- **Flowhub Get Products** (`flowhub_get_products`) retrieves the cannabis product catalog from Flowhub including strains, concentrates, edibles, and accessories with pricing, descriptions, THC/CBD content, and compliance information.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-get-products.php†L17-L200】
+- **Flowhub Manage Product** (`flowhub_manage_product`) creates or updates cannabis products in Flowhub. Supports managing product details, pricing, THC/CBD content, categories, and compliance information.【F:includes/tools/class-wp-mcp-ai-tool-flowhub-manage-product.php†L17-L200】
+
+---
+
+## PayHere payment gateway integration
+
+- **PayHere Get Payment** (`payhere_get_payment`) retrieves payment transaction details from the PayHere payment gateway by order ID. Returns payment status, customer details, amounts, fees, and payment method information. Requires a PayHere API key configured in **Settings → NV oOS → Integrations → PayHere**.【F:includes/tools/class-wp-mcp-ai-tool-payhere-get-payment.php†L17-L150】
+
+---
+
+## Erlang C queuing theory tools
+
+The Erlang C formula is a teletraffic engineering model used to compute the probability that a visitor must wait in a queue, the minimum agents needed to meet a service-level target (e.g., "80% answered within 20 s"), and predicted average wait times under given load. All four tools ship in the base plugin (no Pro addon required) and use pure PHP math with no external dependencies.
+
+The shared `WP_MCP_AI_Erlang_C` helper class (`includes/class-wp-mcp-ai-erlang-c.php`) exposes:
+- `erlang_c( $agents, $traffic_intensity )` — probability of waiting
+- `avg_wait_time( $agents, $arrival_rate, $avg_handle_time )` — expected queue wait in seconds
+- `min_agents_for_service_level( $arrival_rate, $avg_handle_time, $target_seconds, $target_pct )` — staff-to-SLA solver
+- `service_level( $agents, $arrival_rate, $avg_handle_time, $target_seconds )` — achieved SLA %
+
+### Base tools (always available)
+
+- **Calculate Erlang C** (`calculate_erlang_c`) is a standalone staffing calculator the AI assistant can invoke to answer any queue or staffing question. **Inputs:** `arrival_rate` (calls/chats per hour), `avg_handle_time` (seconds), `num_agents`, `target_service_level_seconds`, `target_service_level_pct`. **Outputs:** `agents_needed`, `probability_wait`, `avg_wait_time_seconds`, `utilization`, `service_level_achieved`. Requires `edit_posts`. Industry default is the 80/20 standard (80% answered in ≤ 20 s).【F:includes/tools/class-wp-mcp-ai-tool-calculate-erlang-c.php†L1-L300】
+- **Erlang C Concurrency Advisor** (`erlang_c_concurrency_advisor`) reads the plugin's own session arrival-rate counters and transcript-duration averages, runs Erlang C, and returns a recommended number of concurrent AI sessions to configure plus a probability-of-waiting score. Gives site admins data-driven guidance on the **Max Concurrent Sessions** setting. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-erlang-c-concurrency-advisor.php†L1-L300】
+
+### Extended tools (optional WFM/contact-centre endpoint)
+
+- **Erlang C Staffing Advisor** (`erlang_c_staffing_advisor`) is a higher-level staffing recommendation tool combining Erlang C with multi-channel factors (chat × 2–4 concurrency multiplier, voice × 1) and a bot-containment-rate adjustment so deflected volume never reaches the human-agent calculation. Optionally pulls live queue stats from NICE WFM, Genesys, Verint, or Calabrio REST endpoints (configure the URL and bearer token in **Settings → NV oOS → Integrations → WFM**). Returns a structured staffing recommendation card. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-erlang-c-staffing-advisor.php†L1-L400】
+- **Erlang C Queue Health** (`erlang_c_queue_health`) polls a configured contact-centre REST endpoint (or uses JetEngine CCT data) for current queue depth and available agents, runs Erlang C to compute the live service-level percentage, fires the `wp_mcp_ai_queue_alert` action when SLA is at risk, and stores a snapshot in a JetEngine CCT for trend reporting. Designed for real-time operations monitoring. Requires `manage_options`.【F:includes/tools/class-wp-mcp-ai-tool-erlang-c-queue-health.php†L1-L400】
+
+---
 
 Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】

@@ -3518,7 +3518,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				)
 			);
 
-			echo '<div class="notice notice-warning"><p>' . wp_kses(
+			echo '<div class="notice notice-warning is-dismissible"><p>' . wp_kses(
 				$message,
 				array(
 					'a' => array(
@@ -3968,8 +3968,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<p class="description">
 				<?php
 				if ( ! empty( $settings['gmail_user_email'] ) ) {
-					/* translators: %s: Gmail email address. */
-					printf( esc_html__( 'A refresh token is stored for %s.', 'mcp-ai-wpoos' ), '<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>' );
+					printf(
+						wp_kses(
+							/* translators: %s: Gmail email address wrapped in <code> tags. */
+							__( 'A refresh token is stored for %s.', 'mcp-ai-wpoos' ),
+							array( 'code' => array() )
+						),
+						'<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>'
+					);
 				} else {
 					esc_html_e( 'A Gmail refresh token is already stored for this site.', 'mcp-ai-wpoos' );
 				}
@@ -5005,15 +5011,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 							}
 
 							printf(
-								/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-								esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+								wp_kses(
+									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
+									__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
+									array( 'code' => array() )
+								),
 								'<code>' . esc_html( $log_file_path ) . '</code>',
 								esc_html( $log_size_display )
 							);
 						} else {
 							printf(
-								/* translators: %s: Path to the PHP error log. */
-								esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+								wp_kses(
+									/* translators: %s: Path to the PHP error log. */
+									__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
+									array( 'code' => array() )
+								),
 								'<code>' . esc_html( $log_file_path ) . '</code>'
 							);
 						}

@@ -1,0 +1,511 @@
+<?php
+/**
+ * MCP App Client.
+ *
+ * Connects to remote MCP servers via Streamable HTTP transport,
+ * discovers tools and UI resources per the MCP 2025-03-26 specification
+ * and MCP Apps extension (SEP-1865, 2026-01-26).
+ *
+ * @package WP_MCP_AI_Pro
+ * @since   1.8.0
+ * @see     https://modelcontextprotocol.io/specification/2025-03-26
+ * @see     https://modelcontextprotocol.io/extensions/apps/overview
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
+ * @license   Proprietary
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Client for connecting to remote MCP servers and discovering capabilities.
+ *
+ * Implements the Streamable HTTP transport for JSON-RPC 2.0 communication
+ * with remote MCP servers. Supports tool discovery, UI resource fetching,
+ * and tool execution proxying.
+ *
+ * @since 1.8.0
+ */
+class WP_MCP_AI_MCP_App_Client {
+
+	/**
+	 * Maximum response body size in bytes (2 MB).
+	 *
+	 * @var int
+	 */
+	const MAX_RESPONSE_SIZE = 2097152;
+
+	/**
+	 * MCP protocol version for initialization.
+	 *
+	 * @var string
+	 */
+	const PROTOCOL_VERSION = '2025-03-26';
+
+	/**
+	 * Server endpoint URL.
+	 *
+	 * @var string
+	 */
+	protected $server_url;
+
+	/**
+	 * Authentication configuration.
+	 *
+	 * @var array
+	 */
+	protected $auth;
+
+	/**
+	 * Request timeout in seconds.
+	 *
+	 * @var int
+	 */
+	protected $timeout;
+
+	/**
+	 * Whether to verify SSL certificates.
+	 *
+	 * @var bool
+	 */
+	protected $verify_ssl;
+
+	/**
+	 * MCP session ID from server.
+	 *
+	 * @var string
+	 */
+	protected $session_id = '';
+
+	/**
+	 * JSON-RPC request counter.
+	 *
+	 * @var int
+	 */
+	protected $request_id = 0;
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.8.0
+	 * @param array $config {
+	 *     Connection configuration.
+	 *
+	 *     @type string $server_url  Required. Remote MCP server endpoint URL.
+	 *     @type string $auth_type   Authentication type: 'bearer', 'header', or 'none'. Default 'none'.
+	 *     @type string $token       Bearer token or header value for authentication.
+	 *     @type string $header_name Custom header name when auth_type is 'header'.
+	 *     @type int    $timeout     Request timeout in seconds. Default 30.
+	 *     @type bool   $verify_ssl  Whether to verify SSL. Default true.
+	 * }
+	 */
+	public function __construct( array $config ) {
+		$config = wp_parse_args(
+			$config,
+			array(
+				'server_url'  => '',
+				'auth_type'   => 'none',
+				'token'       => '',
+				'header_name' => '',
+				'timeout'     => 30,
+				'verify_ssl'  => true,
+			)
+		);
+
+		$this->server_url = esc_url_raw( $config['server_url'] );
+		$this->auth       = array(
+			'type'        => sanitize_key( $config['auth_type'] ),
+			'token'       => $config['token'],
+			'header_name' => sanitize_text_field( $config['header_name'] ),
+		);
+		$this->timeout    = max( 1, min( 120, absint( $config['timeout'] ) ) );
+		$this->verify_ssl = (bool) $config['verify_ssl'];
+	}
+
+	/**
+	 * Initialize the MCP session with the remote server.
+	 *
+	 * Sends the `initialize` JSON-RPC request per MCP spec to negotiate
+	 * capabilities and protocol version.
+	 *
+	 * @since 1.8.0
+	 * @return array|WP_Error Server capabilities on success, WP_Error on failure.
+	 */
+	public function initialize() {
+		$params = array(
+			'protocolVersion' => self::PROTOCOL_VERSION,
+			'capabilities'    => array(
+				'roots' => new stdClass(),
+			),
+			'clientInfo'      => array(
+				'name'    => 'NV oOS MCP App Client',
+				'version' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.8.0',
+			),
+		);
+
+		$result = $this->send_request( 'initialize', $params );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Send initialized notification.
+		$this->send_notification( 'notifications/initialized' );
+
+		return $result;
+	}
+
+	/**
+	 * Discover available tools from the remote MCP server.
+	 *
+	 * @since 1.8.0
+	 * @return array|WP_Error Array of tool definitions on success, WP_Error on failure.
+	 */
+	public function list_tools() {
+		$result = $this->send_request( 'tools/list', new stdClass() );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! isset( $result['tools'] ) || ! is_array( $result['tools'] ) ) {
+			return array();
+		}
+
+		return $result['tools'];
+	}
+
+	/**
+	 * Execute a tool on the remote MCP server.
+	 *
+	 * @since 1.8.0
+	 * @param string $tool_name Tool name.
+	 * @param array  $arguments Tool arguments.
+	 * @return array|WP_Error Tool result on success, WP_Error on failure.
+	 */
+	public function call_tool( $tool_name, array $arguments = array() ) {
+		$params = array(
+			'name'      => sanitize_text_field( $tool_name ),
+			'arguments' => ! empty( $arguments ) ? $arguments : new stdClass(),
+		);
+
+		return $this->send_request( 'tools/call', $params );
+	}
+
+	/**
+	 * List available resources from the remote MCP server.
+	 *
+	 * @since 1.8.0
+	 * @return array|WP_Error Array of resource definitions, WP_Error on failure.
+	 */
+	public function list_resources() {
+		$result = $this->send_request( 'resources/list', new stdClass() );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( ! isset( $result['resources'] ) || ! is_array( $result['resources'] ) ) {
+			return array();
+		}
+
+		return $result['resources'];
+	}
+
+	/**
+	 * Read a specific resource from the remote MCP server.
+	 *
+	 * @since 1.8.0
+	 * @param string $uri Resource URI (e.g., ui://server/resource).
+	 * @return array|WP_Error Resource content, WP_Error on failure.
+	 */
+	public function read_resource( $uri ) {
+		$params = array(
+			'uri' => sanitize_text_field( $uri ),
+		);
+
+		return $this->send_request( 'resources/read', $params );
+	}
+
+	/**
+	 * Test connectivity to the remote MCP server.
+	 *
+	 * Performs an initialize handshake and returns server info + capabilities.
+	 *
+	 * @since 1.8.0
+	 * @return array|WP_Error Connection test result on success, WP_Error on failure.
+	 */
+	public function test_connection() {
+		if ( empty( $this->server_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_missing_url',
+				__( 'MCP server URL is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Validate URL scheme.
+		$scheme = wp_parse_url( $this->server_url, PHP_URL_SCHEME );
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_invalid_scheme',
+				__( 'MCP server URL must use HTTP or HTTPS.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$result = $this->initialize();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$server_info  = isset( $result['serverInfo'] ) ? $result['serverInfo'] : array();
+		$capabilities = isset( $result['capabilities'] ) ? $result['capabilities'] : array();
+
+		$has_tools     = ! empty( $capabilities['tools'] );
+		$has_resources = ! empty( $capabilities['resources'] );
+
+		return array(
+			'success'       => true,
+			'server_info'   => $server_info,
+			'capabilities'  => $capabilities,
+			'has_tools'     => $has_tools,
+			'has_resources' => $has_resources,
+			'session_id'    => $this->session_id,
+		);
+	}
+
+	/**
+	 * Send a JSON-RPC 2.0 request to the MCP server.
+	 *
+	 * Uses the Streamable HTTP transport as recommended by the MCP specification.
+	 *
+	 * @since 1.8.0
+	 * @param string $method JSON-RPC method name.
+	 * @param mixed  $params Method parameters.
+	 * @return array|WP_Error Decoded result on success, WP_Error on failure.
+	 */
+	protected function send_request( $method, $params ) {
+		++$this->request_id;
+
+		$payload = array(
+			'jsonrpc' => '2.0',
+			'id'      => $this->request_id,
+			'method'  => $method,
+			'params'  => $params,
+		);
+
+		$headers = $this->get_request_headers();
+
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$args = array(
+			'method'    => 'POST',
+			'headers'   => $headers,
+			'body'      => wp_json_encode( $payload ),
+			'timeout'   => $this->timeout,
+			'sslverify' => $this->verify_ssl,
+		);
+
+		/**
+		 * Filters the MCP App client request arguments before sending.
+		 *
+		 * @since 1.8.0
+		 * @param array  $args       Request arguments.
+		 * @param string $method     JSON-RPC method.
+		 * @param string $server_url Server URL.
+		 */
+		$args = apply_filters( 'wp_mcp_ai_mcp_app_request_args', $args, $method, $this->server_url );
+
+		$response = wp_remote_request( $this->server_url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_connection_failed',
+				sprintf(
+					/* translators: %s: Error message from remote request. */
+					__( 'Failed to connect to MCP server: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+
+		// Capture session ID from response header.
+		$session_header = wp_remote_retrieve_header( $response, 'mcp-session-id' );
+		if ( ! empty( $session_header ) ) {
+			$this->session_id = sanitize_text_field( $session_header );
+		}
+
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_http_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: Server URL. */
+					__( 'MCP server returned HTTP %1$d from %2$s.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$this->server_url
+				),
+				array( 'status' => $status_code )
+			);
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( strlen( $body ) > self::MAX_RESPONSE_SIZE ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_response_too_large',
+				__( 'MCP server response exceeds maximum allowed size.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( null === $decoded ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_invalid_json',
+				__( 'MCP server returned invalid JSON.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Handle JSON-RPC error response.
+		if ( isset( $decoded['error'] ) ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unknown MCP server error.', 'mcp-ai-wpoos-pro' );
+			$error_code    = isset( $decoded['error']['code'] ) ? (int) $decoded['error']['code'] : -32000;
+
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_rpc_error',
+				$error_message,
+				array( 'rpc_code' => $error_code )
+			);
+		}
+
+		if ( ! isset( $decoded['result'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_missing_result',
+				__( 'MCP server response missing result field.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $decoded['result'];
+	}
+
+	/**
+	 * Send a JSON-RPC 2.0 notification (no response expected).
+	 *
+	 * @since 1.8.0
+	 * @param string $method Notification method name.
+	 * @param mixed  $params Notification parameters.
+	 * @return true|WP_Error True on success, WP_Error on failure.
+	 */
+	protected function send_notification( $method, $params = null ) {
+		$payload = array(
+			'jsonrpc' => '2.0',
+			'method'  => $method,
+		);
+
+		if ( null !== $params ) {
+			$payload['params'] = $params;
+		}
+
+		$headers = $this->get_request_headers();
+
+		if ( is_wp_error( $headers ) ) {
+			return $headers;
+		}
+
+		$args = array(
+			'method'    => 'POST',
+			'headers'   => $headers,
+			'body'      => wp_json_encode( $payload ),
+			'timeout'   => $this->timeout,
+			'sslverify' => $this->verify_ssl,
+		);
+
+		$response = wp_remote_request( $this->server_url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Build request headers including authentication and session.
+	 *
+	 * @since 1.8.0
+	 * @return array|WP_Error Headers array or WP_Error on invalid auth config.
+	 */
+	protected function get_request_headers() {
+		$headers = array(
+			'Content-Type' => 'application/json',
+			'Accept'       => 'application/json',
+			'User-Agent'   => 'NV-oOS-MCP-App-Client/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.8.0' ),
+		);
+
+		// Add session header if we have one.
+		if ( ! empty( $this->session_id ) ) {
+			$headers['Mcp-Session-Id'] = $this->session_id;
+		}
+
+		// Add authentication.
+		switch ( $this->auth['type'] ) {
+			case 'bearer':
+				if ( empty( $this->auth['token'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_mcp_app_missing_token',
+						__( 'Bearer token is required for authentication.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$headers['Authorization'] = 'Bearer ' . $this->auth['token'];
+				break;
+
+			case 'header':
+				if ( empty( $this->auth['header_name'] ) || empty( $this->auth['token'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_mcp_app_missing_header_auth',
+						__( 'Header name and value are required for header authentication.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				$headers[ sanitize_text_field( $this->auth['header_name'] ) ] = $this->auth['token'];
+				break;
+
+			case 'none':
+				// No authentication needed.
+				break;
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_mcp_app_invalid_auth_type',
+					__( 'Invalid authentication type for MCP App.', 'mcp-ai-wpoos-pro' )
+				);
+		}
+
+		return $headers;
+	}
+
+	/**
+	 * Get the current session ID.
+	 *
+	 * @since 1.8.0
+	 * @return string
+	 */
+	public function get_session_id() {
+		return $this->session_id;
+	}
+
+	/**
+	 * Get the server URL.
+	 *
+	 * @since 1.8.0
+	 * @return string
+	 */
+	public function get_server_url() {
+		return $this->server_url;
+	}
+}

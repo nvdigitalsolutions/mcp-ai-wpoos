@@ -149,6 +149,8 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 			// Media Toolkit widgets (2).
 			'class-wp-mcp-ai-media-templates-widget.php',
 			'class-wp-mcp-ai-media-collections-widget.php',
+			// Vehicle Cleaning Estimator widget (1).
+			'class-wp-mcp-ai-vehicle-cleaning-estimator-widget.php',
 		);
 
 		// Load and register each widget.
@@ -233,6 +235,7 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 			'mcp_ai_tool_builder_schemas',
 			'mcp_media_templates',
 			'mcp_media_collections',
+			'mcp_vehicle_cleaning_estimator',
 		);
 
 		foreach ( $shortcode_tags as $tag ) {
@@ -263,6 +266,7 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 				'mcp-ai-toolkits/ai-tool-builder-schemas',
 				'mcp-ai-toolkits/media-templates',
 				'mcp-ai-toolkits/media-collections',
+				'mcp-ai-toolkits/vehicle-cleaning-estimator',
 			);
 
 			foreach ( $block_types as $block_type ) {
