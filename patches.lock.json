@@ -1,5 +1,5 @@
 {
-    "_hash": "81db5dca45ffa6a73a5166f6565f9a5dafe67a50ffe115aab7421a20c8b3c2b2",
+    "_hash": "80565346a5fc8278e069c6578b536e767db78f238b86edc9ac244d3aeec52d48",
     "patches": {
         "wp-phpunit/wp-phpunit": [
             {
@@ -7,6 +7,16 @@
                 "description": "Add guard check for WP_LANG_DIR constant",
                 "url": "patches/wp-phpunit-wp-lang-dir-guard.patch",
                 "sha256": "193063ae066c514012432aed894106c2bc3c7798588d7ef9e17c4b3983f39f6d",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            },
+            {
+                "package": "wp-phpunit/wp-phpunit",
+                "description": "PHPUnit 10+ compatibility: Reflection fallback and getTickets guard",
+                "url": "patches/wp-phpunit-phpunit10-compat.patch",
+                "sha256": "236059e2379fcd503dbcaabbf59bc68114e0be027d3ce2352bec94df9b6bdd9d",
                 "depth": 1,
                 "extra": {
                     "provenance": "root"
@@ -19,6 +29,18 @@
                 "description": "Remove deprecated approval_prompt parameter to fix Google OAuth conflict",
                 "url": "patches/league-oauth2-client-remove-approval-prompt.patch",
                 "sha256": "3c9b8da9e4d6820f6bc8e66529958ffc0e60bffaadb4a7f7f4485c694208d9f2",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ],
+        "phpunit/phpunit": [
+            {
+                "package": "phpunit/phpunit",
+                "description": "Allow WordPress hyphenated test file names in TestSuiteLoader",
+                "url": "patches/phpunit11-allow-wordpress-test-naming.patch",
+                "sha256": "74fd2d6ebc5bb18cce41e16c087427df1ee949e5a111cfbdc83a2e2ead217a28",
                 "depth": 1,
                 "extra": {
                     "provenance": "root"
