@@ -24,18 +24,6 @@
                     "provenance": "root"
                 }
             }
-        ],
-        "phpunit/phpunit": [
-            {
-                "package": "phpunit/phpunit",
-                "description": "Allow WordPress-style test naming (hyphens in filenames, underscores in class names)",
-                "url": "patches/phpunit-allow-wordpress-test-naming.patch",
-                "sha256": "72497e45664d6c17f6d3c91535542cf1dca703c71b1b4b395a1f43676dc5e948",
-                "depth": 1,
-                "extra": {
-                    "provenance": "root"
-                }
-            }
         ]
     }
 }

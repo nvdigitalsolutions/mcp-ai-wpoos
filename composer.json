@@ -33,7 +33,7 @@
         "php-stubs/wordpress-stubs": "^6.4",
         "squizlabs/php_codesniffer": "^3.13",
         "wp-coding-standards/wpcs": "^3.3",
-        "phpunit/phpunit": "^12.5",
+        "phpunit/phpunit": "^9.6",
         "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0"
     },
@@ -62,9 +62,6 @@
             },
             "league/oauth2-client": {
                 "Remove deprecated approval_prompt parameter to fix Google OAuth conflict": "patches/league-oauth2-client-remove-approval-prompt.patch"
-            },
-            "phpunit/phpunit": {
-                "Allow WordPress-style test naming (hyphens in filenames, underscores in class names)": "patches/phpunit-allow-wordpress-test-naming.patch"
             }
         },
         "php_codesniffer": {

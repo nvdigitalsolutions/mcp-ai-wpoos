@@ -874,6 +874,8 @@ class Test_Provider_Client_Adapters extends WP_UnitTestCase {
 	/**
 	 * Every adapter should return a non-empty, lowercase string slug.
 	 *
+	 * @dataProvider provider_slug_data
+	 *
 	 * @param string $adapter_class Fully-qualified adapter class name.
 	 * @return void
 	 */
