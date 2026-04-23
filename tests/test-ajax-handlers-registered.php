@@ -114,6 +114,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 	 *
 	 * @param string $action The AJAX action to test.
 	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'ajax_actions_provider' )]
 	public function test_ajax_action_is_registered( $action ) {
 		$this->assertTrue(
 			has_action( $action ) !== false,

@@ -1,0 +1,46 @@
+--- a/src/Runner/TestSuiteLoader.php	2026-04-23 05:14:51.054105248 +0000
++++ b/src/Runner/TestSuiteLoader.php	2026-04-23 05:20:18.764150268 +0000
+@@ -48,6 +48,8 @@
+         $suiteClassName = $this->classNameFromFileName($suiteClassFile);
+         $loadedClasses  = $this->loadSuiteClassFile($suiteClassFile);
+ 
++        $fallback = null;
++
+         foreach ($loadedClasses as $className) {
+             /** @noinspection PhpUnhandledExceptionInspection */
+             $class = new ReflectionClass($className);
+@@ -64,15 +66,29 @@
+                 continue;
+             }
+ 
+-            if (!str_ends_with(strtolower($class->getShortName()), strtolower($suiteClassName))) {
+-                continue;
++            if (!$class->isAbstract()) {
++                // WordPress-style test files use hyphens in file names but underscores in class
++                // names (e.g. test-foo-bar.php / class Test_Foo_Bar). Normalize both sides so
++                // the name-matching check also passes for such files.
++                $normalizedShortName  = str_replace('-', '_', strtolower($class->getShortName()));
++                $normalizedSuiteName  = str_replace('-', '_', strtolower($suiteClassName));
++                if (str_ends_with($normalizedShortName, $normalizedSuiteName)) {
++                    return $class;
++                }
++
++                // Keep as a fallback: the first non-abstract TestCase subclass in the file.
++                if ($fallback === null) {
++                    $fallback = $class;
++                }
+             }
+ 
+-            if (!$class->isAbstract()) {
+-                return $class;
++            if ($class->isAbstract() && str_ends_with(strtolower($class->getShortName()), strtolower($suiteClassName))) {
++                $e = new ClassIsAbstractException($class->getName(), $suiteClassFile);
+             }
++        }
+ 
+-            $e = new ClassIsAbstractException($class->getName(), $suiteClassFile);
++        if ($fallback !== null) {
++            return $fallback;
+         }
+ 
+         if (isset($e)) {
