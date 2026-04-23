@@ -1,5 +1,5 @@
 {
-    "_hash": "41771d9351c54ab2fa0bf6855f267d9a9140cb64075d0ca62f24a2995bdc7cc7",
+    "_hash": "81db5dca45ffa6a73a5166f6565f9a5dafe67a50ffe115aab7421a20c8b3c2b2",
     "patches": {
         "wp-phpunit/wp-phpunit": [
             {
@@ -19,6 +19,18 @@
                 "description": "Remove deprecated approval_prompt parameter to fix Google OAuth conflict",
                 "url": "patches/league-oauth2-client-remove-approval-prompt.patch",
                 "sha256": "3c9b8da9e4d6820f6bc8e66529958ffc0e60bffaadb4a7f7f4485c694208d9f2",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ],
+        "phpunit/phpunit": [
+            {
+                "package": "phpunit/phpunit",
+                "description": "Allow WordPress-style test naming (hyphens in filenames, underscores in class names)",
+                "url": "patches/phpunit-allow-wordpress-test-naming.patch",
+                "sha256": "72497e45664d6c17f6d3c91535542cf1dca703c71b1b4b395a1f43676dc5e948",
                 "depth": 1,
                 "extra": {
                     "provenance": "root"

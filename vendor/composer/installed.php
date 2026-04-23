@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-phpunit-argument-injection',
         'version' => 'dev-copilot/fix-phpunit-argument-injection',
-        'reference' => '2a75747b9166d265c758e5c03e8853ae57d1e739',
+        'reference' => '813c8a7ae4cf1a5d2f77e2cc050a67330f591632',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-phpunit-argument-injection',
             'version' => 'dev-copilot/fix-phpunit-argument-injection',
-            'reference' => '2a75747b9166d265c758e5c03e8853ae57d1e739',
+            'reference' => '813c8a7ae4cf1a5d2f77e2cc050a67330f591632',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

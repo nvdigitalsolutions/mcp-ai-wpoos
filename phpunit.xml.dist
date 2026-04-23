@@ -7,6 +7,9 @@
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
             <directory suffix=".php">addons/pro/tests</directory>
+            <exclude>tests/bootstrap.php</exclude>
+            <exclude>tests/wp-tests-config.php</exclude>
+            <exclude>tests/helpers</exclude>
             <exclude>tests/manual-test-preset-preview.php</exclude>
             <exclude>tests/manual-verify-auto-aspect-ratio.php</exclude>
             <exclude>tests/manual</exclude>

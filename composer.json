@@ -62,6 +62,9 @@
             },
             "league/oauth2-client": {
                 "Remove deprecated approval_prompt parameter to fix Google OAuth conflict": "patches/league-oauth2-client-remove-approval-prompt.patch"
+            },
+            "phpunit/phpunit": {
+                "Allow WordPress-style test naming (hyphens in filenames, underscores in class names)": "patches/phpunit-allow-wordpress-test-naming.patch"
             }
         },
         "php_codesniffer": {

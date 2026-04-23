@@ -1,0 +1,13 @@
+--- a/src/Runner/TestSuiteLoader.php	2026-04-23 02:25:25.254265282 +0000
++++ b/src/Runner/TestSuiteLoader.php	2026-04-23 02:25:25.267624651 +0000
+@@ -64,10 +64,6 @@
+                 continue;
+             }
+ 
+-            if (!str_ends_with(strtolower($class->getShortName()), strtolower($suiteClassName))) {
+-                continue;
+-            }
+-
+             if (!$class->isAbstract()) {
+                 return $class;
+             }
