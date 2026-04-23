@@ -1,0 +1,57 @@
+--- a/includes/abstract-testcase.php	2026-04-23 05:11:38.092687246 +0000
++++ b/includes/abstract-testcase.php	2026-04-23 05:11:54.685237945 +0000
+@@ -563,12 +563,39 @@
+ 		if ( method_exists( $this, 'getAnnotations' ) ) {
+ 			// PHPUnit < 9.5.0.
+ 			$annotations = $this->getAnnotations();
+-		} else {
+-			// PHPUnit >= 9.5.0.
++		} elseif ( method_exists( '\\PHPUnit\\Util\\Test', 'parseTestMethodAnnotations' ) ) {
++			// PHPUnit 9.5.0 - 9.x.
+ 			$annotations = \PHPUnit\Util\Test::parseTestMethodAnnotations(
+ 				static::class,
+ 				$this->getName( false )
+ 			);
++		} else {
++			// PHPUnit 10+ removed parseTestMethodAnnotations(); parse docblocks via Reflection.
++			$method_name = method_exists( $this, 'name' ) ? $this->name() : $this->getName( false );
++			$annotations = array( 'class' => array(), 'method' => array() );
++			foreach ( array( 'class' => static::class, 'method' => $method_name ) as $depth => $target ) {
++				if ( 'class' === $depth ) {
++					try {
++						$doc = ( new \ReflectionClass( $target ) )->getDocComment();
++					} catch ( \ReflectionException $e ) {
++						$doc = false;
++					}
++				} else {
++					try {
++						$doc = ( new \ReflectionMethod( static::class, $target ) )->getDocComment();
++					} catch ( \ReflectionException $e ) {
++						$doc = false;
++					}
++				}
++				if ( false !== $doc ) {
++					if ( preg_match_all( '/@expectedDeprecated\\s+(.+)/m', $doc, $matches ) ) {
++						$annotations[ $depth ]['expectedDeprecated'] = array_map( 'trim', $matches[1] );
++					}
++					if ( preg_match_all( '/@expectedIncorrectUsage\\s+(.+)/m', $doc, $matches ) ) {
++						$annotations[ $depth ]['expectedIncorrectUsage'] = array_map( 'trim', $matches[1] );
++					}
++				}
++			}
+ 		}
+ 
+ 		foreach ( array( 'class', 'method' ) as $depth ) {
+--- a/includes/phpunit6/compat.php	2026-04-23 05:11:38.094160945 +0000
++++ b/includes/phpunit6/compat.php	2026-04-23 05:12:02.666092232 +0000
+@@ -28,6 +28,10 @@
+ 
+ 		// phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
+ 		public static function getTickets( $class_name, $method_name ) {
++			if ( ! method_exists( '\\PHPUnit\\Util\\Test', 'parseTestMethodAnnotations' ) ) {
++				// PHPUnit 10+ removed annotation support; @ticket annotations not supported.
++				return array();
++			}
+ 			$annotations = PHPUnit\Util\Test::parseTestMethodAnnotations( $class_name, $method_name );
+ 
+ 			$tickets = array();
