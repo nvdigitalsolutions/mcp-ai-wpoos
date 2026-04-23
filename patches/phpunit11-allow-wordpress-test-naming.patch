@@ -1,5 +1,5 @@
 --- a/src/Runner/TestSuiteLoader.php	2026-04-23 05:14:51.054105248 +0000
-+++ b/src/Runner/TestSuiteLoader.php	2026-04-23 05:15:09.858236152 +0000
++++ b/src/Runner/TestSuiteLoader.php	2026-04-23 05:20:18.764150268 +0000
 @@ -48,6 +48,8 @@
          $suiteClassName = $this->classNameFromFileName($suiteClassFile);
          $loadedClasses  = $this->loadSuiteClassFile($suiteClassFile);
@@ -17,11 +17,11 @@
 -                continue;
 +            if (!$class->isAbstract()) {
 +                // WordPress-style test files use hyphens in file names but underscores in class
-+                // names (e.g. test-foo-bar.php / class Test_Foo_Bar). Normalise both sides so
++                // names (e.g. test-foo-bar.php / class Test_Foo_Bar). Normalize both sides so
 +                // the name-matching check also passes for such files.
-+                $normalisedShortName  = str_replace('-', '_', strtolower($class->getShortName()));
-+                $normalisedSuiteName  = str_replace('-', '_', strtolower($suiteClassName));
-+                if (str_ends_with($normalisedShortName, $normalisedSuiteName)) {
++                $normalizedShortName  = str_replace('-', '_', strtolower($class->getShortName()));
++                $normalizedSuiteName  = str_replace('-', '_', strtolower($suiteClassName));
++                if (str_ends_with($normalizedShortName, $normalizedSuiteName)) {
 +                    return $class;
 +                }
 +
