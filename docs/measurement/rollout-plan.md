@@ -25,6 +25,7 @@ Scope is bounded by two architectural commitments:
 
 - ✅ Shipped and merged to `alpha-working`
 - 🟡 In flight (open PR)
+- ▶️ Next up — committed as the next PR after the current in-flight one
 - ⬜ Planned — not started
 
 ## Delivered PRs
@@ -123,7 +124,29 @@ The ordering below is chosen so every PR leaves the plugin in a
 shippable state and each PR's tests can exercise its own surface
 without depending on later PRs.
 
-### ⬜ PR 7 — Chat-loop token & cost instrumentation
+### Prioritization (confirmed April 2026)
+
+PR 7 (chat-loop token & cost) is the committed next PR, ahead of
+both PR 8 (SSE) and PR 9 (persistent store). Rationale:
+
+- **Highest user-visible value per diff.** Token and cost are the
+  two measurements operators ask for first; PR 6 covers tool
+  latency but not model spend.
+- **No downstream dependency.** Chat-loop emission writes through
+  the same `Metric_Collector` ring buffer PR 6 uses, so PR 9's
+  persistent store is not a prerequisite — when PR 9 lands the
+  events flow through automatically.
+- **Provider-normalization work unblocks PR 8.** The cost/token
+  adapter layer PR 7 introduces for OpenAI/Gemini/Ollama is reused
+  by the SSE observer in PR 8 to attribute stream timings to a
+  provider.
+
+PR 9 (persistent store) is intentionally sequenced after PRs 7–8 so
+the store lands with real production emission traffic shaping its
+schema, rather than being sized against PR 6 alone. PR 11 (CLI
+runner and regression alerting) remains blocked on PR 9.
+
+### ▶️ PR 7 — Chat-loop token & cost instrumentation
 
 **Goal:** close the second largest observability gap — the REST chat
 loop and agentic iterations — so cost/latency metrics reach the
