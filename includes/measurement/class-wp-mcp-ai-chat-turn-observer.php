@@ -81,13 +81,62 @@ class WP_MCP_AI_Chat_Turn_Observer {
 	/**
 	 * Reset the singleton (tests only).
 	 *
+	 * Also detaches any stale handler bound to a *previous* instance
+	 * of this class that the WordPress test-case harness may have
+	 * restored from its pre-test hook snapshot. Without this step,
+	 * restored hooks end up registered alongside the new singleton
+	 * and the observer double-emits.
+	 *
 	 * @return void
 	 */
 	public static function reset_instance() {
 		if ( null !== self::$instance ) {
 			self::$instance->detach();
 		}
+		self::detach_all_stale_hooks();
 		self::$instance = null;
+	}
+
+	/**
+	 * Remove any chat-turn-observer callbacks registered on the
+	 * three observed hooks, regardless of which instance they were
+	 * bound to. Safe to call outside the singleton lifecycle.
+	 *
+	 * @return void
+	 */
+	private static function detach_all_stale_hooks() {
+		global $wp_filter;
+		if ( ! is_array( $wp_filter ) ) {
+			return;
+		}
+		$pairs = array(
+			'wp_mcp_ai_before_chat_request' => 'on_before',
+			'wp_mcp_ai_after_chat_response' => 'on_after',
+			'wp_mcp_ai_cost_calculated'     => 'on_cost',
+		);
+		foreach ( $pairs as $hook_name => $method ) {
+			if ( ! isset( $wp_filter[ $hook_name ] ) ) {
+				continue;
+			}
+			$hook = $wp_filter[ $hook_name ];
+			if ( ! isset( $hook->callbacks ) || ! is_array( $hook->callbacks ) ) {
+				continue;
+			}
+			foreach ( $hook->callbacks as $priority => $callbacks ) {
+				foreach ( $callbacks as $id => $entry ) {
+					if ( ! isset( $entry['function'] ) || ! is_array( $entry['function'] ) ) {
+						continue;
+					}
+					$target = $entry['function'][0];
+					if ( $target instanceof self && ( $entry['function'][1] ?? '' ) === $method ) {
+						unset( $hook->callbacks[ $priority ][ $id ] );
+					}
+				}
+				if ( empty( $hook->callbacks[ $priority ] ) ) {
+					unset( $hook->callbacks[ $priority ] );
+				}
+			}
+		}
 	}
 
 	/**

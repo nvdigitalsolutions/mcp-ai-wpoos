@@ -322,7 +322,7 @@ class WP_MCP_AI_Eval_Runner {
 
 		$reward_means = array();
 		foreach ( $reward_totals as $slug => $t ) {
-			$reward_means[ $slug ] = $t['count'] > 0 ? $t['sum'] / $t['count'] : 0.0;
+			$reward_means[ $slug ] = $t['count'] > 0 ? (float) ( $t['sum'] / $t['count'] ) : 0.0;
 		}
 
 		return array(
@@ -330,9 +330,9 @@ class WP_MCP_AI_Eval_Runner {
 			'passed'            => $passed,
 			'abstained'         => $abstained,
 			'errors'            => $errors,
-			'pass_rate'         => $total > 0 ? $passed / $total : 0.0,
-			'abstention_rate'   => $total > 0 ? $abstained / $total : 0.0,
-			'error_rate'        => $total > 0 ? $errors / $total : 0.0,
+			'pass_rate'         => $total > 0 ? (float) ( $passed / $total ) : 0.0,
+			'abstention_rate'   => $total > 0 ? (float) ( $abstained / $total ) : 0.0,
+			'error_rate'        => $total > 0 ? (float) ( $errors / $total ) : 0.0,
 			'mean_score'        => $this->mean( $scores ),
 			'median_score'      => $this->median( $scores ),
 			'mean_confidence'   => $this->mean( $confidences ),
@@ -393,5 +393,243 @@ class WP_MCP_AI_Eval_Runner {
 			return (float) $sorted[ $mid ];
 		}
 		return ( (float) $sorted[ $mid - 1 ] + (float) $sorted[ $mid ] ) / 2.0;
+	}
+
+	/**
+	 * Run a suite under counterfactual conditions.
+	 *
+	 * For each case, the generator is invoked once as normal, then the
+	 * {@see WP_MCP_AI_Counterfactual_Runner} evaluates the same verifier
+	 * against the candidate and a list of variant subjects produced by
+	 * degraders declared at the suite, case, or runner level.
+	 *
+	 * Generator return shape is the same as `run()`. Additionally, a
+	 * case or suite author may expose a `counterfactual_variants`
+	 * entry (array of degrader slugs or inline callables) on either
+	 * the case's `verifier_args` or the runner `$options`. Runner-level
+	 * variants apply to every case; case-level variants override.
+	 *
+	 * The runner produces an `eval.counterfactual.preferred` metric
+	 * per case (1 when the candidate wins strictly, 0 otherwise) and
+	 * surfaces `counterfactual_rate` + `counterfactual_flat_rate` in
+	 * the summary so a dashboard or alert rule can flag suites whose
+	 * verifier lost discriminative power.
+	 *
+	 * @param WP_MCP_AI_Eval_Suite $suite     Suite.
+	 * @param callable             $generator Generator callable.
+	 * @param array                $options   Runner options.
+	 *                                        Accepts `rewards` (see run())
+	 *                                        and `counterfactual_variants`
+	 *                                        (array of slugs/callables).
+	 * @return array                           Report.
+	 */
+	public function run_counterfactual( WP_MCP_AI_Eval_Suite $suite, $generator, array $options = array() ) {
+		if ( ! is_callable( $generator ) ) {
+			return array(
+				'suite'   => $suite->to_array(),
+				'error'   => 'generator_not_callable',
+				'summary' => $this->empty_counterfactual_summary(),
+				'cases'   => array(),
+			);
+		}
+
+		$default_variants = isset( $options['counterfactual_variants'] ) && is_array( $options['counterfactual_variants'] )
+			? $options['counterfactual_variants']
+			: array( 'shuffle_tokens', 'truncate_to_prefix' );
+		$flat_epsilon     = isset( $options['flat_epsilon'] ) ? (float) $options['flat_epsilon'] : WP_MCP_AI_Counterfactual_Runner::DEFAULT_FLAT_EPSILON;
+
+		$counterfactual = new WP_MCP_AI_Counterfactual_Runner( $this->verifiers );
+		$started_at     = microtime( true );
+		$case_reports   = array();
+
+		foreach ( $suite->get_cases() as $case ) {
+			$case_reports[] = $this->run_counterfactual_case( $case, $suite, $generator, $counterfactual, $default_variants, $flat_epsilon );
+		}
+
+		$summary = $this->summarize_counterfactual( $case_reports );
+
+		$report = array(
+			'suite'       => $suite->to_array(),
+			'summary'     => $summary,
+			'cases'       => $case_reports,
+			'duration_ms' => (int) round( ( microtime( true ) - $started_at ) * 1000 ),
+			'started_at'  => (int) $started_at,
+			'mode'        => 'counterfactual',
+		);
+
+		/**
+		 * Fires when a counterfactual eval run completes.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array                $report Report.
+		 * @param WP_MCP_AI_Eval_Suite $suite  Suite.
+		 */
+		do_action( 'wp_mcp_ai_eval_counterfactual_completed', $report, $suite );
+
+		return $report;
+	}
+
+	/**
+	 * Run a single counterfactual case.
+	 *
+	 * @param WP_MCP_AI_Eval_Case            $case             Case.
+	 * @param WP_MCP_AI_Eval_Suite           $suite            Suite.
+	 * @param callable                       $generator        Generator.
+	 * @param WP_MCP_AI_Counterfactual_Runner $counterfactual  Helper.
+	 * @param array                          $default_variants Runner-level variants.
+	 * @param float                          $flat_epsilon     Flat-signal epsilon.
+	 * @return array
+	 */
+	private function run_counterfactual_case(
+		WP_MCP_AI_Eval_Case $case,
+		WP_MCP_AI_Eval_Suite $suite,
+		$generator,
+		WP_MCP_AI_Counterfactual_Runner $counterfactual,
+		array $default_variants,
+		$flat_epsilon
+	) {
+		$case_started = microtime( true );
+		$generation   = call_user_func(
+			$generator,
+			$case,
+			array(
+				'suite_slug'        => $suite->get_slug(),
+				'generator_context' => $suite->get_generator_context(),
+				'mode'              => 'counterfactual',
+			)
+		);
+		$case_latency_ms = (int) round( ( microtime( true ) - $case_started ) * 1000 );
+
+		if ( is_wp_error( $generation ) ) {
+			return array(
+				'case'       => $case->to_array(),
+				'preferred'  => false,
+				'flat'       => false,
+				'latency_ms' => $case_latency_ms,
+				'error'      => array(
+					'code'    => 'generator_error',
+					'message' => $generation->get_error_message(),
+				),
+			);
+		}
+		if ( ! is_array( $generation ) || ! array_key_exists( 'output', $generation ) ) {
+			return array(
+				'case'       => $case->to_array(),
+				'preferred'  => false,
+				'flat'       => false,
+				'latency_ms' => $case_latency_ms,
+				'error'      => array(
+					'code'    => 'generator_invalid_return',
+					'message' => 'Generator must return an array with an "output" key.',
+				),
+			);
+		}
+
+		$subject = array(
+			'value'    => $generation['output'],
+			'input'    => $case->get_input(),
+			'expected' => $case->get_expected(),
+		);
+
+		$verifier_args = $case->get_verifier_args();
+		$variants      = isset( $verifier_args['counterfactual_variants'] ) && is_array( $verifier_args['counterfactual_variants'] )
+			? $verifier_args['counterfactual_variants']
+			: $default_variants;
+
+		$result = $counterfactual->run(
+			$case->get_verifier_slug(),
+			$subject,
+			$variants,
+			array(
+				'verifier_context' => array_merge( $verifier_args, array( 'eval_case' => $case->get_slug() ) ),
+				'provider_context' => isset( $generation['provider_context'] ) && is_array( $generation['provider_context'] )
+					? $generation['provider_context']
+					: $suite->get_generator_context(),
+				'flat_epsilon'     => $flat_epsilon,
+			)
+		);
+
+		$preferred = ! empty( $result['preferred'] );
+		$flat      = ! empty( $result['flat'] );
+
+		$this->collector->record(
+			'eval.counterfactual.preferred',
+			$preferred ? 1 : 0,
+			array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() )
+		);
+		if ( $flat ) {
+			$this->collector->record(
+				'eval.counterfactual.flat',
+				1,
+				array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() )
+			);
+		}
+
+		return array(
+			'case'            => $case->to_array(),
+			'preferred'       => $preferred,
+			'flat'            => $flat,
+			'candidate_score' => isset( $result['candidate_score'] ) ? (float) $result['candidate_score'] : 0.0,
+			'variant_scores'  => isset( $result['variant_scores'] ) ? $result['variant_scores'] : array(),
+			'reasons'         => isset( $result['reasons'] ) ? $result['reasons'] : array(),
+			'latency_ms'      => $case_latency_ms,
+		);
+	}
+
+	/**
+	 * Summarize counterfactual case reports.
+	 *
+	 * @param array $case_reports Case reports.
+	 * @return array
+	 */
+	private function summarize_counterfactual( array $case_reports ) {
+		$total = count( $case_reports );
+		if ( 0 === $total ) {
+			return $this->empty_counterfactual_summary();
+		}
+
+		$preferred = 0;
+		$flat      = 0;
+		$errors    = 0;
+		foreach ( $case_reports as $r ) {
+			if ( ! empty( $r['error'] ) ) {
+				++$errors;
+				continue;
+			}
+			if ( ! empty( $r['preferred'] ) ) {
+				++$preferred;
+			}
+			if ( ! empty( $r['flat'] ) ) {
+				++$flat;
+			}
+		}
+
+		return array(
+			'total'                    => $total,
+			'preferred'                => $preferred,
+			'flat'                     => $flat,
+			'errors'                   => $errors,
+			'counterfactual_rate'      => $total > 0 ? (float) ( $preferred / $total ) : 0.0,
+			'counterfactual_flat_rate' => $total > 0 ? (float) ( $flat / $total ) : 0.0,
+			'error_rate'               => $total > 0 ? (float) ( $errors / $total ) : 0.0,
+		);
+	}
+
+	/**
+	 * Empty counterfactual summary.
+	 *
+	 * @return array
+	 */
+	private function empty_counterfactual_summary() {
+		return array(
+			'total'                    => 0,
+			'preferred'                => 0,
+			'flat'                     => 0,
+			'errors'                   => 0,
+			'counterfactual_rate'      => 0.0,
+			'counterfactual_flat_rate' => 0.0,
+			'error_rate'               => 0.0,
+		);
 	}
 }

@@ -612,6 +612,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// measurement bootstrap (which fires the registration hooks) is
 		// already in place.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-verifier.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-presets.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-budget-guarded-reward.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();

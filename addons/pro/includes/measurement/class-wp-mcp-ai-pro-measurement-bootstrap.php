@@ -75,6 +75,7 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 		}
 
 		add_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_verifiers' ), 20 );
+		add_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_preset_rubrics' ), 25 );
 		add_action( 'wp_mcp_ai_register_budgets', array( __CLASS__, 'register_budgets' ), 20 );
 		add_action( 'wp_mcp_ai_register_reward_functions', array( __CLASS__, 'register_rewards' ), 30 );
 	}
@@ -87,6 +88,7 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 	public static function reset() {
 		self::$booted = false;
 		remove_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_verifiers' ), 20 );
+		remove_action( 'wp_mcp_ai_register_verifiers', array( __CLASS__, 'register_preset_rubrics' ), 25 );
 		remove_action( 'wp_mcp_ai_register_budgets', array( __CLASS__, 'register_budgets' ), 20 );
 		remove_action( 'wp_mcp_ai_register_reward_functions', array( __CLASS__, 'register_rewards' ), 30 );
 	}
@@ -218,5 +220,46 @@ class WP_MCP_AI_Pro_Measurement_Bootstrap {
 				'counter_metric'      => 'agent.abstention.rate',
 			)
 		);
+	}
+
+	/**
+	 * Register the three stock rubric presets (prompt adherence,
+	 * JSON schema, citation presence). Runs at priority 25 so the
+	 * composite `pro_content_rubric` registered at 20 is in place
+	 * first — presets do not depend on it, but operators who have
+	 * both registered get deterministic ordering this way.
+	 *
+	 * Each preset is wrapped in its own try/catch so a single broken
+	 * filter cannot prevent the others from registering.
+	 *
+	 * @param WP_MCP_AI_Verifier_Registry $registry Registry.
+	 * @return void
+	 */
+	public static function register_preset_rubrics( $registry ) {
+		if ( ! $registry instanceof WP_MCP_AI_Verifier_Registry ) {
+			return;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Rubric_Presets' ) ) {
+			return;
+		}
+
+		$factories = array(
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_PROMPT_ADHERENCE  => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'prompt_adherence' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_JSON_SCHEMA       => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'json_schema' ),
+			WP_MCP_AI_Pro_Rubric_Presets::SLUG_CITATION_PRESENCE => array( 'WP_MCP_AI_Pro_Rubric_Presets', 'citation_presence' ),
+		);
+
+		foreach ( $factories as $slug => $factory ) {
+			try {
+				$verifier = call_user_func( $factory );
+				if ( $verifier instanceof WP_MCP_AI_Pro_Rubric_Verifier ) {
+					$registry->register( $verifier );
+				}
+			} catch ( InvalidArgumentException $e ) {
+				// A filter author removed every criterion. Skip this
+				// preset but keep trying the others.
+				continue;
+			}
+		}
 	}
 }
