@@ -27,6 +27,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 	 */
 	private $budgets;
 
+	/**
+	 * Setup.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -60,16 +63,25 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Teardown.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Budget_Registry::reset_instance();
 		parent::tearDown();
 	}
 
+	/**
+	 * Test make callback rejects missing args.
+	 */
 	public function test_make_callback_rejects_missing_args() {
 		$this->assertInstanceOf( 'WP_Error', WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback( array() ) );
 		$this->assertInstanceOf( 'WP_Error', WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback( array( 'inner' => 'x' ) ) );
 	}
 
+	/**
+	 * Test passthrough when budget ok.
+	 */
 	public function test_passthrough_when_budget_ok() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
 			array( 'inner' => 'always_one', 'budget' => 'test_cost' )
@@ -78,6 +90,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertSame( 1.0, $cb( array() ) );
 	}
 
+	/**
+	 * Test warn multiplier applies in warn state.
+	 */
 	public function test_warn_multiplier_applies_in_warn_state() {
 		$this->budgets->consume( 'test_cost', 0.6 ); // warn (limit=1.0, warn_ratio=0.5).
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
@@ -90,6 +105,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.5, $cb( array() ), 0.0001 );
 	}
 
+	/**
+	 * Test exceeded state zeros the reward.
+	 */
 	public function test_exceeded_state_zeros_the_reward() {
 		$this->budgets->consume( 'test_cost', 1.5 );
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
@@ -98,6 +116,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $cb( array() ) );
 	}
 
+	/**
+	 * Test missing inner reward returns zero.
+	 */
 	public function test_missing_inner_reward_returns_zero() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
 			array( 'inner' => 'not_registered', 'budget' => 'test_cost' )
@@ -105,6 +126,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertSame( 0.0, $cb( array() ) );
 	}
 
+	/**
+	 * Test missing budget degrades to passthrough.
+	 */
 	public function test_missing_budget_degrades_to_passthrough() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
 			array( 'inner' => 'always_one', 'budget' => 'no_such_budget' )
@@ -113,6 +137,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertSame( 1.0, $cb( array() ) );
 	}
 
+	/**
+	 * Test register wrapper produces working definition.
+	 */
 	public function test_register_wrapper_produces_working_definition() {
 		$def = WP_MCP_AI_Pro_Budget_Guarded_Reward::register_wrapper(
 			$this->rewards,
@@ -137,6 +164,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertSame( 0.0, call_user_func( $found['callback'], array() ) );
 	}
 
+	/**
+	 * Test non registry returns wp error.
+	 */
 	public function test_non_registry_returns_wp_error() {
 		$res = WP_MCP_AI_Pro_Budget_Guarded_Reward::register_wrapper(
 			'not a registry',
@@ -145,6 +175,9 @@ class Test_WP_MCP_AI_Pro_Budget_Guarded_Reward extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $res );
 	}
 
+	/**
+	 * Test multiplier clamped to unit interval.
+	 */
 	public function test_multiplier_clamped_to_unit_interval() {
 		$cb = WP_MCP_AI_Pro_Budget_Guarded_Reward::make_callback(
 			array(

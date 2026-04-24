@@ -17,11 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 
+	/**
+	 * Test construct requires criteria.
+	 */
 	public function test_construct_requires_criteria() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Pro_Rubric_Verifier( 'r', array() );
 	}
 
+	/**
+	 * Test callback criteria return weighted score.
+	 */
 	public function test_callback_criteria_return_weighted_score() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -49,6 +55,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'b', $res['evidence']['criteria'] );
 	}
 
+	/**
+	 * Test callback bool return normalized.
+	 */
 	public function test_callback_bool_return_normalized() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -63,6 +72,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertFalse( $res['passed'] );
 	}
 
+	/**
+	 * Test bad callback shape yields error reason.
+	 */
 	public function test_bad_callback_shape_yields_error_reason() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -79,6 +91,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'error', $res['evidence']['criteria']['a'] );
 	}
 
+	/**
+	 * Test criterion with no evaluator is dropped.
+	 */
 	public function test_criterion_with_no_evaluator_is_dropped() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -90,6 +105,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertCount( 1, $v->get_criteria() );
 	}
 
+	/**
+	 * Test all criteria dropped raises.
+	 */
 	public function test_all_criteria_dropped_raises() {
 		$this->expectException( 'InvalidArgumentException' );
 		new WP_MCP_AI_Pro_Rubric_Verifier(
@@ -101,11 +119,17 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test sub verifier chaining.
+	 */
 	public function test_sub_verifier_chaining() {
 		// Register a fake sub-verifier on the base registry and have the
 		// rubric call it.
 		$registry = WP_MCP_AI_Verifier_Registry::get_instance();
 		$fake     = new class() extends WP_MCP_AI_Verifier_Base {
+			/**
+			 *   construct.
+			 */
 			public function __construct() {
 				$this->slug  = 'fake_sub';
 				$this->label = 'fake';
@@ -115,6 +139,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 					'disallowed_models'    => array(),
 				);
 			}
+			/**
+			 * Verify.
+			 */
 			public function verify( array $subject, array $context = array() ) {
 				return $this->result_pass( 0.9, 1.0, array( 'ok' ) );
 			}
@@ -136,6 +163,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$registry->unregister( 'fake_sub' );
 	}
 
+	/**
+	 * Test unknown sub verifier produces error reason.
+	 */
 	public function test_unknown_sub_verifier_produces_error_reason() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -148,6 +178,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'error', $res['evidence']['criteria']['sub'] );
 	}
 
+	/**
+	 * Test zero weight criterion is skipped.
+	 */
 	public function test_zero_weight_criterion_is_skipped() {
 		$v = new WP_MCP_AI_Pro_Rubric_Verifier(
 			'r',
@@ -161,6 +194,9 @@ class Test_WP_MCP_AI_Pro_Rubric_Verifier extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 1.0, $res['score'], 0.0001 );
 	}
 
+	/**
+	 * Test self reference is rejected.
+	 */
 	public function test_self_reference_is_rejected() {
 		// A rubric that lists itself as a sub-verifier should produce an
 		// explicit self-reference error (via the verifier-registry lookup

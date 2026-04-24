@@ -48,6 +48,14 @@ function wp_mcp_ai_measurement_bootstrap() {
 
 	// Prime the collector singleton so listeners attach early.
 	WP_MCP_AI_Metric_Collector::get_instance();
+
+	// Attach the tool-execution observer. Kept after the collector is
+	// primed so the observer's first `record()` call hits a ready
+	// collector. Attach is idempotent and filterable via
+	// `wp_mcp_ai_tool_execution_observer_enabled`.
+	if ( class_exists( 'WP_MCP_AI_Tool_Execution_Observer' ) ) {
+		WP_MCP_AI_Tool_Execution_Observer::get_instance()->attach();
+	}
 }
 
 /**
@@ -170,6 +178,14 @@ if ( function_exists( 'add_action' ) ) {
 	add_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities', 5 );
 	add_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers', 20 );
 	add_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards', 20 );
+
+	// Register stock metric definitions at priority 20 so site
+	// overrides (priority 10) can pre-empt by id.
+	add_action(
+		'wp_mcp_ai_register_metrics',
+		array( 'WP_MCP_AI_Stock_Metrics', 'register' ),
+		20
+	);
 
 	// Mount the read-only measurement dashboard admin page.
 	if ( is_admin() && class_exists( 'WP_MCP_AI_Admin_Measurement_Dashboard' ) ) {

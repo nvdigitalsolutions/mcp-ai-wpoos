@@ -17,6 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 
+	/**
+	 * Setup.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Pro_Measurement_Bootstrap::reset();
@@ -24,6 +27,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		WP_MCP_AI_Reward_Function_Registry::reset_instance();
 	}
 
+	/**
+	 * Teardown.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Pro_Measurement_Bootstrap::reset();
 		WP_MCP_AI_Budget_Registry::reset_instance();
@@ -31,6 +37,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * Test boot attaches hooks idempotently.
+	 */
 	public function test_boot_attaches_hooks_idempotently() {
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot(); // idempotent.
@@ -49,6 +58,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test register verifiers registers pro rubric.
+	 */
 	public function test_register_verifiers_registers_pro_rubric() {
 		$registry = WP_MCP_AI_Verifier_Registry::get_instance();
 		// Unregister if stale from a prior suite.
@@ -61,6 +73,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		$registry->unregister( 'pro_content_rubric' );
 	}
 
+	/**
+	 * Test register budgets registers pro request cost.
+	 */
 	public function test_register_budgets_registers_pro_request_cost() {
 		$registry = WP_MCP_AI_Budget_Registry::get_instance();
 		WP_MCP_AI_Pro_Measurement_Bootstrap::register_budgets( $registry );
@@ -69,6 +84,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		$this->assertEqualsWithDelta( 0.25, $env->get_limit(), 0.0001 );
 	}
 
+	/**
+	 * Test budget limit filter honored.
+	 */
 	public function test_budget_limit_filter_honored() {
 		$filter = static function () { return 1.5; };
 		add_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
@@ -81,6 +99,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
 	}
 
+	/**
+	 * Test budget limit filter zero skips registration.
+	 */
 	public function test_budget_limit_filter_zero_skips_registration() {
 		$filter = static function () { return 0; };
 		add_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
@@ -92,6 +113,9 @@ class Test_WP_MCP_AI_Pro_Measurement_Bootstrap extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_pro_request_cost_budget_limit', $filter );
 	}
 
+	/**
+	 * Test rewards register guarded verified success after base.
+	 */
 	public function test_rewards_register_guarded_verified_success_after_base() {
 		// Register base reference rewards first.
 		WP_MCP_AI_Reference_Rewards::register( WP_MCP_AI_Reward_Function_Registry::get_instance() );

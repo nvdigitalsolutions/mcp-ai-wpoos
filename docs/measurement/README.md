@@ -57,4 +57,5 @@ unless filtered.
 - [`dashboard.md`](dashboard.md) — measurement admin dashboard (now writable)
 - [`budgets.md`](budgets.md) — budget envelopes (anti-Goodhart spend caps)
 - [`otel-exporter.md`](otel-exporter.md) — OTLP/JSON exporter + rolling buffer
+- [`tool-execution.md`](tool-execution.md) — stock metrics + tool-execution observer (first live emission path)
 - [`../../addons/pro/docs/measurement-pro.md`](../../addons/pro/docs/measurement-pro.md) — Pro toolkit: rubric verifier + budget-guarded reward
