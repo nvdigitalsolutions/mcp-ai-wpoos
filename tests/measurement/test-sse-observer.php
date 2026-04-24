@@ -277,6 +277,10 @@ class Test_WP_MCP_AI_SSE_Observer extends WP_UnitTestCase {
 
 	/**
 	 * Job id is sanitised — URL-encoded / injected characters are stripped.
+	 *
+	 * The payload below is intentionally a synthetic canary combining
+	 * HTML/script tokens and path traversal — it exists solely to prove
+	 * the sanitiser strips them. No real traffic shape is implied.
 	 */
 	public function test_job_id_is_sanitised() {
 		$this->simulate_stream( "job-<script>alert('x')</script>/../../etc/passwd", 'complete', 0 );

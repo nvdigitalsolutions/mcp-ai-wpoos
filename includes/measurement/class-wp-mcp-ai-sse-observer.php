@@ -205,12 +205,11 @@ class WP_MCP_AI_SSE_Observer {
 		}
 
 		$now       = microtime( true );
-		$frame     = &$this->frames[ $key ];
 		$collector = $this->collector();
 
-		if ( null === $frame['first_chunk_at'] ) {
-			$frame['first_chunk_at'] = $now;
-			$ttfb_ms                 = max( 0.0, ( $now - (float) $frame['started_at'] ) * 1000.0 );
+		if ( null === $this->frames[ $key ]['first_chunk_at'] ) {
+			$this->frames[ $key ]['first_chunk_at'] = $now;
+			$ttfb_ms                                = max( 0.0, ( $now - (float) $this->frames[ $key ]['started_at'] ) * 1000.0 );
 			if ( null !== $collector ) {
 				$collector->record(
 					WP_MCP_AI_SSE_Metrics::STREAM_TTFB_MS,
@@ -218,8 +217,8 @@ class WP_MCP_AI_SSE_Observer {
 					self::base_context( $key, null )
 				);
 			}
-		} elseif ( null !== $frame['last_chunk_at'] ) {
-			$interval_ms = max( 0.0, ( $now - (float) $frame['last_chunk_at'] ) * 1000.0 );
+		} elseif ( null !== $this->frames[ $key ]['last_chunk_at'] ) {
+			$interval_ms = max( 0.0, ( $now - (float) $this->frames[ $key ]['last_chunk_at'] ) * 1000.0 );
 			if ( null !== $collector ) {
 				$collector->record(
 					WP_MCP_AI_SSE_Metrics::STREAM_CHUNK_INTERVAL_MS,
@@ -229,8 +228,8 @@ class WP_MCP_AI_SSE_Observer {
 			}
 		}
 
-		$frame['last_chunk_at'] = $now;
-		++$frame['chunk_count'];
+		$this->frames[ $key ]['last_chunk_at'] = $now;
+		++$this->frames[ $key ]['chunk_count'];
 	}
 
 	/**
