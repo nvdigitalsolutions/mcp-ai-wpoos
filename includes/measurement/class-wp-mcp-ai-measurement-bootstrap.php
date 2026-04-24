@@ -38,6 +38,75 @@ function wp_mcp_ai_measurement_bootstrap() {
 }
 
 /**
+ * Register the reference verifiers (rule, schema, LLM-judge).
+ *
+ * Attached to `wp_mcp_ai_register_verifiers` at priority 20 so third-party
+ * verifiers (priority 10) can pre-empt the default instances by slug.
+ *
+ * Sites may disable any reference verifier via the
+ * `wp_mcp_ai_enable_reference_verifiers` filter — returning an array of
+ * slugs to keep, or an empty array to disable all of them.
+ *
+ * @param WP_MCP_AI_Verifier_Registry $registry Registry.
+ * @return void
+ */
+function wp_mcp_ai_register_reference_verifiers( $registry ) {
+	if ( ! $registry instanceof WP_MCP_AI_Verifier_Registry ) {
+		return;
+	}
+	/**
+	 * Filters which reference verifiers get registered.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array<int,string> $slugs Slugs to register.
+	 */
+	$enabled = apply_filters(
+		'wp_mcp_ai_enable_reference_verifiers',
+		array( 'rule_verifier', 'schema_verifier', 'llm_judge' )
+	);
+	if ( ! is_array( $enabled ) ) {
+		return;
+	}
+
+	if ( in_array( 'rule_verifier', $enabled, true ) && null === $registry->get( 'rule_verifier' ) ) {
+		$registry->register( new WP_MCP_AI_Rule_Verifier( 'rule_verifier' ) );
+	}
+	if ( in_array( 'schema_verifier', $enabled, true ) && null === $registry->get( 'schema_verifier' ) ) {
+		$registry->register( new WP_MCP_AI_Schema_Verifier( 'schema_verifier' ) );
+	}
+	if ( in_array( 'llm_judge', $enabled, true ) && null === $registry->get( 'llm_judge' ) ) {
+		// No judge callable by default — the verifier abstains until one is
+		// supplied via `wp_mcp_ai_llm_judge_callable`.
+		$registry->register( new WP_MCP_AI_LLM_Judge_Verifier( 'llm_judge' ) );
+	}
+}
+
+/**
+ * Register the reference reward functions.
+ *
+ * @param WP_MCP_AI_Reward_Function_Registry $registry Registry.
+ * @return void
+ */
+function wp_mcp_ai_register_reference_rewards( $registry ) {
+	if ( ! $registry instanceof WP_MCP_AI_Reward_Function_Registry ) {
+		return;
+	}
+	/**
+	 * Filters whether reference reward functions get registered.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param bool $enabled Whether to register defaults. Default true.
+	 */
+	$enabled = (bool) apply_filters( 'wp_mcp_ai_enable_reference_rewards', true );
+	if ( ! $enabled ) {
+		return;
+	}
+	WP_MCP_AI_Reference_Rewards::register( $registry );
+}
+
+/**
  * Lightweight capability bootstrap — grants the `manage_wp_mcp_ai_measurements`
  * and `view_wp_mcp_ai_measurements` capabilities to administrators unless the
  * site has explicitly filtered the default role map. Called on first admin
@@ -86,4 +155,6 @@ function wp_mcp_ai_measurement_ensure_capabilities() {
 if ( function_exists( 'add_action' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_measurement_bootstrap', 50 );
 	add_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities', 5 );
+	add_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers', 20 );
+	add_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards', 20 );
 }

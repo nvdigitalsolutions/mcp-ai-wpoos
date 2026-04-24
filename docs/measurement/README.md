@@ -51,3 +51,5 @@ unless filtered.
 - [`conventions.md`](conventions.md) — naming, OTel mapping, NIST AI RMF alignment
 - [`goodhart-checklist.md`](goodhart-checklist.md) — authoring checklist for new metrics
 - [`privacy-matrix.md`](privacy-matrix.md) — privacy tiers and redaction policy
+- [`verifier-authoring.md`](verifier-authoring.md) — authoring guide for custom verifiers
+- [`reward-authoring.md`](reward-authoring.md) — authoring guide for reward functions

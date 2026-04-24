@@ -82,6 +82,10 @@ require_once WP_MCP_AI_PATH . 'includes/measurement/interface-wp-mcp-ai-verifier
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-base.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-reward-function-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-rule-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-schema-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-llm-judge-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/rewards/class-wp-mcp-ai-reference-rewards.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
