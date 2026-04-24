@@ -21,14 +21,21 @@ example a PHI-aware NER model — by implementing
 
 ## Retention
 
-Defaults (PR 4 implements):
+PR 9 implements persistent raw-event storage with per-tier TTLs
+enforced by a daily cron. Defaults (all filterable via
+`wp_mcp_ai_measurement_retention`):
 
-- `public` / `internal`: 30 days raw, 365 days aggregate.
-- `sensitive`: 14 days raw, 365 days aggregate.
-- `restricted`: raw never persisted (in-memory + immediate aggregate).
+- `public`:    365 days
+- `internal`:   90 days
+- `sensitive`:  30 days
+- `restricted`: **never persisted** (in-memory buffer only; the
+  persister and the event store both refuse to write Restricted
+  rows)
 
-All retention values are filterable via `wp_mcp_ai_measurement_retention`
-and enforced by a nightly cron job.
+The values above are the current implementation. Earlier drafts
+proposed shorter TTLs; the 30d/14d draft is superseded by PR 9.
+See `persistent-store.md` for the detailed retention contract,
+including the reconciliation with the rollout plan.
 
 ## GDPR / CCPA erasure
 

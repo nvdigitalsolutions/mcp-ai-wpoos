@@ -69,6 +69,28 @@ function wp_mcp_ai_measurement_bootstrap() {
 	if ( class_exists( 'WP_MCP_AI_SSE_Observer' ) ) {
 		WP_MCP_AI_SSE_Observer::get_instance()->attach();
 	}
+
+	// Ensure the metric-events table exists. `install()` is idempotent
+	// and short-circuits when the schema version matches — cheap enough
+	// to run on every request. This guards against the case where the
+	// activation hook didn't run (e.g. upgrade via `wp plugin update`).
+	if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
+		WP_MCP_AI_Metric_Event_Store::get_instance()->install();
+	}
+
+	// Attach the metric persister. Appends to a per-request buffer on
+	// `wp_mcp_ai_metric_recorded` and flushes once on `shutdown` via a
+	// single batched INSERT. Filterable via `wp_mcp_ai_persister_enabled`.
+	if ( class_exists( 'WP_MCP_AI_Metric_Persister' ) ) {
+		WP_MCP_AI_Metric_Persister::get_instance()->attach();
+	}
+
+	// Wire the retention cron callback. Scheduling itself happens on
+	// activation (and as a belt-and-braces check on `init`); this only
+	// ensures the callback is bound when the hook fires.
+	if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
+		WP_MCP_AI_Metric_Retention::register_cron_callback();
+	}
 }
 
 /**
@@ -224,4 +246,20 @@ if ( function_exists( 'add_action' ) ) {
 			55
 		);
 	}
+
+	// Belt-and-braces retention-cron scheduling. The primary
+	// scheduling path is the activation hook in
+	// `includes/bootstrap/activation.php`, but upgrades via
+	// `wp plugin update` or `composer update` skip the activation
+	// hook. Running this on `init` at a late priority ensures the
+	// cron is scheduled without requiring a reactivation.
+	add_action(
+		'init',
+		static function () {
+			if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
+				WP_MCP_AI_Metric_Retention::schedule();
+			}
+		},
+		50
+	);
 }

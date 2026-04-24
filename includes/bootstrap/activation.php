@@ -280,6 +280,15 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			$audit = new WP_MCP_AI_Slash_Command_Audit();
 			$audit->create_table();
 		}
+
+		// Create the measurement event-store table and schedule the
+		// daily retention cron. Both are idempotent.
+		if ( class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
+			WP_MCP_AI_Metric_Event_Store::get_instance()->install();
+		}
+		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
+			WP_MCP_AI_Metric_Retention::schedule();
+		}
 	}
 }
 
@@ -324,6 +333,12 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_openai_files' );
+		}
+
+		// Unschedule the measurement retention cron. Table + data are
+		// left in place — uninstall is where destructive cleanup lives.
+		if ( class_exists( 'WP_MCP_AI_Metric_Retention' ) ) {
+			WP_MCP_AI_Metric_Retention::unschedule();
 		}
 
 		flush_rewrite_rules();

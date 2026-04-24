@@ -61,5 +61,6 @@ unless filtered.
 - [`tool-execution.md`](tool-execution.md) — stock metrics + tool-execution observer (first live emission path)
 - [`chat-turn.md`](chat-turn.md) — chat-turn metrics + observer (token usage, realised cost, turn duration — second live emission path)
 - [`sse-stream.md`](sse-stream.md) — SSE stream metrics + observer (TTFB, chunk cadence, cancellation-as-first-class-outcome — third live emission path)
+- [`persistent-store.md`](persistent-store.md) — durable event table, per-request persister, retention cron (first cross-request read path)
 - [`rollout-plan.md`](rollout-plan.md) — full multi-PR delivery schedule (status + remaining scope)
 - [`../../addons/pro/docs/measurement-pro.md`](../../addons/pro/docs/measurement-pro.md) — Pro toolkit: rubric verifier + budget-guarded reward

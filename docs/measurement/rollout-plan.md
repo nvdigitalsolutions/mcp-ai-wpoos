@@ -208,21 +208,47 @@ Delivered scope:
 - Tests: 20 new (7 metric, 13 observer) covering every outcome
   branch, concurrent-stream routing, sanitisation, detach / opt-out.
 
-### ⬜ PR 9 — Persistent metric store
+### ✅ PR 9 — Persistent metric store — *2026-04-24*
 
-**Goal:** move buffered events from in-memory ring buffer to a
-custom table so the dashboard (PR 3/4) can display cross-request
-history.
+Delivered durable cross-request persistence so dashboards, CLI
+runners, and alerting can read history beyond a single request.
 
-Scope:
+- `WP_MCP_AI_Metric_Event_Store`: custom `{prefix}mcp_ai_metric_events`
+  table, schema-versioned via `dbDelta` + the
+  `wp_mcp_ai_metric_events_schema_version` option. Batched INSERTs
+  (200 rows per statement) keep us below `max_allowed_packet`.
+  Bounded queries (`LIMIT` clamped to `[1, 5000]`), tier-scoped
+  purge, privacy-keyed counts.
+- `WP_MCP_AI_Metric_Persister`: attaches to
+  `wp_mcp_ai_metric_recorded`, appends to an in-memory buffer
+  (cap via `wp_mcp_ai_persister_buffer_max`, default 2048), and
+  fires a single INSERT on `shutdown`. Restricted events are
+  dropped **before buffering** — the store has a defensive
+  second barrier.
+- `WP_MCP_AI_Metric_Retention`: daily
+  `wp_mcp_ai_metric_retention_purge` cron, defaults
+  Public 365d / Internal 90d / Sensitive 30d;
+  Restricted is never persisted (reconciled with
+  `privacy-matrix.md` — the rollout-plan's original 7d Restricted
+  retention was superseded by the stronger "never persisted"
+  invariant and is documented accordingly).
+  Filterable via `wp_mcp_ai_measurement_retention`.
+- Wired into activation (schema install + cron schedule) and
+  `plugins_loaded` (idempotent install as belt-and-braces for
+  `wp plugin update` upgrades).
+- Tests: 27 new covering schema idempotency, roundtrip queries,
+  time-bounded queries, LIMIT clamping, chunked writes,
+  Restricted drop at both barriers, unknown-tier coercion,
+  per-tier purge, completion action, retention clamping, cron
+  schedule idempotency, buffer cap, veto + disabled filters.
 
-- Custom table `wp_mcp_ai_metric_events` with schema-versioned
-  migration
-- Persister attached to `wp_mcp_ai_metric_recorded`; buffers async
-  per request, flushes on shutdown
-- Retention controller: TTL per privacy tier
-  (Public 365d / Internal 90d / Sensitive 30d / Restricted 7d)
-- Dashboard gains time-range filter and sparkline renders
+### 🟡 PR 9.1 — Dashboard time-range UI (follow-up — queued)
+
+The query surface exists (`Metric_Event_Store::query_by_metric()`
++ `count_by_privacy()`). The UI sparkline renderer was offloaded
+so PR 9 reviewers see the durability and retention logic in
+isolation. Split into PR 9.1 alongside the dashboard work that
+PR 10 will touch.
 
 ### ⬜ PR 10 — Rubric verifier suite & counterfactual tests
 
