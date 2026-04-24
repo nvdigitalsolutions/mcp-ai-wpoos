@@ -72,6 +72,17 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-chart-js-helper.ph
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-analytics-engine.php';
+
+// ---------------------------------------------------------------------------
+// Measurement subsystem (metrics, verifiers, reward functions)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-metric-collector.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/interface-wp-mcp-ai-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-base.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-reward-function-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
 // ---------------------------------------------------------------------------
