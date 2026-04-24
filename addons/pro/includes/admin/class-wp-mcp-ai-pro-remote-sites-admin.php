@@ -2409,14 +2409,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row">
-						<label for="telegram_secret_token"><?php esc_html_e( 'Webhook Secret Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+						<label for="telegram_secret_token"><?php esc_html_e( 'Webhook Secret Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="password" name="telegram_secret_token" id="telegram_secret_token" class="regular-text" value="" autocomplete="new-password" placeholder="<?php esc_attr_e( 'Optional: random 1–256 character string', 'mcp-ai-wpoos-pro' ); ?>">
+						<input type="password" name="telegram_secret_token" id="telegram_secret_token" class="regular-text" value="" autocomplete="new-password" placeholder="<?php esc_attr_e( 'Leave blank to auto-generate a secure 64-character token', 'mcp-ai-wpoos-pro' ); ?>">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing secret token. Set when registering the webhook to add an extra layer of security — Telegram will include this in the X-Telegram-Bot-Api-Secret-Token header on every incoming update.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Required for Telegram webhook authentication. Leave blank to keep the existing secret token, or enter a new value to rotate it. Telegram will send this value in the X-Telegram-Bot-Api-Secret-Token header on every update; the plugin rejects updates that do not include a matching token. Allowed characters: A–Z, a–z, 0–9, _ and –.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Optional. When set, Telegram will send this value in the X-Telegram-Bot-Api-Secret-Token header on every update, allowing the plugin to verify that the request is genuinely from Telegram. Allowed characters: A–Z, a–z, 0–9, _ and –.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Required for Telegram webhook authentication. Leave blank and a secure 64-character token will be generated automatically when you click "Set Webhook". Telegram will send this value in the X-Telegram-Bot-Api-Secret-Token header on every update; the plugin rejects updates that do not include a matching token. Allowed characters: A–Z, a–z, 0–9, _ and –.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -12694,6 +12694,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Guard: the Telegram webhook REST route
+		// (/wp-json/mcp-ai/v1/webhooks/telegram[/{connection_id}]) is registered by
+		// WP_MCP_AI_Telegram_Webhook_Controller, which is only loaded when the
+		// Chat Channels Toolkit is enabled (see chat-channels-toolkit-init.php and
+		// the require_once in mcp-ai-wpoos-pro.php). Registering a webhook with
+		// Telegram while the toolkit is disabled succeeds at the Telegram API but
+		// every subsequent update is delivered to a route that does not exist,
+		// producing "Wrong response from the webhook: 404 Not Found" in Telegram's
+		// webhook status. Refuse to call setWebhook until the toolkit is active.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			wp_send_json_error(
+				__( 'The Chat Channels Toolkit is disabled. Enable it under NV oOS → Tools → Toolkits before registering a Telegram webhook, otherwise Telegram will receive 404 Not Found for every incoming update.', 'mcp-ai-wpoos-pro' )
+			);
 			return;
 		}
 
