@@ -44,6 +44,31 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 	const MAX_RECENT_EVENTS = 50;
 
 	/**
+	 * Time-range presets available in the persisted-metrics panel.
+	 * Values are seconds. Labels are set in `time_range_labels()`.
+	 * Used by PR 9.1 dashboard time-range selector.
+	 *
+	 * @var array<string,int>
+	 */
+	const TIME_RANGES = array(
+		'1h'  => 3600,
+		'24h' => 86400,
+		'7d'  => 604800,
+		'30d' => 2592000,
+	);
+
+	/**
+	 * Default time-range slug.
+	 */
+	const DEFAULT_RANGE = '24h';
+
+	/**
+	 * Number of buckets the sparkline is divided into. Kept at 24 so
+	 * 24h mode reads one-bucket-per-hour. Other ranges compress / expand.
+	 */
+	const SPARKLINE_BUCKETS = 24;
+
+	/**
 	 * Required capability. `manage_options` matches the rest of the plugin's
 	 * admin surface and is the narrowest capability that still lets a site
 	 * admin inspect measurement wiring.
