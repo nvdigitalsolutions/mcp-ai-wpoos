@@ -63,6 +63,12 @@ function wp_mcp_ai_measurement_bootstrap() {
 	if ( class_exists( 'WP_MCP_AI_Chat_Turn_Observer' ) ) {
 		WP_MCP_AI_Chat_Turn_Observer::get_instance()->attach();
 	}
+
+	// Attach the SSE stream observer. Collector must be primed first.
+	// Filterable via `wp_mcp_ai_sse_observer_enabled`.
+	if ( class_exists( 'WP_MCP_AI_SSE_Observer' ) ) {
+		WP_MCP_AI_SSE_Observer::get_instance()->attach();
+	}
 }
 
 /**
@@ -198,6 +204,13 @@ if ( function_exists( 'add_action' ) ) {
 	add_action(
 		'wp_mcp_ai_register_metrics',
 		array( 'WP_MCP_AI_Chat_Turn_Metrics', 'register' ),
+		20
+	);
+
+	// Register SSE stock metric definitions at priority 20 as well.
+	add_action(
+		'wp_mcp_ai_register_metrics',
+		array( 'WP_MCP_AI_SSE_Metrics', 'register' ),
 		20
 	);
 

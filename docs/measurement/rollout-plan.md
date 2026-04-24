@@ -175,18 +175,38 @@ lands, a tiny follow-up observer emits the reserved
 `chat.agentic.iterations` histogram without any metric-registry
 churn.
 
-### ⬜ PR 8 — SSE/stream instrumentation
+### ✅ PR 8 — SSE/stream instrumentation
 
-**Goal:** surface streaming health — TTFB, chunk cadence, and
-client-cancellation rates.
+**Shipped.** See [`sse-stream.md`](sse-stream.md).
 
-Scope:
+Delivered scope:
 
-- Stock metrics: `stream.ttfb_ms`, `stream.chunk_interval_ms`,
-  `stream.total_duration_ms`, `stream.cancelled.count`,
-  `stream.error.count`
-- Observer wired into the SSE dispatcher's existing lifecycle hooks
-- Privacy: chunk content never recorded; only timing + outcome
+- `WP_MCP_AI_SSE_Metrics` — 7 stock metric definitions
+  (`stream.count`, `stream.error.count`, `stream.cancelled.count`,
+  `stream.ttfb_ms`, `stream.chunk_interval_ms`,
+  `stream.total_duration_ms`, `stream.chunks.count`). Each
+  declares a Goodhart counter pairing; all stay in the Internal
+  privacy tier.
+- `WP_MCP_AI_SSE_Observer` — job-keyed frame map; records TTFB on
+  the first chunk, chunk intervals on subsequent chunks, duration
+  and chunk count on stream end. Idempotent `attach()` / `detach()`.
+- **Three new lifecycle hooks in the base plugin**
+  (`wp_mcp_ai_sse_stream_started`, `…_chunk_sent`, `…_stream_ended`).
+  Pure notification hooks — no behaviour change to the SSE
+  dispatcher. These were bundled into PR 8 because they are
+  narrowly scoped and trivially small; the broader `tool_raised`
+  exception hook remains deferred to its own PR.
+- **Cancellation is a first-class outcome, not an error.** The
+  observer routes `cancelled_by_client` and `cancelled_by_job` to
+  `stream.cancelled.count`; only `failed` increments
+  `stream.error.count`. Enforced by
+  `Test_WP_MCP_AI_SSE_Observer::test_client_cancellation_is_not_error`.
+- Privacy: only `job_id` (sanitised) and `outcome` (fixed
+  vocabulary) are recorded; chunk content and status payloads
+  never leave the dispatcher. Enforced by
+  `test_privacy_canary_no_payload_leakage`.
+- Tests: 20 new (7 metric, 13 observer) covering every outcome
+  branch, concurrent-stream routing, sanitisation, detach / opt-out.
 
 ### ⬜ PR 9 — Persistent metric store
 
