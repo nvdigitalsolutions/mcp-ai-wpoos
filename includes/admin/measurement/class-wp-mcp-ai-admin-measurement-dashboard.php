@@ -935,14 +935,9 @@ endif;
 			if ( $ts < $since || $ts > $until ) {
 				continue;
 			}
-			$value = isset( $event['metric_value'] ) ? (float) $event['metric_value'] : 0.0;
-			$idx   = (int) floor( ( ( $ts - $since ) / $span ) * $bucket_count );
-			if ( $idx >= $bucket_count ) {
-				$idx = $bucket_count - 1;
-			}
-			if ( $idx < 0 ) {
-				$idx = 0;
-			}
+			$value           = isset( $event['metric_value'] ) ? (float) $event['metric_value'] : 0.0;
+			$idx             = (int) floor( ( ( $ts - $since ) / $span ) * $bucket_count );
+			$idx             = max( 0, min( $bucket_count - 1, $idx ) );
 			$sums[ $idx ]   += $value;
 			$counts[ $idx ] += 1;
 		}
@@ -965,7 +960,8 @@ endif;
 		// When every bucket was empty, min/max collapse to 0.
 		$min = null === $min ? 0.0 : (float) $min;
 		$max = null === $max ? 0.0 : (float) $max;
-		// Force a visual gap if min == max on a non-empty series.
+		// Force a visual gap if min == max on a non-empty uniform series,
+		// otherwise the sparkline would collapse to a zero-height line.
 		if ( $max === $min ) {
 			$max = $min + 1.0;
 		}
