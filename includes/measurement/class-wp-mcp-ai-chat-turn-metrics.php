@@ -20,11 +20,13 @@
  *     priority 20 so third-party registrations at priority 10 can
  *     pre-empt a stock metric by id (first registration wins — see
  *     `WP_MCP_AI_Measurement_Registry::register()`).
- *   - `chat.agentic.iterations` is reserved but NOT emitted by the
- *     shipped observer: the REST agentic loop does not currently
- *     expose a per-iteration action hook. The metric id is registered
- *     so site owners or a future core-hook PR can emit it without
- *     needing to coordinate an id change.
+ *   - `chat.agentic.iterations` is emitted by the observer once per
+ *     chat turn, carrying the total iteration count seen for that
+ *     turn via the `wp_mcp_ai_agentic_iteration_complete` hook that
+ *     the REST agentic loop fires after each iteration (PR 7.1).
+ *     Sites can suppress emission by either disabling the observer
+ *     (`wp_mcp_ai_chat_turn_observer_enabled`) or by removing the
+ *     base-plugin hook.
  *
  * Opt-out: sites that want to disable stock chat-turn metric emission
  * entirely can return an empty array from the

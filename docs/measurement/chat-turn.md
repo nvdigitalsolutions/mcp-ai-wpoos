@@ -35,17 +35,24 @@ payloads (prompt fragments, user ids on a per-request basis, etc.)
 would require re-classification to Sensitive or Restricted; see
 [`privacy-matrix.md`](privacy-matrix.md).
 
-## `chat.agentic.iterations` is reserved but not emitted
+## `chat.agentic.iterations` emission (PR 7.1)
 
-The REST agentic loop in `includes/class-wp-mcp-ai-rest.php` does not
-currently expose a per-iteration `do_action`. PR 7 registers the
-metric id so the future emitter does not need to coordinate an id
-rename, but the shipped observer does **not** record this metric.
+The chat-turn observer listens on
+`wp_mcp_ai_agentic_iteration_complete`, which the base plugin's REST
+agentic loop fires after each iteration in both the non-streaming
+and streaming (SSE) paths. During a turn the observer keeps the
+maximum iteration count it has seen per `assistant_id`. When the
+matching `wp_mcp_ai_after_chat_response` fires it emits **one**
+histogram sample carrying that maximum and clears the counter.
 
-Adding the per-iteration hook is a one-line core change tracked in
-the rollout plan as PR 7.1 and deliberately shipped separately — a
-measurement PR should not bundle a new core hook into the base
-plugin.
+Turns with no tool calls (the LLM returned content on the first
+pass) never fire the iteration hook, so they never emit a sample —
+this keeps the histogram free of synthetic zeros that would skew
+p50/p95 towards zero.
+
+Nested assistant calls (assistant A invokes assistant B mid-flight)
+are disambiguated by `assistant_id` so each pops its own iteration
+count.
 
 ## Observer lifecycle
 
@@ -53,11 +60,15 @@ plugin.
 wp_mcp_ai_before_chat_request (priority 5)
     └── push { assistant_id, started_at, redacted_options }
 
+wp_mcp_ai_agentic_iteration_complete (priority 10)
+    └── update per-assistant max iteration count
+
 wp_mcp_ai_after_chat_response  (priority 95)
     ├── pop matching frame (scan top-down if top doesn't match)
     ├── record chat.turn.count
     ├── record chat.turn.error.count  (if WP_Error or response.error)
     ├── record chat.turn.duration_ms  (if frame was popped)
+    ├── record chat.agentic.iterations (if iteration count > 0)
     ├── record token_usage.prompt_tokens     (if response.usage.prompt_tokens > 0)
     └── record token_usage.completion_tokens (if response.usage.completion_tokens > 0)
 

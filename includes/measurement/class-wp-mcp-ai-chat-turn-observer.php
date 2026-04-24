@@ -3,9 +3,12 @@
  * Chat-Turn Observer
  *
  * Bridges the plugin's pre-existing `wp_mcp_ai_before_chat_request`,
- * `wp_mcp_ai_after_chat_response`, and `wp_mcp_ai_cost_calculated` action
- * hooks into the measurement collector. This is the second live-traffic
- * emission path after the tool-execution observer from PR 6.
+ * `wp_mcp_ai_after_chat_response`, `wp_mcp_ai_cost_calculated`, and
+ * `wp_mcp_ai_agentic_iteration_complete` action hooks into the
+ * measurement collector. This is the second live-traffic emission
+ * path after the tool-execution observer from PR 6. Iteration hook
+ * support was added in PR 7.1 and enables emission of the previously
+ * reserved `chat.agentic.iterations` histogram.
  *
  * Concurrency model:
  *   A single PHP request serves one chat turn at a time, but the chat
@@ -51,6 +54,15 @@ class WP_MCP_AI_Chat_Turn_Observer {
 	 * @var array<int,array<string,mixed>>
 	 */
 	private $stack = array();
+
+	/**
+	 * Per-assistant max iteration count seen during the current turn.
+	 * Keyed by `(string) $assistant_id`. Emitted on the corresponding
+	 * `wp_mcp_ai_after_chat_response` and cleared immediately.
+	 *
+	 * @var array<string,int>
+	 */
+	private $iteration_counts = array();
 
 	/**
 	 * Singleton instance.
@@ -110,9 +122,10 @@ class WP_MCP_AI_Chat_Turn_Observer {
 			return;
 		}
 		$pairs = array(
-			'wp_mcp_ai_before_chat_request' => 'on_before',
-			'wp_mcp_ai_after_chat_response' => 'on_after',
-			'wp_mcp_ai_cost_calculated'     => 'on_cost',
+			'wp_mcp_ai_before_chat_request'        => 'on_before',
+			'wp_mcp_ai_after_chat_response'        => 'on_after',
+			'wp_mcp_ai_cost_calculated'            => 'on_cost',
+			'wp_mcp_ai_agentic_iteration_complete' => 'on_agentic_iteration',
 		);
 		foreach ( $pairs as $hook_name => $method ) {
 			if ( ! isset( $wp_filter[ $hook_name ] ) ) {
@@ -167,6 +180,7 @@ class WP_MCP_AI_Chat_Turn_Observer {
 		add_action( 'wp_mcp_ai_before_chat_request', array( $this, 'on_before' ), 5, 4 );
 		add_action( 'wp_mcp_ai_after_chat_response', array( $this, 'on_after' ), 95, 3 );
 		add_action( 'wp_mcp_ai_cost_calculated', array( $this, 'on_cost' ), 95, 5 );
+		add_action( 'wp_mcp_ai_agentic_iteration_complete', array( $this, 'on_agentic_iteration' ), 10, 2 );
 
 		$this->attached = true;
 		return true;
@@ -184,8 +198,10 @@ class WP_MCP_AI_Chat_Turn_Observer {
 		remove_action( 'wp_mcp_ai_before_chat_request', array( $this, 'on_before' ), 5 );
 		remove_action( 'wp_mcp_ai_after_chat_response', array( $this, 'on_after' ), 95 );
 		remove_action( 'wp_mcp_ai_cost_calculated', array( $this, 'on_cost' ), 95 );
-		$this->attached = false;
-		$this->stack    = array();
+		remove_action( 'wp_mcp_ai_agentic_iteration_complete', array( $this, 'on_agentic_iteration' ), 10 );
+		$this->attached         = false;
+		$this->stack            = array();
+		$this->iteration_counts = array();
 	}
 
 	/**
@@ -249,6 +265,19 @@ class WP_MCP_AI_Chat_Turn_Observer {
 
 		if ( null !== $duration_ms ) {
 			$collector->record( WP_MCP_AI_Chat_Turn_Metrics::CHAT_TURN_DURATION_MS, $duration_ms, $ctx );
+		}
+
+		// Emit the reserved `chat.agentic.iterations` histogram when the
+		// base plugin's agentic-loop hook fired at least once during this
+		// turn. Tracked per-assistant so nested calls in the invocation
+		// stack cannot cross-contaminate one another.
+		$aid_key = (string) self::sanitize_scalar_id( $assistant_id );
+		if ( '' !== $aid_key && isset( $this->iteration_counts[ $aid_key ] ) ) {
+			$iterations = (int) $this->iteration_counts[ $aid_key ];
+			unset( $this->iteration_counts[ $aid_key ] );
+			if ( $iterations > 0 ) {
+				$collector->record( WP_MCP_AI_Chat_Turn_Metrics::CHAT_AGENTIC_ITERATIONS, $iterations, $ctx );
+			}
 		}
 
 		// Emit token-usage metrics directly from the response when the
@@ -315,6 +344,34 @@ class WP_MCP_AI_Chat_Turn_Observer {
 		}
 
 		$collector->record( WP_MCP_AI_Chat_Turn_Metrics::TOKEN_USAGE_TOTAL_COST_USD, $cost, $ctx );
+	}
+
+	/**
+	 * Observability hook: record a completed agentic-loop iteration.
+	 *
+	 * Fires from the base plugin's REST chat path (non-streaming and
+	 * streaming). Each call carries the total iteration count reached
+	 * so far — we keep the maximum per assistant_id and emit a single
+	 * `chat.agentic.iterations` histogram sample when the matching
+	 * `wp_mcp_ai_after_chat_response` pops the turn's frame.
+	 *
+	 * Signature matches `do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id )`.
+	 *
+	 * @param mixed $iteration    Iterations completed so far (1-based).
+	 * @param mixed $assistant_id Assistant identifier.
+	 * @return void
+	 */
+	public function on_agentic_iteration( $iteration = 0, $assistant_id = null ) {
+		$count = (int) $iteration;
+		if ( $count <= 0 ) {
+			return;
+		}
+		$key = (string) self::sanitize_scalar_id( $assistant_id );
+		if ( '' === $key ) {
+			return;
+		}
+		$prev                           = isset( $this->iteration_counts[ $key ] ) ? (int) $this->iteration_counts[ $key ] : 0;
+		$this->iteration_counts[ $key ] = max( $prev, $count );
 	}
 
 	/**

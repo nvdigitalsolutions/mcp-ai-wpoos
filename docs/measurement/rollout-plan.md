@@ -166,14 +166,19 @@ PR 9 (persistent store) follows PR 8 so the store lands with real
 production emission traffic shaping its schema. PR 11 (CLI runner
 and regression alerting) remains blocked on PR 9.
 
-### ⬜ PR 7.1 — Agentic-loop iteration hook (core)
+### ✅ PR 7.1 — Agentic-loop iteration hook (core) + emitter
 
-Standalone one-line base-plugin PR that adds a
+Standalone base-plugin PR that adds a
 `do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id )`
-call at the two loop sites in `class-wp-mcp-ai-rest.php`. When this
-lands, a tiny follow-up observer emits the reserved
-`chat.agentic.iterations` histogram without any metric-registry
-churn.
+call at both agentic-loop sites in `class-wp-mcp-ai-rest.php` (the
+non-streaming path and the SSE/streaming path). The shipped chat-turn
+observer now consumes this hook, tracks the per-assistant maximum
+iteration count during the current turn, and emits one
+`chat.agentic.iterations` histogram sample when the matching
+`wp_mcp_ai_after_chat_response` pops the frame. Turns with no tool
+calls emit nothing — this keeps the histogram free of synthetic zeros.
+Tests cover the happy path, the no-iterations path, and nested
+assistant invocations with independent counts.
 
 ### ✅ PR 8 — SSE/stream instrumentation
 

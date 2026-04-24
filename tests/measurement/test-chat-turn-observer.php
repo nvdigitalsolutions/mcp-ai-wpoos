@@ -296,4 +296,75 @@ class Test_WP_MCP_AI_Chat_Turn_Observer extends WP_UnitTestCase {
 		$this->assertSame( 'openai', $ctx['provider'] );
 		$this->assertSame( 'gpt-4o-mini', $ctx['model'] );
 	}
+
+	/**
+	 * PR 7.1 — when the base plugin fires
+	 * `wp_mcp_ai_agentic_iteration_complete` at each loop iteration, the
+	 * observer emits a single `chat.agentic.iterations` sample at
+	 * chat-turn close carrying the max iteration seen.
+	 */
+	public function test_agentic_iteration_hook_emits_histogram_once_per_turn() {
+		do_action( 'wp_mcp_ai_before_chat_request', 7, array(), array( 'provider' => 'openai' ), null );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 1, 7 );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 2, 7 );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 3, 7 );
+		do_action( 'wp_mcp_ai_after_chat_response', 7, $this->fake_response_ok(), null );
+
+		$iter_events = array_values(
+			array_filter(
+				WP_MCP_AI_Metric_Collector::get_instance()->buffered(),
+				static function ( $e ) {
+					return 'chat.agentic.iterations' === $e['id'];
+				}
+			)
+		);
+		$this->assertCount( 1, $iter_events, 'Expected exactly one histogram sample per turn.' );
+		$this->assertSame( 3.0, (float) $iter_events[0]['value'] );
+	}
+
+	/**
+	 * PR 7.1 — turns with no agentic iterations (e.g. the LLM returned
+	 * content with no tool_calls on the first pass) do not emit the
+	 * histogram metric at all.
+	 */
+	public function test_no_iterations_means_no_agentic_histogram_sample() {
+		do_action( 'wp_mcp_ai_before_chat_request', 7, array(), array( 'provider' => 'openai' ), null );
+		do_action( 'wp_mcp_ai_after_chat_response', 7, $this->fake_response_ok(), null );
+
+		$ids = array_column( WP_MCP_AI_Metric_Collector::get_instance()->buffered(), 'id' );
+		$this->assertNotContains( 'chat.agentic.iterations', $ids );
+	}
+
+	/**
+	 * PR 7.1 — iteration counts are tracked per assistant_id so nested
+	 * calls with different assistants do not cross-contaminate.
+	 */
+	public function test_agentic_iteration_counts_are_per_assistant() {
+		do_action( 'wp_mcp_ai_before_chat_request', 7, array(), array( 'provider' => 'openai' ), null );
+		do_action( 'wp_mcp_ai_before_chat_request', 8, array(), array( 'provider' => 'openai' ), null );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 1, 7 );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 1, 8 );
+		do_action( 'wp_mcp_ai_agentic_iteration_complete', 2, 8 );
+		do_action( 'wp_mcp_ai_after_chat_response', 8, $this->fake_response_ok(), null );
+		do_action( 'wp_mcp_ai_after_chat_response', 7, $this->fake_response_ok(), null );
+
+		$samples = array_values(
+			array_filter(
+				WP_MCP_AI_Metric_Collector::get_instance()->buffered(),
+				static function ( $e ) {
+					return 'chat.agentic.iterations' === $e['id'];
+				}
+			)
+		);
+		$this->assertCount( 2, $samples );
+		// Collector ordering is insertion order; 8 closes first, then 7.
+		$values = array_map(
+			static function ( $e ) {
+				return (float) $e['value'];
+			},
+			$samples
+		);
+		sort( $values );
+		$this->assertSame( array( 1.0, 2.0 ), $values );
+	}
 }
