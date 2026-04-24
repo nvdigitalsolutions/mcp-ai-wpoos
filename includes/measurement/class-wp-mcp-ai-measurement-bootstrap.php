@@ -33,6 +33,12 @@ function wp_mcp_ai_measurement_bootstrap() {
 	$rewards = WP_MCP_AI_Reward_Function_Registry::get_instance();
 	$rewards->boot();
 
+	// Boot the budget registry next so it can attach its collector listener
+	// before any metric is recorded during this request.
+	if ( class_exists( 'WP_MCP_AI_Budget_Registry' ) ) {
+		WP_MCP_AI_Budget_Registry::get_instance()->boot();
+	}
+
 	// Boot the eval suite registry last — by the time this fires, all
 	// verifiers and rewards are registered so suite authors can reference
 	// them without ordering headaches.

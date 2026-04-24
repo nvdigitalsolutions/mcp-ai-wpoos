@@ -86,6 +86,9 @@ require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-ru
 require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-schema-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-llm-judge-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/rewards/class-wp-mcp-ai-reference-rewards.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/budgets/class-wp-mcp-ai-budget-envelope.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/budgets/class-wp-mcp-ai-budget-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/exporters/class-wp-mcp-ai-otel-exporter.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-case.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite-registry.php';

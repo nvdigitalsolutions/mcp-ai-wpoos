@@ -55,6 +55,7 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 	 */
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 30 );
+		add_action( 'admin_post_wp_mcp_ai_measurement_action', array( $this, 'handle_admin_post' ) );
 	}
 
 	/**
@@ -81,6 +82,86 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 	}
 
 	/**
+	 * Handle writable actions posted from the dashboard. Every branch
+	 * enforces capability + nonce before doing any work; unknown actions
+	 * bounce back to the dashboard as a no-op so a malformed POST can
+	 * never silently drop changes.
+	 *
+	 * @return void
+	 */
+	public function handle_admin_post() {
+		if ( ! current_user_can( self::REQUIRED_CAPABILITY ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
+		}
+		$nonce  = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		$action = isset( $_POST['mcp_ai_action'] ) ? sanitize_key( wp_unslash( $_POST['mcp_ai_action'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wp_mcp_ai_measurement_action::' . $action ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ), '', array( 'response' => 400 ) );
+		}
+
+		$notice = 'ok';
+		switch ( $action ) {
+			case 'clear_buffer':
+				if ( class_exists( 'WP_MCP_AI_Metric_Collector' ) ) {
+					WP_MCP_AI_Metric_Collector::get_instance()->clear_buffer();
+				}
+				if ( class_exists( 'WP_MCP_AI_OTel_Exporter' ) ) {
+					( new WP_MCP_AI_OTel_Exporter() )->clear_rolling_buffer();
+				}
+				$notice = 'buffer_cleared';
+				break;
+
+			case 'download_export':
+				$this->stream_export_json();
+				return;
+
+			case 'reset_budget':
+				$slug = isset( $_POST['budget_slug'] ) ? sanitize_key( wp_unslash( $_POST['budget_slug'] ) ) : '';
+				if ( '' !== $slug && class_exists( 'WP_MCP_AI_Budget_Registry' ) ) {
+					$reset = WP_MCP_AI_Budget_Registry::get_instance()->reset_persistent( $slug );
+					$notice = $reset ? 'budget_reset' : 'budget_not_found';
+				} else {
+					$notice = 'budget_invalid';
+				}
+				break;
+
+			default:
+				$notice = 'unknown_action';
+				break;
+		}
+
+		$redirect = add_query_arg(
+			array(
+				'page'             => self::PAGE_SLUG,
+				'mcp_ai_notice'    => $notice,
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
+	 * Stream the current OTel payload as a JSON file download.
+	 *
+	 * @return void
+	 */
+	private function stream_export_json() {
+		if ( ! class_exists( 'WP_MCP_AI_OTel_Exporter' ) ) {
+			wp_die( esc_html__( 'Exporter is unavailable.', 'mcp-ai-wpoos' ), '', array( 'response' => 500 ) );
+		}
+		$exporter = new WP_MCP_AI_OTel_Exporter();
+		$payload  = $exporter->build_payload();
+		$filename = 'wp-mcp-ai-measurement-' . gmdate( 'Ymd-His' ) . '.json';
+
+		nocache_headers();
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		echo wp_json_encode( $payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON body, not HTML.
+		exit;
+	}
+
+	/**
 	 * Render the dashboard page.
 	 *
 	 * @return void
@@ -95,13 +176,17 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		$rewards   = $this->get_rewards();
 		$suites    = $this->get_suites();
 		$events    = $this->get_recent_events();
+		$budgets   = $this->get_budgets();
 
 		?>
 		<div class="wrap wp-mcp-ai-measurement-dashboard">
 			<h1><?php esc_html_e( 'NV oOS Measurement', 'mcp-ai-wpoos' ); ?></h1>
+			<?php $this->render_notice(); ?>
 			<p class="description">
-				<?php esc_html_e( 'Read-only overview of registered metrics, verifiers, reward functions, eval suites, and the most recent events in the in-memory collector buffer.', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Overview of registered metrics, verifiers, reward functions, eval suites, budget envelopes, and the most recent events in the in-memory collector buffer.', 'mcp-ai-wpoos' ); ?>
 			</p>
+
+			<?php $this->render_actions_panel(); ?>
 
 			<h2><?php esc_html_e( 'Summary', 'mcp-ai-wpoos' ); ?></h2>
 			<ul class="wp-mcp-ai-measurement-summary">
@@ -122,6 +207,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 					<?php esc_html_e( 'eval suites registered', 'mcp-ai-wpoos' ); ?>
 				</li>
 				<li>
+					<strong><?php echo esc_html( number_format_i18n( count( $budgets ) ) ); ?></strong>
+					<?php esc_html_e( 'budget envelopes registered', 'mcp-ai-wpoos' ); ?>
+				</li>
+				<li>
 					<strong><?php echo esc_html( number_format_i18n( count( $events ) ) ); ?></strong>
 					<?php esc_html_e( 'recent events in buffer', 'mcp-ai-wpoos' ); ?>
 				</li>
@@ -130,9 +219,68 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			<?php $this->render_metrics_table( $metrics ); ?>
 			<?php $this->render_verifiers_table( $verifiers ); ?>
 			<?php $this->render_rewards_table( $rewards ); ?>
+			<?php $this->render_budgets_table( $budgets ); ?>
 			<?php $this->render_suites_table( $suites ); ?>
 			<?php $this->render_events_table( $events ); ?>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render admin notice (post-action).
+	 *
+	 * @return void
+	 */
+	private function render_notice() {
+		$notice = isset( $_GET['mcp_ai_notice'] ) ? sanitize_key( wp_unslash( $_GET['mcp_ai_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- notice only.
+		if ( '' === $notice ) {
+			return;
+		}
+		$map = array(
+			'buffer_cleared'    => array( 'updated', __( 'Collector buffer and rolling OTel buffer cleared.', 'mcp-ai-wpoos' ) ),
+			'budget_reset'      => array( 'updated', __( 'Budget envelope accumulator reset.', 'mcp-ai-wpoos' ) ),
+			'budget_not_found'  => array( 'error', __( 'Budget envelope not found.', 'mcp-ai-wpoos' ) ),
+			'budget_invalid'    => array( 'error', __( 'Budget envelope slug missing.', 'mcp-ai-wpoos' ) ),
+			'unknown_action'    => array( 'error', __( 'Unknown measurement action.', 'mcp-ai-wpoos' ) ),
+			'ok'                => array( 'updated', __( 'Action completed.', 'mcp-ai-wpoos' ) ),
+		);
+		if ( ! isset( $map[ $notice ] ) ) {
+			return;
+		}
+		list( $level, $message ) = $map[ $notice ];
+		printf(
+			'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
+			esc_attr( 'error' === $level ? 'error' : 'success' ),
+			esc_html( $message )
+		);
+	}
+
+	/**
+	 * Render the action buttons panel.
+	 *
+	 * @return void
+	 */
+	private function render_actions_panel() {
+		$endpoint = admin_url( 'admin-post.php' );
+		?>
+		<h2><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></h2>
+		<div class="wp-mcp-ai-measurement-actions" style="display:flex;gap:1em;flex-wrap:wrap;">
+			<form method="post" action="<?php echo esc_url( $endpoint ); ?>">
+				<input type="hidden" name="action" value="wp_mcp_ai_measurement_action" />
+				<input type="hidden" name="mcp_ai_action" value="clear_buffer" />
+				<?php wp_nonce_field( 'wp_mcp_ai_measurement_action::clear_buffer' ); ?>
+				<?php submit_button( __( 'Clear Buffers', 'mcp-ai-wpoos' ), 'secondary', 'submit', false ); ?>
+			</form>
+			<form method="post" action="<?php echo esc_url( $endpoint ); ?>">
+				<input type="hidden" name="action" value="wp_mcp_ai_measurement_action" />
+				<input type="hidden" name="mcp_ai_action" value="download_export" />
+				<?php wp_nonce_field( 'wp_mcp_ai_measurement_action::download_export' ); ?>
+				<?php submit_button( __( 'Download OTel JSON Export', 'mcp-ai-wpoos' ), 'primary', 'submit', false ); ?>
+			</form>
+		</div>
+		<p class="description">
+			<?php esc_html_e( 'Clear Buffers empties the in-memory collector and the rolling OTel buffer. Download OTel JSON Export returns the current buffer serialized as OTLP/JSON for ingestion by an OpenTelemetry Collector.', 'mcp-ai-wpoos' ); ?>
+		</p>
 		<?php
 	}
 
@@ -182,6 +330,18 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			return array();
 		}
 		return WP_MCP_AI_Eval_Suite_Registry::get_instance()->all();
+	}
+
+	/**
+	 * Fetch budget snapshot.
+	 *
+	 * @return array
+	 */
+	private function get_budgets() {
+		if ( ! class_exists( 'WP_MCP_AI_Budget_Registry' ) ) {
+			return array();
+		}
+		return WP_MCP_AI_Budget_Registry::get_instance()->snapshot();
 	}
 
 	/**
@@ -318,6 +478,69 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 					</td>
 					<td><?php echo esc_html( ! empty( $def['counter_metric'] ) ? $def['counter_metric'] : '—' ); ?></td>
 					<td><?php echo esc_html( isset( $def['anti_gaming'] ) ? $def['anti_gaming'] : '' ); ?></td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Budgets table (with reset action per persistent envelope).
+	 *
+	 * @param array $budgets Snapshot entries.
+	 * @return void
+	 */
+	private function render_budgets_table( array $budgets ) {
+		?>
+		<h2><?php esc_html_e( 'Budget Envelopes', 'mcp-ai-wpoos' ); ?></h2>
+		<?php if ( empty( $budgets ) ) : ?>
+			<p><em><?php esc_html_e( 'No budget envelopes registered. Use the wp_mcp_ai_register_budgets hook to add one.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php return; endif; ?>
+		<table class="widefat striped">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Slug', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Label', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Scope', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Metrics', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Consumed', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Limit', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Utilization', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'State', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+			<?php
+			$endpoint = admin_url( 'admin-post.php' );
+			foreach ( $budgets as $row ) :
+				$env   = $row['envelope'];
+				$state = isset( $row['state'] ) ? (string) $row['state'] : 'ok';
+				$state_color = 'ok' === $state ? '#46b450' : ( 'warn' === $state ? '#ffb900' : '#dc3232' );
+				?>
+				<tr>
+					<td><code><?php echo esc_html( $env['slug'] ); ?></code></td>
+					<td><?php echo esc_html( $env['label'] ); ?></td>
+					<td><?php echo esc_html( $env['scope'] ); ?></td>
+					<td><?php echo esc_html( implode( ', ', (array) $env['metric_ids'] ) ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( (float) $row['consumed'], 4 ) ); ?><?php echo esc_html( '' !== $env['unit'] ? ' ' . $env['unit'] : '' ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( (float) $env['limit'], 4 ) ); ?><?php echo esc_html( '' !== $env['unit'] ? ' ' . $env['unit'] : '' ); ?></td>
+					<td><?php echo esc_html( number_format_i18n( (float) $row['ratio'] * 100, 1 ) . '%' ); ?></td>
+					<td><span style="color:<?php echo esc_attr( $state_color ); ?>;font-weight:600;"><?php echo esc_html( strtoupper( $state ) ); ?></span></td>
+					<td>
+						<?php if ( 'persistent' === $env['scope'] ) : ?>
+							<form method="post" action="<?php echo esc_url( $endpoint ); ?>" style="display:inline;">
+								<input type="hidden" name="action" value="wp_mcp_ai_measurement_action" />
+								<input type="hidden" name="mcp_ai_action" value="reset_budget" />
+								<input type="hidden" name="budget_slug" value="<?php echo esc_attr( $env['slug'] ); ?>" />
+								<?php wp_nonce_field( 'wp_mcp_ai_measurement_action::reset_budget' ); ?>
+								<?php submit_button( __( 'Reset', 'mcp-ai-wpoos' ), 'small', 'submit', false ); ?>
+							</form>
+						<?php else : ?>
+							<em><?php esc_html_e( 'auto-resets per request', 'mcp-ai-wpoos' ); ?></em>
+						<?php endif; ?>
+					</td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>

@@ -54,4 +54,6 @@ unless filtered.
 - [`verifier-authoring.md`](verifier-authoring.md) — authoring guide for custom verifiers
 - [`reward-authoring.md`](reward-authoring.md) — authoring guide for reward functions
 - [`eval-harness.md`](eval-harness.md) — eval case/suite/runner contract
-- [`dashboard.md`](dashboard.md) — read-only measurement dashboard
+- [`dashboard.md`](dashboard.md) — measurement admin dashboard (now writable)
+- [`budgets.md`](budgets.md) — budget envelopes (anti-Goodhart spend caps)
+- [`otel-exporter.md`](otel-exporter.md) — OTLP/JSON exporter + rolling buffer
