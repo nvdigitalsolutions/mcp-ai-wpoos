@@ -159,30 +159,37 @@ class WP_MCP_AI_Verifier_Registry {
 	public function check_independence( WP_MCP_AI_Verifier_Interface $verifier, array $generator_context ) {
 		$profile = $verifier->get_independence_profile();
 
-		$provider = isset( $generator_context['provider'] ) ? (string) $generator_context['provider'] : '';
-		$model    = isset( $generator_context['model'] ) ? (string) $generator_context['model'] : '';
-		$tool     = isset( $generator_context['tool'] ) ? (string) $generator_context['tool'] : '';
-
-		if ( '' !== $provider && ! empty( $profile['disallowed_providers'] ) && in_array( $provider, $profile['disallowed_providers'], true ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_verifier_not_independent',
+		$checks = array(
+			'provider' => array(
+				'value'    => isset( $generator_context['provider'] ) ? (string) $generator_context['provider'] : '',
+				'disallow' => isset( $profile['disallowed_providers'] ) ? $profile['disallowed_providers'] : array(),
 				/* translators: %s: provider name. */
-				sprintf( __( 'Verifier shares provider "%s" with generator.', 'mcp-ai-wpoos' ), $provider )
-			);
-		}
-		if ( '' !== $model && ! empty( $profile['disallowed_models'] ) && in_array( $model, $profile['disallowed_models'], true ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_verifier_not_independent',
+				'message'  => __( 'Verifier shares provider "%s" with generator.', 'mcp-ai-wpoos' ),
+			),
+			'model'    => array(
+				'value'    => isset( $generator_context['model'] ) ? (string) $generator_context['model'] : '',
+				'disallow' => isset( $profile['disallowed_models'] ) ? $profile['disallowed_models'] : array(),
 				/* translators: %s: model name. */
-				sprintf( __( 'Verifier shares model "%s" with generator.', 'mcp-ai-wpoos' ), $model )
-			);
-		}
-		if ( '' !== $tool && ! empty( $profile['disallowed_tools'] ) && in_array( $tool, $profile['disallowed_tools'], true ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_verifier_not_independent',
+				'message'  => __( 'Verifier shares model "%s" with generator.', 'mcp-ai-wpoos' ),
+			),
+			'tool'     => array(
+				'value'    => isset( $generator_context['tool'] ) ? (string) $generator_context['tool'] : '',
+				'disallow' => isset( $profile['disallowed_tools'] ) ? $profile['disallowed_tools'] : array(),
 				/* translators: %s: tool slug. */
-				sprintf( __( 'Verifier shares tool "%s" with generator.', 'mcp-ai-wpoos' ), $tool )
-			);
+				'message'  => __( 'Verifier shares tool "%s" with generator.', 'mcp-ai-wpoos' ),
+			),
+		);
+
+		foreach ( $checks as $check ) {
+			if ( '' !== $check['value']
+				&& ! empty( $check['disallow'] )
+				&& in_array( $check['value'], $check['disallow'], true )
+			) {
+				return new WP_Error(
+					'wp_mcp_ai_verifier_not_independent',
+					sprintf( $check['message'], $check['value'] )
+				);
+			}
 		}
 		return true;
 	}

@@ -307,14 +307,15 @@ class WP_MCP_AI_Metric_Collector {
 		}
 
 		// Deterministic within a single PHP request so paired counter-metrics
-		// are either both kept or both dropped.
+		// are either both kept or both dropped. Use 7 hex chars (28 bits) to
+		// avoid 32-bit hexdec overflow.
 		static $request_salt = null;
 		if ( null === $request_salt ) {
 			$request_salt = wp_generate_password( 12, false, false );
 		}
 
-		$hash     = hexdec( substr( md5( $metric_id . '|' . $request_salt ), 0, 8 ) );
-		$bucket   = ( $hash % 10000 ) / 10000.0;
+		$hash   = hexdec( substr( md5( $metric_id . '|' . $request_salt ), 0, 7 ) );
+		$bucket = ( $hash % 10000 ) / 10000.0;
 		return $bucket < $rate;
 	}
 

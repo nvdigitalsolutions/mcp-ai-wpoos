@@ -194,7 +194,8 @@ class WP_MCP_AI_Measurement_Registry {
 		$id = sanitize_key( $definition['id'] );
 		// sanitize_key strips dots; preserve them for dotted metric ids.
 		$raw_id = strtolower( trim( $definition['id'] ) );
-		if ( ! preg_match( '/^[a-z0-9][a-z0-9_.\-]*$/', $raw_id ) ) {
+		// Hyphen placed at end of character class to avoid range interpretation.
+		if ( ! preg_match( '/^[a-z0-9][a-z0-9_.-]*$/', $raw_id ) ) {
 			return null;
 		}
 		$id = $raw_id;

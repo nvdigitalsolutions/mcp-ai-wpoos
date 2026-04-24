@@ -162,7 +162,7 @@ class Test_WP_MCP_AI_Metric_Collector extends WP_UnitTestCase {
 				'tool'         => '<script>alert(1)</script>ping',
 				'attributes'   => array(
 					'ok'   => 'value',
-					12345  => 'int-key-dropped-by-sanitize-key',
+					12345  => 'numeric-key-preserved',
 					'bad'  => array( 'nested-not-allowed' ),
 				),
 			)
@@ -171,6 +171,9 @@ class Test_WP_MCP_AI_Metric_Collector extends WP_UnitTestCase {
 		$this->assertSame( 42, $event['context']['assistant_id'] );
 		$this->assertSame( 'ping', $event['context']['tool'] );
 		$this->assertArrayHasKey( 'ok', $event['context']['attributes'] );
+		// Numeric keys are coerced to string and kept by sanitize_key.
+		$this->assertArrayHasKey( '12345', $event['context']['attributes'] );
+		// Nested arrays are skipped because only scalar values are allowed.
 		$this->assertArrayNotHasKey( 'bad', $event['context']['attributes'] );
 	}
 }
