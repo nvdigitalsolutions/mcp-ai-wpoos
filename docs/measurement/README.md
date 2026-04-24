@@ -53,3 +53,5 @@ unless filtered.
 - [`privacy-matrix.md`](privacy-matrix.md) — privacy tiers and redaction policy
 - [`verifier-authoring.md`](verifier-authoring.md) — authoring guide for custom verifiers
 - [`reward-authoring.md`](reward-authoring.md) — authoring guide for reward functions
+- [`eval-harness.md`](eval-harness.md) — eval case/suite/runner contract
+- [`dashboard.md`](dashboard.md) — read-only measurement dashboard

@@ -33,6 +33,13 @@ function wp_mcp_ai_measurement_bootstrap() {
 	$rewards = WP_MCP_AI_Reward_Function_Registry::get_instance();
 	$rewards->boot();
 
+	// Boot the eval suite registry last — by the time this fires, all
+	// verifiers and rewards are registered so suite authors can reference
+	// them without ordering headaches.
+	if ( class_exists( 'WP_MCP_AI_Eval_Suite_Registry' ) ) {
+		WP_MCP_AI_Eval_Suite_Registry::get_instance()->boot();
+	}
+
 	// Prime the collector singleton so listeners attach early.
 	WP_MCP_AI_Metric_Collector::get_instance();
 }
@@ -157,4 +164,15 @@ if ( function_exists( 'add_action' ) ) {
 	add_action( 'admin_init', 'wp_mcp_ai_measurement_ensure_capabilities', 5 );
 	add_action( 'wp_mcp_ai_register_verifiers', 'wp_mcp_ai_register_reference_verifiers', 20 );
 	add_action( 'wp_mcp_ai_register_reward_functions', 'wp_mcp_ai_register_reference_rewards', 20 );
+
+	// Mount the read-only measurement dashboard admin page.
+	if ( is_admin() && class_exists( 'WP_MCP_AI_Admin_Measurement_Dashboard' ) ) {
+		add_action(
+			'plugins_loaded',
+			static function () {
+				new WP_MCP_AI_Admin_Measurement_Dashboard();
+			},
+			55
+		);
+	}
 }

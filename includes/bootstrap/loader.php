@@ -86,6 +86,13 @@ require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-ru
 require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-schema-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-llm-judge-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/rewards/class-wp-mcp-ai-reference-rewards.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-case.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-runner.php';
+if ( is_admin() ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/measurement/class-wp-mcp-ai-admin-measurement-dashboard.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
