@@ -122,6 +122,7 @@ WordPress action pipeline.
 
 ## See also
 
+- [`rollout-plan.md`](rollout-plan.md) — full measurement delivery schedule (PR 6 in context)
 - [`privacy-matrix.md`](privacy-matrix.md) — privacy tiers and redaction policy
 - [`goodhart-checklist.md`](goodhart-checklist.md) — metric-authoring checklist
 - [`budgets.md`](budgets.md) — attaching budgets to tool metrics

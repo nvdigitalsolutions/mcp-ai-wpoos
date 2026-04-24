@@ -9,9 +9,10 @@ principles:
 - **Verifier's law** — verifiers must be orthogonal to the generator. The
   registry enforces this with an independence profile per verifier.
 
-This document indexes the core primitives shipped in the base plugin. Later
-PRs add the eval harness, admin dashboard, OTel exporter, and Pro toolkit
-manifests (per the rollout strategy in the original plan).
+This document indexes the core primitives shipped in the base plugin.
+The full multi-PR delivery schedule — what has shipped and what is
+still planned — lives in [`rollout-plan.md`](rollout-plan.md) and is
+updated in the same PR that changes its status.
 
 ## Files
 
@@ -58,4 +59,5 @@ unless filtered.
 - [`budgets.md`](budgets.md) — budget envelopes (anti-Goodhart spend caps)
 - [`otel-exporter.md`](otel-exporter.md) — OTLP/JSON exporter + rolling buffer
 - [`tool-execution.md`](tool-execution.md) — stock metrics + tool-execution observer (first live emission path)
+- [`rollout-plan.md`](rollout-plan.md) — full multi-PR delivery schedule (status + remaining scope)
 - [`../../addons/pro/docs/measurement-pro.md`](../../addons/pro/docs/measurement-pro.md) — Pro toolkit: rubric verifier + budget-guarded reward
