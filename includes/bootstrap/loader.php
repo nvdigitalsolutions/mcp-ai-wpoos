@@ -95,6 +95,8 @@ require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-su
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-runner.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-stock-metrics.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-tool-execution-observer.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-chat-turn-metrics.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-chat-turn-observer.php';
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/measurement/class-wp-mcp-ai-admin-measurement-dashboard.php';
 }

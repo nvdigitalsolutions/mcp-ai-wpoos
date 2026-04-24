@@ -118,6 +118,40 @@ traffic. Without PR 6 the infrastructure from PRs 1–5 has no inputs.
 - Opt-outs via `wp_mcp_ai_stock_metrics_definitions` and
   `wp_mcp_ai_tool_execution_observer_enabled`
 
+### ✅ PR 7 — Chat-loop token & cost instrumentation
+
+Doc: [`chat-turn.md`](chat-turn.md)
+
+Second live emission path. PR 6 instruments individual tool calls;
+PR 7 instruments the chat turn that orchestrates them — token usage,
+realised cost (USD), turn duration, and success/error outcome.
+
+- `WP_MCP_AI_Chat_Turn_Metrics` — seven baseline metrics
+  (`chat.turn.count`, `chat.turn.error.count`,
+  `chat.turn.duration_ms`, `token_usage.prompt_tokens`,
+  `token_usage.completion_tokens`, `token_usage.total_cost_usd`,
+  plus the reserved `chat.agentic.iterations` id) with Goodhart
+  pairings enforced as a test invariant
+- `WP_MCP_AI_Chat_Turn_Observer` — assistant_id-keyed invocation
+  stack hooked at `wp_mcp_ai_before_chat_request` priority 5 /
+  `wp_mcp_ai_after_chat_response` priority 95 /
+  `wp_mcp_ai_cost_calculated` priority 95
+- Cost routed through the existing `wp_mcp_ai_cost_calculated`
+  hook — no duplicated rate tables
+- Privacy: prompts, completions, API keys, system messages and
+  attachments are never recorded; only provider, model,
+  assistant_id, user_id, guest-flag (asserted by a string-scan test)
+- Opt-outs via `wp_mcp_ai_chat_turn_metrics_definitions` and
+  `wp_mcp_ai_chat_turn_observer_enabled`
+
+**Deferred from PR 7:** `chat.agentic.iterations` is registered but
+not emitted by the shipped observer — the REST agentic loop does
+not currently expose a per-iteration action hook. Adding that hook
+is a one-line core change that ships as a separate PR so the
+measurement PR does not bundle a core-surface change. The metric
+id is reserved here so the future emitter does not need to
+coordinate an id rename.
+
 ## Remaining PRs
 
 The ordering below is chosen so every PR leaves the plugin in a
@@ -126,47 +160,20 @@ without depending on later PRs.
 
 ### Prioritization (confirmed April 2026)
 
-PR 7 (chat-loop token & cost) is the committed next PR, ahead of
-both PR 8 (SSE) and PR 9 (persistent store). Rationale:
+With PR 7 shipped, PR 8 (SSE/stream instrumentation) is next,
+reusing the provider/model attribution pattern PR 7 introduced.
+PR 9 (persistent store) follows PR 8 so the store lands with real
+production emission traffic shaping its schema. PR 11 (CLI runner
+and regression alerting) remains blocked on PR 9.
 
-- **Highest user-visible value per diff.** Token and cost are the
-  two measurements operators ask for first; PR 6 covers tool
-  latency but not model spend.
-- **No downstream dependency.** Chat-loop emission writes through
-  the same `Metric_Collector` ring buffer PR 6 uses, so PR 9's
-  persistent store is not a prerequisite — when PR 9 lands the
-  events flow through automatically.
-- **Provider-normalization work unblocks PR 8.** The cost/token
-  adapter layer PR 7 introduces for OpenAI/Gemini/Ollama is reused
-  by the SSE observer in PR 8 to attribute stream timings to a
-  provider.
+### ⬜ PR 7.1 — Agentic-loop iteration hook (core)
 
-PR 9 (persistent store) is intentionally sequenced after PRs 7–8 so
-the store lands with real production emission traffic shaping its
-schema, rather than being sized against PR 6 alone. PR 11 (CLI
-runner and regression alerting) remains blocked on PR 9.
-
-### ▶️ PR 7 — Chat-loop token & cost instrumentation
-
-**Goal:** close the second largest observability gap — the REST chat
-loop and agentic iterations — so cost/latency metrics reach the
-collector. PR 6 instruments individual tool calls; PR 7 instruments
-the turn that orchestrates them.
-
-Scope:
-
-- Stock metrics: `token_usage.prompt_tokens`,
-  `token_usage.completion_tokens`, `token_usage.total_cost_usd`,
-  `chat.turn.duration_ms`, `chat.turn.error.count`,
-  `chat.agentic.iterations`
-- Observer attached to the existing
-  `wp_mcp_ai_before_chat_request` / `wp_mcp_ai_after_chat_response`
-  hooks and the agentic-loop iteration hook
-- Cost calculation routed through the existing
-  `wp_mcp_ai_cost_calculated` hook rather than duplicating rate
-  tables
-- Privacy: no prompt content ever leaves scope; only provider,
-  model, assistant_id, user_id
+Standalone one-line base-plugin PR that adds a
+`do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id )`
+call at the two loop sites in `class-wp-mcp-ai-rest.php`. When this
+lands, a tiny follow-up observer emits the reserved
+`chat.agentic.iterations` histogram without any metric-registry
+churn.
 
 ### ⬜ PR 8 — SSE/stream instrumentation
 

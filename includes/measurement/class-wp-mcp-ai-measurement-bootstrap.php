@@ -56,6 +56,13 @@ function wp_mcp_ai_measurement_bootstrap() {
 	if ( class_exists( 'WP_MCP_AI_Tool_Execution_Observer' ) ) {
 		WP_MCP_AI_Tool_Execution_Observer::get_instance()->attach();
 	}
+
+	// Attach the chat-turn observer. Same ordering guarantee as the
+	// tool-execution observer — collector must be primed first.
+	// Filterable via `wp_mcp_ai_chat_turn_observer_enabled`.
+	if ( class_exists( 'WP_MCP_AI_Chat_Turn_Observer' ) ) {
+		WP_MCP_AI_Chat_Turn_Observer::get_instance()->attach();
+	}
 }
 
 /**
@@ -184,6 +191,13 @@ if ( function_exists( 'add_action' ) ) {
 	add_action(
 		'wp_mcp_ai_register_metrics',
 		array( 'WP_MCP_AI_Stock_Metrics', 'register' ),
+		20
+	);
+
+	// Register chat-turn stock metric definitions at priority 20 as well.
+	add_action(
+		'wp_mcp_ai_register_metrics',
+		array( 'WP_MCP_AI_Chat_Turn_Metrics', 'register' ),
 		20
 	);
 
