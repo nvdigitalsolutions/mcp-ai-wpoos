@@ -247,13 +247,26 @@ runners, and alerting can read history beyond a single request.
   per-tier purge, completion action, retention clamping, cron
   schedule idempotency, buffer cap, veto + disabled filters.
 
-### 🟡 PR 9.1 — Dashboard time-range UI (follow-up — queued)
+### ✅ PR 9.1 — Dashboard time-range + persisted-metrics panel
 
-The query surface exists (`Metric_Event_Store::query_by_metric()`
-+ `count_by_privacy()`). The UI sparkline renderer was offloaded
-so PR 9 reviewers see the durability and retention logic in
-isolation. Split into PR 9.1 alongside the dashboard work that
-PR 10 will touch.
+New "Persisted Metrics" section on the measurement dashboard backed
+by the PR 9 event store. Adds:
+
+- Metric picker populated from the measurement registry.
+- Time-range selector (1h / 24h / 7d / 30d) persisted in the URL so
+  links are shareable and the panel is stateless between requests.
+- Per-privacy-tier row-count summary driven by
+  `WP_MCP_AI_Metric_Event_Store::count_by_privacy()`.
+- Server-rendered inline SVG sparkline bucketed into 24 equal-width
+  slots. Each bucket reports the arithmetic mean of samples that
+  fell inside it; empty buckets report `0.0` so quiet stretches read
+  as flat rather than interpolated. Flat-line guard prevents
+  zero-height SVGs when `min == max`. No client-side JS, no XHR —
+  works under strict CSP policies.
+- Pure-static `bucket_events()` helper for testability with 5
+  PHPUnit tests covering empty input, bucket assignment, out-of-range
+  drop, flat-line guard, and bucket-count clamping. All 105
+  measurement tests remain green.
 
 ### ⬜ PR 10 — Rubric verifier suite & counterfactual tests
 

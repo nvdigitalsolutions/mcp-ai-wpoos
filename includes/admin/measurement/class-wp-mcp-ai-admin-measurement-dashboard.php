@@ -143,7 +143,7 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			case 'reset_budget':
 				$slug = isset( $_POST['budget_slug'] ) ? sanitize_key( wp_unslash( $_POST['budget_slug'] ) ) : '';
 				if ( '' !== $slug && class_exists( 'WP_MCP_AI_Budget_Registry' ) ) {
-					$reset = WP_MCP_AI_Budget_Registry::get_instance()->reset_persistent( $slug );
+					$reset  = WP_MCP_AI_Budget_Registry::get_instance()->reset_persistent( $slug );
 					$notice = $reset ? 'budget_reset' : 'budget_not_found';
 				} else {
 					$notice = 'budget_invalid';
@@ -157,8 +157,8 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 
 		$redirect = add_query_arg(
 			array(
-				'page'             => self::PAGE_SLUG,
-				'mcp_ai_notice'    => $notice,
+				'page'          => self::PAGE_SLUG,
+				'mcp_ai_notice' => $notice,
 			),
 			admin_url( 'admin.php' )
 		);
@@ -242,6 +242,7 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			</ul>
 
 			<?php $this->render_metrics_table( $metrics ); ?>
+			<?php $this->render_persisted_metrics_panel( $metrics ); ?>
 			<?php $this->render_verifiers_table( $verifiers ); ?>
 			<?php $this->render_rewards_table( $rewards ); ?>
 			<?php $this->render_budgets_table( $budgets ); ?>
@@ -262,12 +263,12 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			return;
 		}
 		$map = array(
-			'buffer_cleared'    => array( 'updated', __( 'Collector buffer and rolling OTel buffer cleared.', 'mcp-ai-wpoos' ) ),
-			'budget_reset'      => array( 'updated', __( 'Budget envelope accumulator reset.', 'mcp-ai-wpoos' ) ),
-			'budget_not_found'  => array( 'error', __( 'Budget envelope not found.', 'mcp-ai-wpoos' ) ),
-			'budget_invalid'    => array( 'error', __( 'Budget envelope slug missing.', 'mcp-ai-wpoos' ) ),
-			'unknown_action'    => array( 'error', __( 'Unknown measurement action.', 'mcp-ai-wpoos' ) ),
-			'ok'                => array( 'updated', __( 'Action completed.', 'mcp-ai-wpoos' ) ),
+			'buffer_cleared'   => array( 'updated', __( 'Collector buffer and rolling OTel buffer cleared.', 'mcp-ai-wpoos' ) ),
+			'budget_reset'     => array( 'updated', __( 'Budget envelope accumulator reset.', 'mcp-ai-wpoos' ) ),
+			'budget_not_found' => array( 'error', __( 'Budget envelope not found.', 'mcp-ai-wpoos' ) ),
+			'budget_invalid'   => array( 'error', __( 'Budget envelope slug missing.', 'mcp-ai-wpoos' ) ),
+			'unknown_action'   => array( 'error', __( 'Unknown measurement action.', 'mcp-ai-wpoos' ) ),
+			'ok'               => array( 'updated', __( 'Action completed.', 'mcp-ai-wpoos' ) ),
 		);
 		if ( ! isset( $map[ $notice ] ) ) {
 			return;
@@ -394,7 +395,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Metrics', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $metrics ) ) : ?>
 			<p><em><?php esc_html_e( 'No metrics registered.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -433,7 +437,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Verifiers', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $verifiers ) ) : ?>
 			<p><em><?php esc_html_e( 'No verifiers registered.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -445,8 +452,9 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $verifiers as $slug => $v ) :
-				$profile = is_object( $v ) && method_exists( $v, 'get_independence_profile' ) ? $v->get_independence_profile() : array();
+			<?php
+			foreach ( $verifiers as $slug => $v ) :
+				$profile   = is_object( $v ) && method_exists( $v, 'get_independence_profile' ) ? $v->get_independence_profile() : array();
 				$providers = isset( $profile['disallowed_providers'] ) ? (array) $profile['disallowed_providers'] : array();
 				$models    = isset( $profile['disallowed_models'] ) ? (array) $profile['disallowed_models'] : array();
 				?>
@@ -474,7 +482,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Reward Functions', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $rewards ) ) : ?>
 			<p><em><?php esc_html_e( 'No reward functions registered.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -521,7 +532,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Budget Envelopes', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $budgets ) ) : ?>
 			<p><em><?php esc_html_e( 'No budget envelopes registered. Use the wp_mcp_ai_register_budgets hook to add one.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -540,8 +554,8 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			<?php
 			$endpoint = admin_url( 'admin-post.php' );
 			foreach ( $budgets as $row ) :
-				$env   = $row['envelope'];
-				$state = isset( $row['state'] ) ? (string) $row['state'] : 'ok';
+				$env         = $row['envelope'];
+				$state       = isset( $row['state'] ) ? (string) $row['state'] : 'ok';
 				$state_color = 'ok' === $state ? '#46b450' : ( 'warn' === $state ? '#ffb900' : '#dc3232' );
 				?>
 				<tr>
@@ -584,7 +598,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Eval Suites', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $suites ) ) : ?>
 			<p><em><?php esc_html_e( 'No eval suites registered. Use the wp_mcp_ai_register_eval_suites hook to add one.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -595,7 +612,8 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $suites as $slug => $suite ) :
+			<?php
+			foreach ( $suites as $slug => $suite ) :
 				$arr = $suite->to_array();
 				?>
 				<tr>
@@ -621,7 +639,10 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 		<h2><?php esc_html_e( 'Recent Events (in-memory buffer)', 'mcp-ai-wpoos' ); ?></h2>
 		<?php if ( empty( $events ) ) : ?>
 			<p><em><?php esc_html_e( 'The collector buffer is empty on this request. Buffered events are per-request and in-memory only — see the exporter PR for persistent storage.', 'mcp-ai-wpoos' ); ?></em></p>
-			<?php return; endif; ?>
+			<?php
+			return;
+endif;
+		?>
 		<table class="widefat striped">
 			<thead>
 				<tr>
@@ -631,7 +652,8 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 				</tr>
 			</thead>
 			<tbody>
-			<?php foreach ( $events as $event ) :
+			<?php
+			foreach ( $events as $event ) :
 				$metric_id = isset( $event['id'] ) ? (string) $event['id'] : '';
 				$value     = isset( $event['value'] ) ? $event['value'] : '';
 				$timestamp = isset( $event['timestamp'] ) ? (int) $event['timestamp'] : 0;
@@ -645,5 +667,345 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			</tbody>
 		</table>
 		<?php
+	}
+
+	/**
+	 * PR 9.1 — Persisted metrics panel.
+	 *
+	 * Renders a time-range picker, a metric picker, a per-privacy-tier
+	 * count summary, and a server-rendered inline SVG sparkline derived
+	 * from the persistent event store (`WP_MCP_AI_Metric_Event_Store`).
+	 *
+	 * Everything is rendered server-side (no JS, no XHR) so the panel
+	 * works on sites that keep the admin heavy-JS budget tight.
+	 *
+	 * Selection is driven by idempotent query args on the dashboard URL,
+	 * so links are shareable and the panel is stateless between requests.
+	 *
+	 * @param array $metrics Registered metric definitions.
+	 * @return void
+	 */
+	private function render_persisted_metrics_panel( array $metrics ) {
+		?>
+		<h2><?php esc_html_e( 'Persisted Metrics', 'mcp-ai-wpoos' ); ?></h2>
+		<?php
+		if ( ! class_exists( 'WP_MCP_AI_Metric_Event_Store' ) ) {
+			?>
+			<p><em><?php esc_html_e( 'Metric event store is unavailable on this site.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php
+			return;
+		}
+
+		$store = WP_MCP_AI_Metric_Event_Store::get_instance();
+		if ( ! $store->table_exists() ) {
+			?>
+			<p><em><?php esc_html_e( 'Metric events table has not been installed yet. Deactivate and reactivate the plugin to install the schema.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php
+			return;
+		}
+
+		// Inputs — all driven from GET so links are shareable and render
+		// is stateless. Nonce not required for read-only queries.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$range_slug = isset( $_GET['mcp_ai_range'] ) ? sanitize_key( wp_unslash( $_GET['mcp_ai_range'] ) ) : self::DEFAULT_RANGE;
+		$metric_id  = isset( $_GET['mcp_ai_metric'] ) ? sanitize_text_field( wp_unslash( $_GET['mcp_ai_metric'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( self::TIME_RANGES[ $range_slug ] ) ) {
+			$range_slug = self::DEFAULT_RANGE;
+		}
+		$range_secs = (int) self::TIME_RANGES[ $range_slug ];
+
+		$metric_ids = array();
+		foreach ( $metrics as $m ) {
+			if ( is_array( $m ) && ! empty( $m['id'] ) && is_string( $m['id'] ) ) {
+				$metric_ids[] = $m['id'];
+			}
+		}
+		$metric_ids = array_values( array_unique( $metric_ids ) );
+		sort( $metric_ids );
+		if ( '' === $metric_id || ! in_array( $metric_id, $metric_ids, true ) ) {
+			$metric_id = isset( $metric_ids[0] ) ? $metric_ids[0] : '';
+		}
+
+		$this->render_persisted_selector( $metric_ids, $metric_id, $range_slug );
+		$this->render_privacy_tier_counts( $store );
+
+		if ( '' === $metric_id ) {
+			return;
+		}
+		$until  = time();
+		$since  = $until - $range_secs;
+		$events = $store->query_by_metric( $metric_id, $since, $until, 5000 );
+		$this->render_sparkline( $events, $metric_id, $since, $until );
+	}
+
+	/**
+	 * Render the time-range + metric picker form.
+	 *
+	 * @param array<int,string> $metric_ids Registered metric ids.
+	 * @param string            $metric_id  Currently-selected metric id.
+	 * @param string            $range_slug Currently-selected range slug.
+	 * @return void
+	 */
+	private function render_persisted_selector( array $metric_ids, $metric_id, $range_slug ) {
+		$endpoint = admin_url( 'admin.php' );
+		$labels   = self::time_range_labels();
+		?>
+		<form method="get" action="<?php echo esc_url( $endpoint ); ?>" class="wp-mcp-ai-persisted-selector" style="margin:0.5em 0;display:flex;gap:1em;align-items:center;flex-wrap:wrap;">
+			<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
+			<label>
+				<?php esc_html_e( 'Metric', 'mcp-ai-wpoos' ); ?>
+				<select name="mcp_ai_metric">
+					<?php foreach ( $metric_ids as $id ) : ?>
+						<option value="<?php echo esc_attr( $id ); ?>" <?php selected( $id, $metric_id ); ?>><?php echo esc_html( $id ); ?></option>
+					<?php endforeach; ?>
+					<?php if ( empty( $metric_ids ) ) : ?>
+						<option value=""><?php esc_html_e( '(no metrics registered)', 'mcp-ai-wpoos' ); ?></option>
+					<?php endif; ?>
+				</select>
+			</label>
+			<label>
+				<?php esc_html_e( 'Range', 'mcp-ai-wpoos' ); ?>
+				<select name="mcp_ai_range">
+					<?php foreach ( $labels as $slug => $label ) : ?>
+						<option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $slug, $range_slug ); ?>><?php echo esc_html( $label ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+			<?php submit_button( __( 'Update', 'mcp-ai-wpoos' ), 'secondary', 'submit', false ); ?>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Render the per-privacy-tier row counts from the persistent store.
+	 *
+	 * @param WP_MCP_AI_Metric_Event_Store $store Event store.
+	 * @return void
+	 */
+	private function render_privacy_tier_counts( $store ) {
+		$counts = $store->count_by_privacy();
+		$total  = 0;
+		foreach ( $counts as $c ) {
+			$total += (int) $c;
+		}
+		?>
+		<p class="wp-mcp-ai-persisted-counts">
+			<?php
+			printf(
+				/* translators: %s is total number of rows in the event store. */
+				esc_html__( '%s rows persisted across privacy tiers:', 'mcp-ai-wpoos' ),
+				'<strong>' . esc_html( number_format_i18n( $total ) ) . '</strong>'
+			);
+			?>
+			<?php foreach ( $counts as $tier => $count ) : ?>
+				<span class="wp-mcp-ai-persisted-tier" style="margin-left:1em;">
+					<code><?php echo esc_html( (string) $tier ); ?></code>:
+					<strong><?php echo esc_html( number_format_i18n( (int) $count ) ); ?></strong>
+				</span>
+			<?php endforeach; ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render an inline SVG sparkline bucketed across the requested range.
+	 *
+	 * Buckets are fixed at `self::SPARKLINE_BUCKETS`. Each bucket value
+	 * is the mean of samples that fell inside it — `0` for empty buckets
+	 * so the line reads as "quiet" rather than interpolated. The SVG is
+	 * rendered server-side with no inline `<script>` so it is safe
+	 * against CSP policies that forbid inline JS.
+	 *
+	 * @param array<int,array<string,mixed>> $events    Rows from `query_by_metric()`.
+	 * @param string                         $metric_id Metric id for the heading/label.
+	 * @param int                            $since     UTC timestamp lower bound.
+	 * @param int                            $until     UTC timestamp upper bound.
+	 * @return void
+	 */
+	private function render_sparkline( array $events, $metric_id, $since, $until ) {
+		if ( empty( $events ) ) {
+			?>
+			<p><em><?php esc_html_e( 'No persisted samples for this metric in the selected range.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php
+			return;
+		}
+
+		$buckets = self::bucket_events( $events, (int) $since, (int) $until, self::SPARKLINE_BUCKETS );
+		$means   = $buckets['means'];
+		$counts  = $buckets['counts'];
+		$max     = $buckets['max'];
+		$min     = $buckets['min'];
+
+		$sample_count = 0;
+		foreach ( $counts as $c ) {
+			$sample_count += $c;
+		}
+
+		// SVG geometry.
+		$width   = 520;
+		$height  = 80;
+		$pad_x   = 4;
+		$pad_y   = 6;
+		$inner_w = $width - ( 2 * $pad_x );
+		$inner_h = $height - ( 2 * $pad_y );
+		$range   = $max - $min;
+		if ( $range <= 0 ) {
+			$range = 1.0; // Flat-line guard.
+		}
+
+		$points = array();
+		$count  = count( $means );
+		for ( $i = 0; $i < $count; $i++ ) {
+			$x        = $pad_x + ( $count > 1 ? ( $i * $inner_w / ( $count - 1 ) ) : ( $inner_w / 2 ) );
+			$y        = $pad_y + $inner_h - ( ( $means[ $i ] - $min ) / $range * $inner_h );
+			$points[] = sprintf( '%0.2f,%0.2f', $x, $y );
+		}
+		$polyline = implode( ' ', $points );
+
+		?>
+		<div class="wp-mcp-ai-sparkline">
+			<p class="description">
+				<?php
+				printf(
+					/* translators: 1: metric id; 2: sample count; 3: min value; 4: max value. */
+					esc_html__( '%1$s — %2$s samples (min %3$s, max %4$s).', 'mcp-ai-wpoos' ),
+					'<code>' . esc_html( $metric_id ) . '</code>',
+					'<strong>' . esc_html( number_format_i18n( $sample_count ) ) . '</strong>',
+					'<strong>' . esc_html( self::format_number( $min ) ) . '</strong>',
+					'<strong>' . esc_html( self::format_number( $max ) ) . '</strong>'
+				);
+				?>
+			</p>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 <?php echo esc_attr( (string) $width ); ?> <?php echo esc_attr( (string) $height ); ?>"
+				width="<?php echo esc_attr( (string) $width ); ?>"
+				height="<?php echo esc_attr( (string) $height ); ?>"
+				role="img"
+				aria-label="<?php echo esc_attr( sprintf( /* translators: %s metric id */ __( 'Sparkline for %s', 'mcp-ai-wpoos' ), $metric_id ) ); ?>"
+				style="border:1px solid #c3c4c7;background:#fff;"
+			>
+				<polyline fill="none" stroke="#2271b1" stroke-width="1.5" points="<?php echo esc_attr( $polyline ); ?>" />
+			</svg>
+			<p class="description" style="display:flex;justify-content:space-between;margin:0;font-variant-numeric:tabular-nums;">
+				<span><?php echo esc_html( gmdate( 'Y-m-d H:i', (int) $since ) . ' UTC' ); ?></span>
+				<span><?php echo esc_html( gmdate( 'Y-m-d H:i', (int) $until ) . ' UTC' ); ?></span>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Bucket a set of rows into `$bucket_count` equal-width time buckets.
+	 *
+	 * Each bucket's reported value is the arithmetic mean of the sample
+	 * values that fell inside it; empty buckets report `0.0` so the line
+	 * reads as flat (rather than interpolated) across quiet stretches.
+	 * Returns means, counts, and observed {min,max} across non-empty
+	 * buckets for the sparkline scale.
+	 *
+	 * Public-static so tests can exercise it without instantiating the
+	 * dashboard admin class.
+	 *
+	 * @param array<int,array<string,mixed>> $events       Rows returned by `query_by_metric()`.
+	 * @param int                            $since        UTC lower bound.
+	 * @param int                            $until        UTC upper bound.
+	 * @param int                            $bucket_count Number of buckets.
+	 * @return array{means: array<int,float>, counts: array<int,int>, min: float, max: float}
+	 */
+	public static function bucket_events( array $events, $since, $until, $bucket_count ) {
+		$bucket_count = max( 1, (int) $bucket_count );
+		$until        = max( (int) $until, (int) $since + 1 );
+		$since        = (int) $since;
+		$span         = max( 1, $until - $since );
+
+		$sums   = array_fill( 0, $bucket_count, 0.0 );
+		$counts = array_fill( 0, $bucket_count, 0 );
+
+		foreach ( $events as $event ) {
+			$ts = 0;
+			if ( isset( $event['recorded_at'] ) ) {
+				if ( is_numeric( $event['recorded_at'] ) ) {
+					$ts = (int) $event['recorded_at'];
+				} else {
+					$ts = (int) strtotime( $event['recorded_at'] . ' UTC' );
+				}
+			}
+			if ( $ts < $since || $ts > $until ) {
+				continue;
+			}
+			$value = isset( $event['metric_value'] ) ? (float) $event['metric_value'] : 0.0;
+			$idx   = (int) floor( ( ( $ts - $since ) / $span ) * $bucket_count );
+			if ( $idx >= $bucket_count ) {
+				$idx = $bucket_count - 1;
+			}
+			if ( $idx < 0 ) {
+				$idx = 0;
+			}
+			$sums[ $idx ]   += $value;
+			$counts[ $idx ] += 1;
+		}
+
+		$means = array();
+		$min   = null;
+		$max   = null;
+		for ( $i = 0; $i < $bucket_count; $i++ ) {
+			$mean    = $counts[ $i ] > 0 ? ( $sums[ $i ] / $counts[ $i ] ) : 0.0;
+			$means[] = $mean;
+			if ( $counts[ $i ] > 0 ) {
+				if ( null === $min || $mean < $min ) {
+					$min = $mean;
+				}
+				if ( null === $max || $mean > $max ) {
+					$max = $mean;
+				}
+			}
+		}
+		// When every bucket was empty, min/max collapse to 0.
+		$min = null === $min ? 0.0 : (float) $min;
+		$max = null === $max ? 0.0 : (float) $max;
+		// Force a visual gap if min == max on a non-empty series.
+		if ( $max === $min ) {
+			$max = $min + 1.0;
+		}
+		return array(
+			'means'  => $means,
+			'counts' => $counts,
+			'min'    => $min,
+			'max'    => $max,
+		);
+	}
+
+	/**
+	 * Human-readable labels for the time-range select options.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function time_range_labels() {
+		return array(
+			'1h'  => __( 'Last hour', 'mcp-ai-wpoos' ),
+			'24h' => __( 'Last 24 hours', 'mcp-ai-wpoos' ),
+			'7d'  => __( 'Last 7 days', 'mcp-ai-wpoos' ),
+			'30d' => __( 'Last 30 days', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Format a numeric value for display — small values as floats with
+	 * up to 4 decimals, larger values as integers with thousands separators.
+	 *
+	 * @param float|int $value Value to format.
+	 * @return string
+	 */
+	private static function format_number( $value ) {
+		$value = (float) $value;
+		if ( abs( $value ) >= 1000 ) {
+			return number_format_i18n( $value, 0 );
+		}
+		if ( abs( $value ) >= 1 ) {
+			return number_format_i18n( $value, 2 );
+		}
+		return number_format_i18n( $value, 4 );
 	}
 }
