@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-measurement-infrastructure',
         'version' => 'dev-copilot/enhance-measurement-infrastructure',
-        'reference' => '4966574091b5a347c98b133f4e48776f77f133cc',
+        'reference' => '284031dc72f3fccb1a4c29f11b3367421309b62c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-measurement-infrastructure',
             'version' => 'dev-copilot/enhance-measurement-infrastructure',
-            'reference' => '4966574091b5a347c98b133f4e48776f77f133cc',
+            'reference' => '284031dc72f3fccb1a4c29f11b3367421309b62c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

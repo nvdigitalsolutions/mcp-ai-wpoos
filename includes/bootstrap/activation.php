@@ -465,6 +465,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 			$wpdb->prefix . 'mcp_ai_slash_command_audit',
 			$wpdb->prefix . 'mcp_ai_job_queue',
 			$wpdb->prefix . 'mcp_ai_hourly_token_usage',
+			$wpdb->prefix . 'mcp_ai_metric_events',
 		);
 
 		foreach ( $tables as $table ) {

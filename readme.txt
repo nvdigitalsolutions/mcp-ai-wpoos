@@ -275,6 +275,34 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.2.0 - April 25, 2026 =
+
+**Measurement Subsystem GA — Stock Metrics, Eval Suites, Regression Alerting**
+
+*Stock Metrics & Persistence*
+
+* Tool-execution, chat-loop, agentic-loop, and SSE/stream metrics emitted through a single `wp_mcp_ai_register_metrics` registry — every signal carries a privacy tier, a direction (higher_is_better / lower_is_better / neutral), and a counter metric so dashboards cannot Goodhart a single dimension
+* Persistent metric event store (`{prefix}mcp_ai_metric_events`) with `wp_mcp_ai_metric_retention_days` filter (default 30 days) and table dropped on uninstall when `Delete data on uninstall` is enabled
+* Dashboard time-range selector and persisted-metric panel under **Tools → Measurement**
+
+*Eval Harness*
+
+* Suites + cases registered via `wp_mcp_ai_register_eval_suites`; runner enforces verifier-independence against the suite's `generator_context` so a judge cannot share provenance with the candidate
+* Pro rubric presets (`prompt_adherence`, `json_schema`, `citation_presence`) and counterfactual runner shipped — `WP_MCP_AI_Eval_Runner::run_counterfactual()` flags measurement invalidity when the verifier fails to prefer the candidate over a degraded variant
+
+*CLI & Regression Alerting*
+
+* `wp mcp-ai measurement run <suite>` — runs a registered suite using a generator callable resolved through the `wp_mcp_ai_cli_measurement_generator` filter; persists the run summary and emits `eval.suite.pass_rate`
+* `wp mcp-ai measurement alert-check <suite> [--window=N] [--webhook=<url>]` — exits 2 on regression and emits `eval.suite.regression.count` per offending metric; webhook failures never mask the exit code so CI cannot silently mark a regression as green
+* `wp mcp-ai measurement list-runs <suite>` — formatted `table|json|yaml|csv` output of persisted run history
+* New stock metrics: `eval.suite.pass_rate` (gauge) and `eval.suite.regression.count` (counter), each tagged with the suite slug and the offending metric
+
+*GA Polish*
+
+* Contextual help tabs on the Measurement dashboard (overview / metrics / privacy / cli) — extensible via the `wp_mcp_ai_measurement_help_tabs` filter
+* Reference snippets shipped under `assets/examples/measurement/`: a custom rule verifier, an eval-suite registration, and a CLI generator callable
+* Documentation: `docs/measurement/README.md`, `docs/measurement/rollout-plan.md`, and `docs/measurement/goodhart-checklist.md` updated through PR 11
+
 = 1.1.8 - April 15, 2026 =
 
 **Erlang C Queuing Theory Tools, Full Tool-Reference Audit**
@@ -672,6 +700,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Measurement subsystem ships GA: stock metrics, eval suites, regression alerting, persistent metric store, and `wp mcp-ai measurement` CLI. New `mcp_ai_metric_events` table is dropped on uninstall when `Delete data on uninstall` is enabled. No breaking changes; safe upgrade.
 
 = 1.1.0 =
 Major update with DeepSeek V4 multi-agent orchestration, 4 new Social Media Analytics tools, memory-based toolkit tracking, and 7 critical bug fixes. Recommended for all users.

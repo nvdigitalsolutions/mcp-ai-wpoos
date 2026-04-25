@@ -329,18 +329,41 @@ Scope:
 - 16 new PHPUnit tests (9 detector + 7 run-store). All measurement
   tests remain green.
 
-### ⬜ PR 12 — GA polish
+### ✅ PR 12 — GA polish
 
 **Goal:** everything a site needs to operate the subsystem
 confidently in production.
 
 Scope:
 
-- Uninstall hygiene (drop tables under `wp_mcp_ai_uninstall_delete_data`)
-- Admin help-tabs on dashboard screens
-- Example rubrics + example custom verifier under
-  `assets/examples/measurement/`
-- Release notes + upgrade notice template in the main `readme.txt`
+- Uninstall hygiene: the PR 9 `{prefix}mcp_ai_metric_events` table is
+  added to the drop list in `wp_mcp_ai_uninstall_single_site()`. The
+  existing `wp_mcp_ai_%` option-wildcard already covers run-store
+  options (`wp_mcp_ai_eval_runs__<slug>`) and the schema-version
+  option, so no extra option cleanup is required.
+- Admin help-tabs on the **Tools → Measurement** dashboard screen:
+  four shipped tabs (overview / metrics / privacy / CLI) plus a help
+  sidebar linking to docs. Tabs are filterable as a single array via
+  `wp_mcp_ai_measurement_help_tabs` so site authors can inject runbook
+  links without subclassing.
+- Reference snippets under `assets/examples/measurement/`:
+  - `example-custom-verifier.php` — minimum-viable subclass of
+    `WP_MCP_AI_Verifier_Base` with abstain-on-empty-input and a
+    declared `independence_profile`.
+  - `example-eval-suite.php` — registering a suite with two cases
+    that reference the verifier.
+  - `example-cli-generator.php` — wiring a generator callable for
+    `wp mcp-ai measurement run` via the
+    `wp_mcp_ai_cli_measurement_generator` filter.
+- `readme.txt` — `1.2.0` Changelog entry covering PR 6–12 highlights
+  and a new Upgrade Notice block calling out the new uninstall
+  table-drop.
+- PHPUnit coverage:
+  - `Test_WP_MCP_AI_Measurement_Help_Tabs` — default-tabs landing,
+    filter injection, malformed-tab skipping, and a no-screen safety
+    case.
+  - `Test_WP_MCP_AI_Measurement_Uninstall_List` — static assertion
+    that `activation.php` enumerates the `mcp_ai_metric_events` table.
 
 ## Triggers for re-planning
 

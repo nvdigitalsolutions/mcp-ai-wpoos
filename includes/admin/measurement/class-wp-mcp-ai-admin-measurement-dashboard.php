@@ -96,7 +96,7 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			$parent = 'tools.php';
 		}
 
-		add_submenu_page(
+		$hook = add_submenu_page(
 			$parent,
 			__( 'Measurement', 'mcp-ai-wpoos' ),
 			__( 'Measurement', 'mcp-ai-wpoos' ),
@@ -104,6 +104,99 @@ class WP_MCP_AI_Admin_Measurement_Dashboard {
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
 		);
+
+		// Register contextual help tabs only when the page actually loads —
+		// `add_help_tab()` requires the current screen to be available, which
+		// is only true after the `load-{$hook}` action fires.
+		if ( $hook ) {
+			add_action( 'load-' . $hook, array( $this, 'register_help_tabs' ) );
+		}
+	}
+
+	/**
+	 * Register WordPress contextual help tabs for the dashboard screen.
+	 *
+	 * Four tabs ship: overview / metrics / privacy / CLI. Tabs are
+	 * filterable as a single array via
+	 * `wp_mcp_ai_measurement_help_tabs` so site authors can add their
+	 * own (e.g. internal runbook links) without subclassing.
+	 *
+	 * @return void
+	 */
+	public function register_help_tabs() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || ! method_exists( $screen, 'add_help_tab' ) ) {
+			return;
+		}
+
+		$tabs = array(
+			array(
+				'id'      => 'wp_mcp_ai_measurement_overview',
+				'title'   => __( 'Overview', 'mcp-ai-wpoos' ),
+				'content' =>
+					'<p>' . esc_html__( 'The Measurement dashboard surfaces signals from the NV oOS measurement subsystem: stock metrics, eval-suite runs, budget envelopes, and persisted metric events.', 'mcp-ai-wpoos' ) . '</p>' .
+					'<p>' . esc_html__( 'Every metric is registered through the wp_mcp_ai_register_metrics hook so third-party code can extend the catalogue without forking the plugin.', 'mcp-ai-wpoos' ) . '</p>',
+			),
+			array(
+				'id'      => 'wp_mcp_ai_measurement_metrics',
+				'title'   => __( 'Metrics', 'mcp-ai-wpoos' ),
+				'content' =>
+					'<p>' . esc_html__( 'Stock metric IDs follow the OpenTelemetry-compatible naming convention "subsystem.entity.signal". Each metric declares a direction (higher_is_better / lower_is_better / neutral) and a counter_metric so a single dimension cannot be optimised in isolation.', 'mcp-ai-wpoos' ) . '</p>' .
+					'<ul>' .
+					'<li><code>tool.execution.count</code> · <code>tool.execution.success.count</code> · <code>tool.execution.error.count</code></li>' .
+					'<li><code>chat.turn.tokens.total</code> · <code>chat.turn.cost_usd</code></li>' .
+					'<li><code>stream.duration_ms</code> · <code>stream.cancelled.count</code></li>' .
+					'<li><code>eval.suite.pass_rate</code> · <code>eval.suite.regression.count</code></li>' .
+					'</ul>',
+			),
+			array(
+				'id'      => 'wp_mcp_ai_measurement_privacy',
+				'title'   => __( 'Privacy', 'mcp-ai-wpoos' ),
+				'content' =>
+					'<p>' . esc_html__( 'Each metric is tagged with a privacy tier: public, internal, or sensitive. The persisted-metric store and OTel exporter both honour the tier — sensitive metrics never leave the site without an explicit allow-list.', 'mcp-ai-wpoos' ) . '</p>' .
+					'<p>' . esc_html__( 'Metric retention defaults to 30 days. Adjust via the wp_mcp_ai_metric_retention_days filter, or delete on uninstall by enabling "Delete data on uninstall" under Settings.', 'mcp-ai-wpoos' ) . '</p>',
+			),
+			array(
+				'id'      => 'wp_mcp_ai_measurement_cli',
+				'title'   => __( 'CLI', 'mcp-ai-wpoos' ),
+				'content' =>
+					'<p>' . esc_html__( 'Eval suites can be run from CI without the web runtime:', 'mcp-ai-wpoos' ) . '</p>' .
+					'<pre><code>wp mcp-ai measurement run my-suite' . "\n" .
+					'wp mcp-ai measurement alert-check my-suite --window=10' . "\n" .
+					'wp mcp-ai measurement list-runs my-suite</code></pre>' .
+					'<p>' . esc_html__( 'alert-check exits 2 on regression. Pair with --webhook=<url> for chat-room or PagerDuty alerts.', 'mcp-ai-wpoos' ) . '</p>',
+			),
+		);
+
+		/**
+		 * Filter the help tabs registered on the Measurement dashboard.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array<int,array{id:string,title:string,content:string}> $tabs Help-tab definitions.
+		 */
+		$tabs = apply_filters( 'wp_mcp_ai_measurement_help_tabs', $tabs );
+		if ( ! is_array( $tabs ) ) {
+			return;
+		}
+
+		foreach ( $tabs as $tab ) {
+			if ( empty( $tab['id'] ) || empty( $tab['title'] ) ) {
+				continue;
+			}
+			$screen->add_help_tab(
+				array(
+					'id'      => sanitize_key( (string) $tab['id'] ),
+					'title'   => (string) $tab['title'],
+					'content' => isset( $tab['content'] ) ? (string) $tab['content'] : '',
+				)
+			);
+		}
+
+		$sidebar  = '<p><strong>' . esc_html__( 'For more information', 'mcp-ai-wpoos' ) . '</strong></p>';
+		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/measurement/README.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Measurement docs', 'mcp-ai-wpoos' ) . '</a></p>';
+		$sidebar .= '<p><a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/measurement/goodhart-checklist.md" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Goodhart checklist', 'mcp-ai-wpoos' ) . '</a></p>';
+		$screen->set_help_sidebar( $sidebar );
 	}
 
 	/**
