@@ -393,6 +393,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'context_window' => 200000,
 				),
 				array(
+					'id'             => 'claude-opus-4-7',
+					'name'           => __( 'Claude Opus 4.7 (flagship)', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
 					'id'             => 'claude-opus-4-6',
 					'name'           => __( 'Claude Opus 4.6 (most capable)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,

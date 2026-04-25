@@ -5248,6 +5248,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		protected function format_model_label( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				// GPT-5.5 series (flagship - Apr 2026).
+				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
+				// GPT-5.4 series (flagship - Mar/Apr 2026).
+				'gpt-5.4'                                 => __( 'GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-pro'                             => __( 'GPT-5.4 Pro (Enterprise)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-mini'                            => __( 'GPT-5.4 Mini (Budget)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-nano'                            => __( 'GPT-5.4 Nano (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-codex'                           => __( 'GPT-5.4 Codex (Specialized Coding)', 'mcp-ai-wpoos' ),
+				// GPT-5.3 series (flagship - Feb 2026).
+				'gpt-5.3-codex'                           => __( 'GPT-5.3 Codex (Agentic Coding)', 'mcp-ai-wpoos' ),
+				'gpt-5.3-codex-spark'                     => __( 'GPT-5.3 Codex Spark (Ultra-Fast)', 'mcp-ai-wpoos' ),
 				// Future flagship models.
 				'gpt-5'                                   => __( 'GPT-5', 'mcp-ai-wpoos' ),
 				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
@@ -5376,6 +5387,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function format_model_label_static( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				'gpt-5.5'                                 => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
+				'gpt-5.4'                                 => __( 'GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-pro'                             => __( 'GPT-5.4 Pro (Enterprise)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-mini'                            => __( 'GPT-5.4 Mini (Budget)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-nano'                            => __( 'GPT-5.4 Nano (Lowest Cost)', 'mcp-ai-wpoos' ),
+				'gpt-5.4-codex'                           => __( 'GPT-5.4 Codex (Specialized Coding)', 'mcp-ai-wpoos' ),
+				'gpt-5.3-codex'                           => __( 'GPT-5.3 Codex (Agentic Coding)', 'mcp-ai-wpoos' ),
+				'gpt-5.3-codex-spark'                     => __( 'GPT-5.3 Codex Spark (Ultra-Fast)', 'mcp-ai-wpoos' ),
 				'gpt-5'                                   => __( 'GPT-5', 'mcp-ai-wpoos' ),
 				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
 				'gpt-5-nano'                              => __( 'GPT-5 Nano', 'mcp-ai-wpoos' ),
@@ -5435,6 +5454,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-5.5 series (flagship - Apr 2026) - 1M+ context window.
+					'gpt-5.5'                            => __( 'GPT-5.5 (Flagship - Apr 2026)', 'mcp-ai-wpoos' ),
+					// GPT-5.4 series (Mar/Apr 2026) - 1M+ context window.
+					'gpt-5.4'                            => __( 'GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
+					'gpt-5.4-pro'                        => __( 'GPT-5.4 Pro (Enterprise)', 'mcp-ai-wpoos' ),
+					'gpt-5.4-mini'                       => __( 'GPT-5.4 Mini (Budget)', 'mcp-ai-wpoos' ),
+					'gpt-5.4-nano'                       => __( 'GPT-5.4 Nano (Lowest Cost)', 'mcp-ai-wpoos' ),
+					'gpt-5.4-codex'                      => __( 'GPT-5.4 Codex (Specialized Coding)', 'mcp-ai-wpoos' ),
+					// GPT-5.3 series (Feb 2026) - 922K context window.
+					'gpt-5.3-codex'                      => __( 'GPT-5.3 Codex (Agentic Coding)', 'mcp-ai-wpoos' ),
+					'gpt-5.3-codex-spark'                => __( 'GPT-5.3 Codex Spark (Ultra-Fast)', 'mcp-ai-wpoos' ),
 					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
 					'gpt-5.2'                            => __( 'GPT-5.2 (Flagship)', 'mcp-ai-wpoos' ),
 					'gpt-5.2-2025-12-11'                 => __( 'GPT-5.2 (Dec 2025)', 'mcp-ai-wpoos' ),
