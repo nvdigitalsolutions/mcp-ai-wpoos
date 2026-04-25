@@ -141,9 +141,19 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// GPT-5.4 series (flagship - Mar 2026) - 1M+ context window, native computer use.
-		$models['gpt-5.4']     = 'GPT-5.4 (Flagship - 1M Context)';
-		$models['gpt-5.4-pro'] = 'GPT-5.4 Pro (Enterprise)';
+		// GPT-5.5 series (flagship - Apr 2026) - 1M+ context window, highest reasoning quality.
+		$models['gpt-5.5'] = 'GPT-5.5 (Flagship - Apr 2026)';
+
+		// GPT-5.4 series (flagship - Mar/Apr 2026) - 1M+ context window, native computer use.
+		$models['gpt-5.4']      = 'GPT-5.4 (1M Context)';
+		$models['gpt-5.4-pro']  = 'GPT-5.4 Pro (Enterprise)';
+		$models['gpt-5.4-mini'] = 'GPT-5.4 Mini (Budget)';
+		$models['gpt-5.4-nano'] = 'GPT-5.4 Nano (Lowest Cost)';
+
+		// GPT-5.4 Codex (coding-optimized, text-only).
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$models['gpt-5.4-codex'] = 'GPT-5.4 Codex (Specialized Coding)';
+		}
 
 		// GPT-5.3 series (flagship - Feb 2026) - 922K context window, advanced agentic coding.
 		$models['gpt-5.3-codex']       = 'GPT-5.3 Codex (Agentic Coding - Flagship)';
@@ -248,11 +258,15 @@ class WP_MCP_AI_Model_Service {
 		// Claude Mythos (Capybara tier) - Most capable (Apr 2026).
 		$models['claude-mythos-preview'] = 'Claude Mythos Preview (Apr 2026) - Most Capable';
 
+		// Claude 4.7 series (multimodal - vision capable) - Latest flagship (Apr 2026).
+		$models['claude-opus-4-7'] = 'Claude Opus 4.7 (Apr 2026) - Flagship';
+
 		// Claude 4.6 series (multimodal - vision capable) - Latest (Feb 2026).
 		$models['claude-opus-4-6']   = 'Claude Opus 4.6 (Feb 2026) - Flagship';
 		$models['claude-sonnet-4-6'] = 'Claude Sonnet 4.6 (Feb 2026) - Recommended';
 
 		// Claude 4.5 series (multimodal - vision capable) - Recent (2025).
+		$models['claude-haiku-4-5']           = 'Claude Haiku 4.5 - Fastest';
 		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
 		$models['claude-haiku-4-5-20251001']  = 'Claude Haiku 4.5 (Oct 2025) - Fastest';
 		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025)';
