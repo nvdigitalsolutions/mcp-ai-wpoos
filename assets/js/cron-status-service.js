@@ -100,17 +100,27 @@
 			if (assistantId) {
 				url += '&assistant_id=' + encodeURIComponent(assistantId);
 			}
-			
+
 			const headers = {
 				'Content-Type': 'application/json',
 			};
 
-			// Add REST authentication header.
+			// Add REST authentication.
 			// Guest tokens take priority for public chat surfaces.
+			//
+			// We send credentials both as a header AND as a query parameter so the
+			// request still authenticates when a CDN, reverse proxy, or service worker
+			// in front of the site strips custom headers (e.g. X-WP-Nonce or
+			// X-WP-MCP-AI-Guest) from cacheable GETs. The server-side permission
+			// check (permissions_check_cron_status) accepts either form. This mirrors
+			// the SSE URL pattern in chat.js which has always used query params
+			// because EventSource cannot send custom headers.
 			if (guestToken) {
 				headers['X-WP-MCP-AI-Guest'] = guestToken;
+				url += '&guest_token=' + encodeURIComponent(guestToken);
 			} else if (nonce) {
 				headers['X-WP-Nonce'] = nonce;
+				url += '&_wpnonce=' + encodeURIComponent(nonce);
 			}
 
 			return fetch(url, {
