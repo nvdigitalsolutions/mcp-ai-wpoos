@@ -28,22 +28,22 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	 * Test cost calculation for Gemini.
 	 */
 	public function test_calculate_cost_gemini() {
-		// gemini-1.5-flash: input $0.075/1M, output $0.30/1M.
-		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash', 2000000, 1000000 );
+		// gemini-2.5-flash: input $0.25/1M, output $1.50/1M (April 2026 pricing).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-flash', 2000000, 1000000 );
 
-		// Expected: (2M / 1M) * 0.075 + (1M / 1M) * 0.30 = 0.15 + 0.30 = $0.45.
-		$this->assertEquals( 0.45, $cost, 'Gemini cost calculation incorrect' );
+		// Expected: (2M / 1M) * 0.25 + (1M / 1M) * 1.50 = 0.50 + 1.50 = $2.00.
+		$this->assertEquals( 2.00, $cost, 'Gemini cost calculation incorrect' );
 	}
 
 	/**
 	 * Test cost calculation for Anthropic.
 	 */
 	public function test_calculate_cost_anthropic() {
-		// claude-3-haiku: input $0.25/1M, output $1.25/1M.
-		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-3-haiku', 500000, 500000 );
+		// claude-haiku-4-5: input $1.00/1M, output $5.00/1M (April 2026 lineup).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-haiku-4-5', 500000, 500000 );
 
-		// Expected: (500K / 1M) * 0.25 + (500K / 1M) * 1.25 = 0.125 + 0.625 = $0.75.
-		$this->assertEquals( 0.75, $cost, 'Anthropic cost calculation incorrect' );
+		// Expected: (500K / 1M) * 1.00 + (500K / 1M) * 5.00 = 0.50 + 2.50 = $3.00.
+		$this->assertEquals( 3.00, $cost, 'Anthropic cost calculation incorrect' );
 	}
 
 	/**
@@ -209,7 +209,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$this->assertIsArray( $models, 'Models should be an array' );
 		$this->assertContains( 'gpt-4o', $models, 'Should include gpt-4o' );
 		$this->assertContains( 'gpt-4o-mini', $models, 'Should include gpt-4o-mini' );
-		$this->assertContains( 'gpt-3.5-turbo', $models, 'Should include gpt-3.5-turbo' );
+		$this->assertContains( 'gpt-4.1', $models, 'Should include gpt-4.1 (April 2026 default)' );
 	}
 
 	/**
@@ -429,10 +429,10 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	 * Test partial model name matching.
 	 */
 	public function test_partial_model_matching() {
-		// Test that gpt-4-turbo-2024-04-09 matches gpt-4-turbo pricing.
-		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4-turbo-2024-04-09', 1000000, 1000000 );
+		// Test that gpt-4.1-2025-04-14 matches gpt-4.1 pricing.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-2025-04-14', 1000000, 1000000 );
 
-		// Should use gpt-4-turbo pricing: input $10/1M, output $30/1M = $40 total.
+		// Should use gpt-4.1 pricing: input $2/1M, output $8/1M = $10 total.
 		$this->assertGreaterThan( 0, $cost, 'Should find pricing for versioned model' );
 	}
 
@@ -443,9 +443,9 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		// Test that gpt-5-2025-08-07 matches gpt-5 pricing (not gpt-5-mini or gpt-5-nano).
 		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-2025-08-07', 1000000, 500000 );
 
-		// Should use gpt-5 pricing: input $10/1M, output $30/1M.
-		// Expected: (1M / 1M) * 10 + (500K / 1M) * 30 = 10 + 15 = $25.00.
-		$this->assertEquals( 25.00, $cost, 'gpt-5-2025-08-07 should match gpt-5 pricing' );
+		// April 2026 gpt-5 pricing: input $1.25/1M, output $10/1M.
+		// Expected: (1M / 1M) * 1.25 + (500K / 1M) * 10 = 1.25 + 5.00 = $6.25.
+		$this->assertEquals( 6.25, $cost, 'gpt-5-2025-08-07 should match gpt-5 pricing' );
 	}
 
 	/**
@@ -456,11 +456,11 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$cost_gpt5      = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5', 1000000, 1000000 );
 		$cost_gpt5_mini = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-mini', 1000000, 1000000 );
 
-		// gpt-5: input $10/1M, output $30/1M = $40 total.
-		$this->assertEquals( 40.00, $cost_gpt5, 'gpt-5 cost calculation incorrect' );
+		// April 2026 gpt-5 pricing: input $1.25/1M, output $10/1M = $11.25 total.
+		$this->assertEquals( 11.25, $cost_gpt5, 'gpt-5 cost calculation incorrect' );
 
-		// gpt-5-mini: input $2/1M, output $6/1M = $8 total.
-		$this->assertEquals( 8.00, $cost_gpt5_mini, 'gpt-5-mini cost calculation incorrect' );
+		// April 2026 gpt-5-mini pricing: input $0.25/1M, output $2/1M = $2.25 total.
+		$this->assertEquals( 2.25, $cost_gpt5_mini, 'gpt-5-mini cost calculation incorrect' );
 
 		// They should be different.
 		$this->assertNotEquals( $cost_gpt5, $cost_gpt5_mini, 'gpt-5 and gpt-5-mini should have different costs' );
@@ -473,8 +473,8 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		// Test that gpt-5-mini-2025-08-07 matches gpt-5-mini pricing (not gpt-5).
 		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-mini-2025-08-07', 1000000, 1000000 );
 
-		// Should use gpt-5-mini pricing: input $2/1M, output $6/1M = $8 total.
-		$this->assertEquals( 8.00, $cost, 'gpt-5-mini-2025-08-07 should match gpt-5-mini pricing' );
+		// April 2026 gpt-5-mini pricing: input $0.25/1M, output $2/1M = $2.25 total.
+		$this->assertEquals( 2.25, $cost, 'gpt-5-mini-2025-08-07 should match gpt-5-mini pricing' );
 	}
 
 	/**
@@ -513,9 +513,9 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$this->assertNotEquals( $cost_gpt4o, $cost_gpt4o_mini, 'gpt-4o-mini should NOT match gpt-4o pricing' );
 
 		// Test Gemini variants.
-		$cost_gemini_flash_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash-2024-05', 1000000, 1000000 );
-		$cost_gemini_flash       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash', 1000000, 1000000 );
-		$this->assertEquals( $cost_gemini_flash, $cost_gemini_flash_dated, 'gemini-1.5-flash-2024-05 should match gemini-1.5-flash' );
+		$cost_gemini_25_pro_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-pro-2024-12', 1000000, 1000000 );
+		$cost_gemini_25_pro       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-pro', 1000000, 1000000 );
+		$this->assertEquals( $cost_gemini_25_pro, $cost_gemini_25_pro_dated, 'gemini-2.5-pro-2024-12 should match gemini-2.5-pro' );
 
 		// Test Gemini 2.5 flash variants.
 		$cost_gemini_25_flash_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-flash-2024-12', 1000000, 1000000 );

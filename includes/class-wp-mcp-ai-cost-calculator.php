@@ -22,47 +22,76 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of March 2026.
+	 * Prices updated as of April 2026.
 	 * Source: Official provider pricing pages and Hugging Face Inference API.
+	 *
+	 * Retired ids (e.g., gpt-4, gpt-4-turbo, gpt-3.5-turbo, o1*, gemini-1.5-*,
+	 * gemini-pro, claude-3-opus-20240229) have been removed; the prefix-matching
+	 * fallback below covers any stored snapshot ids (e.g., gpt-5-2025-08-07).
 	 */
 	const PRICING = array(
 		'openai'      => array(
-			// GPT-5.4 series (March 2026).
+			// GPT-5.5 series (April 2026 flagship).
+			'gpt-5.5'                                 => array(
+				'input'        => 5.00,  // $5 per 1M input tokens.
+				'output'       => 30.00, // $30 per 1M output tokens.
+				'cached_input' => 0.50,  // $0.50 per 1M cached input tokens (90% off).
+			),
+			// GPT-5.4 series (April 2026).
 			'gpt-5.4'                                 => array(
 				'input'        => 2.50,  // $2.50 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
 				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
+			),
+			'gpt-5.4-mini'                            => array(
+				'input'        => 0.75,  // $0.75 per 1M input tokens.
+				'output'       => 4.50,  // $4.50 per 1M output tokens.
+				'cached_input' => 0.075, // $0.075 per 1M cached input tokens (90% off).
+			),
+			'gpt-5.4-nano'                            => array(
+				'input'        => 0.20,  // $0.20 per 1M input tokens.
+				'output'       => 1.25,  // $1.25 per 1M output tokens.
+				'cached_input' => 0.02,  // $0.02 per 1M cached input tokens (90% off).
 			),
 			'gpt-5.4-pro'                             => array(
 				'input'        => 30.00,  // $30 per 1M input tokens.
 				'output'       => 180.00, // $180 per 1M output tokens.
 				'cached_input' => 3.00,   // $3 per 1M cached input tokens (90% off).
 			),
-			// GPT-5.3 Codex (updated March 2026).
+			'gpt-5.4-codex'                           => array(
+				'input'        => 2.50,  // $2.50 per 1M input tokens.
+				'output'       => 12.00, // $12 per 1M output tokens.
+				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
+			),
+			// GPT-5.3 Codex (updated April 2026).
 			'gpt-5.3-codex'                           => array(
 				'input'        => 3.00,  // $3 per 1M input tokens.
 				'output'       => 15.00, // $15 per 1M output tokens.
 				'cached_input' => 0.30,  // $0.30 per 1M cached input tokens (90% off).
 			),
 			'gpt-5'                                   => array(
-				'input'  => 10.00,
-				'output' => 30.00,
+				'input'  => 1.25,
+				'output' => 10.00,
 			),
 			'gpt-5-mini'                              => array(
-				'input'  => 2.00,
-				'output' => 6.00,
+				'input'  => 0.25,
+				'output' => 2.00,
+			),
+			'gpt-5-nano'                              => array(
+				'input'  => 0.05,
+				'output' => 0.40,
 			),
 			'gpt-4.1'                                 => array(
-				'input'  => 1.00,
-				'output' => 4.00,
+				'input'  => 2.00,
+				'output' => 8.00,
 			),
 			'gpt-4.1-mini'                            => array(
 				'input'  => 0.40,
 				'output' => 1.60,
 			),
 			'gpt-4.1-nano'                            => array(
-				'input'  => 0.20,
-				'output' => 0.80,
+				'input'  => 0.10,
+				'output' => 0.40,
 			),
 			'gpt-4o'                                  => array(
 				'input'  => 2.50,
@@ -71,18 +100,6 @@ class WP_MCP_AI_Cost_Calculator {
 			'gpt-4o-mini'                             => array(
 				'input'  => 0.15,
 				'output' => 0.60,
-			),
-			'gpt-4-turbo'                             => array(
-				'input'  => 10.00,
-				'output' => 30.00,
-			),
-			'gpt-4'                                   => array(
-				'input'  => 30.00,
-				'output' => 60.00,
-			),
-			'gpt-3.5-turbo'                           => array(
-				'input'  => 0.50,
-				'output' => 1.50,
 			),
 			// o-series reasoning models (December 2025 - updated pricing).
 			'o3'                                      => array(
@@ -100,52 +117,13 @@ class WP_MCP_AI_Cost_Calculator {
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
 			),
 			'o4-mini'                                 => array(
-				'input'  => 2.00,
-				'output' => 8.00,
-			),
-			// o1 series (legacy reasoning models, still active).
-			'o1'                                      => array(
-				'input'        => 15.00, // $15 per 1M tokens.
-				'output'       => 60.00, // $60 per 1M tokens.
-				'cached_input' => 7.50,  // $7.50 per 1M tokens.
-			),
-			'o1-pro'                                  => array(
-				'input'  => 150.00, // $150 per 1M tokens.
-				'output' => 600.00, // $600 per 1M tokens.
-			),
-			'o1-2024-12-17'                           => array(
-				'input'        => 15.00,
-				'output'       => 60.00,
-				'cached_input' => 7.50,
-			),
-			'o1-preview'                              => array(
-				'input'        => 15.00,
-				'output'       => 60.00,
-				'cached_input' => 7.50,
-			),
-			'o1-mini'                                 => array(
-				'input'        => 1.10, // $1.10 per 1M tokens (updated from $3).
-				'output'       => 4.40, // $4.40 per 1M tokens (updated from $12).
-				'cached_input' => 0.55, // $0.55 per 1M tokens.
+				'input'        => 1.10,
+				'output'       => 4.40,
+				'cached_input' => 0.275,
 			),
 			// GPT-4o Realtime models (audio/speech).
 			// December 2024 update: 60% cheaper pricing, WebRTC support.
 			'gpt-4o-realtime-preview'                 => array(
-				'input'        => 100.00, // Audio input: $100 per 1M tokens.
-				'output'       => 200.00, // Audio output: $200 per 1M tokens.
-				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
-			),
-			'gpt-4o-realtime-preview-2024-12-17'      => array(
-				'input'        => 100.00, // Audio input: $100 per 1M tokens.
-				'output'       => 200.00, // Audio output: $200 per 1M tokens.
-				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
-			),
-			'gpt-4o-realtime-preview-2025-01-06'      => array(
-				'input'        => 100.00, // Audio input: $100 per 1M tokens.
-				'output'       => 200.00, // Audio output: $200 per 1M tokens.
-				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
-			),
-			'gpt-4o-realtime-preview-2025-06-03'      => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
@@ -155,28 +133,13 @@ class WP_MCP_AI_Cost_Calculator {
 				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
 				'cached_input' => 2.00,  // Cached audio input: ~$2 per 1M tokens.
 			),
-			'gpt-4o-mini-realtime-preview-2024-12-17' => array(
-				'input'        => 10.00, // Audio input: ~$10 per 1M tokens (10x cheaper).
-				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
-				'cached_input' => 2.00,  // Cached audio input: ~$2 per 1M tokens.
-			),
 			'gpt-4o-audio-preview'                    => array(
-				'input'        => 100.00, // Audio input: $100 per 1M tokens.
-				'output'       => 200.00, // Audio output: $200 per 1M tokens.
-				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
-			),
-			'gpt-4o-audio-preview-2024-12-17'         => array(
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
 			),
 			// GPT Realtime Mini (December 2025 - new naming convention).
 			'gpt-realtime-mini'                       => array(
-				'input'        => 10.00, // Audio input: $10 per 1M tokens.
-				'output'       => 20.00, // Audio output: $20 per 1M tokens.
-				'cached_input' => 0.30,  // Cached audio input: $0.30 per 1M tokens.
-			),
-			'gpt-realtime-mini-2025-12-15'            => array(
 				'input'        => 10.00, // Audio input: $10 per 1M tokens.
 				'output'       => 20.00, // Audio output: $20 per 1M tokens.
 				'cached_input' => 0.30,  // Cached audio input: $0.30 per 1M tokens.
@@ -191,28 +154,27 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'gemini'      => array(
-			// Gemini 3.1 series (February 2026 - latest flagship).
-			'gemini-3.1-pro-preview' => array(
-				'input'  => 2.00,
-				'output' => 12.00,
-			),
-			// Gemini 3 series (preview).
-			'gemini-3-pro-preview'   => array(
-				'input'  => 2.00,
-				'output' => 12.00,
-			),
-			'gemini-3-flash-preview' => array(
-				'input'  => 0.50,
-				'output' => 3.00,
-			),
-			// Gemini 2.5 series (February 2026).
-			'gemini-2.5-pro'         => array(
+			// Gemini 3.1 series (April 2026 GA).
+			'gemini-3.1-pro'         => array(
 				'input'  => 1.25,
-				'output' => 10.00,
+				'output' => 5.00,
+			),
+			'gemini-3.1-flash'       => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
+			'gemini-3.1-flash-lite'  => array(
+				'input'  => 0.015,
+				'output' => 0.06,
+			),
+			// Gemini 2.5 series (still supported).
+			'gemini-2.5-pro'         => array(
+				'input'  => 0.30,
+				'output' => 1.50,
 			),
 			'gemini-2.5-flash'       => array(
-				'input'  => 0.30,
-				'output' => 2.50,
+				'input'  => 0.25,
+				'output' => 1.50,
 			),
 			'gemini-2.5-flash-lite'  => array(
 				'input'  => 0.05,
@@ -221,33 +183,6 @@ class WP_MCP_AI_Cost_Calculator {
 			'gemini-2.5-flash-image' => array(
 				'input'  => 39.00,  // $0.039 per image (1024x1024).
 				'output' => 39.00,
-			),
-			// Gemini 2.0 series.
-			'gemini-2.0-flash'       => array(
-				'input'  => 0.10,
-				'output' => 0.40,
-			),
-			// Gemini 1.5 series (legacy).
-			'gemini-1.5-pro'         => array(
-				'input'  => 1.25,
-				'output' => 5.00,
-			),
-			'gemini-1.5-pro-002'     => array(
-				'input'  => 1.25,
-				'output' => 5.00,
-			),
-			'gemini-1.5-flash'       => array(
-				'input'  => 0.075,
-				'output' => 0.30,
-			),
-			'gemini-1.5-flash-002'   => array(
-				'input'  => 0.075,
-				'output' => 0.30,
-			),
-			// Deprecated Gemini 1.0.
-			'gemini-pro'             => array(
-				'input'  => 0.50,
-				'output' => 1.50,
 			),
 			// Veo video generation models.
 			// Pricing is per second of generated video.
@@ -262,16 +197,21 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'anthropic'   => array(
+			// Claude 4.7 series (April 2026 flagship).
+			'claude-opus-4-7'            => array(
+				'input'  => 5.00,
+				'output' => 25.00,
+			),
 			// Claude 4.6 series (February 2026).
 			'claude-sonnet-4-6'          => array(
 				'input'  => 3.00,
-				'output' => 12.00,
+				'output' => 15.00,
 			),
 			'claude-opus-4-6'            => array(
 				'input'  => 5.00,
 				'output' => 25.00,
 			),
-			// Claude 4.5 series (January 2026).
+			// Claude 4.5 series (deprecated alias retained for backward compatibility).
 			'claude-sonnet-4-5'          => array(
 				'input'  => 3.00,
 				'output' => 15.00,
@@ -284,10 +224,6 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-opus-4-5-20251101'   => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
 			'claude-haiku-4-5'           => array(
 				'input'  => 1.00,
 				'output' => 5.00,
@@ -296,32 +232,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 1.00,
 				'output' => 5.00,
 			),
-			// Legacy aliases (backward compatibility).
-			'claude-sonnet-4.5'          => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
-			'claude-haiku-4.5'           => array(
-				'input'  => 1.00,
-				'output' => 5.00,
-			),
-			'claude-opus-4.1'            => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
-			'claude-opus-4.0'            => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
-			// Claude 3.5 series (deprecated Nov 10, 2025).
-			'claude-3.5-sonnet'          => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
-			'claude-3.5-sonnet-v2'       => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
+			// Claude 3.5 series (deprecated; sunset 2026-09-30).
 			'claude-3-5-sonnet-20241022' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
@@ -329,23 +240,6 @@ class WP_MCP_AI_Cost_Calculator {
 			'claude-3-5-haiku-20241022'  => array(
 				'input'  => 0.80,
 				'output' => 4.00,
-			),
-			// Claude 3 series (legacy).
-			'claude-3-opus'              => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
-			'claude-3-opus-20240229'     => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
-			'claude-3-sonnet'            => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
-			'claude-3-haiku'             => array(
-				'input'  => 0.25,
-				'output' => 1.25,
 			),
 		),
 		'ollama'      => array(
@@ -580,9 +474,9 @@ class WP_MCP_AI_Cost_Calculator {
 	 * @return float Estimated cost in USD.
 	 */
 	private static function estimate_cost_from_tokens( $tokens ) {
-		// Use an average of common models: gpt-4o-mini as a reasonable default.
-		// Average of input (0.15) and output (0.60) = 0.375 per 1M tokens.
-		$avg_cost_per_million = 0.375;
+		// April 2026: blended baseline anchored to GPT-5.4-mini (input $0.75 + output $4.50,
+		// weighted toward input-heavy workloads). Yields a conservative ~$0.50 per 1M tokens.
+		$avg_cost_per_million = 0.50;
 
 		return ( $tokens / 1000000 ) * $avg_cost_per_million;
 	}

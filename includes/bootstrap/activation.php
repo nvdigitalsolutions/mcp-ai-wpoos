@@ -238,6 +238,12 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
+		// Schedule daily model catalog discovery cron job.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' ) ) {
+			$discovery_interval = apply_filters( 'wp_mcp_ai_model_discovery_interval', 'daily' );
+			$discovery_interval = is_string( $discovery_interval ) && '' !== $discovery_interval ? $discovery_interval : 'daily';
+			wp_schedule_event( time() + HOUR_IN_SECONDS, $discovery_interval, 'wp_mcp_ai_model_catalog_discovery' );
+		}
 
 		// Install default multi-agent orchestration system on first activation.
 		// This is deferred to init hook to ensure assistant CPT is registered.
@@ -333,6 +339,11 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_openai_files' );
+		}
+		// Unschedule the model catalog discovery cron.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_model_catalog_discovery' );
 		}
 
 		// Unschedule the measurement retention cron. Table + data are

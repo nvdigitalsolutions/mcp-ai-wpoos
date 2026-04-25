@@ -179,6 +179,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 // Model Rate Limits CCT provides default model data regardless of JetEngine availability.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-catalog-migration.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-discovery-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-dead-letter-queue.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
