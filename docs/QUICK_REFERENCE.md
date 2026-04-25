@@ -1,13 +1,18 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.8  
-**Last Updated:** April 15, 2026
+**Version:** 1.1.9  
+**Last Updated:** April 25, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## 🆕 Recent Updates (April 2026)
 
-- **Erlang C Queuing Theory Tools** ⭐ NEW (v1.1.8) – 4 workforce-management tools built on the Erlang C formula. `calculate_erlang_c` (general staffing solver), `erlang_c_concurrency_advisor` (AI session tuning), `erlang_c_staffing_advisor` (multi-channel with bot-deflection and WFM endpoint), `erlang_c_queue_health` (real-time SLA monitoring with `wp_mcp_ai_queue_alert` action hook). All four ship in the base plugin with no external dependencies. See [`docs/features/erlang-c-staffing-tools.md`](features/erlang-c-staffing-tools.md).
+- **Measurement Subsystem GA** ⭐ NEW (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics for tool-execution, chat-loop, agentic-loop, and SSE; persistent `{prefix}mcp_ai_metric_events` table with retention cron (`wp_mcp_ai_metric_retention_days`, default 30 days); eval harness with verifier-independence enforcement; Pro rubric presets (`prompt_adherence`, `json_schema`, `citation_presence`) and counterfactual runner; OTel JSON exporter; Measurement dashboard under **Tools → Measurement** with time-range + sparkline; `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. See [`docs/measurement/README.md`](measurement/README.md).
+- **PHPUnit 11 Upgrade (CVE Fix)** 🔒 (v1.1.9) — PHPUnit upgraded to 11.x with WordPress-compatibility patches to resolve the argument-injection vulnerability **GHSA-qrr6-mg7r-m243**. CI PHP bumped 8.1 → 8.2.
+- **Chart.js Handle Normalization** (v1.1.9) — All admin dashboards now enqueue a single `wp-mcp-ai-chartjs` handle to eliminate duplicate registrations and version drift.
+- **Graphify Knowledge Graph Addon v0.5.0** (v1.1.9) — Optional WordPress Knowledge Graph addon restored under `addons/graphify/`.
+- **Orchestration Reference Doc** (v1.1.9) — New [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) documents every workflow preset, resource preset, the PSO algorithm, and all orchestration hooks / filters / storage keys in one place.
+- **Erlang C Queuing Theory Tools** (v1.1.8) – 4 workforce-management tools built on the Erlang C formula. `calculate_erlang_c` (general staffing solver), `erlang_c_concurrency_advisor` (AI session tuning), `erlang_c_staffing_advisor` (multi-channel with bot-deflection and WFM endpoint), `erlang_c_queue_health` (real-time SLA monitoring with `wp_mcp_ai_queue_alert` action hook). All four ship in the base plugin with no external dependencies. See [`docs/features/erlang-c-staffing-tools.md`](features/erlang-c-staffing-tools.md).
 - **tool-reference.md fully updated** – All 230+ tools in `load_default_tools` (base + extended) are now documented. Added 14 new sections covering: OpenAI file/model management, text embeddings & vector stores, multi-agent orchestration, agent memory management, reasoning & code analysis, deep research, browser-native AI (client-side NLP), Yahoo Fantasy Football toolkit, Newsletter plugin integration, WP All Import/Export integration, Flowhub cannabis dispensary, PayHere payment gateway, and Erlang C queue tools.
 - **MCP Protocol Completion** ⭐ (v1.1.7) – Full MCP 2024-11-05 spec compliance: `resources/read`, `prompts/get`, `ping`, `completion/complete`, `logging/setLevel`, `notifications/cancelled`, JSON-RPC batching (up to 20 messages), tool annotations, `Mcp-Session-Id` management.
 - **MCP Apps (SEP-1865)** ⭐ (v1.1.7) – Per-assistant remote MCP server connections (up to 10) with JSON-RPC 2.0 tool bridging, transient-cached discovery, admin metabox.

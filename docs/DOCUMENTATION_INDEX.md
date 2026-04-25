@@ -1,12 +1,20 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 16, 2026  
-**Plugin Version:** 1.2.0  
+**Last Updated:** April 25, 2026  
+**Plugin Version:** 1.1.9  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 25, 2026 UPDATE:** 📊 **MEASUREMENT SUBSYSTEM GA, PHPUNIT 11 UPGRADE (CVE FIX), CHART.JS HANDLE NORMALIZATION, GRAPHIFY RESTORE**
+> - **Measurement Subsystem GA** (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics (tool-execution, chat-loop, agentic-loop, SSE), persistent metric event store with `wp_mcp_ai_metric_retention_days` filter, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, Measurement dashboard under **Tools → Measurement**, and `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. New stock metrics `eval.suite.pass_rate` (gauge) and `eval.suite.regression.count` (counter).
+> - **PHPUnit 11 Upgrade** 🔒 (v1.1.9) — PHPUnit upgraded to 11.x with WordPress-compat patches to resolve argument-injection CVE **GHSA-qrr6-mg7r-m243**. CI PHP bumped 8.1 → 8.2. `@dataProvider` docblocks migrated to attributes.
+> - **Chart.js Handle Normalization** (v1.1.9) — All admin dashboards (ECA, Schedule Manager, Agent Command Center, Measurement) now enqueue a single `wp-mcp-ai-chartjs` handle.
+> - **Graphify Knowledge Graph Addon v0.5.0** (v1.1.9) — Optional WordPress Knowledge Graph addon restored under `addons/graphify/`.
+> - **New Doc**: [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md) and full [`docs/measurement/`](measurement/) reference set (README, rollout-plan, goodhart-checklist, verifier/reward authoring, eval-harness, persistent-store, dashboard, SSE/stream, tool-execution, chat-turn, budgets, OTel exporter, privacy-matrix, conventions).
+> - **README.md / CHANGELOG.md / readme.txt / QUICK_REFERENCE.md** — Updated to v1.1.9 with a new Latest Updates section.
 
 > **📌 APRIL 16, 2026 UPDATE:** 🧠 **PSO ADAPTIVE OPTIMIZATION & ORCHESTRATION REFERENCE**
 > - **PSO Optimizer Service** (v1.2.0) — Particle Swarm Optimization for adaptive AI parameter tuning. 7-dimension search space, inertia decay, per-assistant particle state, global swarm convergence. New `pso_adaptive` workflow preset.
