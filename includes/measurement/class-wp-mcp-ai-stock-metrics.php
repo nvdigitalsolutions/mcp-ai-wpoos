@@ -66,6 +66,21 @@ class WP_MCP_AI_Stock_Metrics {
 	const TOOL_EXECUTION_IN_FLIGHT = 'tool.execution.in_flight';
 
 	/**
+	 * Metric id: per-run pass rate of an eval suite (gauge, 0..1).
+	 *
+	 * Emitted once per `wp mcp-ai measurement run` invocation tagged
+	 * with the suite slug. Higher-is-better; pair with
+	 * `eval.suite.regression.count` and abstention/error rates to
+	 * resist Goodhart-style optimisation against pass-rate alone.
+	 */
+	const EVAL_SUITE_PASS_RATE = 'eval.suite.pass_rate';
+
+	/**
+	 * Metric id: regressions surfaced by `wp mcp-ai measurement alert-check` (counter).
+	 */
+	const EVAL_SUITE_REGRESSION_COUNT = 'eval.suite.regression.count';
+
+	/**
 	 * Return the canonical stock metric definitions.
 	 *
 	 * Exposed as a static method (rather than a constant) so docstrings
@@ -136,6 +151,30 @@ class WP_MCP_AI_Stock_Metrics {
 				'counter_metric' => self::TOOL_EXECUTION_DURATION_MS,
 				'goodhart_note'  => 'Saturation signal. Pair with duration to distinguish "many fast calls" from "a pile-up".',
 				'otel_attribute' => 'mcp_ai.tool.execution.in_flight',
+			),
+			array(
+				'id'             => self::EVAL_SUITE_PASS_RATE,
+				'label'          => __( 'Eval suite pass rate', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Fraction of cases that passed in the most recent run of an eval suite (0..1). Tagged by suite slug.', 'mcp-ai-wpoos' ),
+				'type'           => WP_MCP_AI_Measurement_Registry::TYPE_GAUGE,
+				'unit'           => 'ratio',
+				'direction'      => WP_MCP_AI_Measurement_Registry::DIRECTION_HIGHER_IS_BETTER,
+				'privacy_tier'   => WP_MCP_AI_Measurement_Registry::PRIVACY_INTERNAL,
+				'counter_metric' => self::EVAL_SUITE_REGRESSION_COUNT,
+				'goodhart_note'  => 'Pass rate alone can be gamed by abstaining or by trivial cases. Always read alongside abstention rate, error rate, and the regression-count counter.',
+				'otel_attribute' => 'mcp_ai.eval.suite.pass_rate',
+			),
+			array(
+				'id'             => self::EVAL_SUITE_REGRESSION_COUNT,
+				'label'          => __( 'Eval suite regressions detected', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Number of regressions surfaced by `wp mcp-ai measurement alert-check`. Tagged by suite slug and the offending metric.', 'mcp-ai-wpoos' ),
+				'type'           => WP_MCP_AI_Measurement_Registry::TYPE_COUNTER,
+				'unit'           => 'events',
+				'direction'      => WP_MCP_AI_Measurement_Registry::DIRECTION_LOWER_IS_BETTER,
+				'privacy_tier'   => WP_MCP_AI_Measurement_Registry::PRIVACY_INTERNAL,
+				'counter_metric' => self::EVAL_SUITE_PASS_RATE,
+				'goodhart_note'  => 'Lower-is-better can be gamed by relaxing thresholds. The threshold values are surfaced in every alert payload so reviewers can audit them.',
+				'otel_attribute' => 'mcp_ai.eval.suite.regression.count',
 			),
 		);
 

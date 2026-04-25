@@ -94,6 +94,8 @@ require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-su
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-runner.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-counterfactual-runner.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-regression-detector.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-run-store.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-stock-metrics.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-tool-execution-observer.php';
 require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-chat-turn-metrics.php';

@@ -268,7 +268,7 @@ by the PR 9 event store. Adds:
   drop, flat-line guard, and bucket-count clamping. All 105
   measurement tests remain green.
 
-### ⬜ PR 10 — Rubric verifier suite & counterfactual tests
+### ✅ PR 10 — Rubric verifier suite & counterfactual tests
 
 **Goal:** give the pro rubric verifier a library of ready-made
 rubrics and a small counterfactual test helper so sites can adopt
@@ -276,25 +276,58 @@ evals without authoring rubrics from scratch.
 
 Scope:
 
-- Prompt-adherence, JSON-schema, citation-presence rubrics
-- Counterfactual helper: for each eval case, verifier receives both
-  the candidate and a shuffled/degraded variant; failure to prefer
-  the candidate flags measurement invalidity
-- Expansion of the base eval harness with `run_counterfactual()`
+- Prompt-adherence, JSON-schema, citation-presence rubrics shipped as
+  `WP_MCP_AI_Pro_Rubric_Presets` (3 factories, each filterable via
+  `wp_mcp_ai_pro_{slug}_criteria`).
+- `WP_MCP_AI_Counterfactual_Runner` — pairs every eval case with a
+  shuffled/degraded variant; failure to prefer the candidate flags
+  measurement invalidity.
+- `WP_MCP_AI_Eval_Runner::run_counterfactual()` extends the harness
+  with a one-call counterfactual sweep, persisting separate
+  `eval.case.preferred` and `eval.suite.counterfactual.score` metrics
+  so a site can graph counterfactual stability alongside pass rate.
 
-### ⬜ PR 11 — CLI runner & regression alerting
+### ✅ PR 11 — CLI runner & regression alerting
 
 **Goal:** run eval suites from CI or WP-CLI without the web runtime
 and alert on cross-run metric regressions.
 
 Scope:
 
-- `wp mcp-ai measurement run <suite>` command
-- `wp mcp-ai measurement alert-check` — compares the latest N runs
-  against a baseline, emits a non-zero exit on regression
-- Stock metrics: `eval.suite.regression.count`,
-  `eval.suite.pass_rate`
-- Optional webhook sink for alerts
+- `wp mcp-ai measurement run <suite>` — runs a registered suite using
+  a generator callable resolved via the
+  `wp_mcp_ai_cli_measurement_generator` filter. Persists the run
+  summary (`WP_MCP_AI_Eval_Run_Store`) and emits the
+  `eval.suite.pass_rate` gauge tagged by suite slug. `--no-persist`
+  supports ad-hoc smoke runs that should not influence baselines.
+- `wp mcp-ai measurement alert-check <suite>` — reads the trailing N
+  runs (`--window`, default 10), feeds the most-recent run + baseline
+  through `WP_MCP_AI_Eval_Regression_Detector`, exits 2 if any rule
+  triggers. Threshold overrides via `--pass-rate-drop`,
+  `--error-rate-rise`, `--abstention-rate-rise`. Emits
+  `eval.suite.regression.count` once per offending metric tagged
+  with both `suite` and `metric` so dashboards can break regressions
+  down by dimension.
+- `wp mcp-ai measurement list-runs <suite>` — prints persisted runs.
+- Optional webhook sink (`--webhook=<url>`) POSTs the alert payload
+  as JSON. Network failures emit a warning but never override the
+  regression exit code so CI cannot silently mark a regression as
+  green.
+- New stock metrics: `eval.suite.pass_rate` (gauge, higher-is-better)
+  and `eval.suite.regression.count` (counter, lower-is-better) — both
+  registered through the existing `wp_mcp_ai_register_metrics` hook
+  and surfacable in the persisted-metrics panel from PR 9.1.
+- `WP_MCP_AI_Eval_Run_Store` — per-suite option-backed history
+  (`wp_mcp_ai_eval_runs__<slug>`), capped at 100 records (filterable
+  via `wp_mcp_ai_eval_run_store_max_runs`). JSON-encoded for cheap
+  uninstall hygiene, JSON-corruption tolerant on read.
+- `WP_MCP_AI_Eval_Regression_Detector` — pure helper (no WP, no DB)
+  with three independent rules: pass-rate drop, error-rate rise,
+  abstention-rate rise. Cold-start contract: empty baseline → never
+  a regression. Missing summary fields are treated as `0.0` so a
+  silent field drop cannot dodge the alarm.
+- 16 new PHPUnit tests (9 detector + 7 run-store). All measurement
+  tests remain green.
 
 ### ⬜ PR 12 — GA polish
 
