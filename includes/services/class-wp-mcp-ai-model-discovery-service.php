@@ -264,7 +264,15 @@ class WP_MCP_AI_Model_Discovery_Service {
 
 		$tool = new WP_MCP_AI_Tool_Discover_New_Models();
 
-		// The tool keeps its provider HTTP fetcher protected; expose it through reflection.
+		// NOTE: The tool's HTTP fetcher is intentionally protected. We use reflection
+		// here to share that implementation with the cron job without duplicating
+		// per-provider request logic. If the tool's `fetch_provider_models()` method
+		// signature ever changes, this branch will return a tool-missing-fetcher
+		// error rather than crashing — the cron run will be marked `partial` and
+		// the offending provider listed in the diff's `errors` map.
+		// TODO: Promote `fetch_provider_models()` to a public, interface-backed
+		// API once the tool surface is refactored to a shared
+		// WP_MCP_AI_Provider_Models_Source contract.
 		$reflection = new ReflectionClass( $tool );
 		if ( ! $reflection->hasMethod( 'fetch_provider_models' ) ) {
 			return new WP_Error( 'discovery_no_fetcher', __( 'Discovery tool does not expose a fetcher.', 'mcp-ai-wpoos' ) );

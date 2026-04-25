@@ -40,6 +40,11 @@ if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 		}
 
 		// Schedule daily model catalog discovery cron job (April 2026 refresh).
+		// Deliberately offset the first run by an hour to keep the activation/upgrade
+		// page load light — the daily file-cleanup crons above run on essentially
+		// idempotent local data, but discovery makes outbound HTTP calls to provider
+		// APIs and we do not want that fanning out at the same moment dozens of
+		// other plugin-load actions are firing.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' ) ) {
 			/**
 			 * Filter the WP-Cron interval used for model catalog discovery.

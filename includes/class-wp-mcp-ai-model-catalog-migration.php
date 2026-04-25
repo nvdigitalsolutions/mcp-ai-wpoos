@@ -193,22 +193,29 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			return 0;
 		}
 
+		$legacy_ids = array_keys( $map );
+		if ( empty( $legacy_ids ) ) {
+			return 0;
+		}
+
+		// Single IN-clause query to find every post_id whose stored model is a legacy id,
+		// rather than one query per legacy id.
+		$placeholders = implode( ', ', array_fill( 0, count( $legacy_ids ), '%s' ) );
+		$query        = $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a fixed list of %s tokens.
+			"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value IN ( {$placeholders} )",
+			array_merge( array( '_wp_mcp_ai_model' ), $legacy_ids )
+		);
+		$rows = $wpdb->get_results( $query );
+
 		$rewritten = 0;
-		foreach ( $map as $legacy => $successor ) {
-			$post_ids = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
-					'_wp_mcp_ai_model',
-					$legacy
-				)
-			);
-
-			if ( empty( $post_ids ) ) {
-				continue;
-			}
-
-			foreach ( $post_ids as $post_id ) {
-				update_post_meta( (int) $post_id, '_wp_mcp_ai_model', $successor );
+		if ( ! empty( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$legacy = $row->meta_value;
+				if ( ! isset( $map[ $legacy ] ) ) {
+					continue;
+				}
+				update_post_meta( (int) $row->post_id, '_wp_mcp_ai_model', $map[ $legacy ] );
 				++$rewritten;
 			}
 		}

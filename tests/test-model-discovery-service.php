@@ -34,6 +34,9 @@ class Test_Model_Discovery_Service extends WP_UnitTestCase {
 	 * The discovery service is suppressed when the enabled filter returns false.
 	 */
 	public function test_discovery_respects_enabled_filter() {
+		// Seed a known timestamp so we can assert it is unchanged after a disabled run.
+		update_option( WP_MCP_AI_Model_Discovery_Service::LAST_RUN_OPTION, 1234567890, false );
+
 		add_filter( 'wp_mcp_ai_model_discovery_enabled', '__return_false' );
 
 		$fired = false;
@@ -45,8 +48,13 @@ class Test_Model_Discovery_Service extends WP_UnitTestCase {
 		);
 
 		WP_MCP_AI_Model_Discovery_Service::cron_handler();
-		$this->assertFalse( $fired, 'Disabled discovery must not persist suggestions.' );
-		$this->assertFalse( get_option( WP_MCP_AI_Model_Discovery_Service::LAST_RUN_OPTION ) );
+
+		$this->assertFalse( $fired, 'Disabled discovery must not fire the suggestions_updated action.' );
+		$this->assertSame(
+			1234567890,
+			(int) get_option( WP_MCP_AI_Model_Discovery_Service::LAST_RUN_OPTION ),
+			'Disabled discovery must not overwrite the last_run timestamp.'
+		);
 	}
 
 	/**

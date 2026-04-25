@@ -392,36 +392,50 @@ add_action( 'admin_notices', 'wp_mcp_ai_check_upload_limits_notice' );
 // ---------------------------------------------------------------------------
 
 if ( ! function_exists( 'wp_mcp_ai_run_model_catalog_migration' ) ) {
-/**
- * Run the one-time model catalog migration for the current JSON version.
- *
- * The migration rewrites stored model identifiers (in
- * wp_mcp_ai_model_configs and assistant post meta) that reference ids
- * removed during a catalog refresh, mapping them to documented
- * successors. The catalog version (read from the bundled JSON file) is
- * used as the bookkeeping key, so future refreshes re-run the routine.
- *
- * @return void
- */
-function wp_mcp_ai_run_model_catalog_migration() {
-if ( ! class_exists( 'WP_MCP_AI_Model_Catalog_Migration' ) ) {
-return;
-}
+	/**
+	 * Run the one-time model catalog migration for the current JSON version.
+	 *
+	 * The migration rewrites stored model identifiers (in
+	 * wp_mcp_ai_model_configs and assistant post meta) that reference ids
+	 * removed during a catalog refresh, mapping them to documented
+	 * successors. The catalog version (read from the bundled JSON file) is
+	 * used as the bookkeeping key, so future refreshes re-run the routine.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_run_model_catalog_migration() {
+	if ( ! class_exists( 'WP_MCP_AI_Model_Catalog_Migration' ) ) {
+		return;
+	}
 
-$catalog_version = '';
-$catalog_path    = WP_MCP_AI_PATH . 'includes/data/model-catalog.json';
-if ( file_exists( $catalog_path ) && is_readable( $catalog_path ) ) {
-$raw     = file_get_contents( $catalog_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading bundled JSON catalog.
-$decoded = json_decode( (string) $raw, true );
-if ( is_array( $decoded ) && isset( $decoded['version'] ) ) {
-$catalog_version = (string) $decoded['version'];
-}
-}
+	$catalog_version = '';
+	$catalog_path    = WP_MCP_AI_PATH . 'includes/data/model-catalog.json';
+	if ( file_exists( $catalog_path ) && is_readable( $catalog_path ) ) {
+		$raw     = file_get_contents( $catalog_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading bundled JSON catalog.
+		$decoded = json_decode( (string) $raw, true );
+		if ( is_array( $decoded ) && isset( $decoded['version'] ) ) {
+			$catalog_version = (string) $decoded['version'];
+		} else {
+			// JSON parse failed or missing version field. Use a sentinel keyed to the
+			// raw bytes so the migration is recorded as run for this corrupt state
+			// and does not repeat on every page load. A future valid JSON (with any
+			// different `version`) re-triggers the migration automatically.
+			$catalog_version = 'invalid-json-' . md5( (string) $raw );
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'model_catalog_json_invalid',
+					'Bundled model catalog JSON is unreadable or missing a version field. Migration recorded with sentinel version.'
+				);
+			}
+		}
+	} else {
+		$catalog_version = 'missing-json';
+	}
 
-WP_MCP_AI_Model_Catalog_Migration::run_if_needed( $catalog_version );
+	WP_MCP_AI_Model_Catalog_Migration::run_if_needed( $catalog_version );
 }
 }
 
 if ( ! has_action( 'init', 'wp_mcp_ai_run_model_catalog_migration' ) ) {
-add_action( 'init', 'wp_mcp_ai_run_model_catalog_migration', 20 );
+	add_action( 'init', 'wp_mcp_ai_run_model_catalog_migration', 20 );
 }
