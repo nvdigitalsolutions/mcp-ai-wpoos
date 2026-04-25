@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-measurement-infrastructure',
-        'version' => 'dev-copilot/enhance-measurement-infrastructure',
-        'reference' => '38833a330fb75c366b2abee08ce3062dc44f6003',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-6c8446da-a4ca-4089-a442-ae55414da867',
+        'version' => 'dev-copilot/rebuild-all-zips-with-script-6c8446da-a4ca-4089-a442-ae55414da867',
+        'reference' => 'f060c57853a73b8ad3a2d5895813c7644057e31f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-measurement-infrastructure',
-            'version' => 'dev-copilot/enhance-measurement-infrastructure',
-            'reference' => '38833a330fb75c366b2abee08ce3062dc44f6003',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-6c8446da-a4ca-4089-a442-ae55414da867',
+            'version' => 'dev-copilot/rebuild-all-zips-with-script-6c8446da-a4ca-4089-a442-ae55414da867',
+            'reference' => 'f060c57853a73b8ad3a2d5895813c7644057e31f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
