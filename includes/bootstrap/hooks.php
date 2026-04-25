@@ -386,3 +386,42 @@ php_value memory_limit 256M</pre>
 }
 
 add_action( 'admin_notices', 'wp_mcp_ai_check_upload_limits_notice' );
+
+// ---------------------------------------------------------------------------
+// Model catalog migration & cron-driven discovery
+// ---------------------------------------------------------------------------
+
+if ( ! function_exists( 'wp_mcp_ai_run_model_catalog_migration' ) ) {
+/**
+ * Run the one-time model catalog migration for the current JSON version.
+ *
+ * The migration rewrites stored model identifiers (in
+ * wp_mcp_ai_model_configs and assistant post meta) that reference ids
+ * removed during a catalog refresh, mapping them to documented
+ * successors. The catalog version (read from the bundled JSON file) is
+ * used as the bookkeeping key, so future refreshes re-run the routine.
+ *
+ * @return void
+ */
+function wp_mcp_ai_run_model_catalog_migration() {
+if ( ! class_exists( 'WP_MCP_AI_Model_Catalog_Migration' ) ) {
+return;
+}
+
+$catalog_version = '';
+$catalog_path    = WP_MCP_AI_PATH . 'includes/data/model-catalog.json';
+if ( file_exists( $catalog_path ) && is_readable( $catalog_path ) ) {
+$raw     = file_get_contents( $catalog_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading bundled JSON catalog.
+$decoded = json_decode( (string) $raw, true );
+if ( is_array( $decoded ) && isset( $decoded['version'] ) ) {
+$catalog_version = (string) $decoded['version'];
+}
+}
+
+WP_MCP_AI_Model_Catalog_Migration::run_if_needed( $catalog_version );
+}
+}
+
+if ( ! has_action( 'init', 'wp_mcp_ai_run_model_catalog_migration' ) ) {
+add_action( 'init', 'wp_mcp_ai_run_model_catalog_migration', 20 );
+}

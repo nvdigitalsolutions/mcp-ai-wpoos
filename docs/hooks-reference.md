@@ -896,3 +896,44 @@ grep -rn "apply_filters( 'wp_mcp_ai_" includes/
 
 **Total hooks:** 80+ actions, 460+ filters across the base plugin. Includes `wp_mcp_ai_queue_alert` (Erlang C SLA breach) added in v1.1.8.
 For Pro-specific hooks, see the Pro addon documentation.
+
+---
+
+## Model Catalog Hooks (April 2026)
+
+### Filter: `wp_mcp_ai_model_catalog`
+Modifies the array of model entries loaded from `includes/data/model-catalog.json`. Each entry is an associative array with keys: `model_name`, `provider`, `name`, `tpm`, `rpm`, `tpd`, `rpd`, `context_window`, `max_output_tokens`, `supports_function_calling`, `supports_vision`, `cost_per_1k_input_tokens`, `cost_per_1k_output_tokens`, `fallback_model`, `status` (`active`/`deprecated`/`legacy`), `sunset_date`, `notes`.
+
+```php
+add_filter( 'wp_mcp_ai_model_catalog', function ( $catalog ) {
+    $catalog[] = array(
+        'model_name'                => 'my-custom-llm',
+        'provider'                  => 'openai',
+        'name'                      => 'My Custom LLM',
+        'cost_per_1k_input_tokens'  => 0.001,
+        'cost_per_1k_output_tokens' => 0.002,
+        'status'                    => 'active',
+    );
+    return $catalog;
+} );
+```
+
+After modifying, call `WP_MCP_AI_Model_Rate_Limits_CCT::flush_catalog_cache()` to invalidate the cache, or click "Reload model catalog" in the Models settings page.
+
+### Filter: `wp_mcp_ai_model_catalog_source_path`
+Override the on-disk JSON path the loader reads. Defaults to `includes/data/model-catalog.json` (with auto-detection of `wp-content/uploads/mcp-ai/model-catalog.json` if present).
+
+### Filter: `wp_mcp_ai_model_discovery_enabled`
+Default `true`. Return `false` to suppress the daily discovery cron.
+
+### Filter: `wp_mcp_ai_model_discovery_interval`
+Default `'daily'`. Accepts any registered schedule slug (`'hourly'`, `'twicedaily'`, `'daily'`, `'weekly'`).
+
+### Action: `wp_mcp_ai_model_catalog_suggestions_updated`
+Fires after `wp_mcp_ai_model_catalog_discovery` produces a fresh diff. Receives the diff payload (`additions`, `sunsets`, `price_changes`, `errors`, `status`, `generated_at`).
+
+```php
+add_action( 'wp_mcp_ai_model_catalog_suggestions_updated', function ( $diff ) {
+    // Notify ops channel, auto-apply additions, etc.
+} );
+```
