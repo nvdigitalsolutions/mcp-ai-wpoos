@@ -28,9 +28,9 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that async executor schedules cron with delay to allow recording.
+	 * Test that async executor schedules cron immediately so spawn_cron() can fire it.
 	 */
-	public function test_async_executor_schedules_with_delay() {
+	public function test_async_executor_schedules_immediately() {
 		$executor = new WP_MCP_AI_Tool_Async_Executor();
 		$executor->init();
 
@@ -60,9 +60,10 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		$event = wp_get_scheduled_event( $hook, array( $job_id ) );
 
 		$this->assertNotFalse( $event, 'Cron event should be scheduled' );
-		$this->assertGreaterThan( time(), $event->timestamp, 'Cron should be scheduled in the future (not immediate)' );
-		$this->assertLessThanOrEqual( time() + 21, $event->timestamp, 'Cron should be scheduled within 21 seconds (20s delay + 1s tolerance)' );
-		$this->assertGreaterThanOrEqual( time() + 19, $event->timestamp, 'Cron should be scheduled at least 19 seconds in the future (20s delay - 1s tolerance)' );
+		// Event must be already due so spawn_cron() can pick it up. We allow a small
+		// tolerance window around time() to keep the test resilient to clock drift.
+		$this->assertLessThanOrEqual( time(), $event->timestamp, 'Cron should be scheduled in the past or at current time so spawn_cron() will fire it' );
+		$this->assertGreaterThanOrEqual( time() - 5, $event->timestamp, 'Cron should be scheduled close to the current time (within 5s tolerance)' );
 
 		// Check that job was recorded in cron manager.
 		$recorded_job = WP_MCP_AI_Cron_Manager::get_job(

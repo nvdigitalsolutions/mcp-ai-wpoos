@@ -165,14 +165,37 @@ class WP_MCP_AI_Tool_Async_Executor {
 			'error'        => null,
 		);
 
-		// Store metadata (use transient for quick access).
+		// Store metadata (use transient for quick access). This must happen before
+		// scheduling the cron event so the handler can read it as soon as it fires.
 		$this->save_metadata( $job_id, $metadata );
 
-		// Schedule cron job with a 20-second delay to ensure metadata and recording complete first.
-		// This prevents race condition where cron executes before transient is saved or job is recorded.
-		// The delay also accounts for potential delays in agentic workflows where the chat client.
-		// expects to receive a response after the job completes.
-		$timestamp = time() + 20;
+		// Record cron job in cron manager for visibility and management BEFORE scheduling
+		// the event. Recording first eliminates the race where the cron handler could fire
+		// before the cron-manager record exists (which previously motivated a 20s schedule
+		// delay). The cron handler itself reads metadata from the transient above and does
+		// not depend on the cron-manager record, but downstream visibility consumers
+		// (e.g. the /cron-status endpoint) do.
+		$timestamp     = time() - 1;
+		$cron_recorded = false;
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id               = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			$cron_recording_result = WP_MCP_AI_Cron_Manager::record_job(
+				self::CRON_HOOK,
+				array( $job_id ),
+				'single',
+				$timestamp,
+				$user_id
+			);
+			// record_job() returns a job ID string on success.
+			$cron_recorded = is_string( $cron_recording_result ) && ! empty( $cron_recording_result );
+		}
+
+		// Schedule the cron event in the immediate past so wp_get_ready_cron_jobs()
+		// returns it and spawn_cron() can actually trigger execution. Previously this
+		// was scheduled 20 seconds in the future, which guaranteed spawn_cron() failed
+		// (it only spawns events whose timestamp is already <= time()) and left the
+		// chat client waiting on a job that would only run on the next page load or
+		// SSE heartbeat.
 		$scheduled = wp_schedule_single_event(
 			$timestamp,
 			self::CRON_HOOK,
@@ -193,44 +216,21 @@ class WP_MCP_AI_Tool_Async_Executor {
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule async tool execution.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Record cron job in cron manager for visibility and management.
-		$cron_recorded = false;
-		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$user_id               = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
-			$cron_recording_result = WP_MCP_AI_Cron_Manager::record_job(
-				self::CRON_HOOK,
-				array( $job_id ),
-				'single',
-				$timestamp,
-				$user_id
-			);
-			// record_job() returns a job ID string on success.
-			$cron_recorded = is_string( $cron_recording_result ) && ! empty( $cron_recording_result );
-		}
-
 		// Trigger WordPress cron immediately to ensure the async tool execution runs.
-		// WordPress cron is virtual and only runs on page loads by default.
-		// Calling spawn_cron() ensures the job executes even if no subsequent page loads occur.
-		// Retry spawn_cron up to 3 times with brief delays to handle transient failures.
-		$spawn_success = false;
-		for ( $spawn_attempt = 0; $spawn_attempt < 3; $spawn_attempt++ ) {
-			$spawn_result = spawn_cron();
-			if ( false !== $spawn_result ) {
-				$spawn_success = true;
-				break;
-			}
-			if ( $spawn_attempt < 2 ) {
-				usleep( 100000 ); // 100ms delay between retries.
-			}
-		}
-
-		if ( ! $spawn_success ) {
-			$this->log_error(
-				'spawn_cron() failed after retries - async job may be delayed until next page load',
+		// WordPress cron is virtual and only runs on page loads by default. Because the
+		// event timestamp above is already due, spawn_cron() can now successfully fire
+		// the wp-cron.php request that runs the handler. A false return here is not an
+		// error condition: it usually just means another cron spawn is already in
+		// progress (DOING_CRON lock) and our event will be picked up by that run or by
+		// the next request, so we record it as a normal info-level event.
+		$spawn_result = function_exists( 'spawn_cron' ) ? spawn_cron() : false;
+		if ( false === $spawn_result ) {
+			$this->log_event(
+				'async_tool_spawn_cron_skipped',
+				'spawn_cron() returned false; async job will run on the next cron tick or page load',
 				array(
 					'job_id'    => $job_id,
 					'tool_slug' => $tool_slug,
-					'attempts'  => $spawn_attempt,
 				)
 			);
 		}
