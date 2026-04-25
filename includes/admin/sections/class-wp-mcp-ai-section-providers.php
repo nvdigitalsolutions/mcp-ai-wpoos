@@ -88,10 +88,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				$openai_models = array(
 					'gpt-5.4'      => 'GPT-5.4 (Recommended)',
 					'gpt-5.4-mini' => 'GPT-5.4 Mini (Budget)',
-					'gpt-4.1'      => 'GPT-4.1 (Stable)',
+					'gpt-5.4-nano' => 'GPT-5.4 Nano',
+					'gpt-5.5'      => 'GPT-5.5 (Flagship)',
+					'gpt-5'        => 'GPT-5',
+					'gpt-5-mini'   => 'GPT-5 Mini',
+					'gpt-5-nano'   => 'GPT-5 Nano',
+					'gpt-4.1'      => 'GPT-4.1',
 					'gpt-4.1-mini' => 'GPT-4.1 Mini',
+					'gpt-4.1-nano' => 'GPT-4.1 Nano',
 					'gpt-4o'       => 'GPT-4o',
 					'gpt-4o-mini'  => 'GPT-4o Mini',
+					'o4-mini'      => 'o4-mini',
+					'o3'           => 'o3',
 				);
 			}
 
@@ -104,11 +112,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-mythos-preview'      => 'Claude Mythos Preview (Most Capable)',
-					'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 (Recommended)',
-					'claude-opus-4-6'            => 'Claude Opus 4.6 (Flagship)',
-					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
-					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Legacy)',
+					'claude-opus-4-7'    => 'Claude Opus 4.7 (Flagship)',
+					'claude-opus-4-6'    => 'Claude Opus 4.6',
+					'claude-sonnet-4-6'  => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-haiku-4-5'   => 'Claude Haiku 4.5 (Fastest)',
 				);
 			}
 
@@ -121,9 +128,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Recommended)',
-					'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
-					'gemini-2.0-flash' => 'Gemini 2.0 Flash',
+					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+					'gemini-3.1-flash'      => 'Gemini 3.1 Flash (Recommended)',
+					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite (Budget)',
+					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
+					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
 				);
 			}
 
