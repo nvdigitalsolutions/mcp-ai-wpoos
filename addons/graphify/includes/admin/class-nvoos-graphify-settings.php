@@ -241,18 +241,34 @@ class NV_oOS_Graphify_Settings {
 			return;
 		}
 
-		// Cytoscape.js from CDN.
+		// Cytoscape.js + fcose layout (bundled locally — see assets/vendor/).
+		// Load order matters: layout-base → cose-base → cytoscape → cytoscape-fcose
+		// (fcose auto-registers itself on the global cytoscape when it evaluates).
+		wp_enqueue_script(
+			'layout-base',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/layout-base/layout-base.js',
+			array(),
+			'2.0.1',
+			true
+		);
+		wp_enqueue_script(
+			'cose-base',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cose-base/cose-base.js',
+			array( 'layout-base' ),
+			'2.2.0',
+			true
+		);
 		wp_enqueue_script(
 			'cytoscape',
-			'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape/cytoscape.min.js',
 			array(),
 			'3.28.1',
 			true
 		);
 		wp_enqueue_script(
 			'cytoscape-fcose',
-			'https://cdnjs.cloudflare.com/ajax/libs/cytoscape-fcose/2.2.0/cytoscape-fcose.min.js',
-			array( 'cytoscape' ),
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape-fcose/cytoscape-fcose.js',
+			array( 'cytoscape', 'cose-base' ),
 			'2.2.0',
 			true
 		);

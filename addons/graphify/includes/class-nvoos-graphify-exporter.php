@@ -125,7 +125,10 @@ class NV_oOS_Graphify_Exporter {
 	/**
 	 * Export as a standalone interactive HTML page.
 	 *
-	 * Uses Cytoscape.js and fcose layout from CDN (no bundled vendor files).
+	 * Uses Cytoscape.js and fcose layout served from the addon's bundled
+	 * vendor directory. The exported file references absolute URLs back to
+	 * the WordPress site that generated it, so the file remains viewable as
+	 * long as the site is reachable.
 	 *
 	 * @since 0.5.0
 	 *
@@ -138,6 +141,12 @@ class NV_oOS_Graphify_Exporter {
 		$cy_json     = wp_json_encode( $cy_elements );
 		$title       = esc_html__( 'Knowledge Graph Export', 'nvoos-graphify' );
 
+		$vendor_url       = esc_url( NVOOS_GRAPHIFY_URL . 'assets/vendor/' );
+		$layout_base_src  = $vendor_url . 'layout-base/layout-base.js';
+		$cose_base_src    = $vendor_url . 'cose-base/cose-base.js';
+		$cytoscape_src    = $vendor_url . 'cytoscape/cytoscape.min.js';
+		$fcose_src        = $vendor_url . 'cytoscape-fcose/cytoscape-fcose.js';
+
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone export file, not a WP page.
 		return <<<HTML
 <!DOCTYPE html>
@@ -146,8 +155,10 @@ class NV_oOS_Graphify_Exporter {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{$title}</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape-fcose/2.2.0/cytoscape-fcose.min.js"></script>
+<script src="{$layout_base_src}"></script>
+<script src="{$cose_base_src}"></script>
+<script src="{$cytoscape_src}"></script>
+<script src="{$fcose_src}"></script>
 <style>
   body { margin: 0; background: #0f0f1a; color: #e0e0ff; font-family: sans-serif; }
   #cy { width: 100vw; height: 100vh; }

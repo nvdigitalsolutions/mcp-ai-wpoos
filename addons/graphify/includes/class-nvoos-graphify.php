@@ -384,10 +384,41 @@ class NV_oOS_Graphify {
 
 		$container_id = 'nvoos-graphify-' . wp_unique_id();
 
+		// Cytoscape.js + fcose layout (bundled locally — see assets/vendor/).
+		// Load order: layout-base → cose-base → cytoscape → cytoscape-fcose.
+		wp_enqueue_script(
+			'layout-base',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/layout-base/layout-base.js',
+			array(),
+			'2.0.1',
+			true
+		);
+		wp_enqueue_script(
+			'cose-base',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cose-base/cose-base.js',
+			array( 'layout-base' ),
+			'2.2.0',
+			true
+		);
+		wp_enqueue_script(
+			'cytoscape',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape/cytoscape.min.js',
+			array(),
+			'3.28.1',
+			true
+		);
+		wp_enqueue_script(
+			'cytoscape-fcose',
+			NVOOS_GRAPHIFY_URL . 'assets/vendor/cytoscape-fcose/cytoscape-fcose.js',
+			array( 'cytoscape', 'cose-base' ),
+			'2.2.0',
+			true
+		);
+
 		wp_enqueue_script(
 			'nvoos-graphify-frontend',
 			NVOOS_GRAPHIFY_URL . 'assets/js/graphify-frontend.js',
-			array( 'jquery' ),
+			array( 'jquery', 'cytoscape', 'cytoscape-fcose' ),
 			NVOOS_GRAPHIFY_VERSION,
 			true
 		);
