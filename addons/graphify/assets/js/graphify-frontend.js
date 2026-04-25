@@ -36,18 +36,16 @@
 
 		$container.html( '<p class="nvoos-graphify-loading">Loading graph…</p>' );
 
-		// Load Cytoscape from CDN if not already present.
+		// Cytoscape and the fcose layout extension are now enqueued as
+		// hard dependencies of this script (see class-nvoos-graphify.php),
+		// so no dynamic CDN injection is required. We still guard for the
+		// extremely rare case where another plugin dequeues them.
 		function doLoad() {
 			if ( typeof window.cytoscape === 'undefined' ) {
-				var script = document.createElement( 'script' );
-				script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js';
-				script.onload = function () {
-					fetchAndRender( config, $container );
-				};
-				document.head.appendChild( script );
-			} else {
-				fetchAndRender( config, $container );
+				$container.html( '<p class="nvoos-graphify-error">Cytoscape.js not loaded.</p>' );
+				return;
 			}
+			fetchAndRender( config, $container );
 		}
 
 		doLoad();

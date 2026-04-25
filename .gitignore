@@ -199,6 +199,12 @@ composer.phar
 !addons/pro/assets/vendor/**/*.js
 !addons/pro/assets/vendor/**/*.css
 
+# Keep Graphify addon vendor production files (cytoscape, fcose, etc.)
+!addons/graphify/assets/vendor/**/*.min.js
+!addons/graphify/assets/vendor/**/*.min.css
+!addons/graphify/assets/vendor/**/*.js
+!addons/graphify/assets/vendor/**/*.css
+
 # Exclude source maps from vendor directories (not needed in production; reduces repo size)
 addons/pro/assets/vendor/**/*.map
 
