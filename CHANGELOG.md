@@ -1,6 +1,41 @@
 # oOS – Changelog
 
 
+## [1.1.9] - 2026-04-25
+
+### April 25, 2026 — Model Catalog Refresh + JSON-Driven Catalog + Discovery Cron
+
+### Added
+- **Data-driven model catalog** — new `includes/data/model-catalog.json` is now the single source of truth for provider model lineups, rate limits, costs, and lifecycle status (156 entries across 11 providers/runtimes).
+- **`wp_mcp_ai_model_catalog` filter** lets site admins and integrators add, override, or remove catalog entries without editing core files.
+- **`wp_mcp_ai_model_catalog_source_path` filter** allows pointing the loader at an alternate JSON file (e.g., a child plugin or mu-plugins file). `wp-content/uploads/mcp-ai/model-catalog.json` is also auto-detected.
+- **Cached loader** — `WP_MCP_AI_Model_Rate_Limits_CCT::load_catalog()` caches the JSON + filter result via `wp_cache_*` (group `wp_mcp_ai_model_catalog`). Call `flush_catalog_cache()` to invalidate.
+- **Daily WP-Cron `wp_mcp_ai_model_catalog_discovery`** with new `WP_MCP_AI_Model_Discovery_Service` produces a reviewable diff (additions / sunsets / price changes) into the `wp_mcp_ai_model_catalog_suggestions` option. Suggestions are *never* auto-applied.
+- **`wp_mcp_ai_model_discovery_enabled` filter** (default `true`) and **`wp_mcp_ai_model_discovery_interval` filter** (default `'daily'`) for opt-out / cadence control.
+- **`wp_mcp_ai_model_catalog_suggestions_updated` action** fires with the diff payload after each cron run.
+- **`WP_MCP_AI_FORCE_HARDCODED_CATALOG` debug constant** lets support reproduce issues without the JSON loader.
+- **One-time migration** (`WP_MCP_AI_Model_Catalog_Migration`) rewrites stored configs and assistant `_wp_mcp_ai_model` post meta from removed ids to documented successors (e.g., `gpt-3.5-turbo` → `gpt-4o-mini`, `claude-3-opus-20240229` → `claude-opus-4-6`, `gemini-1.5-pro` → `gemini-2.5-pro`, `o1` → `o4-mini`).
+
+### Changed
+- **OpenAI catalog** — added GPT-5.5, GPT-5.4-mini, GPT-5.4-nano, GPT-5.4-codex with April 2026 pricing. GPT-5/4.1/4o re-priced. User-pinned `gpt-4.1`, `gpt-4o`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano` remain ACTIVE as the cost-effective defaults.
+- **Anthropic catalog** — added `claude-opus-4-7` flagship; legacy `claude-opus-4-5` / `claude-sonnet-4-5` / `claude-haiku-3-5` aliases marked `deprecated`.
+- **Gemini catalog** — added `gemini-3.1-pro`, `gemini-3.1-flash`, `gemini-3.1-flash-lite` (April 2026 GA). All `gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`, `gemini-pro-vision`, and `imagen-3` removed.
+- **NVIDIA NIM catalog** — added `nvidia/nemotron-4-340b-instruct`, `meta/llama-4-1-*`, `qwen/qwen3.5-coder-480b`, `microsoft/phi-4.1`. Deprecated `meta/llama-3.1-*` and `microsoft/phi-3-*` entries removed.
+- **Cloudflare Workers AI** — added `@cf/meta/llama-4-scout-17b-16e-instruct`, `@cf/google/gemma-3-12b-it`.
+- **Hugging Face** — added `meta-llama/Llama-4-8B-Instruct`, `Qwen/Qwen3-7B-Instruct`, `mistralai/Mistral-Small-3.1-24B-Instruct`. Phi-3-mini marked `deprecated`.
+- **Ollama** — added `llama4`, `llama4:16x17b`, `qwen3`, `gemma3`, `phi4`, `deepseek-r1:7b`. `llama3:70b`, `mistral`, `gemma2` tagged `legacy`.
+- **WebLLM (browser)** — added `Llama-3.2-3B-Instruct-q4f16_1-MLC`, `Qwen2.5-3B-Instruct-q4f16_1-MLC`, `gemma-3-2b-it-q4f16_1-MLC`.
+- **Cost calculator** — pricing table aligned with April 2026 reality (GPT-5/4.1/4o re-priced; Gemini 1.5/2.0 removed; Claude Opus 4.7 added; retired audio/realtime dated snapshots removed). `avg_cost_per_million` baseline bumped to $0.50.
+- **Provider dropdowns** — fallback option lists in admin Providers section + onboarding wizard refreshed to current April 2026 lineups.
+
+### Removed
+- **Dead orphan code block** in `class-wp-mcp-ai-model-config.php` (lines 332–3219, sitting inside an unclosed docblock comment after the live `return $configs;`). File shrank 3416 → 521 lines.
+- **Sunset model ids** purged from the catalog: `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo`, `o1`, `o1-mini`, `o1-preview`, `o1-pro`, `chatgpt-4o-latest`, dated `gpt-4o-realtime-preview-*` / `gpt-4o-audio-preview-*`, `gpt-4.1-2025-04-14`, `gpt-5.1-thinking/instant`, `gpt-5.2-thinking/instant`, `claude-3-opus-20240229`, `claude-3-haiku-20240307`, `claude-mythos-preview`, all `gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`, `gemini-pro-vision`, `gemini-3-pro-preview`, `gemini-3-flash-preview`, `imagen-3`, `meta/llama-3.1-*`, `microsoft/phi-3-*`.
+
+### Migration
+- Stored `wp_mcp_ai_model_configs` entries and assistant `_wp_mcp_ai_model` post meta referencing removed ids are auto-rewritten to documented successors on first load after the upgrade, keyed by the catalog `version` field so subsequent refreshes re-run the routine.
+
+
 ## [1.1.8] - 2026-04-15
 
 ### April 15, 2026 — Erlang C Queuing Tools, Full Tool-Reference Audit, WordPress.org Compliance Re-Audit

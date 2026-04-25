@@ -38,6 +38,28 @@ if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
+
+		// Schedule daily model catalog discovery cron job (April 2026 refresh).
+		// Deliberately offset the first run by an hour to keep the activation/upgrade
+		// page load light — the daily file-cleanup crons above run on essentially
+		// idempotent local data, but discovery makes outbound HTTP calls to provider
+		// APIs and we do not want that fanning out at the same moment dozens of
+		// other plugin-load actions are firing.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' ) ) {
+			/**
+			 * Filter the WP-Cron interval used for model catalog discovery.
+			 *
+			 * Accepts any registered schedule slug (e.g., 'hourly', 'twicedaily',
+			 * 'daily', 'weekly').
+			 *
+			 * @since 2026.04
+			 *
+			 * @param string $interval Default 'daily'.
+			 */
+			$interval = apply_filters( 'wp_mcp_ai_model_discovery_interval', 'daily' );
+			$interval = is_string( $interval ) && '' !== $interval ? $interval : 'daily';
+			wp_schedule_event( time() + HOUR_IN_SECONDS, $interval, 'wp_mcp_ai_model_catalog_discovery' );
+		}
 	}
 }
 
@@ -53,6 +75,29 @@ if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_f
 
 if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler' ) ) {
 	add_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler', 10, 1 );
+}
+
+if ( ! has_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
+	add_action( 'wp_mcp_ai_model_catalog_discovery', 'wp_mcp_ai_model_catalog_discovery_handler' );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_model_catalog_discovery_handler' ) ) {
+	/**
+	 * Cron job handler for the daily model catalog discovery service.
+	 *
+	 * Delegates to {@see WP_MCP_AI_Model_Discovery_Service::cron_handler()}, which
+	 * obeys the wp_mcp_ai_model_discovery_enabled filter and persists a diff
+	 * payload (additions / sunsets / price changes) into the
+	 * wp_mcp_ai_model_catalog_suggestions option for admin review.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_model_catalog_discovery_handler() {
+		if ( ! class_exists( 'WP_MCP_AI_Model_Discovery_Service' ) ) {
+			return;
+		}
+		WP_MCP_AI_Model_Discovery_Service::cron_handler();
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {
