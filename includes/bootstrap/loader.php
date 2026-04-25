@@ -72,6 +72,43 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-chart-js-helper.ph
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-analytics-engine.php';
+
+// ---------------------------------------------------------------------------
+// Measurement subsystem (metrics, verifiers, reward functions)
+// ---------------------------------------------------------------------------
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-metric-collector.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/interface-wp-mcp-ai-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-base.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-verifier-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-reward-function-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-rule-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-schema-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/verifiers/class-wp-mcp-ai-llm-judge-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/rewards/class-wp-mcp-ai-reference-rewards.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/budgets/class-wp-mcp-ai-budget-envelope.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/budgets/class-wp-mcp-ai-budget-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/exporters/class-wp-mcp-ai-otel-exporter.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-case.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-suite-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-runner.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-counterfactual-runner.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-regression-detector.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/eval/class-wp-mcp-ai-eval-run-store.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-stock-metrics.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-tool-execution-observer.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-chat-turn-metrics.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-chat-turn-observer.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-sse-metrics.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-sse-observer.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-metric-event-store.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-metric-persister.php';
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-metric-retention.php';
+if ( is_admin() ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/measurement/class-wp-mcp-ai-admin-measurement-dashboard.php';
+}
+require_once WP_MCP_AI_PATH . 'includes/measurement/class-wp-mcp-ai-measurement-bootstrap.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
 // ---------------------------------------------------------------------------

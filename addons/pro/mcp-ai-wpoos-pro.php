@@ -604,6 +604,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
 		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
 
+		// ========================================================================
+		// PHASE 6B: PRO MEASUREMENT TOOLKIT
+		// ========================================================================
+		// Register Pro-only verifiers, budget envelopes, and reward wrappers
+		// on the base measurement registries. Loaded here so the base
+		// measurement bootstrap (which fires the registration hooks) is
+		// already in place.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-verifier.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-rubric-presets.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-budget-guarded-reward.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
+		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 

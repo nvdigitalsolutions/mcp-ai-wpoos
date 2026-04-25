@@ -110,6 +110,39 @@ class WP_MCP_AI_SSE_Stream {
 			)
 		);
 
+		/**
+		 * Fires when an SSE stream begins, immediately after the initial
+		 * `connected` event is buffered and before the poll loop starts.
+		 *
+		 * Pure notification hook; observers MUST NOT alter the stream state
+		 * (no echoing, no calls that modify `$stream`).
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param string $job_id        Job identifier.
+		 * @param array  $params        Stream parameters (`max_duration`, `poll_interval`, `started_at`).
+		 */
+		do_action(
+			'wp_mcp_ai_sse_stream_started',
+			$job_id,
+			array(
+				'max_duration'  => $max_duration,
+				'poll_interval' => $poll_interval,
+				'started_at'    => $start_time,
+			)
+		);
+
+		/**
+		 * Outcome is refined as the loop exits. Values:
+		 * - `complete`              — terminal state `completed`
+		 * - `failed`                — terminal state `failed`
+		 * - `cancelled_by_job`      — terminal state `cancelled`
+		 * - `cancelled_by_client`   — `connection_aborted()` returned true
+		 * - `timeout`               — max duration reached
+		 * - `iteration_exhausted`   — safety cap tripped (rare, edge case)
+		 */
+		$outcome = 'iteration_exhausted';
+
 		// Poll until max duration, terminal state, or client disconnect.
 		while ( ( time() - $start_time ) < $max_duration && $iteration_count < $max_iterations ) {
 			++$iteration_count;
@@ -123,6 +156,7 @@ class WP_MCP_AI_SSE_Stream {
 						'message' => 'Client connection aborted',
 					)
 				);
+				$outcome = 'cancelled_by_client';
 				break;
 			}
 
@@ -133,6 +167,24 @@ class WP_MCP_AI_SSE_Stream {
 				$stream     .= self::format_sse_message( 'status', $status );
 				$last_status = $status;
 
+				/**
+				 * Fires when a non-heartbeat SSE chunk is buffered for delivery.
+				 *
+				 * Fires for `connected`, `status`, `disconnected`, `complete`,
+				 * `timeout`, and `close` events, but NOT for heartbeat comments —
+				 * so `stream.chunk_interval_ms` measures real status progression
+				 * rather than the heartbeat cadence.
+				 *
+				 * Pure notification hook; observers MUST NOT alter stream state.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param string $job_id      Job identifier.
+				 * @param string $event_type  SSE event name (e.g. `status`, `complete`).
+				 * @param int    $iteration   Iteration count at time of emission.
+				 */
+				do_action( 'wp_mcp_ai_sse_stream_chunk_sent', $job_id, 'status', $iteration_count );
+
 				// Check if job is in terminal state.
 				if ( isset( $status['status'] ) && in_array( $status['status'], $terminal_states, true ) ) {
 					$stream .= self::format_sse_message(
@@ -142,6 +194,13 @@ class WP_MCP_AI_SSE_Stream {
 							'final_status' => $status['status'],
 						)
 					);
+					if ( 'completed' === $status['status'] ) {
+						$outcome = 'complete';
+					} elseif ( 'failed' === $status['status'] ) {
+						$outcome = 'failed';
+					} else {
+						$outcome = 'cancelled_by_job';
+					}
 					break;
 				}
 			}
@@ -174,10 +233,38 @@ class WP_MCP_AI_SSE_Stream {
 					'message' => 'Maximum connection duration reached',
 				)
 			);
+			$outcome = 'timeout';
 		}
 
 		// Send closing message.
 		$stream .= self::format_sse_message( 'close', array( 'job_id' => $job_id ) );
+
+		/**
+		 * Fires when an SSE stream ends, just before the handler returns
+		 * the buffered stream body. The `$outcome` parameter distinguishes
+		 * real errors from client cancellations and server-side timeouts —
+		 * consumers (measurement, logging) must treat `cancelled_by_client`
+		 * as a first-class non-error outcome.
+		 *
+		 * Pure notification hook; observers MUST NOT alter stream state.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param string $job_id     Job identifier.
+		 * @param string $outcome    One of `complete`, `failed`, `cancelled_by_job`,
+		 *                           `cancelled_by_client`, `timeout`, `iteration_exhausted`.
+		 * @param array  $summary    Stream summary (`duration_ms`, `iterations`, `started_at`).
+		 */
+		do_action(
+			'wp_mcp_ai_sse_stream_ended',
+			$job_id,
+			$outcome,
+			array(
+				'duration_ms' => (int) ( ( time() - $start_time ) * 1000 ),
+				'iterations'  => $iteration_count,
+				'started_at'  => $start_time,
+			)
+		);
 
 		return $stream;
 	}

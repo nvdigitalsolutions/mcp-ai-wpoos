@@ -2908,6 +2908,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				++$iteration;
+
+				/**
+				 * Fires after a single agentic-loop iteration has completed in
+				 * the non-streaming REST chat path. Pure notification hook —
+				 * consumed by the measurement observer to emit the
+				 * `chat.agentic.iterations` histogram. No behaviour change.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param int   $iteration    Total iterations completed so far (1-based).
+				 * @param mixed $assistant_id Assistant identifier.
+				 */
+				do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
 			}
 
 			if ( $iteration >= $max_iterations ) {
@@ -3726,6 +3739,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				++$iteration;
+
+				/**
+				 * Fires after a single agentic-loop iteration has completed in
+				 * the streaming (SSE) REST chat path. Pure notification hook —
+				 * consumed by the measurement observer to emit the
+				 * `chat.agentic.iterations` histogram. No behaviour change.
+				 *
+				 * @since 1.3.0
+				 *
+				 * @param int   $iteration    Total iterations completed so far (1-based).
+				 * @param mixed $assistant_id Assistant identifier.
+				 */
+				do_action( 'wp_mcp_ai_agentic_iteration_complete', $iteration, $assistant_id );
 			}
 
 			if ( $iteration >= $max_iterations ) {
