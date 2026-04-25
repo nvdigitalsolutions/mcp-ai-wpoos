@@ -8,7 +8,7 @@
 # - Combined (base + pro)
 # - Core plugin (lightweight)
 # - WordPress.org compliant package (with CDN exclusions and text domain transformation)
-# - Standalone add-ons (canvas + algorave)
+# - Standalone add-ons (canvas + algorave + embedded + fantasy-football + cornerstone3d + graphify)
 #
 # Usage:
 #   ./bin/rebuild-all-zips.sh                          # Rebuild all versions

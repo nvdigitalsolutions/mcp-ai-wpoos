@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.8
+Stable tag: 1.1.9
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -275,9 +275,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
-= 1.2.0 - April 25, 2026 =
+= 1.1.9 - April 25, 2026 =
 
-**Measurement Subsystem GA — Stock Metrics, Eval Suites, Regression Alerting**
+**Measurement Subsystem GA, PHPUnit 11 Upgrade (CVE Fix), Chart.js Handle Normalization, Graphify Addon Restore**
 
 *Stock Metrics & Persistence*
 
@@ -302,6 +302,23 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * Contextual help tabs on the Measurement dashboard (overview / metrics / privacy / cli) — extensible via the `wp_mcp_ai_measurement_help_tabs` filter
 * Reference snippets shipped under `assets/examples/measurement/`: a custom rule verifier, an eval-suite registration, and a CLI generator callable
 * Documentation: `docs/measurement/README.md`, `docs/measurement/rollout-plan.md`, and `docs/measurement/goodhart-checklist.md` updated through PR 11
+
+*Security & Tooling*
+
+* **PHPUnit upgraded to 11** with WordPress-compatibility patches to fix argument-injection vulnerability **GHSA-qrr6-mg7r-m243**; `@dataProvider` docblocks migrated to attributes; CI PHP bumped 8.1 → 8.2 (PHPUnit 11 requires PHP ≥ 8.2)
+* `patches.lock.json` regenerated to include phpunit and wp-phpunit-phpunit10 patches
+* WPCS test-suite cleanup — 83 lint errors resolved in `tests/test-provider-client-adapters.php`
+* Production autoload classmap regenerated with `composer install --no-dev --classmap-authoritative`
+
+*Frontend & Addons*
+
+* **Chart.js handle normalization** — every admin screen now enqueues a single `wp-mcp-ai-chartjs` script handle (ECA dashboard, Schedule Manager, Agent Command Center, Measurement dashboard) to avoid duplicate registrations and version drift
+* **Graphify addon v0.5.0 restored** — WordPress Knowledge Graph addon, living under `addons/graphify/`, is back in the distribution after a short revert cycle
+
+*Documentation*
+
+* New `docs/ORCHESTRATION_REFERENCE.md` — single authoritative reference for the orchestration layer (all 10 workflow presets, 13 resource presets with full settings matrices, PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service file index)
+* Version bumped to 1.1.9 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md
 
 = 1.1.8 - April 15, 2026 =
 
@@ -701,8 +718,8 @@ This plugin has been in active development since October 2024. See the complete 
 
 == Upgrade Notice ==
 
-= 1.2.0 =
-Measurement subsystem ships GA: stock metrics, eval suites, regression alerting, persistent metric store, and `wp mcp-ai measurement` CLI. New `mcp_ai_metric_events` table is dropped on uninstall when `Delete data on uninstall` is enabled. No breaking changes; safe upgrade.
+= 1.1.9 =
+Measurement subsystem ships GA: stock metrics, eval suites, regression alerting, persistent metric store, and `wp mcp-ai measurement` CLI. New `mcp_ai_metric_events` table is dropped on uninstall when `Delete data on uninstall` is enabled. PHPUnit upgraded to 11 to resolve argument-injection CVE GHSA-qrr6-mg7r-m243 (test-suite only; affects CI/dev environments). No breaking changes for runtime plugin users; safe upgrade.
 
 = 1.1.0 =
 Major update with DeepSeek V4 multi-agent orchestration, 4 new Social Media Analytics tools, memory-based toolkit tracking, and 7 critical bug fixes. Recommended for all users.

@@ -3,6 +3,42 @@
 
 ## [1.1.9] - 2026-04-25
 
+### April 16–25, 2026 — Measurement Subsystem GA, PHPUnit 11 Upgrade (CVE Fix), Chart.js Handle Normalization, Graphify Addon Restore
+
+Major delivery of the end-to-end **Measurement subsystem** (12 sequenced PRs) plus a security-driven **PHPUnit 11** upgrade, Chart.js enqueue normalization across admin dashboards, restoration of the Graphify Knowledge Graph addon, and a comprehensive new Orchestration Reference document.
+
+### Added
+- **Measurement subsystem GA (PRs 1–12, April 24–25, 2026)** — Complete rollout of the measurement / evals / reward stack:
+  - **PR 1–4 — Core** — `WP_MCP_AI_Measurement_Registry`, `WP_MCP_AI_Metric_Collector` (in-memory ring buffer, `wp_mcp_ai_metric_recorded`, `wp_mcp_ai_measurement_export`), verifier contract + base class + registry with independence enforcement, reward-function registry with anti-gaming safeguards, and reference verifiers (rule / schema / LLM-judge) + reference rewards.
+  - **PR 5 — Eval harness** — case / suite / runner primitives, read-only Measurement dashboard under **Tools → Measurement**, budget envelopes, OTel JSON exporter, writable dashboard actions.
+  - **PR 6 — Pro rewards** — Pro rubric verifier, budget-guarded reward, Pro measurement bootstrap.
+  - **PR 7 / 7.1 — Chat & agentic loop** — Chat-loop token / cost instrumentation and agentic-loop iteration observer + emitter (`wp_mcp_ai_agentic_iteration` hook family).
+  - **PR 8 — SSE / stream** — SSE/stream instrumentation with per-stream duration, TTFB, and cancellation counters.
+  - **PR 9 / 9.1 — Persistent store** — `{prefix}mcp_ai_metric_events` table, per-request persister, retention cron, `wp_mcp_ai_metric_retention_days` filter (default 30 days), persisted-metric dashboard panel with time-range selector and sparkline; table dropped on uninstall when *Delete data on uninstall* is enabled.
+  - **PR 10 — Rubric presets + counterfactual runner** — Pro presets (`prompt_adherence`, `json_schema`, `citation_presence`); `WP_MCP_AI_Eval_Runner::run_counterfactual()` flags measurement invalidity when the verifier fails to prefer the candidate over a degraded variant; eval-runner counterfactual mode; chat-turn observer & runner flake fixes.
+  - **PR 11 — WP-CLI runner + regression alerting** — `wp mcp-ai measurement run <suite>`, `wp mcp-ai measurement alert-check <suite> [--window=N] [--webhook=<url>]` (exits 2 on regression, webhook failures never mask the exit code), `wp mcp-ai measurement list-runs <suite>` (`table|json|yaml|csv`); new stock metrics `eval.suite.pass_rate` (gauge) and `eval.suite.regression.count` (counter).
+  - **PR 12 — GA polish** — Contextual help tabs on the dashboard (extensible via `wp_mcp_ai_measurement_help_tabs`), uninstall cleanup, reference snippets under `assets/examples/measurement/` (custom rule verifier, eval-suite registration, CLI generator), release notes.
+  - Every signal carries a privacy tier, a direction (`higher_is_better` / `lower_is_better` / `neutral`), and a paired counter-metric so dashboards cannot Goodhart a single dimension.
+  - New stock metrics include tool-execution, chat-loop, agentic-loop, and SSE/stream families, all emitted through a single `wp_mcp_ai_register_metrics` registry.
+- **Graphify addon v0.5.0** — NV oOS Graphify (WordPress Knowledge Graph) restored under `addons/graphify/` after a short revert cycle.
+- **`docs/ORCHESTRATION_REFERENCE.md`** (April 16, 2026) — New single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets with full settings-comparison matrices, PSO algorithm documentation, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks/filters, data-storage keys, admin UI, and service-file index.
+- **`docs/measurement/`** — Full subsystem docs: `README.md`, `rollout-plan.md`, `goodhart-checklist.md`, `verifier-authoring.md`, `reward-authoring.md`, `eval-harness.md`, `persistent-store.md`, `dashboard.md`, `sse-stream.md`, `tool-execution.md`, `chat-turn.md`, `budgets.md`, `otel-exporter.md`, `privacy-matrix.md`, `conventions.md`.
+
+### Security
+- **PHPUnit upgraded to 11.x** with WordPress-compatibility patches (American-English `normalized` naming patch, wp-phpunit-phpunit10 compat) to resolve the argument-injection vulnerability **GHSA-qrr6-mg7r-m243**. A short PHPUnit 12 attempt was reverted because of wp-phpunit incompatibility; the final landing is on PHPUnit 11.
+- **CI PHP minimum bumped 8.1 → 8.2** — PHPUnit 11 requires PHP ≥ 8.2.
+- `patches.lock.json` regenerated to include the phpunit and wp-phpunit-phpunit10 patches.
+
+### Changed
+- **Chart.js enqueue handle normalized** to `wp-mcp-ai-chartjs` across ECA dashboard, Schedule Manager, Agent Command Center, and the new Measurement dashboard. Prevents duplicate registrations, version drift, and double-load warnings.
+- **Test suite WPCS cleanup** — 83 lint errors resolved in `tests/test-provider-client-adapters.php`.
+- **`@dataProvider` docblocks** removed where the PHP attribute alternative is required by PHPUnit 11/12's stricter parser.
+- **Production autoload classmap** regenerated with `composer install --no-dev --classmap-authoritative` for optimized autoloading on production clones.
+- **Version** bumped to 1.1.9 across plugin header, `WP_MCP_AI_VERSION` constant, readme.txt stable tag, and CHANGELOG.md.
+
+### Fixed
+- Chat-turn observer and eval-runner flakes (PR 10).
+- `schedule-manager` and residual ECA/admin pages still enqueuing the old chartjs handle.
 ### April 25, 2026 — Model Catalog Refresh + JSON-Driven Catalog + Discovery Cron
 
 ### Added

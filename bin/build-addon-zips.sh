@@ -7,6 +7,7 @@
 #   build/nvoos-algorave-linux-x64-vX.Y.Z.zip
 #   build/nvoos-fantasy-football-vX.Y.Z.zip
 #   build/nvoos-cornerstone3d-vX.Y.Z.zip
+#   build/nvoos-graphify-vX.Y.Z.zip
 #
 # Usage:
 #   ./bin/build-addon-zips.sh
@@ -68,8 +69,8 @@ echo "   Use --skip-canvas to build without the canvas addon."
 exit 1
 fi
 
-if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ]; then
-echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, and addons/embedded must exist."
+if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
+echo "❌ Error: addons/algorave, addons/fantasy-football, addons/cornerstone3d, addons/embedded, and addons/graphify must exist."
 exit 1
 fi
 
@@ -89,16 +90,17 @@ ALGORAVE_ZIP="${OUTPUT_DIR}/nvoos-algorave-linux-x64-v${VERSION}.zip"
 FF_ZIP="${OUTPUT_DIR}/nvoos-fantasy-football-v${VERSION}.zip"
 CS3D_ZIP="${OUTPUT_DIR}/nvoos-cornerstone3d-v${VERSION}.zip"
 EMBEDDED_ZIP="${OUTPUT_DIR}/nvoos-embedded-v${VERSION}.zip"
+GRAPHIFY_ZIP="${OUTPUT_DIR}/nvoos-graphify-v${VERSION}.zip"
 
-rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP"
+rm -f "$ALGORAVE_ZIP" "$FF_ZIP" "$CS3D_ZIP" "$EMBEDDED_ZIP" "$GRAPHIFY_ZIP"
 if [ "$SKIP_CANVAS" = false ]; then
 rm -f "$CANVAS_ZIP"
 fi
 
 if [ "$SKIP_CANVAS" = true ]; then
-TOTAL_STEPS=4
-else
 TOTAL_STEPS=5
+else
+TOTAL_STEPS=6
 fi
 
 echo "=========================================="
@@ -189,12 +191,28 @@ CS3D_SIZE=$(du -h "$CS3D_ZIP" | cut -f1)
 echo "✅ ${CS3D_ZIP} (${CS3D_SIZE})"
 echo ""
 
+echo "[5/${TOTAL_STEPS}] Building nvoos-graphify-v${VERSION}.zip"
+mkdir -p "${TMP_DIR}/graphify-stage/nvoos-graphify"
+rsync -a "addons/graphify/" "${TMP_DIR}/graphify-stage/nvoos-graphify/" \
+--exclude 'node_modules/' \
+--exclude '.git/' \
+--exclude '.DS_Store' \
+--exclude 'tests/' \
+--exclude 'package-lock.json'
+(
+cd "${TMP_DIR}/graphify-stage"
+zip -r -q "${ROOT_DIR}/${GRAPHIFY_ZIP}" nvoos-graphify/
+)
+GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
+echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
+echo ""
+
 if [ "$SKIP_CANVAS" = true ]; then
 echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavailable)"
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
-echo "[5/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
 mkdir -p "${TMP_DIR}/canvas-work"
 rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude 'node_modules/' \
@@ -250,6 +268,7 @@ echo "  - ${ALGORAVE_ZIP}"
 echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
+echo "  - ${GRAPHIFY_ZIP}"
 if [ "$SKIP_CANVAS" = false ]; then
 echo "  - ${CANVAS_ZIP}"
 else

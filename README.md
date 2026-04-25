@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.8  
-**Release Date:** 2026-04-15 (April 2026 — Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit; v1.1.7: Full MCP 2024-11-05 compliance, MCP Apps, CRE Debt & Securitization Pro Toolkit, 36 new pro professions, 17 new teams)  
-**Latest Updates:** April 2026 (v1.1.8) — 4 Erlang C base-plugin tools (`calculate_erlang_c`, `erlang_c_concurrency_advisor`, `erlang_c_staffing_advisor`, `erlang_c_queue_health`), `wp_mcp_ai_queue_alert` action hook, full tool-reference audit (all 230+ base tools documented across 14 new sections), WordPress.org re-audit (all 13 guidelines pass). Prior release (v1.1.7): Full MCP 2024-11-05 protocol compliance (all 11 methods), JSON-RPC batching, tool annotations, session management, MCP Apps per-assistant remote server connections (SEP-1865), CRE Debt & Securitization Pro Toolkit (57 tools across 5 modules), 36 new pro toolkit professions + 17 new teams (296 professions / 100 teams total), WordPress.org compliance hardening, Algorave audio fixes, security dependency updates  
+**Version:** 1.1.9  
+**Release Date:** 2026-04-25 (April 2026 — Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix, Chart.js handle normalization, Graphify addon restore, Orchestration Reference doc; v1.1.8: Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit)  
+**Latest Updates:** April 2026 (v1.1.9) — Measurement subsystem GA across 12 sequenced PRs (stock metrics for tool-execution / chat-loop / agentic-loop / SSE, persistent metric event store with retention cron, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, read-only + writable Measurement dashboard, `wp mcp-ai measurement` WP-CLI runner with regression alerting); PHPUnit upgraded to 11 with WordPress-compat patches to fix argument-injection CVE **GHSA-qrr6-mg7r-m243** (CI PHP 8.1 → 8.2); Chart.js admin handle normalized to `wp-mcp-ai-chartjs`; Graphify Knowledge Graph addon v0.5.0 restored; new `docs/ORCHESTRATION_REFERENCE.md`. Prior release (v1.1.8): 4 Erlang C base-plugin tools, `wp_mcp_ai_queue_alert` action hook, full tool-reference audit (all 230+ base tools across 14 new sections), WordPress.org re-audit (all 13 guidelines pass).  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.8 — April 2026)](#-latest-updates-v118--april-2026)
+- [🆕 Latest Updates (v1.1.9 — April 2026)](#-latest-updates-v119--april-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -273,7 +273,44 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.8 — April 2026)
+## 🆕 Latest Updates (v1.1.9 — April 2026)
+
+### Measurement Subsystem GA (April 24–25, 2026) ⭐ **NEW**
+
+**End-to-end measurement / evals / reward stack shipped across 12 sequenced PRs** — stock metrics, persistent store, eval harness, Pro rubric presets, WP-CLI runner, regression alerting, and a full Measurement dashboard. See [`docs/measurement/README.md`](docs/measurement/README.md) and [`docs/measurement/rollout-plan.md`](docs/measurement/rollout-plan.md).
+
+- ✅ **Stock metrics** — tool-execution, chat-loop, agentic-loop, and SSE/stream metrics all emitted through a single `wp_mcp_ai_register_metrics` registry. Every signal carries a privacy tier, a direction (`higher_is_better` / `lower_is_better` / `neutral`), and a paired counter-metric so dashboards cannot Goodhart a single dimension.
+- ✅ **Persistent metric event store** — `{prefix}mcp_ai_metric_events` table with per-request persister, retention cron, `wp_mcp_ai_metric_retention_days` filter (default 30 days). Table is dropped on uninstall when *Delete data on uninstall* is enabled.
+- ✅ **Eval harness** — suites + cases registered via `wp_mcp_ai_register_eval_suites`; runner enforces verifier-independence against the suite's `generator_context` so a judge cannot share provenance with the candidate.
+- ✅ **Pro rubric presets** — `prompt_adherence`, `json_schema`, `citation_presence`. `WP_MCP_AI_Eval_Runner::run_counterfactual()` flags measurement invalidity when the verifier fails to prefer the candidate over a degraded variant.
+- ✅ **WP-CLI runner & regression alerting** — `wp mcp-ai measurement run <suite>`, `wp mcp-ai measurement alert-check <suite> [--window=N] [--webhook=<url>]` (exits `2` on regression, webhook failures never mask the exit code), `wp mcp-ai measurement list-runs <suite>` (`table|json|yaml|csv`). New stock metrics `eval.suite.pass_rate` and `eval.suite.regression.count`.
+- ✅ **Dashboard** — read-only + writable Measurement dashboard under **Tools → Measurement** with a time-range selector, persisted-metric panel, sparkline, and contextual help tabs (extensible via `wp_mcp_ai_measurement_help_tabs`).
+- ✅ **Exporters** — Budget envelopes and an OTel JSON exporter. Reference snippets ship under `assets/examples/measurement/`.
+
+### PHPUnit 11 Upgrade — Security (April 18–23, 2026) 🔒
+
+**PHPUnit upgraded to 11 with WordPress-compatibility patches to resolve the argument-injection vulnerability GHSA-qrr6-mg7r-m243.**
+
+- ✅ `@dataProvider` docblocks migrated to PHP attributes where required by PHPUnit 11's stricter parser.
+- ✅ `patches.lock.json` regenerated to include phpunit and wp-phpunit-phpunit10 patches (American-English `normalized` naming).
+- ✅ **CI PHP bumped 8.1 → 8.2** — PHPUnit 11 requires PHP ≥ 8.2.
+- ✅ 83 WPCS lint errors fixed in `tests/test-provider-client-adapters.php`.
+
+### Chart.js Handle Normalization (April 18, 2026)
+
+All admin dashboards (ECA, Schedule Manager, Agent Command Center, Measurement) now enqueue a single `wp-mcp-ai-chartjs` script handle — eliminates duplicate registrations, version drift, and double-load warnings.
+
+### Graphify Knowledge Graph Addon v0.5.0 Restored (April 18, 2026)
+
+**NV oOS Graphify** — an optional WordPress Knowledge Graph addon — has been restored under `addons/graphify/` after a short revert cycle.
+
+### Comprehensive Orchestration Reference (April 16, 2026)
+
+New [`docs/ORCHESTRATION_REFERENCE.md`](docs/ORCHESTRATION_REFERENCE.md) is the single authoritative reference for the orchestration layer: all 10 workflow presets, all 13 resource presets (with full settings-comparison matrices), PSO algorithm, tool-execution orchestrator, load balancer, reasoning controller, multi-agent system, health monitoring, budget enforcement, hooks / filters, storage keys, admin UI, and service-file index.
+
+---
+
+## 🆕 Previous Updates (v1.1.8 — April 2026)
 
 ### Erlang C Workforce Management Tools (April 15, 2026) ⭐ **NEW**
 
