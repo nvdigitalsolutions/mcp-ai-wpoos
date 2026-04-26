@@ -70,6 +70,21 @@ if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
 }
 
 /**
+ * Tone.js live-coding eval allowed.
+ *
+ * Defaults to false. The Algorave addon's live-coder shortcode compiles
+ * user-typed JavaScript with `new Function('Tone', code)`. That gives the
+ * compiled code full access to the parent page's DOM, cookies, and fetch.
+ * The Strudel mini-notation engine remains the safe default; this constant
+ * unlocks the Tone.js engine for trusted operators.
+ *
+ * define( 'WP_MCP_AI_ALLOW_TONEJS_EVAL', true );
+ */
+if ( ! defined( 'WP_MCP_AI_ALLOW_TONEJS_EVAL' ) ) {
+	define( 'WP_MCP_AI_ALLOW_TONEJS_EVAL', false );
+}
+
+/**
  * Pro Dashboard enabled.
  *
  * Defaults to true. Set to false to disable Pro Dashboard features.

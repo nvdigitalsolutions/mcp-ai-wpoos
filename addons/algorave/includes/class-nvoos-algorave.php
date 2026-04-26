@@ -219,6 +219,14 @@ class NV_oOS_Algorave {
 	 * @return string HTML output.
 	 */
 	public static function shortcode_live_coder( $atts ) {
+		// Capability gate (F-AI-01 / R-S-05): the live-coder evaluates
+		// user-typed JavaScript via `new Function('Tone', code)`. Only authors
+		// (`edit_posts`) and above may load the front-end surface that exposes
+		// the eval entry point; lower-privileged users get an empty render.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return '';
+		}
+
 		$atts = shortcode_atts(
 			array(
 				'bpm'        => 120,
@@ -338,10 +346,11 @@ class NV_oOS_Algorave {
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'defaultBpm'     => absint( $settings['default_bpm'] ),
 				'defaultScale'   => sanitize_text_field( $settings['default_scale'] ),
-				'strudelEnabled' => ! empty( $settings['strudel_cdn'] ),
-				'visualizer'     => ! empty( $settings['visualizer_enabled'] ),
-				'samplesUrl'     => esc_url_raw( $samples_base ),
-				'sampleMaps'     => array(
+				'strudelEnabled'    => ! empty( $settings['strudel_cdn'] ),
+				'tonejsEvalAllowed' => defined( 'WP_MCP_AI_ALLOW_TONEJS_EVAL' ) && WP_MCP_AI_ALLOW_TONEJS_EVAL,
+				'visualizer'        => ! empty( $settings['visualizer_enabled'] ),
+				'samplesUrl'        => esc_url_raw( $samples_base ),
+				'sampleMaps'        => array(
 					'drumMachines'      => esc_url_raw( $samples_base . 'tidal-drum-machines.json' ),
 					'drumMachinesAlias' => esc_url_raw( $samples_base . 'tidal-drum-machines-alias.json' ),
 					'piano'             => esc_url_raw( $samples_base . 'piano.json' ),

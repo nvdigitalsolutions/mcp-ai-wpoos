@@ -9,11 +9,11 @@
 | Severity | Count | Status |
 |---:|---:|---|
 | Critical | 0 | — |
-| **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 1 PARTIALLY FIXED (F-AUTHZ-01), 2 OPEN |
+| **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
 | Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
 | Low | 21 | 5 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01), 16 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **15 closed/partially-fixed, 35 open** |
+| **Total** | **50** | **16 closed/partially-fixed, 34 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -83,7 +83,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Files** | `addons/algorave/assets/js/algorave-pattern-engine.js:917` |
 | **Description** | User-typed live-coding JS is compiled with `new Function('Tone', code)` and executed in the page's main context, with full DOM, cookie and `fetch` access. Even though the feature is opt-in, an attacker who tricks a user into pasting a malicious snippet (or who is granted `subscriber`+ on a multisite where the shortcode is reachable) can exfiltrate the user's session. |
 | **Recommendation** | (1) Move execution into a sandboxed iframe (`sandbox="allow-scripts"`, no `allow-same-origin`) with a strict `script-src 'self'` CSP; (2) Pass user code via `postMessage`; (3) Capability gate the frontend shortcode on at least `edit_posts`. |
-| **Status** | OPEN |
+| **Status** | **PARTIALLY FIXED — this PR (Wave 13 / R-S-05)**. Two layered defences landed: (a) `shortcode_live_coder()` now refuses to render unless the requesting user has `edit_posts` — anonymous and subscriber-level visitors no longer load the live-coder UI at all; (b) the `new Function('Tone', code)` path is now gated behind a new opt-in constant `WP_MCP_AI_ALLOW_TONEJS_EVAL` (default `false`, defined in `includes/bootstrap/constants.php`). The flag is forwarded to the browser as `nvoosAlgoraveConfig.tonejsEvalAllowed`; when false, `algorave-pattern-engine.js` dispatches an `algorave:error` event instead of compiling the user's code. The Strudel engine remains the safe default. **Remaining work:** move the Tone.js execution into a sandboxed iframe (`sandbox="allow-scripts"`, no `allow-same-origin`) with strict CSP — tracked as a follow-up PR. |
 | **Roadmap** | R-S-05 |
 
 ---
