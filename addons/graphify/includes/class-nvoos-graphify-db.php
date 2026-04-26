@@ -148,11 +148,14 @@ class NV_oOS_Graphify_DB {
 	 */
 	public static function uninstall() {
 		global $wpdb;
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names are not user-supplied.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::edges_table() );
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::nodes_table() );
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::meta_table() );
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Use %i identifier placeholder (WordPress 6.2+) so the table names are
+		// safely quoted by $wpdb->prepare() rather than concatenated. The names
+		// themselves are server-controlled ($wpdb->prefix . 'graphify_*'), but
+		// using %i is the project's required pattern and guards against any
+		// future regression where a tool argument might reach this path.
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::edges_table() ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::nodes_table() ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::meta_table() ) );
 		delete_option( 'nvoos_graphify_db_version' );
 	}
 

@@ -6,14 +6,14 @@
 
 ## Summary by severity
 
-| Severity | Count |
-|---:|---:|
-| Critical | 0 |
-| **High** | **5** |
-| Medium | 14 |
-| Low | 21 |
-| Informational | 10 |
-| **Total** | **50** |
+| Severity | Count | Status |
+|---:|---:|---|
+| Critical | 0 | — |
+| **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
+| Medium | 14 | 1 FIXED (F-TLS-01), 13 OPEN |
+| Low | 21 | 1 CLOSED (F-CMP-02 re-verified false positive), 20 OPEN |
+| Informational | 10 | — |
+| **Total** | **50** | **3 closed, 47 open** |
 
 ---
 
@@ -55,8 +55,8 @@
 | **Files** | `addons/graphify/includes/class-nvoos-graphify-db.php:152-154`; `addons/graphify/includes/class-nvoos-graphify-report.php:80` |
 | **Description** | 7 `WordPress.DB.PreparedSQL.NotPrepared` errors. Table names are server-controlled (`{$wpdb->prefix}graphify_*`) so the **current** code is not exploitable, but the WPCS rule guards against future regressions and the `%i` placeholder is the modern correct form. |
 | **Recommendation** | Convert each query to `$wpdb->prepare( "SELECT … FROM %i …", $table_name )` (`%i` is supported on WP ≥ 6.2; the plugin requires WP 6.0+, so add a graceful fallback or bump the requirement). Add tests asserting that supplying a bogus table name returns no rows rather than a SQL error. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-03 |
+| **Status** | **FIXED** — this PR (R-S-03). The two flagged sites (`uninstall()` table drops and `Report::build()` community query) now use `$wpdb->prepare()` with `%i` for table-name quoting. Other interpolated queries inside graphify still carry `phpcs:ignore` suppressions and are tracked under R-A-01 for a follow-up sweep. |
+| **Roadmap** | R-S-03 (this PR) |
 
 ### F-PRIV-03 — Healthcare addon HIPAA posture undocumented
 
@@ -108,11 +108,11 @@
 | **Severity** | Medium |
 | **CWE** | CWE-295 (Improper Certificate Validation) |
 | **Addon(s)** | base, pro |
-| **Files** | `includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php:161`; `includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php:239`; `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-product.php:457`; `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php:419` |
-| **Description** | TLS verification disabled on outbound calls. MITM risk on hostile networks. |
-| **Recommendation** | Remove all four `sslverify => false`. If a specific endpoint genuinely needs it (rare; usually an internal CA), document the host and inject the CA bundle via `https_local_ssl_verify` / `http_request_args` filter for that single host. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-06 |
+| **Files** | `includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php:161`; `addons/pro/includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php:239`; `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-product.php:457`; `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-validate-image-for-vehicle.php:419` |
+| **Description** | TLS verification disabled on outbound calls. The two image-validators fetched arbitrary user-supplied URLs (real MITM risk). The two import-trigger sites called `home_url()` (own site) but still bypassed cert checks unconditionally. |
+| **Recommendation** | Remove all four `sslverify => false`. Loopback / private-network targets are still relaxed automatically by the `http_request_args` filter in `WP_MCP_AI_HTTP_Helper` (gated by the "Allow loopback SSL bypass" admin setting), so dev environments are unaffected. |
+| **Status** | **FIXED** — this PR (R-S-06). All four sites now omit `sslverify` so it defaults to `true`. The varnish-cache tool retains its loopback-only `sslverify=false` because it is correctly gated by an explicit `is_loopback_address()` check. The base http-helper itself is the loopback gate, not a finding. |
+| **Roadmap** | R-S-06 (this PR) |
 
 ### F-AUTHZ-02 — `wp_ajax_nopriv_*` handlers (6 total) need explicit review
 
@@ -264,7 +264,7 @@
 |---|---|---|---|---|
 | F-INPUT-01 | Some `json_decode` payloads not schema-validated | various | CWE-20 | OPEN |
 | F-CRYPTO-01 | Verify `wp_mcp_ai_encrypt` key derivation (KDF, IV uniqueness, AEAD) | `includes/class-wp-mcp-ai-encryption.php` | CWE-326 | OPEN |
-| F-CMP-02 | 4 non-test PHP files missing `ABSPATH` guard | see [`automated-scan-results.md`](./automated-scan-results.md) §5.4 | CWE-829 | OPEN |
+| F-CMP-02 | 4 non-test PHP files initially flagged as missing `ABSPATH` guard. **Re-verified — false positive.** `addons/embedded/uninstall.php` correctly uses `WP_UNINSTALL_PLUGIN`; both vault classes correctly use `WPINC` (functionally equivalent to `ABSPATH`); `addons/pro/build/workflow-builder/workflow-builder.asset.php` is a build artifact that must `return array(...)` directly and cannot have an exit guard. **CLOSED — no fix needed.** | see [`automated-scan-results.md`](./automated-scan-results.md) §5.4 | CWE-829 | CLOSED |
 | F-CMP-03 | `readme.txt` `Tested up to` / `Stable tag` drift between releases | `readme.txt` | n/a | OPEN |
 | F-CMP-04 | Some legacy `mcp_ai_*` nonce action names instead of `wp_mcp_ai_*` | various | n/a | OPEN |
 | F-CMP-05 | Several `.min.js` files without sibling source / source map | `assets/js/*.min.js` | n/a (WP.org guideline 11) | OPEN |

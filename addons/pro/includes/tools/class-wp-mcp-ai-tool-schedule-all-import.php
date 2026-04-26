@@ -234,9 +234,11 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 				wp_remote_get(
 					$trigger_url,
 					array(
-						'timeout'   => 1,
-						'blocking'  => false,
-						'sslverify' => false,
+						'timeout'  => 1,
+						'blocking' => false,
+						// sslverify intentionally not overridden — defaults to true.
+						// Loopback / private-network targets are automatically handled
+						// by the http_request_args filter in WP_MCP_AI_HTTP_Helper.
 					)
 				);
 			}
