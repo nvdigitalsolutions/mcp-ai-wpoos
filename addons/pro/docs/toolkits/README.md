@@ -1,6 +1,6 @@
 # Pro Toolkit Documentation Index
 
-The NV oOS Pro add-on bundles **25+ specialized toolkits**. Each toolkit is independently
+The NV oOS Pro add-on bundles **30 specialized toolkits**. Each toolkit is independently
 toggleable from **WordPress Admin → NV oOS → Settings → Pro Features** and is loaded only
 when both the Pro add-on is active and the toolkit's `enable_*` flag is set.
 

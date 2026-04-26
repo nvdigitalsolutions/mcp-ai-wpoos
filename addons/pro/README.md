@@ -13,13 +13,13 @@
 
 ## Overview
 
-The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **24 specialized professional toolkits** with **249+ advanced tools** powered by best-in-class NPM packages.
+The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **30 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
 
 **This is NOT open-source software.** It is a commercial product available only through authorized channels with proper licensing.
 
 ## Professional Toolkits
 
-The Pro Add-on includes **25+ specialized professional toolkits** organized into the following categories.
+The Pro Add-on includes **30 specialized professional toolkits** organized into the following categories.
 
 > **Per-toolkit documentation:** every toolkit has a dedicated overview page in
 > [`docs/toolkits/`](docs/toolkits/README.md) that covers its activation setting, custom

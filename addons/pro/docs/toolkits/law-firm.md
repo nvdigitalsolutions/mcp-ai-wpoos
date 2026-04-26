@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Activation setting** | `enable_law_firm_toolkit` (in `wp_mcp_ai_settings`) |
+| **Activation setting** | `enable_law_firm_toolkit` |
 | **Per-toolkit settings** | `wp_mcp_ai_law_firm_settings` |
 | **Admin location** | NV oOS → Settings → Pro Features → Law Firm Toolkit |
 | **Tools** | **64** AI tools across 7 modules |
