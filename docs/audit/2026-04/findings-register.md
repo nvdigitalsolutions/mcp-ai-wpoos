@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 3 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02), 11 OPEN |
+| Medium | 14 | 4 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04), 10 OPEN |
 | Low | 21 | 1 CLOSED (F-CMP-02 re-verified false positive), 20 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **5 closed, 45 open** |
+| **Total** | **50** | **6 closed, 44 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -147,8 +147,8 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Addon(s)** | base, embedded |
 | **Description** | Guest tokens issued for embedded chat surfaces are not bound to the embed origin, so a token leaked from one origin can be replayed on another. |
 | **Recommendation** | Bind the token to a single `origin` (or a configured allowlist) at issuance time and verify on use. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-09 |
+| **Status** | **FIXED** — this PR (R-S-09). `WP_MCP_AI_Shortcode::generate_guest_token()` now persists the issuance origin (default = host of `home_url()`, override via filter `wp_mcp_ai_guest_token_issuance_origin`). `WP_MCP_AI_Shortcode::validate_guest_token()` accepts an optional `WP_REST_Request`; when the stored record has a bound origin, the request's `Origin` header (or `Referer` host as a fallback) must match the bound host or be present in the array returned by `wp_mcp_ai_guest_token_allowed_origins`. `Origin: null` (sandboxed iframes / `file://`) is rejected. Tokens persisted before this binding (no `origin` field) continue to validate for the remainder of their TTL so active sessions are not invalidated by the upgrade. All four call sites (`includes/class-wp-mcp-ai-rest.php` × 3, `includes/class-wp-mcp-ai-job-notifier-rest.php` × 1) now pass `$request`. Nine new PHPUnit cases in `tests/test-guest-token-origin-binding.php` cover matching origin, mismatched origin, Referer fallback, no-request CLI/cron path, legacy record compat, allowlist filter, issuance filter disabling, missing-origin-and-referer, and `Origin: null`. |
+| **Roadmap** | R-S-09 (this PR) |
 
 ### F-XSS-01 — Pro shortcodes render user/AI data — confirm escaping
 

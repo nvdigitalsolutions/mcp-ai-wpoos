@@ -463,7 +463,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$guest_token = $this->extract_guest_token( $request );
 			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 				$assistant_id    = absint( $request->get_param( 'assistant_id' ) );
-				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id );
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id, $request );
 
 				if ( $guest_assistant ) {
 					// Guest users (not logged in) can access their own transcripts (user_id = 0).
@@ -1580,7 +1580,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$guest_token = $this->extract_guest_token( $request );
 
 			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id );
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id, $request );
 
 				if ( $guest_assistant ) {
 					if ( ! $assistant_id ) {
@@ -2130,7 +2130,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// extract_guest_token already supports both header and query parameter.
 			$guest_token = $this->extract_guest_token( $request );
 			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0, $request );
 
 				if ( $guest_assistant ) {
 					// Guest users can view their own cron jobs (user_id = 0).
