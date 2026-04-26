@@ -617,6 +617,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/measurement/class-wp-mcp-ai-pro-measurement-bootstrap.php';
 		WP_MCP_AI_Pro_Measurement_Bootstrap::boot();
 
+		// ========================================================================
+		// PHASE 6C: PARA + QMS METHODOLOGY SUBSYSTEMS
+		// ========================================================================
+		// PARA (Projects/Areas/Resources/Archives) for the Project Management toolkit
+		// and QMS (ISO 9001:2015 Clause 7.5 Documented Information) for the Document
+		// Generation toolkit. Both are opt-in via feature flags
+		// (`enable_para_organization`, `enable_qms_compliance`) and are no-ops when
+		// their respective toolkits are disabled.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/para/class-wp-mcp-ai-para-init.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/qms/class-wp-mcp-ai-qms-init.php';
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -714,6 +725,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
+			// PARA Methodology tools (Pro feature - v1.2.0).
+			'WP_MCP_AI_Tool_PARA_Classify_Item'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-classify-item.php',
+			'WP_MCP_AI_Tool_PARA_Move_To_Archives'        => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-move-to-archives.php',
+			'WP_MCP_AI_Tool_PARA_Create_Area'             => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-create-area.php',
+			'WP_MCP_AI_Tool_PARA_Update_Area'             => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-update-area.php',
+			'WP_MCP_AI_Tool_PARA_List_Areas'              => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-list-areas.php',
+			'WP_MCP_AI_Tool_PARA_Weekly_Review'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-weekly-review.php',
+			'WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project' => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-promote-resource-to-project.php',
+			// QMS (ISO 9001:2015 Clause 7.5) tools (Pro feature - v1.2.0).
+			'WP_MCP_AI_Tool_QMS_Create_Controlled_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-create-controlled-document.php',
+			'WP_MCP_AI_Tool_QMS_Submit_For_Review'        => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-submit-for-review.php',
+			'WP_MCP_AI_Tool_QMS_Approve_Document'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-approve-document.php',
+			'WP_MCP_AI_Tool_QMS_Release_Document'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-release-document.php',
+			'WP_MCP_AI_Tool_QMS_Supersede_Document'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-supersede-document.php',
+			'WP_MCP_AI_Tool_QMS_Mark_Obsolete'            => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-mark-obsolete.php',
+			'WP_MCP_AI_Tool_QMS_Sign_Document'            => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-sign-document.php',
+			'WP_MCP_AI_Tool_QMS_List_Controlled_Documents' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-list-controlled-documents.php',
+			'WP_MCP_AI_Tool_QMS_Get_Audit_Trail'          => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-get-audit-trail.php',
+			'WP_MCP_AI_Tool_QMS_Schedule_Review'          => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-schedule-review.php',
 			// Remotion programmatic video creation tool (React/Node.js, always-on pro tool).
 			'WP_MCP_AI_Tool_Create_Remotion_Video'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-remotion-video.php',
 			// Product Actualization tool.

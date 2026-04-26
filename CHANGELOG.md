@@ -1,5 +1,43 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — QMS + PARA Methodology Integration (Pro)
+
+Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
+
+- **QMS — ISO 9001:2015 Clause 7.5 (Document Generation Toolkit)**
+  - New `mcp_ai_doc_record` CPT for controlled-document instances with full per-record metadata (document_id, revision, owner/reviewer/approver IDs, effective/next-review dates, retention years, disposition, external origin, change reason/summary, signatures, content hash, supersede pointers).
+  - New `mcp_ai_qms_doc_type` taxonomy seeded with Policy / Procedure / Work Instruction / Form / Record / External (clause 7.5.3 b).
+  - `WP_MCP_AI_QMS_Workflow` state machine: `draft → in_review → approved → released → superseded/obsolete` with pre-condition gates.
+  - `WP_MCP_AI_QMS_Audit_Log` immutable audit table (`{prefix}wp_mcp_ai_qms_audit`) with prepared queries, IP/UA capture, before/after content hashes, and a shared `subsystem` column (qms/para).
+  - 21 CFR Part 11-friendly e-signatures: WP password re-prompt + SHA-256 hash binding signature → document content.
+  - Daily retention cron auto-marks obsolete records once `effective_date + retention_years` has elapsed.
+  - Daily review-due cron fires `wp_mcp_ai_qms_review_due_for_record` for owners.
+  - New `manage_qms` capability (Editor/Admin by default; filterable).
+  - 10 new Pro tools: `qms_create_controlled_document`, `qms_submit_for_review`, `qms_approve_document`, `qms_release_document`, `qms_supersede_document`, `qms_mark_obsolete`, `qms_sign_document`, `qms_list_controlled_documents`, `qms_get_audit_trail`, `qms_schedule_review`.
+  - Hooks: `wp_mcp_ai_qms_before/after_state_transition`, `wp_mcp_ai_qms_document_signed`, `wp_mcp_ai_qms_audit_logged`. Filters: `wp_mcp_ai_qms_capability_roles`, `wp_mcp_ai_qms_require_release_signature`, `wp_mcp_ai_qms_grant_to_admins`.
+
+- **PARA — Tiago Forte's Projects/Areas/Resources/Archives (Project Management Toolkit)**
+  - New `mcp_ai_para` hierarchical taxonomy with four locked roots: `projects`, `areas`, `resources`, `archives` (cannot be deleted/renamed). Sub-buckets allowed.
+  - New `mcp_ai_area` CPT for ongoing responsibilities, with `_para_standard`, `_para_owner`, `_para_review_cadence`, `_para_last_reviewed` meta.
+  - `WP_MCP_AI_PARA_Lifecycle` daily sweep: auto-archives completed/cancelled projects, surfaces dormant Areas, dormant Resources, and archive candidates.
+  - PARA admin column with color-coded badges on all PARA-classified post-type list tables.
+  - Single-select PARA metabox on every supported CPT.
+  - 7 new Pro tools: `para_classify_item`, `para_move_to_archives`, `para_create_area`, `para_update_area`, `para_list_areas`, `para_weekly_review`, `para_promote_resource_to_project`.
+  - Hooks: `wp_mcp_ai_para_item_classified`, `wp_mcp_ai_para_archived`, `wp_mcp_ai_para_unarchived`, `wp_mcp_ai_para_sweep_complete`. Filters: `wp_mcp_ai_para_object_types`, `wp_mcp_ai_para_dormancy_days`, `wp_mcp_ai_para_resource_dormancy_days`.
+
+- **Cross-toolkit bridge**
+  - QMS-obsolete documents auto-move to PARA archives (when both subsystems enabled).
+  - Released QMS documents linked to a PARA Area refresh that Area's `_para_last_reviewed` timestamp.
+  - Both subsystems write to the same audit table (`subsystem` column).
+
+- **Documentation**: `docs/qms-compliance.md`, `docs/para-methodology.md`.
+
+- **Tests**: `tests/qms/test-qms-workflow.php`, `tests/qms/test-qms-audit-log.php`, `tests/para/test-para-taxonomy.php`, `tests/para/test-para-lifecycle.php`.
+
+Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
+
 
 ## [1.1.9] - 2026-04-25
 
