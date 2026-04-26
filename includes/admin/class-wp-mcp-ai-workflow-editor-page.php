@@ -95,7 +95,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 			'mcpAiWorkflowEditor',
 			array(
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'nonce'     => wp_create_nonce( 'mcp_ai_workflow_editor' ),
+				'nonce'     => wp_create_nonce( 'wp_mcp_ai_workflow_editor' ),
 				'workflows' => $this->get_all_workflows(),
 			)
 		);
@@ -210,7 +210,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 	 * @since 1.3.0
 	 */
 	public function ajax_save_workflow() {
-		check_ajax_referer( 'mcp_ai_workflow_editor', 'nonce' );
+		check_ajax_referer( 'wp_mcp_ai_workflow_editor', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
@@ -260,7 +260,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 	 * @since 1.3.0
 	 */
 	public function ajax_delete_workflow() {
-		check_ajax_referer( 'mcp_ai_workflow_editor', 'nonce' );
+		check_ajax_referer( 'wp_mcp_ai_workflow_editor', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
@@ -292,7 +292,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 	 * @since 1.3.0
 	 */
 	public function ajax_test_workflow() {
-		check_ajax_referer( 'mcp_ai_workflow_editor', 'nonce' );
+		check_ajax_referer( 'wp_mcp_ai_workflow_editor', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );

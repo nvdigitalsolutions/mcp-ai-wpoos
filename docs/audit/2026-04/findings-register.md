@@ -11,9 +11,9 @@
 | Critical | 0 | — |
 | **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
 | Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
-| Low | 21 | 6 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive), 15 OPEN |
+| Low | 21 | 6 CLOSED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep), 14 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **17 closed/partially-fixed, 33 open** |
+| **Total** | **50** | **18 closed/partially-fixed, 32 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -267,7 +267,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | F-CRYPTO-01 | Verify `wp_mcp_ai_encrypt` key derivation (KDF, IV uniqueness, AEAD) | `includes/class-wp-mcp-ai-encryption.php` | CWE-326 | OPEN |
 | F-CMP-02 | 4 non-test PHP files initially flagged as missing `ABSPATH` guard. **Re-verified — false positive.** `addons/embedded/uninstall.php` correctly uses `WP_UNINSTALL_PLUGIN`; both vault classes correctly use `WPINC` (functionally equivalent to `ABSPATH`); `addons/pro/build/workflow-builder/workflow-builder.asset.php` is a build artifact that must `return array(...)` directly and cannot have an exit guard. **CLOSED — no fix needed.** | see [`automated-scan-results.md`](./automated-scan-results.md) §5.4 | CWE-829 | CLOSED |
 | F-CMP-03 | `readme.txt` `Tested up to` / `Stable tag` drift between releases | `readme.txt` | n/a | OPEN |
-| F-CMP-04 | Some legacy `mcp_ai_*` nonce action names instead of `wp_mcp_ai_*` | various | n/a | OPEN |
+| F-CMP-04 | Some legacy `mcp_ai_*` nonce action names instead of `wp_mcp_ai_*` | various | n/a | **PARTIALLY FIXED — Wave 15.** Base-plugin nonce action strings standardised: `mcp_ai_workflow_editor` → `wp_mcp_ai_workflow_editor` (4 call-sites in `includes/admin/class-wp-mcp-ai-workflow-editor-page.php`) and `mcp_ai_training_details` → `wp_mcp_ai_training_details` (paired `wp_nonce_field` in `includes/class-wp-mcp-ai-security-training.php` and matching `wp_verify_nonce` in `includes/admin/class-wp-mcp-ai-security-training-admin.php`). Field names (e.g. `mcp_ai_training_details_nonce`) and meta-box IDs left unchanged — those are stable identifiers, not security-relevant. Pro-addon legacy action strings (`mcp_ai_pro_workflow_builder`, `mcp_ai_lf_*`, `mcp_ai_cre_*`, `mcp_ai_account_*`, `mcp_ai_media_template_admin`, `mcp_ai_media_collection_admin`, `mcp_ai_booking`) remain on a follow-up sweep. |
 | F-CMP-05 | Several `.min.js` files without sibling source / source map | `assets/js/*.min.js` | n/a (WP.org guideline 11) | OPEN |
 | F-RATE-01 | No outbound rate-limit on Yahoo / ESPN tools | fantasy-football tools | CWE-770 | OPEN |
 | F-DOS-01 | Graphify traversal tools have no result-size cap | graphify tools | CWE-770 | OPEN |
