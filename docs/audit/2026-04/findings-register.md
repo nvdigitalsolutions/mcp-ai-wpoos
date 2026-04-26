@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
-| Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
+| Medium | 14 | 8 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02), 6 OPEN |
 | Low | 21 | 6 CLOSED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep), 14 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **18 closed/partially-fixed, 32 open** |
+| **Total** | **50** | **19 closed/partially-fixed, 31 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -124,7 +124,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | CWE-862 (Missing Authorization) |
 | **Description** | The 6 unauthenticated AJAX handlers must each be inspected to confirm: (a) nonce required; (b) rate-limited; (c) only emits public data. |
 | **Recommendation** | Per-handler review checklist; add the regression test from R-T-05. |
-| **Status** | TRIAGED |
+| **Status** | **FIXED — Wave 16 (R-S-07).** Per-handler audit results: **(1) `wp_mcp_ai_execute_quick_action` (base)** — `check_ajax_referer` ✅; immediately rejects unauthenticated users via `current_user_can('read')` ✅. The `wp_ajax_nopriv_` registration was dead code and has been **removed**. **(2) `wp_mcp_ai_get_professional_config` (base)** — `check_ajax_referer` ✅; returns only post-meta of a public CPT (provider/model/temperature) ✅; transient rate-limit **added** (20 req/min/IP, filterable via `wp_mcp_ai_ajax_rate_limit`). **(3) `wp_mcp_ai_get_models_for_provider` (base)** — `check_ajax_referer` ✅; returns model list (public UI config) ✅; transient rate-limit **added** (20 req/min/IP). **(4) `wp_mcp_ai_render_professional_chat` (base)** — `check_ajax_referer` ✅; calls `do_shortcode` with `sanitize_text_field`-sanitized atts ✅; transient rate-limit **added** (10 req/min/IP — lower limit for this heavier operation). **(5) `wp_mcp_ai_google_chat_webhook` (pro)** — `wp_ajax_nopriv_` is correct: it's a Google Chat webhook receiver. Signature/OIDC verification happens via `verify_google_chat_webhook()` ✅. No nonce (correct for external webhook). **(6) `wp_mcp_ai_telegram_webhook` (pro)** — `wp_ajax_nopriv_` is correct: it's a Telegram webhook receiver. `hash_equals`-protected `X-Telegram-Bot-Api-Secret-Token` header verification ✅. New helper `wp_mcp_ai_check_ajax_rate_limit( $action, $max_per_min )` added to `includes/bootstrap/helpers.php`. |
 | **Roadmap** | R-S-07 |
 
 ### F-AUTHZ-03 — Multisite super-admin gates not consistently applied

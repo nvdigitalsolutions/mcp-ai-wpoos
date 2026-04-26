@@ -474,3 +474,55 @@ if ( ! function_exists( 'wp_mcp_ai_run_shell' ) ) {
 		);
 	}
 }
+
+if ( ! function_exists( 'wp_mcp_ai_check_ajax_rate_limit' ) ) {
+/**
+ * Transient-based per-IP rate limiter for nopriv AJAX handlers.
+ *
+ * Uses the request IP to key a one-minute sliding-window counter.
+ * Calls `wp_send_json_error()` and exits when the limit is exceeded;
+ * otherwise returns void so the caller can continue normally.
+ *
+ * Usage (call immediately after check_ajax_referer):
+ *
+ *   wp_mcp_ai_check_ajax_rate_limit( 'my_action' );
+ *
+ * @param string $action      Short slug that identifies the protected action.
+ *                            Must be safe for use in transient keys.
+ * @param int    $max_per_min Maximum allowed requests per minute from a
+ *                            single IP address. Default 20.
+ */
+function wp_mcp_ai_check_ajax_rate_limit( $action, $max_per_min = 20 ) {
+// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- REMOTE_ADDR is set by the TCP stack, not the client.
+$ip_raw  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+$ip_hash = substr( md5( $ip_raw ), 0, 16 ); // Non-cryptographic; used only to shorten the transient key.
+$key     = 'wp_mcp_ai_rl_' . sanitize_key( $action ) . '_' . $ip_hash;
+
+/**
+ * Filter the per-action rate limit applied to nopriv AJAX handlers.
+ *
+ * @param int    $max_per_min Maximum requests per minute for this action.
+ * @param string $action      The action slug being rate-limited.
+ */
+$max_per_min = (int) apply_filters( 'wp_mcp_ai_ajax_rate_limit', $max_per_min, $action );
+
+$count = get_transient( $key );
+
+if ( false === $count ) {
+set_transient( $key, 1, MINUTE_IN_SECONDS );
+return;
+}
+
+if ( (int) $count >= $max_per_min ) {
+wp_send_json_error(
+array(
+'message' => __( 'Too many requests. Please slow down.', 'mcp-ai-wpoos' ),
+'code'    => 'rate_limit_exceeded',
+),
+429
+);
+}
+
+set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
+}
+}

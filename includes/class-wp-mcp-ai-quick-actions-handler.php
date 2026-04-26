@@ -41,7 +41,8 @@ class WP_MCP_AI_Quick_Actions_Handler {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_quick_action', array( $this, 'handle_execute_action' ) );
-		add_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action', array( $this, 'handle_execute_action' ) );
+		// Note: nopriv registration intentionally omitted — handle_execute_action requires
+		// current_user_can( 'read' ) which always rejects unauthenticated requests.
 	}
 
 	/**
