@@ -151,8 +151,10 @@
 		// Click node: open URL or highlight.
 		cy.on( 'tap', 'node', function ( e ) {
 			var url = e.target.data( 'url' );
-			if ( url ) {
-				window.open( url, '_blank', 'noopener,noreferrer' );
+			// Only allow http(s) URLs to neutralise javascript: / data: schemes that
+			// some browsers still execute via window.open().
+			if ( url && /^https?:\/\//i.test( String( url ) ) ) {
+				window.open( String( url ), '_blank', 'noopener,noreferrer' );
 			}
 		} );
 	}

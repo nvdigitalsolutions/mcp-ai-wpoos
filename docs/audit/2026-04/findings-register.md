@@ -10,10 +10,12 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 1 FIXED (F-TLS-01), 13 OPEN |
+| Medium | 14 | 2 FIXED (F-TLS-01, F-SVG-XSS-01), 12 OPEN |
 | Low | 21 | 1 CLOSED (F-CMP-02 re-verified false positive), 20 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **3 closed, 47 open** |
+| **Total** | **50** | **4 closed, 46 open** |
+
+Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
 ---
 
@@ -179,8 +181,8 @@
 | **CWE** | CWE-79 |
 | **Addon(s)** | graphify |
 | **Recommendation** | Apply `esc_html` to every label inserted into `<text>` SVG nodes. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-11 |
+| **Status** | **FIXED** — this PR (R-S-11). The standalone HTML export (`class-nvoos-graphify-exporter.php::to_html`) no longer concatenates `n.label`/`n.type`/`n.url` into `innerHTML`; it builds the info panel via `createElement` + `textContent`. The admin sidebar (`graphify-admin.js`) and frontend (`graphify-frontend.js`) now validate `n.url` against `^https?://` before using it in an `<a href>` or `window.open` call, neutralising `javascript:` / `data:` / `vbscript:` schemes. Cytoscape itself renders node labels on canvas, which already escapes correctly, so no further changes were needed there. |
+| **Roadmap** | R-S-11 (this PR) |
 
 ### F-UPLOAD-01 — DICOM upload validation insufficient
 
