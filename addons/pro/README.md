@@ -1,6 +1,6 @@
 # Open Operator System (NV oOS) - Pro Add-on
 
-**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 24 specialized professional toolkits.
+**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 30 specialized professional toolkits.
 
 ---
 
