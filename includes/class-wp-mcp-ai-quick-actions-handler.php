@@ -277,13 +277,18 @@ class WP_MCP_AI_Quick_Actions_Handler {
 	 * when the SVG is later rendered inline or via <object>/<img>.
 	 *
 	 * Removes:
-	 * - <script>, <foreignObject>, <handler>, <iframe>, <embed>, <set>, <use> (with external href)
+	 * - <script>, <foreignObject>, <iframe>, <embed>, <object>, <handler>,
+	 *   <set>, <animate>, <animateTransform>, <animateMotion>.
 	 * - All `on*` event handler attributes (onload, onclick, ...).
 	 * - href / xlink:href values whose scheme is not http(s), mailto, tel, or
 	 *   a same-document fragment ("#id"). javascript:/vbscript:/data: URLs
-	 *   are dropped so the surviving tag becomes inert rather than removing
-	 *   it entirely (preserves graphical content where possible).
-	 * - External DTDs / network entities via LIBXML_NONET + LIBXML_NOENT off.
+	 *   are dropped so the surviving tag becomes inert (e.g. a <use> keeps
+	 *   its geometry but loses an external/javascript: reference) rather than
+	 *   removing it entirely, preserving graphical content where possible.
+	 * - `style` containing expression()/javascript:/vbscript:.
+	 * - DOCTYPE (XXE defence) plus LIBXML_NONET to block network access for
+	 *   external DTDs/entities. Entity expansion is left at the parser default
+	 *   (no substitution) to defend against billion-laughs.
 	 *
 	 * @param string $svg Raw SVG markup as read from the uploaded tmp file.
 	 * @return string|false Sanitised SVG, or false if parsing failed.
