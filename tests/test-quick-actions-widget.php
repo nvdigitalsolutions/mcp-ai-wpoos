@@ -211,4 +211,146 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 		$this->assertFileExists( $proposal_file );
 		$this->assertFileExists( $usage_file );
 	}
+
+	// ---------------------------------------------------------------------
+	// SVG sanitisation (audit F-XSS-02 / R-S-10)
+	// ---------------------------------------------------------------------
+
+	/**
+	 * Get an accessible reflection of sanitize_svg_contents.
+	 *
+	 * @return ReflectionMethod
+	 */
+	private function get_svg_sanitiser_method() {
+		$handler    = WP_MCP_AI_Quick_Actions_Handler::get_instance();
+		$reflection = new ReflectionClass( $handler );
+		$method     = $reflection->getMethod( 'sanitize_svg_contents' );
+		$method->setAccessible( true );
+		return array( $handler, $method );
+	}
+
+	/**
+	 * Inline <script> elements must be removed.
+	 */
+	public function test_svg_sanitiser_strips_script_tag() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle r="10"/></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsStringIgnoringCase( '<script', $out );
+		$this->assertStringContainsString( '<circle', $out );
+	}
+
+	/**
+	 * `on*` event handler attributes must be removed.
+	 */
+	public function test_svg_sanitiser_strips_event_handlers() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><circle r="10" onclick="alert(2)"/></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsStringIgnoringCase( 'onload', $out );
+		$this->assertStringNotContainsStringIgnoringCase( 'onclick', $out );
+	}
+
+	/**
+	 * <foreignObject> wrapping <iframe> with javascript: URL must be removed.
+	 */
+	public function test_svg_sanitiser_strips_foreign_object() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><iframe src="javascript:alert(1)"/></foreignObject></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsStringIgnoringCase( '<foreignObject', $out );
+		$this->assertStringNotContainsStringIgnoringCase( '<iframe', $out );
+		$this->assertStringNotContainsStringIgnoringCase( 'javascript:', $out );
+	}
+
+	/**
+	 * `xlink:href="javascript:..."` must be dropped while http(s) and
+	 * fragment hrefs are preserved.
+	 */
+	public function test_svg_sanitiser_filters_unsafe_hrefs() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+
+		$bad = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a xlink:href="javascript:alert(1)"><text>x</text></a></svg>'
+		);
+		$this->assertIsString( $bad );
+		$this->assertStringNotContainsStringIgnoringCase( 'javascript:', $bad );
+
+		$good_http = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><a xlink:href="https://example.com/"><text>x</text></a></svg>'
+		);
+		$this->assertIsString( $good_http );
+		$this->assertStringContainsString( 'https://example.com/', $good_http );
+
+		$good_fragment = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#icon"/></svg>'
+		);
+		$this->assertIsString( $good_fragment );
+		$this->assertStringContainsString( '#icon', $good_fragment );
+	}
+
+	/**
+	 * `style` containing javascript:/expression() must be removed.
+	 */
+	public function test_svg_sanitiser_strips_unsafe_style() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg"><circle r="10" style="background:url(javascript:alert(1))"/></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsStringIgnoringCase( 'javascript:', $out );
+		$this->assertStringNotContainsStringIgnoringCase( 'expression(', $out );
+	}
+
+	/**
+	 * DOCTYPE entity declarations must be stripped (XXE defence).
+	 */
+	public function test_svg_sanitiser_strips_doctype() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg"><text>&x;</text></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsString( '/etc/passwd', $out );
+		$this->assertStringNotContainsString( '<!DOCTYPE', $out );
+	}
+
+	/**
+	 * Non-XML / malformed input must be rejected, not coerced.
+	 */
+	public function test_svg_sanitiser_rejects_non_xml() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke( $handler, 'not xml at all <<<' );
+		$this->assertFalse( $out );
+	}
+
+	/**
+	 * <set>/<animate> animation tags that can carry attributeName=on*
+	 * must be removed entirely.
+	 */
+	public function test_svg_sanitiser_strips_animation_tags() {
+		list( $handler, $method ) = $this->get_svg_sanitiser_method();
+		$out = $method->invoke(
+			$handler,
+			'<svg xmlns="http://www.w3.org/2000/svg"><set attributeName="onmouseover" to="alert(1)"/><animate attributeName="onclick" to="alert(2)"/><circle r="10"/></svg>'
+		);
+		$this->assertIsString( $out );
+		$this->assertStringNotContainsStringIgnoringCase( '<set', $out );
+		$this->assertStringNotContainsStringIgnoringCase( '<animate', $out );
+		$this->assertStringContainsString( '<circle', $out );
+	}
 }

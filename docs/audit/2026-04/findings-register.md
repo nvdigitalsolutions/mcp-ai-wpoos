@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 2 FIXED (F-TLS-01, F-SVG-XSS-01), 12 OPEN |
+| Medium | 14 | 3 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02), 11 OPEN |
 | Low | 21 | 1 CLOSED (F-CMP-02 re-verified false positive), 20 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **4 closed, 46 open** |
+| **Total** | **50** | **5 closed, 45 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -167,11 +167,11 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 |---|---|
 | **Severity** | Medium |
 | **CWE** | CWE-79 |
-| **Addon(s)** | canvas |
-| **Description** | Canvas editor accepts SVG. SVG can carry `<script>` and `<foreignObject>` elements. |
-| **Recommendation** | Run all incoming SVG through an `wp_kses` profile that strips `<script>`, `<foreignObject>`, `xlink:href`, and event-handler attributes before persisting. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-10 |
+| **Addon(s)** | base (`includes/class-wp-mcp-ai-quick-actions-handler.php`), canvas |
+| **Description** | The Quick Actions handler accepts `image/svg+xml` from any logged-in user with the `read` capability (Subscriber+) and writes it straight into the WordPress media library via `wp_handle_upload`. SVG can carry `<script>`, `<foreignObject>`, event-handler attributes, `javascript:` URLs in `xlink:href`, and DOCTYPE entity declarations (XXE). |
+| **Recommendation** | Run all incoming SVG through a sanitiser that strips `<script>`, `<foreignObject>`, `<iframe>`, `<embed>`, `<object>`, `<handler>`, `<set>`, `<animate*>`; removes all `on*` event handlers; drops `href` / `xlink:href` whose scheme is not http(s) / mailto / tel / fragment; drops `style` containing `expression(` / `javascript:` / `vbscript:`; removes DOCTYPE; loads with `LIBXML_NONET`. Also gate SVG upload behind the `upload_files` capability so subscribers can never upload an SVG. |
+| **Status** | **FIXED** — this PR (R-S-10). `WP_MCP_AI_Quick_Actions_Handler::handle_file_upload()` now refuses SVG uploads from users without `upload_files`, then routes the tmp file through a new `sanitize_svg_contents()` method that uses `DOMDocument` + `DOMXPath` (with `LIBXML_NONET` and entity-loader disabled on PHP < 8) to strip every dangerous element / attribute / scheme / DOCTYPE before `wp_handle_upload` runs. Eight new PHPUnit cases in `tests/test-quick-actions-widget.php` cover `<script>`, `onload`, `<foreignObject>`+`<iframe>`, `javascript:` xlink:href, http(s) / fragment href preservation, `style` with `expression(` / `javascript:`, DOCTYPE entity declarations (XXE), animation-tag stripping, and non-XML rejection. |
+| **Roadmap** | R-S-10 (this PR) |
 
 ### F-SVG-XSS-01 — Graphify SVG output renders user-controlled labels
 
