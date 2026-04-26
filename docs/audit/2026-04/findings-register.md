@@ -9,11 +9,11 @@
 | Severity | Count | Status |
 |---:|---:|---|
 | Critical | 0 | — |
-| **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
+| **High** | **5** | 1 FIXED (F-SQL-01), 1 PARTIALLY FIXED (F-AUTHZ-01), 3 OPEN |
 | Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
 | Low | 21 | 5 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01), 16 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **13 closed, 37 open** |
+| **Total** | **50** | **14 closed/partially-fixed, 36 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -31,7 +31,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Files** | `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php:140`; `includes/rest/class-wp-mcp-ai-rest-a2a-controller.php:104,116`; `addons/pro/includes/src/ChatChannels/class-wp-mcp-ai-google-chat-webhook-handler.php:54`; `addons/pro/includes/rest/class-wp-mcp-ai-telegram-login-controller.php:87`; `addons/pro/includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php:107,136`; `addons/pro/includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php:131,156`; `addons/pro/includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php:123` (+1) |
 | **Description** | 14 REST routes register `'permission_callback' => '__return_true'`. Of these, 11 are webhook endpoints that **must** accept anonymous traffic, but **only if** they verify the provider's signature header (HMAC / JWT / token) **before** any side-effect. Three are non-webhook (`mcp-controller`, `a2a-controller` ×2) and currently rely on validation logic inside the endpoint callback rather than the permission callback — that's correct functionally but blocks the standard "REST permission failure" CI pattern. |
 | **Recommendation** | (1) Move signature/HMAC verification into the `permission_callback` so callers receive `401` before the body is parsed; (2) Add a per-controller test that calls the route with an invalid signature and asserts `rest_forbidden`; (3) For `mcp-controller` and `a2a-controller`, register a real permission callback that calls the existing verifier methods. |
-| **Status** | OPEN |
+| **Status** | **PARTIALLY FIXED — this PR (Wave 11 / R-S-01)**. Analysis of the 10 remaining `__return_true` routes: **(a) `OPTIONS /mcp`** — CORS preflight; `__return_true` is correct and unchanged. **(b) `GET /a2a/agent-card` (×2)** — Replaced with `permissions_check_agent_card()` that returns 403 when `enable_a2a_server` is disabled (publicly accessible only while A2A is active). **(c) `POST /webhooks/google-chat` (legacy handler)** — The full `WP_MCP_AI_Google_Chat_Webhook_Controller` (active in Pro) already uses `validate_google_oidc_token`; the legacy fallback now uses `verify_google_chat_webhook()`, which applies the `wp_mcp_ai_verify_google_chat_legacy_webhook` filter so operators can add their own check. **(d) `GET /telegram-login`** — Replaced with `verify_telegram_auth_permission()` that runs HMAC verification via the existing `verify_auth_data()` in the permission callback. **(e) Twitter CRC GET (×2), WhatsApp verify GET (×2), Messenger verify GET (×1)** — Legitimately public per their respective webhook registration protocols; `__return_true` is correct and unchanged. 8 new PHPUnit cases in `tests/test-webhook-permission-callbacks.php`. |
 | **Roadmap** | R-S-01 |
 
 ### F-EXEC-01 — `shell_exec()` / `exec()` in 11 pro tool classes

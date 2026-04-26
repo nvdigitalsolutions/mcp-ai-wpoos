@@ -84,7 +84,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_login_callback' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'verify_telegram_auth_permission' ),
 				'args'                => array(
 					'id'         => array(
 						'required'          => false,
@@ -109,6 +109,65 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Permission callback: verify the Telegram Login Widget HMAC signature before
+	 * the handler body runs.
+	 *
+	 * Telegram supplies `id`, `auth_date`, and `hash` as query parameters. The
+	 * `hash` is an HMAC-SHA-256 of the alphabetically sorted data-check string
+	 * signed with SHA-256(bot_token). Returning a WP_Error here causes WordPress
+	 * to emit a 401/403 response before the callback is invoked, which is the
+	 * correct REST permission-failure pattern.
+	 *
+	 * Note: when no active Web Login connection is configured (i.e., the feature is
+	 * not set up), this returns a 503 WP_Error so callers receive an explicit error
+	 * rather than a generic 401.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return true|WP_Error True if the signature is valid, WP_Error otherwise.
+	 */
+	public function verify_telegram_auth_permission( $request ) {
+		// Minimum required parameters to attempt verification. Reject both absent
+		// params (null) and empty-string values (?hash=) to avoid misleading errors
+		// deeper in the HMAC verification path.
+		if ( ! $request->get_param( 'hash' ) || ! $request->get_param( 'auth_date' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_missing_params',
+				__( 'Missing required Telegram auth parameters.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$connection = $this->get_active_web_login_connection();
+		if ( ! $connection ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_not_configured',
+				__( 'Telegram Web Login is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$bot_token = $this->get_bot_token( $connection );
+		if ( '' === $bot_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_token_error',
+				__( 'Server configuration error.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$auth_data    = $this->extract_auth_data( $request );
+		$verification = $this->verify_auth_data( $auth_data, $bot_token );
+
+		if ( is_wp_error( $verification ) ) {
+			return $verification;
+		}
+
+		return true;
 	}
 
 	/**
