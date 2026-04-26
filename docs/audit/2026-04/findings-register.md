@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 5 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03), 9 OPEN |
+| Medium | 14 | 6 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03), 8 OPEN |
 | Low | 21 | 3 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03), 18 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **9 closed, 41 open** |
+| **Total** | **50** | **10 closed, 40 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -254,7 +254,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 |---|---|
 | **Severity** | Medium |
 | **Recommendation** | Configurable allowlist of MCP server URLs; reject any not on the list (plus SSRF wrapper from R-A-02). |
-| **Status** | OPEN |
+| **Status** | **FIXED** — this PR (R-S-14). `WP_MCP_AI_MCP_App_Registry::is_url_allowed()` now validates every MCP App `server_url` before it is saved, before tools are discovered, and before the REST `test_connection` endpoint issues any outbound HTTP. The validator rejects non-`http`/`https` schemes (including `javascript:`, `data:`, `file:`), malformed URLs, and — when an allowlist is configured via the `WP_MCP_AI_MCP_APP_ALLOWED_HOSTS` constant (CSV) or the `wp_mcp_ai_mcp_app_allowed_hosts` filter (array) — any host not on the list. Allowlist matching is case-insensitive and supports a leading `*.` wildcard for one-level subdomain matching. When the allowlist is empty, a warning is logged so operators notice unrestricted deployments. Twelve new PHPUnit cases in `tests/test-mcp-apps.php` cover empty URL, non-http schemes, malformed URLs, the empty-allowlist permissive path, exact match, mismatch, case-insensitivity, wildcard subdomain match, wildcard non-match for apex / other domain, sanitize-time drop of disallowed URLs, and sanitize-time preservation of allowed URLs. |
 | **Roadmap** | R-S-14 |
 
 ---
