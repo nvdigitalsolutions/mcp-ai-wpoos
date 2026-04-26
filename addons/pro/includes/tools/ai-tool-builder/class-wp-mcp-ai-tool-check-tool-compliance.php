@@ -111,6 +111,15 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+}
+
+
 		// Get code to check.
 		$code      = '';
 		$file_path = '';
@@ -249,7 +258,8 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 				escapeshellarg( $file_path )
 			);
 
-			$output = shell_exec( $command );
+			$proc   = wp_mcp_ai_run_shell( $command );
+			$output = $proc['stdout'];
 
 			if ( ! empty( $output ) ) {
 				$result = json_decode( $output, true );
@@ -528,8 +538,9 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 				escapeshellarg( $file_path )
 			);
 
-			shell_exec( $command );
+			wp_mcp_ai_run_shell( $command );
 
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local PHP file reading.
 			return file_get_contents( $file_path );
 		}
 

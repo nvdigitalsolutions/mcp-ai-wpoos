@@ -9,11 +9,11 @@
 | Severity | Count | Status |
 |---:|---:|---|
 | Critical | 0 | — |
-| **High** | **5** | 1 FIXED (F-SQL-01), 1 PARTIALLY FIXED (F-AUTHZ-01), 3 OPEN |
+| **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 1 PARTIALLY FIXED (F-AUTHZ-01), 2 OPEN |
 | Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
 | Low | 21 | 5 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01), 16 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **14 closed/partially-fixed, 36 open** |
+| **Total** | **50** | **15 closed/partially-fixed, 35 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -44,7 +44,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Files** | `addons/pro/includes/tools/ai-tool-builder/class-wp-mcp-ai-tool-check-tool-compliance.php:252,531`; `addons/pro/includes/tools/architect-agent/class-wp-mcp-ai-tool-execute-shell-command.php:313,322`; `addons/pro/includes/tools/architect-agent/class-wp-mcp-ai-tool-git-operations.php:229,242,262`; `addons/pro/includes/tools/architect-agent/class-wp-mcp-ai-tool-search-codebase.php:199,283`; `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-html-to-pdf.php:169,291`; `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php:692`; `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php:632`; `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-excel-document.php:584`; `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php:247,296` |
 | **Description** | Direct invocations of `shell_exec()`/`exec()`. While most pass through `escapeshellarg()` and use whitelisted binaries, the pattern is brittle: arguments derived from tool input (search patterns, git refs, file paths) reach the shell. WordPress.org guidelines and the project's own `CLAUDE.md` direct that `proc_open` (no shell) is preferred. |
 | **Recommendation** | (1) Rewrite all to `proc_open` with array-form argv (no `/bin/sh -c`); (2) Add a global `WP_MCP_AI_ALLOW_SHELL_TOOLS` constant defaulting to `false` that gates all such tools; (3) Add `current_user_can( 'manage_options' )` at the top of every shell-using tool's `execute()`; (4) Add an audit-log entry on every invocation. |
-| **Status** | OPEN |
+| **Status** | **FIXED — this PR (Wave 12 / R-S-02)**. All changes gated behind the new `WP_MCP_AI_ALLOW_SHELL_TOOLS` constant (default `false`) defined in `includes/bootstrap/constants.php`. Every `execute()` method in all 8 affected tools now returns an error immediately when the constant is false or when the caller lacks `manage_options`. `shell_exec()` and `exec()` are fully replaced: (a) `shell_exec('which ...')` probe calls → `wp_mcp_ai_find_binary()` (array-form `proc_open`); (b) `exec_git()` in git-operations → `wp_mcp_ai_run_shell()` (string-form `proc_open`, args already `escapeshellarg()`'d); (c) `execute_with_exec()` in execute-shell-command removed — tool now requires `proc_open` and returns a hard error when it is absent; (d) `exec()` in search-codebase replaced with `wp_mcp_ai_run_shell()`; (e) `shell_exec()` in check-tool-compliance replaced with `wp_mcp_ai_run_shell()`; (f) `exec()` in all 5 document-generation tools replaced with `wp_mcp_ai_run_shell()`. Two new shared helpers in `includes/bootstrap/helpers.php`: `wp_mcp_ai_run_process()` (array-form, no shell) and `wp_mcp_ai_run_shell()` (string-form, replaces exec/shell_exec). |
 | **Roadmap** | R-S-02 |
 
 ### F-SQL-01 — Unprepared SQL in graphify

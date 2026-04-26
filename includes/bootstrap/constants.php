@@ -56,6 +56,20 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 }
 
 /**
+ * Shell tools allowed.
+ *
+ * Defaults to false. Pro tools that invoke shell commands (execute_shell_command,
+ * git_operations, search_codebase, check_tool_compliance, and the document-generation
+ * tools that shell out to wkhtmltopdf / pdftk) will refuse to execute unless this
+ * constant is explicitly set to true by the site operator in wp-config.php.
+ *
+ * define( 'WP_MCP_AI_ALLOW_SHELL_TOOLS', true );
+ */
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) ) {
+	define( 'WP_MCP_AI_ALLOW_SHELL_TOOLS', false );
+}
+
+/**
  * Pro Dashboard enabled.
  *
  * Defaults to true. Set to false to disable Pro Dashboard features.

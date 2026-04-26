@@ -192,6 +192,19 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return array(
+'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+);
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return array(
+'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+);
+}
+
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Verify user is logged in.
@@ -629,7 +642,8 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 
 		// Execute command.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $cmd, $output, $return_code );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, sys_get_temp_dir() );
+		$return_code  = $proc_result['exit_code'];
 
 		// Clean up temp files.
 		@unlink( $json_file );
