@@ -202,3 +202,61 @@ if ( ! function_exists( 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
 if ( ! has_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
 	add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
 }
+
+if ( ! function_exists( 'wp_mcp_ai_user_can_manage_fleet' ) ) {
+	/**
+	 * Check whether the current user has the capability to manage fleet-wide
+	 * operations (federation, asset inventory, dependency scanning).
+	 *
+	 * On a single-site installation `manage_options` (site admin) is sufficient.
+	 * On a multisite network these operations affect the whole network, so
+	 * `manage_network_options` (super admin) is required instead.
+	 *
+	 * The cap can be overridden via the `wp_mcp_ai_fleet_capability` filter
+	 * when custom role configurations are in use.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True if the current user may manage fleet operations.
+	 */
+	function wp_mcp_ai_user_can_manage_fleet() {
+		$default_cap = is_multisite() ? 'manage_network_options' : 'manage_options';
+
+		/**
+		 * Filters the capability required for fleet-wide management operations.
+		 *
+		 * Allows custom role configurations to adjust the required capability.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $capability Capability slug. Default `'manage_network_options'`
+		 *                           on multisite, `'manage_options'` on single-site.
+		 */
+		$cap = apply_filters( 'wp_mcp_ai_fleet_capability', $default_cap );
+		$cap = is_string( $cap ) ? sanitize_key( $cap ) : $default_cap;
+
+		return current_user_can( $cap );
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_fleet_capability' ) ) {
+	/**
+	 * Return the capability string required to manage fleet operations.
+	 *
+	 * Identical to `wp_mcp_ai_user_can_manage_fleet()` but returns the cap slug
+	 * rather than a boolean — useful when passing a capability to WordPress API
+	 * functions such as `add_submenu_page()` that accept a string.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string Capability slug.
+	 */
+	function wp_mcp_ai_fleet_capability() {
+		$default_cap = is_multisite() ? 'manage_network_options' : 'manage_options';
+
+		/** This filter is documented in includes/bootstrap/helpers.php */
+		$cap = apply_filters( 'wp_mcp_ai_fleet_capability', $default_cap );
+
+		return ( is_string( $cap ) && '' !== $cap ) ? sanitize_key( $cap ) : $default_cap;
+	}
+}

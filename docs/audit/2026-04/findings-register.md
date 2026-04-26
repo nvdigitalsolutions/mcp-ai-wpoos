@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 4 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04), 10 OPEN |
+| Medium | 14 | 5 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03), 9 OPEN |
 | Low | 21 | 3 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03), 18 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **8 closed, 42 open** |
+| **Total** | **50** | **9 closed, 41 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -135,8 +135,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | CWE-285 |
 | **Description** | Federation, asset-inventory, and dependency-scan operations affect the network. They currently use `manage_options` (per-site admin) — should be `manage_network` on multisite. |
 | **Recommendation** | Add a helper `wp_mcp_ai_user_can_manage_fleet()` that returns `is_multisite() ? current_user_can( 'manage_network' ) : current_user_can( 'manage_options' )`, and use it on all fleet-wide endpoints. |
-| **Status** | OPEN |
-| **Roadmap** | R-S-08 |
+| **Status** | **FIXED** — this PR (R-S-08). A new `wp_mcp_ai_user_can_manage_fleet()` helper (and its string-returning sibling `wp_mcp_ai_fleet_capability()`, both added to `includes/bootstrap/helpers.php`) gate every fleet-wide endpoint behind `manage_network_options` on multisite and `manage_options` on single-site. The cap is filterable via `wp_mcp_ai_fleet_capability`. Updated: `class-wp-mcp-ai-federation-directory-rest.php` REST permission check; `class-wp-mcp-ai-asset-inventory-rest.php` permission callback; `class-wp-mcp-ai-asset-inventory-admin.php` `add_submenu_page` cap; `class-wp-mcp-ai-federation-rate-limiter.php` admin bypass. |
 
 ### F-AUTHZ-04 — Embedded guest-token issuance lacks origin binding
 
