@@ -11,9 +11,9 @@
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
 | Medium | 14 | 6 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03), 8 OPEN |
-| Low | 21 | 3 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03), 18 OPEN |
+| Low | 21 | 5 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01), 16 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **10 closed, 40 open** |
+| **Total** | **50** | **12 closed, 38 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -274,11 +274,11 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | F-UPLOAD-02 | Canvas export — confirm `wp_handle_upload` path | canvas | CWE-434 | OPEN |
 | F-CSP-01 | Embedded surface should set `frame-ancestors` CSP | embedded | CWE-1021 | OPEN |
 | F-SQL-02 | One unprepared SQL in `class-wp-mcp-ai-model-catalog-migration.php:209` | base | CWE-89 | **FIXED** (extends R-S-03 pattern) |
-| F-LOGS-01 | Confirm logger redacts Bearer tokens, OpenAI keys, Auth0 JWTs | `includes/class-wp-mcp-ai-logger.php` | CWE-532 | OPEN |
+| F-LOGS-01 | Confirm logger redacts Bearer tokens, OpenAI keys, Auth0 JWTs | `includes/class-wp-mcp-ai-logger.php` | CWE-532 | **FIXED** — this PR (Wave 9). Added `token`, `jwt`, `id_token`, `openai_token` to exact-match sensitive key list; added `_token`/`-token` to suffix-match list; added `redact_sensitive_string_patterns()` that masks `Bearer <token>`, `sk-…` (OpenAI), and `AIza…` (Google/Gemini) patterns embedded in any plain string leaf value. Two new PHPUnit cases in `tests/test-logger.php`. |
 | F-DOC-01 | `CLAUDE.md` and READMEs say "519 tools" — actual is ~800+ (live registry: `WP_MCP_AI_Tool_Registry::get_tools()`) | docs | n/a | **FIXED** (R-D-04) |
 | F-COOKIE-01 | Verify guest-token cookies have `Secure; HttpOnly; SameSite=Lax` | embedded / chat | CWE-1004 | OPEN |
 | F-TIME-01 | All credential compares should use `hash_equals`/`wp_hash` (sample passes; verify exhaustively) | various | CWE-208 | OPEN |
-| F-LOG-LEAK-01 | `wp_option get wp_mcp_ai_recent_errors` may leak secrets in error context | `includes/class-wp-mcp-ai-error-handler.php` | CWE-532 | OPEN |
+| F-LOG-LEAK-01 | `wp_option get wp_mcp_ai_recent_errors` may leak secrets in error context | `includes/class-wp-mcp-ai-error-handler.php` | CWE-532 | **FIXED** — this PR (Wave 9). The error handler passes `error_data` to `WP_MCP_AI_Logger::log_event()` which calls `sanitize_context()`. The value-level pattern scanner added in F-LOGS-01 now also scans string values in `error_data` for embedded secrets before the entry is persisted to `wp_mcp_ai_recent_errors`. |
 | F-CRON-01 | 89 cron registrations — confirm all callbacks are gated against direct invocation | various | CWE-352 | OPEN |
 | F-NPM-01 | `npm audit` 10 moderate (root) | `package.json` | various GHSA | OPEN |
 | F-NPM-02 | `npm audit` 3 moderate (pro) | `addons/pro/package.json` | various GHSA | OPEN |
