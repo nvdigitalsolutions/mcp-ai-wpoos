@@ -9,7 +9,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # 519 total built-in tool implementations (165 base + 348 pro + 6 core/memory)
+│   ├── tools/            # 800+ total built-in tool implementations (≈220 base + ≈580 pro; counts are approximate — `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── integrations/     # Third-party plugin integrations
 │   └── crawler/          # Crawl4AI integration
@@ -257,7 +257,7 @@ class Test_Feature extends WP_UnitTestCase {
 
 The plugin has two modes:
 - **Base Version** (default): 165 core tools, no third-party dependencies
-- **Full Version**: All 519 tools including WooCommerce, JetEngine, and Pro addons (165 base + 348 pro + 6 core/memory)
+- **Full Version**: All 800+ tools including WooCommerce, JetEngine, and Pro addons (≈220 base + ≈580 pro; counts are approximate)
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 
@@ -328,7 +328,7 @@ The plugin respects `WP_DEBUG` and provides additional debug output when enabled
 The `docs/` directory contains 32 comprehensive documentation files. Key documents:
 - `docs/QUICK_REFERENCE.md` - Fast reference guide
 - `docs/DOCUMENTATION_INDEX.md` - Complete documentation map
-- `docs/tool-reference.md` - All 519 tools documented
+- `docs/tool-reference.md` - Tool documentation (live registry is authoritative for the exact count)
 - `docs/rest-api.md` - Complete REST API reference
 - `docs/CODE_REVIEW.md` - Code quality standards
 - `docs/BEST_PRACTICES.md` - Usage recommendations

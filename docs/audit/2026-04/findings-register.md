@@ -11,9 +11,9 @@
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
 | Medium | 14 | 4 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04), 10 OPEN |
-| Low | 21 | 1 CLOSED (F-CMP-02 re-verified false positive), 20 OPEN |
+| Low | 21 | 2 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04), 19 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **6 closed, 44 open** |
+| **Total** | **50** | **7 closed, 43 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -276,7 +276,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | F-CSP-01 | Embedded surface should set `frame-ancestors` CSP | embedded | CWE-1021 | OPEN |
 | F-SQL-02 | One unprepared SQL in `class-wp-mcp-ai-model-catalog-migration.php:209` | base | CWE-89 | OPEN |
 | F-LOGS-01 | Confirm logger redacts Bearer tokens, OpenAI keys, Auth0 JWTs | `includes/class-wp-mcp-ai-logger.php` | CWE-532 | OPEN |
-| F-DOC-01 | `CLAUDE.md` and READMEs say "519 tools" — actual is ~845 | docs | n/a | OPEN |
+| F-DOC-01 | `CLAUDE.md` and READMEs say "519 tools" — actual is ~800+ (live registry: `WP_MCP_AI_Tool_Registry::get_tools()`) | docs | n/a | **FIXED** (R-D-04) |
 | F-COOKIE-01 | Verify guest-token cookies have `Secure; HttpOnly; SameSite=Lax` | embedded / chat | CWE-1004 | OPEN |
 | F-TIME-01 | All credential compares should use `hash_equals`/`wp_hash` (sample passes; verify exhaustively) | various | CWE-208 | OPEN |
 | F-LOG-LEAK-01 | `wp_option get wp_mcp_ai_recent_errors` may leak secrets in error context | `includes/class-wp-mcp-ai-error-handler.php` | CWE-532 | OPEN |
