@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 1 FIXED (F-SQL-01), 4 OPEN |
-| Medium | 14 | 6 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03), 8 OPEN |
+| Medium | 14 | 7 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02), 7 OPEN |
 | Low | 21 | 5 CLOSED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01), 16 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **12 closed, 38 open** |
+| **Total** | **50** | **13 closed, 37 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -245,7 +245,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Severity** | Medium |
 | **CWE** | CWE-94 (prompt injection / jailbreak vector) |
 | **Recommendation** | Truncate to a tunable byte cap (default 64 KB), and pass through a "delimiter neutralisation" helper that strips/escapes any markers the assistant uses to delineate tool output. |
-| **Status** | OPEN |
+| **Status** | **FIXED** — this PR (Wave 10 / R-A-06). `WP_MCP_AI_REST_Validator::truncate_tool_result_content()` byte-caps tool results at 64 KB (filterable via `wp_mcp_ai_tool_result_max_bytes`), appending a `[tool_result_truncated]` marker when cut. `WP_MCP_AI_REST_Validator::neutralise_tool_result_delimiters()` strips ChatML tokens (`<|im_start|>`, `<|im_end|>`, etc.), Llama/Meta special tokens (`<|eot_id|>`, `<|start_header_id|>`, etc.), XML-style tool-call markers (`<tool_response>`, `<function_calls>`, etc.), and null bytes. Both helpers are applied inside `sanitize_tool_result_for_llm()` on every tool-role message entering the prompt — covering both the non-streaming and streaming agentic loops in `class-wp-mcp-ai-rest.php` and the service-layer path in `class-wp-mcp-ai-chat-service.php`. 11 new PHPUnit cases in `tests/test-rest-validator.php`. |
 | **Roadmap** | R-A-06 |
 
 ### F-AI-03 — MCP server allowlist not enforced

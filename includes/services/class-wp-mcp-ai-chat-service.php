@@ -1213,6 +1213,13 @@ class WP_MCP_AI_Chat_Service {
 			$sanitized_result['content'] = wp_json_encode( $content );
 		}
 
+		// Apply prompt-injection defence: strip special tokens and byte-cap.
+		// Re-use the REST validator helpers which are already instantiated at
+		// the plugin level as a shared service.
+		$validator                   = new WP_MCP_AI_REST_Validator();
+		$sanitized_result['content'] = $validator->neutralise_tool_result_delimiters( (string) $sanitized_result['content'] );
+		$sanitized_result['content'] = $validator->truncate_tool_result_content( $sanitized_result['content'] );
+
 		return $sanitized_result;
 	}
 

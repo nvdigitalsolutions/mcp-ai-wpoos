@@ -2771,7 +2771,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					$tool_message = array(
 						'role'    => 'tool',
-						'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
+						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+						'content' => $sanitized_result,
 					);
 
 					if ( '' !== $tool_call_id ) {
@@ -3573,7 +3574,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					$tool_message = array(
 						'role'    => 'tool',
-						'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
+						// sanitize_tool_result_for_llm() always returns a string (truncated + delimiter-neutralised).
+						'content' => $sanitized_result,
 					);
 
 					if ( '' !== $tool_call_id ) {
