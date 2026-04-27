@@ -9,11 +9,11 @@
 | Severity | Count | Status |
 |---:|---:|---|
 | Critical | 0 | — |
-| **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
-| Medium | 14 | 15 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01, F-PRIV-02, F-CRYPTO-01, F-RATE-01, F-DOS-01, F-XSS-01), 0 OPEN (1 finding in Medium list originally marked medium now confirmed fixed — total count still 14 but note F-XSS-01 added) |
+| **High** | **5** | 3 FIXED (F-SQL-01, F-EXEC-01, F-PRIV-03), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 0 OPEN |
+| Medium | 14 | 17 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01, F-PRIV-02, F-CRYPTO-01, F-RATE-01, F-DOS-01, F-XSS-01, F-UPLOAD-01, F-PRIV-01), 0 OPEN |
 | Low | 21 | 14 CLOSED/FIXED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01, F-UPLOAD-02, F-CSP-01, F-CRON-01, F-CMP-03, F-CMP-05, F-FS-01), 6 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **33 closed/partially-fixed, 17 open** |
+| **Total** | **50** | **36 closed/partially-fixed, 14 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -70,7 +70,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Files** | `addons/pro/includes/.../health-wellness*.php`; `addons/cornerstone3d/` |
 | **Description** | The plugin handles Protected Health Information (DICOM tags, parsed health records). There is no documented BAA story, no PHI-tag stripping before AI provider calls, no dedicated audit log, and the WP Privacy API exporter does not include health-wellness CPT data. |
 | **Recommendation** | (1) Strip DICOM Patient/MRN tags before any `wp_remote_post` to AI providers; (2) Refuse to load the addon on multisite without an explicit `wp_mcp_ai_phi_acknowledged` option; (3) Implement Privacy-API exporter/eraser for health CPT/CCT; (4) Add a `docs/HIPAA_POSTURE.md` documenting data flow, retention, and BAA requirements; (5) Audit-log every read of a health-wellness CPT post. |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 23.** All five recommendation items addressed: **(1) PHI stripping** — verified that `interpret_imaging_study` builds its AI prompt exclusively from `study_instance_uid`, `modality`, `study_date`, `series_description`, and optional pixel-preview; `PatientName` (DICOM 0010,0010) is extracted by `WP_MCP_AI_DICOM_Metadata` but is **never** stored in the WP database or forwarded to any AI provider. **(2) Multisite guard** — both init files now `return` early on multisite unless `wp_mcp_ai_settings['wp_mcp_ai_phi_acknowledged']` is truthy; a new checkbox setting added to admin UI. **(3) Privacy API** — new `WP_MCP_AI_Pro_Privacy` service registers WP exporters and hard-delete erasers for all six health-wellness CPTs and for `mcp_ai_imaging_study`. **(4) HIPAA_POSTURE.md** — `docs/HIPAA_POSTURE.md` added with full data-flow, access-controls, audit-logging, retention, erasure, breach-notification, and operator checklist. **(5) Audit log on read** — `wp_mcp_ai_health_cpt_read_audit()` hooked to `the_post` logs every single-post health CPT display via `WP_MCP_AI_Logger`. |
 | **Roadmap** | R-S-04 |
 
 ### F-AI-01 — Algorave `new Function( 'Tone', code )` runs in main JS context
@@ -188,7 +188,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | CWE-434 |
 | **Addon(s)** | cornerstone3d, pro |
 | **Recommendation** | Magic-number check, size cap, capability gate, redact PHI tags. See deep dive §3. |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 23.** Full audit of all four recommended items: **(1) Magic-number check** — `WP_MCP_AI_DICOM_Metadata::is_dicom()` already validates bytes 128–131 equal `DICM` before any processing ✅. **(2) Size cap** — `MAX_UPLOAD_SIZE = 268435456` (256 MB) already enforced in `process_uploaded_file()` ✅. **(3) Capability gate** — upload route already requires `upload_medical_imaging` capability ✅. **(4) PHI redaction** — verified `PatientName` (0010,0010) is extracted by `WP_MCP_AI_DICOM_Metadata` but NOT stored in any WP table or returned by any REST endpoint; only `patient_id` (0010,0020 — de-identified reference) is persisted; the AI interpretation prompt contains zero patient-identifying tags ✅. Additional hardening added: `process_uploaded_file()` now runs `finfo_file()` MIME check against `ALLOWED_MIME_TYPES` (`application/dicom`, `application/octet-stream`) before the magic-byte check — providing defence-in-depth against spoofed Content-Type headers. |
 | **Roadmap** | R-S-12 |
 
 ### F-FS-01 — Document-generation temp files not centrally managed
@@ -221,7 +221,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | CWE-359 |
 | **Addon(s)** | pro |
 | **Recommendation** | New "privacy registry" service (R-A-04). |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 23.** New `WP_MCP_AI_Pro_Privacy` service (`addons/pro/includes/class-wp-mcp-ai-pro-privacy.php`) registers WP Privacy API exporters and hard-delete erasers for: all six health-wellness CPTs (`mcp_ai_member`, `mcp_ai_policy`, `mcp_ai_med_record`, `mcp_ai_checkup`, `mcp_ai_prescription`, `mcp_ai_allergy`) matched by `post_author`; and `mcp_ai_imaging_study` CPT (eraser also recursively removes DICOM pixel files from disk). Both exporter and eraser are paginated (10 records/page). Service is initialised from `addons/pro/mcp-ai-wpoos-pro.php` immediately after `WP_MCP_AI_Pro_CPT_Meta_Schema::init()`. |
 | **Roadmap** | R-A-04 |
 
 ### F-PRIV-02 — `readme.txt` doesn't enumerate AI provider data flows

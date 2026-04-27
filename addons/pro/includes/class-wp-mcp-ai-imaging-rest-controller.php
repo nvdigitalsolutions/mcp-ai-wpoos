@@ -1057,6 +1057,25 @@ class WP_MCP_AI_Imaging_REST_Controller extends WP_REST_Controller {
 
 		$tmp_path = $file['tmp_name'];
 
+		// F-UPLOAD-01: Enforce MIME type using php-finfo against the actual file bytes,
+		// not the browser-reported Content-Type which can be spoofed.
+		// DICOM files have no universally registered MIME type; php-finfo commonly
+		// reports them as 'application/dicom' or 'application/octet-stream'.
+		// Either is acceptable; anything else is rejected.
+		if ( function_exists( 'finfo_open' ) ) {
+			$finfo     = finfo_open( FILEINFO_MIME_TYPE );
+			$mime_type = $finfo ? finfo_file( $finfo, $tmp_path ) : '';
+			if ( $finfo ) {
+				finfo_close( $finfo );
+			}
+			if ( '' !== $mime_type && ! in_array( $mime_type, self::ALLOWED_MIME_TYPES, true ) ) {
+				return new WP_Error(
+					'imaging_invalid_mime',
+					__( 'Uploaded file has an unexpected content type. Only DICOM files are accepted.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		// Validate DICOM magic.
 		if ( ! WP_MCP_AI_DICOM_Metadata::is_dicom( $tmp_path ) ) {
 			return new WP_Error( 'imaging_not_dicom', __( 'Uploaded file is not a valid DICOM file.', 'mcp-ai-wpoos-pro' ) );
