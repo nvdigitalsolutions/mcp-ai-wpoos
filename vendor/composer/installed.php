@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-telegram-auto-reply-bug',
+        'version' => 'dev-copilot/fix-telegram-auto-reply-bug',
+        'reference' => '6f9b08b0535b17f996bfef21c2c7733f9e6c9e31',
         'pretty_version' => 'dev-copilot/update-model-config-dropdown',
         'version' => 'dev-copilot/update-model-config-dropdown',
         'reference' => 'fd055ad54163d5f516105e49bf05e95be3dfc091',
@@ -53,6 +56,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-telegram-auto-reply-bug',
+            'version' => 'dev-copilot/fix-telegram-auto-reply-bug',
+            'reference' => '6f9b08b0535b17f996bfef21c2c7733f9e6c9e31',
             'pretty_version' => 'dev-copilot/update-model-config-dropdown',
             'version' => 'dev-copilot/update-model-config-dropdown',
             'reference' => 'fd055ad54163d5f516105e49bf05e95be3dfc091',
