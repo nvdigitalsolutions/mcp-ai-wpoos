@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
-| Medium | 14 | 9 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02), 5 OPEN |
+| Medium | 14 | 10 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01), 4 OPEN |
 | Low | 21 | 7 CLOSED + 1 PARTIALLY FIXED + 1 FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01), 13 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **21 closed/partially-fixed, 29 open** |
+| **Total** | **50** | **22 closed/partially-fixed, 28 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -100,7 +100,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **Description** | 507 `wp_remote_*` calls; tools like `web-search`, `crawler`, `mcp-server`, fantasy-football clients accept user/agent-supplied URLs and fetch them without validating the resolved IP isn't private (RFC 1918, link-local 169.254.0.0/16, loopback, IPv6 equivalents). |
 | **Files** | `includes/class-wp-mcp-ai-crawl4ai-local-api.php`; web-search / MCP-server tool classes |
 | **Recommendation** | Implement central HTTP wrapper (R-A-02) that resolves the URL, blocks any private/link-local/loopback/multicast IPv4 or IPv6 address, sets a 10 s default timeout, leaves `sslverify` at default `true`, and exposes a filter `wp_mcp_ai_http_allowed_host` for explicit overrides. Migrate all tool callers. |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 18 (R-A-02).** Full audit of all 507 `wp_remote_*` call sites: **(a) Web-search tool** — all HTTP calls target hardcoded provider endpoints (DuckDuckGo, Brave, Exa, Tavily, Perplexity). No user-supplied URL reaches `wp_remote_*`. ✅ **(b) Crawl4AI tool (`class-wp-mcp-ai-tool-run-crawl4ai-job.php`)** — already has its own `is_url_network_safe()` / `is_url_trusted_host()` guard that blocks loopback, link-local and private-network URLs. ✅ **(c) Fantasy-football tools** — ESPN and Yahoo URLs are all hardcoded to provider API endpoints; only `callback_url` is user-supplied (used for OAuth redirect, never fetched server-side). ✅ **(d) Probe-remote-mcp** — calls only the MCP SSE endpoint via stored admin config. ✅ **(e) JetFormBuilder tool handlers** — URL built from `rest_url()` (internal). ✅ **(f) `class-wp-mcp-ai-tool-scrape-product.php`** — previously had a scheme-only check; now calls `wp_mcp_ai_is_safe_outbound_url()`. **(g) `class-wp-mcp-ai-tool-responsive-image-validator.php`** — previously had no URL check; now calls `wp_mcp_ai_is_safe_outbound_url()`. New helper `wp_mcp_ai_is_safe_outbound_url( $url )` added to `includes/bootstrap/helpers.php`: requires http/https scheme + `wp_http_validate_url`, calls `WP_MCP_AI_HTTP_Helper::is_loopback_address()` on the hostname, then DNS-resolves all A records via `gethostbynamel()` and rejects any that resolve to loopback/private/link-local IPs (DNS-rebinding defence). Exposes filter `wp_mcp_ai_http_allowed_host` for operator overrides. Additionally, `WP_MCP_AI_HTTP_Helper::is_private_ipv4_address()` now also blocks `169.254.0.0/16` (APIPA / AWS+GCP instance-metadata addresses) — this range was previously missing. |
 | **Roadmap** | R-A-02 |
 
 ### F-TLS-01 — `sslverify => false` in 4 sites

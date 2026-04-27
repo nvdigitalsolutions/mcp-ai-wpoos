@@ -583,3 +583,80 @@ __( 'The specified path is not within the allowed directory.', 'mcp-ai-wpoos' )
 return $resolved;
 }
 }
+
+if ( ! function_exists( 'wp_mcp_ai_is_safe_outbound_url' ) ) {
+/**
+ * Validate that a URL is safe to fetch as an outbound HTTP request.
+ *
+ * Guards against Server-Side Request Forgery (SSRF) by:
+ *  1. Requiring a valid http/https URL.
+ *  2. Blocking any host that resolves to a loopback, private-network,
+ *     or link-local IP address (including the AWS/GCP instance-metadata
+ *     endpoint 169.254.169.254).
+ *  3. DNS-resolving the hostname so that DNS-rebinding to a private IP
+ *     after the URL check is also caught.
+ *
+ * Operators may whitelist specific hostnames via the filter
+ * `wp_mcp_ai_http_allowed_host`.
+ *
+ * Usage:
+ *   if ( ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
+ *       return new WP_Error( 'wp_mcp_ai_unsafe_url', __( 'The URL resolves to a blocked address.', 'mcp-ai-wpoos' ) );
+ *   }
+ *
+ * @param string $url URL to validate.
+ * @return bool True if the URL is safe to fetch; false if it should be blocked.
+ */
+function wp_mcp_ai_is_safe_outbound_url( $url ) {
+if ( ! is_string( $url ) || '' === $url ) {
+return false;
+}
+
+// Require a valid URL with http or https scheme.
+$sanitized = esc_url_raw( $url, array( 'http', 'https' ) );
+if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
+return false;
+}
+
+$parts = wp_parse_url( $sanitized );
+if ( false === $parts || empty( $parts['host'] ) ) {
+return false;
+}
+
+$host = strtolower( $parts['host'] );
+
+/**
+ * Allows specific hostnames to bypass the private-IP block.
+ *
+ * Useful for development environments or trusted internal services.
+ *
+ * @param string[] $allowed_hosts Array of allowed hostnames (exact match).
+ * @param string   $host          The hostname being evaluated.
+ * @param string   $url           The full URL being evaluated.
+ */
+$allowed_hosts = (array) apply_filters( 'wp_mcp_ai_http_allowed_host', array(), $host, $url );
+if ( in_array( $host, $allowed_hosts, true ) ) {
+return true;
+}
+
+// Reject hosts that are already known-private names (localhost, etc.)
+// without requiring a DNS lookup.
+if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $host ) ) {
+return false;
+}
+
+// DNS-resolve the hostname to defend against DNS-rebinding attacks.
+// gethostbynamel() returns all A records; gethostbyname() returns the first.
+// We check all A records returned.
+$resolved_ips = gethostbynamel( $host );
+if ( false !== $resolved_ips && ! empty( $resolved_ips ) ) {
+foreach ( $resolved_ips as $resolved_ip ) {
+if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $resolved_ip ) ) {
+return false;
+}
+}
+}
+
+return true;
+}
+}

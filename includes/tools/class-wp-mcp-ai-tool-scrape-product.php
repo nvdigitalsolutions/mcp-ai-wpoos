@@ -135,10 +135,9 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! empty( $html_file ) ) {
 			$html = $this->read_html_file( $html_file );
 		} else {
-			// Validate URL scheme.
-			$parts = wp_parse_url( $url );
-			if ( false === $parts || empty( $parts['scheme'] ) || ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ) );
+			// Validate URL scheme and block SSRF targets (private/link-local IPs, metadata endpoints).
+			if ( ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only public HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ) );
 			}
 			$html = $this->fetch_url_content( $url );
 		}
