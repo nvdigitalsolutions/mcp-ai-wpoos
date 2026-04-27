@@ -817,6 +817,24 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
+			// Append memory documents (vector store chunks assigned to the assistant)
+			// to the system string. Ollama's native API exposes a single top-level
+			// `system` key, so we concatenate the chunks after the base system prompt.
+			if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+				$memory_messages = $this->build_memory_messages_from_options( $options );
+				if ( ! empty( $memory_messages ) ) {
+					$memory_text = implode(
+						"\n\n",
+						array_column( $memory_messages, 'content' )
+					);
+					if ( ! empty( $payload['system'] ) ) {
+						$payload['system'] .= "\n\n" . $memory_text;
+					} else {
+						$payload['system'] = $memory_text;
+					}
+				}
+			}
+
 			return $payload;
 		}
 
@@ -1204,6 +1222,57 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		 * @param mixed $tools Tool definitions from the REST layer.
 		 * @return array Normalized tool array.
 		 */
+		/**
+		 * Build system messages for memory documents assigned to the assistant.
+		 *
+		 * Identical to the LM Studio / OpenAI client implementations — this helper
+		 * is provider-agnostic and simply converts the pre-loaded `memory_documents`
+		 * array (populated by the REST layer from the assistant's assigned vector
+		 * store files) into an array of system-role messages, one per chunk.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $options Chat request options containing memory_documents.
+		 * @return array Array of system messages for memory documents.
+		 */
+		protected function build_memory_messages_from_options( array $options ) {
+			if ( empty( $options['memory_documents'] ) || ! is_array( $options['memory_documents'] ) ) {
+				return array();
+			}
+
+			$messages = array();
+
+			foreach ( $options['memory_documents'] as $document ) {
+				if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+					continue;
+				}
+
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'mcp-ai-wpoos' );
+				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+				$parts      = count( $chunks );
+				$part_index = 0;
+
+				foreach ( $chunks as $chunk ) {
+					++$part_index;
+
+					$label = $title;
+
+					if ( $parts > 1 ) {
+						/* translators: %1$s: document title, %2$d: chunk number. */
+						$label = sprintf( __( '%1$s (Part %2$d)', 'mcp-ai-wpoos' ), $title, $part_index );
+					}
+
+					$messages[] = array(
+						'role'    => 'system',
+						/* translators: %1$s: document title, %2$s: extracted text snippet. */
+						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'mcp-ai-wpoos' ), $label, wp_kses_post( $chunk ) ),
+					);
+				}
+			}
+
+			return $messages;
+		}
+
 		protected function normalise_tools_for_payload( $tools ) {
 			if ( $tools instanceof \Traversable ) {
 				$tools = iterator_to_array( $tools );
@@ -1479,6 +1548,15 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					'role'    => 'system',
 					'content' => wp_kses_post( (string) $options['system_prompt'] ),
 				);
+			}
+
+			// Inject memory documents (vector store chunks assigned to the assistant)
+			// immediately after the system-prompt message, mirroring the LM Studio client.
+			if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+				$memory_messages = $this->build_memory_messages_from_options( $options );
+				if ( ! empty( $memory_messages ) ) {
+					$formatted = array_merge( $formatted, $memory_messages );
+				}
 			}
 
 			// Messages are already in OpenAI format from the REST layer; pass them through.
