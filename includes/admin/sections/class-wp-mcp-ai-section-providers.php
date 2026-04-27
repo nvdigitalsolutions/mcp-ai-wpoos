@@ -757,8 +757,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Ollama Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Ollama (Local AI) as an available provider', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When disabled, Ollama will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'description'    => __( 'When disabled, Ollama will not be available for use by assistants or API requests. Disabled by default because Ollama requires a separately installed local server; enable after configuring your endpoint URL and pulling at least one model.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 				'ollama_endpoint_url'                => array(
 					'type'        => 'url',
@@ -819,8 +819,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable LM Studio Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable LM Studio (Local AI) as an available provider', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When disabled, LM Studio will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
-					'default'        => true,
+					'description'    => __( 'When disabled, LM Studio will not be available for use by assistants or API requests. Disabled by default because LM Studio requires a separately installed local server; enable after configuring your endpoint URL and loading a model.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 				'lm_studio_endpoint_url'             => array(
 					'type'        => 'url',
