@@ -2,12 +2,20 @@
 
 **Plugin:** NV Digital Open Operator System (oOS)  
 **Review ID:** R nvdigital-open-operator-system-oos/vsamtani/25Dec25/T4 17Jan26/3.8RC2  
-**Status:** ✅ 100% Complete — READY FOR SUBMISSION  
-**Last Updated:** 2026-03-03
+**Status:** ✅ READY FOR RE-SUBMISSION (v1.1.11)  
+**Last Updated:** 2026-04-27
+
+> **v1.1.11 update (April 27, 2026):** Three additional readme/build-pipeline items closed:
+> 1. Dead support-forum URL in `readme.txt` rewritten to the canonical WordPress.org slug (`nvdigital-open-operator-system-oos`).
+> 2. Inconsistent tool count in `readme.txt` reconciled to `230+` (matches `tool-reference.md` and the Tool Registry screenshot caption).
+> 3. Canonical `mcp` tag added to the `Tags:` line (5 tags total).
+> 4. `bin/build-wordpress-org-from-base.sh` now rewrites the support-forum URL per package variant and verifies the transformed `readme.txt` for legacy slug leakage; `bin/review-zips.sh` asserts the same invariants on already-built zips.
+>
+> **Deferred to v2.0 (not a submission blocker):** Source-level identifier prefix migration from `wp_mcp_ai_*` / `WP_MCP_AI_*` to a slug-derived prefix (~14k identifiers across base + Pro) requires a coordinated options/postmeta/cron-hook migration and is unsafe to ship in a patch release. WordPress.org's prefix guideline is a recommendation; the plugin already passes the strict text-domain and slug requirements.
 
 ---
 
-## ✅ COMPLETED ISSUES (17/17 - 100%)
+## ✅ COMPLETED ISSUES (20/20 - 100%)
 
 ### 1. ✅ Tested Up To Value
 - Changed `6.7.1` → `6.7` (major version only)

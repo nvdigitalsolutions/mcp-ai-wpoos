@@ -565,6 +565,40 @@ review_core() {
 # ============================================================================
 # WordPress.org package checks
 # ============================================================================
+
+# Verify readme.txt inside a transformed WordPress.org package contains the
+# correct slug-aware support-forum URL and no legacy slug leakage. This is the
+# build-output mirror of the per-variant normalization in
+# bin/build-wordpress-org-from-base.sh.
+check_wporg_readme_slug() {
+    local DIR="$1"
+    local EXPECTED_SLUG="$2"
+    local README="$DIR/readme.txt"
+
+    if [ ! -f "$README" ]; then
+        warn "readme.txt missing in WP.org package — cannot verify slug"
+        return
+    fi
+
+    if grep -qE "support/plugin/(wp-mcp-ai|mcp-ai-wpoos)" "$README"; then
+        fail "readme.txt contains legacy WordPress.org support-forum slug"
+        return
+    fi
+
+    if grep -q "support/plugin/${EXPECTED_SLUG}" "$README"; then
+        pass "readme.txt support-forum URL uses expected slug (${EXPECTED_SLUG})"
+    else
+        # Forum link is informational; absence is a warning, not a failure.
+        warn "readme.txt has no support-forum link for ${EXPECTED_SLUG}"
+    fi
+
+    if grep -q "Text Domain: mcp-ai-wpoos" "$README"; then
+        fail "readme.txt contains unrewritten 'Text Domain: mcp-ai-wpoos' header"
+    else
+        pass "readme.txt has no unrewritten text-domain header"
+    fi
+}
+
 review_wporg_base() {
     local DIR="$1"
     local EXPECTED_VER="$2"
@@ -578,6 +612,9 @@ review_wporg_base() {
 
     # Check text domain transformation
     check_text_domain_transform "$DIR" "base"
+
+    # Check readme.txt slug normalization
+    check_wporg_readme_slug "$DIR" "nvdigital-open-operator-system-oos"
 
     # Check translation file renamed
     if [ -f "$DIR/languages/nvdigital-open-operator-system-oos.pot" ]; then
@@ -603,6 +640,10 @@ review_wporg_pro() {
 
     # Check text domain transformation
     check_text_domain_transform "$DIR" "pro"
+
+    # Check readme.txt slug normalization (Pro is not submitted to WP.org but
+    # the build still normalizes its readme for consistency)
+    check_wporg_readme_slug "$DIR" "nvdigital-open-operator-system-oos-pro"
 }
 
 review_wporg_combined() {
@@ -618,6 +659,9 @@ review_wporg_combined() {
 
     # Check text domain transformation
     check_text_domain_transform "$DIR" "combined"
+
+    # Check readme.txt slug normalization (combined uses the base slug)
+    check_wporg_readme_slug "$DIR" "nvdigital-open-operator-system-oos"
 }
 
 review_wporg_core() {
@@ -633,6 +677,9 @@ review_wporg_core() {
 
     # Check text domain transformation
     check_text_domain_transform "$DIR" "core"
+
+    # Check readme.txt slug normalization
+    check_wporg_readme_slug "$DIR" "nvdigital-open-operator-system-oos-core"
 }
 
 # ============================================================================
