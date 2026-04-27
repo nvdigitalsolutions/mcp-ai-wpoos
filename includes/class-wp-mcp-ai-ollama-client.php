@@ -1214,15 +1214,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		}
 
 		/**
-		 * Normalize tool definitions for the Ollama /api/chat payload.
-		 *
-		 * Mirrors the normalise_tools_for_payload pattern used in the LM Studio client
-		 * to ensure consistent tool schema handling across all local AI providers.
-		 *
-		 * @param mixed $tools Tool definitions from the REST layer.
-		 * @return array Normalized tool array.
-		 */
-		/**
 		 * Build system messages for memory documents assigned to the assistant.
 		 *
 		 * Identical to the LM Studio / OpenAI client implementations — this helper
@@ -1273,6 +1264,17 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $messages;
 		}
 
+		/**
+		 * Normalize tool definitions for the Ollama /api/chat payload.
+		 *
+		 * Mirrors the normalise_tools_for_payload pattern used in the LM Studio client
+		 * to ensure consistent tool schema handling across all local AI providers.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param mixed $tools Tool definitions from the REST layer.
+		 * @return array Normalized tool array.
+		 */
 		protected function normalise_tools_for_payload( $tools ) {
 			if ( $tools instanceof \Traversable ) {
 				$tools = iterator_to_array( $tools );
