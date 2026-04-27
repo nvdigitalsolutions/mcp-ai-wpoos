@@ -56,18 +56,18 @@ Tool classes: **231 base** + **584 pro** = **815 total** (the README's "519" is 
 
 ## Headline result
 
-| Metric | Result |
-|---|---|
-| Critical findings | **0** |
-| High findings | **5** |
-| Medium findings | **14** |
-| Low / Informational | **31** |
-| Dependency CVEs (composer) | **0** |
-| Dependency advisories (npm, prod) | 13 moderate (10 root, 3 pro) — all auto-fixable |
-| WP.org submission readiness | **Not yet** — see [`wp-org-submission-checklist.md`](./wp-org-submission-checklist.md) |
+| Metric | At audit close (2026-04-26) | Current status (2026-04-27) |
+|---|---|---|
+| Critical findings | **0** | **0** |
+| High findings | **5** | 3 FIXED, 2 PARTIALLY FIXED, 0 OPEN |
+| Medium findings | **14** | All FIXED |
+| Low / Informational | **31** (21 Low + 10 Info) | 14 Low FIXED + 1 PARTIALLY FIXED + 4 CLOSED (no fix needed) + 2 ACCEPTED; 10 Informational |
+| Dependency CVEs (composer) | **0** | **0** |
+| Dependency advisories (npm, prod) | 13 moderate (10 root, 3 pro) — all auto-fixable | Reduced via `npm audit fix`; remaining items are dev-only or in `.distignore`-excluded `optionalDependencies` (F-NPM-01 FIXED, F-NPM-02 ACCEPTED) |
+| WP.org submission readiness (base plugin) | **Not yet** | ✅ **Submission-ready** — all 9 gating items in [`wp-org-submission-checklist.md`](./wp-org-submission-checklist.md) are ✅ as of 2026-04-27 (v1.1.10) |
 
-See [`executive-summary.md`](./executive-summary.md) for the narrative.
+Per-finding status is authoritative in [`findings-register.md`](./findings-register.md). See [`executive-summary.md`](./executive-summary.md) for the narrative and [`remediation-roadmap.md`](./remediation-roadmap.md) for the wave-by-wave roadmap.
 
 ---
 
-_Audit conducted: 2026-04-26. Auditor: automated agent walkthrough of the planned methodology, with all numbers reproducible from the commands recorded in [`automated-scan-results.md`](./automated-scan-results.md)._
+_Audit conducted: 2026-04-26. Status table reverified 2026-04-27 against branch `copilot/prepare-plugin-for-resubmission` at version `1.1.10`. Auditor: automated agent walkthrough of the planned methodology, with all numbers reproducible from the commands recorded in [`automated-scan-results.md`](./automated-scan-results.md)._
