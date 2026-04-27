@@ -104,6 +104,12 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats implements WP_MCP_AI_Tool_Interfa
 			return $access_token;
 		}
 
+		// Outbound API rate limit: max 20 requests/min to the Yahoo Fantasy Sports API.
+		$rate_limit_error = function_exists( 'wp_mcp_ai_check_api_rate_limit' ) ? wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 ) : null;
+		if ( is_wp_error( $rate_limit_error ) ) {
+			return $rate_limit_error;
+		}
+
 		// Build API URL.
 		$api_url = sprintf(
 			'https://fantasysports.yahooapis.com/fantasy/v2/league/%s/players;player_keys=%s/stats',

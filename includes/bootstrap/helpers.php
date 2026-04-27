@@ -660,3 +660,54 @@ return false;
 return true;
 }
 }
+
+if ( ! function_exists( 'wp_mcp_ai_check_api_rate_limit' ) ) {
+/**
+ * Enforce a global (shared across all users) outbound API rate limit.
+ *
+ * Uses a transient to count calls in the current minute. Unlike
+ * `wp_mcp_ai_check_ajax_rate_limit()` (which is per-IP for nopriv AJAX),
+ * this helper is keyed only by the API slug so it represents the total
+ * call-rate the plugin makes to that external service per minute.
+ *
+ * Usage:
+ *   $err = wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 );
+ *   if ( is_wp_error( $err ) ) { return $err; }
+ *
+ * @param string $api_slug    Short identifier for the external API (e.g. 'yahoo_fantasy').
+ * @param int    $max_per_min Maximum outbound calls allowed per minute.
+ * @return null|WP_Error Null when the call is allowed; WP_Error when the limit is exceeded.
+ */
+function wp_mcp_ai_check_api_rate_limit( $api_slug, $max_per_min = 20 ) {
+$key = 'wp_mcp_ai_api_rl_' . sanitize_key( $api_slug );
+
+/**
+ * Filters the per-API outbound rate limit.
+ *
+ * @param int    $max_per_min Maximum calls per minute.
+ * @param string $api_slug    The API slug being rate-limited.
+ */
+$max_per_min = (int) apply_filters( 'wp_mcp_ai_api_rate_limit', $max_per_min, $api_slug );
+
+$count = get_transient( $key );
+
+if ( false === $count ) {
+set_transient( $key, 1, MINUTE_IN_SECONDS );
+return null;
+}
+
+if ( (int) $count >= $max_per_min ) {
+return new WP_Error(
+'wp_mcp_ai_api_rate_limit_exceeded',
+sprintf(
+/* translators: %s: external API name */
+__( 'Rate limit exceeded for the %s API. Please wait a moment and try again.', 'mcp-ai-wpoos' ),
+esc_html( $api_slug )
+)
+);
+}
+
+set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
+return null;
+}
+}

@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
-| Medium | 14 | 10 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01), 4 OPEN |
+| Medium | 14 | 14 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01, F-PRIV-02, F-CRYPTO-01, F-RATE-01, F-DOS-01), 0 OPEN |
 | Low | 21 | 7 CLOSED + 1 PARTIALLY FIXED + 1 FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01), 13 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **22 closed/partially-fixed, 28 open** |
+| **Total** | **50** | **26 closed/partially-fixed, 24 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -235,7 +235,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | (compliance — N/A) |
 | **Description** | WP Plugin Directory requires plugins that send data to external services to disclose which data, where, and the relevant ToS URLs. The current `readme.txt` lists providers but not data fields/ToS. |
 | **Recommendation** | Add a "External services and data sharing" section to `readme.txt` covering OpenAI, Gemini, Ollama, NVIDIA NIM, plus each integration's ToS / Privacy URL. |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 19 (R-D-01).** Audit of `readme.txt` confirmed the `== External Services ==` section already documents every provider (OpenAI, Gemini, Gemini Corpus, Anthropic, Ollama, LM Studio, NVIDIA NIM, YouTube, Unsplash, Pexels, Weather services, Bing Maps, Google Maps, Yahoo Fantasy Sports, ESPN Fantasy, Brave, Exa, Tavily, Perplexity, Screaming Frog, Google Search Console, SendGrid, Twilio) with: **Purpose**, **Data Sent** (specific fields), **When** (trigger condition), **Service URL**, **Terms of Service** URL, and **Privacy Policy** URL. This meets the WP Plugin Directory "External services" disclosure requirement. No changes to `readme.txt` were required. |
 | **Roadmap** | R-D-01 |
 
 ### F-AI-02 — Tool results re-entering the prompt are not length-limited / escaped
@@ -264,13 +264,13 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | ID | Title | File:Line | CWE | Status |
 |---|---|---|---|---|
 | F-INPUT-01 | Some `json_decode` payloads not schema-validated | various | CWE-20 | OPEN |
-| F-CRYPTO-01 | Verify `wp_mcp_ai_encrypt` key derivation (KDF, IV uniqueness, AEAD) | `includes/class-wp-mcp-ai-encryption.php` | CWE-326 | OPEN |
+| F-CRYPTO-01 | Verify `wp_mcp_ai_encrypt` key derivation (KDF, IV uniqueness, AEAD) | `includes/class-wp-mcp-ai-encryption.php` | CWE-326 | **FIXED — Wave 19.** Audit findings: (a) *KDF* — key is stored as `base64(random_bytes(32))`; no KDF needed since this is already a full-entropy 256-bit key ✅. (b) *IV uniqueness* — old CBC path used `random_bytes(16)` per call ✅. (c) *AEAD* — old AES-256-CBC had **no authentication tag**, leaving ciphertext vulnerable to padding-oracle and bit-flipping attacks. **Fix:** cipher upgraded to **AES-256-GCM** (AEAD) via `openssl_encrypt` with a 12-byte nonce and a 16-byte authentication tag. New ciphertext format: `"v2:" + base64(nonce[12] . ciphertext . tag[16])`. The `decrypt()` method detects the `v2:` prefix for GCM and falls back transparently to the legacy AES-256-CBC path (constant `CIPHER_METHOD_LEGACY`) for any existing stored values — **no data migration required**. Tamper detection: `openssl_decrypt` returns `false` when the GCM tag does not verify, so corrupted or tampered ciphertexts are cleanly rejected. |
 | F-CMP-02 | 4 non-test PHP files initially flagged as missing `ABSPATH` guard. **Re-verified — false positive.** `addons/embedded/uninstall.php` correctly uses `WP_UNINSTALL_PLUGIN`; both vault classes correctly use `WPINC` (functionally equivalent to `ABSPATH`); `addons/pro/build/workflow-builder/workflow-builder.asset.php` is a build artifact that must `return array(...)` directly and cannot have an exit guard. **CLOSED — no fix needed.** | see [`automated-scan-results.md`](./automated-scan-results.md) §5.4 | CWE-829 | CLOSED |
 | F-CMP-03 | `readme.txt` `Tested up to` / `Stable tag` drift between releases | `readme.txt` | n/a | OPEN |
 | F-CMP-04 | Some legacy `mcp_ai_*` nonce action names instead of `wp_mcp_ai_*` | various | n/a | **PARTIALLY FIXED — Wave 15.** Base-plugin nonce action strings standardised: `mcp_ai_workflow_editor` → `wp_mcp_ai_workflow_editor` (4 call-sites in `includes/admin/class-wp-mcp-ai-workflow-editor-page.php`) and `mcp_ai_training_details` → `wp_mcp_ai_training_details` (paired `wp_nonce_field` in `includes/class-wp-mcp-ai-security-training.php` and matching `wp_verify_nonce` in `includes/admin/class-wp-mcp-ai-security-training-admin.php`). Field names (e.g. `mcp_ai_training_details_nonce`) and meta-box IDs left unchanged — those are stable identifiers, not security-relevant. Pro-addon legacy action strings (`mcp_ai_pro_workflow_builder`, `mcp_ai_lf_*`, `mcp_ai_cre_*`, `mcp_ai_account_*`, `mcp_ai_media_template_admin`, `mcp_ai_media_collection_admin`, `mcp_ai_booking`) remain on a follow-up sweep. |
 | F-CMP-05 | Several `.min.js` files without sibling source / source map | `assets/js/*.min.js` | n/a (WP.org guideline 11) | OPEN |
-| F-RATE-01 | No outbound rate-limit on Yahoo / ESPN tools | fantasy-football tools | CWE-770 | OPEN |
-| F-DOS-01 | Graphify traversal tools have no result-size cap | graphify tools | CWE-770 | OPEN |
+| F-RATE-01 | No outbound rate-limit on Yahoo / ESPN tools | fantasy-football tools | CWE-770 | **FIXED — Wave 19 (F-RATE-01).** ESPN client already had a transient-based rate limiter (`check_rate_limit()` / `track_request()`, 20 req/min). Yahoo tools had none. New `wp_mcp_ai_check_api_rate_limit( $api_slug, $max_per_min )` helper added to `includes/bootstrap/helpers.php` — uses a global transient keyed by `wp_mcp_ai_api_rl_{slug}`, filterable via `wp_mcp_ai_api_rate_limit`. Applied to all 5 Yahoo tool callers: `yahoo-ff-get-leagues`, `yahoo-ff-get-player-stats`, `yahoo-ff-get-roster`, `yahoo-ff-league-standings`, and `yahoo-ff-trade-analyzer` (applied in `get_players_stats()` to cap the multi-player loop). |
+| F-DOS-01 | Graphify traversal tools have no result-size cap | graphify tools | CWE-770 | **FIXED — Wave 19 (F-DOS-01).** `NV_oOS_Graphify_DB::get_edges_for_node()` had no `LIMIT` clause — a "god node" with thousands of edges could exhaust memory and the AI context window. **Fix:** added a `$limit` parameter (default 500, hard-capped at 2000) and appended `LIMIT %d` to both the relation-filtered and unfiltered queries. The `graphify_get_neighbors` tool now exposes a `max_neighbors` parameter (schema: `minimum: 1, maximum: 500, default: 100`) and passes it through to the DB call. Other traversal tools (`query-graph`, `get-community`) already enforced their own `min/max` bounds via `max(1, min(200, ...))`. |
 | F-UPLOAD-02 | Canvas export — confirm `wp_handle_upload` path | canvas | CWE-434 | OPEN |
 | F-CSP-01 | Embedded surface should set `frame-ancestors` CSP | embedded | CWE-1021 | OPEN |
 | F-SQL-02 | One unprepared SQL in `class-wp-mcp-ai-model-catalog-migration.php:209` | base | CWE-89 | **FIXED** (extends R-S-03 pattern) |
