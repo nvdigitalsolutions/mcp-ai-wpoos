@@ -19,6 +19,27 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 	class WP_MCP_AI_Ollama_Client {
 
 		/**
+		 * Default minimum context window (num_ctx) used when callers do not
+		 * provide one explicitly. Sized to comfortably hold a system prompt,
+		 * tool definitions, recent chat history, and the requested generation
+		 * budget for typical assistant workloads. Ollama itself defaults to
+		 * only 2048 tokens which is too small in practice.
+		 *
+		 * @since 1.1.9
+		 */
+		const DEFAULT_NUM_CTX = 8192;
+
+		/**
+		 * Fallback assumption for num_predict when computing the dynamic
+		 * num_ctx default and num_predict has not been resolved yet. Matches
+		 * Ollama's own built-in num_ctx default so the math degrades to a
+		 * safe minimum.
+		 *
+		 * @since 1.1.9
+		 */
+		const NUM_PREDICT_FALLBACK_FOR_CTX = 2048;
+
+		/**
 		 * Get the configured network interface for HTTP requests.
 		 *
 		 * @return string
@@ -568,6 +589,40 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			} elseif ( isset( $options['num_predict'] ) ) {
 				// Use num_predict with minimum enforcement.
 				$payload['options']['num_predict'] = max( 512, absint( $options['num_predict'] ) );
+			}
+
+			// Ensure num_ctx is large enough to hold the prompt plus the
+			// generation budget (num_predict). Ollama defaults to num_ctx=2048
+			// which is far too small for typical assistant requests with system
+			// prompts and tool definitions; when the prompt exceeds the context
+			// window, Ollama returns finish_reason=length with empty content,
+			// surfacing as "exceeded the available token limit" in the UI.
+			if ( ! isset( $payload['options']['num_ctx'] ) ) {
+				$num_predict = isset( $payload['options']['num_predict'] ) ? (int) $payload['options']['num_predict'] : self::NUM_PREDICT_FALLBACK_FOR_CTX;
+
+				// Headroom for prompt + system + tool definitions. The class
+				// constant covers the vast majority of real-world chats; we
+				// additionally make sure we have at least 2x the requested
+				// generation budget.
+				$default_num_ctx = max( self::DEFAULT_NUM_CTX, $num_predict * 2 );
+
+				/**
+				 * Filter the default Ollama num_ctx (context window size).
+				 *
+				 * Ollama's default is 2048 which causes prompts to overflow on
+				 * almost any non-trivial chat. We default to 8192 (or 2x the
+				 * generation budget, whichever is larger). Sites running large
+				 * models (e.g. llama3.1 with 128K context) can raise this via
+				 * the filter, while sites running on tiny VRAM may want to
+				 * lower it.
+				 *
+				 * @since 1.1.9
+				 *
+				 * @param int   $default_num_ctx Default context window size.
+				 * @param int   $num_predict     Resolved num_predict for this request.
+				 * @param array $options         Original request options.
+				 */
+				$payload['options']['num_ctx'] = (int) apply_filters( 'wp_mcp_ai_ollama_default_num_ctx', $default_num_ctx, $num_predict, $options );
 			}
 
 			if ( empty( $payload['options'] ) ) {
