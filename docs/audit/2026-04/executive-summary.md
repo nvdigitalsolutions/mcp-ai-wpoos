@@ -22,7 +22,7 @@ The plugin is **not yet ready** for an unconditional WP.org submission update �
 | 6 | **F-SSRF-01** | Medium | No SSRF allowlist on tool-driven outbound HTTP — central wrapper needed | base, pro |
 | 7 | **F-TLS-01** | Medium | `sslverify => false` in 4 tool classes | base, pro |
 | 8 | **F-PRIV-01 + F-PRIV-02** | Medium | Pro CCT/CPT data not covered by Privacy API; AI provider data flows not disclosed in `readme.txt` | pro, base |
-| 9 | **F-LINT-02** | Low | Pro tree (`addons/pro/*`) excluded from PHPCS — single biggest visibility gap | tooling |
+| 9 | **F-LINT-02** | Low | Pro tree (`addons/pro/*`) excluded from PHPCS — measured Wave 24: 5,806 errors / 8,141 warnings across 745 files (11,016 auto-fixable) | tooling |
 | 10 | **F-NPM-01/02** | Low | 13 moderate npm advisories (root + pro), all auto-fixable via `npm audit fix` | tooling |
 
 ## Posture per addon
@@ -51,7 +51,7 @@ The plugin is **not yet ready** for an unconditional WP.org submission update �
 
 ## What needs the most attention
 
-- **Pro tree visibility.** The single biggest audit gap is that `addons/pro/*` is excluded from PHPCS in `phpcs.xml.dist:24`. Re-enabling will surface a backlog comparable to the base tree. Roadmap **R-T-01**.
+- **Pro tree visibility.** The single biggest audit gap is that `addons/pro/*` is excluded from PHPCS in `phpcs.xml.dist:24`. Wave 24 measurement: **5,806 errors and 8,141 warnings across 745 files (out of 3,758 PHP files); 11,016 violations are `phpcbf`-auto-fixable.** Remediation in Roadmap **R-T-01**.
 - **Webhook signature posture.** 11 webhook routes use `__return_true` — verification logic exists in each callback but is not called *before* the route body parses, so a malformed payload can still trigger expensive code paths. Roadmap **R-S-01**.
 - **HIPAA / PHI flow.** The healthcare and DICOM addons handle clinical data but do not document the data flow, do not strip PHI before AI provider calls, and are not covered by the WP Privacy API. Roadmap **R-S-04**.
 - **Shell tools.** 11 pro tool classes invoke `exec`/`shell_exec`. Each should be gated behind both a capability check and an opt-in constant, and each should migrate to `proc_open` array form. Roadmap **R-S-02**.

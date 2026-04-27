@@ -19,6 +19,7 @@ These changes make the rest of the audit reproducible and prevent regression whi
 ### R-T-01 — Re-enable PHPCS on `addons/pro/`
 - **Closes:** F-LINT-02
 - **Files:** `phpcs.xml.dist`, `composer.json` (`lint:base` script)
+- **Measured baseline (Wave 24):** 5,806 errors, 8,141 warnings across 745 files (3,758 PHP files in tree); 11,016 auto-fixable by `phpcbf`.
 - **Plan:** Remove the `<exclude-pattern>*/addons/pro/*</exclude-pattern>` line; run `composer run format` (PHPCBF auto-fix) on the pro tree; commit the auto-fixes; document remaining errors with targeted `phpcs:ignore` annotations only where unavoidable.
 - **Acceptance:** `composer run lint` passes against the full tree (or fails only on a documented allow-listed set). CI green.
 
