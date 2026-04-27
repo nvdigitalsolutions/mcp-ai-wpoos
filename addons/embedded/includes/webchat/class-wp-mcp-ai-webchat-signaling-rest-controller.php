@@ -45,6 +45,12 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 	public function __construct() {
 		$this->namespace = self::REST_NAMESPACE;
 		$this->rest_base = 'webchat';
+
+		// Attach clickjacking-protection headers to every response this controller
+		// sends. The controller extends WP_REST_Controller directly (not the plugin's
+		// WP_MCP_AI_REST_Controller_Base), so security headers are not inherited
+		// automatically — they must be added here.
+		add_filter( 'rest_post_dispatch', array( $this, 'add_security_headers' ), 10, 3 );
 	}
 
 	/**
@@ -192,6 +198,38 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 			__( 'You do not have permission to access WebChat signaling.', 'mcp-ai-wpoos-pro' ),
 			array( 'status' => rest_authorization_required_code() )
 		);
+	}
+
+	/**
+	 * Append clickjacking-protection headers to responses from this controller.
+	 *
+	 * Scoped to routes in the webchat namespace to avoid polluting unrelated responses.
+	 * The `Content-Security-Policy: frame-ancestors 'self'` header is the modern
+	 * replacement for `X-Frame-Options`; both are emitted for broad browser coverage.
+	 *
+	 * @param WP_HTTP_Response $result  Response about to be dispatched.
+	 * @param WP_REST_Server   $server  REST server instance.
+	 * @param WP_REST_Request  $request Request that triggered the response.
+	 * @return WP_HTTP_Response Unchanged response (headers added as a side-effect).
+	 */
+	public function add_security_headers( $result, $server, $request ) {
+		if ( ! $result instanceof WP_HTTP_Response ) {
+			return $result;
+		}
+
+		// Only add headers for routes in this controller's namespace.
+		$route = $request->get_route();
+		if ( 0 !== strpos( $route, '/' . $this->namespace . '/' . $this->rest_base ) ) {
+			return $result;
+		}
+
+		// Prevent the response from being loaded inside a cross-origin frame.
+		// frame-ancestors 'self' allows embedding within the same origin (needed for
+		// the in-page webchat widget) while blocking third-party framing.
+		$result->header( 'Content-Security-Policy', "frame-ancestors 'self'" );
+		$result->header( 'X-Frame-Options', 'SAMEORIGIN' );
+
+		return $result;
 	}
 
 	/**

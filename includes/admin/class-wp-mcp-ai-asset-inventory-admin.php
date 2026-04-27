@@ -35,7 +35,7 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 			'nvoos-pro-dashboard',
 			__( 'Asset Inventory', 'mcp-ai-wpoos' ),
 			__( 'Asset Inventory', 'mcp-ai-wpoos' ),
-			'manage_options',
+			wp_mcp_ai_fleet_capability(),
 			'nvoos-asset-inventory',
 			array( $this, 'render_page' )
 		);

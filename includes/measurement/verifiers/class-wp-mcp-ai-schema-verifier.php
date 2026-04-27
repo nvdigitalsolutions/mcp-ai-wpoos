@@ -41,7 +41,7 @@ class WP_MCP_AI_Schema_Verifier extends WP_MCP_AI_Verifier_Base {
 	 * @param array  $schema JSON Schema-style definition.
 	 */
 	public function __construct( $slug = 'schema_verifier', array $schema = array() ) {
-		$this->slug                 = sanitize_key( $slug ) ?: 'schema_verifier';
+		$this->slug                 = '' !== sanitize_key( $slug ) ? sanitize_key( $slug ) : 'schema_verifier';
 		$this->label                = __( 'Schema Verifier', 'mcp-ai-wpoos' );
 		$this->kind                 = 'schema';
 		$this->independence_profile = array(

@@ -56,6 +56,186 @@ class WP_MCP_AI_MCP_App_Registry {
 	const MAX_APPS_PER_ASSISTANT = 10;
 
 	/**
+	 * Validate whether a remote MCP server URL is allowed.
+	 *
+	 * Performs three layers of checks:
+	 *
+	 * 1. **Scheme** — only `http`/`https` are accepted. `javascript:`,
+	 *    `data:`, `file:`, etc. are rejected.
+	 * 2. **Host present** — the URL must include a non-empty host.
+	 * 3. **Hostname allowlist** (optional) — when an allowlist is configured
+	 *    via either:
+	 *    - the `WP_MCP_AI_MCP_APP_ALLOWED_HOSTS` constant (comma-separated
+	 *      string of host names), or
+	 *    - the `wp_mcp_ai_mcp_app_allowed_hosts` filter (array of host
+	 *      names),
+	 *    only URLs whose host is a member of the allowlist are accepted.
+	 *    Allowlist matching is case-insensitive on the hostname only and
+	 *    supports a leading `*.` wildcard (e.g. `*.example.com`).
+	 *
+	 *    When the resolved allowlist is empty, the call is permissive
+	 *    (returns `true`) but a warning is logged so operators can spot
+	 *    unconfigured deployments.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $url The remote MCP server URL to validate.
+	 * @return true|WP_Error True when the URL is allowed; WP_Error otherwise.
+	 */
+	public static function is_url_allowed( $url ) {
+		$url = is_string( $url ) ? trim( $url ) : '';
+
+		if ( '' === $url ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_url_empty',
+				__( 'MCP App server URL is empty.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$parts = wp_parse_url( $url );
+
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_url_malformed',
+				__( 'MCP App server URL is malformed.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$scheme = strtolower( $parts['scheme'] );
+		if ( 'http' !== $scheme && 'https' !== $scheme ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_app_url_scheme',
+				__( 'MCP App server URL must use the http or https scheme.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$host = strtolower( $parts['host'] );
+
+		$allowlist = self::get_allowed_hosts();
+
+		if ( empty( $allowlist ) ) {
+			// No allowlist configured: permissive but logged so operators can
+			// notice that the deployment is open to arbitrary upstream MCP
+			// servers. Use log_warning when available; fall back to debug log.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'MCP App allowlist is empty — accepting arbitrary upstream MCP server. Configure WP_MCP_AI_MCP_APP_ALLOWED_HOSTS or the wp_mcp_ai_mcp_app_allowed_hosts filter to restrict access.',
+					array( 'host' => $host )
+				);
+			}
+			return true;
+		}
+
+		foreach ( $allowlist as $pattern ) {
+			if ( self::host_matches_pattern( $host, $pattern ) ) {
+				return true;
+			}
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_mcp_app_url_not_allowed',
+			sprintf(
+				/* translators: %s: host name. */
+				__( 'MCP App server host %s is not on the configured allowlist.', 'mcp-ai-wpoos-pro' ),
+				$host
+			),
+			array(
+				'status' => 403,
+				'host'   => $host,
+			)
+		);
+	}
+
+	/**
+	 * Build the resolved hostname allowlist from constant + filter.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return array<int, string> Lower-cased list of host patterns.
+	 */
+	protected static function get_allowed_hosts() {
+		$hosts = array();
+
+		if ( defined( 'WP_MCP_AI_MCP_APP_ALLOWED_HOSTS' ) && is_string( WP_MCP_AI_MCP_APP_ALLOWED_HOSTS ) ) {
+			foreach ( explode( ',', WP_MCP_AI_MCP_APP_ALLOWED_HOSTS ) as $candidate ) {
+				$candidate = strtolower( trim( $candidate ) );
+				if ( '' !== $candidate ) {
+					$hosts[] = $candidate;
+				}
+			}
+		}
+
+		/**
+		 * Filters the allowlist of remote MCP App server hosts.
+		 *
+		 * Each entry is a hostname (case-insensitive). A leading `*.`
+		 * acts as a one-level wildcard — e.g. `*.example.com` matches
+		 * `mcp.example.com` and `api.example.com` but not
+		 * `example.com` itself.
+		 *
+		 * Returning an empty array disables strict enforcement and is
+		 * the default permissive (with logged warning) behaviour.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param array $hosts Hostnames seeded from the
+		 *                     `WP_MCP_AI_MCP_APP_ALLOWED_HOSTS` constant.
+		 */
+		$hosts = apply_filters( 'wp_mcp_ai_mcp_app_allowed_hosts', $hosts );
+
+		if ( ! is_array( $hosts ) ) {
+			return array();
+		}
+
+		$normalized = array();
+		foreach ( $hosts as $host ) {
+			if ( ! is_string( $host ) ) {
+				continue;
+			}
+			$host = strtolower( trim( $host ) );
+			if ( '' !== $host ) {
+				$normalized[] = $host;
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Check whether a host matches an allowlist pattern.
+	 *
+	 * Supports an optional `*.` prefix for one-level wildcard matching.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $host    Lower-cased host extracted from the URL.
+	 * @param string $pattern Lower-cased allowlist entry.
+	 * @return bool True on match.
+	 */
+	protected static function host_matches_pattern( $host, $pattern ) {
+		if ( '' === $host || '' === $pattern ) {
+			return false;
+		}
+
+		if ( 0 === strpos( $pattern, '*.' ) ) {
+			$suffix = substr( $pattern, 1 ); // Includes the leading dot, e.g. ".example.com".
+			// Wildcard matches any single subdomain (or deeper). Require that
+			// $host ends with the suffix and has at least one char before it.
+			$suffix_length = strlen( $suffix );
+			$host_length   = strlen( $host );
+			if ( $host_length <= $suffix_length ) {
+				return false;
+			}
+			return substr( $host, -$suffix_length ) === $suffix;
+		}
+
+		return $host === $pattern;
+	}
+
+	/**
 	 * Singleton instance.
 	 *
 	 * @var self|null
@@ -149,9 +329,26 @@ class WP_MCP_AI_MCP_App_Registry {
 			return array();
 		}
 
+		$server_url = isset( $app['server_url'] ) ? esc_url_raw( $app['server_url'] ) : '';
+
+		// Drop the URL when it fails the allowlist / scheme validation.
+		// save_apps() then skips entries with an empty server_url.
+		if ( '' !== $server_url ) {
+			$allowed = self::is_url_allowed( $server_url );
+			if ( is_wp_error( $allowed ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						sprintf( 'MCP App URL rejected at save: %s', $allowed->get_error_message() ),
+						array( 'server_url' => $server_url )
+					);
+				}
+				$server_url = '';
+			}
+		}
+
 		return array(
 			'label'       => isset( $app['label'] ) ? sanitize_text_field( $app['label'] ) : '',
-			'server_url'  => isset( $app['server_url'] ) ? esc_url_raw( $app['server_url'] ) : '',
+			'server_url'  => $server_url,
 			'auth_type'   => isset( $app['auth_type'] ) && in_array( $app['auth_type'], array( 'none', 'bearer', 'header' ), true )
 				? $app['auth_type']
 				: 'none',
@@ -200,6 +397,18 @@ class WP_MCP_AI_MCP_App_Registry {
 			}
 
 			if ( empty( $app_config['server_url'] ) ) {
+				continue;
+			}
+
+			// Defense-in-depth: re-validate against the allowlist in case the
+			// stored config predates the current allowlist configuration.
+			if ( is_wp_error( self::is_url_allowed( $app_config['server_url'] ) ) ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Skipping MCP App tool discovery: server URL is not on the current allowlist.',
+						array( 'server_url' => $app_config['server_url'] )
+					);
+				}
 				continue;
 			}
 

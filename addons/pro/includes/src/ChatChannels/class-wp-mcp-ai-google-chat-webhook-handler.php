@@ -51,9 +51,49 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Handler' ) ) {
 				array(
 					'methods'             => 'POST',
 					'callback'            => array( $this, 'handle_webhook' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'verify_google_chat_webhook' ),
 				)
 			);
+		}
+
+		/**
+		 * Permission callback for the legacy Google Chat webhook endpoint.
+		 *
+		 * This legacy handler is only registered when the full-featured
+		 * WP_MCP_AI_Google_Chat_Webhook_Controller (which provides proper OIDC
+		 * token verification) is NOT available. Without connection settings there
+		 * is no pre-configured secret to verify against, so this callback:
+		 *
+		 *  1. Exposes a `wp_mcp_ai_verify_google_chat_legacy_webhook` filter that
+		 *     site owners can use to add their own signature check. Returning
+		 *     a WP_Error rejects the request; returning true accepts it.
+		 *  2. When the filter is not hooked (default), the request is allowed — this
+		 *     matches the previous `__return_true` behaviour so existing installs
+		 *     are not broken, while giving operators an upgrade path.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param WP_REST_Request $request The incoming webhook request.
+		 * @return true|WP_Error True to allow, WP_Error to reject with 401/403.
+		 */
+		public function verify_google_chat_webhook( $request ) {
+			/**
+			 * Verify an incoming legacy Google Chat webhook request.
+			 *
+			 * Hook this filter to add signature / token verification. Return a
+			 * WP_Error to reject the request (WordPress will respond with the
+			 * error's HTTP status). Return `true` to allow it through.
+			 *
+			 * When the full WP_MCP_AI_Google_Chat_Webhook_Controller is active
+			 * this legacy handler is never registered, so this filter is never
+			 * called in production Pro installations.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param true            $result  Default: true (allow).
+			 * @param WP_REST_Request $request The incoming request.
+			 */
+			return apply_filters( 'wp_mcp_ai_verify_google_chat_legacy_webhook', true, $request );
 		}
 
 		/**

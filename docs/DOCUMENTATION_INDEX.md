@@ -63,7 +63,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Copyright Attribution** – `@author`/`@copyright`/`@license` tags across 2,535 PHP + 159 JS/CSS files.
 > - **Bug Fixes** – Telegram webhook 403, chat inbox bot names, message pagination, connection_id scoping, workflow presets.
 > - **Security** – brace-expansion (CVE-2026-33750) and serialize-javascript (CVE-2026-34043) patched.
-> - **Tool Count** – 165 base + 368 pro = **533 total tools** (was 519).
+> - **Tool Count** – Approximately 800+ tools (≈220 base + ≈580 pro). Counts are approximate and evolve with each release; `WP_MCP_AI_Tool_Registry::get_tools()` is the authoritative source.
 > - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
@@ -450,7 +450,8 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive code review and plugin gap analysis - **Grade: A- (93/100)**
 
-- **[CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **NEW (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
+- **[audit/2026-04/](audit/2026-04/README.md)** ⭐ **NEW (Apr 26)** — Complete security & compliance code review of base plugin + all addons. 0 Critical, 5 High, 14 Medium findings; full inventory, findings register, remediation roadmap, WP.org submission checklist.
+- **[CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **PREVIOUS (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
 - **[CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)** ⭐ **PREVIOUS (Jan 8)** - Comprehensive audit. Grade A- (93/100). Production ready.
   - Complete codebase audit covering code quality, security, features, documentation
   - **Production Ready Status: ✅ APPROVED**

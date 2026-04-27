@@ -613,6 +613,13 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		/**
 		 * Recursively redact sensitive information from a payload.
 		 *
+		 * Two layers of protection:
+		 * 1. Key-based: any value whose key is recognised as sensitive is replaced
+		 *    wholesale with the `[redacted]` placeholder.
+		 * 2. Value-based: any plain string value (regardless of key name) is
+		 *    scanned for well-known secret patterns (Bearer tokens, OpenAI / Google
+		 *    API keys) and those sub-strings are masked in-place.
+		 *
 		 * @param mixed $value Value to inspect.
 		 * @return mixed
 		 */
@@ -638,6 +645,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			if ( is_object( $value ) ) {
 				return self::redact_sensitive_data( get_object_vars( $value ) );
+			}
+
+			// Layer 2: scan plain string leaves for embedded secret patterns.
+			if ( is_string( $value ) ) {
+				return self::redact_sensitive_string_patterns( $value );
 			}
 
 			return $value;
@@ -675,6 +687,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				'bearer_token',
 				'password',
 				'private_key',
+				// Additions: generic token key, JWT variants, OpenAI-style keys.
+				'token',
+				'jwt',
+				'id_token',
+				'openai_token',
 			);
 
 			if ( in_array( $normalized, $exact_matches, true ) ) {
@@ -692,6 +709,8 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				'_client_secret',
 				'_secret',
 				'_password',
+				// Catches any *_token key (id_token, openai_token, service_token, etc.).
+				'_token',
 				'-api-key',
 				'-access-token',
 				'-refresh-token',
@@ -700,6 +719,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				'-client-secret',
 				'-secret',
 				'-password',
+				'-token',
 			);
 
 			foreach ( $suffix_matches as $suffix ) {
@@ -719,6 +739,50 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 */
 		protected static function redact_sensitive_value( $value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for context-aware redaction.
 			return '[redacted]';
+		}
+
+		/**
+		 * Redact well-known secret patterns embedded in a plain string value.
+		 *
+		 * This provides a second layer of defence for secrets that appear in
+		 * log-message strings or response-body fields where key-based redaction
+		 * would not trigger (e.g. a raw HTTP response body that contains an
+		 * Authorization header, or an error message that echoes back an API key).
+		 *
+		 * Patterns:
+		 *   - Bearer <token>   — OAuth 2.0 / Auth0 JWTs / plugin credentials.
+		 *   - sk-<...>         — OpenAI API keys (classic, project, service-account).
+		 *   - AIza<...>        — Google / Gemini API keys.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param string $value Raw string value from a log context.
+		 * @return string String with matching secret patterns replaced.
+		 */
+		protected static function redact_sensitive_string_patterns( $value ) {
+			// Bearer tokens (OAuth, Auth0 JWTs, plugin credentials, etc.).
+			// Matches "Bearer " followed by at least 10 URL-safe or base64 chars.
+			$value = preg_replace(
+				'/\bBearer\s+[A-Za-z0-9\-._~+\/]{10,}(?:=[*]{0,2})?/i',
+				'Bearer [redacted]',
+				$value
+			);
+
+			// OpenAI API keys: sk-<anything> and sk-proj-<anything>, sk-svcacct-<anything>.
+			$value = preg_replace(
+				'/\bsk-[A-Za-z0-9\-_]{20,}/',
+				'sk-[redacted]',
+				$value
+			);
+
+			// Google / Gemini API keys begin with AIza.
+			$value = preg_replace(
+				'/\bAIza[0-9A-Za-z_\-]{30,}/',
+				'AIza[redacted]',
+				$value
+			);
+
+			return (string) $value;
 		}
 
 		/**

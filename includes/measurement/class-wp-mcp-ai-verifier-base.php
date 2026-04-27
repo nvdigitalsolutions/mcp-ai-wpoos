@@ -56,6 +56,8 @@ abstract class WP_MCP_AI_Verifier_Base implements WP_MCP_AI_Verifier_Interface {
 	);
 
 	/**
+	 * Get the verifier slug.
+	 *
 	 * @return string
 	 */
 	public function get_slug() {
@@ -63,6 +65,8 @@ abstract class WP_MCP_AI_Verifier_Base implements WP_MCP_AI_Verifier_Interface {
 	}
 
 	/**
+	 * Get the verifier label.
+	 *
 	 * @return string
 	 */
 	public function get_label() {
@@ -70,6 +74,8 @@ abstract class WP_MCP_AI_Verifier_Base implements WP_MCP_AI_Verifier_Interface {
 	}
 
 	/**
+	 * Get the verifier kind.
+	 *
 	 * @return string
 	 */
 	public function get_kind() {
@@ -77,6 +83,8 @@ abstract class WP_MCP_AI_Verifier_Base implements WP_MCP_AI_Verifier_Interface {
 	}
 
 	/**
+	 * Get the independence profile configuration.
+	 *
 	 * @return array<string,mixed>
 	 */
 	public function get_independence_profile() {

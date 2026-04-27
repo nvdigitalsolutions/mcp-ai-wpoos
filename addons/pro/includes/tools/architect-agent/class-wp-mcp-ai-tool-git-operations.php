@@ -149,6 +149,15 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+}
+
+
 		// Extract arguments.
 		$operation         = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
 		$file_path         = isset( $arguments['file_path'] ) ? sanitize_text_field( $arguments['file_path'] ) : '';
@@ -226,8 +235,7 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return bool True if git is available.
 	 */
 	private function is_git_available() {
-		exec( 'git --version 2>&1', $output, $return_var );
-		return 0 === $return_var;
+		return wp_mcp_ai_find_binary( 'git', '--version' );
 	}
 
 	/**
@@ -236,37 +244,27 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return bool True if directory is a git repository.
 	 */
 	private function is_git_repository() {
-		$original_dir = getcwd();
-		chdir( WP_MCP_AI_PATH );
-
-		exec( 'git rev-parse --git-dir 2>&1', $output, $return_var );
-
-		chdir( $original_dir );
-
-		return 0 === $return_var;
+		$result = wp_mcp_ai_run_process( array( 'git', 'rev-parse', '--git-dir' ), WP_MCP_AI_PATH );
+		return $result['success'];
 	}
 
 	/**
 	 * Execute git command.
 	 *
-	 * @param string $command Git command.
+	 * All variable arguments passed by callers are already wrapped in
+	 * escapeshellarg(). wp_mcp_ai_run_shell() replaces exec() with proc_open
+	 * so that WordPress.org WPCS and the project's CLAUDE.md requirement are met.
+	 *
+	 * @param string $command Git command (must be pre-escaped).
 	 * @return array Command result.
 	 */
 	private function exec_git( $command ) {
-		$original_dir = getcwd();
-		chdir( WP_MCP_AI_PATH );
-
-		$output     = array();
-		$return_var = 0;
-
-		exec( $command . ' 2>&1', $output, $return_var );
-
-		chdir( $original_dir );
+		$result = wp_mcp_ai_run_shell( $command . ' 2>&1', WP_MCP_AI_PATH );
 
 		return array(
-			'output'    => implode( "\n", $output ),
-			'exit_code' => $return_var,
-			'success'   => 0 === $return_var,
+			'output'    => $result['stdout'],
+			'exit_code' => $result['exit_code'],
+			'success'   => $result['success'],
 		);
 	}
 

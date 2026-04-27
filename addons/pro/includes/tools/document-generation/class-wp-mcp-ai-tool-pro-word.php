@@ -203,6 +203,19 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return array(
+'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+);
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return array(
+'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+);
+}
+
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		// Verify user is logged in.
@@ -648,7 +661,10 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 		$upload_dir = wp_upload_dir();
-		$temp_file  = wp_tempnam( 'docx-' . time() );
+		$temp_file  = wp_mcp_ai_tempnam( 'docx-' );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
 		$docx_file  = $temp_file . '.docx';
 
 		// Rename temp file to have .docx extension.
@@ -689,7 +705,8 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		// Execute command.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( $cmd, $output, $return_code );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
+		$return_code  = $proc_result['exit_code'];
 
 		// Clean up temp files.
 		@unlink( $json_file );

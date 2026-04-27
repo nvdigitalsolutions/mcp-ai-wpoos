@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/review-addons-plugins-security',
+        'version' => 'dev-copilot/review-addons-plugins-security',
+        'reference' => '2cfc803b0c0fc496dad4f54fe2abd8a096739a11',
         'pretty_version' => 'dev-copilot/fix-ollama-live-model-dropdown',
         'version' => 'dev-copilot/fix-ollama-live-model-dropdown',
         'reference' => '29defbd5e7d9de8d16de3eb1fbde0206c3eb1914',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/review-addons-plugins-security',
+            'version' => 'dev-copilot/review-addons-plugins-security',
+            'reference' => '2cfc803b0c0fc496dad4f54fe2abd8a096739a11',
             'pretty_version' => 'dev-copilot/fix-ollama-live-model-dropdown',
             'version' => 'dev-copilot/fix-ollama-live-model-dropdown',
             'reference' => '29defbd5e7d9de8d16de3eb1fbde0206c3eb1914',

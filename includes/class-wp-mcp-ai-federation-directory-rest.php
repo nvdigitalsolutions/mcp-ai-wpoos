@@ -227,7 +227,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			}
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! wp_mcp_ai_user_can_manage_fleet() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),

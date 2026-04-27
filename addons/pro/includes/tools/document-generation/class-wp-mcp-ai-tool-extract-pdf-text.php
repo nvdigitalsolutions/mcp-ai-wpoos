@@ -265,7 +265,10 @@ The downloaded file is empty.', 'mcp-ai-wpoos-pro' ),
 			if ( ! function_exists( 'wp_tempnam' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/file.php';
 			}
-			$temp_file = wp_tempnam( 'mcp_ai_pdf_' );
+			$temp_file = wp_mcp_ai_tempnam( 'mcp_ai_pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				$temp_file = wp_tempnam( 'mcp_ai_pdf_' ); // fallback
+			}
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $temp_file, $body ) ) {
 				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -458,7 +461,10 @@ Failed to extract text from PDF: %s', 'mcp-ai-wpoos-pro' ),
 		$pdftotext = shell_exec( 'which pdftotext 2>/dev/null' );
 
 		if ( ! empty( $pdftotext ) ) {
-			$output_file = tempnam( sys_get_temp_dir(), 'txt_' );
+			$output_file = wp_mcp_ai_tempnam( 'txt_', '.txt' );
+			if ( is_wp_error( $output_file ) ) {
+				$output_file = tempnam( sys_get_temp_dir(), 'txt_' ); // fallback
+			}
 			$cmd         = sprintf(
 				'pdftotext %s %s %s 2>&1',
 				$max_pages > 0 ? '-l ' . (int) $max_pages : '',
