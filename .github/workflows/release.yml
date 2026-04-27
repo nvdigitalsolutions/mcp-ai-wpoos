@@ -264,11 +264,130 @@ jobs:
           retention-days: 30
 
   # =============================================================================
-  # Job 2: Create GitHub Release
+  # Job 2: WordPress.org Plugin Check (gating R-T-04)
+  #
+  # Runs the official `wp plugin-check` command against the built ZIP — the
+  # exact same artifact that `10up/action-wordpress-plugin-deploy` would push.
+  # Any reported Errors block the release; Warnings are surfaced for triage.
+  # See docs/audit/2026-04/wp-org-submission-checklist.md row R-T-04.
+  # =============================================================================
+  plugin-check:
+    name: WordPress.org Plugin Check
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ needs.build.outputs.version }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, mysqli, zip, dom, xml, curl
+          tools: composer:v2, wp-cli
+          coverage: none
+
+      - name: Bootstrap a temporary WordPress install
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/wp
+          cd /tmp/wp
+          wp core download --version=latest --skip-content --path=/tmp/wp
+          wp config create \
+            --dbname=wordpress_pluginchk \
+            --dbuser=root \
+            --dbpass='' \
+            --dbhost=127.0.0.1 \
+            --skip-check \
+            --path=/tmp/wp
+          # plugin-check works without a populated DB; we only need WP loaded.
+
+      - name: Install Plugin Check (PCP) plugin
+        run: |
+          set -euo pipefail
+          cd /tmp/wp
+          # Skip DB-bound install steps; we only need the plugin code on disk.
+          wp plugin install plugin-check \
+            --path=/tmp/wp \
+            --skip-themes \
+            --skip-plugins \
+            --quiet || true
+          # Verify the PCP code is present on disk.
+          test -d /tmp/wp/wp-content/plugins/plugin-check
+
+      - name: Extract built ZIP into wp-content/plugins
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.build.outputs.version }}"
+          ZIP_FILE="${PLUGIN_SLUG}-${VERSION}.zip"
+          mkdir -p /tmp/wp/wp-content/plugins
+          unzip -q -o "${ZIP_FILE}" -d /tmp/wp/wp-content/plugins/
+          ls /tmp/wp/wp-content/plugins/
+
+      - name: Run wp plugin-check (Errors gate the build)
+        id: pcp
+        run: |
+          set -euo pipefail
+          cd /tmp/wp
+          # Allow PCP to load without activating the plugin (it scans on disk).
+          wp plugin check "${PLUGIN_SLUG}" \
+            --path=/tmp/wp \
+            --format=json \
+            --severity=5 \
+            --require=/tmp/wp/wp-content/plugins/plugin-check/plugin.php \
+            > /tmp/pcp-report.json 2>/tmp/pcp-stderr.log || PCP_EXIT=$?
+          PCP_EXIT="${PCP_EXIT:-0}"
+          echo "pcp_exit=${PCP_EXIT}" >> $GITHUB_OUTPUT
+
+          echo "::group::PCP raw stderr"
+          cat /tmp/pcp-stderr.log || true
+          echo "::endgroup::"
+
+          echo "::group::PCP raw report"
+          cat /tmp/pcp-report.json || true
+          echo "::endgroup::"
+
+          # Count Errors vs Warnings.
+          ERRORS=$(jq '[.[] | select(.type=="ERROR")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          WARNINGS=$(jq '[.[] | select(.type=="WARNING")] | length' /tmp/pcp-report.json 2>/dev/null || echo 0)
+          echo "Plugin Check ERRORS=${ERRORS}, WARNINGS=${WARNINGS}"
+          {
+            echo "## WordPress.org Plugin Check"
+            echo ""
+            echo "- **Errors:** ${ERRORS}"
+            echo "- **Warnings:** ${WARNINGS}"
+            echo ""
+            echo "Full report uploaded as artifact \`pcp-report\`."
+          } >> $GITHUB_STEP_SUMMARY
+
+          if [ "${ERRORS}" -gt 0 ]; then
+            echo "::error::Plugin Check reported ${ERRORS} error(s) — release is blocked."
+            exit 1
+          fi
+
+      - name: Upload Plugin Check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pcp-report
+          path: |
+            /tmp/pcp-report.json
+            /tmp/pcp-stderr.log
+          if-no-files-found: warn
+          retention-days: 30
+
+  # =============================================================================
+  # Job 3: Create GitHub Release
   # =============================================================================
   release:
     name: GitHub Release
-    needs: build
+    needs: [build, plugin-check]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     
@@ -354,11 +473,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # =============================================================================
-  # Job 3: Deploy to WordPress.org SVN
+  # Job 4: Deploy to WordPress.org SVN
   # =============================================================================
   deploy-wporg:
     name: WordPress.org Deploy
-    needs: [build, release]
+    needs: [build, plugin-check, release]
     runs-on: ubuntu-latest
     if: |
       startsWith(github.ref, 'refs/tags/') && 
@@ -451,11 +570,11 @@ jobs:
           echo "SVN tag: https://plugins.svn.wordpress.org/${{ env.PLUGIN_SLUG }}/tags/${{ needs.build.outputs.version }}/"
 
   # =============================================================================
-  # Job 4: Post-Release Notifications
+  # Job 5: Post-Release Notifications
   # =============================================================================
   notify:
     name: Notify
-    needs: [build, release, deploy-wporg]
+    needs: [build, plugin-check, release, deploy-wporg]
     runs-on: ubuntu-latest
     if: always() && needs.build.result == 'success'
     
@@ -465,6 +584,7 @@ jobs:
           echo "## 📦 Release Summary"
           echo ""
           echo "**Version:** ${{ needs.build.outputs.version }}"
+          echo "**Plugin Check:** ${{ needs.plugin-check.result }}"
           echo "**GitHub Release:** ${{ needs.release.result }}"
           echo "**WordPress.org:** ${{ needs.deploy-wporg.result }}"
           echo ""

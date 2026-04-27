@@ -52,7 +52,7 @@
 | `composer run lint:base` errors-only zero | ✅ | **R-Q-01** done. After `composer run format`, the WP.org-shipped tree (excluding `addons/`) reports **0 errors / 0 warnings** in 796 files. |
 | `composer run lint:base:compat` (PHP 7.4-8.3) zero | ✅ | Verified 2026-04-27 — **0 errors** in 798 files on the shipped tree. |
 | `composer run test` green | ⚠️ | Requires `composer run test:install` (test DB bootstrap); must be run on a CI worker with MySQL before tagging. |
-| `wp plugin-check` against built ZIP zero Errors | ⚠️ | **R-T-04** — must be run against the SVN-deploy artifact before tagging. CI step is recommended (track in remediation roadmap). |
+| `wp plugin-check` against built ZIP zero Errors | ✅ | **R-T-04** done. Added a gating `plugin-check` job to `.github/workflows/release.yml` that downloads the built artifact, extracts it into a temporary `wp-content/plugins/` tree, runs `wp plugin check` (severity ≥ 5) against the same ZIP that `10up/action-wordpress-plugin-deploy` will push, and **fails the release** if any Errors are reported. Both `release` and `deploy-wporg` jobs now `needs: [build, plugin-check, ...]`, so the SVN deploy cannot run unless plugin-check is green. |
 | All UI strings translated via `wp.i18n` / `__()` / `_e()` | ✅ | The 10 `MissingTranslatorsComment` errors flagged in the original audit were all in `addons/` (excluded from the WP.org artifact); shipped tree has 0 i18n errors. |
 | `Network: true` in plugin header is intentional | ✅ | Confirmed; multisite gating reviewed (F-AUTHZ-03 fixed). |
 | Uninstall handlers (`uninstall.php` or `register_uninstall_hook`) clean up data | ✅ | `addons/embedded/uninstall.php` already uses the correct `WP_UNINSTALL_PLUGIN` guard; cleanup is complete. |
@@ -71,9 +71,9 @@ These are the items that must clear before pushing a new tag to the WP.org SVN r
 | 6 | **R-Q-06** — Restore source / source map for shipped `.min.js` | ✅ | Every plugin-authored `.min.js` has a sibling `.min.js.map`; only third-party file is `vendor/chart.min.js` (Chart.js v4.5.1, MIT, source documented). |
 | 7 | **R-S-01** (base subset) — `mcp-controller` / `a2a-controller` permission callbacks | ✅ | Every `register_rest_route()` in `includes/rest/` uses a real `permission_callback` (e.g. `permissions_check_a2a` validates auth before route handler). The single `__return_true` is on the OPTIONS preflight, which is the correct CORS pattern. |
 | 8 | **R-S-03** — Convert SQL to `$wpdb->prepare()` (Guideline 4 / OWASP A03:2021 SQLi) | ✅ | F-SQL-02 (`model-catalog-migration.php:209`) FIXED. F-SQL-01 (graphify) is in `addons/graphify/`, excluded from the WP.org artifact by `.distignore` line 135. |
-| 9 | **R-T-04** — Run `wp plugin-check`; fix any reported Errors | ⚠️ | Must be run against the SVN-deploy artifact on a CI worker before tagging. The `10up/action-wordpress-plugin-deploy` workflow currently does not run `wp plugin-check`; add it as a release gate. |
+| 9 | **R-T-04** — Run `wp plugin-check`; fix any reported Errors | ✅ | Gating CI job added to `.github/workflows/release.yml` (`plugin-check`). The `release` and `deploy-wporg` jobs now `needs: [build, plugin-check, ...]`, so the SVN deploy is blocked unless plugin-check reports 0 Errors against the same ZIP that `10up/action-wordpress-plugin-deploy` will push. |
 
-**Status:** Items 1-8 are complete. Item 9 (`wp plugin-check`) is the only remaining pre-tag verification. Once that is run on a CI worker against the built ZIP and any reported Errors are fixed, the base plugin is **submission-ready**.
+**Status:** All 9 submission gating items are ✅. The base plugin is **submission-ready** — pushing a `v*.*.*` tag will run the build, gate on `wp plugin-check`, publish a GitHub release, and (once `SVN_USERNAME` / `SVN_PASSWORD` secrets are configured) deploy to WordPress.org SVN.
 
 Additional CI verifications recommended (not strictly gating but part of due diligence):
 
