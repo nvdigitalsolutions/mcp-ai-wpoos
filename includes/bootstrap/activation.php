@@ -238,6 +238,10 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
+		// Schedule hourly temp-file cleanup cron job (F-FS-01).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_temp_files' ) ) {
+			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_cleanup_temp_files' );
+		}
 		// Schedule daily model catalog discovery cron job.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' ) ) {
 			$discovery_interval = apply_filters( 'wp_mcp_ai_model_discovery_interval', 'daily' );
@@ -339,6 +343,10 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' );
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_openai_files' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_temp_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_temp_files' );
 		}
 		// Unschedule the model catalog discovery cron.
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_model_catalog_discovery' );
@@ -496,6 +504,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 		$cron_hooks = array(
 			'wp_mcp_ai_cleanup_gemini_files',
 			'wp_mcp_ai_cleanup_openai_files',
+			'wp_mcp_ai_cleanup_temp_files',
 			'wp_mcp_ai_process_job_queue',
 			'wp_mcp_ai_cleanup_job_queue',
 			'wp_mcp_ai_asset_discovery',

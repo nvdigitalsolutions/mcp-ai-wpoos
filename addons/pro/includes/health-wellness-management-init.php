@@ -16,6 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// F-PRIV-03: On multisite, the health & wellness addon must only run on sites
+// where an administrator has explicitly acknowledged PHI handling obligations
+// by setting the wp_mcp_ai_phi_acknowledged setting to 'yes' (checkbox: true).
+if ( is_multisite() ) {
+	$_phi_settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $_phi_settings['wp_mcp_ai_phi_acknowledged'] ) ) {
+		return;
+	}
+	unset( $_phi_settings );
+}
+
 // Load migration class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/migrations/class-wp-mcp-ai-migrate-medical-record-post-type.php';
 
@@ -152,4 +163,62 @@ function wp_mcp_ai_get_member_id_by_user_id( $user_id ) {
 	);
 
 	return ! empty( $posts ) ? (int) $posts[0] : 0;
+}
+
+
+// F-PRIV-03: Audit-log every single-post read of a health CPT when a user
+// views the post in the WP admin (load-edit.php / load-post.php) or visits it
+// on the front end via a singular query.  We bind to `the_post` (fires for
+// both WP admin and front-end template rendering) and log using the base
+// plugin's WP_MCP_AI_Logger so the event ends up in the standard audit trail.
+if ( ! has_action( 'the_post', 'wp_mcp_ai_health_cpt_read_audit' ) ) {
+add_action( 'the_post', 'wp_mcp_ai_health_cpt_read_audit' );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_health_cpt_read_audit' ) ) {
+/**
+ * Write an audit-log entry whenever a health & wellness CPT post is displayed.
+ *
+ * @param WP_Post $post The post object being displayed.
+ * @return void
+ */
+function wp_mcp_ai_health_cpt_read_audit( $post ) {
+static $health_types = array(
+'mcp_ai_member',
+'mcp_ai_policy',
+'mcp_ai_med_record',
+'mcp_ai_checkup',
+'mcp_ai_prescription',
+'mcp_ai_allergy',
+);
+
+if ( ! ( $post instanceof WP_Post ) || ! in_array( $post->post_type, $health_types, true ) ) {
+return;
+}
+
+// Only log individual record reads, not archive / query loops.
+if ( ! is_singular() && ! is_admin() ) {
+return;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+return;
+}
+
+WP_MCP_AI_Logger::log_event(
+'health_cpt_read',
+sprintf(
+/* translators: 1: CPT slug  2: post ID */
+__( 'Health record read: type=%1$s id=%2$d', 'mcp-ai-wpoos-pro' ),
+esc_html( $post->post_type ),
+(int) $post->ID
+),
+array(
+'post_type' => $post->post_type,
+'post_id'   => $post->ID,
+'user_id'   => get_current_user_id(),
+'context'   => is_admin() ? 'admin' : 'frontend',
+)
+);
+}
 }

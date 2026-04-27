@@ -1828,10 +1828,20 @@ class WP_MCP_AI_Shortcode {
 	/**
 	 * Generate a guest access token for the given assistant.
 	 *
-	 * @param int $assistant_id Assistant post ID.
+	 * Optionally binds the token to the page origin so a token leaked from
+	 * one origin cannot be replayed from another (audit F-AUTHZ-04 / R-S-09).
+	 * Pass `$origin` to override the default (the host portion of `home_url()`),
+	 * or filter `wp_mcp_ai_guest_token_issuance_origin` to provide a different
+	 * binding host. An empty string disables the binding for this token (legacy
+	 * behaviour).
+	 *
+	 * @param int    $assistant_id Assistant post ID.
+	 * @param string $origin       Optional. Origin host to bind the token to.
+	 *                             Defaults to the host of `home_url()`. Pass an
+	 *                             empty string to disable binding.
 	 * @return string Guest access token or empty string on failure.
 	 */
-	public static function generate_guest_token( $assistant_id ) {
+	public static function generate_guest_token( $assistant_id, $origin = null ) {
 		$assistant_id = absint( $assistant_id );
 
 		if ( ! $assistant_id ) {
@@ -1846,9 +1856,24 @@ class WP_MCP_AI_Shortcode {
 
 		$ttl = self::get_guest_token_ttl();
 
+		if ( null === $origin ) {
+			$origin = self::default_guest_token_origin();
+		}
+
+		/**
+		 * Filter the origin a guest token is bound to at issuance.
+		 *
+		 * Return an empty string to disable origin binding for this token.
+		 *
+		 * @param string $origin       Bound origin host (lower-case, no scheme).
+		 * @param int    $assistant_id Assistant post ID.
+		 */
+		$origin = apply_filters( 'wp_mcp_ai_guest_token_issuance_origin', $origin, $assistant_id );
+
 		$record = array(
 			'assistant_id' => $assistant_id,
 			'created'      => time(),
+			'origin'       => is_string( $origin ) ? strtolower( trim( $origin ) ) : '',
 		);
 
 		$saved = set_transient( self::build_guest_token_key( $token ), $record, $ttl );
@@ -1866,11 +1891,21 @@ class WP_MCP_AI_Shortcode {
 	 * Enforces both the transient-based sliding TTL and an absolute maximum
 	 * lifetime from the token's creation timestamp to prevent indefinite renewal.
 	 *
-	 * @param string $token        Guest access token supplied by the client.
-	 * @param int    $assistant_id Assistant post ID provided in the request.
+	 * When a `WP_REST_Request` is provided and the token's stored record is
+	 * bound to an origin, the request's `Origin` header (or `Referer` host as a
+	 * fallback) must match the bound origin or be present in the allowlist
+	 * returned by the `wp_mcp_ai_guest_token_allowed_origins` filter
+	 * (audit F-AUTHZ-04 / R-S-09). Records persisted before this binding
+	 * was introduced (no `origin` field) skip the check for backward
+	 * compatibility for the remainder of their TTL.
+	 *
+	 * @param string               $token        Guest access token supplied by the client.
+	 * @param int                  $assistant_id Assistant post ID provided in the request.
+	 * @param WP_REST_Request|null $request      Optional. REST request to derive the
+	 *                                            calling origin from for binding checks.
 	 * @return int|false Assistant ID associated with the token when valid, false otherwise.
 	 */
-	public static function validate_guest_token( $token, $assistant_id = 0 ) {
+	public static function validate_guest_token( $token, $assistant_id = 0, $request = null ) {
 		$token = is_string( $token ) ? trim( $token ) : '';
 
 		if ( '' === $token ) {
@@ -1896,10 +1931,91 @@ class WP_MCP_AI_Shortcode {
 			return false;
 		}
 
+		// Origin binding (audit F-AUTHZ-04 / R-S-09). Skip when the record has
+		// no stored origin (legacy tokens issued before binding was introduced)
+		// or when the caller did not pass a request — internal call paths such
+		// as CLI / cron must remain unaffected.
+		$bound_origin = isset( $data['origin'] ) ? (string) $data['origin'] : '';
+		if ( '' !== $bound_origin && $request instanceof WP_REST_Request ) {
+			$request_origin = self::extract_request_origin_host( $request );
+
+			/**
+			 * Filter the list of origin hosts allowed to use a guest token.
+			 *
+			 * The bound origin is always included; this filter lets
+			 * integrators add additional origins (e.g. for a single token
+			 * shared across an explicit allowlist of customer domains).
+			 *
+			 * @param string[]        $allowed_origins Lower-case host names.
+			 * @param int             $stored_assistant Assistant post ID the token is scoped to.
+			 * @param WP_REST_Request $request         Incoming REST request.
+			 */
+			$allowed_origins = apply_filters(
+				'wp_mcp_ai_guest_token_allowed_origins',
+				array( $bound_origin ),
+				$stored_assistant,
+				$request
+			);
+
+			if ( ! is_array( $allowed_origins ) ) {
+				$allowed_origins = array( $bound_origin );
+			}
+			$allowed_origins = array_values( array_unique( array_filter( array_map( 'strtolower', array_map( 'trim', $allowed_origins ) ) ) ) );
+
+			if ( '' === $request_origin || ! in_array( $request_origin, $allowed_origins, true ) ) {
+				return false;
+			}
+		}
+
 		// Refresh the sliding TTL for active sessions.
 		set_transient( self::build_guest_token_key( $token ), $data, self::get_guest_token_ttl() );
 
 		return $stored_assistant;
+	}
+
+	/**
+	 * Default origin host to bind a freshly issued guest token to.
+	 *
+	 * Returns the lower-case host portion of `home_url()`, which matches what
+	 * the browser will send as the `Origin` header when the chat widget calls
+	 * back into the REST API from a same-origin page or a same-origin iframe.
+	 *
+	 * @return string Host or empty string.
+	 */
+	protected static function default_guest_token_origin() {
+		$home_host = wp_parse_url( home_url(), PHP_URL_HOST );
+		return is_string( $home_host ) ? strtolower( $home_host ) : '';
+	}
+
+	/**
+	 * Derive the calling origin host from a REST request.
+	 *
+	 * Prefers the `Origin` header (set by the browser on cross-origin XHR /
+	 * fetch and on POST). Falls back to the host portion of `Referer` when
+	 * `Origin` is absent, which covers same-origin GETs that some browsers
+	 * still send without an `Origin` header.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return string Lower-case host or empty string when neither header is present.
+	 */
+	protected static function extract_request_origin_host( WP_REST_Request $request ) {
+		$origin = $request->get_header( 'origin' );
+		if ( is_string( $origin ) && '' !== $origin && 'null' !== strtolower( $origin ) ) {
+			$host = wp_parse_url( $origin, PHP_URL_HOST );
+			if ( is_string( $host ) && '' !== $host ) {
+				return strtolower( $host );
+			}
+		}
+
+		$referer = $request->get_header( 'referer' );
+		if ( is_string( $referer ) && '' !== $referer ) {
+			$host = wp_parse_url( $referer, PHP_URL_HOST );
+			if ( is_string( $host ) && '' !== $host ) {
+				return strtolower( $host );
+			}
+		}
+
+		return '';
 	}
 
 	/**

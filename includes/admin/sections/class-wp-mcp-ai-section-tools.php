@@ -601,6 +601,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// PHI handling acknowledgement (required on multisite before health/imaging addons load).
+				'wp_mcp_ai_phi_acknowledged'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'PHI Handling Acknowledgement (Multisite)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'I acknowledge that this site handles Protected Health Information (PHI) and that appropriate HIPAA safeguards (BAA, access controls, audit logging, breach notification) are in place.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Required on multisite installations before the Health & Wellness and Healthcare Imaging toolkits will load. Has no effect on single-site installations. See docs/HIPAA_POSTURE.md for full data-flow and compliance documentation.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Healthcare Imaging Viewer fields.
 				'enable_healthcare_imaging'              => array(
 					'type'           => 'checkbox',

@@ -43,7 +43,7 @@ class WP_MCP_AI_Federation_Rate_Limiter {
 	 */
 	public function check_rate_limit( $endpoint, $limit = self::DEFAULT_LIMIT, $window = self::DEFAULT_WINDOW ) {
 		// Allow admins to bypass rate limiting.
-		if ( current_user_can( 'manage_options' ) ) {
+		if ( wp_mcp_ai_user_can_manage_fleet() ) {
 			return true;
 		}
 

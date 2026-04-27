@@ -131,6 +131,15 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+}
+
+
 		// Extract arguments.
 		$query           = isset( $arguments['query'] ) ? trim( $arguments['query'] ) : '';
 		$search_type     = isset( $arguments['search_type'] ) ? sanitize_text_field( $arguments['search_type'] ) : 'text';
@@ -191,14 +200,8 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 	private function search_text( $query, $file_pattern, $exclude_pattern, $case_sensitive, $limit, $context_lines ) {
 		$grep_cmd = $this->build_grep_command( $query, $file_pattern, $exclude_pattern, $case_sensitive, $limit, $context_lines );
 
-		$original_dir = getcwd();
-		chdir( WP_MCP_AI_PATH );
-
-		$output     = array();
-		$return_var = 0;
-		exec( $grep_cmd . ' 2>&1', $output, $return_var );
-
-		chdir( $original_dir );
+		$proc_result = wp_mcp_ai_run_shell( $grep_cmd . ' 2>&1', WP_MCP_AI_PATH );
+		$output      = array_filter( explode( "\n", $proc_result['stdout'] ) );
 
 		$results = $this->parse_grep_output( $output );
 
@@ -275,14 +278,8 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		$find_cmd .= ' | head -n ' . $limit;
 
-		$original_dir = getcwd();
-		chdir( WP_MCP_AI_PATH );
-
-		$output     = array();
-		$return_var = 0;
-		exec( $find_cmd . ' 2>&1', $output, $return_var );
-
-		chdir( $original_dir );
+		$proc_result = wp_mcp_ai_run_shell( $find_cmd . ' 2>&1', WP_MCP_AI_PATH );
+		$output      = array_filter( explode( "\n", $proc_result['stdout'] ) );
 
 		$results = array();
 		foreach ( $output as $file ) {

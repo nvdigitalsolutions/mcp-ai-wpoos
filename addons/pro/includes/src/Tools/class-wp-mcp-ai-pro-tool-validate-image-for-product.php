@@ -453,8 +453,12 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 			$head_response = wp_remote_head(
 				$image_url,
 				array(
-					'timeout'   => 10,
-					'sslverify' => false,
+					'timeout' => 10,
+					// sslverify intentionally not set — defaults to true so external
+					// image hosts must present valid certificates. The global
+					// http_request_args filter in WP_MCP_AI_HTTP_Helper relaxes this
+					// only for loopback / private-network destinations when the
+					// "Allow loopback SSL bypass" admin setting is enabled.
 				)
 			);
 

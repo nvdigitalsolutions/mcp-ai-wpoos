@@ -104,6 +104,19 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return array(
+'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+);
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return array(
+'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+);
+}
+
+
 		// Check user capability.
 		if ( ! current_user_can( 'upload_files' ) ) {
 			return array(
@@ -166,8 +179,7 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Fallback to command-line wkhtmltopdf.
-		$wkhtmltopdf = shell_exec( 'which wkhtmltopdf 2>/dev/null' );
-		if ( ! empty( $wkhtmltopdf ) ) {
+		if ( wp_mcp_ai_find_binary( 'wkhtmltopdf' ) ) {
 			return $this->convert_with_wkhtmltopdf( $html, $title, $filename, $page_size, $orientation );
 		}
 
@@ -199,8 +211,12 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$pdf_content = $dompdf->output();
 
 			// Create temporary file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'pdf_' );
-			if ( false === file_put_contents( $temp_file, $pdf_content ) ) {
+			$temp_file = wp_mcp_ai_tempnam( 'pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
+			if ( false === file_put_contents( $temp_file, $pdf_content ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error( 'pdf_write_failed', __( 'Failed to write PDF file.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -273,11 +289,18 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	protected function convert_with_wkhtmltopdf( $html, $title, $filename, $page_size, $orientation ) {
 		// Create temp HTML file.
-		$temp_html = tempnam( sys_get_temp_dir(), 'html_' );
-		file_put_contents( $temp_html, $html );
+		$temp_html = wp_mcp_ai_tempnam( 'html_', '.html' );
+		if ( is_wp_error( $temp_html ) ) {
+			return $temp_html;
+		}
+		file_put_contents( $temp_html, $html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		// Create temp PDF file.
-		$temp_pdf = tempnam( sys_get_temp_dir(), 'pdf_' );
+		$temp_pdf = wp_mcp_ai_tempnam( 'pdf_', '.pdf' );
+		if ( is_wp_error( $temp_pdf ) ) {
+			@unlink( $temp_html ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			return $temp_pdf;
+		}
 
 		// Build command.
 		$cmd = sprintf(
@@ -288,13 +311,14 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			escapeshellarg( $temp_pdf )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_html ) );
+		$return_code  = $proc_result['exit_code'];
 
 		// Clean up temp HTML.
-		@unlink( $temp_html );
+		@unlink( $temp_html ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( 0 !== $return_code || ! file_exists( $temp_pdf ) ) {
-			@unlink( $temp_pdf );
+			@unlink( $temp_pdf ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return new WP_Error(
 				'wkhtmltopdf_failed',
 				__( 'wkhtmltopdf conversion failed.', 'mcp-ai-wpoos-pro' )

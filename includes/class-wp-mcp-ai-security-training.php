@@ -145,7 +145,7 @@ class WP_MCP_AI_Security_Training {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render_training_details_meta_box( $post ) {
-		wp_nonce_field( 'mcp_ai_training_details', 'mcp_ai_training_details_nonce' );
+		wp_nonce_field( 'wp_mcp_ai_training_details', 'mcp_ai_training_details_nonce' );
 
 		$role_required = get_post_meta( $post->ID, '_training_role', true );
 		$module_type   = get_post_meta( $post->ID, '_training_type', true );

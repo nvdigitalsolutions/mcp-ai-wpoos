@@ -63,9 +63,9 @@ class WP_MCP_AI_Eval_Runner {
 	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_Verifier_Registry|null         $verifiers Verifier registry (optional).
-	 * @param WP_MCP_AI_Reward_Function_Registry|null  $rewards   Reward registry (optional).
-	 * @param WP_MCP_AI_Metric_Collector|null          $collector Collector (optional).
+	 * @param WP_MCP_AI_Verifier_Registry|null        $verifiers Verifier registry (optional).
+	 * @param WP_MCP_AI_Reward_Function_Registry|null $rewards   Reward registry (optional).
+	 * @param WP_MCP_AI_Metric_Collector|null         $collector Collector (optional).
 	 */
 	public function __construct(
 		$verifiers = null,
@@ -206,12 +206,47 @@ class WP_MCP_AI_Eval_Runner {
 		// Emit metrics (best-effort — if the metric id is not registered the
 		// collector simply drops the event, which keeps the runner usable
 		// before site authors have registered their full metric catalogue).
-		$this->collector->record( 'eval.case.passed', $passed ? 1 : 0, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
-		$this->collector->record( 'eval.case.score', $score, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
-		$this->collector->record( 'eval.case.confidence', $confidence, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
-		$this->collector->record( 'eval.case.latency_ms', $case_latency_ms, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
+		$this->collector->record(
+			'eval.case.passed',
+			$passed ? 1 : 0,
+			array(
+				'suite' => $suite->get_slug(),
+				'case' => $case->get_slug(),
+			)
+		);
+		$this->collector->record(
+			'eval.case.score',
+			$score,
+			array(
+				'suite' => $suite->get_slug(),
+				'case' => $case->get_slug(),
+			)
+		);
+		$this->collector->record(
+			'eval.case.confidence',
+			$confidence,
+			array(
+				'suite' => $suite->get_slug(),
+				'case' => $case->get_slug(),
+			)
+		);
+		$this->collector->record(
+			'eval.case.latency_ms',
+			$case_latency_ms,
+			array(
+				'suite' => $suite->get_slug(),
+				'case' => $case->get_slug(),
+			)
+		);
 		if ( $abstained ) {
-			$this->collector->record( 'eval.case.abstained', 1, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
+			$this->collector->record(
+				'eval.case.abstained',
+				1,
+				array(
+					'suite' => $suite->get_slug(),
+					'case' => $case->get_slug(),
+				)
+			);
 		}
 
 		$rewards = array();
@@ -225,13 +260,23 @@ class WP_MCP_AI_Eval_Runner {
 					'cost_usd'            => $cost_usd,
 					'budget_usd'          => $budget_usd,
 				),
-				array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() )
+				array(
+					'suite' => $suite->get_slug(),
+					'case' => $case->get_slug(),
+				)
 			);
 			if ( is_wp_error( $value ) ) {
 				$rewards[ $reward_slug ] = array( 'error' => $value->get_error_message() );
 			} else {
 				$rewards[ $reward_slug ] = (float) $value;
-				$this->collector->record( 'eval.reward.' . $reward_slug, (float) $value, array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() ) );
+				$this->collector->record(
+					'eval.reward.' . $reward_slug,
+					(float) $value,
+					array(
+						'suite' => $suite->get_slug(),
+						'case' => $case->get_slug(),
+					)
+				);
 			}
 		}
 
@@ -311,7 +356,10 @@ class WP_MCP_AI_Eval_Runner {
 				foreach ( $r['rewards'] as $slug => $value ) {
 					if ( is_numeric( $value ) ) {
 						if ( ! isset( $reward_totals[ $slug ] ) ) {
-							$reward_totals[ $slug ] = array( 'sum' => 0.0, 'count' => 0 );
+							$reward_totals[ $slug ] = array(
+								'sum' => 0.0,
+								'count' => 0,
+							);
 						}
 						$reward_totals[ $slug ]['sum']   += (float) $value;
 						++$reward_totals[ $slug ]['count'];
@@ -389,7 +437,7 @@ class WP_MCP_AI_Eval_Runner {
 		$sorted = $values;
 		sort( $sorted, SORT_NUMERIC );
 		$mid = (int) floor( $n / 2 );
-		if ( $n % 2 === 1 ) {
+		if ( 1 === $n % 2 ) {
 			return (float) $sorted[ $mid ];
 		}
 		return ( (float) $sorted[ $mid - 1 ] + (float) $sorted[ $mid ] ) / 2.0;
@@ -473,12 +521,12 @@ class WP_MCP_AI_Eval_Runner {
 	/**
 	 * Run a single counterfactual case.
 	 *
-	 * @param WP_MCP_AI_Eval_Case            $case             Case.
-	 * @param WP_MCP_AI_Eval_Suite           $suite            Suite.
-	 * @param callable                       $generator        Generator.
+	 * @param WP_MCP_AI_Eval_Case             $case             Case.
+	 * @param WP_MCP_AI_Eval_Suite            $suite            Suite.
+	 * @param callable                        $generator        Generator.
 	 * @param WP_MCP_AI_Counterfactual_Runner $counterfactual  Helper.
-	 * @param array                          $default_variants Runner-level variants.
-	 * @param float                          $flat_epsilon     Flat-signal epsilon.
+	 * @param array                           $default_variants Runner-level variants.
+	 * @param float                           $flat_epsilon     Flat-signal epsilon.
 	 * @return array
 	 */
 	private function run_counterfactual_case(
@@ -556,13 +604,19 @@ class WP_MCP_AI_Eval_Runner {
 		$this->collector->record(
 			'eval.counterfactual.preferred',
 			$preferred ? 1 : 0,
-			array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() )
+			array(
+				'suite' => $suite->get_slug(),
+				'case' => $case->get_slug(),
+			)
 		);
 		if ( $flat ) {
 			$this->collector->record(
 				'eval.counterfactual.flat',
 				1,
-				array( 'suite' => $suite->get_slug(), 'case' => $case->get_slug() )
+				array(
+					'suite' => $suite->get_slug(),
+					'case' => $case->get_slug(),
+				)
 			);
 		}
 

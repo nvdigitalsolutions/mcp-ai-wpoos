@@ -101,7 +101,7 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'handle_agent_card_request' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'permissions_check_agent_card' ),
 				),
 			)
 		);
@@ -113,7 +113,7 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_per_assistant_card' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'permissions_check_agent_card' ),
 				'args'                => array(
 					'assistant_id' => array(
 						'type'              => 'integer',
@@ -170,6 +170,32 @@ class WP_MCP_AI_REST_A2A_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Authenticate the request.
 		return $this->permissions_check_authenticated( $request );
+	}
+
+	/**
+	 * Permission check for Agent Card discovery endpoints (GET /a2a/agent-card and
+	 * GET /a2a/agent-card/{id}).
+	 *
+	 * Agent Cards are intentionally public — they are the machine-readable discovery
+	 * document that remote A2A agents read before initiating a session (similar to
+	 * RFC 8615 .well-known resources). However there is no reason to expose them
+	 * when A2A is disabled on this installation.
+	 *
+	 * @param WP_REST_Request $request The request (unused; kept for signature compatibility).
+	 * @return true|WP_Error True when A2A is enabled, WP_Error 403 otherwise.
+	 */
+	public function permissions_check_agent_card( $request ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		if ( empty( $settings['enable_a2a_server'] ) ) {
+			return new WP_Error(
+				'a2a_disabled',
+				__( 'A2A protocol is not enabled on this server.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 
 	/**

@@ -822,7 +822,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	protected static function read_catalog_file() {
 		$default_path = defined( 'WP_MCP_AI_PATH' )
 			? trailingslashit( WP_MCP_AI_PATH ) . 'includes/data/model-catalog.json'
-			: dirname( __FILE__ ) . '/data/model-catalog.json';
+			: __DIR__ . '/data/model-catalog.json';
 
 		/**
 		 * Filter the path to the JSON file used as the model catalog source.

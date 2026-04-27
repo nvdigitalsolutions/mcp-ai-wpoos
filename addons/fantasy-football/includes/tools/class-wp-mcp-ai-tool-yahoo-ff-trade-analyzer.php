@@ -190,6 +190,14 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
+		// Outbound API rate limit: max 20 requests/min to the Yahoo Fantasy Sports API.
+		// The trade analyzer calls this method repeatedly (once per player × week combination),
+		// so the rate limiter is applied here to cap the total Yahoo API request budget.
+		$rate_limit_error = function_exists( 'wp_mcp_ai_check_api_rate_limit' ) ? wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 ) : null;
+		if ( is_wp_error( $rate_limit_error ) ) {
+			return $rate_limit_error;
+		}
+
 		$players_stats = array();
 
 		foreach ( $player_keys as $player_key ) {

@@ -99,7 +99,7 @@ class WP_MCP_AI_Security_Training_Admin {
 	 */
 	public function save_training_meta( $post_id, $post ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 		// Verify nonce.
-		if ( ! isset( $_POST['mcp_ai_training_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_ai_training_details_nonce'] ) ), 'mcp_ai_training_details' ) ) {
+		if ( ! isset( $_POST['mcp_ai_training_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_ai_training_details_nonce'] ) ), 'wp_mcp_ai_training_details' ) ) {
 			return;
 		}
 

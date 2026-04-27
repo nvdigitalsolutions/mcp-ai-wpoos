@@ -354,7 +354,10 @@ class WP_MCP_AI_Budget_Registry {
 			$this->ensure_persistent_loaded();
 			$this->maybe_roll_window( $envelope );
 			if ( ! isset( $this->persistent_accumulators[ $slug ] ) ) {
-				$this->persistent_accumulators[ $slug ] = array( 'value' => 0.0, 'window_started_at' => time() );
+				$this->persistent_accumulators[ $slug ] = array(
+					'value' => 0.0,
+					'window_started_at' => time(),
+				);
 			}
 			$this->persistent_accumulators[ $slug ]['value'] += $value;
 			$new_value = (float) $this->persistent_accumulators[ $slug ]['value'];

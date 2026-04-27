@@ -232,7 +232,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @return bool True if user has permission, false otherwise.
 	 */
 	public function check_admin_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
-		return current_user_can( 'manage_options' );
+		return wp_mcp_ai_user_can_manage_fleet();
 	}
 }
 

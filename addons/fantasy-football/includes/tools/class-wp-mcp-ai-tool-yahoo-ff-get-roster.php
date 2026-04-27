@@ -100,6 +100,12 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Roster implements WP_MCP_AI_Tool_Interface, WP
 			return $access_token;
 		}
 
+		// Outbound API rate limit: max 20 requests/min to the Yahoo Fantasy Sports API.
+		$rate_limit_error = function_exists( 'wp_mcp_ai_check_api_rate_limit' ) ? wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 ) : null;
+		if ( is_wp_error( $rate_limit_error ) ) {
+			return $rate_limit_error;
+		}
+
 		// Build API URL.
 		if ( empty( $team_key ) ) {
 			// Get user's team in the league.

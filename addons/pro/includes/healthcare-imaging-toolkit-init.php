@@ -23,6 +23,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// F-PRIV-03: On multisite, the healthcare imaging toolkit must only run on
+// sites where an administrator has explicitly acknowledged PHI handling
+// obligations by setting the wp_mcp_ai_phi_acknowledged setting to true.
+if ( is_multisite() ) {
+	$_phi_settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $_phi_settings['wp_mcp_ai_phi_acknowledged'] ) ) {
+		return;
+	}
+	unset( $_phi_settings );
+}
+
 // Load capability helper.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-imaging-capabilities.php';
 

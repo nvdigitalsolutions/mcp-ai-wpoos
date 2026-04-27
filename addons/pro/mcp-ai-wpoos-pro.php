@@ -346,6 +346,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cpt-meta-schema.php';
 		WP_MCP_AI_Pro_CPT_Meta_Schema::init();
 
+		// Register Privacy API exporters/erasers for Pro health & imaging CPT data (F-PRIV-01).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-privacy.php';
+		WP_MCP_AI_Pro_Privacy::init();
+
 		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
 		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';

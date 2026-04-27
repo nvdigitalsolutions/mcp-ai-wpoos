@@ -125,6 +125,14 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		$check_dimensions = isset( $arguments['check_dimensions'] ) ? (bool) $arguments['check_dimensions'] : true;
 		$generate_report  = isset( $arguments['generate_report'] ) ? (bool) $arguments['generate_report'] : true;
 
+		// Block SSRF: if a URL was supplied, ensure it resolves to a public address.
+		if ( '' !== $url && ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'The provided URL resolves to a blocked address. Only public HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ),
+			);
+		}
+
 		// Before execution hook.
 		$this->do_before_execute( $arguments, $context );
 
