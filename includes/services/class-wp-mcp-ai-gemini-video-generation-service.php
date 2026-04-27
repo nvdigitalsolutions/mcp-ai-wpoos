@@ -620,7 +620,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$parameters['negativePrompt'] = sanitize_textarea_field( $args['negative_prompt'] );
 		}
 
-		if ( isset( $args['seed'] ) ) {
+		// Note: 'seed' is not supported by Veo 3.1 (returns INVALID_ARGUMENT). Only send for Veo 2.0.
+		if ( $is_veo_2 && isset( $args['seed'] ) ) {
 			$parameters['seed'] = absint( $args['seed'] );
 		}
 
