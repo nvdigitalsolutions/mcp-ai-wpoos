@@ -714,8 +714,31 @@ class WP_MCP_AI_Model_Config_Renderer {
 		// Ollama and LM Studio models — detect capabilities from model name patterns.
 		// Cloud-hosted Ollama models (:cloud suffix) may be multimodal.
 		if ( 'ollama' === $provider || 'lm_studio' === $provider ) {
-			// Vision-capable model families (local or cloud variants).
-			$vision_patterns = array( 'llava', 'bakllava', 'moondream', 'minicpm-v', 'gemma4', 'qwen2-vl', 'qwen2.5-vl', 'llama4', 'phi4-vision', 'phi3-vision', 'mistral3', 'gemma4:31b-cloud', 'qwen3.5:397b-cloud', 'kimi-k2.5:cloud', 'glm-5:cloud', 'minimax-m2.7:cloud', 'gpt-oss:120b-cloud', 'gpt-oss:20b-cloud' );
+			// Vision-capable local model families.
+			$local_vision_patterns = array(
+				'llava',
+				'bakllava',
+				'moondream',
+				'minicpm-v',
+				'gemma4',
+				'qwen2-vl',
+				'qwen2.5-vl',
+				'llama4',
+				'phi4-vision',
+				'phi3-vision',
+				'mistral3',
+			);
+			// Vision-capable cloud model identifiers (:cloud suffix).
+			$cloud_vision_patterns = array(
+				'gemma4:31b-cloud',
+				'qwen3.5:397b-cloud',
+				'kimi-k2.5:cloud',
+				'glm-5:cloud',
+				'minimax-m2.7:cloud',
+				'gpt-oss:120b-cloud',
+				'gpt-oss:20b-cloud',
+			);
+			$vision_patterns = array_merge( $local_vision_patterns, $cloud_vision_patterns );
 			foreach ( $vision_patterns as $pattern ) {
 				if ( false !== strpos( $model_id, $pattern ) ) {
 					$capability_flags[] = 'vision';

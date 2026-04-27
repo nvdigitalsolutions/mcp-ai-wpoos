@@ -153,7 +153,7 @@ window.wpMcpAiSaveExpandedState = function() {
                         response.data.models.forEach(function (model) {
                             const sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
                             const cloudBadge = model.is_cloud
-                                ? ' <span title="Cloud-hosted model" style="color:#0073aa;font-size:0.9em;">&#x2601;</span>'
+                                ? ' <span class="wp-mcp-ai-model-cloud-badge" title="Cloud-hosted model">&#x2601;</span>'
                                 : '';
                             html += '<li style="margin-bottom: 5px;">';
                             html += '<a href="#" class="wp-mcp-ai-select-ollama-model" data-model="' + model.name + '">';
