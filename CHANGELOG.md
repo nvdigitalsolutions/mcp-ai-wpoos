@@ -1,6 +1,28 @@
 # oOS – Changelog
 
 
+## [1.1.11] - 2026-04-27
+
+### April 27, 2026 — WordPress.org Compliance Hardening
+
+A small but tightly-scoped compliance pass to clear the remaining WordPress.org Plugin Check items in the readme/build pipeline before re-submission. No runtime behavior changes.
+
+### Fixed
+- **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
+- **Inconsistent tool count in readme.txt** — Headline description and Base Plugin section both report `230+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
+- **Missing `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). MCP protocol support was previously undiscoverable in WordPress.org plugin search.
+
+### Changed
+- **`bin/build-wordpress-org-from-base.sh`** — New per-package `Step 2b` rewrites the WordPress.org support-forum URL to match each transformed slug (`nvdigital-open-operator-system-oos`, `…-pro`, `…-core`). The build now also runs a verification grep at the end of `transform_package()` and exits non-zero if any legacy `wp-mcp-ai` slug or unrewritten `Text Domain: mcp-ai-wpoos` header survives in `readme.txt`. Prevents silent metadata regressions in future releases.
+- **`bin/review-zips.sh`** — New `check_wporg_readme_slug()` helper asserts the same readme invariants when auditing already-built `.zip` packages, so a stale build can no longer pass review even if the build script is bypassed.
+
+### Documentation
+- **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status. Both note that source-level identifier prefix migration (`wp_mcp_ai_*` / `WP_MCP_AI_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+
+### Version
+- **Version** bumped to 1.1.11 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+
 ## [1.1.10] - 2026-04-27
 
 ### April 27, 2026 — April 2026 Security Audit Summary, Production-Ready Vendor Autoload, Veo 3.1 Seed-Parameter Fix

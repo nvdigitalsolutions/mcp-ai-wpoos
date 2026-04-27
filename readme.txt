@@ -1,15 +1,15 @@
 === NV Digital Open Operator System (oOS) ===
 Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
-Tags: ai, chatbot, openai, assistant, automation
+Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.10
+Stable tag: 1.1.11
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 220+ built-in tools.
+AI Assistant framework with OpenAI, Gemini, NVIDIA NIM, and Ollama integration. PHP 7.4+ base plugin with 230+ built-in tools.
 
 == Description ==
 
@@ -19,7 +19,7 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 220+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 230+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
 **Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
@@ -247,7 +247,7 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 * [GitHub Issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues) - Bug reports and feature requests
 * [Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs) - Comprehensive guides
-* [WordPress.org Forums](https://wordpress.org/support/plugin/wp-mcp-ai/) - Community support
+* [WordPress.org Forums](https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/) - Community support (after WordPress.org approval)
 
 = Is this plugin patented? =
 
@@ -274,6 +274,29 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.11 - April 27, 2026 =
+
+**WordPress.org Compliance Hardening — readme metadata, slug-aware build pipeline, and verification gates**
+
+*Fixed*
+
+* **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
+* **Inconsistent tool count in readme** — The headline description and the Base Plugin section now both report `230+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
+* **Missing canonical `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). The MCP protocol is a primary feature and was previously undiscoverable in plugin search.
+
+*Changed*
+
+* **`bin/build-wordpress-org-from-base.sh`** — Added a per-package readme-normalization step that rewrites the WordPress.org support-forum URL to match each transformed slug (`nvdigital-open-operator-system-oos`, `…-pro`, `…-core`). The build now also runs a verification grep at the end of `transform_package()` and exits non-zero if any legacy `wp-mcp-ai` slug or unrewritten `mcp-ai-wpoos` text-domain reference survives in `readme.txt`. Prevents the metadata regressions silently re-entering future releases.
+* **`bin/review-zips.sh`** — Asserts the same readme invariants when auditing already-built `.zip` packages, so a stale build can no longer pass review.
+
+*Documentation*
+
+* **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status table and a note that source-level identifier prefix migration (`wp_mcp_ai_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+
+*Version*
+
+* Bumped to 1.1.11 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 = 1.1.10 - April 27, 2026 =
 
