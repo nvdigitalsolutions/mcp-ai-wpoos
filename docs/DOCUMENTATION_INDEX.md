@@ -1,12 +1,18 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 25, 2026  
-**Plugin Version:** 1.1.9  
+**Last Updated:** April 27, 2026  
+**Plugin Version:** 1.1.10  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 27, 2026 UPDATE:** 🛡️ **APRIL 2026 SECURITY AUDIT SUMMARY, PRODUCTION VENDOR AUTOLOAD, VEO 3.1 SEED FIX**
+> - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](audit/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
+> - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
+> - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0; Veo 3.1 rejects it (PR #4735).
+> - **README.md / CHANGELOG.md / readme.txt / QUICK_REFERENCE.md** — Updated to v1.1.10.
 
 > **📌 APRIL 25, 2026 UPDATE:** 📊 **MEASUREMENT SUBSYSTEM GA, PHPUNIT 11 UPGRADE (CVE FIX), CHART.JS HANDLE NORMALIZATION, GRAPHIFY RESTORE**
 > - **Measurement Subsystem GA** (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics (tool-execution, chat-loop, agentic-loop, SSE), persistent metric event store with `wp_mcp_ai_metric_retention_days` filter, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, Measurement dashboard under **Tools → Measurement**, and `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. New stock metrics `eval.suite.pass_rate` (gauge) and `eval.suite.regression.count` (counter).

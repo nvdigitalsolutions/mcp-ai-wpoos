@@ -1,6 +1,27 @@
 # oOS – Changelog
 
 
+## [1.1.10] - 2026-04-27
+
+### April 27, 2026 — April 2026 Security Audit Summary, Production-Ready Vendor Autoload, Veo 3.1 Seed-Parameter Fix
+
+Documentation, distribution, and one targeted bug fix release. No source-code changes to plugin runtime behavior beyond the Veo 3.1 fix.
+
+### Documentation
+- **New `docs/compliance/SECURITY_AUDIT_2026_04.md`** — Published summary of the April 2026 security & compliance code review covering the base plugin, the Pro addon, and the six minor addons (`algorave`, `canvas`, `cornerstone3d`, `embedded`, `fantasy-football`, `graphify`). Cross-references the nine deliverables under `docs/audit/2026-04/`. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- `docs/DOCUMENTATION_INDEX.md`, `docs/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/audit/2026-04/README.md` cross-reference the new audit summary.
+- `README.md` Latest Updates banner refreshed for v1.1.10; the **Active Security Monitoring** section now links to the published audit summary.
+
+### Changed
+- **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes). The plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` to pull dev dependencies (PHPUnit, WPCS, etc.).
+
+### Fixed
+- **Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` when `seed` is supplied (PR #4735)** — the `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`). Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model.
+
+### Version
+- **Version** bumped to 1.1.10 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+
 ## [1.1.9] - 2026-04-25
 
 ### April 16–25, 2026 — Measurement Subsystem GA, PHPUnit 11 Upgrade (CVE Fix), Chart.js Handle Normalization, Graphify Addon Restore
