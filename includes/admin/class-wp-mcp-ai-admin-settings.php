@@ -1129,7 +1129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
@@ -1628,6 +1628,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'ollama_model',
 				__( 'Ollama Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ollama_model_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_ollama_section'
+			);
+
+			add_settings_field(
+				'ollama_use_openai_compatible_endpoint',
+				__( 'OpenAI-Compatible Mode', 'mcp-ai-wpoos' ),
+				array( $this, 'render_ollama_openai_compatible_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_ollama_section'
 			);
@@ -2433,6 +2441,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			if ( isset( $settings['ollama_model'] ) ) {
 				$clean['ollama_model'] = trim( sanitize_text_field( $settings['ollama_model'] ) );
 			}
+
+			$clean['ollama_use_openai_compatible_endpoint'] = ! empty( $settings['ollama_use_openai_compatible_endpoint'] );
 
 			if ( isset( $settings['lm_studio_endpoint_url'] ) ) {
 				$url                             = trim( $settings['lm_studio_endpoint_url'] );
@@ -3813,6 +3823,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<button type="button" id="wp-mcp-ai-fetch-ollama-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'mcp-ai-wpoos' ); ?></button>
 		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your Ollama instance.', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-ollama-models-list" style="margin-top: 10px;"></div>
+			<?php
+		}
+
+		/**
+		 * Render the Ollama OpenAI-compatible endpoint toggle field.
+		 */
+		public function render_ollama_openai_compatible_field() {
+			$settings = self::get_settings();
+			$checked  = ! empty( $settings['ollama_use_openai_compatible_endpoint'] );
+			?>
+		<label>
+			<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_use_openai_compatible_endpoint]" value="1" <?php checked( $checked ); ?> />
+			<?php esc_html_e( 'Use OpenAI-compatible endpoint (/v1/chat/completions)', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, requests are sent to the OpenAI-compatible endpoint instead of the native Ollama endpoint. This provides the most reliable tool/skill/plugin support and is the recommended setting for models that support function calling (e.g. llama3.1, qwen2.5, mistral-nemo). Requires Ollama v0.1.36 or later.', 'mcp-ai-wpoos' ); ?>
+		</p>
 			<?php
 		}
 
