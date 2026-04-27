@@ -1229,12 +1229,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
 
-				// Ensure top-level 'name' is set from the nested function definition.
+				// For type='function' tools, derive the top-level name from function.name
+				// (overwriting any existing name to ensure consistency).
+				// For all other types, fall through to the derivation block below.
 				if ( 'function' === $type && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
 					$tool['name'] = (string) $tool['function']['name'];
-				}
-
-				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+				} elseif ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					// No name yet: derive from the first available identifier.
 					if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
 						$tool['name'] = (string) $tool['function']['name'];
 					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {

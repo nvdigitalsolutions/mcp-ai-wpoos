@@ -363,8 +363,8 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 
 		$sent_messages = $this->last_request_body['messages'];
 		// The tool message should have been converted to a user message.
-		$user_messages = array_filter( $sent_messages, fn( $m ) => 'user' === $m['role'] );
-		$tool_messages = array_filter( $sent_messages, fn( $m ) => 'tool' === $m['role'] );
+		$user_messages = array_filter( $sent_messages, function ( $m ) { return 'user' === $m['role']; } );
+		$tool_messages = array_filter( $sent_messages, function ( $m ) { return 'tool' === $m['role']; } );
 
 		$this->assertEmpty( $tool_messages, 'No tool-role messages should remain when tools are absent.' );
 		$found = false;
@@ -710,7 +710,7 @@ class Test_Ollama_Tool_Calling extends WP_UnitTestCase {
 		);
 
 		$messages = $this->last_request_body['messages'];
-		$system_messages = array_filter( $messages, fn( $m ) => 'system' === $m['role'] );
+		$system_messages = array_filter( $messages, function ( $m ) { return 'system' === $m['role']; } );
 
 		$this->assertNotEmpty( $system_messages, 'System prompt must be a system-role message in loopback mode.' );
 		$first_system = array_values( $system_messages )[0];
