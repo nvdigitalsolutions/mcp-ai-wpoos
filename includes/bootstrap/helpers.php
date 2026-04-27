@@ -526,3 +526,60 @@ array(
 set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
 }
 }
+
+if ( ! function_exists( 'wp_mcp_ai_validate_path' ) ) {
+/**
+ * Resolve and bound-check a user-supplied file path.
+ *
+ * Prevents path-traversal attacks by resolving the path to its canonical
+ * real form and then verifying it starts with (i.e. is contained within)
+ * the supplied allowed root.
+ *
+ * Typical allowed roots:
+ *   - `wp_upload_dir()['basedir']`  — uploaded-file tools
+ *   - `WP_CONTENT_DIR`             — theme/plugin file tools
+ *   - `WP_MCP_AI_PATH`             — plugin-internal file tools
+ *
+ * Usage:
+ *   $safe = wp_mcp_ai_validate_path( $arguments['file_path'], wp_upload_dir()['basedir'] );
+ *   if ( is_wp_error( $safe ) ) { return $safe; }
+ *   // use $safe (the canonical absolute path)
+ *
+ * @param string $path         Path supplied by the caller (may be relative, symlinked, etc.).
+ * @param string $allowed_root Absolute directory that $path must be contained in.
+ * @return string|WP_Error Canonical absolute path on success; WP_Error on failure.
+ */
+function wp_mcp_ai_validate_path( $path, $allowed_root ) {
+$path = (string) $path;
+
+if ( '' === $path ) {
+return new WP_Error(
+'wp_mcp_ai_empty_path',
+__( 'File path must not be empty.', 'mcp-ai-wpoos' )
+);
+}
+
+// realpath() resolves symlinks and eliminates `..` sequences.
+// It returns false if the file does not exist.
+$resolved = realpath( $path );
+if ( false === $resolved ) {
+return new WP_Error(
+'wp_mcp_ai_path_not_found',
+__( 'The specified file or directory does not exist.', 'mcp-ai-wpoos' )
+);
+}
+
+// Normalize both paths so cross-platform slash styles don't bypass the check.
+$resolved_norm = wp_normalize_path( $resolved );
+$root_norm     = trailingslashit( wp_normalize_path( (string) $allowed_root ) );
+
+if ( 0 !== strpos( $resolved_norm, $root_norm ) ) {
+return new WP_Error(
+'wp_mcp_ai_path_outside_root',
+__( 'The specified path is not within the allowed directory.', 'mcp-ai-wpoos' )
+);
+}
+
+return $resolved;
+}
+}
