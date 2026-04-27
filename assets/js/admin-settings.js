@@ -152,10 +152,14 @@ window.wpMcpAiSaveExpandedState = function() {
                         let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
                         response.data.models.forEach(function (model) {
                             const sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
+                            const cloudBadge = model.is_cloud
+                                ? ' <span title="Cloud-hosted model" style="color:#0073aa;font-size:0.9em;">&#x2601;</span>'
+                                : '';
                             html += '<li style="margin-bottom: 5px;">';
                             html += '<a href="#" class="wp-mcp-ai-select-ollama-model" data-model="' + model.name + '">';
                             html += model.name + sizeInfo;
                             html += '</a>';
+                            html += cloudBadge;
                             if (model.family) {
                                 html += ' - ' + model.family;
                             }

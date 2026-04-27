@@ -1129,7 +1129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 				'nvidia'      => __( 'NVIDIA NIM', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),

@@ -494,9 +494,12 @@ class WP_MCP_AI_Model_Service {
 						if ( empty( $model['name'] ) ) {
 							continue;
 						}
-						$name           = (string) $model['name'];
-						$family         = ! empty( $model['family'] ) ? (string) $model['family'] : '';
-						$models[ $name ] = $family ? sprintf( '%s (%s)', $name, $family ) : $name;
+						$name  = (string) $model['name'];
+						$family = ! empty( $model['family'] ) ? (string) $model['family'] : '';
+						// Append a cloud indicator to the display label for cloud-hosted models.
+						$is_cloud        = ! empty( $model['is_cloud'] );
+						$cloud_suffix    = $is_cloud ? ' ☁' : '';
+						$models[ $name ] = ( $family ? sprintf( '%s (%s)', $name, $family ) : $name ) . $cloud_suffix;
 					}
 				}
 			} catch ( \Exception $e ) {
@@ -541,6 +544,14 @@ class WP_MCP_AI_Model_Service {
 				'phi3'          => 'Phi-3',
 				'codellama'     => 'CodeLlama',
 				'qwen2.5'       => 'Qwen 2.5',
+				// Cloud-hosted models accessible via Ollama cloud (:cloud suffix).
+				'gemma4:31b-cloud'      => 'Gemma 4 31B ☁ (Cloud)',
+				'qwen3.5:397b-cloud'    => 'Qwen 3.5 397B ☁ (Cloud)',
+				'kimi-k2.5:cloud'       => 'Kimi K2.5 ☁ (Cloud)',
+				'glm-5:cloud'           => 'GLM-5 ☁ (Cloud)',
+				'minimax-m2.7:cloud'    => 'MiniMax M2.7 ☁ (Cloud)',
+				'gpt-oss:120b-cloud'    => 'GPT-OSS 120B ☁ (Cloud)',
+				'gpt-oss:20b-cloud'     => 'GPT-OSS 20B ☁ (Cloud)',
 			);
 
 			if ( ! $requires_vision && ! $requires_multimodal ) {

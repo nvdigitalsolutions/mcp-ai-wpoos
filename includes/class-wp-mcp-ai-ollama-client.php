@@ -210,10 +210,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			if ( isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
 				foreach ( $decoded['models'] as $model ) {
 					if ( isset( $model['name'] ) ) {
-						$models[] = array(
-							'name'   => $model['name'],
-							'size'   => isset( $model['size'] ) ? $model['size'] : 0,
-							'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+						$model_name = (string) $model['name'];
+						$models[]   = array(
+							'name'     => $model_name,
+							'size'     => isset( $model['size'] ) ? $model['size'] : 0,
+							'family'   => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+							'is_cloud' => ( false !== strpos( $model_name, ':cloud' ) ),
 						);
 					}
 				}
