@@ -216,7 +216,10 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			// Create temp file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'excel_' );
+			$temp_file = wp_mcp_ai_tempnam( 'excel_', '.xlsx' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
 			$writer    = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
 			$writer->save( $temp_file );
 
@@ -274,7 +277,11 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array|WP_Error Result array or error.
 	 */
 	protected function export_to_csv( $data, $headers, $filename ) {
-		$temp_file = tempnam( sys_get_temp_dir(), 'csv_' );
+		$temp_file = wp_mcp_ai_tempnam( 'csv_', '.csv' );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		$handle    = fopen( $temp_file, 'w' );
 
 		if ( ! $handle ) {

@@ -211,8 +211,12 @@ return array(
 			$pdf_content = $dompdf->output();
 
 			// Create temporary file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'pdf_' );
-			if ( false === file_put_contents( $temp_file, $pdf_content ) ) {
+			$temp_file = wp_mcp_ai_tempnam( 'pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
+			if ( false === file_put_contents( $temp_file, $pdf_content ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				return new WP_Error( 'pdf_write_failed', __( 'Failed to write PDF file.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -285,11 +289,18 @@ return array(
 	 */
 	protected function convert_with_wkhtmltopdf( $html, $title, $filename, $page_size, $orientation ) {
 		// Create temp HTML file.
-		$temp_html = tempnam( sys_get_temp_dir(), 'html_' );
-		file_put_contents( $temp_html, $html );
+		$temp_html = wp_mcp_ai_tempnam( 'html_', '.html' );
+		if ( is_wp_error( $temp_html ) ) {
+			return $temp_html;
+		}
+		file_put_contents( $temp_html, $html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		// Create temp PDF file.
-		$temp_pdf = tempnam( sys_get_temp_dir(), 'pdf_' );
+		$temp_pdf = wp_mcp_ai_tempnam( 'pdf_', '.pdf' );
+		if ( is_wp_error( $temp_pdf ) ) {
+			@unlink( $temp_html ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			return $temp_pdf;
+		}
 
 		// Build command.
 		$cmd = sprintf(
@@ -300,14 +311,14 @@ return array(
 			escapeshellarg( $temp_pdf )
 		);
 
-		$proc_result = wp_mcp_ai_run_shell( $cmd, sys_get_temp_dir() );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_html ) );
 		$return_code  = $proc_result['exit_code'];
 
 		// Clean up temp HTML.
-		@unlink( $temp_html );
+		@unlink( $temp_html ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( 0 !== $return_code || ! file_exists( $temp_pdf ) ) {
-			@unlink( $temp_pdf );
+			@unlink( $temp_pdf ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return new WP_Error(
 				'wkhtmltopdf_failed',
 				__( 'wkhtmltopdf conversion failed.', 'mcp-ai-wpoos-pro' )

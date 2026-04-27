@@ -11,9 +11,9 @@
 | Critical | 0 | — |
 | **High** | **5** | 2 FIXED (F-SQL-01, F-EXEC-01), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 1 OPEN |
 | Medium | 14 | 15 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01, F-PRIV-02, F-CRYPTO-01, F-RATE-01, F-DOS-01, F-XSS-01), 0 OPEN (1 finding in Medium list originally marked medium now confirmed fixed — total count still 14 but note F-XSS-01 added) |
-| Low | 21 | 13 CLOSED/FIXED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01, F-UPLOAD-02, F-CSP-01, F-CRON-01, F-CMP-03, F-CMP-05), 7 OPEN |
+| Low | 21 | 14 CLOSED/FIXED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01, F-UPLOAD-02, F-CSP-01, F-CRON-01, F-CMP-03, F-CMP-05, F-FS-01), 6 OPEN |
 | Informational | 10 | — |
-| **Total** | **50** | **32 closed/partially-fixed, 18 open** |
+| **Total** | **50** | **33 closed/partially-fixed, 17 open** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 
@@ -199,7 +199,7 @@ Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blockin
 | **CWE** | CWE-377 |
 | **Addon(s)** | pro |
 | **Recommendation** | Centralise into `wp_upload_dir()['basedir'] . '/wp-mcp-ai-temp/'` with mode 0750 and `wp_unique_filename`; enforce cron cleanup. |
-| **Status** | OPEN |
+| **Status** | **FIXED — Wave 22.** Two new helpers added to `includes/bootstrap/helpers.php`: `wp_mcp_ai_get_temp_dir()` (creates `wp_upload_dir()['basedir']/wp-mcp-ai-temp/`, `chmod 0750`, `.htaccess Deny from all`) and `wp_mcp_ai_tempnam($prefix, $ext)` (writes a unique file into that dir via `wp_unique_filename()`). An hourly cron event `wp_mcp_ai_cleanup_temp_files` registered in `includes/bootstrap/cron.php` (and activation/deactivation hooks in `includes/bootstrap/activation.php`) purges files older than one hour, logging the count via `WP_MCP_AI_Logger`. All `tempnam(sys_get_temp_dir(), …)` calls in the 10 document-generation tool files migrated to `wp_mcp_ai_tempnam()` with error-return early-exit; `wp_tempnam()` callers also migrated (with `wp_tempnam()` fallback guarded by `is_wp_error`). Shell `$cwd` arguments changed from `sys_get_temp_dir()` to `dirname($temp_file)` so the shell process also works within the plugin temp directory. |
 | **Roadmap** | R-S-13 |
 
 ### F-FS-02 — Path-traversal on user-supplied paths in tools |

@@ -39,6 +39,11 @@ if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
 
+		// Schedule hourly cleanup of plugin-owned temp files (F-FS-01).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_temp_files' ) ) {
+			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_cleanup_temp_files' );
+		}
+
 		// Schedule daily model catalog discovery cron job (April 2026 refresh).
 		// Deliberately offset the first run by an hour to keep the activation/upgrade
 		// page load light — the daily file-cleanup crons above run on essentially
@@ -71,6 +76,10 @@ if ( ! has_action( 'wp_mcp_ai_cleanup_gemini_files', 'wp_mcp_ai_cleanup_gemini_f
 
 if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' ) ) {
 	add_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' );
+}
+
+if ( ! has_action( 'wp_mcp_ai_cleanup_temp_files', 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
+	add_action( 'wp_mcp_ai_cleanup_temp_files', 'wp_mcp_ai_cleanup_temp_files_handler' );
 }
 
 if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler' ) ) {
@@ -203,5 +212,69 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 	 */
 	function wp_mcp_ai_init_async_executor() {
 		wp_mcp_ai_get_async_tool_executor();
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
+	/**
+	 * Cron job handler: purge stale files from the plugin-owned temp directory.
+	 *
+	 * Runs hourly. Removes any file under `wp-mcp-ai-temp/` that is older than
+	 * one hour. This acts as a safety-net for the rare cases where a document-
+	 * generation tool exits abnormally before it can call `@unlink()` on its
+	 * temp files.
+	 *
+	 * @since 1.2.0
+	 */
+	function wp_mcp_ai_cleanup_temp_files_handler() {
+		if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
+			return;
+		}
+
+		$temp_dir = wp_mcp_ai_get_temp_dir();
+		if ( is_wp_error( $temp_dir ) || ! is_dir( $temp_dir ) ) {
+			return;
+		}
+
+		$cutoff  = time() - HOUR_IN_SECONDS;
+		$deleted = 0;
+
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$files = @glob( trailingslashit( $temp_dir ) . '*' );
+		if ( ! is_array( $files ) ) {
+			return;
+		}
+
+		foreach ( $files as $file ) {
+			if ( ! is_file( $file ) ) {
+				continue;
+			}
+
+			// Never remove the .htaccess guard file.
+			if ( '.htaccess' === basename( $file ) ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$mtime = @filemtime( $file );
+			if ( false !== $mtime && $mtime < $cutoff ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				if ( @unlink( $file ) ) {
+					$deleted++;
+				}
+			}
+		}
+
+		if ( $deleted > 0 ) {
+			WP_MCP_AI_Logger::log_event(
+				'temp_file_cleanup_cron',
+				sprintf(
+					/* translators: %d: number of files deleted */
+					__( 'Temp file cleanup: removed %d stale file(s).', 'mcp-ai-wpoos' ),
+					$deleted
+				),
+				array( 'temp_dir' => $temp_dir, 'deleted' => $deleted )
+			);
+		}
 	}
 }

@@ -711,3 +711,100 @@ set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
 return null;
 }
 }
+
+if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
+/**
+ * Return (and initialise) the plugin-owned temp directory.
+ *
+ * The directory sits inside the WordPress uploads folder so it shares the same
+ * filesystem permissions as other WordPress-managed files, is outside the
+ * system-wide /tmp, and can be locked down with an .htaccess rule to block
+ * direct HTTP access.
+ *
+ * Subsequent calls skip the filesystem work once the transient flag confirms
+ * the directory has already been prepared.
+ *
+ * @since 1.2.0
+ * @return string|WP_Error Absolute path with trailing slash, or WP_Error on failure.
+ */
+function wp_mcp_ai_get_temp_dir() {
+	$upload_dir = wp_upload_dir( null, true, false );
+	if ( ! empty( $upload_dir['error'] ) ) {
+		return new WP_Error( 'wp_mcp_ai_temp_dir', $upload_dir['error'] );
+	}
+
+	$temp_dir = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
+
+	// Check whether the directory has already been set up this request.
+	static $initialised = false;
+	if ( $initialised ) {
+		return trailingslashit( $temp_dir );
+	}
+
+	if ( ! file_exists( $temp_dir ) ) {
+		if ( ! wp_mkdir_p( $temp_dir ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_temp_dir_create',
+				sprintf(
+					/* translators: %s: directory path */
+					__( 'Could not create plugin temp directory: %s', 'mcp-ai-wpoos' ),
+					esc_html( $temp_dir )
+				)
+			);
+		}
+		// Restrict directory permissions (0750 = owner rwx, group r-x, other ---).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		@chmod( $temp_dir, 0750 );
+	}
+
+	// Drop an .htaccess to deny direct HTTP access on Apache hosts.
+	$htaccess = $temp_dir . '/.htaccess';
+	if ( ! file_exists( $htaccess ) ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
+	}
+
+	$initialised = true;
+	return trailingslashit( $temp_dir );
+}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_tempnam' ) ) {
+/**
+ * Create a uniquely-named temp file inside the plugin temp directory.
+ *
+ * Mirrors the signature of PHP's {@see tempnam()} but writes into the
+ * plugin-owned directory returned by {@see wp_mcp_ai_get_temp_dir()}.
+ *
+ * @since 1.2.0
+ * @param string $prefix Short prefix for the filename.
+ * @param string $ext    Optional file extension including the leading dot, e.g. '.pdf'.
+ * @return string|WP_Error Absolute path to the newly created file, or WP_Error on failure.
+ */
+function wp_mcp_ai_tempnam( $prefix = 'tmp', $ext = '' ) {
+	$dir = wp_mcp_ai_get_temp_dir();
+	if ( is_wp_error( $dir ) ) {
+		return $dir;
+	}
+
+	// Build a collision-free name: prefix + random hex + optional extension.
+	$name      = sanitize_file_name( $prefix ) . wp_generate_password( 12, false ) . $ext;
+	$unique    = wp_unique_filename( $dir, $name );
+	$full_path = $dir . $unique;
+
+	// Create the file immediately so the path is reserved (mirrors tempnam behaviour).
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	if ( false === file_put_contents( $full_path, '' ) ) {
+		return new WP_Error(
+			'wp_mcp_ai_tempnam',
+			sprintf(
+				/* translators: %s: file path */
+				__( 'Could not create temp file: %s', 'mcp-ai-wpoos' ),
+				esc_html( $full_path )
+			)
+		);
+	}
+
+	return $full_path;
+}
+}

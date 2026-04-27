@@ -601,7 +601,10 @@ return array(
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 		$upload_dir = wp_upload_dir();
-		$temp_file  = wp_tempnam( 'pdf-' . time() );
+		$temp_file  = wp_mcp_ai_tempnam( 'pdf-' );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
 		$pdf_file   = $temp_file . '.pdf';
 
 		// Rename temp file to have .pdf extension.
@@ -642,7 +645,7 @@ return array(
 
 		// Execute command.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		$proc_result = wp_mcp_ai_run_shell( $cmd, sys_get_temp_dir() );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
 		$return_code  = $proc_result['exit_code'];
 
 		// Clean up temp files.

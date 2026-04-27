@@ -232,8 +232,11 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 			$pdf_content = $dompdf->output();
 
 			// Create temp file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'invoice_' );
-			file_put_contents( $temp_file, $pdf_content );
+			$temp_file = wp_mcp_ai_tempnam( 'invoice_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
+			file_put_contents( $temp_file, $pdf_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 			// Upload to WordPress media library.
 			$file_array = array(

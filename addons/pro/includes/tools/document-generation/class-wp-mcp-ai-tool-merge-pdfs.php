@@ -296,7 +296,10 @@ return array(
 	 * @return array|WP_Error Result array or error.
 	 */
 	protected function merge_with_pdftk( $file_paths, $filename ) {
-		$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+		$temp_file = wp_mcp_ai_tempnam( 'merged_pdf_', '.pdf' );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
 
 		$cmd = sprintf(
 			'pdftk %s cat output %s 2>&1',
@@ -304,11 +307,11 @@ return array(
 			escapeshellarg( $temp_file )
 		);
 
-		$proc_result = wp_mcp_ai_run_shell( $cmd, sys_get_temp_dir() );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
 		$return_code  = $proc_result['exit_code'];
 
 		if ( 0 !== $return_code ) {
-			@unlink( $temp_file );
+			@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return new WP_Error( 'merge_failed', __( 'Failed to merge PDFs using pdftk.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -374,7 +377,10 @@ return array(
 			}
 
 			// Save to temp file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+			$temp_file = wp_mcp_ai_tempnam( 'merged_pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
 			$pdf->Output( $temp_file, 'F' );
 
 			// Upload to WordPress media library.
