@@ -317,6 +317,7 @@ if docker run --rm --platform linux/amd64 \
 		)
 		CANVAS_SIZE=$(du -h "$CANVAS_ZIP" | cut -f1)
 		echo "✅ ${CANVAS_ZIP} (${CANVAS_SIZE})"
+		echo "   Canvas build log: ${CANVAS_LOG}"
 	fi
 else
 	echo "⚠️  Warning: canvas docker build failed (this is non-fatal)."
