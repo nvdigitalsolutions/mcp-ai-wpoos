@@ -1522,7 +1522,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			if ( $code < 200 || $code >= 300 ) {
 				$error_msg = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Ollama.', 'mcp-ai-wpoos' );
-				return new WP_Error( 'wp_mcp_ai_api_error', $error_msg, array( 'status' => $code, 'body' => $decoded ) );
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_msg,
+					array(
+						'status' => $code,
+						'body' => $decoded,
+					)
+				);
 			}
 
 			WP_MCP_AI_Logger::log_event( 'ollama_compat_response', 'Ollama OpenAI-compatible request completed.' );
