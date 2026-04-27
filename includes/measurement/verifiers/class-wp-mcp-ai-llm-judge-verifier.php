@@ -61,7 +61,7 @@ class WP_MCP_AI_LLM_Judge_Verifier extends WP_MCP_AI_Verifier_Base {
 	 * @param array         $independence  Independence profile.
 	 */
 	public function __construct( $slug = 'llm_judge', $callable = null, array $independence = array() ) {
-		$this->slug                 = sanitize_key( $slug ) ?: 'llm_judge';
+		$this->slug                 = '' !== sanitize_key( $slug ) ? sanitize_key( $slug ) : 'llm_judge';
 		$this->label                = __( 'LLM Judge Verifier', 'mcp-ai-wpoos' );
 		$this->kind                 = 'llm_judge';
 		$this->judge_callable       = is_callable( $callable ) ? $callable : null;

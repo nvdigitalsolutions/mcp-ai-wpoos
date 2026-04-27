@@ -90,7 +90,6 @@ class WP_MCP_AI_Model_Catalog_Migration {
 			'microsoft/phi-3-small-128k-instruct'    => 'microsoft/phi-4',
 			'microsoft/phi-3-small-8k-instruct'      => 'microsoft/phi-4',
 			// Vertex / GCP stale.
-			'claude-3.5-sonnet-v2'                   => 'claude-sonnet-4-6',
 		);
 	}
 

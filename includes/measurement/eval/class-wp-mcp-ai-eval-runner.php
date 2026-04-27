@@ -437,7 +437,7 @@ class WP_MCP_AI_Eval_Runner {
 		$sorted = $values;
 		sort( $sorted, SORT_NUMERIC );
 		$mid = (int) floor( $n / 2 );
-		if ( $n % 2 === 1 ) {
+		if ( 1 === $n % 2 ) {
 			return (float) $sorted[ $mid ];
 		}
 		return ( (float) $sorted[ $mid - 1 ] + (float) $sorted[ $mid ] ) / 2.0;
