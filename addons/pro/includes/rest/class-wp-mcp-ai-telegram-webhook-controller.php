@@ -988,20 +988,46 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		$original_user_id = get_current_user_id();
-		$admin_users      = get_users(
-			array(
-				'role'   => 'administrator',
-				'number' => 1,
-				'fields' => 'ID',
-			)
-		);
 
-		if ( ! empty( $admin_users ) ) {
-			wp_set_current_user( $admin_users[0] );
+		// Resolve the WordPress user that the internal /mcp-ai/v1/chat request
+		// should run as. Historically this impersonated the first administrator
+		// returned by get_users(), which caused incorrect attribution: media
+		// generated during a Telegram-driven turn would be owned by an
+		// arbitrary site administrator instead of someone tied to the
+		// assistant.  Prefer the assistant post's author (a deterministic
+		// owner with capabilities the assistant was registered under) and only
+		// fall back to the first administrator when the assistant has no
+		// valid author.
+		$impersonate_user_id = 0;
+		$assistant_author    = (int) get_post_field( 'post_author', $assistant_id );
+
+		if ( $assistant_author > 0 ) {
+			$author_user = get_userdata( $assistant_author );
+			if ( $author_user && ! empty( $author_user->ID ) ) {
+				$impersonate_user_id = (int) $author_user->ID;
+			}
+		}
+
+		if ( ! $impersonate_user_id ) {
+			$admin_users = get_users(
+				array(
+					'role'   => 'administrator',
+					'number' => 1,
+					'fields' => 'ID',
+				)
+			);
+
+			if ( ! empty( $admin_users ) ) {
+				$impersonate_user_id = (int) $admin_users[0];
+			}
+		}
+
+		if ( $impersonate_user_id ) {
+			wp_set_current_user( $impersonate_user_id );
 			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		} else {
 			WP_MCP_AI_Logger::log_error(
-				'Telegram AI reply: no administrator user found; internal chat request may fail.',
+				'Telegram AI reply: no assistant author or administrator user found; internal chat request may fail.',
 				array( 'assistant_id' => $assistant_id )
 			);
 		}

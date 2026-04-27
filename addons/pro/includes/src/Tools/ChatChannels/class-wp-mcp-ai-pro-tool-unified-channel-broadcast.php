@@ -15,10 +15,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
+// Load the trait that blocks execution from the public /chat-client endpoint.
+if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-restrict-from-chat-client.php';
+}
+
 /**
  * Provides a tool for broadcasting messages to multiple chat platforms simultaneously.
+ *
+ * Restricted from the /chat-client endpoint by default: an assistant invoked
+ * from a public chat surface must not be able to fan out a broadcast to
+ * Telegram/Slack/Discord/etc. on the site owner's behalf. Sites that want to
+ * allow this can pass `allow_sensitive_tools=true` in the shortcode/widget
+ * settings.
  */
-class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
 	 * Check if this tool is available.
