@@ -10,10 +10,10 @@
 |---:|---:|---|
 | Critical | 0 | — |
 | **High** | **5** | 3 FIXED (F-SQL-01, F-EXEC-01, F-PRIV-03), 2 PARTIALLY FIXED (F-AUTHZ-01, F-AI-01), 0 OPEN |
-| Medium | 14 | 17 FIXED (F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-SSRF-01, F-PRIV-02, F-CRYPTO-01, F-RATE-01, F-DOS-01, F-XSS-01, F-UPLOAD-01, F-PRIV-01), 0 OPEN |
-| Low | 21 | 14 CLOSED/FIXED + 1 PARTIALLY FIXED (F-CMP-02 re-verified false positive, F-DOC-01 R-D-04, F-SQL-02 extends R-S-03, F-LOGS-01, F-LOG-LEAK-01, F-COOKIE-01 re-verified false positive, F-CMP-04 base-plugin sweep, F-TIME-01, F-UPLOAD-02, F-CSP-01, F-CRON-01, F-CMP-03, F-CMP-05, F-FS-01), 6 OPEN |
+| **Medium** | **15** | All FIXED — F-TLS-01, F-SVG-XSS-01, F-XSS-02, F-AUTHZ-04, F-AUTHZ-03, F-AI-03, F-AI-02, F-AUTHZ-02, F-FS-02, F-FS-01, F-SSRF-01, F-PRIV-02, F-PRIV-01, F-XSS-01, F-UPLOAD-01 |
+| Low | 21 | 14 FIXED + 1 PARTIALLY FIXED (F-CMP-04 base-plugin sweep) + 4 CLOSED/false-positive (F-CMP-02, F-COOKIE-01, F-UPLOAD-02, F-CRON-01) + 1 ACCEPTED (F-NPM-02) + 1 OPEN (F-LINT-02) |
 | Informational | 10 | — |
-| **Total** | **50** | **36 closed/partially-fixed, 14 open** |
+| **Total** | **51** | **44 closed/fixed/partially-fixed + 2 closed-no-fix + 1 accepted; 1 OPEN (F-LINT-02, out of WP.org distribution scope)** |
 
 Wave-1 also ships the **R-T-05 security regression workflow** (advisory) blocking new `__return_true` permission callbacks, new `'sslverify' => false`, and new `eval()` / raw `shell_exec` outside the documented allowlist.
 

@@ -66,8 +66,8 @@ The audit's High-severity items are concentrated in **non-default code paths** (
 | 6 | [`F-SSRF-01`](../audit/2026-04/findings-register.md) | Medium | Fixed | No SSRF allowlist on tool-driven outbound HTTP — central wrapper added | base, pro |
 | 7 | [`F-TLS-01`](../audit/2026-04/findings-register.md) | Medium | Fixed | `sslverify => false` in tool classes | base, pro |
 | 8 | [`F-PRIV-01` / `F-PRIV-02`](../audit/2026-04/findings-register.md) | Medium | Fixed | Pro CCT/CPT not covered by Privacy API; AI-provider data flows undisclosed in `readme.txt` | base, pro |
-| 9 | [`F-LINT-02`](../audit/2026-04/findings-register.md) | Low | Open | Pro tree (`addons/pro/*`) excluded from PHPCS — Wave 24 measurement: 5,806 errors / 8,141 warnings across 745 files (11,016 auto-fixable) | tooling |
-| 10 | [`F-NPM-01` / `F-NPM-02`](../audit/2026-04/findings-register.md) | Low | Open | 13 moderate npm advisories (root + pro), all auto-fixable via `npm audit fix` | tooling |
+| 9 | [`F-LINT-02`](../audit/2026-04/findings-register.md) | Low | Open | Pro tree (`addons/pro/*`) excluded from PHPCS — Wave 24 measurement: 5,806 errors / 8,141 warnings across 745 files (11,016 auto-fixable). Out of WP.org distribution scope. | tooling |
+| 10 | [`F-NPM-01` / `F-NPM-02`](../audit/2026-04/findings-register.md) | Low | F-NPM-01 Fixed / F-NPM-02 Accepted | Root advisories cleared via `npm audit fix` + `path-to-regexp` override; pro `exceljs → uuid` chain accepted as low-risk dev-only | tooling |
 
 Severity counts taken from the executive summary; granular per-finding status (`OPEN` / `TRIAGED` / `FIXED` / `PARTIALLY FIXED`) is tracked in [`findings-register.md`](../audit/2026-04/findings-register.md).
 
@@ -86,25 +86,25 @@ Severity counts taken from the executive summary; granular per-finding status (`
 
 ## 6. WordPress.org submission readiness
 
-**Verdict:** Not yet ready for an unconditional WP.org submission update. The base plugin has issues to clear before re-submission, tracked in detail in [`wp-org-submission-checklist.md`](../audit/2026-04/wp-org-submission-checklist.md):
+**Verdict:** ✅ **Submission-ready (base plugin v1.1.10).** All 9 submission gating items in [`wp-org-submission-checklist.md`](../audit/2026-04/wp-org-submission-checklist.md) are ✅ as of 2026-04-27:
 
 | Item | Status |
 |---|---|
-| **F-LINT-02** — Pro tree excluded from PHPCS (build pipeline must be lint-clean) | Open |
-| **F-PRIV-02** — `readme.txt` external-services disclosure | Fixed |
-| **F-CMP-05** — minified-only files without source / source maps | Open (R-Q-06) |
-| **F-LINT-01** — 330 PHPCS errors (auto-fix 168, hand-fix 162) | Open |
-| Run `wp plugin-check` against the built ZIP | Pending (R-T-04) |
+| **F-LINT-02** — Pro tree excluded from PHPCS | Open — out of WP.org distribution scope (Pro is not distributed via the Plugin Directory; `.distignore` excludes `addons/`). Tracked under R-T-01. |
+| **F-PRIV-02** — `readme.txt` external-services disclosure | ✅ Fixed (R-D-01 / Wave 19) |
+| **F-CMP-05** — minified-only files without source / source maps | ✅ Fixed (R-Q-06 / Wave 21) |
+| **F-LINT-01** — PHPCS errors on the WP.org-shipped tree | ✅ Fixed (R-Q-01 / Wave 24) — 0 errors / 0 warnings on 796 files |
+| **R-T-04** — Run `wp plugin-check` against the built ZIP | ✅ Fixed — gating job in `.github/workflows/release.yml` blocks SVN deploy if plugin-check reports any Errors |
 
 All 13 prior WP.org Plugin Directory Guideline items audited in [`WORDPRESS_ORG_COMPLIANCE_2026_04_15.md`](WORDPRESS_ORG_COMPLIANCE_2026_04_15.md) remain compliant on the v1.1.10 codebase.
 
-## 7. What needs the most attention
+## 7. What received the most attention
 
-- **Pro tree visibility.** The single biggest audit gap is that `addons/pro/*` is excluded from PHPCS in `phpcs.xml.dist:24`. Wave 24 measurement: **5,806 errors / 8,141 warnings across 745 files (out of 3,758 PHP files); 11,016 violations are `phpcbf`-auto-fixable.** Remediation in roadmap **R-T-01**.
-- **Webhook signature posture.** 11 webhook routes use `__return_true`; verification logic exists in each callback but is not called *before* the route body parses, so a malformed payload can still trigger expensive code paths. Roadmap **R-S-01**. Status: partially fixed.
-- **HIPAA / PHI flow.** The healthcare and DICOM addons handle clinical data; documented data flow, PHI stripping, and Privacy-API coverage now in place. Roadmap **R-S-04**. Status: fixed.
-- **Shell tools.** 11 pro tool classes invoked `exec` / `shell_exec`. Migrated to `proc_open` array form, gated behind capability + opt-in constant. Roadmap **R-S-02**. Status: fixed.
-- **SSRF allowlist.** 507 `wp_remote_*` calls; central wrapper now guards against private-IP / link-local destinations. Roadmap **R-A-02**. Status: fixed.
+- **Pro tree visibility.** The single biggest residual audit gap is that `addons/pro/*` is excluded from PHPCS in `phpcs.xml.dist:24`. Wave 24 measurement: **5,806 errors / 8,141 warnings across 745 files (out of 3,758 PHP files); 11,016 violations are `phpcbf`-auto-fixable.** Tracked under roadmap **R-T-01**. Out of WP.org submission scope.
+- **Webhook signature posture.** 11 webhook routes used `__return_true`; signature verification has been moved into the permission callback for the routes where that was correct (Telegram login, agent-card ×2, Google Chat legacy fallback). The remaining `__return_true` callbacks (Twitter CRC GET, WhatsApp verify GET ×2, Messenger verify GET, OPTIONS preflight) are legitimately public per upstream webhook protocols; documented and retained. Roadmap **R-S-01**. Status: **partially fixed** (Wave 11).
+- **HIPAA / PHI flow.** All five recommendations shipped — PHI never reaches AI providers, multisite guard requires `wp_mcp_ai_phi_acknowledged`, Privacy-API exporter + eraser cover all health CPTs and `mcp_ai_imaging_study`, `docs/HIPAA_POSTURE.md` documents the data flow, every health CPT read is audit-logged. Roadmap **R-S-04**. Status: **fixed** (Wave 23).
+- **Shell tools.** All 11 pro shell-tool classes gated behind `WP_MCP_AI_ALLOW_SHELL_TOOLS` (default `false`) + `current_user_can('manage_options')`; `exec`/`shell_exec` migrated to `proc_open`. Roadmap **R-S-02**. Status: **fixed** (Wave 12).
+- **SSRF allowlist.** New `wp_mcp_ai_is_safe_outbound_url()` resolves all DNS A records and blocks loopback / private / link-local / multicast / APIPA-169.254.x.x; user-URL-fetching tools migrated. Roadmap **R-A-02**. Status: **fixed** (Wave 18).
 
 ## 8. Test-coverage gaps
 
@@ -117,9 +117,12 @@ Summary of [`test-coverage-gaps.md`](../audit/2026-04/test-coverage-gaps.md) (Ph
 
 ## 9. Remediation status & effort
 
-The five High findings were estimated at **5–8 focused PRs**. At publication of this summary, **3 Highs are FIXED** and **2 are PARTIALLY FIXED**; remediation has materially exceeded the original estimate. The detailed roadmap remains in [`remediation-roadmap.md`](../audit/2026-04/remediation-roadmap.md).
+The five High findings were estimated at **5–8 focused PRs**. As of 2026-04-27, **3 Highs are FIXED** (F-SQL-01, F-EXEC-01, F-PRIV-03) and **2 are PARTIALLY FIXED** (F-AUTHZ-01, F-AI-01). All 14–15 Mediums are FIXED. Of the Low items, 14 are FIXED, 4 CLOSED as false-positive, 1 ACCEPTED (F-NPM-02), 1 PARTIALLY FIXED (F-CMP-04), and 1 OPEN (F-LINT-02 — Pro tree, out of WP.org distribution scope). Remediation has materially exceeded the original estimate. The detailed roadmap with per-item status markers (✅ Done · 🟡 Partial · 🟠 Open · ⏭️ Accepted) is in [`remediation-roadmap.md`](../audit/2026-04/remediation-roadmap.md).
 
-No findings have been formally accepted as residual risk.
+Two items are formally accepted as residual risk:
+
+- **F-NPM-02** (Pro `exceljs → uuid` chain) — ExcelJS does not invoke the vulnerable `uuid` API; fix would require an ExcelJS major-version downgrade.
+- **F-NPM-01 residual** — 5 moderate `uuid` advisories in the `@wordpress/scripts` 31.x dev toolchain. Dev-only risk.
 
 ## 10. Scope statistics & methodology
 
