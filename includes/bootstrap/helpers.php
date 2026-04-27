@@ -476,335 +476,335 @@ if ( ! function_exists( 'wp_mcp_ai_run_shell' ) ) {
 }
 
 if ( ! function_exists( 'wp_mcp_ai_check_ajax_rate_limit' ) ) {
-/**
- * Transient-based per-IP rate limiter for nopriv AJAX handlers.
- *
- * Uses the request IP to key a one-minute sliding-window counter.
- * Calls `wp_send_json_error()` and exits when the limit is exceeded;
- * otherwise returns void so the caller can continue normally.
- *
- * Usage (call immediately after check_ajax_referer):
- *
- *   wp_mcp_ai_check_ajax_rate_limit( 'my_action' );
- *
- * @param string $action      Short slug that identifies the protected action.
- *                            Must be safe for use in transient keys.
- * @param int    $max_per_min Maximum allowed requests per minute from a
- *                            single IP address. Default 20.
- */
-function wp_mcp_ai_check_ajax_rate_limit( $action, $max_per_min = 20 ) {
-// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- REMOTE_ADDR is set by the TCP stack, not the client.
-$ip_raw  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-$ip_hash = substr( md5( $ip_raw ), 0, 16 ); // Non-cryptographic; used only to shorten the transient key.
-$key     = 'wp_mcp_ai_rl_' . sanitize_key( $action ) . '_' . $ip_hash;
+	/**
+	 * Transient-based per-IP rate limiter for nopriv AJAX handlers.
+	 *
+	 * Uses the request IP to key a one-minute sliding-window counter.
+	 * Calls `wp_send_json_error()` and exits when the limit is exceeded;
+	 * otherwise returns void so the caller can continue normally.
+	 *
+	 * Usage (call immediately after check_ajax_referer):
+	 *
+	 *   wp_mcp_ai_check_ajax_rate_limit( 'my_action' );
+	 *
+	 * @param string $action      Short slug that identifies the protected action.
+	 *                            Must be safe for use in transient keys.
+	 * @param int    $max_per_min Maximum allowed requests per minute from a
+	 *                            single IP address. Default 20.
+	 */
+	function wp_mcp_ai_check_ajax_rate_limit( $action, $max_per_min = 20 ) {
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- REMOTE_ADDR is set by the TCP stack, not the client.
+		$ip_raw  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+		$ip_hash = substr( md5( $ip_raw ), 0, 16 ); // Non-cryptographic; used only to shorten the transient key.
+		$key     = 'wp_mcp_ai_rl_' . sanitize_key( $action ) . '_' . $ip_hash;
 
-/**
- * Filter the per-action rate limit applied to nopriv AJAX handlers.
- *
- * @param int    $max_per_min Maximum requests per minute for this action.
- * @param string $action      The action slug being rate-limited.
- */
-$max_per_min = (int) apply_filters( 'wp_mcp_ai_ajax_rate_limit', $max_per_min, $action );
+		/**
+		 * Filter the per-action rate limit applied to nopriv AJAX handlers.
+		 *
+		 * @param int    $max_per_min Maximum requests per minute for this action.
+		 * @param string $action      The action slug being rate-limited.
+		 */
+		$max_per_min = (int) apply_filters( 'wp_mcp_ai_ajax_rate_limit', $max_per_min, $action );
 
-$count = get_transient( $key );
+		$count = get_transient( $key );
 
-if ( false === $count ) {
-set_transient( $key, 1, MINUTE_IN_SECONDS );
-return;
-}
+		if ( false === $count ) {
+			set_transient( $key, 1, MINUTE_IN_SECONDS );
+			return;
+		}
 
-if ( (int) $count >= $max_per_min ) {
-wp_send_json_error(
-array(
-'message' => __( 'Too many requests. Please slow down.', 'mcp-ai-wpoos' ),
-'code'    => 'rate_limit_exceeded',
-),
-429
-);
-}
+		if ( (int) $count >= $max_per_min ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Too many requests. Please slow down.', 'mcp-ai-wpoos' ),
+					'code'    => 'rate_limit_exceeded',
+				),
+				429
+			);
+		}
 
-set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
-}
+		set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_validate_path' ) ) {
-/**
- * Resolve and bound-check a user-supplied file path.
- *
- * Prevents path-traversal attacks by resolving the path to its canonical
- * real form and then verifying it starts with (i.e. is contained within)
- * the supplied allowed root.
- *
- * Typical allowed roots:
- *   - `wp_upload_dir()['basedir']`  — uploaded-file tools
- *   - `WP_CONTENT_DIR`             — theme/plugin file tools
- *   - `WP_MCP_AI_PATH`             — plugin-internal file tools
- *
- * Usage:
- *   $safe = wp_mcp_ai_validate_path( $arguments['file_path'], wp_upload_dir()['basedir'] );
- *   if ( is_wp_error( $safe ) ) { return $safe; }
- *   // use $safe (the canonical absolute path)
- *
- * @param string $path         Path supplied by the caller (may be relative, symlinked, etc.).
- * @param string $allowed_root Absolute directory that $path must be contained in.
- * @return string|WP_Error Canonical absolute path on success; WP_Error on failure.
- */
-function wp_mcp_ai_validate_path( $path, $allowed_root ) {
-$path = (string) $path;
+	/**
+	 * Resolve and bound-check a user-supplied file path.
+	 *
+	 * Prevents path-traversal attacks by resolving the path to its canonical
+	 * real form and then verifying it starts with (i.e. is contained within)
+	 * the supplied allowed root.
+	 *
+	 * Typical allowed roots:
+	 *   - `wp_upload_dir()['basedir']`  — uploaded-file tools
+	 *   - `WP_CONTENT_DIR`             — theme/plugin file tools
+	 *   - `WP_MCP_AI_PATH`             — plugin-internal file tools
+	 *
+	 * Usage:
+	 *   $safe = wp_mcp_ai_validate_path( $arguments['file_path'], wp_upload_dir()['basedir'] );
+	 *   if ( is_wp_error( $safe ) ) { return $safe; }
+	 *   // use $safe (the canonical absolute path)
+	 *
+	 * @param string $path         Path supplied by the caller (may be relative, symlinked, etc.).
+	 * @param string $allowed_root Absolute directory that $path must be contained in.
+	 * @return string|WP_Error Canonical absolute path on success; WP_Error on failure.
+	 */
+	function wp_mcp_ai_validate_path( $path, $allowed_root ) {
+		$path = (string) $path;
 
-if ( '' === $path ) {
-return new WP_Error(
-'wp_mcp_ai_empty_path',
-__( 'File path must not be empty.', 'mcp-ai-wpoos' )
-);
-}
+		if ( '' === $path ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_path',
+				__( 'File path must not be empty.', 'mcp-ai-wpoos' )
+			);
+		}
 
-// realpath() resolves symlinks and eliminates `..` sequences.
-// It returns false if the file does not exist.
-$resolved = realpath( $path );
-if ( false === $resolved ) {
-return new WP_Error(
-'wp_mcp_ai_path_not_found',
-__( 'The specified file or directory does not exist.', 'mcp-ai-wpoos' )
-);
-}
+		// realpath() resolves symlinks and eliminates `..` sequences.
+		// It returns false if the file does not exist.
+		$resolved = realpath( $path );
+		if ( false === $resolved ) {
+			return new WP_Error(
+				'wp_mcp_ai_path_not_found',
+				__( 'The specified file or directory does not exist.', 'mcp-ai-wpoos' )
+			);
+		}
 
-// Normalize both paths so cross-platform slash styles don't bypass the check.
-$resolved_norm = wp_normalize_path( $resolved );
-$root_norm     = trailingslashit( wp_normalize_path( (string) $allowed_root ) );
+		// Normalize both paths so cross-platform slash styles don't bypass the check.
+		$resolved_norm = wp_normalize_path( $resolved );
+		$root_norm     = trailingslashit( wp_normalize_path( (string) $allowed_root ) );
 
-if ( 0 !== strpos( $resolved_norm, $root_norm ) ) {
-return new WP_Error(
-'wp_mcp_ai_path_outside_root',
-__( 'The specified path is not within the allowed directory.', 'mcp-ai-wpoos' )
-);
-}
+		if ( 0 !== strpos( $resolved_norm, $root_norm ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_path_outside_root',
+				__( 'The specified path is not within the allowed directory.', 'mcp-ai-wpoos' )
+			);
+		}
 
-return $resolved;
-}
+		return $resolved;
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_is_safe_outbound_url' ) ) {
-/**
- * Validate that a URL is safe to fetch as an outbound HTTP request.
- *
- * Guards against Server-Side Request Forgery (SSRF) by:
- *  1. Requiring a valid http/https URL.
- *  2. Blocking any host that resolves to a loopback, private-network,
- *     or link-local IP address (including the AWS/GCP instance-metadata
- *     endpoint 169.254.169.254).
- *  3. DNS-resolving the hostname so that DNS-rebinding to a private IP
- *     after the URL check is also caught.
- *
- * Operators may whitelist specific hostnames via the filter
- * `wp_mcp_ai_http_allowed_host`.
- *
- * Usage:
- *   if ( ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
- *       return new WP_Error( 'wp_mcp_ai_unsafe_url', __( 'The URL resolves to a blocked address.', 'mcp-ai-wpoos' ) );
- *   }
- *
- * @param string $url URL to validate.
- * @return bool True if the URL is safe to fetch; false if it should be blocked.
- */
-function wp_mcp_ai_is_safe_outbound_url( $url ) {
-if ( ! is_string( $url ) || '' === $url ) {
-return false;
-}
+	/**
+	 * Validate that a URL is safe to fetch as an outbound HTTP request.
+	 *
+	 * Guards against Server-Side Request Forgery (SSRF) by:
+	 *  1. Requiring a valid http/https URL.
+	 *  2. Blocking any host that resolves to a loopback, private-network,
+	 *     or link-local IP address (including the AWS/GCP instance-metadata
+	 *     endpoint 169.254.169.254).
+	 *  3. DNS-resolving the hostname so that DNS-rebinding to a private IP
+	 *     after the URL check is also caught.
+	 *
+	 * Operators may whitelist specific hostnames via the filter
+	 * `wp_mcp_ai_http_allowed_host`.
+	 *
+	 * Usage:
+	 *   if ( ! wp_mcp_ai_is_safe_outbound_url( $url ) ) {
+	 *       return new WP_Error( 'wp_mcp_ai_unsafe_url', __( 'The URL resolves to a blocked address.', 'mcp-ai-wpoos' ) );
+	 *   }
+	 *
+	 * @param string $url URL to validate.
+	 * @return bool True if the URL is safe to fetch; false if it should be blocked.
+	 */
+	function wp_mcp_ai_is_safe_outbound_url( $url ) {
+		if ( ! is_string( $url ) || '' === $url ) {
+			return false;
+		}
 
-// Require a valid URL with http or https scheme.
-$sanitized = esc_url_raw( $url, array( 'http', 'https' ) );
-if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
-return false;
-}
+		// Require a valid URL with http or https scheme.
+		$sanitized = esc_url_raw( $url, array( 'http', 'https' ) );
+		if ( ! $sanitized || ! wp_http_validate_url( $sanitized ) ) {
+			return false;
+		}
 
-$parts = wp_parse_url( $sanitized );
-if ( false === $parts || empty( $parts['host'] ) ) {
-return false;
-}
+		$parts = wp_parse_url( $sanitized );
+		if ( false === $parts || empty( $parts['host'] ) ) {
+			return false;
+		}
 
-$host = strtolower( $parts['host'] );
+		$host = strtolower( $parts['host'] );
 
-/**
- * Allows specific hostnames to bypass the private-IP block.
- *
- * Useful for development environments or trusted internal services.
- *
- * @param string[] $allowed_hosts Array of allowed hostnames (exact match).
- * @param string   $host          The hostname being evaluated.
- * @param string   $url           The full URL being evaluated.
- */
-$allowed_hosts = (array) apply_filters( 'wp_mcp_ai_http_allowed_host', array(), $host, $url );
-if ( in_array( $host, $allowed_hosts, true ) ) {
-return true;
-}
+		/**
+		 * Allows specific hostnames to bypass the private-IP block.
+		 *
+		 * Useful for development environments or trusted internal services.
+		 *
+		 * @param string[] $allowed_hosts Array of allowed hostnames (exact match).
+		 * @param string   $host          The hostname being evaluated.
+		 * @param string   $url           The full URL being evaluated.
+		 */
+		$allowed_hosts = (array) apply_filters( 'wp_mcp_ai_http_allowed_host', array(), $host, $url );
+		if ( in_array( $host, $allowed_hosts, true ) ) {
+			return true;
+		}
 
-// Reject hosts that are already known-private names (localhost, etc.)
-// without requiring a DNS lookup.
-if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $host ) ) {
-return false;
-}
+		// Reject hosts that are already known-private names (localhost, etc.)
+		// without requiring a DNS lookup.
+		if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $host ) ) {
+			return false;
+		}
 
-// DNS-resolve the hostname to defend against DNS-rebinding attacks.
-// gethostbynamel() returns all A records; gethostbyname() returns the first.
-// We check all A records returned.
-$resolved_ips = gethostbynamel( $host );
-if ( false !== $resolved_ips && ! empty( $resolved_ips ) ) {
-foreach ( $resolved_ips as $resolved_ip ) {
-if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $resolved_ip ) ) {
-return false;
-}
-}
-}
+		// DNS-resolve the hostname to defend against DNS-rebinding attacks.
+		// gethostbynamel() returns all A records; gethostbyname() returns the first.
+		// We check all A records returned.
+		$resolved_ips = gethostbynamel( $host );
+		if ( false !== $resolved_ips && ! empty( $resolved_ips ) ) {
+			foreach ( $resolved_ips as $resolved_ip ) {
+				if ( WP_MCP_AI_HTTP_Helper::is_loopback_address( $resolved_ip ) ) {
+					return false;
+				}
+			}
+		}
 
-return true;
-}
+		return true;
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_check_api_rate_limit' ) ) {
-/**
- * Enforce a global (shared across all users) outbound API rate limit.
- *
- * Uses a transient to count calls in the current minute. Unlike
- * `wp_mcp_ai_check_ajax_rate_limit()` (which is per-IP for nopriv AJAX),
- * this helper is keyed only by the API slug so it represents the total
- * call-rate the plugin makes to that external service per minute.
- *
- * Usage:
- *   $err = wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 );
- *   if ( is_wp_error( $err ) ) { return $err; }
- *
- * @param string $api_slug    Short identifier for the external API (e.g. 'yahoo_fantasy').
- * @param int    $max_per_min Maximum outbound calls allowed per minute.
- * @return null|WP_Error Null when the call is allowed; WP_Error when the limit is exceeded.
- */
-function wp_mcp_ai_check_api_rate_limit( $api_slug, $max_per_min = 20 ) {
-$key = 'wp_mcp_ai_api_rl_' . sanitize_key( $api_slug );
+	/**
+	 * Enforce a global (shared across all users) outbound API rate limit.
+	 *
+	 * Uses a transient to count calls in the current minute. Unlike
+	 * `wp_mcp_ai_check_ajax_rate_limit()` (which is per-IP for nopriv AJAX),
+	 * this helper is keyed only by the API slug so it represents the total
+	 * call-rate the plugin makes to that external service per minute.
+	 *
+	 * Usage:
+	 *   $err = wp_mcp_ai_check_api_rate_limit( 'yahoo_fantasy', 20 );
+	 *   if ( is_wp_error( $err ) ) { return $err; }
+	 *
+	 * @param string $api_slug    Short identifier for the external API (e.g. 'yahoo_fantasy').
+	 * @param int    $max_per_min Maximum outbound calls allowed per minute.
+	 * @return null|WP_Error Null when the call is allowed; WP_Error when the limit is exceeded.
+	 */
+	function wp_mcp_ai_check_api_rate_limit( $api_slug, $max_per_min = 20 ) {
+		$key = 'wp_mcp_ai_api_rl_' . sanitize_key( $api_slug );
 
-/**
- * Filters the per-API outbound rate limit.
- *
- * @param int    $max_per_min Maximum calls per minute.
- * @param string $api_slug    The API slug being rate-limited.
- */
-$max_per_min = (int) apply_filters( 'wp_mcp_ai_api_rate_limit', $max_per_min, $api_slug );
+		/**
+		 * Filters the per-API outbound rate limit.
+		 *
+		 * @param int    $max_per_min Maximum calls per minute.
+		 * @param string $api_slug    The API slug being rate-limited.
+		 */
+		$max_per_min = (int) apply_filters( 'wp_mcp_ai_api_rate_limit', $max_per_min, $api_slug );
 
-$count = get_transient( $key );
+		$count = get_transient( $key );
 
-if ( false === $count ) {
-set_transient( $key, 1, MINUTE_IN_SECONDS );
-return null;
-}
+		if ( false === $count ) {
+			set_transient( $key, 1, MINUTE_IN_SECONDS );
+			return null;
+		}
 
-if ( (int) $count >= $max_per_min ) {
-return new WP_Error(
-'wp_mcp_ai_api_rate_limit_exceeded',
-sprintf(
-/* translators: %s: external API name */
-__( 'Rate limit exceeded for the %s API. Please wait a moment and try again.', 'mcp-ai-wpoos' ),
-esc_html( $api_slug )
-)
-);
-}
-
-set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
-return null;
-}
-}
-
-if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
-/**
- * Return (and initialise) the plugin-owned temp directory.
- *
- * The directory sits inside the WordPress uploads folder so it shares the same
- * filesystem permissions as other WordPress-managed files, is outside the
- * system-wide /tmp, and can be locked down with an .htaccess rule to block
- * direct HTTP access.
- *
- * Subsequent calls skip the filesystem work once the transient flag confirms
- * the directory has already been prepared.
- *
- * @since 1.2.0
- * @return string|WP_Error Absolute path with trailing slash, or WP_Error on failure.
- */
-function wp_mcp_ai_get_temp_dir() {
-	$upload_dir = wp_upload_dir( null, true, false );
-	if ( ! empty( $upload_dir['error'] ) ) {
-		return new WP_Error( 'wp_mcp_ai_temp_dir', $upload_dir['error'] );
-	}
-
-	$temp_dir = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
-
-	// Check whether the directory has already been set up this request.
-	static $initialised = false;
-	if ( $initialised ) {
-		return trailingslashit( $temp_dir );
-	}
-
-	if ( ! file_exists( $temp_dir ) ) {
-		if ( ! wp_mkdir_p( $temp_dir ) ) {
+		if ( (int) $count >= $max_per_min ) {
 			return new WP_Error(
-				'wp_mcp_ai_temp_dir_create',
+				'wp_mcp_ai_api_rate_limit_exceeded',
 				sprintf(
-					/* translators: %s: directory path */
-					__( 'Could not create plugin temp directory: %s', 'mcp-ai-wpoos' ),
-					esc_html( $temp_dir )
+				/* translators: %s: external API name */
+					__( 'Rate limit exceeded for the %s API. Please wait a moment and try again.', 'mcp-ai-wpoos' ),
+					esc_html( $api_slug )
 				)
 			);
 		}
-		// Restrict directory permissions (0750 = owner rwx, group r-x, other ---).
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
-		@chmod( $temp_dir, 0750 );
-	}
 
-	// Drop an .htaccess to deny direct HTTP access on Apache hosts.
-	$htaccess = $temp_dir . '/.htaccess';
-	if ( ! file_exists( $htaccess ) ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
+		set_transient( $key, (int) $count + 1, MINUTE_IN_SECONDS );
+		return null;
 	}
-
-	$initialised = true;
-	return trailingslashit( $temp_dir );
 }
+
+if ( ! function_exists( 'wp_mcp_ai_get_temp_dir' ) ) {
+	/**
+	 * Return (and initialise) the plugin-owned temp directory.
+	 *
+	 * The directory sits inside the WordPress uploads folder so it shares the same
+	 * filesystem permissions as other WordPress-managed files, is outside the
+	 * system-wide /tmp, and can be locked down with an .htaccess rule to block
+	 * direct HTTP access.
+	 *
+	 * Subsequent calls skip the filesystem work once the transient flag confirms
+	 * the directory has already been prepared.
+	 *
+	 * @since 1.2.0
+	 * @return string|WP_Error Absolute path with trailing slash, or WP_Error on failure.
+	 */
+	function wp_mcp_ai_get_temp_dir() {
+		$upload_dir = wp_upload_dir( null, true, false );
+		if ( ! empty( $upload_dir['error'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_temp_dir', $upload_dir['error'] );
+		}
+
+		$temp_dir = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
+
+		// Check whether the directory has already been set up this request.
+		static $initialised = false;
+		if ( $initialised ) {
+			return trailingslashit( $temp_dir );
+		}
+
+		if ( ! file_exists( $temp_dir ) ) {
+			if ( ! wp_mkdir_p( $temp_dir ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_temp_dir_create',
+					sprintf(
+					/* translators: %s: directory path */
+						__( 'Could not create plugin temp directory: %s', 'mcp-ai-wpoos' ),
+						esc_html( $temp_dir )
+					)
+				);
+			}
+			// Restrict directory permissions (0750 = owner rwx, group r-x, other ---).
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			@chmod( $temp_dir, 0750 );
+		}
+
+		// Drop an .htaccess to deny direct HTTP access on Apache hosts.
+		$htaccess = $temp_dir . '/.htaccess';
+		if ( ! file_exists( $htaccess ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
+		}
+
+		$initialised = true;
+		return trailingslashit( $temp_dir );
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_tempnam' ) ) {
-/**
- * Create a uniquely-named temp file inside the plugin temp directory.
- *
- * Mirrors the signature of PHP's {@see tempnam()} but writes into the
- * plugin-owned directory returned by {@see wp_mcp_ai_get_temp_dir()}.
- *
- * @since 1.2.0
- * @param string $prefix Short prefix for the filename.
- * @param string $ext    Optional file extension including the leading dot, e.g. '.pdf'.
- * @return string|WP_Error Absolute path to the newly created file, or WP_Error on failure.
- */
-function wp_mcp_ai_tempnam( $prefix = 'tmp', $ext = '' ) {
-	$dir = wp_mcp_ai_get_temp_dir();
-	if ( is_wp_error( $dir ) ) {
-		return $dir;
-	}
+	/**
+	 * Create a uniquely-named temp file inside the plugin temp directory.
+	 *
+	 * Mirrors the signature of PHP's {@see tempnam()} but writes into the
+	 * plugin-owned directory returned by {@see wp_mcp_ai_get_temp_dir()}.
+	 *
+	 * @since 1.2.0
+	 * @param string $prefix Short prefix for the filename.
+	 * @param string $ext    Optional file extension including the leading dot, e.g. '.pdf'.
+	 * @return string|WP_Error Absolute path to the newly created file, or WP_Error on failure.
+	 */
+	function wp_mcp_ai_tempnam( $prefix = 'tmp', $ext = '' ) {
+		$dir = wp_mcp_ai_get_temp_dir();
+		if ( is_wp_error( $dir ) ) {
+			return $dir;
+		}
 
-	// Build a collision-free name: prefix + random hex + optional extension.
-	$name      = sanitize_file_name( $prefix ) . wp_generate_password( 12, false ) . $ext;
-	$unique    = wp_unique_filename( $dir, $name );
-	$full_path = $dir . $unique;
+		// Build a collision-free name: prefix + random hex + optional extension.
+		$name      = sanitize_file_name( $prefix ) . wp_generate_password( 12, false ) . $ext;
+		$unique    = wp_unique_filename( $dir, $name );
+		$full_path = $dir . $unique;
 
-	// Create the file immediately so the path is reserved (mirrors tempnam behaviour).
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-	if ( false === file_put_contents( $full_path, '' ) ) {
-		return new WP_Error(
-			'wp_mcp_ai_tempnam',
-			sprintf(
+		// Create the file immediately so the path is reserved (mirrors tempnam behaviour).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $full_path, '' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tempnam',
+				sprintf(
 				/* translators: %s: file path */
-				__( 'Could not create temp file: %s', 'mcp-ai-wpoos' ),
-				esc_html( $full_path )
-			)
-		);
-	}
+					__( 'Could not create temp file: %s', 'mcp-ai-wpoos' ),
+					esc_html( $full_path )
+				)
+			);
+		}
 
-	return $full_path;
-}
+		return $full_path;
+	}
 }

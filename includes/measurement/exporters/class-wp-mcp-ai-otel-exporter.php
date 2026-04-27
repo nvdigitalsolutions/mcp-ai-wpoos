@@ -374,16 +374,28 @@ class WP_MCP_AI_OTel_Exporter {
 	 */
 	private function attribute_entry( $key, $value ) {
 		if ( is_bool( $value ) ) {
-			return array( 'key' => $key, 'value' => array( 'boolValue' => $value ) );
+			return array(
+				'key' => $key,
+				'value' => array( 'boolValue' => $value ),
+			);
 		}
 		if ( is_int( $value ) ) {
-			return array( 'key' => $key, 'value' => array( 'intValue' => (string) $value ) );
+			return array(
+				'key' => $key,
+				'value' => array( 'intValue' => (string) $value ),
+			);
 		}
 		if ( is_float( $value ) ) {
-			return array( 'key' => $key, 'value' => array( 'doubleValue' => $value ) );
+			return array(
+				'key' => $key,
+				'value' => array( 'doubleValue' => $value ),
+			);
 		}
 		if ( is_string( $value ) ) {
-			return array( 'key' => $key, 'value' => array( 'stringValue' => $value ) );
+			return array(
+				'key' => $key,
+				'value' => array( 'stringValue' => $value ),
+			);
 		}
 		return null;
 	}

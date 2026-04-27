@@ -273,7 +273,10 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_temp_files_handler' ) ) {
 					__( 'Temp file cleanup: removed %d stale file(s).', 'mcp-ai-wpoos' ),
 					$deleted
 				),
-				array( 'temp_dir' => $temp_dir, 'deleted' => $deleted )
+				array(
+					'temp_dir' => $temp_dir,
+					'deleted' => $deleted,
+				)
 			);
 		}
 	}
