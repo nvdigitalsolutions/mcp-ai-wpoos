@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.9
+Stable tag: 1.1.10
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -274,6 +274,27 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.10 - April 27, 2026 =
+
+**April 2026 Security Audit Summary, Production-Ready Vendor Autoload, Veo 3.1 Seed-Parameter Fix**
+
+*Documentation*
+
+* New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/compliance/SECURITY_AUDIT_2026_04.md) — published summary of the April 2026 security & compliance code review (base plugin + Pro addon + 6 minor addons). Cross-references the 9 deliverables under `docs/audit/2026-04/`. Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational
+* `docs/DOCUMENTATION_INDEX.md`, `docs/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/audit/2026-04/README.md` updated to cross-reference the new audit summary
+
+*Changed*
+
+* **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes); the plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` to pull dev dependencies (PHPUnit, WPCS)
+
+*Fixed*
+
+* **Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` when `seed` is supplied (PR #4735)** — the `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model
+
+*Version*
+
+* Bumped to 1.1.10 across plugin header, `WP_MCP_AI_VERSION` constant, `package.json`, `readme.txt` Stable tag, and CHANGELOG.md
 
 = 1.1.9 - April 25, 2026 =
 

@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.9  
-**Release Date:** 2026-04-25 (April 2026 — Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix, Chart.js handle normalization, Graphify addon restore, Orchestration Reference doc; v1.1.8: Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit)  
-**Latest Updates:** April 2026 (v1.1.9) — Measurement subsystem GA across 12 sequenced PRs (stock metrics for tool-execution / chat-loop / agentic-loop / SSE, persistent metric event store with retention cron, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, read-only + writable Measurement dashboard, `wp mcp-ai measurement` WP-CLI runner with regression alerting); PHPUnit upgraded to 11 with WordPress-compat patches to fix argument-injection CVE **GHSA-qrr6-mg7r-m243** (CI PHP 8.1 → 8.2); Chart.js admin handle normalized to `wp-mcp-ai-chartjs`; Graphify Knowledge Graph addon v0.5.0 restored; new `docs/ORCHESTRATION_REFERENCE.md`. Prior release (v1.1.8): 4 Erlang C base-plugin tools, `wp_mcp_ai_queue_alert` action hook, full tool-reference audit (all 230+ base tools across 14 new sections), WordPress.org re-audit (all 13 guidelines pass).  
+**Version:** 1.1.10  
+**Release Date:** 2026-04-27 (April 27, 2026 — April 2026 security audit summary published, production-ready vendor autoload, Veo 3.1 seed-parameter fix; v1.1.9: Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix, Chart.js handle normalization, Graphify addon restore, Orchestration Reference doc; v1.1.8: Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit)  
+**Latest Updates:** April 2026 (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) publishes the April 2026 security & compliance audit summary (no Critical findings; 5 High — 3 Fixed, 2 Partially Fixed; 14 Medium all Fixed; 21 Low; 10 Informational; 50 total). Production-ready vendor autoload (PR #4733) — deployable from a clean clone without a separate `composer install`. Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` fix (PR #4735) — `seed` is now sent only to Veo 2.0. Prior release (v1.1.9): Measurement subsystem GA across 12 sequenced PRs (stock metrics for tool-execution / chat-loop / agentic-loop / SSE, persistent metric event store with retention cron, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, read-only + writable Measurement dashboard, `wp mcp-ai measurement` WP-CLI runner with regression alerting); PHPUnit upgraded to 11 with WordPress-compat patches to fix argument-injection CVE **GHSA-qrr6-mg7r-m243** (CI PHP 8.1 → 8.2); Chart.js admin handle normalized to `wp-mcp-ai-chartjs`; Graphify Knowledge Graph addon v0.5.0 restored; new `docs/ORCHESTRATION_REFERENCE.md`.  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.9 — April 2026)](#-latest-updates-v119--april-2026)
+- [🆕 Latest Updates (v1.1.10 — April 2026)](#-latest-updates-v1110--april-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -132,6 +132,8 @@ The plugin works standalone with **224 base tools** and optionally extends throu
 - **Input Sanitization & Output Escaping** - All user input sanitized, all output escaped following WordPress security best practices
 
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
+
+**Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/).
 
 ## Patent Pending
 
@@ -273,7 +275,15 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.9 — April 2026)
+## 🆕 Latest Updates (v1.1.10 — April 2026)
+
+### April 27, 2026 — Security Audit Summary, Production Vendor Autoload, Veo 3.1 Fix 🛡️
+
+- ✅ **April 2026 Security Audit Summary published** — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) consolidates the nine deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/) into a single reference for maintainers and operators. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied include WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- ✅ **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes); the plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` for dev dependencies.
+- ✅ **Veo 3.1 `generate_veo_video` fix (PR #4735)** — `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`); Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model.
+
+## 🆕 Previous Updates (v1.1.9 — April 25, 2026)
 
 ### Measurement Subsystem GA (April 24–25, 2026) ⭐ **NEW**
 
