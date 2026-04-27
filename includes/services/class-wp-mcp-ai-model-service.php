@@ -463,44 +463,76 @@ class WP_MCP_AI_Model_Service {
 	 * @return array Model list.
 	 */
 	protected function get_ollama_models( $settings, $requires_vision, $requires_multimodal ) {
-		if ( empty( $settings['ollama_endpoint_url'] ) || empty( $settings['ollama_model'] ) ) {
+		if ( empty( $settings['ollama_endpoint_url'] ) ) {
 			return array();
 		}
 
-		$models = array(
-			$settings['ollama_model'] => $settings['ollama_model'],
-		);
+		$models = array();
 
-		// Add common Ollama models.
-		$common_ollama_models = array(
-			// Latest flagship models (2025-2026).
-			'llama4'        => 'Llama 4 (Latest Meta flagship)',
-			'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
-			'deepseek-v3'   => 'DeepSeek V3',
-			'qwen3'         => 'Qwen 3',
-			// Established models.
-			'llama3.3'      => 'Llama 3.3',
-			'llama3.2'      => 'Llama 3.2',
-			'llama3.1'      => 'Llama 3.1',
-			'llama3'        => 'Llama 3',
-			'mistral'       => 'Mistral',
-			'mistral-large' => 'Mistral Large',
-			'mixtral'       => 'Mixtral',
-			'gemma4'        => 'Gemma 4',
-			'gemma3'        => 'Gemma 3',
-			'gemma2'        => 'Gemma 2',
-			'phi4'          => 'Phi-4',
-			'phi3'          => 'Phi-3',
-			'codellama'     => 'CodeLlama',
-			'qwen2.5'       => 'Qwen 2.5',
-		);
-
-		// Add common models that match requirements.
-		if ( ! $requires_vision && ! $requires_multimodal ) {
-			foreach ( $common_ollama_models as $model_id => $model_name ) {
-				if ( $model_id !== $settings['ollama_model'] ) {
-					$models[ $model_id ] = $model_name;
+		// Try to fetch live models from the configured Ollama endpoint so the
+		// dropdown stays accurate when users add or remove models on the server.
+		// Falls back to the hard-coded common-model list (plus the configured
+		// default) if the endpoint cannot be reached.
+		if ( class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+			try {
+				$client      = new WP_MCP_AI_Ollama_Client();
+				$live_models = $client->list_models();
+				if ( ! is_wp_error( $live_models ) && is_array( $live_models ) ) {
+					foreach ( $live_models as $model ) {
+						if ( empty( $model['name'] ) ) {
+							continue;
+						}
+						$name           = (string) $model['name'];
+						$family         = ! empty( $model['family'] ) ? (string) $model['family'] : '';
+						$models[ $name ] = $family ? sprintf( '%s (%s)', $name, $family ) : $name;
+					}
 				}
+			} catch ( \Exception $e ) {
+				// Swallow exceptions so the settings UI never breaks if the
+				// Ollama server is offline; we'll fall back to defaults below.
+				WP_MCP_AI_Logger::log_error(
+					'Failed to fetch live Ollama models for dropdown.',
+					array( 'error' => $e->getMessage() )
+				);
+			}
+		}
+
+		// Always include the configured default model first if set so it's
+		// guaranteed to appear in the dropdown.
+		if ( ! empty( $settings['ollama_model'] ) ) {
+			$configured                  = $settings['ollama_model'];
+			$models                      = array( $configured => $configured ) + $models;
+		}
+
+		// If we still have no models (endpoint unreachable AND no configured
+		// default), seed the dropdown with the common Ollama model list so
+		// users have something to pick from while diagnosing connectivity.
+		if ( empty( $models ) ) {
+			$common_ollama_models = array(
+				// Latest flagship models (2025-2026).
+				'llama4'        => 'Llama 4 (Latest Meta flagship)',
+				'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
+				'deepseek-v3'   => 'DeepSeek V3',
+				'qwen3'         => 'Qwen 3',
+				// Established models.
+				'llama3.3'      => 'Llama 3.3',
+				'llama3.2'      => 'Llama 3.2',
+				'llama3.1'      => 'Llama 3.1',
+				'llama3'        => 'Llama 3',
+				'mistral'       => 'Mistral',
+				'mistral-large' => 'Mistral Large',
+				'mixtral'       => 'Mixtral',
+				'gemma4'        => 'Gemma 4',
+				'gemma3'        => 'Gemma 3',
+				'gemma2'        => 'Gemma 2',
+				'phi4'          => 'Phi-4',
+				'phi3'          => 'Phi-3',
+				'codellama'     => 'CodeLlama',
+				'qwen2.5'       => 'Qwen 2.5',
+			);
+
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				$models = $common_ollama_models;
 			}
 		}
 
