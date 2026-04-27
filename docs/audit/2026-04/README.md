@@ -1,5 +1,7 @@
 # NV oOS Security & Compliance Audit — April 2026
 
+> **Published summary:** [`docs/compliance/SECURITY_AUDIT_2026_04.md`](../../compliance/SECURITY_AUDIT_2026_04.md) consolidates the deliverables in this directory into a single reference for maintainers and operators.
+
 This directory contains the deliverables of the security and compliance code review of the **NV Digital Open Operator System (NV oOS)** WordPress plugin and its addons, executed against the 7-phase plan recorded in the audit kickoff PR.
 
 ## Scope at a glance
