@@ -243,6 +243,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_model', __( 'No model configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
+			// OpenAI-compatible loopback mode: route to /v1/chat/completions when enabled.
+			// This lets every tool/skill/plugin work without any schema translation because
+			// Ollama's compatibility layer already speaks the OpenAI function-calling protocol.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['ollama_use_openai_compatible_endpoint'] ) ) {
+				return $this->create_openai_compat_completion( $messages, $options, $model );
+			}
+
 			$payload = $this->build_payload( $messages, $options, $model );
 			if ( is_wp_error( $payload ) ) {
 				return $payload;
@@ -315,8 +323,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Split response by newlines to get individual JSON chunks.
 			$lines = explode( "\n", $body );
 
-			$accumulated_content = '';
-			$final_chunk         = null;
+			$accumulated_content    = '';
+			$accumulated_tool_calls = array(); // tool_calls accumulate across chunks.
+			$accumulated_thinking   = '';      // reasoning/thinking channel (v0.7+).
+			$final_chunk            = null;
 
 			foreach ( $lines as $line ) {
 				$line = trim( $line );
@@ -337,6 +347,17 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					// We need to append (concatenate) each delta to build the full response.
 					// See: https://docs.ollama.com/api/streaming.
 					$accumulated_content .= (string) $chunk['message']['content'];
+				}
+
+				// Accumulate reasoning/thinking content if present.
+				if ( isset( $chunk['message']['thinking'] ) ) {
+					$accumulated_thinking .= (string) $chunk['message']['thinking'];
+				}
+
+				// Collect tool_calls from any chunk that carries them.
+				// Ollama typically sends tool_calls as a complete array in a single chunk.
+				if ( isset( $chunk['message']['tool_calls'] ) && is_array( $chunk['message']['tool_calls'] ) && ! empty( $chunk['message']['tool_calls'] ) ) {
+					$accumulated_tool_calls = $chunk['message']['tool_calls'];
 				}
 
 				// Check if this is the final chunk.
@@ -367,6 +388,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				),
 				'done'    => true,
 			);
+
+			if ( ! empty( $accumulated_tool_calls ) ) {
+				$normalized_response['message']['tool_calls'] = $accumulated_tool_calls;
+			}
+
+			if ( '' !== $accumulated_thinking ) {
+				$normalized_response['message']['thinking'] = $accumulated_thinking;
+			}
 
 			// Copy over metadata fields from the final chunk if available.
 			if ( isset( $final_chunk['done_reason'] ) ) {
@@ -406,6 +435,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No messages provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
+			// When tools are attached, preserve tool-related message fields intact so
+			// the agentic loop's assistant→tool→assistant round-trip works correctly.
+			$has_tools = ! empty( $options['tools'] );
+
 			$ollama_messages = array();
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
@@ -413,6 +446,59 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				}
 				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
+
+				// When using tools, preserve assistant messages with tool_calls intact.
+				// The agentic loop stores tool_calls in OpenAI format (arguments as JSON
+				// string) so we convert them back to Ollama's native format (object).
+				if ( $has_tools && 'assistant' === $role ) {
+					if ( is_array( $content ) ) {
+						$text_parts = array();
+						foreach ( $content as $segment ) {
+							if ( is_string( $segment ) ) {
+								$text_parts[] = $segment;
+							} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$text_parts[] = $segment['text'];
+							}
+						}
+						$content = implode( "\n", $text_parts );
+					}
+					$msg = array(
+						'role'    => $role,
+						'content' => wp_kses_post( (string) $content ),
+					);
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						$msg['tool_calls'] = $this->convert_tool_calls_to_ollama( $message['tool_calls'] );
+					}
+					$ollama_messages[] = $msg;
+					continue;
+				}
+
+				// When using tools, preserve tool-role messages with tool_call_id/name.
+				if ( $has_tools && 'tool' === $role ) {
+					if ( is_array( $content ) ) {
+						$text_parts = array();
+						foreach ( $content as $segment ) {
+							if ( is_string( $segment ) ) {
+								$text_parts[] = $segment;
+							} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$text_parts[] = $segment['text'];
+							}
+						}
+						$content = implode( "\n", $text_parts );
+					}
+					$msg = array(
+						'role'    => $role,
+						'content' => wp_kses_post( (string) $content ),
+					);
+					if ( isset( $message['tool_call_id'] ) ) {
+						$msg['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+					}
+					if ( isset( $message['name'] ) ) {
+						$msg['name'] = sanitize_text_field( $message['name'] );
+					}
+					$ollama_messages[] = $msg;
+					continue;
+				}
 
 				// Base64-encoded images for Ollama vision models (e.g., llava).
 				$images = array();
@@ -476,6 +562,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					continue;
 				}
 
+				// When tools are NOT present, convert tool messages to user messages for
+				// backward compatibility (e.g., replaying saved conversations without tools).
 				if ( 'tool' === $role ) {
 					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
 					$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
@@ -561,6 +649,18 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$payload['options']['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
 			}
 
+			if ( isset( $options['num_thread'] ) && is_numeric( $options['num_thread'] ) ) {
+				$payload['options']['num_thread'] = (int) $options['num_thread'];
+			}
+
+			if ( isset( $options['num_gpu'] ) && is_numeric( $options['num_gpu'] ) ) {
+				$payload['options']['num_gpu'] = (int) $options['num_gpu'];
+			}
+
+			if ( isset( $options['low_vram'] ) ) {
+				$payload['options']['low_vram'] = (bool) $options['low_vram'];
+			}
+
 			// Apply resource-aware num_predict if not explicitly set.
 			// Priority order:
 			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
@@ -627,6 +727,66 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			if ( empty( $payload['options'] ) ) {
 				unset( $payload['options'] );
+			}
+
+			// Add tools if provided (Ollama native function calling, supported since v0.3).
+			if ( ! empty( $options['tools'] ) ) {
+				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+
+				// tool_choice: 'auto', 'none', 'required', or a specific function object.
+				if ( isset( $options['tool_choice'] ) ) {
+					if ( is_string( $options['tool_choice'] ) && in_array( $options['tool_choice'], array( 'auto', 'none', 'required' ), true ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					} elseif ( is_array( $options['tool_choice'] ) && isset( $options['tool_choice']['type'] ) && 'function' === $options['tool_choice']['type'] && isset( $options['tool_choice']['function']['name'] ) ) {
+						$payload['tool_choice'] = array(
+							'type'     => 'function',
+							'function' => array(
+								'name' => sanitize_text_field( $options['tool_choice']['function']['name'] ),
+							),
+						);
+					}
+				}
+
+				// Ollama supports parallel_tool_calls in recent versions.
+				if ( isset( $options['parallel_tool_calls'] ) ) {
+					$payload['parallel_tool_calls'] = (bool) $options['parallel_tool_calls'];
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'ollama_tools_attached',
+					'Ollama: tool definitions added to payload.',
+					array(
+						'model'       => $model,
+						'tools_count' => count( $payload['tools'] ),
+					)
+				);
+			}
+
+			// Structured output: honor response_format.
+			// 'json_object' → format: 'json'; 'json_schema' → format: <schema object>.
+			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+				$rf_type = isset( $options['response_format']['type'] ) ? $options['response_format']['type'] : '';
+				if ( 'json_object' === $rf_type ) {
+					$payload['format'] = 'json';
+				} elseif ( 'json_schema' === $rf_type && isset( $options['response_format']['json_schema']['schema'] ) && is_array( $options['response_format']['json_schema']['schema'] ) ) {
+					$payload['format'] = $options['response_format']['json_schema']['schema'];
+				}
+			} elseif ( isset( $options['format'] ) && '' !== $options['format'] ) {
+				// Allow passing format directly (e.g. 'json' or a schema array).
+				$payload['format'] = $options['format'];
+			}
+
+			// Think/reasoning channel (supported since Ollama v0.7 for reasoning models).
+			if ( isset( $options['think'] ) ) {
+				$payload['think'] = (bool) $options['think'];
+			} elseif ( ! empty( $options['reasoning'] ) ) {
+				$payload['think'] = true;
+			}
+
+			// keep_alive controls how long Ollama keeps the model loaded in GPU memory.
+			// Use '-1' for permanent, '0' to unload immediately, or e.g. '5m' for 5 minutes.
+			if ( isset( $options['keep_alive'] ) && '' !== $options['keep_alive'] ) {
+				$payload['keep_alive'] = $options['keep_alive'];
 			}
 
 			if ( ! empty( $options['system_prompt'] ) ) {
@@ -781,11 +941,54 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 			// Otherwise keep default 'stop' - we have content and done=true or missing (assumed complete).
 
+			// Parse tool_calls from Ollama native format and convert to OpenAI format.
+			// Ollama: [{function: {name: "...", arguments: {...}}}] (arguments is an object).
+			// OpenAI: [{id: "...", type: "function", function: {name: "...", arguments: "..."}}] (arguments is a JSON string).
+			$tool_calls = array();
+			if ( isset( $response['message']['tool_calls'] ) && is_array( $response['message']['tool_calls'] ) && ! empty( $response['message']['tool_calls'] ) ) {
+				foreach ( $response['message']['tool_calls'] as $index => $tc ) {
+					if ( ! isset( $tc['function']['name'] ) ) {
+						continue;
+					}
+					$arguments = isset( $tc['function']['arguments'] ) ? $tc['function']['arguments'] : array();
+					// Ollama returns arguments as an object; OpenAI expects a JSON-encoded string.
+					if ( is_array( $arguments ) || is_object( $arguments ) ) {
+						$arguments = wp_json_encode( $arguments );
+					}
+					if ( false === $arguments ) {
+						$arguments = '{}';
+					}
+					$tool_calls[] = array(
+						'id'       => 'call_' . $index . '_' . substr( md5( $tc['function']['name'] . $index ), 0, 8 ),
+						'type'     => 'function',
+						'function' => array(
+							'name'      => sanitize_text_field( $tc['function']['name'] ),
+							'arguments' => $arguments,
+						),
+					);
+				}
+			}
+
+			if ( ! empty( $tool_calls ) ) {
+				$message['tool_calls'] = $tool_calls;
+				// Agentic loop expects finish_reason === 'tool_calls' to trigger execution.
+				$finish_reason = 'tool_calls';
+				// Empty content is normal when the model only calls tools.
+				if ( '' === trim( $content ) ) {
+					$content = '';
+				}
+			}
+
 			// Industry standard: When finish_reason is 'length' with no content, provide helpful error message.
 			// This happens when the prompt/conversation consumes all available tokens (num_predict limit).
 			// Following OpenAI API standard: message.content field should always be present.
 			if ( 'length' === $finish_reason && '' === trim( $content ) ) {
 				$content = __( 'The model could not generate a response because the conversation exceeded the available token limit. Try shortening your message, starting a new conversation, or increasing the token limit in Settings → NV oOS → Orchestration → Max Tokens.', 'mcp-ai-wpoos' );
+			}
+
+			// Expose thinking/reasoning content when the model returns it (Ollama v0.7+ reasoning models).
+			if ( isset( $response['message']['thinking'] ) && '' !== (string) $response['message']['thinking'] ) {
+				$message['reasoning_content'] = (string) $response['message']['thinking'];
 			}
 
 			// Always set message content field to maintain OpenAI API compatibility.
@@ -953,6 +1156,463 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			WP_MCP_AI_Logger::log_event( 'ollama_completion_response', 'Ollama completion request completed.' );
 
 			return $decoded;
+		}
+
+		/**
+		 * Convert tool_calls from OpenAI format to Ollama native format.
+		 *
+		 * The agentic loop stores tool_calls with arguments as a JSON-encoded string
+		 * (OpenAI format). Ollama's native /api/chat expects arguments as a decoded
+		 * PHP array/object. This method performs that conversion so the round-trip
+		 * assistant→tool→assistant works correctly.
+		 *
+		 * @param array $tool_calls Tool calls in OpenAI format.
+		 * @return array Tool calls in Ollama native format.
+		 */
+		protected function convert_tool_calls_to_ollama( array $tool_calls ) {
+			$result = array();
+			foreach ( $tool_calls as $tc ) {
+				if ( ! is_array( $tc ) || ! isset( $tc['function']['name'] ) ) {
+					continue;
+				}
+				$arguments = isset( $tc['function']['arguments'] ) ? $tc['function']['arguments'] : array();
+				// OpenAI stores arguments as a JSON string; decode to object for Ollama.
+				if ( is_string( $arguments ) && '' !== $arguments ) {
+					$decoded = json_decode( $arguments, true );
+					if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+						$arguments = $decoded;
+					} else {
+						$arguments = array();
+					}
+				}
+				$result[] = array(
+					'function' => array(
+						'name'      => sanitize_text_field( $tc['function']['name'] ),
+						'arguments' => is_array( $arguments ) ? $arguments : array(),
+					),
+				);
+			}
+			return $result;
+		}
+
+		/**
+		 * Normalize tool definitions for the Ollama /api/chat payload.
+		 *
+		 * Mirrors the normalise_tools_for_payload pattern used in the LM Studio client
+		 * to ensure consistent tool schema handling across all local AI providers.
+		 *
+		 * @param mixed $tools Tool definitions from the REST layer.
+		 * @return array Normalized tool array.
+		 */
+		protected function normalise_tools_for_payload( $tools ) {
+			if ( $tools instanceof \Traversable ) {
+				$tools = iterator_to_array( $tools );
+			}
+			if ( is_object( $tools ) ) {
+				$tools = (array) $tools;
+			}
+			if ( ! is_array( $tools ) ) {
+				return array();
+			}
+
+			$normalised = array();
+			foreach ( $tools as $tool ) {
+				if ( $tool instanceof \Traversable ) {
+					$tool = iterator_to_array( $tool );
+				}
+				if ( is_object( $tool ) ) {
+					$tool = (array) $tool;
+				}
+				if ( ! is_array( $tool ) || empty( $tool ) ) {
+					continue;
+				}
+
+				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+				// Ensure top-level 'name' is set from the nested function definition.
+				if ( 'function' === $type && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+					$tool['name'] = (string) $tool['function']['name'];
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+						$tool['name'] = (string) $tool['function']['name'];
+					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+						$tool['name'] = (string) $tool['slug'];
+					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+						$tool['name'] = (string) $tool['id'];
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					continue;
+				}
+				$tool['name'] = (string) $tool['name'];
+
+				// Sanitize parameter schemas to ensure Ollama-compatible format.
+				if ( isset( $tool['function']['parameters'] ) && is_array( $tool['function']['parameters'] ) ) {
+					$tool['function']['parameters'] = $this->sanitize_parameters_for_openai( $tool['function']['parameters'] );
+				} elseif ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$tool['parameters'] = $this->sanitize_parameters_for_openai( $tool['parameters'] );
+				}
+
+				$normalised[] = $tool;
+			}
+			return array_values( $normalised );
+		}
+
+		/**
+		 * Sanitize a function parameter schema to meet Ollama / OpenAI requirements.
+		 *
+		 * Removes composition keywords (oneOf, anyOf, allOf, not) from the root level
+		 * and ensures the root type is 'object', matching the constraints applied by
+		 * the OpenAI and LM Studio clients for full cross-provider parity.
+		 *
+		 * @param array  $schema     JSON Schema array to sanitize.
+		 * @param string $parent_key Parent key (empty string signals root-level checks).
+		 * @return array Sanitized schema.
+		 */
+		protected function sanitize_parameters_for_openai( array $schema, $parent_key = '' ) {
+			if ( '' === $parent_key ) {
+				$root_unsupported = array( 'oneOf', 'anyOf', 'allOf', 'not' );
+				foreach ( $root_unsupported as $keyword ) {
+					if ( isset( $schema[ $keyword ] ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'ollama_schema_sanitization',
+							"Removed unsupported top-level keyword: {$keyword}",
+							array(
+								'keyword' => $keyword,
+								'context' => 'root_level',
+							)
+						);
+						unset( $schema[ $keyword ] );
+					}
+				}
+				if ( ! isset( $schema['type'] ) ) {
+					$schema['type'] = 'object';
+				}
+			}
+
+			$sanitized = array();
+			foreach ( $schema as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$sanitized[ $key ] = $this->sanitize_parameters_for_openai( $value, $key );
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+			return $sanitized;
+		}
+
+		/**
+		 * Fetch the capabilities of a specific model via /api/show.
+		 *
+		 * Ollama v0.5+ includes a 'capabilities' array in the model info response,
+		 * e.g. ["completion", "tools", "vision", "thinking", "embedding"].
+		 * Results are cached for 5 minutes to avoid hammering the server.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $model   Model name (e.g. 'llama3.1:8b').
+		 * @param bool   $refresh Force a fresh API call, bypassing the cache.
+		 * @return array Capabilities array (empty if unavailable or older Ollama version).
+		 */
+		public function get_model_capabilities( $model, $refresh = false ) {
+			$endpoint_url = $this->get_endpoint_url();
+			if ( empty( $endpoint_url ) || empty( $model ) ) {
+				return array();
+			}
+
+			$model     = sanitize_text_field( $model );
+			$cache_key = 'ollama_caps_' . md5( $endpoint_url . $model );
+
+			if ( ! $refresh && class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+				$cached = WP_MCP_AI_Cache_Helper::get( $cache_key );
+				if ( false !== $cached && is_array( $cached ) ) {
+					return $cached;
+				}
+			}
+
+			$url = untrailingslashit( $endpoint_url ) . '/api/show';
+
+			$response = wp_remote_post(
+				$url,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode( array( 'name' => $model ) ),
+					'timeout' => max( 15, $this->resolve_timeout( array() ) ),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return array();
+			}
+
+			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+			if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+				return array();
+			}
+
+			$capabilities = isset( $decoded['capabilities'] ) && is_array( $decoded['capabilities'] ) ? $decoded['capabilities'] : array();
+
+			if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+				WP_MCP_AI_Cache_Helper::set( $cache_key, $capabilities, 5 * MINUTE_IN_SECONDS );
+			}
+
+			return $capabilities;
+		}
+
+		/**
+		 * Check whether the given model supports function/tool calling.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $model Model name.
+		 * @return bool
+		 */
+		public function supports_tools( $model ) {
+			return in_array( 'tools', $this->get_model_capabilities( $model ), true );
+		}
+
+		/**
+		 * Check whether the given model supports vision (image inputs).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $model Model name.
+		 * @return bool
+		 */
+		public function supports_vision( $model ) {
+			return in_array( 'vision', $this->get_model_capabilities( $model ), true );
+		}
+
+		/**
+		 * Check whether the given model supports thinking/reasoning output.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string $model Model name.
+		 * @return bool
+		 */
+		public function supports_thinking( $model ) {
+			return in_array( 'thinking', $this->get_model_capabilities( $model ), true );
+		}
+
+		/**
+		 * Create a chat completion via Ollama's OpenAI-compatible endpoint.
+		 *
+		 * When the 'ollama_use_openai_compatible_endpoint' setting is enabled this
+		 * method is called instead of the native /api/chat path.  It sends the
+		 * request to <endpoint>/v1/chat/completions using the OpenAI wire format,
+		 * which means tool_calls, tool_choice, response_format, etc. all work out
+		 * of the box without any schema translation.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $messages Chat messages.
+		 * @param array  $options  Request options.
+		 * @param string $model    Resolved model name.
+		 * @return array|WP_Error
+		 */
+		protected function create_openai_compat_completion( array $messages, array $options, $model ) {
+			$endpoint_url = $this->get_endpoint_url();
+			$url          = untrailingslashit( $endpoint_url ) . '/v1/chat/completions';
+
+			$payload = $this->build_openai_compat_payload( $messages, $options, $model );
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
+
+			$http_args = array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => max( 120, $this->resolve_timeout( $options ) ),
+			);
+
+			WP_MCP_AI_Logger::log_event( 'ollama_compat_request', 'Sending request to Ollama OpenAI-compatible endpoint.', array( 'model' => $model ) );
+
+			$response = wp_remote_post( $url, $http_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Ollama OpenAI-compat request failed.', array( 'error' => $response->get_error_message() ) );
+				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Request failed.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON from Ollama OpenAI-compatible endpoint.', 'mcp-ai-wpoos' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_msg = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Ollama.', 'mcp-ai-wpoos' );
+				return new WP_Error( 'wp_mcp_ai_api_error', $error_msg, array( 'status' => $code, 'body' => $decoded ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'ollama_compat_response', 'Ollama OpenAI-compatible request completed.' );
+
+			return $this->normalize_openai_compat_response( $decoded, $model );
+		}
+
+		/**
+		 * Build the payload for Ollama's OpenAI-compatible /v1/chat/completions endpoint.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $messages Chat messages.
+		 * @param array  $options  Request options.
+		 * @param string $model    Resolved model name.
+		 * @return array|WP_Error
+		 */
+		protected function build_openai_compat_payload( array $messages, array $options, $model ) {
+			if ( empty( $messages ) ) {
+				return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No messages provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
+
+			// OpenAI-compatible: system prompt is a system-role message, not a top-level key.
+			$formatted = array();
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$formatted[] = array(
+					'role'    => 'system',
+					'content' => wp_kses_post( (string) $options['system_prompt'] ),
+				);
+			}
+
+			// Messages are already in OpenAI format from the REST layer; pass them through.
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+				$content = isset( $message['content'] ) ? $message['content'] : '';
+
+				// Flatten content arrays to strings for OpenAI compat.
+				if ( is_array( $content ) ) {
+					$text_parts = array();
+					foreach ( $content as $segment ) {
+						if ( is_string( $segment ) ) {
+							$text_parts[] = $segment;
+						} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+							$text_parts[] = $segment['text'];
+						}
+					}
+					$content = implode( "\n", $text_parts );
+				}
+				$content = wp_kses_post( (string) $content );
+
+				$msg = array(
+					'role'    => $role,
+					'content' => $content,
+				);
+
+				// Preserve tool_calls on assistant messages.
+				if ( 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+					$msg['tool_calls'] = $message['tool_calls'];
+				}
+				// Preserve tool_call_id on tool messages.
+				if ( 'tool' === $role ) {
+					if ( isset( $message['tool_call_id'] ) ) {
+						$msg['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+					}
+					if ( isset( $message['name'] ) ) {
+						$msg['name'] = sanitize_text_field( $message['name'] );
+					}
+				}
+
+				if ( '' === trim( $content ) && 'tool' !== $role && ! isset( $msg['tool_calls'] ) ) {
+					continue;
+				}
+
+				$formatted[] = $msg;
+			}
+
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$max_tokens   = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : $resource_mgr->get_max_tokens();
+
+			$payload = array(
+				'model'      => $model,
+				'messages'   => $formatted,
+				'stream'     => false,
+				'max_tokens' => max( 512, $max_tokens ),
+			);
+
+			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
+				$payload['temperature'] = (float) $options['temperature'];
+			}
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+			if ( isset( $options['stop'] ) && ! empty( $options['stop'] ) ) {
+				$payload['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
+			}
+
+			// Tools (OpenAI format — no translation needed).
+			if ( ! empty( $options['tools'] ) ) {
+				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+				if ( isset( $options['tool_choice'] ) ) {
+					if ( is_string( $options['tool_choice'] ) && in_array( $options['tool_choice'], array( 'auto', 'none', 'required' ), true ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					} elseif ( is_array( $options['tool_choice'] ) && isset( $options['tool_choice']['type'] ) && 'function' === $options['tool_choice']['type'] && isset( $options['tool_choice']['function']['name'] ) ) {
+						$payload['tool_choice'] = array(
+							'type'     => 'function',
+							'function' => array(
+								'name' => sanitize_text_field( $options['tool_choice']['function']['name'] ),
+							),
+						);
+					}
+				}
+				if ( isset( $options['parallel_tool_calls'] ) ) {
+					$payload['parallel_tool_calls'] = (bool) $options['parallel_tool_calls'];
+				}
+			}
+
+			// Structured output.
+			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+				$payload['response_format'] = $options['response_format'];
+			}
+
+			return $payload;
+		}
+
+		/**
+		 * Normalize the OpenAI-compatible endpoint response.
+		 *
+		 * Ollama's /v1/chat/completions response is already in OpenAI format.
+		 * We only need to normalize the content field and set the provider slug.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array  $response Decoded API response.
+		 * @param string $model    Model identifier.
+		 * @return array
+		 */
+		protected function normalize_openai_compat_response( array $response, $model ) {
+			if ( ! isset( $response['choices'] ) ) {
+				$response['choices'] = array();
+			}
+
+			// Normalize content to array format if it's a plain string.
+			foreach ( $response['choices'] as $index => $choice ) {
+				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) ) {
+					$response['choices'][ $index ]['message']['content'] = array(
+						array(
+							'type' => 'text',
+							'text' => $choice['message']['content'],
+						),
+					);
+				}
+			}
+
+			$response['provider'] = 'ollama';
+			if ( ! isset( $response['model'] ) ) {
+				$response['model'] = $model;
+			}
+			return $response;
 		}
 	}
 }
