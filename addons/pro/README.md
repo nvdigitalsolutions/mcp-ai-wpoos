@@ -1,6 +1,6 @@
 # Open Operator System (NV oOS) - Pro Add-on
 
-**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 24 specialized professional toolkits.
+**COMMERCIAL PLUGIN** - Premium WordPress AI automation platform with 30 specialized professional toolkits.
 
 ---
 
@@ -13,13 +13,17 @@
 
 ## Overview
 
-The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **24 specialized professional toolkits** with **249+ advanced tools** powered by best-in-class NPM packages.
+The **Pro Add-on** is a premium commercial extension that transforms the base Open Operator System into a comprehensive enterprise-grade AI automation platform. It adds **30 specialized professional toolkits** with **289+ advanced tools** powered by best-in-class NPM packages.
 
 **This is NOT open-source software.** It is a commercial product available only through authorized channels with proper licensing.
 
 ## Professional Toolkits
 
-The Pro Add-on includes **24 specialized professional toolkits** organized into the following categories:
+The Pro Add-on includes **30 specialized professional toolkits** organized into the following categories.
+
+> **Per-toolkit documentation:** every toolkit has a dedicated overview page in
+> [`docs/toolkits/`](docs/toolkits/README.md) that covers its activation setting, custom
+> post types, admin pages, tool list, and any compliance considerations.
 
 ### 📄 Document & Content Management
 
@@ -258,7 +262,20 @@ Complete health records management:
 
 **Use Cases**: Healthcare providers, wellness centers, veterinary clinics
 
-#### 19. Regulatory Registration Toolkit ✅
+#### 19. Healthcare Imaging Toolkit ✅
+**DICOM-aware medical imaging viewer**
+
+Imaging studies, DICOM metadata extraction, audit log, and admin viewer page:
+- `mcp_ai_imaging_study` CPT
+- DICOM metadata extractor (modality, study/series UIDs)
+- Append-only audit log
+- REST controller + admin viewer
+
+**Use Cases**: Radiology workflow, clinical review, DICOMweb integration
+**Activation**: `enable_healthcare_imaging`
+**Docs**: [docs/toolkits/healthcare-imaging.md](docs/toolkits/healthcare-imaging.md)
+
+#### 20. Regulatory Registration Toolkit ✅
 **Phase 2.11 Complete**
 
 Compliance and registration management:
@@ -268,12 +285,43 @@ Compliance and registration management:
 - Compliance reporting
 
 **Use Cases**: Regulated industries, professional services, healthcare
+**Activation**: `enable_regulatory_registration_toolkit`
+**Docs**: [docs/toolkits/regulatory-registration.md](docs/toolkits/regulatory-registration.md)
+
+---
+
+### ⚖️ Legal & Financial Services
+
+#### 21. Law Firm Toolkit ✅
+**64 tools across 7 modules**
+
+Practice management for solo attorneys and firms:
+- Matter, Client, Document, Time Entry, Trust Transaction CPTs
+- Intake, matter management, document automation, billing & trust
+- Litigation support, compliance & ethics, research & analytics
+- ABA Model Rules / IOLTA aligned
+
+**Use Cases**: Solo practitioners, boutique and AmLaw firms, legal-tech vendors
+**Activation**: `enable_law_firm_toolkit`
+**Docs**: [docs/toolkits/law-firm.md](docs/toolkits/law-firm.md)
+
+#### 22. CRE Debt & Securitization Toolkit ✅
+**57 tools across 5 modules**
+
+Commercial real-estate debt analytics:
+- Originations, Underwriting, Debt Fund, CMBS / CRE CLO, Asset Management
+- Aligned with CREFC / MBA / ARGUS / CCIM / CFA standards
+- Loan and Property CPTs, Portfolio Dashboard
+
+**Use Cases**: CRE lenders, debt funds, CMBS issuers, special servicers
+**Activation**: `enable_cre_debt_toolkit`
+**Docs**: [docs/toolkits/cre-debt.md](docs/toolkits/cre-debt.md)
 
 ---
 
 ### 📍 Location & Geography
 
-#### 20. Places Management System ✅
+#### 23. Places Management System ✅
 **NPM Package**: `@turf/turf` v7.3.2
 
 Advanced geospatial management:
@@ -289,7 +337,7 @@ Advanced geospatial management:
 
 ### 🎓 Education & Assessment
 
-#### 21. Quiz System ✅
+#### 24. Quiz System ✅
 **NPM Package**: `katex` v0.16.27
 
 Educational assessment with math support:
@@ -300,11 +348,24 @@ Educational assessment with math support:
 
 **Use Cases**: Educational institutions, online courses, STEM content
 
+#### 25. ECA Management System ✅
+**Extra-Curricular Activities CPT system**
+
+Manage clubs, sports, electives, and student enrolments:
+- ECA and Student CPTs with REST API
+- Enrolment, attendance, conflicts, timetables
+- Notifications and workflow rules
+- Participation analytics and Excel export
+
+**Use Cases**: Schools, universities, after-school programs, membership clubs
+**Activation**: `enable_eca_management`
+**Docs**: [docs/toolkits/eca-management.md](docs/toolkits/eca-management.md)
+
 ---
 
-### 🔐 Security & Utilities
+### 🔐 Security, Cognition & Communication
 
-#### 22. Password Vault Manager ✅
+#### 26. Password Vault Manager ✅
 **Phase 2.11 Complete**
 
 Secure credential management:
@@ -312,19 +373,48 @@ Secure credential management:
 - Password generation
 - Multi-factor authentication support
 - Secure sharing
+- Bitwarden import/export and sync
 
 **Use Cases**: Development teams, IT departments, agencies
+**Docs**: [docs/toolkits/password-vault.md](docs/toolkits/password-vault.md)
 
-#### 24. ECA Management System ✅
-**Custom Post Type system**
+#### 27. Extended Cognition Toolkit ✅
+**Sensor inputs for AI agents**
 
-Entity-Component-Attribute management:
-- Flexible data modeling
-- Dynamic attribute systems
-- Relationship management
-- Custom taxonomies
+Camera, microphone, screen and motion capture grounded in Clark & Chalmers (1998)
+extended-mind theory. Privacy-first, with explicit per-session consent.
 
-**Use Cases**: Complex data structures, custom applications, specialized workflows
+**Use Cases**: Accessibility, field service, hands-free assistants
+**Activation**: `enable_extended_cognition_toolkit`
+**Docs**: [docs/toolkits/extended-cognition.md](docs/toolkits/extended-cognition.md)
+
+#### 28. Chat Channels Integration Toolkit ✅
+**Multi-platform messaging**
+
+Slack, Microsoft Teams, Google Chat, WhatsApp, web chat and webhooks behind a
+single Channel Contacts / Channel Messages CPT model, with broadcast tooling.
+
+**Use Cases**: Customer support, omnichannel marketing, internal comms
+**Activation**: `enable_chat_channels_toolkit`
+**Docs**: [docs/toolkits/chat-channels.md](docs/toolkits/chat-channels.md)
+
+#### 29. Skills Manager ✅
+**Agent skills (agentskills.io)**
+
+Pro UI and REST API for portable, file-based agent skills: upload, edit, version,
+research and assign skills to assistants.
+
+**Use Cases**: Building reusable AI playbooks across assistants
+**Docs**: [docs/toolkits/skills-manager.md](docs/toolkits/skills-manager.md)
+
+#### 30. Vector Storage Pro Tools ✅
+**RAG / file_search prep**
+
+Pro extensions over OpenAI vector stores: file preparation, HTML→Markdown
+conversion, structured-data extraction, research aggregation.
+
+**Use Cases**: Knowledge-base assistants, RAG pipelines
+**Docs**: [docs/toolkits/vector-storage.md](docs/toolkits/vector-storage.md)
 
 ---
 
@@ -490,6 +580,7 @@ Toolkits are enabled through WordPress admin settings:
 **Social Media & Analytics:**
 - `enable_social_media_toolkit` - Multi-platform social management
 - `enable_analytics_toolkit` - Business intelligence
+- `enable_chat_channels_toolkit` - Unified Slack/Teams/Google Chat/WhatsApp/web messaging
 
 **Development & Architecture:**
 - `enable_site_creator_toolkit` - Site building tools
@@ -503,13 +594,21 @@ Toolkits are enabled through WordPress admin settings:
 
 **Healthcare & Compliance:**
 - `enable_health_wellness_management` - Health records system
+- `enable_healthcare_imaging` - DICOM imaging viewer (PHI)
 - `enable_regulatory_registration_toolkit` - Compliance management
+
+**Legal & Financial Services:**
+- `enable_law_firm_toolkit` - Practice management for law firms
+- `enable_cre_debt_toolkit` - CRE debt and securitization analytics
 
 **Location & Geography:**
 - `enable_places_management` - Location management
 
 **Education:**
 - `enable_quiz_system` - Quiz management with math support
+
+**Cognition:**
+- `enable_extended_cognition_toolkit` - Camera/mic/screen/motion capture (privacy-gated)
 
 **Additional Features:**
 - `enable_ai_cpt_management` - AI-enhanced post types
@@ -692,11 +791,12 @@ brew install ffmpeg
 
 ## Documentation
 
-- **Pro Toolkit Documentation**: See `/addons/pro/docs/` directory
-- **Tool Reference**: Comprehensive documentation in toolkit README files
+- **Per-Toolkit Documentation**: [`docs/toolkits/`](./docs/toolkits/README.md) — overview page for every toolkit (activation flag, CPTs, admin pages, tool list, compliance notes)
+- **Pro Toolkit Documentation**: See [`docs/`](./docs/) directory for deep-dive guides
+- **Tool Reference**: Comprehensive documentation in each toolkit's `includes/tools/<toolkit>/README.md`
 - **Integration Guides**: Phase implementation documentation
-- **NPM Package Details**: `docs/NPM_PACKAGE_OPPORTUNITIES.md`
-- **Architecture**: `TOOLKIT_ARCHITECTURE.md` and `TOOLKIT_ARCHITECTURE_PATTERNS.md`
+- **NPM Package Details**: [`docs/NPM_PACKAGE_OPPORTUNITIES.md`](./docs/NPM_PACKAGE_OPPORTUNITIES.md)
+- **Architecture**: [`docs/TOOLKIT_ARCHITECTURE.md`](./docs/TOOLKIT_ARCHITECTURE.md) and [`docs/TOOLKIT_ARCHITECTURE_PATTERNS.md`](./docs/TOOLKIT_ARCHITECTURE_PATTERNS.md)
 - **Base Plugin Docs**: See `/docs/` in main repository
 
 ---

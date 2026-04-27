@@ -438,7 +438,7 @@ class WP_MCP_AI_Model_Config {
 		// Check enable_ollama setting (defaults to false if not set).
 		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : false;
 		if ( $enable_ollama && ! empty( $settings['ollama_endpoint_url'] ) ) {
-			$providers['ollama'] = __( 'Ollama (Local)', 'mcp-ai-wpoos' );
+			$providers['ollama'] = __( 'Ollama', 'mcp-ai-wpoos' );
 		}
 
 		// Check enable_lm_studio setting (defaults to false if not set).

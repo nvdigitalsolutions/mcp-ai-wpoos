@@ -1385,6 +1385,12 @@
 	vertical-align: middle;
 }
 
+.wp-mcp-ai-model-cloud-badge {
+	color: #0073aa;
+	font-size: 0.9em;
+	vertical-align: middle;
+}
+
 .wp-mcp-ai-model-size {
 	font-family: monospace;
 	font-size: 0.95em;

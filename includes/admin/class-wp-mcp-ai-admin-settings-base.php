@@ -291,6 +291,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'anthropic_base_url'                   => '',
 				'ollama_endpoint_url'                  => '',
 				'ollama_model'                         => '',
+				'ollama_use_openai_compatible_endpoint' => false,
 				'lm_studio_endpoint_url'               => '',
 				'lm_studio_model'                      => '',
 				'default_assistant'                    => 0,

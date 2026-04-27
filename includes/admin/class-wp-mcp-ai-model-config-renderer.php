@@ -711,7 +711,45 @@ class WP_MCP_AI_Model_Config_Renderer {
 			return $capability_flags;
 		}
 
-		// Ollama and LM Studio models - assume text-only unless specified.
+		// Ollama and LM Studio models — detect capabilities from model name patterns.
+		// Cloud-hosted Ollama models (:cloud suffix) may be multimodal.
+		if ( 'ollama' === $provider || 'lm_studio' === $provider ) {
+			// Vision-capable local model families.
+			$local_vision_patterns = array(
+				'llava',
+				'bakllava',
+				'moondream',
+				'minicpm-v',
+				'gemma4',
+				'qwen2-vl',
+				'qwen2.5-vl',
+				'llama4',
+				'phi4-vision',
+				'phi3-vision',
+				'mistral3',
+			);
+			// Vision-capable cloud model identifiers (:cloud suffix).
+			$cloud_vision_patterns = array(
+				'gemma4:31b-cloud',
+				'qwen3.5:397b-cloud',
+				'kimi-k2.5:cloud',
+				'glm-5:cloud',
+				'minimax-m2.7:cloud',
+				'gpt-oss:120b-cloud',
+				'gpt-oss:20b-cloud',
+			);
+			$vision_patterns = array_merge( $local_vision_patterns, $cloud_vision_patterns );
+			foreach ( $vision_patterns as $pattern ) {
+				if ( false !== strpos( $model_id, $pattern ) ) {
+					$capability_flags[] = 'vision';
+					$capability_flags[] = 'multimodal';
+					return $capability_flags;
+				}
+			}
+			return $capability_flags;
+		}
+
+		// Default: text-only.
 		return $capability_flags;
 	}
 
@@ -818,7 +856,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 					'check' => ! empty( $settings['gemini_api_key'] ),
 				),
 				'ollama'    => array(
-					'label' => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+					'label' => __( 'Ollama', 'mcp-ai-wpoos' ),
 					'check' => ! empty( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_model'] ),
 				),
 				'lm_studio' => array(
