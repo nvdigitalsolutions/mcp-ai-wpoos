@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-ollama-live-model-dropdown',
-        'version' => 'dev-copilot/fix-ollama-live-model-dropdown',
-        'reference' => '29defbd5e7d9de8d16de3eb1fbde0206c3eb1914',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-for-testing',
+        'version' => 'dev-copilot/rebuild-all-zips-for-testing',
+        'reference' => '349ebecc5a84bb7fcf4cf37af946e7c4bc185b6b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-ollama-live-model-dropdown',
-            'version' => 'dev-copilot/fix-ollama-live-model-dropdown',
-            'reference' => '29defbd5e7d9de8d16de3eb1fbde0206c3eb1914',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-for-testing',
+            'version' => 'dev-copilot/rebuild-all-zips-for-testing',
+            'reference' => '349ebecc5a84bb7fcf4cf37af946e7c4bc185b6b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
