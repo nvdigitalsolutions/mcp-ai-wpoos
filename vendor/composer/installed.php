@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-model-config-dropdown',
+        'version' => 'dev-copilot/update-model-config-dropdown',
+        'reference' => 'fd055ad54163d5f516105e49bf05e95be3dfc091',
         'pretty_version' => 'dev-copilot/review-addons-plugins-security',
         'version' => 'dev-copilot/review-addons-plugins-security',
         'reference' => '2cfc803b0c0fc496dad4f54fe2abd8a096739a11',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-model-config-dropdown',
+            'version' => 'dev-copilot/update-model-config-dropdown',
+            'reference' => 'fd055ad54163d5f516105e49bf05e95be3dfc091',
             'pretty_version' => 'dev-copilot/review-addons-plugins-security',
             'version' => 'dev-copilot/review-addons-plugins-security',
             'reference' => '2cfc803b0c0fc496dad4f54fe2abd8a096739a11',
