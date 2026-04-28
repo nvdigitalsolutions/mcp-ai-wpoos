@@ -73,11 +73,31 @@ class NV_oOS_Graphify_REST {
 				'callback'            => array( __CLASS__, 'get_nodes' ),
 				'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 				'args'                => array(
-					'per_page'     => array( 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 200, 'sanitize_callback' => 'absint' ),
-					'page'         => array( 'type' => 'integer', 'default' => 1, 'minimum' => 1, 'sanitize_callback' => 'absint' ),
-					'type'         => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-					'community_id' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-					'search'       => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
+					'per_page'     => array(
+						'type'              => 'integer',
+						'default'           => 50,
+						'minimum'           => 1,
+						'maximum'           => 200,
+						'sanitize_callback' => 'absint',
+					),
+					'page'         => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'type'         => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'community_id' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'search'       => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 			)
 		);
@@ -91,7 +111,11 @@ class NV_oOS_Graphify_REST {
 				'callback'            => array( __CLASS__, 'get_node' ),
 				'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 				'args'                => array(
-					'node_id' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'required' => true ),
+					'node_id' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'required'          => true,
+					),
 				),
 			)
 		);
@@ -105,9 +129,18 @@ class NV_oOS_Graphify_REST {
 				'callback'            => array( __CLASS__, 'trigger_build' ),
 				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
 				'args'                => array(
-					'incremental' => array( 'type' => 'boolean', 'default' => false ),
-					'semantic'    => array( 'type' => 'boolean', 'default' => true ),
-					'reset'       => array( 'type' => 'boolean', 'default' => false ),
+					'incremental' => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+					'semantic'    => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+					'reset'       => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
 				),
 			)
 		);
@@ -121,9 +154,22 @@ class NV_oOS_Graphify_REST {
 				'callback'            => array( __CLASS__, 'search_nodes' ),
 				'permission_callback' => array( __CLASS__, 'check_read_permission' ),
 				'args'                => array(
-					'q'     => array( 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_text_field' ),
-					'type'  => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-					'limit' => array( 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100, 'sanitize_callback' => 'absint' ),
+					'q'     => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'type'  => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'limit' => array(
+						'type'              => 'integer',
+						'default'           => 20,
+						'minimum'           => 1,
+						'maximum'           => 100,
+						'sanitize_callback' => 'absint',
+					),
 				),
 			)
 		);
@@ -137,8 +183,184 @@ class NV_oOS_Graphify_REST {
 				'callback'            => array( __CLASS__, 'export_graph' ),
 				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
 				'args'                => array(
-					'format'     => array( 'type' => 'string', 'default' => 'json', 'enum' => array( 'json', 'html', 'graphml', 'csv', 'neo4j', 'obsidian' ) ),
-					'max_nodes'  => array( 'type' => 'integer', 'default' => 2000, 'minimum' => 1, 'maximum' => 5000, 'sanitize_callback' => 'absint' ),
+					'format'    => array(
+						'type'    => 'string',
+						'default' => 'json',
+						'enum'    => array( 'json', 'html', 'graphml', 'csv', 'neo4j', 'obsidian' ),
+					),
+					'max_nodes' => array(
+						'type'              => 'integer',
+						'default'           => 2000,
+						'minimum'           => 1,
+						'maximum'           => 5000,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		// POST /retrieve — RAG context retrieval.
+		register_rest_route(
+			self::NAMESPACE,
+			'/retrieve',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'retrieve_context' ),
+				'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+				'args'                => array(
+					'question'      => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'k'             => array(
+						'type'              => 'integer',
+						'default'           => 10,
+						'minimum'           => 1,
+						'maximum'           => 20,
+						'sanitize_callback' => 'absint',
+					),
+					'hops'          => array(
+						'type'              => 'integer',
+						'default'           => 2,
+						'minimum'           => 1,
+						'maximum'           => 3,
+						'sanitize_callback' => 'absint',
+					),
+					'use_vectors'   => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
+					'include_edges' => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+				),
+			)
+		);
+
+		// GET /resolve — resolve external entity.
+		register_rest_route(
+			self::NAMESPACE,
+			'/resolve',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'resolve_external' ),
+				'permission_callback' => array( __CLASS__, 'check_read_permission' ),
+				'args'                => array(
+					'ref'         => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'auto_ingest' => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+				),
+			)
+		);
+
+		// GET /sources — list remote sources.
+		register_rest_route(
+			self::NAMESPACE,
+			'/sources',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_sources' ),
+				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+			)
+		);
+
+		// POST /sources — create a remote source.
+		register_rest_route(
+			self::NAMESPACE,
+			'/sources',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'create_source' ),
+				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+				'args'                => array(
+					'slug'    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'driver'  => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'label'   => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'enabled' => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+					'config'  => array(
+						'type'    => 'object',
+						'default' => array(),
+					),
+				),
+			)
+		);
+
+		// DELETE /sources/{slug} — delete a remote source.
+		register_rest_route(
+			self::NAMESPACE,
+			'/sources/(?P<slug>[a-z0-9_\-]+)',
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( __CLASS__, 'delete_source' ),
+				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+				'args'                => array(
+					'slug' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'required'          => true,
+					),
+				),
+			)
+		);
+
+		// POST /sources/{slug}/sync — trigger manual sync.
+		register_rest_route(
+			self::NAMESPACE,
+			'/sources/(?P<slug>[a-z0-9_\-]+)/sync',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'sync_source' ),
+				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+				'args'                => array(
+					'slug'  => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'required'          => true,
+					),
+					'async' => array(
+						'type'    => 'boolean',
+						'default' => true,
+					),
+				),
+			)
+		);
+
+		// POST /sources/{slug}/test — test connection.
+		register_rest_route(
+			self::NAMESPACE,
+			'/sources/(?P<slug>[a-z0-9_\-]+)/test',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'test_source' ),
+				'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+				'args'                => array(
+					'slug' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'required'          => true,
+					),
 				),
 			)
 		);
@@ -222,14 +444,14 @@ class NV_oOS_Graphify_REST {
 		$edges     = NV_oOS_Graphify_DB::get_edges_for_node( $node_id );
 		$neighbors = array();
 		foreach ( $edges as $edge ) {
-			$nid          = ( $edge->source_node_id === $node_id ) ? $edge->target_node_id : $edge->source_node_id;
-			$nbr          = NV_oOS_Graphify_DB::get_node( $nid );
-			$neighbors[]  = array(
-				'node_id'  => $nid,
-				'label'    => $nbr ? $nbr->label : $nid,
-				'type'     => $nbr ? $nbr->type : '',
-				'relation' => $edge->relation,
-				'direction'=> ( $edge->source_node_id === $node_id ) ? 'outgoing' : 'incoming',
+			$nid         = ( $edge->source_node_id === $node_id ) ? $edge->target_node_id : $edge->source_node_id;
+			$nbr         = NV_oOS_Graphify_DB::get_node( $nid );
+			$neighbors[] = array(
+				'node_id'   => $nid,
+				'label'     => $nbr ? $nbr->label : $nid,
+				'type'      => $nbr ? $nbr->type : '',
+				'relation'  => $edge->relation,
+				'direction' => ( $edge->source_node_id === $node_id ) ? 'outgoing' : 'incoming',
 			);
 		}
 
@@ -303,6 +525,174 @@ class NV_oOS_Graphify_REST {
 			array(
 				'format' => $format,
 				'data'   => $result,
+			)
+		);
+	}
+
+	/**
+	 * POST /retrieve — RAG context retrieval.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function retrieve_context( WP_REST_Request $request ) {
+		$tool   = new NV_oOS_Graphify_Tool_Retrieve_Context();
+		$result = $tool->execute(
+			array(
+				'question'      => $request->get_param( 'question' ),
+				'k'             => $request->get_param( 'k' ),
+				'hops'          => $request->get_param( 'hops' ),
+				'use_vectors'   => (bool) $request->get_param( 'use_vectors' ),
+				'include_edges' => (bool) $request->get_param( 'include_edges' ),
+			),
+			array()
+		);
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * GET /resolve — Resolve an external entity ref to a local node.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function resolve_external( WP_REST_Request $request ) {
+		$tool   = new NV_oOS_Graphify_Tool_Resolve_External();
+		$result = $tool->execute(
+			array(
+				'ref'         => $request->get_param( 'ref' ),
+				'auto_ingest' => (bool) $request->get_param( 'auto_ingest' ),
+			),
+			array()
+		);
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * GET /sources — List configured remote sources.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return WP_REST_Response
+	 */
+	public static function get_sources() {
+		$tool   = new NV_oOS_Graphify_Tool_List_Remote_Sources();
+		$result = $tool->execute( array(), array() );
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * POST /sources — Create a remote source.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function create_source( WP_REST_Request $request ) {
+		$config = $request->get_param( 'config' );
+		if ( ! is_array( $config ) ) {
+			$config = array();
+		}
+		$result = NV_oOS_Graphify_DB::save_remote_source(
+			array(
+				'slug'    => $request->get_param( 'slug' ),
+				'driver'  => $request->get_param( 'driver' ),
+				'label'   => $request->get_param( 'label' ) ?? '',
+				'enabled' => (bool) $request->get_param( 'enabled' ),
+				'config'  => $config,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'slug'    => $request->get_param( 'slug' ),
+			)
+		);
+	}
+
+	/**
+	 * DELETE /sources/{slug} — Delete a remote source.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public static function delete_source( WP_REST_Request $request ) {
+		NV_oOS_Graphify_DB::delete_remote_source( sanitize_key( $request->get_param( 'slug' ) ) );
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	/**
+	 * POST /sources/{slug}/sync — Trigger a manual source sync.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function sync_source( WP_REST_Request $request ) {
+		$slug     = sanitize_key( $request->get_param( 'slug' ) );
+		$async    = (bool) $request->get_param( 'async' );
+		$enricher = new NV_oOS_Graphify_Remote_Enricher();
+		$summary  = $enricher->sync_source( $slug, $async );
+
+		if ( is_wp_error( $summary ) ) {
+			return $summary;
+		}
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'slug'    => $slug,
+				'async'   => $async,
+				'summary' => $summary,
+			)
+		);
+	}
+
+	/**
+	 * POST /sources/{slug}/test — Test a source connection.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function test_source( WP_REST_Request $request ) {
+		$slug     = sanitize_key( $request->get_param( 'slug' ) );
+		$registry = NV_oOS_Graphify_Remote_Registry::get_instance();
+		$sources  = $registry->get_active_sources();
+		$source   = null;
+		foreach ( $sources as $s ) {
+			if ( ( $s['_slug'] ?? '' ) === $slug ) {
+				$source = $s;
+				break;
+			}
+		}
+		if ( ! $source ) {
+			return new WP_Error( 'not_found', __( 'Source not found or not enabled.', 'nvoos-graphify' ), array( 'status' => 404 ) );
+		}
+		$driver = $registry->get_driver( $source['driver'] ?? '' );
+		if ( ! $driver ) {
+			return new WP_Error( 'no_driver', __( 'Driver not found.', 'nvoos-graphify' ), array( 'status' => 500 ) );
+		}
+		$result = $driver->test_connection( $source );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'result'  => $result,
 			)
 		);
 	}

@@ -61,6 +61,30 @@ class NV_oOS_Graphify_DB {
 		return $wpdb->prefix . 'nvoos_graph_meta';
 	}
 
+	/**
+	 * Return the full table name for remote sources.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return string
+	 */
+	public static function remote_sources_table() {
+		global $wpdb;
+		return $wpdb->prefix . 'nvoos_graph_remote_sources';
+	}
+
+	/**
+	 * Return the full table name for node embeddings.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return string
+	 */
+	public static function embeddings_table() {
+		global $wpdb;
+		return $wpdb->prefix . 'nvoos_graph_node_embeddings';
+	}
+
 	// -------------------------------------------------------------------------
 	// Schema install / upgrade
 	// -------------------------------------------------------------------------
@@ -85,23 +109,29 @@ class NV_oOS_Graphify_DB {
 
 		// Nodes table.
 		$sql_nodes = "CREATE TABLE {$nodes} (
-			id          BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-			node_id     VARCHAR(191)         NOT NULL,
-			label       VARCHAR(512)         NOT NULL,
-			type        VARCHAR(64)          NOT NULL DEFAULT 'post',
-			post_id     BIGINT(20) UNSIGNED  NOT NULL DEFAULT 0,
-			url         VARCHAR(512)         NOT NULL DEFAULT '',
-			properties  LONGTEXT,
-			degree      INT(11)              NOT NULL DEFAULT 0,
-			community_id VARCHAR(64)         NOT NULL DEFAULT '',
-			content_hash VARCHAR(64)         NOT NULL DEFAULT '',
-			created_at  DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at  DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			id           BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			node_id      VARCHAR(191)         NOT NULL,
+			label        VARCHAR(512)         NOT NULL,
+			type         VARCHAR(64)          NOT NULL DEFAULT 'post',
+			post_id      BIGINT(20) UNSIGNED  NOT NULL DEFAULT 0,
+			url          VARCHAR(512)         NOT NULL DEFAULT '',
+			properties   LONGTEXT,
+			degree       INT(11)              NOT NULL DEFAULT 0,
+			community_id VARCHAR(64)          NOT NULL DEFAULT '',
+			content_hash VARCHAR(64)          NOT NULL DEFAULT '',
+			external_id  VARCHAR(512)         NOT NULL DEFAULT '',
+			source_slug  VARCHAR(128)         NOT NULL DEFAULT '',
+			confidence   FLOAT                NOT NULL DEFAULT 1.0,
+			expires_at   DATETIME             DEFAULT NULL,
+			created_at   DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at   DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			UNIQUE KEY   node_id (node_id),
 			KEY          type (type),
 			KEY          post_id (post_id),
-			KEY          community_id (community_id)
+			KEY          community_id (community_id),
+			KEY          external_id (external_id(64)),
+			KEY          source_slug (source_slug)
 		) {$charset_collate};";
 
 		// Edges table.
@@ -113,13 +143,16 @@ class NV_oOS_Graphify_DB {
 			confidence     FLOAT               NOT NULL DEFAULT 1.0,
 			provenance     VARCHAR(32)         NOT NULL DEFAULT 'EXTRACTED',
 			properties     LONGTEXT,
+			source_slug    VARCHAR(128)        NOT NULL DEFAULT '',
+			fetched_at     DATETIME            DEFAULT NULL,
 			created_at     DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			UNIQUE KEY   edge_unique (source_node_id, target_node_id, relation(64)),
 			KEY          source_node_id (source_node_id),
 			KEY          target_node_id (target_node_id),
 			KEY          relation (relation),
-			KEY          provenance (provenance)
+			KEY          provenance (provenance),
+			KEY          source_slug (source_slug)
 		) {$charset_collate};";
 
 		// Addon meta table.
@@ -136,6 +169,39 @@ class NV_oOS_Graphify_DB {
 		dbDelta( $sql_edges );
 		dbDelta( $sql_meta );
 
+		// Remote sources table.
+		$remote     = self::remote_sources_table();
+		$sql_remote = "CREATE TABLE {$remote} (
+			id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			slug          VARCHAR(128)        NOT NULL,
+			driver        VARCHAR(64)         NOT NULL,
+			label         VARCHAR(255)        NOT NULL DEFAULT '',
+			config_json   LONGTEXT,
+			enabled       TINYINT(1)          NOT NULL DEFAULT 1,
+			rate_limit    INT(11)             NOT NULL DEFAULT 60,
+			last_sync_at  DATETIME            DEFAULT NULL,
+			last_error    TEXT,
+			circuit_state VARCHAR(16)         NOT NULL DEFAULT 'closed',
+			created_at    DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY slug (slug)
+		) {$charset_collate};";
+		dbDelta( $sql_remote );
+
+		// Node embeddings table.
+		$embeddings     = self::embeddings_table();
+		$sql_embeddings = "CREATE TABLE {$embeddings} (
+			id         BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			node_id    VARCHAR(191)        NOT NULL,
+			model      VARCHAR(128)        NOT NULL DEFAULT 'text-embedding-3-small',
+			dim        INT(11)             NOT NULL DEFAULT 0,
+			vector     LONGBLOB,
+			updated_at DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY node_model (node_id, model(64))
+		) {$charset_collate};";
+		dbDelta( $sql_embeddings );
+
 		update_option( 'nvoos_graphify_db_version', NVOOS_GRAPHIFY_DB_VERSION );
 	}
 
@@ -148,15 +214,25 @@ class NV_oOS_Graphify_DB {
 	 */
 	public static function uninstall() {
 		global $wpdb;
-		// Use %i identifier placeholder (WordPress 6.2+) so the table names are
-		// safely quoted by $wpdb->prepare() rather than concatenated. The names
-		// themselves are server-controlled ($wpdb->prefix . 'graphify_*'), but
-		// using %i is the project's required pattern and guards against any
-		// future regression where a tool argument might reach this path.
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::embeddings_table() ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::remote_sources_table() ) );
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::edges_table() ) );
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::nodes_table() ) );
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::meta_table() ) );
 		delete_option( 'nvoos_graphify_db_version' );
+	}
+
+	/**
+	 * Upgrade the database schema from a previous version.
+	 *
+	 * Safe to call multiple times — dbDelta only applies missing changes.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function upgrade() {
+		self::install();
 	}
 
 	// -------------------------------------------------------------------------
@@ -191,6 +267,10 @@ class NV_oOS_Graphify_DB {
 			'url'          => esc_url_raw( isset( $node['url'] ) ? $node['url'] : '' ),
 			'properties'   => wp_json_encode( isset( $node['properties'] ) ? $node['properties'] : array() ),
 			'content_hash' => sanitize_text_field( isset( $node['content_hash'] ) ? $node['content_hash'] : '' ),
+			'external_id'  => sanitize_text_field( isset( $node['external_id'] ) ? $node['external_id'] : '' ),
+			'source_slug'  => sanitize_key( isset( $node['source_slug'] ) ? $node['source_slug'] : '' ),
+			'confidence'   => isset( $node['confidence'] ) ? max( 0.0, min( 1.0, (float) $node['confidence'] ) ) : 1.0,
+			'expires_at'   => isset( $node['expires_at'] ) ? sanitize_text_field( $node['expires_at'] ) : null,
 		);
 
 		// Try to insert; on duplicate key, update mutable columns.
@@ -237,7 +317,7 @@ class NV_oOS_Graphify_DB {
 		foreach ( $batches as $batch ) {
 			foreach ( $batch as $node ) {
 				if ( self::upsert_node( $node ) !== false ) {
-					$count++;
+					++$count;
 				}
 			}
 		}
@@ -342,9 +422,9 @@ class NV_oOS_Graphify_DB {
 		$offset = absint( isset( $args['offset'] ) ? $args['offset'] : 0 );
 
 		$allowed_order_by = array( 'degree', 'label', 'created_at', 'updated_at', 'type' );
-		$order_by = isset( $args['order_by'] ) && in_array( $args['order_by'], $allowed_order_by, true )
+		$order_by         = isset( $args['order_by'] ) && in_array( $args['order_by'], $allowed_order_by, true )
 			? $args['order_by'] : 'degree';
-		$order = ( isset( $args['order'] ) && 'ASC' === strtoupper( $args['order'] ) ) ? 'ASC' : 'DESC';
+		$order            = ( isset( $args['order'] ) && 'ASC' === strtoupper( $args['order'] ) ) ? 'ASC' : 'DESC';
 
 		$where  = array();
 		$params = array();
@@ -386,8 +466,8 @@ class NV_oOS_Graphify_DB {
 	 */
 	public static function recalculate_degree( $node_id ) {
 		global $wpdb;
-		$nodes = self::nodes_table();
-		$edges = self::edges_table();
+		$nodes   = self::nodes_table();
+		$edges   = self::edges_table();
 		$node_id = sanitize_text_field( $node_id );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -531,7 +611,7 @@ class NV_oOS_Graphify_DB {
 		foreach ( $batches as $batch ) {
 			foreach ( $batch as $edge ) {
 				if ( self::upsert_edge( $edge ) !== false ) {
-					$count++;
+					++$count;
 				}
 			}
 		}
@@ -646,11 +726,11 @@ class NV_oOS_Graphify_DB {
 		$edge_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$edges}" );
 		$comm_count = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT community_id) FROM {$nodes} WHERE community_id != ''" );
 
-		$nodes_by_type = $wpdb->get_results(
+		$nodes_by_type   = $wpdb->get_results(
 			"SELECT type, COUNT(*) AS cnt FROM {$nodes} GROUP BY type ORDER BY cnt DESC",
 			ARRAY_A
 		);
-		$edges_by_rel = $wpdb->get_results(
+		$edges_by_rel    = $wpdb->get_results(
 			"SELECT relation, COUNT(*) AS cnt FROM {$edges} GROUP BY relation ORDER BY cnt DESC",
 			ARRAY_A
 		);
@@ -723,7 +803,7 @@ class NV_oOS_Graphify_DB {
 			$wpdb->update(
 				$table,
 				array( 'meta_value' => $serialized ),
-				array( 'meta_key'   => $key ),
+				array( 'meta_key' => $key ),
 				array( '%s' ),
 				array( '%s' )
 			);
@@ -737,5 +817,319 @@ class NV_oOS_Graphify_DB {
 				array( '%s', '%s' )
 			);
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Node external ID helpers
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get a node by external ID (Wikidata QID, URL, etc.).
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $external_id External identifier.
+	 * @return object|null Row object or null.
+	 */
+	public static function get_node_by_external_id( $external_id ) {
+		global $wpdb;
+		$table = self::nodes_table();
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE external_id = %s LIMIT 1", sanitize_text_field( $external_id ) )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Update the external_id field for a node.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $node_id     Node identifier.
+	 * @param string $external_id External identifier to set.
+	 * @return bool True on success.
+	 */
+	public static function update_node_external_id( $node_id, $external_id ) {
+		global $wpdb;
+		$result = $wpdb->update(
+			self::nodes_table(),
+			array( 'external_id' => sanitize_text_field( $external_id ) ),
+			array( 'node_id' => sanitize_text_field( $node_id ) ),
+			array( '%s' ),
+			array( '%s' )
+		);
+		return false !== $result;
+	}
+
+	// -------------------------------------------------------------------------
+	// Remote sources CRUD
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Save (upsert) a remote source record.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param array $data {
+	 *     @type string $slug    Source slug (required).
+	 *     @type string $driver  Driver type slug (required).
+	 *     @type string $label   Human-readable name.
+	 *     @type int    $enabled 1|0.
+	 *     @type array  $config  Config array (sensitive fields encrypted).
+	 * }
+	 * @return true|WP_Error
+	 */
+	public static function save_remote_source( array $data ) {
+		global $wpdb;
+		$table = self::remote_sources_table();
+
+		$slug    = sanitize_key( $data['slug'] );
+		$driver  = sanitize_key( $data['driver'] );
+		$label   = sanitize_text_field( isset( $data['label'] ) ? $data['label'] : '' );
+		$enabled = ! empty( $data['enabled'] ) ? 1 : 0;
+		$config  = isset( $data['config'] ) && is_array( $data['config'] ) ? $data['config'] : array();
+
+		if ( empty( $slug ) || empty( $driver ) ) {
+			return new WP_Error( 'invalid_data', __( 'slug and driver are required.', 'nvoos-graphify' ) );
+		}
+
+		// Encrypt sensitive config fields.
+		foreach ( $config as $k => $v ) {
+			if ( NV_oOS_Graphify_Crypto::is_sensitive_key( $k ) ) {
+				$config[ $k ] = NV_oOS_Graphify_Crypto::encrypt( (string) $v );
+			}
+		}
+
+		$config_json = wp_json_encode( $config );
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$exists = $wpdb->get_var(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE slug = %s LIMIT 1", $slug )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( $exists ) {
+			$wpdb->update(
+				$table,
+				array(
+					'driver'      => $driver,
+					'label'       => $label,
+					'enabled'     => $enabled,
+					'config_json' => $config_json,
+				),
+				array( 'slug' => $slug ),
+				array( '%s', '%s', '%d', '%s' ),
+				array( '%s' )
+			);
+		} else {
+			$wpdb->insert(
+				$table,
+				array(
+					'slug'        => $slug,
+					'driver'      => $driver,
+					'label'       => $label,
+					'enabled'     => $enabled,
+					'config_json' => $config_json,
+				),
+				array( '%s', '%s', '%s', '%d', '%s' )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get a single remote source by slug.
+	 *
+	 * Config fields are returned encrypted. Use the registry's get_active_sources()
+	 * for decrypted configs ready for driver consumption.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $slug Source slug.
+	 * @return object|null Row object or null.
+	 */
+	public static function get_remote_source( $slug ) {
+		global $wpdb;
+		$table = self::remote_sources_table();
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE slug = %s LIMIT 1", sanitize_key( $slug ) )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * List all remote sources, optionally filtered.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param array $args {
+	 *     @type int $enabled Filter by enabled status (1 or 0). Omit for all.
+	 * }
+	 * @return array Array of row objects.
+	 */
+	public static function list_remote_sources( array $args = array() ) {
+		global $wpdb;
+		$table = self::remote_sources_table();
+
+		if ( isset( $args['enabled'] ) ) {
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			return $wpdb->get_results(
+				$wpdb->prepare( "SELECT * FROM {$table} WHERE enabled = %d ORDER BY label ASC", absint( $args['enabled'] ) )
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_results( "SELECT * FROM {$table} ORDER BY label ASC" );
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Delete a remote source by slug.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $slug Source slug.
+	 * @return void
+	 */
+	public static function delete_remote_source( $slug ) {
+		global $wpdb;
+		$wpdb->delete(
+			self::remote_sources_table(),
+			array( 'slug' => sanitize_key( $slug ) ),
+			array( '%s' )
+		);
+	}
+
+	/**
+	 * Update last_sync_at and optionally last_error for a source.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string      $slug        Source slug.
+	 * @param string|null $error       Error message or null for success.
+	 * @param string|null $circuit_state 'open'|'closed'|null to leave unchanged.
+	 * @return void
+	 */
+	public static function update_remote_source_sync( $slug, $error = null, $circuit_state = null ) {
+		global $wpdb;
+		$data   = array( 'last_sync_at' => current_time( 'mysql', true ) );
+		$format = array( '%s' );
+
+		if ( null !== $error ) {
+			$data['last_error'] = sanitize_text_field( (string) $error );
+			$format[]           = '%s';
+		}
+		if ( null !== $circuit_state ) {
+			$allowed               = array( 'open', 'closed', 'half-open' );
+			$data['circuit_state'] = in_array( $circuit_state, $allowed, true ) ? $circuit_state : 'closed';
+			$format[]              = '%s';
+		}
+
+		$wpdb->update(
+			self::remote_sources_table(),
+			$data,
+			array( 'slug' => sanitize_key( $slug ) ),
+			$format,
+			array( '%s' )
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Embedding CRUD
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Upsert an embedding record.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param array $data {
+	 *     @type string $node_id Node identifier.
+	 *     @type string $model   Model identifier.
+	 *     @type int    $dim     Vector dimensions.
+	 *     @type string $vector  Packed binary vector.
+	 * }
+	 * @return int|false Row ID or false.
+	 */
+	public static function upsert_embedding( array $data ) {
+		global $wpdb;
+		$table   = self::embeddings_table();
+		$node_id = sanitize_text_field( $data['node_id'] );
+		$model   = sanitize_text_field( isset( $data['model'] ) ? $data['model'] : 'text-embedding-3-small' );
+		$dim     = absint( isset( $data['dim'] ) ? $data['dim'] : 0 );
+		$vector  = isset( $data['vector'] ) ? $data['vector'] : '';
+
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing_id = $wpdb->get_var(
+			$wpdb->prepare( "SELECT id FROM {$table} WHERE node_id = %s AND model = %s LIMIT 1", $node_id, $model )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( $existing_id ) {
+			$wpdb->update(
+				$table,
+				array(
+					'dim'    => $dim,
+					'vector' => $vector,
+				),
+				array( 'id' => absint( $existing_id ) ),
+				array( '%d', '%s' ),
+				array( '%d' )
+			);
+			return absint( $existing_id );
+		}
+
+		$result = $wpdb->insert(
+			$table,
+			array(
+				'node_id' => $node_id,
+				'model'   => $model,
+				'dim'     => $dim,
+				'vector'  => $vector,
+			),
+			array( '%s', '%s', '%d', '%s' )
+		);
+		return $result ? $wpdb->insert_id : false;
+	}
+
+	/**
+	 * Get an embedding record for a node.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $node_id Node identifier.
+	 * @param string $model   Model identifier.
+	 * @return object|null Row object or null.
+	 */
+	public static function get_embedding( $node_id, $model = 'text-embedding-3-small' ) {
+		global $wpdb;
+		$table = self::embeddings_table();
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$table} WHERE node_id = %s AND model = %s LIMIT 1", sanitize_text_field( $node_id ), sanitize_text_field( $model ) )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/**
+	 * Get all embeddings for a given model.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $model Model identifier.
+	 * @return array Array of row objects.
+	 */
+	public static function get_all_embeddings( $model = 'text-embedding-3-small' ) {
+		global $wpdb;
+		$table = self::embeddings_table();
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return $wpdb->get_results(
+			$wpdb->prepare( "SELECT node_id, vector FROM {$table} WHERE model = %s", sanitize_text_field( $model ) )
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 }

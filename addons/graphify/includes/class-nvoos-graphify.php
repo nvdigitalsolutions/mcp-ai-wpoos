@@ -36,6 +36,13 @@ class NV_oOS_Graphify {
 	 */
 	const CRON_BUILD_HOOK = 'nvoos_graphify_cron_build';
 
+	/**
+	 * Cron hook for scheduled remote enrichment.
+	 *
+	 * @var string
+	 */
+	const CRON_ENRICH_HOOK = 'nvoos_graphify_cron_enrich';
+
 	// -------------------------------------------------------------------------
 	// Boot
 	// -------------------------------------------------------------------------
@@ -54,6 +61,7 @@ class NV_oOS_Graphify {
 		add_action( 'init', array( __CLASS__, 'register_block' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_frontend_assets' ) );
 		add_action( self::CRON_BUILD_HOOK, array( __CLASS__, 'run_scheduled_build' ) );
+		add_action( self::CRON_ENRICH_HOOK, array( __CLASS__, 'run_scheduled_enrich' ) );
 		add_action( 'nvoos_graphify_cron_semantic_extract', array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch' ) );
 	}
 
@@ -68,6 +76,15 @@ class NV_oOS_Graphify {
 		if ( ! nvoos_graphify_is_base_active() ) {
 			return;
 		}
+
+		// Upgrade DB schema if needed.
+		$installed_ver = get_option( 'nvoos_graphify_db_version', '0' );
+		if ( $installed_ver !== NVOOS_GRAPHIFY_DB_VERSION ) {
+			NV_oOS_Graphify_DB::upgrade();
+		}
+
+		// Register default remote source drivers.
+		add_action( 'nvoos_graphify_register_remote_sources', array( __CLASS__, 'register_default_drivers' ) );
 
 		// Register REST controller.
 		NV_oOS_Graphify_REST::init();
@@ -95,7 +112,36 @@ class NV_oOS_Graphify {
 		// Admin settings class.
 		if ( is_admin() ) {
 			NV_oOS_Graphify_Settings::init();
+			NV_oOS_Graphify_Remote_Admin::init();
 		}
+	}
+
+	/**
+	 * Run the scheduled remote enrichment.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function run_scheduled_enrich() {
+		$enricher = new NV_oOS_Graphify_Remote_Enricher();
+		$enricher->enrich_all( false );
+	}
+
+	/**
+	 * Register default remote source drivers with the registry.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param NV_oOS_Graphify_Remote_Registry $registry Driver registry.
+	 * @return void
+	 */
+	public static function register_default_drivers( $registry ) {
+		$registry->register_driver( new NV_oOS_Graphify_Remote_Wikidata() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_OOS_Federation() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_Generic_REST() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_RSS_Sitemap() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_SPARQL() );
 	}
 
 	// -------------------------------------------------------------------------
@@ -201,6 +247,11 @@ class NV_oOS_Graphify {
 				'openai_api_key'       => '',
 				'cytoscape_height'     => '600px',
 				'max_display_nodes'    => 300,
+				'remote_enrich_enabled' => false,
+				'remote_enrich_budget' => 50,
+				'embeddings_enabled'   => false,
+				'embeddings_model'     => 'text-embedding-3-small',
+				'remote_enrich_async'  => true,
 			)
 		);
 	}
@@ -299,6 +350,10 @@ class NV_oOS_Graphify {
 			'NV_oOS_Graphify_Tool_Shortest_Path',
 			'NV_oOS_Graphify_Tool_Suggest_Links',
 			'NV_oOS_Graphify_Tool_Content_Gaps',
+			'NV_oOS_Graphify_Tool_Retrieve_Context',
+			'NV_oOS_Graphify_Tool_Resolve_External',
+			'NV_oOS_Graphify_Tool_Sync_Remote_Source',
+			'NV_oOS_Graphify_Tool_List_Remote_Sources',
 		);
 	}
 
@@ -327,6 +382,10 @@ class NV_oOS_Graphify {
 			'class-nvoos-graphify-tool-shortest-path.php',
 			'class-nvoos-graphify-tool-suggest-links.php',
 			'class-nvoos-graphify-tool-content-gaps.php',
+			'class-nvoos-graphify-tool-retrieve-context.php',
+			'class-nvoos-graphify-tool-resolve-external.php',
+			'class-nvoos-graphify-tool-sync-remote-source.php',
+			'class-nvoos-graphify-tool-list-remote-sources.php',
 		);
 		foreach ( $files as $file ) {
 			require_once $dir . $file;
