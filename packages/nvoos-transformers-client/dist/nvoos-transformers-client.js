@@ -156,7 +156,14 @@ class TransformersTasksClient {
 			// Load from configured source. Defaults to the CDN-hosted v3 build but can
 			// be overridden via configure({ transformersImporter }) so consumers can
 			// bundle their own copy of @huggingface/transformers.
-			const importer = this.config.transformersImporter || ( () => import( /* @vite-ignore */ this.config.transformersUrl ) );
+			let importer = this.config.transformersImporter;
+			if ( ! importer ) {
+				if ( ! this.config.transformersUrl ) {
+					throw new Error( 'nvoos-transformers-client: transformersUrl is not configured. Set it via the constructor or configure({ transformersUrl }), or supply a transformersImporter.' );
+				}
+				const url = this.config.transformersUrl;
+				importer = () => import( /* @vite-ignore */ url );
+			}
 			const module = await importer();
 			this.transformersModule = module;
 			this.log( 'Transformers.js v3 loaded successfully' );
