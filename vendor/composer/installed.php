@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-graphy-remote-connections',
         'version' => 'dev-copilot/enhance-graphy-remote-connections',
-        'reference' => 'b093db5ee778531168a1445ee13f79caefb900e7',
+        'reference' => 'a717244e8a95826a70a819f53a60f17a798ff11f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-graphy-remote-connections',
             'version' => 'dev-copilot/enhance-graphy-remote-connections',
-            'reference' => 'b093db5ee778531168a1445ee13f79caefb900e7',
+            'reference' => 'a717244e8a95826a70a819f53a60f17a798ff11f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
