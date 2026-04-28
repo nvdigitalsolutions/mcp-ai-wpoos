@@ -34,6 +34,14 @@ All packages are **ES modules** with full TypeScript definitions. See each packa
 | [`nvoos-audio`](./nvoos-audio/) | TTS, STT, translation, and voice chat with VAD | Zero |
 | [`nvoos-dom-batcher`](./nvoos-dom-batcher/) | RAF DOM batcher, scroll batcher, and UI utilities | Zero |
 
+### Tier 4 — Browser AI Runtime Utilities
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-llm-worker`](./nvoos-llm-worker/) | Web Worker manager for non-blocking LLM operations | Zero |
+| [`nvoos-model-loader`](./nvoos-model-loader/) | Progressive 4-stage AI model loading UI | Zero |
+| [`nvoos-transformers-client`](./nvoos-transformers-client/) | HuggingFace Transformers.js task wrapper (summarize, sentiment, NER, translate, QA, embed) | @huggingface/transformers (optional peer) |
+
 ---
 
 ## Package Details
@@ -164,13 +172,59 @@ npm install @nvdigitalsolutions/nvoos-dom-batcher
 
 ---
 
+### @nvdigitalsolutions/nvoos-llm-worker
+
+- `LLMWorkerManager` — manages a Web Worker hosting a WebLLM (or compatible) engine
+- Promise-based API: `createWorker()`, `loadModel()`, `generate()`, `unloadModel()`, `getStats()`, `terminate()`
+- Streaming generation via `onChunk` callback
+- 10s `worker_ready` handshake; 5-min model-load timeout
+- Configurable `workerUrl` and `workerOptions` (defaults to `{ type: 'module' }`)
+- Zero external dependencies (you supply the worker script)
+
+```bash
+npm install @nvdigitalsolutions/nvoos-llm-worker
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-model-loader
+
+- `ProgressiveModelLoader` — 4-stage loading UI: checking → downloading → initializing → ready
+- Generic over any engine factory accepting `initProgressCallback` (WebLLM, Transformers.js, custom)
+- Cache check via `caches.open('webllm-models')`
+- Configurable CSS class names and stage definitions
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-model-loader
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-transformers-client
+
+- `TransformersTasksClient` — browser-native AI tasks via `@huggingface/transformers` v3
+- Tasks: `summarize`, `sentiment`, `extractEntities`, `translate`, `questionAnswering`, `embed`
+- Auto-detects WebGPU with WASM fallback; configurable `device`, `dtype`, and per-task models
+- Pipeline cache per `(task, model)` — repeat calls cost only inference
+- Loads Transformers.js from CDN by default, or supply your own bundled importer
+- Zero hard dependencies (`@huggingface/transformers` is an optional peer)
+
+```bash
+npm install @nvdigitalsolutions/nvoos-transformers-client
+# Optional: bundle Transformers.js instead of using the CDN
+npm install @huggingface/transformers
+```
+
+---
+
 ## Building All Packages
 
 Each package has an `adapt-for-npm.js` build script that transforms the WordPress
 plugin source into a clean ES module:
 
 ```bash
-for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher; do
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync nvoos-slash-commands nvoos-audio nvoos-dom-batcher nvoos-llm-worker nvoos-model-loader nvoos-transformers-client; do
   (cd $pkg && node adapt-for-npm.js)
 done
 ```
@@ -223,12 +277,12 @@ Each package includes a custom `adapt-for-npm.js` script that:
 
 ## 📊 Package Comparison
 
-| Feature | storage | markdown | events | http-client | clipboard | offline-sync | slash-commands | audio | dom-batcher |
-|---------|---------|----------|--------|-------------|-----------|--------------|----------------|-------|-------------|
-| **WP Dependencies** | None | None | None | None | None | None | None | None | None |
-| **External Deps** | 0 | 2 (peer) | 1 (peer) | 1 (peer) | 0 | 0 | 0 | 0 | 0 |
-| **TypeScript** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Tree-Shakeable** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature | storage | markdown | events | http-client | clipboard | offline-sync | slash-commands | audio | dom-batcher | llm-worker | model-loader | transformers-client |
+|---------|---------|----------|--------|-------------|-----------|--------------|----------------|-------|-------------|------------|--------------|---------------------|
+| **WP Dependencies** | None | None | None | None | None | None | None | None | None | None | None | None |
+| **External Deps** | 0 | 2 (peer) | 1 (peer) | 1 (peer) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 (optional peer) |
+| **TypeScript** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Tree-Shakeable** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ## 🔗 Links
 
@@ -240,7 +294,7 @@ Each package includes a custom `adapt-for-npm.js` script that:
 
 ---
 
-**Status**: ✅ **COMPLETE - All 9 packages ready for publication**
+**Status**: ✅ **All 12 packages ready for publication** (9 original + 3 Tier 4 browser AI runtime)
 
-**Last Updated**: 2026-03-20  
+**Last Updated**: 2026-04-28  
 **Maintained By**: NV Digital Solutions

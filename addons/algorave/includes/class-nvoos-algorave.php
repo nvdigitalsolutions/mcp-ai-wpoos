@@ -219,12 +219,17 @@ class NV_oOS_Algorave {
 	 * @return string HTML output.
 	 */
 	public static function shortcode_live_coder( $atts ) {
-		// Capability gate (F-AI-01 / R-S-05): the live-coder evaluates
-		// user-typed JavaScript via `new Function('Tone', code)`. Only authors
-		// (`edit_posts`) and above may load the front-end surface that exposes
-		// the eval entry point; lower-privileged users get an empty render.
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			return '';
+		// Capability gate (F-AI-01 / R-S-05): the live-coder can evaluate
+		// user-typed JavaScript via `new Function('Tone', code)` when the
+		// Tone.js engine is enabled by the site operator. Authors
+		// (`edit_posts`) and above always see the surface. Lower-privileged
+		// users (including guests) only see it when the addon's
+		// "Guest Access" setting is explicitly enabled by an administrator;
+		// for those users the Tone.js raw-eval path is force-disabled below
+		// in enqueue_algorave_assets() regardless of WP_MCP_AI_ALLOW_TONEJS_EVAL,
+		// leaving only the sandboxed Strudel engine available.
+		if ( ! self::current_user_can_view_live_coder() ) {
+			return self::render_live_coder_login_prompt();
 		}
 
 		$atts = shortcode_atts(
@@ -347,7 +352,7 @@ class NV_oOS_Algorave {
 				'defaultBpm'     => absint( $settings['default_bpm'] ),
 				'defaultScale'   => sanitize_text_field( $settings['default_scale'] ),
 				'strudelEnabled'    => ! empty( $settings['strudel_cdn'] ),
-				'tonejsEvalAllowed' => defined( 'WP_MCP_AI_ALLOW_TONEJS_EVAL' ) && WP_MCP_AI_ALLOW_TONEJS_EVAL,
+				'tonejsEvalAllowed' => self::is_tonejs_eval_allowed_for_current_user(),
 				'visualizer'        => ! empty( $settings['visualizer_enabled'] ),
 				'samplesUrl'        => esc_url_raw( $samples_base ),
 				'sampleMaps'        => array(
@@ -377,10 +382,88 @@ class NV_oOS_Algorave {
 			return;
 		}
 
-		if ( has_shortcode( $post->post_content, 'algorave_live_coder' )
-			|| has_shortcode( $post->post_content, 'algorave_pattern_library' ) ) {
-			self::enqueue_algorave_assets();
+		$has_live_coder      = has_shortcode( $post->post_content, 'algorave_live_coder' );
+		$has_pattern_library = has_shortcode( $post->post_content, 'algorave_pattern_library' );
+
+		if ( ! $has_live_coder && ! $has_pattern_library ) {
+			return;
 		}
+
+		// If only the live coder is on the page and the current viewer can't
+		// see it, skip enqueuing its scripts entirely.
+		if ( $has_live_coder && ! $has_pattern_library
+			&& ! self::current_user_can_view_live_coder() ) {
+			return;
+		}
+
+		self::enqueue_algorave_assets();
+	}
+
+	/**
+	 * Whether the current user is permitted to view the live coder surface.
+	 *
+	 * Authors (`edit_posts`) and above are always allowed. Other users
+	 * (including unauthenticated guests) require the addon's
+	 * "Guest Access" setting to be explicitly enabled by an administrator.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when the current user may render the live coder.
+	 */
+	public static function current_user_can_view_live_coder() {
+		if ( current_user_can( 'edit_posts' ) ) {
+			return true;
+		}
+
+		$settings = self::get_settings();
+		return ! empty( $settings['guest_access'] );
+	}
+
+	/**
+	 * Whether the Tone.js raw `new Function` eval path may be used by the
+	 * current user.
+	 *
+	 * Defense-in-depth: even when the site operator has opted in by defining
+	 * `WP_MCP_AI_ALLOW_TONEJS_EVAL = true`, only users with `edit_posts` may
+	 * trigger the unrestricted JavaScript eval. Guests and lower-privileged
+	 * users are limited to the sandboxed Strudel engine.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool True when Tone.js eval is permitted for the current user.
+	 */
+	public static function is_tonejs_eval_allowed_for_current_user() {
+		if ( ! defined( 'WP_MCP_AI_ALLOW_TONEJS_EVAL' ) || ! WP_MCP_AI_ALLOW_TONEJS_EVAL ) {
+			return false;
+		}
+		return current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Render a small login prompt shown in place of the live coder when the
+	 * current visitor is not permitted to view it.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return string HTML markup.
+	 */
+	private static function render_live_coder_login_prompt() {
+		$html = '<div class="algorave-live-coder-locked" role="status">';
+
+		if ( is_user_logged_in() ) {
+			// Logged-in but lacks edit_posts and Guest Access is off.
+			$html .= '<p>' . esc_html__( 'The live coder is not available to your account. Ask a site administrator to enable Guest Access or grant you author permissions.', 'nvoos-algorave' ) . '</p>';
+		} else {
+			$login_url = wp_login_url( get_permalink() );
+			$html     .= '<p>' . esc_html__( 'The live coder is available to authorized users.', 'nvoos-algorave' ) . '</p>';
+			$html     .= '<p><a class="algorave-login-link" href="' . esc_url( $login_url ) . '">';
+			$html     .= esc_html__( 'Log in to continue', 'nvoos-algorave' );
+			$html     .= '</a></p>';
+		}
+
+		$html .= '</div>';
+
+		return $html;
 	}
 
 	/**

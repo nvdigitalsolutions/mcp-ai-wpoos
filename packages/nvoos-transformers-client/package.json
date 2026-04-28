@@ -1,0 +1,63 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-transformers-client",
+  "version": "0.1.0-alpha.1",
+  "description": "HuggingFace Transformers.js task wrapper (summarization, sentiment, NER, translation, QA, embeddings) - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-transformers-client.js",
+  "module": "dist/nvoos-transformers-client.js",
+  "types": "dist/nvoos-transformers-client.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-transformers-client.js",
+      "default": "./dist/nvoos-transformers-client.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-transformers-client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-transformers-client"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "transformers",
+    "huggingface",
+    "ai",
+    "browser-ai",
+    "summarization",
+    "sentiment",
+    "ner",
+    "translation",
+    "embeddings",
+    "webgpu",
+    "nvdigital",
+    "nvoos"
+  ],
+  "peerDependencies": {
+    "@huggingface/transformers": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@huggingface/transformers": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

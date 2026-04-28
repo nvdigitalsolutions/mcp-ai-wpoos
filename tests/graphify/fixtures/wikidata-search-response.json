@@ -1,0 +1,38 @@
+{
+	"searchinfo": {
+		"search": "Albert Einstein"
+	},
+	"search": [
+		{
+			"id": "Q937",
+			"concepturi": "http://www.wikidata.org/entity/Q937",
+			"url": "//www.wikidata.org/wiki/Q937",
+			"title": "Q937",
+			"pageid": 855,
+			"repository": "wikidata",
+			"label": "Albert Einstein",
+			"description": "German-born theoretical physicist; developer of the theory of relativity",
+			"match": {
+				"type": "label",
+				"language": "en",
+				"text": "Albert Einstein"
+			}
+		},
+		{
+			"id": "Q13426873",
+			"concepturi": "http://www.wikidata.org/entity/Q13426873",
+			"url": "//www.wikidata.org/wiki/Q13426873",
+			"title": "Q13426873",
+			"pageid": 15423601,
+			"repository": "wikidata",
+			"label": "Albert Einstein",
+			"description": "Swiss-German-American physicist",
+			"match": {
+				"type": "alias",
+				"language": "en",
+				"text": "Albert Einstein"
+			}
+		}
+	],
+	"success": 1
+}
