@@ -1817,6 +1817,25 @@ npm install && npm run build
 composer install --no-dev
 ```
 
+#### Optional: Strip Dev Files for Production
+
+If you are deploying via `git clone` to a **production server with anti-malware / EDR scanning**, the working tree will contain test fixtures that embed verbatim attack-payload literals (XSS canaries, SQL-injection samples, prompt-injection strings) used by the security test suite. These can occasionally trip signature-based scanners.
+
+For a clean production tree, run the bundled strip script after cloning:
+
+```bash
+# Preview what would be removed
+bin/strip-dev-files.sh --dry-run
+
+# Remove tests/, docs/, bin/, .github/, .bmad/, .context/, examples/,
+# phpunit.xml.dist, phpcs.xml.dist, dev configs, etc.
+bin/strip-dev-files.sh
+```
+
+The script mirrors the exclusion list in `.distignore` (used for the WordPress.org SVN deploy) and the `export-ignore` rules in `.gitattributes` (used for GitHub-distributed ZIPs). It is idempotent and refuses to run on a working tree with uncommitted changes (override with `--force`).
+
+> **Note:** Do not run this on a development checkout — it removes the test suite, docs, and build tooling. It is intended for deploy targets that only run the plugin.
+
 #### Final Steps
 
 1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
