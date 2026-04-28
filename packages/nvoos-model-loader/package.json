@@ -1,0 +1,51 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-model-loader",
+  "version": "0.1.0-alpha.1",
+  "description": "Progressive AI model loading UI with 4-stage progress tracking - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-model-loader.js",
+  "module": "dist/nvoos-model-loader.js",
+  "types": "dist/nvoos-model-loader.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-model-loader.js",
+      "default": "./dist/nvoos-model-loader.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-model-loader",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-model-loader"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "model-loader",
+    "ai",
+    "webllm",
+    "transformers",
+    "progress-ui",
+    "browser-ai",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
