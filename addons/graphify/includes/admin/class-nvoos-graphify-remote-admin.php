@@ -31,6 +31,7 @@ class NV_oOS_Graphify_Remote_Admin {
 		add_action( 'wp_ajax_nvoos_graphify_test_remote_source', array( __CLASS__, 'ajax_test_source' ) );
 		add_action( 'wp_ajax_nvoos_graphify_sync_remote_source', array( __CLASS__, 'ajax_sync_source' ) );
 		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings', array( __CLASS__, 'ajax_reindex_embeddings' ) );
+		add_action( 'wp_ajax_nvoos_graphify_validate_field_map', array( __CLASS__, 'ajax_validate_field_map' ) );
 		add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
 	}
 
@@ -325,6 +326,37 @@ class NV_oOS_Graphify_Remote_Admin {
 	}
 
 	/**
+	 * AJAX: validate a field-map JSON string and return structured
+	 * errors/warnings/fields. Optionally validates against a sample
+	 * record when one is provided in the request.
+	 *
+	 * Expects POST: nonce, field_map (string), sample (optional JSON string).
+	 *
+	 * @since 0.7.9
+	 */
+	public static function ajax_validate_field_map() {
+		check_ajax_referer( 'nvoos_graphify_remote_action', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Permission denied.', 'nvoos-graphify' ) );
+		}
+
+		$json   = isset( $_POST['field_map'] ) ? wp_unslash( $_POST['field_map'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- raw JSON validated below.
+		$sample = isset( $_POST['sample'] ) ? wp_unslash( $_POST['sample'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- raw JSON validated below.
+
+		if ( ! is_string( $json ) ) {
+			wp_send_json_error( __( 'Field map must be a string.', 'nvoos-graphify' ) );
+		}
+
+		if ( is_string( $sample ) && '' !== trim( $sample ) ) {
+			$decoded = json_decode( $sample, true );
+			if ( is_array( $decoded ) ) {
+				wp_send_json_success( NV_oOS_Graphify_Field_Map_Validator::validate_against_sample( $json, $decoded ) );
+			}
+		}
+		wp_send_json_success( NV_oOS_Graphify_Field_Map_Validator::validate( $json ) );
+	}
+
+	/**
 	 * Render the modal markup used by the "Add" buttons.
 	 *
 	 * @since 0.6.0
@@ -401,6 +433,52 @@ class NV_oOS_Graphify_Remote_Admin {
 					if(res.success){ location.reload(); }
 					else { $('#nvoos-modal-message').text(res.data||'Error'); }
 				});
+			});
+
+			// Live field-map validation: when a textarea named "field_map"
+			// is edited inside the modal, debounce-validate via AJAX and
+			// render structured feedback below the input.
+			var fmTimer = null;
+			$(document).on('input', 'textarea[name="field_map"]', function(){
+				var $ta = $(this);
+				var $fb = $ta.siblings('.nvoos-fieldmap-feedback');
+				if (!$fb.length) {
+					$fb = $('<div class="nvoos-fieldmap-feedback" style="margin-top:6px;font-size:12px;"></div>');
+					$ta.after($fb);
+				}
+				clearTimeout(fmTimer);
+				fmTimer = setTimeout(function(){
+					var val = $ta.val();
+					if (!val || !val.trim()) { $fb.html(''); return; }
+					$.post(ajaxurl, {
+						action: 'nvoos_graphify_validate_field_map',
+						nonce: nonce,
+						field_map: val
+					}, function(res){
+						if (!res || !res.success || !res.data) { $fb.html(''); return; }
+						var d = res.data;
+						var html = '';
+						if (d.valid) {
+							html += '<span style="color:#1a7f37;">\u2713 <?php echo esc_js( __( 'Valid map', 'nvoos-graphify' ) ); ?></span>';
+							if (d.fields && d.fields.length) {
+								html += ' <span style="color:#666;">(' + d.fields.length + ' <?php echo esc_js( __( 'paths', 'nvoos-graphify' ) ); ?>)</span>';
+							}
+						} else {
+							html += '<span style="color:#b32d2e;">\u2717 <?php echo esc_js( __( 'Invalid map', 'nvoos-graphify' ) ); ?></span>';
+						}
+						if (d.errors && d.errors.length) {
+							html += '<ul style="color:#b32d2e;margin:4px 0 0 18px;">';
+							d.errors.forEach(function(e){ html += '<li>' + $('<div>').text(e).html() + '</li>'; });
+							html += '</ul>';
+						}
+						if (d.warnings && d.warnings.length) {
+							html += '<ul style="color:#bf8700;margin:4px 0 0 18px;">';
+							d.warnings.forEach(function(w){ html += '<li>' + $('<div>').text(w).html() + '</li>'; });
+							html += '</ul>';
+						}
+						$fb.html(html);
+					});
+				}, 350);
 			});
 
 			// Sync button.
