@@ -142,6 +142,9 @@ class NV_oOS_Graphify {
 		$registry->register_driver( new NV_oOS_Graphify_Remote_Generic_REST() );
 		$registry->register_driver( new NV_oOS_Graphify_Remote_RSS_Sitemap() );
 		$registry->register_driver( new NV_oOS_Graphify_Remote_SPARQL() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_WooCommerce() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_CSV() );
+		$registry->register_driver( new NV_oOS_Graphify_Remote_Webhook() );
 	}
 
 	// -------------------------------------------------------------------------

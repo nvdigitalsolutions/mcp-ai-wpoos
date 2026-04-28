@@ -51,14 +51,22 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-exporter.php';
 
 // Load remote source system.
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/interface-nvoos-graphify-remote-source.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-source-base.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-crypto.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-http-client.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-registry.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-state-store.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-oauth-broker.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-field-mapper.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-entity-resolver.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-wikidata.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-oos-federation.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-generic-rest.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-rss-sitemap.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-sparql.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-woocommerce.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-csv.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-webhook.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-remote-enricher.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php';
 

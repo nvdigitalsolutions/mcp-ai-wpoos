@@ -364,6 +364,26 @@ class NV_oOS_Graphify_REST {
 				),
 			)
 		);
+
+		// POST /webhooks/{slug} — receive a webhook payload for a configured webhook source.
+		// Authentication is via per-source HMAC-SHA256 (X-NVOOS-Signature header), so the
+		// permission_callback intentionally returns true and verification happens in the handler.
+		register_rest_route(
+			self::NAMESPACE,
+			'/webhooks/(?P<slug>[a-z0-9_\-]+)',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'receive_webhook' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'slug' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'required'          => true,
+					),
+				),
+			)
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -693,6 +713,90 @@ class NV_oOS_Graphify_REST {
 			array(
 				'success' => true,
 				'result'  => $result,
+			)
+		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Permission callbacks
+	// -------------------------------------------------------------------------
+
+	/**
+	 * POST /webhooks/{slug} — Receive a verified webhook payload for a webhook-source.
+	 *
+	 * The configured per-source `webhook_secret` is used to validate the
+	 * `X-NVOOS-Signature` header (HMAC-SHA256 of the raw request body, hex,
+	 * optionally prefixed with `sha256=`). On success, ingested nodes are
+	 * upserted and entity resolution is attempted for each new node.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @param WP_REST_Request $request Incoming request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function receive_webhook( WP_REST_Request $request ) {
+		$slug = sanitize_key( $request->get_param( 'slug' ) );
+		if ( '' === $slug ) {
+			return new WP_Error( 'webhook_invalid_slug', __( 'Invalid source slug.', 'nvoos-graphify' ), array( 'status' => 400 ) );
+		}
+
+		$db_source = NV_oOS_Graphify_DB::get_remote_source( $slug );
+		if ( ! $db_source || empty( $db_source->enabled ) ) {
+			return new WP_Error( 'webhook_unknown_source', __( 'Unknown or disabled source.', 'nvoos-graphify' ), array( 'status' => 404 ) );
+		}
+		if ( 'webhook' !== sanitize_key( $db_source->driver ) ) {
+			return new WP_Error( 'webhook_wrong_driver', __( 'Source is not configured as a webhook receiver.', 'nvoos-graphify' ), array( 'status' => 400 ) );
+		}
+
+		// Decrypt config so we can read the secret + field map.
+		$config = array();
+		if ( ! empty( $db_source->config_json ) ) {
+			$decoded = json_decode( $db_source->config_json, true );
+			if ( is_array( $decoded ) ) {
+				foreach ( $decoded as $k => $v ) {
+					if ( is_string( $v ) && NV_oOS_Graphify_Crypto::is_sensitive_key( $k ) ) {
+						$decoded[ $k ] = NV_oOS_Graphify_Crypto::decrypt( $v );
+					}
+				}
+				$config = $decoded;
+			}
+		}
+		$config['_slug'] = $slug;
+
+		$driver = new NV_oOS_Graphify_Remote_Webhook();
+		$driver->set_config( $config );
+
+		$raw_body  = (string) $request->get_body();
+		$signature = (string) $request->get_header( 'x-nvoos-signature' );
+		if ( ! $driver->verify_signature( $raw_body, $signature ) ) {
+			return new WP_Error( 'webhook_bad_signature', __( 'Invalid or missing signature.', 'nvoos-graphify' ), array( 'status' => 401 ) );
+		}
+
+		$payload = json_decode( $raw_body, true );
+		if ( ! is_array( $payload ) ) {
+			return new WP_Error( 'webhook_invalid_json', __( 'Body must be valid JSON.', 'nvoos-graphify' ), array( 'status' => 400 ) );
+		}
+
+		$nodes      = $driver->payload_to_nodes( $payload );
+		$ingested   = 0;
+		$resolved   = 0;
+		foreach ( $nodes as $node ) {
+			if ( NV_oOS_Graphify_DB::upsert_node( $node ) ) {
+				++$ingested;
+				if ( ! empty( $node['node_id'] ) && class_exists( 'NV_oOS_Graphify_Entity_Resolver' ) ) {
+					$resolved += NV_oOS_Graphify_Entity_Resolver::resolve_node( $node, $slug );
+				}
+			}
+		}
+
+		NV_oOS_Graphify_DB::update_remote_source_sync( $slug );
+
+		return rest_ensure_response(
+			array(
+				'success'         => true,
+				'received'        => count( $nodes ),
+				'ingested'        => $ingested,
+				'sameAs_emitted'  => $resolved,
 			)
 		);
 	}

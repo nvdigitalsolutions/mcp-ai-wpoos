@@ -155,7 +155,7 @@ class NV_oOS_Graphify_Remote_Registry {
 	 */
 	public function get_active_sources() {
 		$this->init_drivers();
-		$rows    = NV_oOS_Graphify_DB::get_remote_sources( array( 'enabled' => 1 ) );
+		$rows    = NV_oOS_Graphify_DB::list_remote_sources( array( 'enabled' => 1 ) );
 		$sources = array();
 		foreach ( $rows as $row ) {
 			$config = array();
