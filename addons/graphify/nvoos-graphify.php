@@ -59,6 +59,7 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-oauth-broker.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-field-mapper.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-entity-resolver.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-schema-org-mapper.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-wikidata.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-oos-federation.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-generic-rest.php';
