@@ -198,7 +198,7 @@ class NV_oOS_Graphify_Remote_Admin {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- already checked above.
 		$slug    = sanitize_key( isset( $_POST['slug'] ) ? wp_unslash( $_POST['slug'] ) : '' );
 		$driver  = sanitize_key( isset( $_POST['driver'] ) ? wp_unslash( $_POST['driver'] ) : '' );
-		$label   = sanitize_text_field( wp_unslash( isset( $_POST['label'] ) ? $_POST['label'] : '' ) );
+		$label   = sanitize_text_field( isset( $_POST['label'] ) ? wp_unslash( $_POST['label'] ) : '' );
 		$enabled = ! empty( $_POST['enabled'] ) ? 1 : 0;
 		$config  = array();
 

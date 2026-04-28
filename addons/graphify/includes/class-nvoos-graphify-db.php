@@ -343,6 +343,27 @@ class NV_oOS_Graphify_DB {
 	}
 
 	/**
+	 * Get all nodes from the graph.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param int $limit Maximum rows (0 = no limit).
+	 * @return array Array of row objects.
+	 */
+	public static function get_all_nodes( $limit = 0 ) {
+		global $wpdb;
+		$table = self::nodes_table();
+		$sql   = "SELECT * FROM {$table}";
+		if ( $limit > 0 ) {
+			$sql .= $wpdb->prepare( ' LIMIT %d', absint( $limit ) );
+		}
+		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results( $sql, ARRAY_A );
+		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Get a node by WordPress post ID.
 	 *
 	 * @since 0.5.0

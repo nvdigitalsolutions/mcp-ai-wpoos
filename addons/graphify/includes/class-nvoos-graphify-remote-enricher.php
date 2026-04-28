@@ -116,16 +116,18 @@ class NV_oOS_Graphify_Remote_Enricher {
 
 					// Create sameAs edge to remote entity node.
 					$remote_node_id = 'remote_' . sanitize_key( $slug ) . '_' . sanitize_key( $result['external_id'] );
-					NV_oOS_Graphify_DB::upsert_edge( array(
-						'source_node_id' => $node_id,
-						'target_node_id' => $remote_node_id,
-						'relation'       => 'SAME_AS',
-						'confidence'     => (float) $result['confidence'],
-						'provenance'     => 'FEDERATED',
-						'source_slug'    => $slug,
-					) );
-					$summary['sameAs_edges']++;
-					$summary['reconciled']++;
+					NV_oOS_Graphify_DB::upsert_edge(
+						array(
+							'source_node_id' => $node_id,
+							'target_node_id' => $remote_node_id,
+							'relation'       => 'SAME_AS',
+							'confidence'     => (float) $result['confidence'],
+							'provenance'     => 'FEDERATED',
+							'source_slug'    => $slug,
+						)
+					);
+					++$summary['sameAs_edges'];
+					++$summary['reconciled'];
 				}
 			}
 
@@ -138,8 +140,8 @@ class NV_oOS_Graphify_Remote_Enricher {
 						break;
 					}
 					NV_oOS_Graphify_DB::upsert_node( $rn );
-					$summary['remote_nodes']++;
-					$count++;
+					++$summary['remote_nodes'];
+					++$count;
 				}
 			}
 
@@ -188,8 +190,8 @@ class NV_oOS_Graphify_Remote_Enricher {
 				$config = $decoded;
 			}
 		}
-		$config['_slug']        = $slug;
-		$config['_rate_limit']  = absint( $db_source->rate_limit );
+		$config['_slug']       = $slug;
+		$config['_rate_limit'] = absint( $db_source->rate_limit );
 
 		$source = $registry->get_driver_instance( $db_source->driver, $config );
 		if ( ! $source ) {
@@ -220,7 +222,7 @@ class NV_oOS_Graphify_Remote_Enricher {
 			$remote_nodes = $source->fetch_nodes( array( 'limit' => $budget ) );
 			foreach ( array_slice( $remote_nodes, 0, $budget ) as $rn ) {
 				NV_oOS_Graphify_DB::upsert_node( $rn );
-				$summary['remote_nodes']++;
+				++$summary['remote_nodes'];
 			}
 		}
 
@@ -229,27 +231,34 @@ class NV_oOS_Graphify_Remote_Enricher {
 			$remote_edges = $source->fetch_edges( array( 'limit' => $budget ) );
 			foreach ( array_slice( $remote_edges, 0, $budget ) as $re ) {
 				NV_oOS_Graphify_DB::upsert_edge( $re );
-				$summary['remote_edges']++;
+				++$summary['remote_edges'];
 			}
 		}
 
 		// Reconcile with entity-type local nodes.
 		if ( in_array( 'reconcile', $capabilities, true ) ) {
-			$local_nodes = NV_oOS_Graphify_DB::list_nodes( array( 'type' => 'entity', 'limit' => 100 ) );
+			$local_nodes = NV_oOS_Graphify_DB::list_nodes(
+				array(
+					'type'  => 'entity',
+					'limit' => 100,
+				)
+			);
 			foreach ( $local_nodes as $ln ) {
 				$result = $source->reconcile( $ln );
 				if ( ! empty( $result['matched'] ) && $result['confidence'] >= self::MIN_CONFIDENCE ) {
 					NV_oOS_Graphify_DB::update_node_external_id( $ln->node_id, $result['external_id'] );
 					$remote_node_id = 'remote_' . sanitize_key( $slug ) . '_' . sanitize_key( $result['external_id'] );
-					NV_oOS_Graphify_DB::upsert_edge( array(
-						'source_node_id' => $ln->node_id,
-						'target_node_id' => $remote_node_id,
-						'relation'       => 'SAME_AS',
-						'confidence'     => (float) $result['confidence'],
-						'provenance'     => 'FEDERATED',
-						'source_slug'    => $slug,
-					) );
-					$summary['reconciled']++;
+					NV_oOS_Graphify_DB::upsert_edge(
+						array(
+							'source_node_id' => $ln->node_id,
+							'target_node_id' => $remote_node_id,
+							'relation'       => 'SAME_AS',
+							'confidence'     => (float) $result['confidence'],
+							'provenance'     => 'FEDERATED',
+							'source_slug'    => $slug,
+						)
+					);
+					++$summary['reconciled'];
 				}
 			}
 		}
@@ -259,5 +268,26 @@ class NV_oOS_Graphify_Remote_Enricher {
 		NV_oOS_Graphify_DB::update_remote_source_sync( $slug );
 
 		return $summary;
+	}
+
+	/**
+	 * Enrich all currently stored graph nodes against all active remote sources.
+	 *
+	 * Convenience wrapper that fetches nodes from the DB and calls {@see enrich()}.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param bool $async When true, schedules a background cron event instead of
+	 *                    running synchronously.
+	 * @return array Summary array with keys 'nodes', 'edges', 'reconciled'.
+	 */
+	public function enrich_all( $async = false ) {
+		$nodes   = NV_oOS_Graphify_DB::get_all_nodes();
+		$summary = self::enrich( is_array( $nodes ) ? $nodes : array(), array( 'async' => $async ) );
+		return array(
+			'nodes'      => isset( $summary['remote_nodes'] ) ? $summary['remote_nodes'] : 0,
+			'edges'      => isset( $summary['sameAs_edges'] ) ? $summary['sameAs_edges'] : 0,
+			'reconciled' => isset( $summary['reconciled'] ) ? $summary['reconciled'] : 0,
+		);
 	}
 }

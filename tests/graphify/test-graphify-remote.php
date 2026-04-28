@@ -106,7 +106,7 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 		$client = new NV_oOS_Graphify_HTTP_Client();
 		$result = $client->get( 'http://192.168.1.1/secret' );
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertStringContainsStringIgnoringCase( 'ssrf', strtolower( $result->get_error_code() ) );
+		$this->assertStringContainsStringIgnoringCase( 'ssrf', $result->get_error_code() );
 	}
 
 	/**
