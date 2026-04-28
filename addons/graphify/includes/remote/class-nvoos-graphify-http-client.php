@@ -152,7 +152,7 @@ class NV_oOS_Graphify_HTTP_Client {
 		// Cache check (GET only).
 		$cache_key = null;
 		if ( 'GET' === $method ) {
-			$cache_key = 'nvoos_graphify_httpcache_' . md5( $url . serialize( $args ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			$cache_key = 'nvoos_graphify_httpcache_' . md5( $url . wp_json_encode( $args ) );
 			$cached    = $this->get_cached( $cache_key, $url, $args );
 			if ( $cached ) {
 				return $cached;
@@ -173,14 +173,14 @@ class NV_oOS_Graphify_HTTP_Client {
 		}
 
 		// Retry loop with exponential backoff.
-		$attempt   = 0;
+		$attempt    = 0;
 		$last_error = null;
 		while ( $attempt < self::MAX_RETRIES ) {
 			if ( $attempt > 0 ) {
 				// Exponential backoff: 1s, 2s, 4s.
 				usleep( self::RETRY_BASE_US * (int) pow( 2, $attempt - 1 ) );
 			}
-			$attempt++;
+			++$attempt;
 
 			if ( 'GET' === $method ) {
 				$raw = wp_remote_get( $url, $request_args );
@@ -332,6 +332,7 @@ class NV_oOS_Graphify_HTTP_Client {
 				set_transient( $key, $circuit, self::CIRCUIT_RESET_TTL * 2 );
 				return true;
 			}
+			/* translators: %s hostname */
 			return new WP_Error( 'circuit_open', sprintf( __( 'Circuit breaker open for host: %s', 'nvoos-graphify' ), esc_html( $host ) ) );
 		}
 
@@ -350,7 +351,11 @@ class NV_oOS_Graphify_HTTP_Client {
 		$key     = 'nvoos_graphify_circuit_' . md5( $host );
 		$circuit = get_transient( $key );
 		if ( ! is_array( $circuit ) ) {
-			$circuit = array( 'state' => 'closed', 'failures' => 0, 'opened_at' => 0 );
+			$circuit = array(
+				'state'     => 'closed',
+				'failures'  => 0,
+				'opened_at' => 0,
+			);
 		}
 		$circuit['failures'] = isset( $circuit['failures'] ) ? (int) $circuit['failures'] + 1 : 1;
 		if ( $circuit['failures'] >= self::CIRCUIT_THRESHOLD ) {

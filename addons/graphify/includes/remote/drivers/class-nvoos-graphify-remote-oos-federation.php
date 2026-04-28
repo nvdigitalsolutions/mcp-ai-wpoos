@@ -51,11 +51,15 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 		return __( 'Remote oOS / MCP Site (Federation)', 'nvoos-graphify' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $config Driver configuration array.
+	 */
 	public function set_config( array $config ) {
 		$this->config = $config;
-		$slug = isset( $config['_slug'] ) ? $config['_slug'] : 'oos_federation';
-		$this->http = new NV_oOS_Graphify_HTTP_Client( $slug );
+		$slug         = isset( $config['_slug'] ) ? $config['_slug'] : 'oos_federation';
+		$this->http   = new NV_oOS_Graphify_HTTP_Client( $slug );
 	}
 
 	/** {@inheritdoc} */
@@ -69,24 +73,67 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 	}
 
 	/** {@inheritdoc} */
+	public function get_config_schema() {
+		return array(
+			'base_url'   => array(
+				'type'        => 'url',
+				'label'       => __( 'Remote Site URL', 'nvoos-graphify' ),
+				'description' => __( 'WordPress site root URL of the remote oOS instance.', 'nvoos-graphify' ),
+				'required'    => true,
+			),
+			'api_token'  => array(
+				'type'        => 'password',
+				'label'       => __( 'API Token', 'nvoos-graphify' ),
+				'description' => __( 'NV oOS credential token (cred_xxxxx.SECRET).', 'nvoos-graphify' ),
+				'required'    => true,
+			),
+			'post_types' => array(
+				'type'        => 'text',
+				'label'       => __( 'Post Types', 'nvoos-graphify' ),
+				'description' => __( 'Comma-separated post types to sync (e.g. post,page).', 'nvoos-graphify' ),
+				'default'     => 'post,page',
+			),
+			'max_nodes'  => array(
+				'type'        => 'number',
+				'label'       => __( 'Max Nodes', 'nvoos-graphify' ),
+				'description' => __( 'Maximum nodes to fetch per sync (0 = unlimited).', 'nvoos-graphify' ),
+				'default'     => 200,
+			),
+		);
+	}
+
+	/** {@inheritdoc} */
 	public function test_connection() {
 		$base_url = $this->get_base_url();
 		if ( empty( $base_url ) ) {
-			return array( 'success' => false, 'message' => __( 'No base_url configured.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'No base_url configured.', 'nvoos-graphify' ),
+			);
 		}
 
 		$url    = trailingslashit( $base_url ) . 'wp-json/nvoos-graphify/v1/graph';
 		$result = $this->http->get( $url, array( 'headers' => $this->get_auth_headers() ) );
 
 		if ( is_wp_error( $result ) ) {
-			return array( 'success' => false, 'message' => $result->get_error_message() );
+			return array(
+				'success' => false,
+				'message' => $result->get_error_message(),
+			);
 		}
 
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'HTTP %d from remote site.', 'nvoos-graphify' ), $result['status'] ) );
+			return array(
+				'success' => false,
+				/* translators: %d HTTP status code */
+				'message' => sprintf( __( 'HTTP %d from remote site.', 'nvoos-graphify' ), $result['status'] ),
+			);
 		}
 
-		return array( 'success' => true, 'message' => __( 'Connected to remote oOS site.', 'nvoos-graphify' ) );
+		return array(
+			'success' => true,
+			'message' => __( 'Connected to remote oOS site.', 'nvoos-graphify' ),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -107,12 +154,16 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 		return is_array( $data ) ? $data : array();
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_nodes( array $args = array() ) {
-		$base_url   = $this->get_base_url();
-		$max_nodes  = isset( $this->config['max_nodes'] ) ? absint( $this->config['max_nodes'] ) : 200;
-		$per_page   = min( 100, $max_nodes );
-		$page       = isset( $args['page'] ) ? absint( $args['page'] ) : 1;
+		$base_url    = $this->get_base_url();
+		$max_nodes   = isset( $this->config['max_nodes'] ) ? absint( $this->config['max_nodes'] ) : 200;
+		$per_page    = min( 100, $max_nodes );
+		$page        = isset( $args['page'] ) ? absint( $args['page'] ) : 1;
 		$source_slug = isset( $this->config['_slug'] ) ? $this->config['_slug'] : 'oos_federation';
 
 		if ( empty( $base_url ) ) {
@@ -169,14 +220,22 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 		return array();
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array|object $local_node Local node to reconcile.
+	 */
 	public function reconcile( $local_node ) {
 		$base_url = $this->get_base_url();
 		$label    = is_object( $local_node ) ? $local_node->label : ( isset( $local_node['label'] ) ? $local_node['label'] : '' );
 		$label    = sanitize_text_field( $label );
 
 		if ( empty( $base_url ) || empty( $label ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$url    = add_query_arg(
@@ -189,17 +248,29 @@ class NV_oOS_Graphify_Remote_OOS_Federation implements NV_oOS_Graphify_Remote_So
 		$result = $this->http->get( $url, array( 'headers' => $this->get_auth_headers() ) );
 
 		if ( is_wp_error( $result ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$data = json_decode( $result['body'], true );
 		if ( empty( $data ) || ! is_array( $data ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$first = reset( $data );
 		if ( empty( $first['node_id'] ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		// Simple confidence based on exact/partial match.

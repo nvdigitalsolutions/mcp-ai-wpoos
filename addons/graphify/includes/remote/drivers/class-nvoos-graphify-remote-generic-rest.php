@@ -51,11 +51,15 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 		return __( 'Generic REST API', 'nvoos-graphify' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $config Driver configuration array.
+	 */
 	public function set_config( array $config ) {
 		$this->config = $config;
-		$slug = isset( $config['_slug'] ) ? $config['_slug'] : 'generic_rest';
-		$this->http = new NV_oOS_Graphify_HTTP_Client( $slug );
+		$slug         = isset( $config['_slug'] ) ? $config['_slug'] : 'generic_rest';
+		$this->http   = new NV_oOS_Graphify_HTTP_Client( $slug );
 	}
 
 	/** {@inheritdoc} */
@@ -69,23 +73,79 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 	}
 
 	/** {@inheritdoc} */
+	public function get_config_schema() {
+		return array(
+			'base_url'     => array(
+				'type'        => 'url',
+				'label'       => __( 'API Endpoint URL', 'nvoos-graphify' ),
+				'description' => __( 'Base URL of the REST API to fetch from.', 'nvoos-graphify' ),
+				'required'    => true,
+			),
+			'api_token'    => array(
+				'type'        => 'password',
+				'label'       => __( 'API Token', 'nvoos-graphify' ),
+				'description' => __( 'Bearer token for authorization (optional).', 'nvoos-graphify' ),
+			),
+			'path_results' => array(
+				'type'        => 'text',
+				'label'       => __( 'Results Path', 'nvoos-graphify' ),
+				'description' => __( 'Dot-notation path to results array (e.g. data.items).', 'nvoos-graphify' ),
+				'default'     => '',
+			),
+			'path_id'      => array(
+				'type'    => 'text',
+				'label'   => __( 'ID Path', 'nvoos-graphify' ),
+				'default' => 'id',
+			),
+			'path_label'   => array(
+				'type'    => 'text',
+				'label'   => __( 'Label Path', 'nvoos-graphify' ),
+				'default' => 'name',
+			),
+			'path_url'     => array(
+				'type'    => 'text',
+				'label'   => __( 'URL Path', 'nvoos-graphify' ),
+				'default' => 'url',
+			),
+			'path_type'    => array(
+				'type'    => 'text',
+				'label'   => __( 'Type Path', 'nvoos-graphify' ),
+				'default' => '',
+			),
+		);
+	}
+
+	/** {@inheritdoc} */
 	public function test_connection() {
 		$base_url = $this->get_base_url();
 		if ( empty( $base_url ) ) {
-			return array( 'success' => false, 'message' => __( 'No base_url configured.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'No base_url configured.', 'nvoos-graphify' ),
+			);
 		}
 
 		$result = $this->http->get( $base_url, array( 'headers' => $this->get_auth_headers() ) );
 
 		if ( is_wp_error( $result ) ) {
-			return array( 'success' => false, 'message' => $result->get_error_message() );
+			return array(
+				'success' => false,
+				'message' => $result->get_error_message(),
+			);
 		}
 
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] ) );
+			return array(
+				'success' => false,
+				/* translators: %d HTTP status code */
+				'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] ),
+			);
 		}
 
-		return array( 'success' => true, 'message' => __( 'Connected.', 'nvoos-graphify' ) );
+		return array(
+			'success' => true,
+			'message' => __( 'Connected.', 'nvoos-graphify' ),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -98,7 +158,11 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_nodes( array $args = array() ) {
 		$base_url    = $this->get_base_url();
 		$source_slug = isset( $this->config['_slug'] ) ? $this->config['_slug'] : 'generic_rest';
@@ -123,10 +187,10 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 			return array();
 		}
 
-		$label_field    = isset( $this->config['node_label_field'] ) ? $this->config['node_label_field'] : 'name';
-		$type_field     = isset( $this->config['node_type_field'] ) ? $this->config['node_type_field'] : 'type';
-		$id_field       = isset( $this->config['node_id_field'] ) ? $this->config['node_id_field'] : 'id';
-		$url_field      = isset( $this->config['node_url_field'] ) ? $this->config['node_url_field'] : 'url';
+		$label_field = isset( $this->config['node_label_field'] ) ? $this->config['node_label_field'] : 'name';
+		$type_field  = isset( $this->config['node_type_field'] ) ? $this->config['node_type_field'] : 'type';
+		$id_field    = isset( $this->config['node_id_field'] ) ? $this->config['node_id_field'] : 'id';
+		$url_field   = isset( $this->config['node_url_field'] ) ? $this->config['node_url_field'] : 'url';
 
 		$nodes = array();
 		foreach ( $items as $item ) {
@@ -158,7 +222,11 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 		return $nodes;
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_edges( array $args = array() ) {
 		$edge_path = isset( $this->config['edge_path'] ) ? $this->config['edge_path'] : '';
 		if ( empty( $edge_path ) ) {
@@ -220,7 +288,11 @@ class NV_oOS_Graphify_Remote_Generic_REST implements NV_oOS_Graphify_Remote_Sour
 	 * @return array
 	 */
 	public function reconcile( $local_node ) {
-		return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+		return array(
+			'external_id' => '',
+			'confidence'  => 0.0,
+			'matched'     => false,
+		);
 	}
 
 	/**

@@ -51,11 +51,15 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 		return __( 'RSS / Atom / Sitemap Feed', 'nvoos-graphify' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $config Driver configuration array.
+	 */
 	public function set_config( array $config ) {
 		$this->config = $config;
-		$slug = isset( $config['_slug'] ) ? $config['_slug'] : 'rss_sitemap';
-		$this->http = new NV_oOS_Graphify_HTTP_Client( $slug );
+		$slug         = isset( $config['_slug'] ) ? $config['_slug'] : 'rss_sitemap';
+		$this->http   = new NV_oOS_Graphify_HTTP_Client( $slug );
 	}
 
 	/** {@inheritdoc} */
@@ -69,28 +73,68 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 	}
 
 	/** {@inheritdoc} */
+	public function get_config_schema() {
+		return array(
+			'feed_url'  => array(
+				'type'        => 'url',
+				'label'       => __( 'Feed / Sitemap URL', 'nvoos-graphify' ),
+				'description' => __( 'RSS 2.0, Atom 1.0, or XML sitemap URL.', 'nvoos-graphify' ),
+				'required'    => true,
+			),
+			'node_type' => array(
+				'type'        => 'text',
+				'label'       => __( 'Node Type', 'nvoos-graphify' ),
+				'description' => __( 'Graph node type to assign to ingested items.', 'nvoos-graphify' ),
+				'default'     => 'article',
+			),
+			'max_items' => array(
+				'type'        => 'number',
+				'label'       => __( 'Max Items', 'nvoos-graphify' ),
+				'description' => __( 'Maximum items to ingest per sync (0 = unlimited).', 'nvoos-graphify' ),
+				'default'     => 100,
+			),
+		);
+	}
+
+	/** {@inheritdoc} */
 	public function test_connection() {
 		$feed_url = $this->get_feed_url();
 		if ( empty( $feed_url ) ) {
-			return array( 'success' => false, 'message' => __( 'No feed_url configured.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'No feed_url configured.', 'nvoos-graphify' ),
+			);
 		}
 
 		$result = $this->http->get( $feed_url );
 		if ( is_wp_error( $result ) ) {
-			return array( 'success' => false, 'message' => $result->get_error_message() );
+			return array(
+				'success' => false,
+				'message' => $result->get_error_message(),
+			);
 		}
 
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array( 'success' => false, 'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] ) );
+			return array(
+				'success' => false,
+				/* translators: %d HTTP status code */
+				'message' => sprintf( __( 'HTTP %d.', 'nvoos-graphify' ), $result['status'] ),
+			);
 		}
 
 		// Validate XML.
 		$xml = @simplexml_load_string( $result['body'] ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		if ( false === $xml ) {
-			return array( 'success' => false, 'message' => __( 'Could not parse XML from feed.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'Could not parse XML from feed.', 'nvoos-graphify' ),
+			);
 		}
 
-		return array( 'success' => true, 'message' => __( 'Feed accessible.', 'nvoos-graphify' ) );
+		return array(
+			'success' => true,
+			'message' => __( 'Feed accessible.', 'nvoos-graphify' ),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -103,7 +147,11 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_nodes( array $args = array() ) {
 		$feed_url    = $this->get_feed_url();
 		$max_items   = isset( $this->config['max_items'] ) ? absint( $this->config['max_items'] ) : 100;
@@ -147,7 +195,11 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 	 * @return array
 	 */
 	public function reconcile( $local_node ) {
-		return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+		return array(
+			'external_id' => '',
+			'confidence'  => 0.0,
+			'matched'     => false,
+		);
 	}
 
 	/**
@@ -209,7 +261,7 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 			$title       = isset( $item->title ) ? sanitize_text_field( (string) $item->title ) : '';
 			$link        = isset( $item->link ) ? esc_url_raw( (string) $item->link ) : '';
 			$description = isset( $item->description ) ? wp_kses_post( (string) $item->description ) : '';
-			$pub_date    = isset( $item->pubDate ) ? sanitize_text_field( (string) $item->pubDate ) : '';
+			$pub_date    = isset( $item->pubDate ) ? sanitize_text_field( (string) $item->pubDate ) : '';  // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 			if ( empty( $title ) && empty( $link ) ) {
 				continue;
@@ -230,7 +282,7 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 				'source_slug' => $source_slug,
 				'provenance'  => 'REMOTE',
 			);
-			$count++;
+			++$count;
 		}
 
 		return $nodes;
@@ -258,8 +310,8 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 			if ( $count >= $max_items ) {
 				break;
 			}
-			$title   = isset( $entry->title ) ? sanitize_text_field( (string) $entry->title ) : '';
-			$link    = '';
+			$title = isset( $entry->title ) ? sanitize_text_field( (string) $entry->title ) : '';
+			$link  = '';
 			if ( isset( $entry->link ) ) {
 				foreach ( $entry->link as $l ) {
 					$attrs = $l->attributes();
@@ -291,7 +343,7 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 				'source_slug' => $source_slug,
 				'provenance'  => 'REMOTE',
 			);
-			$count++;
+			++$count;
 		}
 
 		return $nodes;
@@ -343,7 +395,7 @@ class NV_oOS_Graphify_Remote_RSS_Sitemap implements NV_oOS_Graphify_Remote_Sourc
 				'source_slug' => $source_slug,
 				'provenance'  => 'REMOTE',
 			);
-			$count++;
+			++$count;
 		}
 
 		return $nodes;

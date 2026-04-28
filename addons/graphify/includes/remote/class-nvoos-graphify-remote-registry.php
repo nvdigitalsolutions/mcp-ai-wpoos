@@ -6,7 +6,7 @@
  * the 'nvoos_graphify_register_remote_sources' action hook.
  *
  * Usage:
- *   NV_oOS_Graphify_Remote_Registry::get_instance()->register_driver( 'wikidata', 'NV_oOS_Graphify_Remote_Wikidata' );
+ *   NV_oOS_Graphify_Remote_Registry::get_instance()->register_driver( new NV_oOS_Graphify_Remote_Wikidata() );
  *   $sources = NV_oOS_Graphify_Remote_Registry::get_instance()->get_active_sources();
  *
  * @package NV_oOS_Graphify
@@ -32,9 +32,9 @@ class NV_oOS_Graphify_Remote_Registry {
 	private static $instance = null;
 
 	/**
-	 * Registered drivers: driver_id => class_name.
+	 * Registered driver instances, keyed by driver ID.
 	 *
-	 * @var array
+	 * @var NV_oOS_Graphify_Remote_Source_Interface[]
 	 */
 	private $drivers = array();
 
@@ -65,28 +65,26 @@ class NV_oOS_Graphify_Remote_Registry {
 	}
 
 	/**
-	 * Register a driver class for a given driver ID.
+	 * Register a driver instance.
 	 *
 	 * @since 0.6.0
 	 *
-	 * @param string $driver_id  Unique driver identifier.
-	 * @param string $class_name Fully-qualified class name implementing NV_oOS_Graphify_Remote_Source_Interface.
+	 * @param NV_oOS_Graphify_Remote_Source_Interface $driver Driver instance.
 	 * @return void
 	 */
-	public function register_driver( $driver_id, $class_name ) {
-		$driver_id  = sanitize_key( $driver_id );
-		$class_name = sanitize_text_field( $class_name );
-		if ( $driver_id && $class_name ) {
-			$this->drivers[ $driver_id ] = $class_name;
+	public function register_driver( NV_oOS_Graphify_Remote_Source_Interface $driver ) {
+		$driver_id = sanitize_key( $driver->get_driver_id() );
+		if ( $driver_id ) {
+			$this->drivers[ $driver_id ] = $driver;
 		}
 	}
 
 	/**
-	 * Return all registered drivers (driver_id => class_name).
+	 * Return all registered driver instances, keyed by driver ID.
 	 *
 	 * @since 0.6.0
 	 *
-	 * @return array
+	 * @return NV_oOS_Graphify_Remote_Source_Interface[]
 	 */
 	public function get_drivers() {
 		$this->init_drivers();
@@ -94,11 +92,40 @@ class NV_oOS_Graphify_Remote_Registry {
 	}
 
 	/**
-	 * Instantiate and return a driver by ID with the given config.
+	 * Return the registered driver slugs (IDs).
 	 *
 	 * @since 0.6.0
 	 *
-	 * @param string $driver_id Unique driver identifier.
+	 * @return string[]
+	 */
+	public function get_registered_driver_slugs() {
+		$this->init_drivers();
+		return array_keys( $this->drivers );
+	}
+
+	/**
+	 * Return a registered prototype driver instance by ID.
+	 *
+	 * Returns the registered instance with no per-source config applied.
+	 * Use get_driver_instance() to get a configured driver.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $driver_id Driver identifier.
+	 * @return NV_oOS_Graphify_Remote_Source_Interface|null Driver instance or null if not found.
+	 */
+	public function get_driver( $driver_id ) {
+		$this->init_drivers();
+		$driver_id = sanitize_key( $driver_id );
+		return isset( $this->drivers[ $driver_id ] ) ? $this->drivers[ $driver_id ] : null;
+	}
+
+	/**
+	 * Return a freshly-configured driver instance for the given driver ID.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $driver_id Driver identifier.
 	 * @param array  $config    Configuration array passed to set_config().
 	 * @return NV_oOS_Graphify_Remote_Source_Interface|null Driver instance or null if not found.
 	 */
@@ -108,7 +135,7 @@ class NV_oOS_Graphify_Remote_Registry {
 		if ( ! isset( $this->drivers[ $driver_id ] ) ) {
 			return null;
 		}
-		$class = $this->drivers[ $driver_id ];
+		$class = get_class( $this->drivers[ $driver_id ] );
 		if ( ! class_exists( $class ) ) {
 			return null;
 		}
@@ -135,9 +162,8 @@ class NV_oOS_Graphify_Remote_Registry {
 			if ( ! empty( $row->config_json ) ) {
 				$raw_config = json_decode( $row->config_json, true );
 				if ( is_array( $raw_config ) ) {
-					// Decrypt sensitive values.
 					foreach ( $raw_config as $k => $v ) {
-						if ( is_string( $v ) && ( false !== strpos( $k, 'token' ) || false !== strpos( $k, 'password' ) || false !== strpos( $k, 'secret' ) || false !== strpos( $k, 'key' ) ) ) {
+						if ( is_string( $v ) && NV_oOS_Graphify_Crypto::is_sensitive_key( $k ) ) {
 							$raw_config[ $k ] = NV_oOS_Graphify_Crypto::decrypt( $v );
 						}
 					}
@@ -147,7 +173,7 @@ class NV_oOS_Graphify_Remote_Registry {
 			$config['_slug']          = $row->slug;
 			$config['_rate_limit']    = absint( $row->rate_limit );
 			$config['_circuit_state'] = $row->circuit_state;
-			$instance = $this->get_driver_instance( $row->driver, $config );
+			$instance                 = $this->get_driver_instance( $row->driver, $config );
 			if ( $instance ) {
 				$sources[ $row->slug ] = $instance;
 			}

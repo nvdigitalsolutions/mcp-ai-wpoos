@@ -58,11 +58,15 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		return __( 'Wikidata (Entity Reconciliation)', 'nvoos-graphify' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $config Driver configuration array.
+	 */
 	public function set_config( array $config ) {
 		$this->config = $config;
-		$slug = isset( $config['_slug'] ) ? $config['_slug'] : 'wikidata';
-		$this->http = new NV_oOS_Graphify_HTTP_Client( $slug );
+		$slug         = isset( $config['_slug'] ) ? $config['_slug'] : 'wikidata';
+		$this->http   = new NV_oOS_Graphify_HTTP_Client( $slug );
 	}
 
 	/** {@inheritdoc} */
@@ -73,6 +77,24 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 	/** {@inheritdoc} */
 	public function get_capabilities() {
 		return array( 'reconcile' );
+	}
+
+	/** {@inheritdoc} */
+	public function get_config_schema() {
+		return array(
+			'language'       => array(
+				'type'        => 'text',
+				'label'       => __( 'Language', 'nvoos-graphify' ),
+				'description' => __( 'BCP 47 language code (e.g. en, de, fr).', 'nvoos-graphify' ),
+				'default'     => 'en',
+			),
+			'min_confidence' => array(
+				'type'        => 'number',
+				'label'       => __( 'Min Confidence', 'nvoos-graphify' ),
+				'description' => __( 'Minimum match confidence threshold (0.0–1.0).', 'nvoos-graphify' ),
+				'default'     => 0.6,
+			),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -90,15 +112,24 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		$result = $this->http->get( $url );
 
 		if ( is_wp_error( $result ) ) {
-			return array( 'success' => false, 'message' => $result->get_error_message() );
+			return array(
+				'success' => false,
+				'message' => $result->get_error_message(),
+			);
 		}
 
 		$data = json_decode( $result['body'], true );
 		if ( empty( $data['search'] ) ) {
-			return array( 'success' => false, 'message' => __( 'Empty results from Wikidata.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'Empty results from Wikidata.', 'nvoos-graphify' ),
+			);
 		}
 
-		return array( 'success' => true, 'message' => __( 'Connected to Wikidata.', 'nvoos-graphify' ) );
+		return array(
+			'success' => true,
+			'message' => __( 'Connected to Wikidata.', 'nvoos-graphify' ),
+		);
 	}
 
 	/** {@inheritdoc} */
@@ -131,12 +162,20 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		return array();
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array|object $local_node Local node to reconcile.
+	 */
 	public function reconcile( $local_node ) {
 		$label = is_object( $local_node ) ? $local_node->label : ( isset( $local_node['label'] ) ? $local_node['label'] : '' );
 		$label = sanitize_text_field( $label );
 		if ( empty( $label ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$url    = add_query_arg(
@@ -153,17 +192,25 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		$result = $this->http->get( $url );
 
 		if ( is_wp_error( $result ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$data = json_decode( $result['body'], true );
 		if ( empty( $data['search'] ) || ! is_array( $data['search'] ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$node_type = is_object( $local_node ) ? $local_node->type : ( isset( $local_node['type'] ) ? $local_node['type'] : '' );
 
-		$best_match    = null;
+		$best_match      = null;
 		$best_confidence = 0.0;
 
 		foreach ( $data['search'] as $item ) {
@@ -184,7 +231,11 @@ class NV_oOS_Graphify_Remote_Wikidata implements NV_oOS_Graphify_Remote_Source_I
 		}
 
 		if ( null === $best_match || $best_confidence < 0.6 ) {
-			return array( 'external_id' => '', 'confidence' => $best_confidence, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => $best_confidence,
+				'matched'     => false,
+			);
 		}
 
 		$qid = $best_match['id'];

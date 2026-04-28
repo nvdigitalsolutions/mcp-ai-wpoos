@@ -57,6 +57,15 @@ interface NV_oOS_Graphify_Remote_Source_Interface {
 	public function get_capabilities();
 
 	/**
+	 * Returns the JSON Schema array describing this driver's configuration fields.
+	 *
+	 * Used by the admin UI to render driver-specific input forms.
+	 *
+	 * @return array Associative array of field definitions (label, type, required, description).
+	 */
+	public function get_config_schema();
+
+	/**
 	 * Test connectivity; returns ['success'=>bool,'message'=>string].
 	 *
 	 * @return array

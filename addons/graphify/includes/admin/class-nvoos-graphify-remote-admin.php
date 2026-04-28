@@ -26,12 +26,12 @@ class NV_oOS_Graphify_Remote_Admin {
 	 * @since 0.6.0
 	 */
 	public static function init() {
-		add_action( 'wp_ajax_nvoos_graphify_save_remote_source',   array( __CLASS__, 'ajax_save_source' ) );
+		add_action( 'wp_ajax_nvoos_graphify_save_remote_source', array( __CLASS__, 'ajax_save_source' ) );
 		add_action( 'wp_ajax_nvoos_graphify_delete_remote_source', array( __CLASS__, 'ajax_delete_source' ) );
-		add_action( 'wp_ajax_nvoos_graphify_test_remote_source',   array( __CLASS__, 'ajax_test_source' ) );
-		add_action( 'wp_ajax_nvoos_graphify_sync_remote_source',   array( __CLASS__, 'ajax_sync_source' ) );
-		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings',   array( __CLASS__, 'ajax_reindex_embeddings' ) );
-		add_action( 'nvoos_graphify_cron_reindex_embeddings',      array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
+		add_action( 'wp_ajax_nvoos_graphify_test_remote_source', array( __CLASS__, 'ajax_test_source' ) );
+		add_action( 'wp_ajax_nvoos_graphify_sync_remote_source', array( __CLASS__, 'ajax_sync_source' ) );
+		add_action( 'wp_ajax_nvoos_graphify_reindex_embeddings', array( __CLASS__, 'ajax_reindex_embeddings' ) );
+		add_action( 'nvoos_graphify_cron_reindex_embeddings', array( 'NV_oOS_Graphify_Embeddings', 'reindex_all' ) );
 	}
 
 	/**
@@ -44,9 +44,9 @@ class NV_oOS_Graphify_Remote_Admin {
 			return;
 		}
 
-		$registry         = NV_oOS_Graphify_Remote_Registry::get_instance();
-		$driver_slugs     = $registry->get_registered_driver_slugs();
-		$configured       = NV_oOS_Graphify_DB::list_remote_sources( array() );
+		$registry     = NV_oOS_Graphify_Remote_Registry::get_instance();
+		$driver_slugs = $registry->get_registered_driver_slugs();
+		$configured   = NV_oOS_Graphify_DB::list_remote_sources( array() );
 		?>
 		<div class="nvoos-graphify-remote-sources">
 			<h2><?php esc_html_e( 'Remote Sources', 'nvoos-graphify' ); ?></h2>
@@ -57,20 +57,21 @@ class NV_oOS_Graphify_Remote_Admin {
 			<?php else : ?>
 				<h3><?php esc_html_e( 'Add New Source', 'nvoos-graphify' ); ?></h3>
 				<div class="nvoos-remote-driver-cards">
-					<?php foreach ( $driver_slugs as $driver_slug ) :
+					<?php
+					foreach ( $driver_slugs as $driver_slug ) :
 						$driver = $registry->get_driver( $driver_slug );
 						if ( ! $driver ) {
 							continue;
 						}
-						$caps = $driver->capabilities();
-					?>
+						$caps = $driver->get_capabilities();
+						?>
 						<div class="nvoos-driver-card">
-							<strong><?php echo esc_html( $driver->get_label() ); ?></strong>
+							<strong><?php echo esc_html( $driver->get_driver_label() ); ?></strong>
 							<p><?php echo esc_html( implode( ', ', $caps ) ); ?></p>
 							<button type="button" class="button button-secondary nvoos-add-source-btn"
 								data-driver="<?php echo esc_attr( $driver_slug ); ?>"
-								data-label="<?php echo esc_attr( $driver->get_label() ); ?>"
-								data-schema="<?php echo esc_attr( wp_json_encode( $driver->config_schema() ) ); ?>">
+								data-label="<?php echo esc_attr( $driver->get_driver_label() ); ?>"
+								data-schema="<?php echo esc_attr( wp_json_encode( $driver->get_config_schema() ) ); ?>">
 								<?php esc_html_e( 'Add', 'nvoos-graphify' ); ?>
 							</button>
 						</div>
@@ -162,11 +163,13 @@ class NV_oOS_Graphify_Remote_Admin {
 		<div class="nvoos-embeddings-panel">
 			<h3><?php esc_html_e( 'Embeddings Index', 'nvoos-graphify' ); ?></h3>
 			<p>
-				<?php printf(
+				<?php
+				printf(
 					/* translators: %d number of stored embeddings */
 					esc_html__( 'Stored embeddings: %d', 'nvoos-graphify' ),
-					$count
-				); ?>
+					absint( $count )
+				);
+				?>
 			</p>
 			<p>
 				<label for="nvoos-embeddings-model"><?php esc_html_e( 'Model:', 'nvoos-graphify' ); ?></label>
@@ -193,14 +196,16 @@ class NV_oOS_Graphify_Remote_Admin {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- already checked above.
-		$slug    = sanitize_key( $_POST['slug'] ?? '' );
-		$driver  = sanitize_key( $_POST['driver'] ?? '' );
-		$label   = sanitize_text_field( $_POST['label'] ?? '' );
+		$slug    = sanitize_key( isset( $_POST['slug'] ) ? wp_unslash( $_POST['slug'] ) : '' );
+		$driver  = sanitize_key( isset( $_POST['driver'] ) ? wp_unslash( $_POST['driver'] ) : '' );
+		$label   = sanitize_text_field( wp_unslash( isset( $_POST['label'] ) ? $_POST['label'] : '' ) );
 		$enabled = ! empty( $_POST['enabled'] ) ? 1 : 0;
 		$config  = array();
 
 		if ( ! empty( $_POST['config'] ) && is_array( $_POST['config'] ) ) {
-			foreach ( $_POST['config'] as $k => $v ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized per key below.
+			$raw_config = wp_unslash( $_POST['config'] );
+			foreach ( $raw_config as $k => $v ) {
 				$config[ sanitize_key( $k ) ] = sanitize_text_field( $v );
 			}
 		}
@@ -210,13 +215,15 @@ class NV_oOS_Graphify_Remote_Admin {
 			wp_send_json_error( __( 'slug, driver, and label are required.', 'nvoos-graphify' ) );
 		}
 
-		$result = NV_oOS_Graphify_DB::save_remote_source( array(
-			'slug'    => $slug,
-			'driver'  => $driver,
-			'label'   => $label,
-			'enabled' => $enabled,
-			'config'  => $config,
-		) );
+		$result = NV_oOS_Graphify_DB::save_remote_source(
+			array(
+				'slug'    => $slug,
+				'driver'  => $driver,
+				'label'   => $label,
+				'enabled' => $enabled,
+				'config'  => $config,
+			)
+		);
 
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( $result->get_error_message() );
@@ -275,7 +282,7 @@ class NV_oOS_Graphify_Remote_Admin {
 			wp_send_json_error( __( 'Source not found or not enabled.', 'nvoos-graphify' ) );
 		}
 
-		$driver  = $registry->get_driver( $source['driver'] ?? '' );
+		$driver = $registry->get_driver( $source['driver'] ?? '' );
 		if ( ! $driver ) {
 			wp_send_json_error( __( 'Driver not found.', 'nvoos-graphify' ) );
 		}

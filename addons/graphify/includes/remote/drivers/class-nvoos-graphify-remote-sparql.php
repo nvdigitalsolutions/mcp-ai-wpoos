@@ -51,11 +51,15 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 		return __( 'SPARQL Endpoint (RDF)', 'nvoos-graphify' );
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $config Driver configuration array.
+	 */
 	public function set_config( array $config ) {
 		$this->config = $config;
-		$slug = isset( $config['_slug'] ) ? $config['_slug'] : 'sparql';
-		$this->http = new NV_oOS_Graphify_HTTP_Client( $slug );
+		$slug         = isset( $config['_slug'] ) ? $config['_slug'] : 'sparql';
+		$this->http   = new NV_oOS_Graphify_HTTP_Client( $slug );
 	}
 
 	/** {@inheritdoc} */
@@ -69,31 +73,80 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 	}
 
 	/** {@inheritdoc} */
+	public function get_config_schema() {
+		return array(
+			'endpoint'  => array(
+				'type'        => 'url',
+				'label'       => __( 'SPARQL Endpoint URL', 'nvoos-graphify' ),
+				'description' => __( 'SPARQL 1.1 SELECT endpoint URL.', 'nvoos-graphify' ),
+				'required'    => true,
+			),
+			'query'     => array(
+				'type'        => 'textarea',
+				'label'       => __( 'SPARQL Query', 'nvoos-graphify' ),
+				'description' => __( 'SELECT query returning ?id ?label ?url variables.', 'nvoos-graphify' ),
+			),
+			'var_id'    => array(
+				'type'    => 'text',
+				'label'   => __( 'ID Variable', 'nvoos-graphify' ),
+				'default' => 'id',
+			),
+			'var_label' => array(
+				'type'    => 'text',
+				'label'   => __( 'Label Variable', 'nvoos-graphify' ),
+				'default' => 'label',
+			),
+			'var_url'   => array(
+				'type'    => 'text',
+				'label'   => __( 'URL Variable', 'nvoos-graphify' ),
+				'default' => 'url',
+			),
+			'api_token' => array(
+				'type'  => 'password',
+				'label' => __( 'Bearer Token (optional)', 'nvoos-graphify' ),
+			),
+		);
+	}
+
+	/** {@inheritdoc} */
 	public function test_connection() {
 		$endpoint = $this->get_endpoint();
 		if ( empty( $endpoint ) ) {
-			return array( 'success' => false, 'message' => __( 'No endpoint_url configured.', 'nvoos-graphify' ) );
+			return array(
+				'success' => false,
+				'message' => __( 'No endpoint_url configured.', 'nvoos-graphify' ),
+			);
 		}
 
 		$result = $this->execute_query( 'ASK { ?s ?p ?o }', 'ask' );
 		if ( is_wp_error( $result ) ) {
-			return array( 'success' => false, 'message' => $result->get_error_message() );
+			return array(
+				'success' => false,
+				'message' => $result->get_error_message(),
+			);
 		}
 
-		return array( 'success' => true, 'message' => __( 'SPARQL endpoint accessible.', 'nvoos-graphify' ) );
+		return array(
+			'success' => true,
+			'message' => __( 'SPARQL endpoint accessible.', 'nvoos-graphify' ),
+		);
 	}
 
 	/** {@inheritdoc} */
 	public function discover() {
 		return array(
-			'driver'        => $this->get_driver_id(),
-			'label'         => $this->get_driver_label(),
-			'endpoint_url'  => $this->get_endpoint(),
-			'capabilities'  => $this->get_capabilities(),
+			'driver'       => $this->get_driver_id(),
+			'label'        => $this->get_driver_label(),
+			'endpoint_url' => $this->get_endpoint(),
+			'capabilities' => $this->get_capabilities(),
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_nodes( array $args = array() ) {
 		$node_query  = isset( $this->config['node_query'] ) ? $this->config['node_query'] : '';
 		$source_slug = isset( $this->config['_slug'] ) ? $this->config['_slug'] : 'sparql';
@@ -138,7 +191,11 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 		return $nodes;
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array $args Optional fetch arguments.
+	 */
 	public function fetch_edges( array $args = array() ) {
 		$edge_query  = isset( $this->config['edge_query'] ) ? $this->config['edge_query'] : '';
 		$source_slug = isset( $this->config['_slug'] ) ? $this->config['_slug'] : 'sparql';
@@ -178,14 +235,22 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 		return $edges;
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * {@inheritdoc}
+	 *
+	 * @param array|object $local_node Local node to reconcile.
+	 */
 	public function reconcile( $local_node ) {
 		$label       = is_object( $local_node ) ? $local_node->label : ( isset( $local_node['label'] ) ? $local_node['label'] : '' );
 		$label       = sanitize_text_field( $label );
 		$source_slug = isset( $this->config['_slug'] ) ? $this->config['_slug'] : 'sparql';
 
 		if ( empty( $label ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		// Build a lookup query for this label.
@@ -193,17 +258,25 @@ class NV_oOS_Graphify_Remote_SPARQL implements NV_oOS_Graphify_Remote_Source_Int
 		$query         = $this->prepend_prefixes(
 			"SELECT ?id ?label WHERE { ?id rdfs:label ?label . FILTER(LCASE(STR(?label)) = LCASE(\"{$label_escaped}\")) } LIMIT 3"
 		);
-		$result = $this->execute_query( $query, 'select' );
+		$result        = $this->execute_query( $query, 'select' );
 
 		if ( is_wp_error( $result ) || empty( $result ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$first = reset( $result );
 		$id    = isset( $first['id']['value'] ) ? sanitize_text_field( $first['id']['value'] ) : '';
 
 		if ( empty( $id ) ) {
-			return array( 'external_id' => '', 'confidence' => 0.0, 'matched' => false );
+			return array(
+				'external_id' => '',
+				'confidence'  => 0.0,
+				'matched'     => false,
+			);
 		}
 
 		$remote_label = isset( $first['label']['value'] ) ? $first['label']['value'] : '';
