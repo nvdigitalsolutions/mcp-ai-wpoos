@@ -156,6 +156,7 @@ class NV_oOS_Graphify {
 			$registry->register_driver( new NV_oOS_Graphify_Remote_Zendesk() );
 			$registry->register_driver( new NV_oOS_Graphify_Remote_M365() );
 			$registry->register_driver( new NV_oOS_Graphify_Remote_ServiceNow() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_Generic_GraphQL() );
 		}
 	}
 
