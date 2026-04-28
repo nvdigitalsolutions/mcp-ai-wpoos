@@ -40,6 +40,8 @@ Renders the live coding editor with audio playback and visualization.
 | `scale`     | `C minor` | Initial musical scale      |
 | `visualizer`| `true`    | Show audio visualizer      |
 
+**Access control.** Authors (`edit_posts`) and above always see the live coder. Other users — including unauthenticated guests — see a small "log in to start playing" prompt unless an administrator enables **Algorave Patterns → Settings → Guest Access**. For safety the Tone.js raw-`eval` engine stays disabled for guests even when `WP_MCP_AI_ALLOW_TONEJS_EVAL` is defined; guests are limited to the sandboxed Strudel engine.
+
 ### `[algorave_pattern_library]`
 
 Renders a browsable grid of saved patterns.

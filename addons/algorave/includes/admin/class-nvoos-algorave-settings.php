@@ -112,7 +112,7 @@ class NV_oOS_Algorave_Settings {
 			'nvoos_algorave_general',
 			array(
 				'id'          => 'guest_access',
-				'description' => __( 'Allow non-logged-in users to use the live coder (performances).', 'nvoos-algorave' ),
+				'description' => __( 'Allow non-logged-in users to view and use the [algorave_live_coder] live coder (e.g. for public performances). The Tone.js raw-eval engine remains disabled for guests even when WP_MCP_AI_ALLOW_TONEJS_EVAL is defined; guests can only use the sandboxed Strudel engine.', 'nvoos-algorave' ),
 			)
 		);
 
