@@ -145,6 +145,13 @@ class NV_oOS_Graphify {
 		$registry->register_driver( new NV_oOS_Graphify_Remote_WooCommerce() );
 		$registry->register_driver( new NV_oOS_Graphify_Remote_CSV() );
 		$registry->register_driver( new NV_oOS_Graphify_Remote_Webhook() );
+
+		// Phase 3 SaaS drivers — Pro only. Available when the Pro addon is loaded.
+		if ( function_exists( 'wp_mcp_ai_is_pro_addon_available' ) && wp_mcp_ai_is_pro_addon_available() ) {
+			$registry->register_driver( new NV_oOS_Graphify_Remote_HubSpot() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_GitHub() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_Slack() );
+		}
 	}
 
 	// -------------------------------------------------------------------------
