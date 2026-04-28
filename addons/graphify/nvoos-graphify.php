@@ -37,7 +37,7 @@ define( 'NVOOS_GRAPHIFY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NVOOS_GRAPHIFY_URL', plugin_dir_url( __FILE__ ) );
 
 /** DB schema version — bump when tables change. */
-define( 'NVOOS_GRAPHIFY_DB_VERSION', '1' );
+define( 'NVOOS_GRAPHIFY_DB_VERSION', '2' );
 
 // Load core classes.
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-db.php';
@@ -48,11 +48,48 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-builder.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-analyzer.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-report.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-exporter.php';
+
+// Load remote source system.
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/interface-nvoos-graphify-remote-source.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-source-base.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-crypto.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-http-client.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-registry.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-remote-state-store.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-oauth-broker.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-field-mapper.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-field-map-validator.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-entity-resolver.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/class-nvoos-graphify-schema-org-mapper.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-wikidata.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-oos-federation.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-generic-rest.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-rss-sitemap.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-sparql.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-woocommerce.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-csv.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-webhook.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-hubspot.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-github.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-slack.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-google-drive.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-jira.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-zendesk.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-m365.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-servicenow.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-generic-graphql.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-generic-sql.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-s3.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-remote-enricher.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings-on-ingest.php';
+
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 
 // Load admin classes.
 if ( is_admin() ) {
 	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-settings.php';
+	require_once NVOOS_GRAPHIFY_PATH . 'includes/admin/class-nvoos-graphify-remote-admin.php';
 }
 
 // Load REST controller.

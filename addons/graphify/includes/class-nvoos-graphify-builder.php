@@ -75,6 +75,20 @@ class NV_oOS_Graphify_Builder {
 			}
 		}
 
+		// 3.5. Remote enrichment (async; skipped when no sources are configured).
+		$remote_nodes = 0;
+		$remote_edges = 0;
+		$settings     = NV_oOS_Graphify::get_settings();
+		if ( ! empty( $settings['remote_enrich_enabled'] ) ) {
+			$enricher       = new NV_oOS_Graphify_Remote_Enricher();
+			$enrich_async   = ! empty( $settings['remote_enrich_async'] );
+			$enrich_summary = $enricher->enrich_all( $enrich_async );
+			if ( ! $enrich_async && is_array( $enrich_summary ) ) {
+				$remote_nodes = isset( $enrich_summary['nodes'] ) ? (int) $enrich_summary['nodes'] : 0;
+				$remote_edges = isset( $enrich_summary['edges'] ) ? (int) $enrich_summary['edges'] : 0;
+			}
+		}
+
 		// 4. Recalculate degree counts for all nodes.
 		self::recalculate_all_degrees();
 
@@ -90,14 +104,16 @@ class NV_oOS_Graphify_Builder {
 		delete_transient( 'nvoos_graphify_report' );
 
 		$summary = array(
-			'success'                => true,
-			'posts_processed'        => $post_count,
-			'nodes_upserted'         => $node_count,
-			'edges_upserted'         => $edge_count,
-			'semantic_nodes'         => $semantic_nodes,
-			'semantic_edges'         => $semantic_edges,
-			'async_semantic'         => $async_semantic,
-			'build_completed'        => $completed,
+			'success'         => true,
+			'posts_processed' => $post_count,
+			'nodes_upserted'  => $node_count,
+			'edges_upserted'  => $edge_count,
+			'semantic_nodes'  => $semantic_nodes,
+			'semantic_edges'  => $semantic_edges,
+			'async_semantic'  => $async_semantic,
+			'remote_nodes'    => $remote_nodes,
+			'remote_edges'    => $remote_edges,
+			'build_completed' => $completed,
 		);
 
 		NV_oOS_Graphify_DB::set_meta( 'last_build_summary', $summary );

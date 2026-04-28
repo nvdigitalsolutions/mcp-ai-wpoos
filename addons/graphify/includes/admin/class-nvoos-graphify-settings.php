@@ -104,6 +104,17 @@ class NV_oOS_Graphify_Settings {
 		add_settings_field( 'rebuild_schedule', __( 'Scheduled Rebuild', 'nvoos-graphify' ), array( __CLASS__, 'field_rebuild_schedule' ), self::PAGE_SLUG, 'nvoos_graphify_build' );
 		add_settings_field( 'openai_api_key', __( 'OpenAI API Key (optional)', 'nvoos-graphify' ), array( __CLASS__, 'field_openai_key' ), self::PAGE_SLUG, 'nvoos_graphify_build' );
 
+		// --- Remote sources section ---
+		add_settings_section( 'nvoos_graphify_remote', __( 'Remote Enrichment', 'nvoos-graphify' ), '__return_false', self::PAGE_SLUG );
+		add_settings_field( 'remote_enrich_enabled', __( 'Enable Remote Enrichment', 'nvoos-graphify' ), array( __CLASS__, 'field_remote_enrich_enabled' ), self::PAGE_SLUG, 'nvoos_graphify_remote' );
+		add_settings_field( 'remote_enrich_budget', __( 'Enrichment Budget (nodes/run)', 'nvoos-graphify' ), array( __CLASS__, 'field_remote_enrich_budget' ), self::PAGE_SLUG, 'nvoos_graphify_remote' );
+		add_settings_field( 'remote_enrich_async', __( 'Async Enrichment', 'nvoos-graphify' ), array( __CLASS__, 'field_remote_enrich_async' ), self::PAGE_SLUG, 'nvoos_graphify_remote' );
+
+		// --- Embeddings section ---
+		add_settings_section( 'nvoos_graphify_embeddings', __( 'Embeddings', 'nvoos-graphify' ), '__return_false', self::PAGE_SLUG );
+		add_settings_field( 'embeddings_enabled', __( 'Enable Embeddings', 'nvoos-graphify' ), array( __CLASS__, 'field_embeddings_enabled' ), self::PAGE_SLUG, 'nvoos_graphify_embeddings' );
+		add_settings_field( 'embeddings_model', __( 'Embeddings Model', 'nvoos-graphify' ), array( __CLASS__, 'field_embeddings_model' ), self::PAGE_SLUG, 'nvoos_graphify_embeddings' );
+
 		// --- Display section ---
 		add_settings_section( 'nvoos_graphify_display', __( 'Display', 'nvoos-graphify' ), '__return_false', self::PAGE_SLUG );
 		add_settings_field( 'schema_injection', __( 'Schema.org Injection', 'nvoos-graphify' ), array( __CLASS__, 'field_schema' ), self::PAGE_SLUG, 'nvoos_graphify_display' );
@@ -121,7 +132,7 @@ class NV_oOS_Graphify_Settings {
 	 * @return array Sanitized settings.
 	 */
 	public static function sanitize_settings( $raw ) {
-		$sanitized = array();
+		$sanitized                        = array();
 		$sanitized['enabled']             = ! empty( $raw['enabled'] ) ? 1 : 0;
 		$sanitized['semantic_extraction'] = ! empty( $raw['semantic_extraction'] ) ? 1 : 0;
 		$sanitized['incremental_builds']  = ! empty( $raw['incremental_builds'] ) ? 1 : 0;
@@ -129,7 +140,7 @@ class NV_oOS_Graphify_Settings {
 		$sanitized['schema_injection']    = ! empty( $raw['schema_injection'] ) ? 1 : 0;
 		$sanitized['related_content']     = ! empty( $raw['related_content'] ) ? 1 : 0;
 
-		$allowed_schedules = array( 'hourly', 'twicedaily', 'daily', 'weekly' );
+		$allowed_schedules             = array( 'hourly', 'twicedaily', 'daily', 'weekly' );
 		$sanitized['rebuild_schedule'] = in_array( $raw['rebuild_schedule'] ?? 'daily', $allowed_schedules, true )
 			? $raw['rebuild_schedule'] : 'daily';
 
@@ -137,6 +148,17 @@ class NV_oOS_Graphify_Settings {
 		$sanitized['cytoscape_height']  = sanitize_text_field( $raw['cytoscape_height'] ?? '600px' );
 		$sanitized['max_display_nodes'] = max( 50, min( 2000, absint( $raw['max_display_nodes'] ?? 300 ) ) );
 		$sanitized['max_related']       = max( 1, min( 10, absint( $raw['max_related'] ?? 5 ) ) );
+
+		// Remote enrichment fields.
+		$sanitized['remote_enrich_enabled'] = ! empty( $raw['remote_enrich_enabled'] ) ? 1 : 0;
+		$sanitized['remote_enrich_budget']  = max( 1, min( 500, absint( $raw['remote_enrich_budget'] ?? 50 ) ) );
+		$sanitized['remote_enrich_async']   = ! empty( $raw['remote_enrich_async'] ) ? 1 : 0;
+
+		// Embeddings fields.
+		$sanitized['embeddings_enabled'] = ! empty( $raw['embeddings_enabled'] ) ? 1 : 0;
+		$allowed_models                  = array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' );
+		$sanitized['embeddings_model']   = in_array( $raw['embeddings_model'] ?? '', $allowed_models, true )
+			? $raw['embeddings_model'] : 'text-embedding-3-small';
 
 		return $sanitized;
 	}
@@ -175,7 +197,7 @@ class NV_oOS_Graphify_Settings {
 
 	/** Render rebuild schedule field. */
 	public static function field_rebuild_schedule() {
-		$s = NV_oOS_Graphify::get_settings();
+		$s       = NV_oOS_Graphify::get_settings();
 		$options = array(
 			'hourly'     => __( 'Hourly', 'nvoos-graphify' ),
 			'twicedaily' => __( 'Twice Daily', 'nvoos-graphify' ),
@@ -222,6 +244,81 @@ class NV_oOS_Graphify_Settings {
 		$s = NV_oOS_Graphify::get_settings();
 		echo '<input type="number" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[max_display_nodes]" value="' . absint( $s['max_display_nodes'] ) . '" min="50" max="2000" class="small-text">';
 		echo '<p class="description">' . esc_html__( 'Maximum nodes to render in the graph explorer. Lower values improve browser performance.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	/**
+	 * Field: Enable remote enrichment.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function field_remote_enrich_enabled() {
+		$s = NV_oOS_Graphify::get_settings();
+		echo '<label><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[remote_enrich_enabled]" value="1"' . checked( 1, $s['remote_enrich_enabled'], false ) . '> ';
+		echo esc_html__( 'Enrich graph nodes from configured remote sources during each build.', 'nvoos-graphify' ) . '</label>';
+	}
+
+	/**
+	 * Field: Remote enrichment node budget per run.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function field_remote_enrich_budget() {
+		$s = NV_oOS_Graphify::get_settings();
+		echo '<input type="number" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[remote_enrich_budget]" value="' . absint( $s['remote_enrich_budget'] ) . '" min="1" max="500" class="small-text">';
+		echo '<p class="description">' . esc_html__( 'Maximum nodes to enrich per build run (1–500). Prevents long-running builds.', 'nvoos-graphify' ) . '</p>';
+	}
+
+	/**
+	 * Field: Async remote enrichment.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function field_remote_enrich_async() {
+		$s = NV_oOS_Graphify::get_settings();
+		echo '<label><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[remote_enrich_async]" value="1"' . checked( 1, $s['remote_enrich_async'], false ) . '> ';
+		echo esc_html__( 'Run enrichment in the background via WP-Cron (recommended for large sites).', 'nvoos-graphify' ) . '</label>';
+	}
+
+	/**
+	 * Field: Enable embeddings.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function field_embeddings_enabled() {
+		$s = NV_oOS_Graphify::get_settings();
+		echo '<label><input type="checkbox" name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[embeddings_enabled]" value="1"' . checked( 1, $s['embeddings_enabled'], false ) . '> ';
+		echo esc_html__( 'Generate and store vector embeddings for nodes (requires OpenAI API key).', 'nvoos-graphify' ) . '</label>';
+	}
+
+	/**
+	 * Field: Embeddings model selector.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public static function field_embeddings_model() {
+		$s       = NV_oOS_Graphify::get_settings();
+		$current = isset( $s['embeddings_model'] ) ? $s['embeddings_model'] : 'text-embedding-3-small';
+		$models  = array(
+			'text-embedding-3-small' => __( 'text-embedding-3-small (recommended)', 'nvoos-graphify' ),
+			'text-embedding-3-large' => __( 'text-embedding-3-large (higher quality, slower)', 'nvoos-graphify' ),
+			'text-embedding-ada-002' => __( 'text-embedding-ada-002 (legacy)', 'nvoos-graphify' ),
+		);
+		echo '<select name="' . esc_attr( NV_oOS_Graphify::OPTION_KEY ) . '[embeddings_model]">';
+		foreach ( $models as $value => $label ) {
+			echo '<option value="' . esc_attr( $value ) . '"' . selected( $current, $value, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		echo '</select>';
+		echo '<p class="description">' . esc_html__( 'OpenAI embedding model used when generating node vectors.', 'nvoos-graphify' ) . '</p>';
 	}
 
 	// -------------------------------------------------------------------------
@@ -324,6 +421,14 @@ class NV_oOS_Graphify_Settings {
 		$last_build = NV_oOS_Graphify_DB::get_meta( 'last_build_completed', __( 'Never', 'nvoos-graphify' ) );
 		$status     = NV_oOS_Graphify_DB::get_meta( 'build_status', 'idle' );
 		$settings   = NV_oOS_Graphify::get_settings();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+		$tabs        = array(
+			'general'    => __( 'General', 'nvoos-graphify' ),
+			'remote'     => __( 'Remote Sources', 'nvoos-graphify' ),
+			'embeddings' => __( 'Embeddings', 'nvoos-graphify' ),
+		);
 		?>
 		<div class="wrap nvoos-graphify-admin">
 			<h1><?php esc_html_e( 'Knowledge Graph', 'nvoos-graphify' ); ?></h1>
@@ -388,17 +493,89 @@ class NV_oOS_Graphify_Settings {
 			</div>
 			<?php endif; ?>
 
-			<?php /* Settings form */ ?>
-			<h2><?php esc_html_e( 'Settings', 'nvoos-graphify' ); ?></h2>
-			<form method="post" action="options.php">
-				<?php
-				settings_fields( 'nvoos_graphify_settings_group' );
-				do_settings_sections( self::PAGE_SLUG );
-				submit_button();
-				?>
-			</form>
+			<?php /* Tabbed settings */ ?>
+			<h2 class="nav-tab-wrapper">
+				<?php foreach ( $tabs as $tab_key => $tab_label ) : ?>
+					<a href="<?php echo esc_url( add_query_arg( 'tab', $tab_key ) ); ?>"
+						class="nav-tab<?php echo ( $current_tab === $tab_key ) ? ' nav-tab-active' : ''; ?>">
+						<?php echo esc_html( $tab_label ); ?>
+					</a>
+				<?php endforeach; ?>
+			</h2>
+
+			<?php if ( 'remote' === $current_tab ) : ?>
+				<?php NV_oOS_Graphify_Remote_Admin::render_tab(); ?>
+				<form method="post" action="options.php" style="margin-top:20px;">
+					<?php
+					settings_fields( 'nvoos_graphify_settings_group' );
+					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_remote' ) );
+					submit_button( __( 'Save Remote Settings', 'nvoos-graphify' ) );
+					?>
+				</form>
+			<?php elseif ( 'embeddings' === $current_tab ) : ?>
+				<?php NV_oOS_Graphify_Remote_Admin::render_embeddings_panel(); ?>
+				<form method="post" action="options.php" style="margin-top:20px;">
+					<?php
+					settings_fields( 'nvoos_graphify_settings_group' );
+					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_embeddings' ) );
+					submit_button( __( 'Save Embeddings Settings', 'nvoos-graphify' ) );
+					?>
+				</form>
+			<?php else : ?>
+				<form method="post" action="options.php">
+					<?php
+					settings_fields( 'nvoos_graphify_settings_group' );
+					do_settings_sections_filtered(
+						self::PAGE_SLUG,
+						array( 'nvoos_graphify_general', 'nvoos_graphify_build', 'nvoos_graphify_display' )
+					);
+					submit_button();
+					?>
+				</form>
+			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Output settings sections for a specific subset of section IDs.
+	 *
+	 * WordPress's `do_settings_sections()` prints ALL sections for a page slug.
+	 * This wrapper lets us selectively print only the sections relevant to a tab.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @global array $wp_settings_sections Registered settings sections.
+	 * @global array $wp_settings_fields   Registered settings fields.
+	 *
+	 * @param string   $page     Settings page slug.
+	 * @param string[] $sections Section IDs to render.
+	 * @return void
+	 */
+	private static function do_settings_sections_filtered( $page, array $sections ) {
+		global $wp_settings_sections, $wp_settings_fields;
+
+		if ( ! isset( $wp_settings_sections[ $page ] ) ) {
+			return;
+		}
+
+		foreach ( (array) $wp_settings_sections[ $page ] as $section ) {
+			if ( ! in_array( $section['id'], $sections, true ) ) {
+				continue;
+			}
+			if ( $section['title'] ) {
+				echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+			}
+			if ( $section['callback'] ) {
+				call_user_func( $section['callback'], $section );
+			}
+			if ( ! isset( $wp_settings_fields[ $page ][ $section['id'] ] ) ) {
+				continue;
+			}
+			echo '<table class="form-table" role="presentation"><tbody>';
+			do_settings_fields( $page, $section['id'] );
+			echo '</tbody></table>';
+		}
 	}
 
 	// -------------------------------------------------------------------------
