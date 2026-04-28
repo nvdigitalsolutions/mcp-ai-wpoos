@@ -73,6 +73,8 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-google-drive.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-jira.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-zendesk.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-m365.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify-remote-servicenow.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-remote-enricher.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php';
 
