@@ -1,0 +1,53 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-llm-worker",
+  "version": "0.1.0-alpha.1",
+  "description": "Web Worker manager for non-blocking LLM operations - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-llm-worker.js",
+  "module": "dist/nvoos-llm-worker.js",
+  "types": "dist/nvoos-llm-worker.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-llm-worker.js",
+      "default": "./dist/nvoos-llm-worker.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-llm-worker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-llm-worker"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "web-worker",
+    "llm",
+    "ai",
+    "webllm",
+    "browser-ai",
+    "non-blocking",
+    "streaming",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "llm-worker.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
