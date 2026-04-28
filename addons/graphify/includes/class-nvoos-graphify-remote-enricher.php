@@ -140,6 +140,9 @@ class NV_oOS_Graphify_Remote_Enricher {
 						break;
 					}
 					NV_oOS_Graphify_DB::upsert_node( $rn );
+					if ( class_exists( 'NV_oOS_Graphify_Embeddings_On_Ingest' ) ) {
+						NV_oOS_Graphify_Embeddings_On_Ingest::auto_enqueue_remote_nodes( $rn );
+					}
 					++$summary['remote_nodes'];
 					++$count;
 				}
@@ -222,6 +225,9 @@ class NV_oOS_Graphify_Remote_Enricher {
 			$remote_nodes = $source->fetch_nodes( array( 'limit' => $budget ) );
 			foreach ( array_slice( $remote_nodes, 0, $budget ) as $rn ) {
 				NV_oOS_Graphify_DB::upsert_node( $rn );
+				if ( class_exists( 'NV_oOS_Graphify_Embeddings_On_Ingest' ) ) {
+					NV_oOS_Graphify_Embeddings_On_Ingest::auto_enqueue_remote_nodes( $rn );
+				}
 				++$summary['remote_nodes'];
 			}
 		}

@@ -63,6 +63,7 @@ class NV_oOS_Graphify {
 		add_action( self::CRON_BUILD_HOOK, array( __CLASS__, 'run_scheduled_build' ) );
 		add_action( self::CRON_ENRICH_HOOK, array( __CLASS__, 'run_scheduled_enrich' ) );
 		add_action( 'nvoos_graphify_cron_semantic_extract', array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch' ) );
+		NV_oOS_Graphify_Embeddings_On_Ingest::register();
 	}
 
 	/**
@@ -269,6 +270,7 @@ class NV_oOS_Graphify {
 				'remote_enrich_budget' => 50,
 				'embeddings_enabled'   => false,
 				'embeddings_model'     => 'text-embedding-3-small',
+				'embed_on_ingest'      => true,
 				'remote_enrich_async'  => true,
 			)
 		);
