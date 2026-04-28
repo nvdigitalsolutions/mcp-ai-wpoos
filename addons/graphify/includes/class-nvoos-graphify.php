@@ -151,6 +151,9 @@ class NV_oOS_Graphify {
 			$registry->register_driver( new NV_oOS_Graphify_Remote_HubSpot() );
 			$registry->register_driver( new NV_oOS_Graphify_Remote_GitHub() );
 			$registry->register_driver( new NV_oOS_Graphify_Remote_Slack() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_Google_Drive() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_Jira() );
+			$registry->register_driver( new NV_oOS_Graphify_Remote_Zendesk() );
 		}
 	}
 
