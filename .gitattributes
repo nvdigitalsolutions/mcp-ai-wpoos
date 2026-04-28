@@ -122,9 +122,9 @@ esbuild.config.pro.js       export-ignore
 cosmos.config.json          export-ignore
 cosmos.webpack.config.js    export-ignore
 webpack.config.js           export-ignore
-webpack.config.tma-builder.js  export-ignore
+webpack.config.tma-builder.js   export-ignore
 webpack.config.tma.js       export-ignore
-webpack.config.workflow.js  export-ignore
+webpack.config.workflow.js   export-ignore
 tsconfig.json               export-ignore
 Makefile                    export-ignore
 Gruntfile.js                export-ignore
