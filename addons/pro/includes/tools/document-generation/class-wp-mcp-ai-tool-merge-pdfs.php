@@ -99,6 +99,19 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return array(
+'error' => __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ),
+);
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return array(
+'error' => __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ),
+);
+}
+
+
 		// Check user capability.
 		if ( ! current_user_can( 'upload_files' ) ) {
 			return array(
@@ -244,9 +257,7 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Try pdftk command-line tool.
-		$pdftk = shell_exec( 'which pdftk 2>/dev/null' );
-
-		if ( ! empty( $pdftk ) ) {
+		if ( wp_mcp_ai_find_binary( 'pdftk' ) ) {
 			$result = $this->merge_with_pdftk( $file_paths, $filename );
 			// Clean up temp files if we downloaded any.
 			foreach ( $temp_files as $temp ) {
@@ -285,7 +296,10 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error Result array or error.
 	 */
 	protected function merge_with_pdftk( $file_paths, $filename ) {
-		$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+		$temp_file = wp_mcp_ai_tempnam( 'merged_pdf_', '.pdf' );
+		if ( is_wp_error( $temp_file ) ) {
+			return $temp_file;
+		}
 
 		$cmd = sprintf(
 			'pdftk %s cat output %s 2>&1',
@@ -293,10 +307,11 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			escapeshellarg( $temp_file )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$proc_result = wp_mcp_ai_run_shell( $cmd, dirname( $temp_file ) );
+		$return_code  = $proc_result['exit_code'];
 
 		if ( 0 !== $return_code ) {
-			@unlink( $temp_file );
+			@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			return new WP_Error( 'merge_failed', __( 'Failed to merge PDFs using pdftk.', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -362,7 +377,10 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 
 			// Save to temp file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+			$temp_file = wp_mcp_ai_tempnam( 'merged_pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
 			$pdf->Output( $temp_file, 'F' );
 
 			// Upload to WordPress media library.

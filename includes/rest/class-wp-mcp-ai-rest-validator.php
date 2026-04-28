@@ -30,6 +30,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_REST_Validator {
 
 	/**
+	 * Default maximum byte size for a tool-result string before it is
+	 * truncated when being re-injected into the prompt as a tool-role
+	 * message. 64 KB is generous enough to carry large JSON payloads
+	 * while preventing runaway context growth.
+	 *
+	 * Filterable via {@see 'wp_mcp_ai_tool_result_max_bytes'}.
+	 *
+	 * @since 1.8.0
+	 * @var int
+	 */
+	const TOOL_RESULT_MAX_BYTES = 65536;
+
+	/**
 	 * Validate messages array structure for chat endpoint.
 	 *
 	 * Validates that the messages parameter is:
@@ -880,7 +893,17 @@ class WP_MCP_AI_REST_Validator {
 			$result = $this->sanitize_complex_data_for_llm( $result );
 		}
 
-		return $result;
+		// Serialise to a string so the two safety layers below can work on
+		// the exact bytes that will be placed in the prompt.
+		$content = is_string( $result ) ? $result : (string) wp_json_encode( $result );
+
+		// Layer 1: neutralise special tokens that could allow prompt injection.
+		$content = $this->neutralise_tool_result_delimiters( $content );
+
+		// Layer 2: cap byte size to prevent context exhaustion / runaway cost.
+		$content = $this->truncate_tool_result_content( $content );
+
+		return $content;
 	}
 
 	/**
@@ -1007,5 +1030,122 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Truncate a serialised tool-result string to a safe byte cap.
+	 *
+	 * Large tool results (e.g. a full-page web crawl, a raw database dump)
+	 * can silently exhaust the model's context window or incur unexpected
+	 * token costs. This helper caps the byte size and appends a visible
+	 * truncation marker so the model knows the payload was cut.
+	 *
+	 * The cap is tunable per-site via the
+	 * {@see 'wp_mcp_ai_tool_result_max_bytes'} filter.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Serialised tool-result string.
+	 * @return string Potentially truncated string with marker appended.
+	 */
+	public function truncate_tool_result_content( $content ) {
+		/**
+		 * Maximum byte size for a single tool-result string injected into
+		 * the prompt.
+		 *
+		 * @since 1.8.0
+		 *
+		 * @param int $max_bytes Byte cap. Default 65536 (64 KB).
+		 */
+		$max_bytes = (int) apply_filters( 'wp_mcp_ai_tool_result_max_bytes', self::TOOL_RESULT_MAX_BYTES );
+
+		// Guard: never truncate to a nonsensical length.
+		if ( $max_bytes < 256 ) {
+			$max_bytes = 256;
+		}
+
+		if ( strlen( $content ) <= $max_bytes ) {
+			return $content;
+		}
+
+		// Truncate and append a human- and model-readable marker.
+		$marker  = ' [tool_result_truncated]';
+		$allowed = $max_bytes - strlen( $marker );
+		return substr( $content, 0, $allowed ) . $marker;
+	}
+
+	/**
+	 * Strip special tokens that could be used to inject text outside the
+	 * intended tool-result boundary (prompt injection / jailbreak vector).
+	 *
+	 * Models ingest tool-role messages as plain text; an attacker who
+	 * controls the data returned by an external tool could embed special
+	 * tokens (e.g. ChatML `<|im_start|>`, Llama `<|eot_id|>`) that some
+	 * inference backends interpret as role-change signals, or XML-style
+	 * markers that the prompt template uses to delimit tool output.
+	 *
+	 * Tokens are stripped rather than HTML-encoded because they are
+	 * meaningless to the model's knowledge base and stripping is safer
+	 * than forwarding a slightly modified token that could still confuse
+	 * tokenisers.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @param string $content Tool-result string to clean.
+	 * @return string Cleaned string.
+	 */
+	public function neutralise_tool_result_delimiters( $content ) {
+		// Null bytes — strip entirely; they break JSON encoding and can
+		// confuse string-length calculations.
+		$content = str_replace( "\x00", '', $content );
+
+		// ChatML special tokens (OpenAI / tiktoken-based models).
+		$content = str_replace(
+			array(
+				'<|im_start|>',
+				'<|im_end|>',
+				'<|endoftext|>',
+				'<|fim_prefix|>',
+				'<|fim_middle|>',
+				'<|fim_suffix|>',
+				'<|fim_pad|>',
+			),
+			'',
+			$content
+		);
+
+		// Llama / Meta special tokens.
+		$content = str_replace(
+			array(
+				'<|eot_id|>',
+				'<|start_header_id|>',
+				'<|end_header_id|>',
+				'<|finetune_right_pad_id|>',
+				'<s>',
+				'</s>',
+			),
+			'',
+			$content
+		);
+
+		// XML-style function / tool-call delimiters used in various prompt
+		// templates (Anthropic XML style, open-source fine-tunes).
+		$content = str_replace(
+			array(
+				'<tool_response>',
+				'</tool_response>',
+				'<function_calls>',
+				'</function_calls>',
+				'<invoke>',
+				'</invoke>',
+				'<tool_call>',
+				'</tool_call>',
+				'</tool_call>',
+			),
+			'',
+			$content
+		);
+
+		return $content;
 	}
 }

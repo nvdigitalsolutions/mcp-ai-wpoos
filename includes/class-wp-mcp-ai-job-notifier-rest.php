@@ -255,7 +255,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 		}
 
 		if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+			$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0, $request );
 
 			if ( $guest_assistant ) {
 				// Guest users can view their own cron jobs (user_id = 0).

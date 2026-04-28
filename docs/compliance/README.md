@@ -1,9 +1,15 @@
 # Compliance Documentation
 
-**Last Updated:** April 17, 2026  
+**Last Updated:** April 27, 2026  
 **Status:** Production Ready
 
 This directory contains comprehensive compliance documentation for multiple security and privacy frameworks, plus WordPress.org Plugin Directory compliance.
+
+---
+
+## 🛡️ Security Audits
+
+- **[SECURITY_AUDIT_2026_04.md](SECURITY_AUDIT_2026_04.md)** — April 27, 2026 — Published summary of the April 2026 security & compliance code review (base + Pro + 6 minor addons). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Cross-references the nine deliverables under [`../audit/2026-04/`](../audit/2026-04/).
 
 ---
 

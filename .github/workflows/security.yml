@@ -114,6 +114,73 @@ jobs:
           fi
         continue-on-error: true
 
+      # ----- Pro addon dependency audits (advisory) -----
+      # Per audit roadmap R-T-02: also run composer/npm audit against addons/pro/
+      # so advisories in the Pro distribution are visible alongside base.
+
+      - name: Run Composer audit (Pro addon)
+        id: composer-audit-pro
+        if: hashFiles('addons/pro/composer.json') != ''
+        run: |
+          set +e
+          if [ -f addons/pro/composer.lock ]; then
+            ( cd addons/pro && composer install --no-interaction --prefer-dist --no-dev --no-scripts ) > /dev/null 2>&1 || true
+          fi
+          ( cd addons/pro && composer audit --format=json ) > composer-audit-pro.json 2>&1
+          set -e
+
+          if [ -f composer-audit-pro.json ] && [ -s composer-audit-pro.json ]; then
+            echo "Composer audit (pro) completed"
+            cat composer-audit-pro.json
+
+            VULNS=$(jq '.advisories | length' composer-audit-pro.json 2>/dev/null || echo "0")
+            echo "vulnerabilities=$VULNS" >> $GITHUB_OUTPUT
+
+            if [ "$VULNS" -gt 0 ]; then
+              echo "::warning::Found $VULNS dependency vulnerabilities in addons/pro"
+            else
+              echo "✅ No Pro addon dependency vulnerabilities found"
+            fi
+          else
+            echo "vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "✅ No Pro addon dependency vulnerabilities found"
+          fi
+        continue-on-error: true
+
+      - name: Run npm audit (Pro addon)
+        id: npm-audit-pro
+        if: hashFiles('addons/pro/package.json') != ''
+        run: |
+          set +e
+          if [ -f addons/pro/package-lock.json ]; then
+            ( cd addons/pro && npm ci --omit=dev --ignore-scripts ) > /dev/null 2>&1 || true
+          fi
+          ( cd addons/pro && npm audit --omit=dev --json ) > npm-audit-pro.json 2>&1
+          set -e
+
+          if [ -f npm-audit-pro.json ] && [ -s npm-audit-pro.json ]; then
+            echo "npm audit (pro) completed"
+            cat npm-audit-pro.json
+
+            HIGH=$(jq '.metadata.vulnerabilities.high // 0' npm-audit-pro.json 2>/dev/null || echo "0")
+            CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit-pro.json 2>/dev/null || echo "0")
+            TOTAL=$(($HIGH + $CRITICAL))
+
+            echo "high_vulnerabilities=$HIGH" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=$CRITICAL" >> $GITHUB_OUTPUT
+
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "::warning::Found $TOTAL high/critical npm vulnerabilities in addons/pro"
+            else
+              echo "✅ No high/critical Pro addon npm vulnerabilities found"
+            fi
+          else
+            echo "high_vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "✅ No high/critical Pro addon npm vulnerabilities found"
+          fi
+        continue-on-error: true
+
       - name: Upload audit results
         uses: actions/upload-artifact@v4
         if: always()
@@ -122,6 +189,8 @@ jobs:
           path: |
             composer-audit.json
             npm-audit.json
+            composer-audit-pro.json
+            npm-audit-pro.json
           retention-days: 30
 
   php-security-scan:

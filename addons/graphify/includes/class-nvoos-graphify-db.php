@@ -148,11 +148,14 @@ class NV_oOS_Graphify_DB {
 	 */
 	public static function uninstall() {
 		global $wpdb;
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names are not user-supplied.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::edges_table() );
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::nodes_table() );
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . self::meta_table() );
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Use %i identifier placeholder (WordPress 6.2+) so the table names are
+		// safely quoted by $wpdb->prepare() rather than concatenated. The names
+		// themselves are server-controlled ($wpdb->prefix . 'graphify_*'), but
+		// using %i is the project's required pattern and guards against any
+		// future regression where a tool argument might reach this path.
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::edges_table() ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::nodes_table() ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::meta_table() ) );
 		delete_option( 'nvoos_graphify_db_version' );
 	}
 
@@ -542,21 +545,26 @@ class NV_oOS_Graphify_DB {
 	 *
 	 * @param string $node_id  Node identifier.
 	 * @param string $relation Optional relation filter.
+	 * @param int    $limit    Maximum number of edges to return (default 500; hard-capped at 2000).
+	 *                         A cap prevents "god nodes" with tens of thousands of edges from
+	 *                         exhausting memory or overwhelming the AI context window.
 	 * @return array
 	 */
-	public static function get_edges_for_node( $node_id, $relation = '' ) {
+	public static function get_edges_for_node( $node_id, $relation = '', $limit = 500 ) {
 		global $wpdb;
 		$table   = self::edges_table();
+		$limit   = max( 1, min( 2000, absint( $limit ) ) );
 		$node_id = sanitize_text_field( $node_id );
 
 		if ( $relation ) {
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			return $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$table} WHERE (source_node_id = %s OR target_node_id = %s) AND relation = %s ORDER BY confidence DESC",
+					"SELECT * FROM {$table} WHERE (source_node_id = %s OR target_node_id = %s) AND relation = %s ORDER BY confidence DESC LIMIT %d",
 					$node_id,
 					$node_id,
-					sanitize_text_field( $relation )
+					sanitize_text_field( $relation ),
+					$limit
 				)
 			);
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -565,9 +573,10 @@ class NV_oOS_Graphify_DB {
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE source_node_id = %s OR target_node_id = %s ORDER BY confidence DESC",
+				"SELECT * FROM {$table} WHERE source_node_id = %s OR target_node_id = %s ORDER BY confidence DESC LIMIT %d",
 				$node_id,
-				$node_id
+				$node_id,
+				$limit
 			)
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared

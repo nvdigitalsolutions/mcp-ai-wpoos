@@ -188,7 +188,25 @@ const cy = cytoscape({
   ],
   layout: { name: 'fcose', animate: true }
 });
-cy.on('tap', 'node', function(e){ const n=e.target.data(); document.getElementById('info').style.display='block'; document.getElementById('info').innerHTML='<h3>'+n.label+'</h3><p>Type: '+n.type+'</p><p>Degree: '+n.degree+'</p>'+(n.url?'<p><a href="'+n.url+'" target="_blank" style="color:#8af">Open ↗</a></p>':''); });
+cy.on('tap', 'node', function(e){
+  var n=e.target.data();
+  var info=document.getElementById('info');
+  info.style.display='block';
+  // Build DOM safely: never use innerHTML with untrusted node label/type/url.
+  while(info.firstChild){info.removeChild(info.firstChild);}
+  var h=document.createElement('h3');h.textContent=n.label||'';info.appendChild(h);
+  var pt=document.createElement('p');pt.textContent='Type: '+(n.type||'');info.appendChild(pt);
+  var pd=document.createElement('p');pd.textContent='Degree: '+(parseInt(n.degree,10)||0);info.appendChild(pd);
+  if(n.url){
+    // Only allow http(s) URLs to neutralise javascript:/data: schemes.
+    var safe=/^https?:\/\//i.test(String(n.url))?String(n.url):'';
+    if(safe){
+      var pu=document.createElement('p');
+      var a=document.createElement('a');a.href=safe;a.target='_blank';a.rel='noopener noreferrer';a.style.color='#8af';a.textContent='Open \u2197';
+      pu.appendChild(a);info.appendChild(pu);
+    }
+  }
+});
 document.getElementById('q').addEventListener('input', function(){ const v=this.value.toLowerCase(); cy.nodes().forEach(n=>{ n.style('opacity', n.data('label').toLowerCase().includes(v)?1:0.2); }); });
 </script>
 </body>

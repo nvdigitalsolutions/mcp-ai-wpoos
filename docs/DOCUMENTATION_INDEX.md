@@ -1,12 +1,18 @@
 # NV oOS Documentation Index
 
-**Last Updated:** April 25, 2026  
-**Plugin Version:** 1.1.9  
+**Last Updated:** April 27, 2026  
+**Plugin Version:** 1.1.11  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 1,600+ files across docs/, root, and archive directories
+
+> **📌 APRIL 27, 2026 UPDATE:** 🛡️ **APRIL 2026 SECURITY AUDIT SUMMARY, PRODUCTION VENDOR AUTOLOAD, VEO 3.1 SEED FIX**
+> - **April 2026 Security Audit Summary** (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](compliance/SECURITY_AUDIT_2026_04.md) publishes the consolidated summary of the nine audit deliverables under [`docs/audit/2026-04/`](audit/2026-04/). Headline verdict: no Critical findings; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational. Standards: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 / API Top 10, WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE.
+> - **Production-Ready Vendor Autoload** (v1.1.10) — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative`; plugin is deployable from a clean clone (PR #4733).
+> - **Veo 3.1 `generate_veo_video` Fix** (v1.1.10) — `seed` parameter now sent only to Veo 2.0; Veo 3.1 rejects it (PR #4735).
+> - **README.md / CHANGELOG.md / readme.txt / QUICK_REFERENCE.md** — Updated to v1.1.10.
 
 > **📌 APRIL 25, 2026 UPDATE:** 📊 **MEASUREMENT SUBSYSTEM GA, PHPUNIT 11 UPGRADE (CVE FIX), CHART.JS HANDLE NORMALIZATION, GRAPHIFY RESTORE**
 > - **Measurement Subsystem GA** (v1.1.9) — 12 sequenced PRs delivered the full measurement / evals / reward stack: stock metrics (tool-execution, chat-loop, agentic-loop, SSE), persistent metric event store with `wp_mcp_ai_metric_retention_days` filter, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, Measurement dashboard under **Tools → Measurement**, and `wp mcp-ai measurement run|alert-check|list-runs` WP-CLI runner with regression-aware exit codes. New stock metrics `eval.suite.pass_rate` (gauge) and `eval.suite.regression.count` (counter).
@@ -63,7 +69,7 @@ This document provides a comprehensive index of all documentation available for 
 > - **Copyright Attribution** – `@author`/`@copyright`/`@license` tags across 2,535 PHP + 159 JS/CSS files.
 > - **Bug Fixes** – Telegram webhook 403, chat inbox bot names, message pagination, connection_id scoping, workflow presets.
 > - **Security** – brace-expansion (CVE-2026-33750) and serialize-javascript (CVE-2026-34043) patched.
-> - **Tool Count** – 165 base + 368 pro = **533 total tools** (was 519).
+> - **Tool Count** – Approximately 800+ tools (≈220 base + ≈580 pro). Counts are approximate and evolve with each release; `WP_MCP_AI_Tool_Registry::get_tools()` is the authoritative source.
 > - **See**: [README.md Latest Updates](../README.md#-latest-updates-marchapril-2026), [CHANGELOG.md](../CHANGELOG.md)
 
 > **📌 MARCH 28, 2026 UPDATE:** 🚀 **ONBOARDING WIZARD ENHANCEMENT — PRESET ASSISTANT SEEDING & ACCESSIBILITY**
@@ -450,7 +456,8 @@ This document provides a comprehensive index of all documentation available for 
 
 **NEW:** Comprehensive code review and plugin gap analysis - **Grade: A- (93/100)**
 
-- **[CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **NEW (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
+- **[audit/2026-04/](audit/2026-04/README.md)** ⭐ **NEW (Apr 26)** — Complete security & compliance code review of base plugin + all addons. 0 Critical, 5 High, 14 Medium findings; full inventory, findings register, remediation roadmap, WP.org submission checklist.
+- **[CODE_REVIEW_2026-02-06.md](implementation-history/2026/CODE_REVIEW_2026-02-06.md)** ⭐ **PREVIOUS (Feb 6)** - Complete security code review. Grade A (95/100). All critical vulnerabilities fixed!
 - **[CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)** ⭐ **PREVIOUS (Jan 8)** - Comprehensive audit. Grade A- (93/100). Production ready.
   - Complete codebase audit covering code quality, security, features, documentation
   - **Production Ready Status: ✅ APPROVED**

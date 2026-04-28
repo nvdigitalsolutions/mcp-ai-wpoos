@@ -442,6 +442,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	 */
 	public function handle_get_professional_config() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
+		wp_mcp_ai_check_ajax_rate_limit( 'prof_config' );
 
 		$professional_id = isset( $_POST['professional_id'] ) ? absint( wp_unslash( $_POST['professional_id'] ) ) : 0;
 
@@ -469,6 +470,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	 */
 	public function handle_get_models_for_provider() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
+		wp_mcp_ai_check_ajax_rate_limit( 'prof_models' );
 
 		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
 
@@ -517,6 +519,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	 */
 	public function handle_render_professional_chat() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
+		wp_mcp_ai_check_ajax_rate_limit( 'prof_render', 10 );
 
 		// Get the shortcode attributes from the request.
 		// The attributes are pre-constructed in JavaScript with controlled values,.

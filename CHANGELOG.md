@@ -1,5 +1,86 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Added — QMS + PARA Methodology Integration (Pro)
+
+Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
+
+- **QMS — ISO 9001:2015 Clause 7.5 (Document Generation Toolkit)**
+  - New `mcp_ai_doc_record` CPT for controlled-document instances with full per-record metadata (document_id, revision, owner/reviewer/approver IDs, effective/next-review dates, retention years, disposition, external origin, change reason/summary, signatures, content hash, supersede pointers).
+  - New `mcp_ai_qms_doc_type` taxonomy seeded with Policy / Procedure / Work Instruction / Form / Record / External (clause 7.5.3 b).
+  - `WP_MCP_AI_QMS_Workflow` state machine: `draft → in_review → approved → released → superseded/obsolete` with pre-condition gates.
+  - `WP_MCP_AI_QMS_Audit_Log` immutable audit table (`{prefix}wp_mcp_ai_qms_audit`) with prepared queries, IP/UA capture, before/after content hashes, and a shared `subsystem` column (qms/para).
+  - 21 CFR Part 11-friendly e-signatures: WP password re-prompt + SHA-256 hash binding signature → document content.
+  - Daily retention cron auto-marks obsolete records once `effective_date + retention_years` has elapsed.
+  - Daily review-due cron fires `wp_mcp_ai_qms_review_due_for_record` for owners.
+  - New `manage_qms` capability (Editor/Admin by default; filterable).
+  - 10 new Pro tools: `qms_create_controlled_document`, `qms_submit_for_review`, `qms_approve_document`, `qms_release_document`, `qms_supersede_document`, `qms_mark_obsolete`, `qms_sign_document`, `qms_list_controlled_documents`, `qms_get_audit_trail`, `qms_schedule_review`.
+  - Hooks: `wp_mcp_ai_qms_before/after_state_transition`, `wp_mcp_ai_qms_document_signed`, `wp_mcp_ai_qms_audit_logged`. Filters: `wp_mcp_ai_qms_capability_roles`, `wp_mcp_ai_qms_require_release_signature`, `wp_mcp_ai_qms_grant_to_admins`.
+
+- **PARA — Tiago Forte's Projects/Areas/Resources/Archives (Project Management Toolkit)**
+  - New `mcp_ai_para` hierarchical taxonomy with four locked roots: `projects`, `areas`, `resources`, `archives` (cannot be deleted/renamed). Sub-buckets allowed.
+  - New `mcp_ai_area` CPT for ongoing responsibilities, with `_para_standard`, `_para_owner`, `_para_review_cadence`, `_para_last_reviewed` meta.
+  - `WP_MCP_AI_PARA_Lifecycle` daily sweep: auto-archives completed/cancelled projects, surfaces dormant Areas, dormant Resources, and archive candidates.
+  - PARA admin column with color-coded badges on all PARA-classified post-type list tables.
+  - Single-select PARA metabox on every supported CPT.
+  - 7 new Pro tools: `para_classify_item`, `para_move_to_archives`, `para_create_area`, `para_update_area`, `para_list_areas`, `para_weekly_review`, `para_promote_resource_to_project`.
+  - Hooks: `wp_mcp_ai_para_item_classified`, `wp_mcp_ai_para_archived`, `wp_mcp_ai_para_unarchived`, `wp_mcp_ai_para_sweep_complete`. Filters: `wp_mcp_ai_para_object_types`, `wp_mcp_ai_para_dormancy_days`, `wp_mcp_ai_para_resource_dormancy_days`.
+
+- **Cross-toolkit bridge**
+  - QMS-obsolete documents auto-move to PARA archives (when both subsystems enabled).
+  - Released QMS documents linked to a PARA Area refresh that Area's `_para_last_reviewed` timestamp.
+  - Both subsystems write to the same audit table (`subsystem` column).
+
+- **Documentation**: `docs/qms-compliance.md`, `docs/para-methodology.md`.
+
+- **Tests**: `tests/qms/test-qms-workflow.php`, `tests/qms/test-qms-audit-log.php`, `tests/para/test-para-taxonomy.php`, `tests/para/test-para-lifecycle.php`.
+
+Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
+
+
+## [1.1.11] - 2026-04-27
+
+### April 27, 2026 — WordPress.org Compliance Hardening
+
+A small but tightly-scoped compliance pass to clear the remaining WordPress.org Plugin Check items in the readme/build pipeline before re-submission. No runtime behavior changes.
+
+### Fixed
+- **Dead support-forum URL** — `readme.txt` now points to `https://wordpress.org/support/plugin/nvdigital-open-operator-system-oos/` (the canonical WordPress.org slug) instead of the obsolete `wp-mcp-ai` URL.
+- **Inconsistent tool count in readme.txt** — Headline description and Base Plugin section both report `230+ tools`, matching the Tool Registry screenshot caption and the audited `tool-reference.md` figure.
+- **Missing `mcp` tag** — `Tags:` line now includes `mcp` alongside `ai assistant`, `openai`, `chatbot`, `automation` (5 tags maximum, per WordPress.org guidelines). MCP protocol support was previously undiscoverable in WordPress.org plugin search.
+
+### Changed
+- **`bin/build-wordpress-org-from-base.sh`** — New per-package `Step 2b` rewrites the WordPress.org support-forum URL to match each transformed slug (`nvdigital-open-operator-system-oos`, `…-pro`, `…-core`). The build now also runs a verification grep at the end of `transform_package()` and exits non-zero if any legacy `wp-mcp-ai` slug or unrewritten `Text Domain: mcp-ai-wpoos` header survives in `readme.txt`. Prevents silent metadata regressions in future releases.
+- **`bin/review-zips.sh`** — New `check_wporg_readme_slug()` helper asserts the same readme invariants when auditing already-built `.zip` packages, so a stale build can no longer pass review even if the build script is bypassed.
+
+### Documentation
+- **`docs/WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md`** and **`docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md`** updated with the 1.1.11 status. Both note that source-level identifier prefix migration (`wp_mcp_ai_*` / `WP_MCP_AI_*` → slug-derived prefix, ~14k identifiers across base + Pro) remains scheduled for v2.0 with a coordinated options/postmeta/cron migration; it is not a WordPress.org submission blocker.
+
+### Version
+- **Version** bumped to 1.1.11 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+
+## [1.1.10] - 2026-04-27
+
+### April 27, 2026 — April 2026 Security Audit Summary, Production-Ready Vendor Autoload, Veo 3.1 Seed-Parameter Fix
+
+Documentation, distribution, and one targeted bug fix release. No source-code changes to plugin runtime behavior beyond the Veo 3.1 fix.
+
+### Documentation
+- **New `docs/compliance/SECURITY_AUDIT_2026_04.md`** — Published summary of the April 2026 security & compliance code review covering the base plugin, the Pro addon, and the six minor addons (`algorave`, `canvas`, `cornerstone3d`, `embedded`, `fantasy-football`, `graphify`). Cross-references the nine deliverables under `docs/audit/2026-04/`. Headline verdict: **no Critical findings**; 5 High (3 Fixed, 2 Partially Fixed); 14 Medium (all Fixed); 21 Low (14 closed); 10 Informational; 50 total. Standards applied: WP Plugin Handbook, WP.org Plugin Directory Guidelines, OWASP Top 10 (2021), OWASP API Security Top 10 (2023), WPCS 3.3, PHPCompatibilityWP, GDPR/CCPA, MCP/SSE conformance.
+- `docs/DOCUMENTATION_INDEX.md`, `docs/compliance/README.md`, `docs/QUICK_REFERENCE.md`, and `docs/audit/2026-04/README.md` cross-reference the new audit summary.
+- `README.md` Latest Updates banner refreshed for v1.1.10; the **Active Security Monitoring** section now links to the published audit summary.
+
+### Changed
+- **Production-ready vendor autoload (PR #4733)** — `vendor/` regenerated with `composer install --no-dev --classmap-authoritative` (677 production classes). The plugin is now deployable from a clean clone without a separate `composer install` step. Local development still requires `composer install` to pull dev dependencies (PHPUnit, WPCS, etc.).
+
+### Fixed
+- **Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` when `seed` is supplied (PR #4735)** — the `seed` parameter is now sent only to Veo 2.0 (`veo-2.0-generate-001`). Veo 3.1 (`veo-3.1-generate-preview`) rejects the parameter and the tool now silently drops it on that model.
+
+### Version
+- **Version** bumped to 1.1.10 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
 
 ## [1.1.9] - 2026-04-25
 

@@ -211,6 +211,104 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify F-LOGS-01 fix: additional sensitive key names are redacted.
+	 *
+	 * @group security
+	 */
+	public function test_redacts_token_jwt_and_id_token_keys() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'enable_logging' => true )
+		);
+
+		$context = array(
+			'token'        => 'plain-token-value',
+			'jwt'          => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjMifQ.sig',
+			'id_token'     => 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjMifQ.sig',
+			'openai_token' => 'sk-proj-aaaa1111bbbb2222cccc3333dddd4444eeee5555',
+			'service_token' => 'some-service-secret',
+			'safe_key'     => 'this should survive',
+		);
+
+		$captured = null;
+		$filter   = function ( $entry ) use ( &$captured ) {
+			$captured = $entry;
+			return false;
+		};
+
+		add_filter( 'wp_mcp_ai_log_entry', $filter );
+		try {
+			WP_MCP_AI_Logger::log_event( 'tool_error', 'Token redaction test.', $context );
+		} finally {
+			remove_filter( 'wp_mcp_ai_log_entry', $filter );
+		}
+
+		$this->assertNotNull( $captured );
+		$sanitized = $captured['context'];
+
+		$this->assertSame( '[redacted]', $sanitized['token'], '"token" key must be redacted' );
+		$this->assertSame( '[redacted]', $sanitized['jwt'], '"jwt" key must be redacted' );
+		$this->assertSame( '[redacted]', $sanitized['id_token'], '"id_token" key must be redacted' );
+		$this->assertSame( '[redacted]', $sanitized['openai_token'], '"openai_token" key must be redacted' );
+		$this->assertSame( '[redacted]', $sanitized['service_token'], '"service_token" suffix _token must be redacted' );
+		$this->assertSame( 'this should survive', $sanitized['safe_key'], 'Non-sensitive keys must be preserved' );
+	}
+
+	/**
+	 * Verify F-LOGS-01 fix: Bearer tokens, OpenAI keys, and Google keys
+	 * embedded inside string values are masked even at non-sensitive key names.
+	 *
+	 * @group security
+	 */
+	public function test_redacts_secret_patterns_in_string_values() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array( 'enable_logging' => true )
+		);
+
+		$openai_key  = 'sk-proj-aaaa1111bbbb2222cccc3333';
+		$google_key  = 'AIzaSyD1234567890123456789012345678';
+		$bearer      = 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature';
+
+		$context = array(
+			// These keys are NOT on the sensitive list — secret patterns live in values.
+			'message'  => "Failed with key $openai_key in body",
+			'body'     => "Authorization: $bearer",
+			'response' => array(
+				'raw'      => "api_key=$google_key",
+				'safe_val' => 'hello world',
+			),
+		);
+
+		$captured = null;
+		$filter   = function ( $entry ) use ( &$captured ) {
+			$captured = $entry;
+			return false;
+		};
+
+		add_filter( 'wp_mcp_ai_log_entry', $filter );
+		try {
+			WP_MCP_AI_Logger::log_event( 'api_error', 'Value redaction test.', $context );
+		} finally {
+			remove_filter( 'wp_mcp_ai_log_entry', $filter );
+		}
+
+		$this->assertNotNull( $captured );
+		$sanitized = $captured['context'];
+
+		$this->assertStringNotContainsString( $openai_key, $sanitized['message'], 'OpenAI key must be masked in message string' );
+		$this->assertStringContainsString( 'sk-[redacted]', $sanitized['message'], 'sk-[redacted] placeholder must appear' );
+
+		$this->assertStringNotContainsString( 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9', $sanitized['body'], 'Bearer JWT must be masked in body string' );
+		$this->assertStringContainsString( 'Bearer [redacted]', $sanitized['body'], 'Bearer [redacted] placeholder must appear' );
+
+		$this->assertStringNotContainsString( $google_key, $sanitized['response']['raw'], 'Google key must be masked in nested string' );
+		$this->assertStringContainsString( 'AIza[redacted]', $sanitized['response']['raw'], 'AIza[redacted] placeholder must appear' );
+
+		$this->assertSame( 'hello world', $sanitized['response']['safe_val'], 'Plain string without secrets must be unchanged' );
+	}
+
+	/**
 	 * Ensure recent error logging tracks only errors and warnings and limits the history.
 	 */
 	public function test_recent_error_messages_track_latest_entries() {

@@ -132,6 +132,66 @@ transform_package() {
     
     echo "   Transformed: $TRANSFORMED instances"
     echo "   Remaining old text domains: $AFTER_COUNT"
+
+    # ------------------------------------------------------------------
+    # Step 2b: Normalize readme.txt for WordPress.org
+    # ------------------------------------------------------------------
+    # WordPress.org publishes plugins under their slug. Each transformed
+    # variant has a different slug, so the support-forum URL in readme.txt
+    # must be rewritten to match. The repository readme.txt uses the
+    # canonical base slug; we patch it per package here.
+    if [ -f "$EXTRACTED_DIR/readme.txt" ]; then
+        echo "Step 2b: Normalizing readme.txt for $PACKAGE_TYPE..."
+
+        # Determine slug for this package variant
+        case "$PACKAGE_TYPE" in
+            *PRO*)
+                README_SLUG="nvdigital-open-operator-system-oos-pro"
+                ;;
+            *CORE*)
+                README_SLUG="nvdigital-open-operator-system-oos-core"
+                ;;
+            *)
+                # BASE and COMPLETE both submit under the base slug
+                README_SLUG="nvdigital-open-operator-system-oos"
+                ;;
+        esac
+
+        # Rewrite the support-forum URL to the slug-correct value.
+        # Matches any current or legacy slug (wp-mcp-ai, mcp-ai-wpoos*, or the base slug).
+        # Use '#' as the sed delimiter so '|' can be used freely inside the regex alternation.
+        sed -i -E \
+            "s#https://wordpress\.org/support/plugin/(wp-mcp-ai|mcp-ai-wpoos[a-z-]*|nvdigital-open-operator-system-oos[a-z-]*)/?#https://wordpress.org/support/plugin/${README_SLUG}/#g" \
+            "$EXTRACTED_DIR/readme.txt"
+
+        # Catch any remaining bare 'mcp-ai-wpoos' tokens in readme.txt
+        # (description text, slugs in URLs, etc). The text-domain rewrites
+        # above only handle quoted strings inside .php / .js sources.
+        sed -i \
+            -e "s|mcp-ai-wpoos-base|${README_SLUG}|g" \
+            -e "s|mcp-ai-wpoos-pro|${README_SLUG}|g" \
+            -e "s|mcp-ai-wpoos-core|${README_SLUG}|g" \
+            "$EXTRACTED_DIR/readme.txt"
+
+        echo "   readme.txt forum URL → ${README_SLUG}"
+
+        # Verification: fail the build if any legacy slug still leaks.
+        # We deliberately scan only readme.txt here — the GitHub project
+        # URL legitimately contains 'mcp-ai-wpoos' because that's the
+        # repository name, so we only flag known compliance tokens.
+        if grep -qE "support/plugin/(wp-mcp-ai|mcp-ai-wpoos)" "$EXTRACTED_DIR/readme.txt"; then
+            echo "❌ readme.txt still contains a legacy WordPress.org support-forum slug"
+            grep -nE "support/plugin/(wp-mcp-ai|mcp-ai-wpoos)" "$EXTRACTED_DIR/readme.txt"
+            return 1
+        fi
+        if grep -q "Text Domain: mcp-ai-wpoos" "$EXTRACTED_DIR/readme.txt"; then
+            echo "❌ readme.txt still contains an unrewritten Text Domain header"
+            return 1
+        fi
+        echo "   ✅ readme.txt verification passed"
+    else
+        echo "Step 2b: No readme.txt in this package — skipping normalization"
+    fi
     
     # Update POT files if they exist
     # Note: Only one of these should exist in any given package:

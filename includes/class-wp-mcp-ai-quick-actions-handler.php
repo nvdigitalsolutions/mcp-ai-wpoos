@@ -41,7 +41,8 @@ class WP_MCP_AI_Quick_Actions_Handler {
 	private function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_quick_action', array( $this, 'handle_execute_action' ) );
-		add_action( 'wp_ajax_nopriv_wp_mcp_ai_execute_quick_action', array( $this, 'handle_execute_action' ) );
+		// Note: nopriv registration intentionally omitted — handle_execute_action requires
+		// current_user_can( 'read' ) which always rejects unauthenticated requests.
 	}
 
 	/**
@@ -200,6 +201,38 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			return new WP_Error( 'invalid_file_type', __( 'File type not allowed.', 'mcp-ai-wpoos' ) );
 		}
 
+		// SVG hardening (audit F-XSS-02): only users who can upload files may
+		// submit SVG (subscribers cannot), and the file is sanitised before it
+		// reaches the WordPress media library so it cannot carry inline
+		// scripts, event handlers, foreign objects, or javascript:/vbscript:
+		// URLs.
+		if ( 'image/svg+xml' === $mime_type ) {
+			if ( ! current_user_can( 'upload_files' ) ) {
+				return new WP_Error( 'invalid_file_type', __( 'SVG uploads require the upload_files capability.', 'mcp-ai-wpoos' ) );
+			}
+
+			$tmp_path = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+			if ( '' === $tmp_path || ! is_readable( $tmp_path ) ) {
+				return new WP_Error( 'upload_error', __( 'SVG upload could not be read for sanitisation.', 'mcp-ai-wpoos' ) );
+			}
+
+			$raw_svg       = file_get_contents( $tmp_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- temp upload, no remote URI.
+			$sanitised_svg = false === $raw_svg ? false : $this->sanitize_svg_contents( $raw_svg );
+
+			if ( false === $sanitised_svg || '' === trim( (string) $sanitised_svg ) ) {
+				return new WP_Error( 'invalid_file_type', __( 'SVG could not be parsed or contained no safe content.', 'mcp-ai-wpoos' ) );
+			}
+
+			$bytes_written = file_put_contents( $tmp_path, $sanitised_svg ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents -- temp upload buffer.
+			if ( false === $bytes_written ) {
+				return new WP_Error( 'upload_error', __( 'Sanitised SVG could not be written for upload.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Refresh the size for the subsequent size check and for
+			// wp_handle_upload's bookkeeping.
+			$file['size'] = $bytes_written;
+		}
+
 		// Check file size (default 10MB).
 		$max_size = apply_filters( 'wp_mcp_ai_quick_action_max_file_size', 10485760 );
 		if ( $file['size'] > $max_size ) {
@@ -238,6 +271,167 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			'path' => $uploaded_file['file'],
 			'type' => $uploaded_file['type'],
 		);
+	}
+
+	/**
+	 * Sanitise an SVG document, stripping anything that could execute script
+	 * when the SVG is later rendered inline or via <object>/<img>.
+	 *
+	 * Removes:
+	 * - <script>, <foreignObject>, <iframe>, <embed>, <object>, <handler>,
+	 *   <set>, <animate>, <animateTransform>, <animateMotion>.
+	 * - All `on*` event handler attributes (onload, onclick, ...).
+	 * - href / xlink:href values whose scheme is not http(s), mailto, tel, or
+	 *   a same-document fragment ("#id"). javascript:/vbscript:/data: URLs
+	 *   are dropped so the surviving tag becomes inert (e.g. a <use> keeps
+	 *   its geometry but loses an external/javascript: reference) rather than
+	 *   removing it entirely, preserving graphical content where possible.
+	 * - `style` containing expression()/javascript:/vbscript:.
+	 * - DOCTYPE (XXE defence) plus LIBXML_NONET to block network access for
+	 *   external DTDs/entities. Entity expansion is left at the parser default
+	 *   (no substitution) to defend against billion-laughs.
+	 *
+	 * @param string $svg Raw SVG markup as read from the uploaded tmp file.
+	 * @return string|false Sanitised SVG, or false if parsing failed.
+	 */
+	protected function sanitize_svg_contents( $svg ) {
+		// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOMDocument / DOMNode API uses camelCase by design.
+		$svg = (string) $svg;
+		if ( '' === $svg ) {
+			return false;
+		}
+
+		// Disable external entity loading on PHP < 8.0 globally (no-op on 8.0+).
+		// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded behind PHP_VERSION_ID < 80000.
+		if ( function_exists( 'libxml_disable_entity_loader' ) && PHP_VERSION_ID < 80000 ) {
+			// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded behind PHP_VERSION_ID < 80000.
+			$prev_entity_loader = libxml_disable_entity_loader( true );
+		} else {
+			$prev_entity_loader = null;
+		}
+		$prev_internal_errors = libxml_use_internal_errors( true );
+
+		$dom                     = new DOMDocument( '1.0', 'UTF-8' );
+		$dom->preserveWhiteSpace = false;
+		$dom->formatOutput       = false;
+
+		// LIBXML_NONET blocks network access for external DTDs/entities.
+		// LIBXML_NOENT is intentionally NOT set so entity expansion is left to
+		// the parser's default (no substitution) — defends against billion-laughs.
+		$loaded = $dom->loadXML( $svg, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+
+		libxml_clear_errors();
+		libxml_use_internal_errors( $prev_internal_errors );
+		if ( null !== $prev_entity_loader && function_exists( 'libxml_disable_entity_loader' ) ) {
+			// phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded; restoring previous state.
+			libxml_disable_entity_loader( $prev_entity_loader );
+		}
+
+		if ( ! $loaded || null === $dom->documentElement ) {
+			return false;
+		}
+
+		// Reject DOCTYPE — even when LIBXML_NONET is set, an attacker-supplied
+		// internal subset can embed entity declarations.
+		if ( $dom->doctype ) {
+			$dom->removeChild( $dom->doctype );
+		}
+
+		$dangerous_tags = array(
+			'script',
+			'foreignobject',
+			'iframe',
+			'embed',
+			'object',
+			'handler',
+			'set',
+			'animate',
+			'animatetransform',
+			'animatemotion',
+		);
+
+		// Walk every element. Use XPath to find dangerous tags case-insensitively
+		// across namespaces, then strip event handlers + javascript: hrefs.
+		$xpath = new DOMXPath( $dom );
+
+		// Remove dangerous elements.
+		foreach ( $dangerous_tags as $tag ) {
+			$nodes = $xpath->query( '//*[translate(local-name(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz") = "' . $tag . '"]' );
+			if ( false === $nodes ) {
+				continue;
+			}
+			// Iterate in reverse so removal does not invalidate indices.
+			for ( $i = $nodes->length - 1; $i >= 0; $i-- ) {
+				$node = $nodes->item( $i );
+				if ( $node && $node->parentNode ) {
+					$node->parentNode->removeChild( $node );
+				}
+			}
+		}
+
+		// Strip event-handler attributes and unsafe href schemes on the
+		// remaining elements.
+		$all_elements = $xpath->query( '//*' );
+		if ( $all_elements instanceof DOMNodeList ) {
+			foreach ( $all_elements as $element ) {
+				if ( ! $element instanceof DOMElement ) {
+					continue;
+				}
+
+				$attrs_to_remove = array();
+				foreach ( $element->attributes as $attr ) {
+					$name = strtolower( $attr->nodeName );
+
+					if ( 0 === strpos( $name, 'on' ) ) {
+						$attrs_to_remove[] = $attr->nodeName;
+						continue;
+					}
+
+					if ( 'href' === $name || 'xlink:href' === $name ) {
+						$value = trim( (string) $attr->nodeValue );
+						if ( '' !== $value && ! $this->is_safe_svg_href( $value ) ) {
+							$attrs_to_remove[] = $attr->nodeName;
+						}
+					}
+
+					// `style` can carry expression() / url(javascript:...) on
+					// some legacy renderers; cheapest defence is to drop it.
+					if ( 'style' === $name ) {
+						$value = (string) $attr->nodeValue;
+						if ( preg_match( '/expression\s*\(|javascript:|vbscript:/i', $value ) ) {
+							$attrs_to_remove[] = $attr->nodeName;
+						}
+					}
+				}
+
+				foreach ( $attrs_to_remove as $name ) {
+					$element->removeAttribute( $name );
+				}
+			}
+		}
+
+		$cleaned = $dom->saveXML( $dom->documentElement );
+		return is_string( $cleaned ) ? $cleaned : false;
+		// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+	}
+
+	/**
+	 * Whether an href / xlink:href value is safe to keep in a sanitised SVG.
+	 *
+	 * @param string $value Trimmed attribute value.
+	 * @return bool True if safe; false to drop the attribute.
+	 */
+	protected function is_safe_svg_href( $value ) {
+		// Same-document fragment.
+		if ( '' !== $value && '#' === $value[0] ) {
+			return true;
+		}
+		// Relative path (no scheme delimiter).
+		if ( false === strpos( $value, ':' ) ) {
+			return true;
+		}
+		// Allowed schemes only.
+		return (bool) preg_match( '#^(https?|mailto|tel):#i', $value );
 	}
 
 	/**

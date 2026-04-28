@@ -479,7 +479,8 @@ class WP_MCP_AI_Model_Service {
 			return array();
 		}
 
-		$models = array();
+		$models             = array();
+		$live_fetch_success = false;
 
 		// Try to fetch live models from the configured Ollama endpoint so the
 		// dropdown stays accurate when users add or remove models on the server.
@@ -489,18 +490,19 @@ class WP_MCP_AI_Model_Service {
 			try {
 				$client      = new WP_MCP_AI_Ollama_Client();
 				$live_models = $client->list_models();
-				if ( ! is_wp_error( $live_models ) && is_array( $live_models ) ) {
+				if ( ! is_wp_error( $live_models ) && is_array( $live_models ) && ! empty( $live_models ) ) {
 					foreach ( $live_models as $model ) {
 						if ( empty( $model['name'] ) ) {
 							continue;
 						}
-						$name  = (string) $model['name'];
+						$name   = (string) $model['name'];
 						$family = ! empty( $model['family'] ) ? (string) $model['family'] : '';
 						// Append a cloud indicator to the display label for cloud-hosted models.
 						$is_cloud        = ! empty( $model['is_cloud'] );
 						$cloud_suffix    = $is_cloud ? ' ☁' : '';
 						$models[ $name ] = ( $family ? sprintf( '%s (%s)', $name, $family ) : $name ) . $cloud_suffix;
 					}
+					$live_fetch_success = true;
 				}
 			} catch ( \Exception $e ) {
 				// Swallow exceptions so the settings UI never breaks if the
@@ -515,14 +517,16 @@ class WP_MCP_AI_Model_Service {
 		// Always include the configured default model first if set so it's
 		// guaranteed to appear in the dropdown.
 		if ( ! empty( $settings['ollama_model'] ) ) {
-			$configured                  = $settings['ollama_model'];
-			$models                      = array( $configured => $configured ) + $models;
+			$configured = $settings['ollama_model'];
+			$models     = array( $configured => $configured ) + $models;
 		}
 
-		// If we still have no models (endpoint unreachable AND no configured
-		// default), seed the dropdown with the common Ollama model list so
-		// users have something to pick from while diagnosing connectivity.
-		if ( empty( $models ) ) {
+		// When live fetch failed, seed the dropdown with the full common Ollama
+		// model list (including cloud models) so users always have a rich
+		// selection to choose from, even when the local server is unreachable.
+		// Any model already present (configured default or live result) is kept
+		// unchanged; common entries only fill the gaps.
+		if ( ! $live_fetch_success && ! $requires_vision && ! $requires_multimodal ) {
 			$common_ollama_models = array(
 				// Latest flagship models (2025-2026).
 				'llama4'        => 'Llama 4 (Latest Meta flagship)',
@@ -545,17 +549,19 @@ class WP_MCP_AI_Model_Service {
 				'codellama'     => 'CodeLlama',
 				'qwen2.5'       => 'Qwen 2.5',
 				// Cloud-hosted models accessible via Ollama cloud (:cloud suffix).
-				'gemma4:31b-cloud'      => 'Gemma 4 31B ☁ (Cloud)',
-				'qwen3.5:397b-cloud'    => 'Qwen 3.5 397B ☁ (Cloud)',
-				'kimi-k2.5:cloud'       => 'Kimi K2.5 ☁ (Cloud)',
-				'glm-5:cloud'           => 'GLM-5 ☁ (Cloud)',
-				'minimax-m2.7:cloud'    => 'MiniMax M2.7 ☁ (Cloud)',
-				'gpt-oss:120b-cloud'    => 'GPT-OSS 120B ☁ (Cloud)',
-				'gpt-oss:20b-cloud'     => 'GPT-OSS 20B ☁ (Cloud)',
+				'gemma4:31b-cloud'   => 'Gemma 4 31B ☁ (Cloud)',
+				'qwen3.5:397b-cloud' => 'Qwen 3.5 397B ☁ (Cloud)',
+				'kimi-k2.5:cloud'    => 'Kimi K2.5 ☁ (Cloud)',
+				'glm-5:cloud'        => 'GLM-5 ☁ (Cloud)',
+				'minimax-m2.7:cloud' => 'MiniMax M2.7 ☁ (Cloud)',
+				'gpt-oss:120b-cloud' => 'GPT-OSS 120B ☁ (Cloud)',
+				'gpt-oss:20b-cloud'  => 'GPT-OSS 20B ☁ (Cloud)',
 			);
 
-			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$models = $common_ollama_models;
+			foreach ( $common_ollama_models as $model_id => $model_name ) {
+				if ( ! isset( $models[ $model_id ] ) ) {
+					$models[ $model_id ] = $model_name;
+				}
 			}
 		}
 

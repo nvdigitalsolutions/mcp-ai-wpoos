@@ -51,7 +51,7 @@ class WP_MCP_AI_Rule_Verifier extends WP_MCP_AI_Verifier_Base {
 	 * @param array  $rules Initial rule definitions.
 	 */
 	public function __construct( $slug = 'rule_verifier', array $rules = array() ) {
-		$this->slug  = sanitize_key( $slug ) ?: 'rule_verifier';
+		$this->slug  = '' !== sanitize_key( $slug ) ? sanitize_key( $slug ) : 'rule_verifier';
 		$this->label = __( 'Rule Verifier', 'mcp-ai-wpoos' );
 		$this->kind  = 'rule';
 		// Rule verifiers do no LLM work, so they are trivially independent.

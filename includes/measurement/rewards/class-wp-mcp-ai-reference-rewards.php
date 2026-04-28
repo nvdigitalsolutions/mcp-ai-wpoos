@@ -77,7 +77,7 @@ class WP_MCP_AI_Reference_Rewards {
 	}
 
 	/**
-	 * verified_success reward.
+	 * Verified_success reward.
 	 *
 	 * @param array $inputs  Inputs.
 	 * @param array $context Context.
@@ -91,7 +91,7 @@ class WP_MCP_AI_Reference_Rewards {
 	}
 
 	/**
-	 * cost_adjusted_success reward.
+	 * Cost_adjusted_success reward.
 	 *
 	 * @param array $inputs  Inputs.
 	 * @param array $context Context.
@@ -108,7 +108,7 @@ class WP_MCP_AI_Reference_Rewards {
 	}
 
 	/**
-	 * calibration_brier reward.
+	 * Calibration_brier reward.
 	 *
 	 * Computes 1 - (confidence - outcome)^2, clamped to [0, 1]. Because the
 	 * outcome is in {0,1} and the confidence is in [0,1], the squared error

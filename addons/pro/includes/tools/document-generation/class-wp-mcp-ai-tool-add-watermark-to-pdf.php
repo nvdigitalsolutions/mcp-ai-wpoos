@@ -281,7 +281,10 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			// Save to temp file.
-			$temp_file = tempnam( sys_get_temp_dir(), 'watermarked_pdf_' );
+			$temp_file = wp_mcp_ai_tempnam( 'watermarked_pdf_', '.pdf' );
+			if ( is_wp_error( $temp_file ) ) {
+				return $temp_file;
+			}
 			$pdf->Output( $temp_file, 'F' );
 
 			// Upload to WordPress media library.

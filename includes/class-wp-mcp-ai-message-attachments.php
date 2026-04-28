@@ -1752,11 +1752,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return false;
 			}
 
-			if ( function_exists( 'hash_equals' ) ) {
-				return hash_equals( $hash_a, $hash_b );
-			}
-
-			return $hash_a === $hash_b;
+			return hash_equals( $hash_a, $hash_b );
 		}
 
 		/**

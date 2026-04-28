@@ -150,6 +150,15 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+// Shell-tools constant and capability gate (F-EXEC-01 / R-S-02).
+if ( ! defined( 'WP_MCP_AI_ALLOW_SHELL_TOOLS' ) || ! WP_MCP_AI_ALLOW_SHELL_TOOLS ) {
+return $this->error_response( __( 'Shell tools are disabled. Set define( \'WP_MCP_AI_ALLOW_SHELL_TOOLS\', true ) in wp-config.php to enable them.', 'mcp-ai-wpoos-pro' ) );
+}
+if ( ! current_user_can( 'manage_options' ) ) {
+return $this->error_response( __( 'You do not have permission to run shell commands.', 'mcp-ai-wpoos-pro' ) );
+}
+
+
 		// Extract arguments.
 		$command     = isset( $arguments['command'] ) ? trim( $arguments['command'] ) : '';
 		$preview     = isset( $arguments['preview'] ) ? (bool) $arguments['preview'] : false;
@@ -212,12 +221,14 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 			return $this->error_response( __( 'Failed to set working directory. Cannot execute command.', 'mcp-ai-wpoos' ) );
 		}
 
-		// Prepare command with timeout.
-		if ( function_exists( 'proc_open' ) ) {
-			$result = $this->execute_with_proc_open( $command, $timeout );
-		} else {
-			$result = $this->execute_with_exec( $command );
+		if ( ! function_exists( 'proc_open' ) ) {
+			if ( $original_dir ) {
+				chdir( $original_dir );
+			}
+			return $this->error_response( __( 'proc_open() is not available on this server. Shell tool execution requires proc_open.', 'mcp-ai-wpoos' ) );
 		}
+
+		$result = $this->execute_with_proc_open( $command, $timeout );
 
 		// Restore original directory.
 		if ( $original_dir ) {
@@ -312,23 +323,17 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * Execute command using exec (fallback method, no timeout support).
 	 *
+	 * Retained for backward compatibility only. The execute_command() method
+	 * now requires proc_open and will never reach this method. It will be
+	 * removed in a future version.
+	 *
+	 * @deprecated 1.1.9 Use execute_with_proc_open() instead.
+	 *
 	 * @param string $command Command to execute.
 	 * @return array Execution result.
 	 */
 	private function execute_with_exec( $command ) {
-		$output     = array();
-		$return_var = 0;
-
-		exec( $command . ' 2>&1', $output, $return_var );
-
-		return array(
-			'status'      => 'completed',
-			'command'     => $command,
-			'stdout'      => implode( "\n", $output ),
-			'stderr'      => '',
-			'exit_code'   => $return_var,
-			'working_dir' => WP_MCP_AI_PATH,
-		);
+		return $this->error_response( __( 'exec() fallback has been removed. proc_open() is required.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**

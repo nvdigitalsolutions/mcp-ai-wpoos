@@ -911,6 +911,25 @@
 					document.dispatchEvent( new CustomEvent( 'algorave:error', { detail: { message: msg } } ) );
 					return;
 				}
+				// F-AI-01 / R-S-05: the Tone.js engine compiles user-typed
+				// JavaScript with `new Function`, which has full access to the
+				// page's DOM and cookies. Refuse to evaluate unless the site
+				// operator has explicitly opted in by defining
+				// WP_MCP_AI_ALLOW_TONEJS_EVAL = true in wp-config.php (the
+				// flag is forwarded here as `tonejsEvalAllowed`).
+				if (
+					typeof nvoosAlgoraveConfig === 'undefined' ||
+					! nvoosAlgoraveConfig.tonejsEvalAllowed
+				) {
+					const msg =
+						'Tone.js live-coding is disabled on this site. Define WP_MCP_AI_ALLOW_TONEJS_EVAL = true in wp-config.php to enable it, or use the Strudel engine.';
+					// eslint-disable-next-line no-console
+					console.warn( '[Algorave] ' + msg );
+					document.dispatchEvent(
+						new CustomEvent( 'algorave:error', { detail: { message: msg } } )
+					);
+					return;
+				}
 				// Tone.js evaluation.
 				try {
 					// eslint-disable-next-line no-eval

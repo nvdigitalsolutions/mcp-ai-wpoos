@@ -75,9 +75,13 @@ class NV_oOS_Graphify_Report {
 		if ( ! empty( $stats['nodes_by_type'] ) ) {
 			global $wpdb;
 			$nodes_table = NV_oOS_Graphify_DB::nodes_table();
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Use %i identifier placeholder (WP 6.2+) for safe table-name quoting.
 			$community_rows = $wpdb->get_results(
-				"SELECT community_id, COUNT(*) AS cnt FROM {$nodes_table} WHERE community_id != '' GROUP BY community_id ORDER BY cnt DESC LIMIT 20", // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$wpdb->prepare(
+					'SELECT community_id, COUNT(*) AS cnt FROM %i WHERE community_id != %s GROUP BY community_id ORDER BY cnt DESC LIMIT 20',
+					$nodes_table,
+					''
+				),
 				ARRAY_A
 			);
 			$communities = is_array( $community_rows ) ? $community_rows : array();

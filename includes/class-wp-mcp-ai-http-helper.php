@@ -187,15 +187,16 @@ class WP_MCP_AI_HTTP_Helper {
 	}
 
 	/**
-	 * Check if an IPv4 address is a private network address (RFC 1918).
+	 * Check if an IPv4 address is a private, link-local, or loopback address.
 	 *
-	 * Private IPv4 ranges:
-	 * 10.0.0.0/8 (10.0.0.0 - 10.255.255.255)
-	 * 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
-	 * 192.168.0.0/16 (192.168.0.0 - 192.168.255.255)
+	 * Blocked ranges:
+	 * 10.0.0.0/8 (10.0.0.0 - 10.255.255.255)          RFC 1918 private
+	 * 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)      RFC 1918 private
+	 * 192.168.0.0/16 (192.168.0.0 - 192.168.255.255)   RFC 1918 private
+	 * 169.254.0.0/16 (169.254.0.0 - 169.254.255.255)   APIPA link-local (incl. AWS/GCP metadata)
 	 *
 	 * @param string $ip IPv4 address to check.
-	 * @return bool True if the address is private, false otherwise.
+	 * @return bool True if the address is private/link-local, false otherwise.
 	 */
 	private static function is_private_ipv4_address( $ip ) {
 		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
@@ -217,6 +218,11 @@ class WP_MCP_AI_HTTP_Helper {
 
 		// 192.168.0.0/16 (192.168.0.0 - 192.168.255.255).
 		if ( 192 === $parts[0] && 168 === $parts[1] ) {
+			return true;
+		}
+
+		// 169.254.0.0/16 (APIPA / link-local — includes AWS 169.254.169.254 and GCP 169.254.169.254 metadata endpoints).
+		if ( 169 === $parts[0] && 254 === $parts[1] ) {
 			return true;
 		}
 		// phpcs:enable Squiz.PHP.CommentedOutCode.Found

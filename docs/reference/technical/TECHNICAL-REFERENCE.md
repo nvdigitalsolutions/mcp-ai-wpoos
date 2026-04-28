@@ -1651,7 +1651,7 @@ WP Admin → NV oOS → Orchestration Dashboard
 - WordPress core only
 
 **Full Version:**
-- 519 tools (165 base + 348 pro + 6 core/memory)
+- 800+ tools (≈220 base + ≈580 pro; counts are approximate — `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - JetEngine integration
 - WooCommerce tools
 - Elementor widgets

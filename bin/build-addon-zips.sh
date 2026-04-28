@@ -23,6 +23,7 @@ cd "$ROOT_DIR"
 
 VERSION=""
 SKIP_CANVAS=false
+STRICT_CANVAS=false
 
 while [[ $# -gt 0 ]]; do
 case $1 in
@@ -34,8 +35,18 @@ shift 2
 SKIP_CANVAS=true
 shift
 ;;
+--strict-canvas)
+STRICT_CANVAS=true
+shift
+;;
 -h|--help)
-echo "Usage: $0 [--version X.Y.Z] [--skip-canvas]"
+echo "Usage: $0 [--version X.Y.Z] [--skip-canvas] [--strict-canvas]"
+echo ""
+echo "  --skip-canvas    Skip the canvas addon build entirely."
+echo "  --strict-canvas  Exit non-zero if the canvas docker build fails."
+echo "                   Default behaviour is to warn and skip canvas while"
+echo "                   continuing to build the other addons; canvas has its"
+echo "                   own dedicated 'Build Canvas Addon' workflow."
 exit 0
 ;;
 *)
@@ -62,11 +73,22 @@ echo "❌ Error: rsync is required but not installed."
 exit 1
 fi
 
+# Canvas requires Docker for reproducible linux-x64 native binary compilation
+# (matches PR #4441 / build-canvas-addon.yml). When Docker is unavailable, we
+# auto-skip canvas with a clear warning instead of failing the whole build —
+# canvas has its own dedicated workflow and is not part of the WordPress.org
+# distribution. Use --strict-canvas if you need the missing-Docker case to be
+# a hard failure (e.g., in a pipeline whose sole purpose is to build canvas).
 if [ "$SKIP_CANVAS" = false ] && ! command -v docker >/dev/null 2>&1; then
-echo "❌ Error: docker is required for reproducible canvas linux-x64 build."
-echo "   This matches PR #4441 build approach (node:20-bookworm container)."
-echo "   Use --skip-canvas to build without the canvas addon."
+if [ "$STRICT_CANVAS" = true ]; then
+echo "❌ Error: docker is required for reproducible canvas linux-x64 build,"
+echo "   and --strict-canvas was set. Install Docker or drop --strict-canvas."
 exit 1
+fi
+echo "ℹ️  Docker not detected — auto-skipping canvas addon build."
+echo "   Canvas ZIPs are produced by the dedicated 'Build Canvas Addon' workflow."
+echo "   Pass --strict-canvas to make missing Docker a hard failure."
+SKIP_CANVAS=true
 fi
 
 if [ ! -d "addons/algorave" ] || [ ! -d "addons/fantasy-football" ] || [ ! -d "addons/cornerstone3d" ] || [ ! -d "addons/embedded" ] || [ ! -d "addons/graphify" ]; then
@@ -207,12 +229,42 @@ GRAPHIFY_SIZE=$(du -h "$GRAPHIFY_ZIP" | cut -f1)
 echo "✅ ${GRAPHIFY_ZIP} (${GRAPHIFY_SIZE})"
 echo ""
 
+# Canvas builds a native Linux binary (canvas.node) inside a Docker
+# container. This step is best-effort:
+#   - Canvas is platform-specific and is NOT part of the WordPress.org
+#     distribution.
+#   - Canvas has a dedicated workflow (`.github/workflows/build-canvas-addon.yml`)
+#     that produces the official linux-x64 / linux-arm64 release artifacts.
+#   - When the inner docker build fails (transient apt mirror issue,
+#     prebuilt-binary fetch failure, kernel mismatch, etc.), the right
+#     behaviour is to skip canvas with a clear diagnostic, NOT to take
+#     down the entire `Build Plugin` job along with the other 5 addons,
+#     the WordPress.org packages, and the toolkit add-ons.
+#
+# The `set -e` at the top of this script is intentionally bypassed for
+# the docker step using `if ! …; then`, so the main pipeline keeps
+# building the remaining packages and exits 0. A non-zero exit can be
+# forced with --strict-canvas for environments that require canvas.
+canvas_build_failed=0
 if [ "$SKIP_CANVAS" = true ]; then
 echo "[skipped] Canvas addon build skipped (--skip-canvas flag or Docker unavailable)"
 echo "  ℹ️  Use the dedicated 'Build Canvas Addon' workflow to build canvas ZIPs."
 echo ""
 else
 echo "[6/${TOTAL_STEPS}] Building nvoos-canvas-linux-x64-v${VERSION}.zip"
+
+# Defensive re-check: in long-running pipelines the docker daemon may have
+# disappeared between the start-of-script check and now. Bail out softly
+# rather than producing a misleading "exit code 1 with no output" failure.
+if ! command -v docker >/dev/null 2>&1; then
+echo "⚠️  Warning: docker no longer available — skipping canvas build."
+canvas_build_failed=1
+elif ! docker info >/dev/null 2>&1; then
+echo "⚠️  Warning: docker daemon not reachable — skipping canvas build."
+echo "   (docker is installed but \`docker info\` failed; the build host may"
+echo "    not have a running daemon, or the user may lack permission.)"
+canvas_build_failed=1
+else
 mkdir -p "${TMP_DIR}/canvas-work"
 rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude 'node_modules/' \
@@ -220,44 +272,61 @@ rsync -a "addons/canvas/" "${TMP_DIR}/canvas-work/" \
 --exclude '.DS_Store'
 
 # Build canvas exactly like PR #4441 workflow: Node 20 Bookworm container.
-docker run --rm --platform linux/amd64 \
+# Note: apt-get output is no longer redirected to /dev/null — without that,
+# CI failures only surface as "Process completed with exit code 1" with
+# zero diagnostic context. We keep `-qq` so the log volume stays modest.
+CANVAS_LOG="${TMP_DIR}/canvas-build.log"
+if docker run --rm --platform linux/amd64 \
 	-v "${ROOT_DIR}/${TMP_DIR}/canvas-work:/work" \
 	-w /work \
 	node:20-bookworm \
-	bash -lc "apt-get update -qq && \
-		apt-get install -y --no-install-recommends \
+	bash -lc "set -e && \
+		apt-get update -qq && \
+		apt-get install -y -qq --no-install-recommends \
 			build-essential \
 			libcairo2-dev \
 			libpango1.0-dev \
 			libjpeg-dev \
 			libgif-dev \
 			librsvg2-dev \
-			pkg-config >/dev/null && \
+			pkg-config && \
 		npm install --silent canvas@2 && \
-		node scripts/copy-canvas.js"
+		node scripts/copy-canvas.js" \
+	>"$CANVAS_LOG" 2>&1; then
+	CANVAS_BINARY="${TMP_DIR}/canvas-work/assets/canvas/build/Release/canvas.node"
+	if [ ! -f "$CANVAS_BINARY" ]; then
+		echo "⚠️  Warning: canvas.node binary not found after build: ${CANVAS_BINARY}"
+		echo "   Last 30 lines of canvas build log:"
+		tail -n 30 "$CANVAS_LOG" | sed 's/^/     /'
+		echo "   Skipping canvas package — use the dedicated 'Build Canvas Addon' workflow."
+		canvas_build_failed=1
+	else
+		mkdir -p "${TMP_DIR}/canvas-work/dist/nvoos-canvas"
+		rsync -a "${TMP_DIR}/canvas-work/" "${TMP_DIR}/canvas-work/dist/nvoos-canvas/" \
+			--exclude 'node_modules/' \
+			--exclude 'scripts/' \
+			--exclude '.git/' \
+			--exclude '.DS_Store' \
+			--exclude 'dist/'
 
-CANVAS_BINARY="${TMP_DIR}/canvas-work/assets/canvas/build/Release/canvas.node"
-if [ ! -f "$CANVAS_BINARY" ]; then
-echo "❌ Error: canvas.node binary not found after build: ${CANVAS_BINARY}"
-exit 1
+		rm -f "${TMP_DIR}/canvas-work/dist/nvoos-canvas/assets/canvas/build/Release/.gitkeep"
+
+		(
+			cd "${TMP_DIR}/canvas-work/dist"
+			zip -r -q "${ROOT_DIR}/${CANVAS_ZIP}" nvoos-canvas/
+		)
+		CANVAS_SIZE=$(du -h "$CANVAS_ZIP" | cut -f1)
+		echo "✅ ${CANVAS_ZIP} (${CANVAS_SIZE})"
+		echo "   Canvas build log: ${CANVAS_LOG}"
+	fi
+else
+	echo "⚠️  Warning: canvas docker build failed (this is non-fatal)."
+	echo "   Last 50 lines of canvas build log:"
+	tail -n 50 "$CANVAS_LOG" | sed 's/^/     /'
+	echo "   Skipping canvas package — use the dedicated 'Build Canvas Addon' workflow."
+	canvas_build_failed=1
 fi
-
-mkdir -p "${TMP_DIR}/canvas-work/dist/nvoos-canvas"
-rsync -a "${TMP_DIR}/canvas-work/" "${TMP_DIR}/canvas-work/dist/nvoos-canvas/" \
---exclude 'node_modules/' \
---exclude 'scripts/' \
---exclude '.git/' \
---exclude '.DS_Store' \
---exclude 'dist/'
-
-rm -f "${TMP_DIR}/canvas-work/dist/nvoos-canvas/assets/canvas/build/Release/.gitkeep"
-
-(
-cd "${TMP_DIR}/canvas-work/dist"
-zip -r -q "${ROOT_DIR}/${CANVAS_ZIP}" nvoos-canvas/
-)
-CANVAS_SIZE=$(du -h "$CANVAS_ZIP" | cut -f1)
-echo "✅ ${CANVAS_ZIP} (${CANVAS_SIZE})"
+fi
 echo ""
 fi
 
@@ -269,8 +338,10 @@ echo "  - ${EMBEDDED_ZIP}"
 echo "  - ${FF_ZIP}"
 echo "  - ${CS3D_ZIP}"
 echo "  - ${GRAPHIFY_ZIP}"
-if [ "$SKIP_CANVAS" = false ]; then
+if [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 0 ]; then
 echo "  - ${CANVAS_ZIP}"
+elif [ "$SKIP_CANVAS" = false ] && [ "$canvas_build_failed" = 1 ]; then
+echo "  - (canvas BUILD FAILED — use Build Canvas Addon workflow; see log above)"
 else
 echo "  - (canvas skipped — use Build Canvas Addon workflow)"
 fi

@@ -246,7 +246,9 @@
 			neighborhood.removeClass( 'faded' ).addClass( 'highlighted' );
 
 			// Build sidebar HTML.
-			var urlHtml  = n.url ? '<p><a href="' + n.url + '" target="_blank" rel="noopener">View post ↗</a></p>' : '';
+			// Only allow http(s) URLs to neutralise javascript: / data: / vbscript:.
+			var safeUrl = ( n.url && /^https?:\/\//i.test( String( n.url ) ) ) ? String( n.url ) : '';
+			var urlHtml = safeUrl ? '<p><a href="' + $( '<span>' ).text( safeUrl ).html() + '" target="_blank" rel="noopener noreferrer">View post ↗</a></p>' : '';
 			var nbrHtml  = '';
 			$.each( nbrs.slice( 0, 10 ), function ( _, nbr ) {
 				nbrHtml += '<li><strong>' + $( '<span>' ).text( nbr.label ).html() + '</strong> <em>' + $( '<span>' ).text( nbr.relation ).html() + '</em></li>';

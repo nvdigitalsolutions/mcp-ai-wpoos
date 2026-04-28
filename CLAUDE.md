@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with 519+ tools, MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with 800+ tools (live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,7 +50,7 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (519+ tools)
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (800+ tools)
 ├── tools/                              ← 165 base tool implementations
 ├── services/                           ← 20+ service classes
 ├── admin/                              ← WordPress admin UI
@@ -114,7 +114,7 @@ return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ) );
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (165 tools) or `false` (all 519+)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (≈220 base tools) or `false` (all 800+; counts are approximate — the registry is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns

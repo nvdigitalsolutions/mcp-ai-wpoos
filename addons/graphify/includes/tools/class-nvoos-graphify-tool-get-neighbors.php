@@ -39,19 +39,26 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'node_id'  => array(
+				'node_id'       => array(
 					'type'        => 'string',
 					'description' => __( 'Node identifier (e.g. "post_123"). Use graphify_get_node to look up a node_id.', 'nvoos-graphify' ),
 				),
-				'label'    => array(
+				'label'         => array(
 					'type'        => 'string',
 					'description' => __( 'Node label (alternative to node_id, uses fuzzy search).', 'nvoos-graphify' ),
 					'maxLength'   => 255,
 				),
-				'relation' => array(
+				'relation'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by relation type, e.g. "LINKS_TO", "CATEGORIZED_BY", "discusses_topic". Leave empty for all relations.', 'nvoos-graphify' ),
 					'maxLength'   => 128,
+				),
+				'max_neighbors' => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of neighbor edges to return (default: 100, max: 500).', 'nvoos-graphify' ),
+					'minimum'     => 1,
+					'maximum'     => 500,
+					'default'     => 100,
 				),
 			),
 			'additionalProperties' => false,
@@ -77,8 +84,9 @@ class NV_oOS_Graphify_Tool_Get_Neighbors implements WP_MCP_AI_Tool_Interface, WP
 			return array( 'success' => false, 'error' => __( 'Node not found.', 'nvoos-graphify' ) );
 		}
 
-		$relation = isset( $arguments['relation'] ) ? sanitize_text_field( $arguments['relation'] ) : '';
-		$edges    = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id, $relation );
+		$relation      = isset( $arguments['relation'] ) ? sanitize_text_field( $arguments['relation'] ) : '';
+		$max_neighbors = isset( $arguments['max_neighbors'] ) ? max( 1, min( 500, absint( $arguments['max_neighbors'] ) ) ) : 100;
+		$edges         = NV_oOS_Graphify_DB::get_edges_for_node( $node->node_id, $relation, $max_neighbors );
 
 		$neighbors = array();
 		foreach ( $edges as $edge ) {

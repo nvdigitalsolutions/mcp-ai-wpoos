@@ -560,3 +560,158 @@ class Test_MCP_App_Tool_Bridge extends WP_UnitTestCase {
 		$this->assertEquals( $config, $bridge->get_app_config() );
 	}
 }
+
+/**
+ * Tests for the MCP App URL allowlist (R-S-14, F-AI-03).
+ *
+ * @group mcp-apps
+ * @group security
+ */
+class Test_MCP_App_Allowlist extends WP_UnitTestCase {
+
+	/**
+	 * Load registry class.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+			require_once WP_MCP_AI_PATH . 'addons/pro/includes/mcp-apps/class-wp-mcp-ai-mcp-app-registry.php';
+		}
+	}
+
+	/**
+	 * Reset filters between tests.
+	 */
+	public function tearDown(): void {
+		remove_all_filters( 'wp_mcp_ai_mcp_app_allowed_hosts' );
+		parent::tearDown();
+	}
+
+	public function test_rejects_empty_url() {
+		$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( '' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_mcp_app_url_empty', $result->get_error_code() );
+	}
+
+	public function test_rejects_non_http_scheme() {
+		foreach ( array( 'javascript:alert(1)', 'data:text/html,foo', 'file:///etc/passwd', 'ftp://example.com/' ) as $url ) {
+			$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( $url );
+			$this->assertWPError( $result, "Should reject $url" );
+			$this->assertContains(
+				$result->get_error_code(),
+				array( 'wp_mcp_ai_mcp_app_url_scheme', 'wp_mcp_ai_mcp_app_url_malformed' ),
+				"URL $url returned unexpected code " . $result->get_error_code()
+			);
+		}
+	}
+
+	public function test_rejects_malformed_url() {
+		$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'not-a-url' );
+		$this->assertWPError( $result );
+	}
+
+	public function test_permissive_when_allowlist_empty() {
+		// No filter, no constant: any well-formed http(s) URL is allowed.
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://example.com/mcp' ) );
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'http://localhost:3000/mcp' ) );
+	}
+
+	public function test_filter_allowlist_exact_match() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( 'mcp.example.com' );
+			}
+		);
+
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/path' ) );
+	}
+
+	public function test_filter_allowlist_rejects_other_hosts() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( 'mcp.example.com' );
+			}
+		);
+
+		$result = WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://evil.example.org/path' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_mcp_app_url_not_allowed', $result->get_error_code() );
+	}
+
+	public function test_filter_allowlist_case_insensitive() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( 'MCP.Example.COM' );
+			}
+		);
+
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/path' ) );
+	}
+
+	public function test_wildcard_matches_subdomain() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( '*.example.com' );
+			}
+		);
+
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://api.example.com/mcp' ) );
+		$this->assertTrue( WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://mcp.example.com/' ) );
+	}
+
+	public function test_wildcard_does_not_match_apex_or_other_domain() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( '*.example.com' );
+			}
+		);
+
+		$apex = WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://example.com/' );
+		$this->assertWPError( $apex, 'Wildcard *.example.com must not match apex example.com' );
+
+		$other = WP_MCP_AI_MCP_App_Registry::is_url_allowed( 'https://api.example.org/' );
+		$this->assertWPError( $other );
+	}
+
+	public function test_sanitize_app_config_drops_disallowed_url() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( 'mcp.allowed.example' );
+			}
+		);
+
+		$cfg = WP_MCP_AI_MCP_App_Registry::sanitize_app_config(
+			array(
+				'label'      => 'Bad app',
+				'server_url' => 'https://attacker.example/mcp',
+			)
+		);
+
+		$this->assertSame( '', $cfg['server_url'], 'Disallowed URLs must be cleared at sanitize time' );
+	}
+
+	public function test_sanitize_app_config_keeps_allowed_url() {
+		add_filter(
+			'wp_mcp_ai_mcp_app_allowed_hosts',
+			static function () {
+				return array( 'mcp.allowed.example' );
+			}
+		);
+
+		$cfg = WP_MCP_AI_MCP_App_Registry::sanitize_app_config(
+			array(
+				'label'      => 'Good app',
+				'server_url' => 'https://mcp.allowed.example/path',
+			)
+		);
+
+		$this->assertSame( 'https://mcp.allowed.example/path', $cfg['server_url'] );
+	}
+}

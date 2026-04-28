@@ -171,6 +171,14 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		// Resolve URL to local path if needed.
 		$file_path = $this->resolve_file_path( $file_path );
 
+		// Verify the resolved path is within the uploads directory (prevents path traversal).
+		$upload_dir    = wp_upload_dir();
+		$validated     = wp_mcp_ai_validate_path( $file_path, $upload_dir['basedir'] );
+		if ( is_wp_error( $validated ) ) {
+			return $validated;
+		}
+		$file_path = $validated;
+
 		// Verify file exists.
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'Excel file not found.', 'mcp-ai-wpoos-pro' ) );

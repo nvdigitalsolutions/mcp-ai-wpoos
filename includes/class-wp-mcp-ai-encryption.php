@@ -30,9 +30,25 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		const ENCRYPTED_SECRET_META_KEY = 'wp_mcp_ai_encrypted_secret';
 
 		/**
-		 * Encryption method.
+		 * Encryption method for new encryptions — AES-256-GCM (AEAD).
+		 *
+		 * Provides authenticated encryption so ciphertext cannot be silently
+		 * tampered with (no padding-oracle or bit-flipping attacks).
 		 */
-		const CIPHER_METHOD = 'aes-256-cbc';
+		const CIPHER_METHOD = 'aes-256-gcm';
+
+		/**
+		 * Legacy cipher method retained for decrypting pre-existing data.
+		 *
+		 * New data is never encrypted with CBC; this constant exists only so the
+		 * backward-compatible decrypt path can reference the cipher name clearly.
+		 */
+		const CIPHER_METHOD_LEGACY = 'aes-256-cbc';
+
+		/**
+		 * Prefix prepended to GCM-encrypted payloads so decrypt() can identify the format.
+		 */
+		const GCM_PREFIX = 'v2:';
 
 		/**
 		 * Get or generate the master encryption key.
@@ -60,11 +76,15 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 		}
 
 		/**
-		 * Encrypt data using the master key.
+		 * Encrypt data using AES-256-GCM (AEAD).
+		 *
+		 * The returned string is prefixed with "v2:" so decrypt() can identify the
+		 * format and apply the correct algorithm. The binary layout inside the
+		 * base64 payload is: nonce[12] . ciphertext[N] . auth_tag[16].
 		 *
 		 * @param string      $data The data to encrypt.
 		 * @param string|null $key  Optional. The encryption key to use. Defaults to master key.
-		 * @return string|false Encrypted data or false on failure.
+		 * @return string|false Encrypted data (prefixed with "v2:") or false on failure.
 		 */
 		public static function encrypt( $data, $key = null ) {
 			if ( empty( $data ) ) {
@@ -80,30 +100,38 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				return false;
 			}
 
-			$iv = random_bytes( 16 );
-
-			$encrypted = openssl_encrypt(
+			// GCM uses a 12-byte nonce (96 bits — the recommended length for GCM).
+			$nonce    = random_bytes( 12 );
+			$tag      = '';
+			$ciphertext = openssl_encrypt(
 				$data,
 				self::CIPHER_METHOD,
 				$key,
 				OPENSSL_RAW_DATA,
-				$iv
+				$nonce,
+				$tag,
+				'',   // AAD (additional authenticated data) — not required here.
+				16    // 128-bit authentication tag.
 			);
 
-			if ( false === $encrypted ) {
+			if ( false === $ciphertext ) {
 				return false;
 			}
 
-			// Prepend IV to encrypted data.
-			return base64_encode( $iv . $encrypted );
+			// Layout: nonce[12] . ciphertext[N] . tag[16].
+			return self::GCM_PREFIX . base64_encode( $nonce . $ciphertext . $tag );
 		}
 
 		/**
-		 * Decrypt data using the master key.
+		 * Decrypt data using the stored master key.
+		 *
+		 * Supports two formats transparently:
+		 *  - "v2:<base64>" — AES-256-GCM with authentication tag verification (new format).
+		 *  - "<base64>"    — AES-256-CBC legacy format (existing stored values).
 		 *
 		 * @param string      $encrypted The encrypted data.
 		 * @param string|null $key       Optional. The encryption key to use. Defaults to master key.
-		 * @return string|false Decrypted data or false on failure.
+		 * @return string|false Decrypted data or false on failure / authentication error.
 		 */
 		public static function decrypt( $encrypted, $key = null ) {
 			if ( empty( $encrypted ) ) {
@@ -114,29 +142,52 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				$key = self::get_master_key();
 			}
 
-			$key = base64_decode( $key );
-			if ( false === $key || strlen( $key ) !== 32 ) {
+			$key_raw = base64_decode( $key );
+			if ( false === $key_raw || strlen( $key_raw ) !== 32 ) {
 				return false;
 			}
 
+			// New format: "v2:<base64(nonce[12] . ciphertext . tag[16])>".
+			if ( 0 === strpos( $encrypted, self::GCM_PREFIX ) ) {
+				$payload = base64_decode( substr( $encrypted, strlen( self::GCM_PREFIX ) ) );
+				// Minimum: 12-byte nonce + 0-byte plaintext + 16-byte tag = 28 bytes.
+				if ( false === $payload || strlen( $payload ) < 28 ) {
+					return false;
+				}
+
+				$nonce      = substr( $payload, 0, 12 );
+				$tag        = substr( $payload, -16 );
+				$ciphertext = substr( $payload, 12, strlen( $payload ) - 28 );
+
+				$decrypted = openssl_decrypt(
+					$ciphertext,
+					self::CIPHER_METHOD,
+					$key_raw,
+					OPENSSL_RAW_DATA,
+					$nonce,
+					$tag
+				);
+
+				// openssl_decrypt returns false when the GCM tag check fails.
+				return $decrypted;
+			}
+
+			// Legacy format: base64(iv[16] . ciphertext) — AES-256-CBC, no authentication.
 			$data = base64_decode( $encrypted );
 			if ( false === $data || strlen( $data ) < 17 ) {
 				return false;
 			}
 
-			// Extract IV and encrypted data.
-			$iv        = substr( $data, 0, 16 );
-			$encrypted = substr( $data, 16 );
+			$iv             = substr( $data, 0, 16 );
+			$ciphertext_cbc = substr( $data, 16 );
 
-			$decrypted = openssl_decrypt(
-				$encrypted,
-				self::CIPHER_METHOD,
-				$key,
+			return openssl_decrypt(
+				$ciphertext_cbc,
+				self::CIPHER_METHOD_LEGACY,
+				$key_raw,
 				OPENSSL_RAW_DATA,
 				$iv
 			);
-
-			return $decrypted;
 		}
 
 		/**

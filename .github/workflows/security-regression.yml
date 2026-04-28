@@ -1,0 +1,188 @@
+name: Security Regression Guards
+
+# Static guards that prevent dangerous patterns from regressing into the
+# codebase. Per the 2026-04 security audit (docs/audit/2026-04/), these gates
+# start advisory (continue-on-error) so that the historical baseline of
+# pre-existing occurrences does not block unrelated work, then become blocking
+# once the in-flight remediation (R-S-01, R-S-02, R-S-06) lands.
+#
+# Closes audit roadmap item R-T-05.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-pattern-guards:
+    name: Forbidden pattern checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ----------------------------------------------------------------------
+      # Resolve the diff range. For PRs, compare against the base branch; for
+      # pushes, compare against the previous commit. This makes the guards
+      # only flag *new* introductions, not pre-existing baseline occurrences.
+      # ----------------------------------------------------------------------
+      - name: Resolve changed PHP files
+        id: changed
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.event.after }}"
+          fi
+
+          # Sanity fallback for first-push / shallow clones where BASE is empty
+          # or unreachable: degrade to scanning HEAD's most recent commit
+          # against its first parent. Prevents the guard from scanning the
+          # entire repo (~3k PHP files) on the initial push to a branch.
+          if [ -z "${BASE_SHA}" ] || [ "${BASE_SHA}" = "0000000000000000000000000000000000000000" ]; then
+            echo "No base ref available; scanning HEAD against HEAD~1."
+            git diff --name-only --diff-filter=AM HEAD~1 HEAD 2>/dev/null \
+              | grep -E '\.(php|js)$' \
+              | grep -v -E '^(vendor/|node_modules/|addons/pro/vendor/|addons/.*/assets/vendor/)' \
+              > changed-files.txt || true
+            # If even HEAD~1 is unreachable (single-commit branch), fall back
+            # to the files from the latest commit only, capped to keep CI
+            # responsive.
+            if [ ! -s changed-files.txt ]; then
+              git show --pretty=format: --name-only HEAD 2>/dev/null \
+                | grep -E '\.(php|js)$' \
+                | grep -v -E '^(vendor/|node_modules/|addons/pro/vendor/|addons/.*/assets/vendor/)' \
+                > changed-files.txt || true
+            fi
+          else
+            git diff --name-only --diff-filter=AM "${BASE_SHA}" "${HEAD_SHA}" \
+              | grep -E '\.(php|js)$' \
+              | grep -v -E '^(vendor/|node_modules/|addons/pro/vendor/|addons/.*/assets/vendor/)' \
+              > changed-files.txt || true
+          fi
+
+          echo "Changed files:"
+          cat changed-files.txt || true
+          echo "count=$(wc -l < changed-files.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      # ----------------------------------------------------------------------
+      # Guard 1: '__return_true' as a permission_callback.
+      # Allowlisted: webhook controllers that verify the upstream HMAC inside
+      # the route handler, plus telegram login controller. New occurrences
+      # outside the allowlist break the build.
+      # ----------------------------------------------------------------------
+      - name: Guard — no new __return_true permission_callback
+        if: steps.changed.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          violations=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue
+            case "$f" in
+              addons/pro/includes/rest/class-wp-mcp-ai-*-webhook-controller.php) continue ;;
+              addons/pro/includes/rest/class-wp-mcp-ai-telegram-login-controller.php) continue ;;
+            esac
+            # Match both quoted ('__return_true' / "__return_true") and
+            # unquoted (__return_true) forms — both are valid PHP for a
+            # callable referenced by name.
+            if grep -nE "['\"]permission_callback['\"][[:space:]]*=>[[:space:]]*(['\"]__return_true['\"]|__return_true)" "$f" > /tmp/hit.txt; then
+              echo "::error file=$f::__return_true used as permission_callback (audit R-S-01). Add a real signature/capability check."
+              cat /tmp/hit.txt
+              violations=$((violations + 1))
+            fi
+          done < changed-files.txt
+          echo "violations=$violations"
+          # Advisory for now (continue-on-error); flip to `exit $violations` once
+          # R-S-01 lands and the historical baseline is cleared.
+          exit 0
+        continue-on-error: true
+
+      # ----------------------------------------------------------------------
+      # Guard 2: 'sslverify' => false in changed files.
+      # Allowed only inside the http-helper loopback gate, which is already on
+      # the allowlist by file path.
+      # ----------------------------------------------------------------------
+      - name: Guard — no new 'sslverify' => false
+        if: steps.changed.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          violations=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue
+            case "$f" in
+              includes/class-wp-mcp-ai-http-helper.php) continue ;;
+              # Loopback-gated PURGE in the varnish tool is the documented
+              # exception; verified safe in audit (deep-dive §base).
+              includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php) continue ;;
+            esac
+            if grep -nE "['\"]sslverify['\"][[:space:]]*=>[[:space:]]*false" "$f" > /tmp/hit.txt; then
+              echo "::error file=$f::'sslverify' => false introduced (audit F-TLS-01). Remove and rely on the WP_MCP_AI_HTTP_Helper loopback filter."
+              cat /tmp/hit.txt
+              violations=$((violations + 1))
+            fi
+          done < changed-files.txt
+          echo "violations=$violations"
+          exit 0
+        continue-on-error: true
+
+      # ----------------------------------------------------------------------
+      # Guard 3: eval( and raw shell_exec( / exec( / passthru( / system(
+      # in changed PHP files. Pro shell tools (audit R-S-02 in flight) are
+      # allowlisted by path until that migration lands.
+      # ----------------------------------------------------------------------
+      - name: Guard — no new eval()/shell_exec()/exec() in PHP
+        if: steps.changed.outputs.count != '0'
+        run: |
+          set -uo pipefail
+          violations=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || continue
+            case "$f" in
+              # Pro tools currently using shell_exec — tracked under R-S-02.
+              addons/pro/includes/tools/architect-agent/*) continue ;;
+              addons/pro/includes/tools/class-wp-mcp-ai-tool-run-shell-*) continue ;;
+              # Tests that intentionally exercise the shell path.
+              tests/*|addons/*/tests/*) continue ;;
+            esac
+            case "$f" in
+              *.php) ;;
+              *) continue ;;
+            esac
+
+            # eval( with non-comment context.
+            if grep -nE "(^|[^a-zA-Z0-9_])eval[[:space:]]*\(" "$f" \
+                | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(\*|//|#)" > /tmp/hit.txt; then
+              echo "::error file=$f::eval() introduced. Refactor to a parsed/structured form."
+              cat /tmp/hit.txt
+              violations=$((violations + 1))
+            fi
+
+            # shell_exec / exec / passthru / system at call-site (not in comments).
+            if grep -nE "(^|[^a-zA-Z0-9_>])(shell_exec|passthru|system|popen)[[:space:]]*\(" "$f" \
+                | grep -vE "^[^:]+:[0-9]+:[[:space:]]*(\*|//|#)" > /tmp/hit.txt; then
+              echo "::error file=$f::raw shell function introduced (audit F-EXEC-01). Use proc_open with array argv via Symfony Process."
+              cat /tmp/hit.txt
+              violations=$((violations + 1))
+            fi
+          done < changed-files.txt
+          echo "violations=$violations"
+          exit 0
+        continue-on-error: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Security regression guards completed. These checks are advisory for the current release cycle and will be made blocking once R-S-01, R-S-02, R-S-06 land."
