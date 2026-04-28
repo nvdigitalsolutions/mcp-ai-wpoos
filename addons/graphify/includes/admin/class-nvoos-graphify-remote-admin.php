@@ -270,24 +270,13 @@ class NV_oOS_Graphify_Remote_Admin {
 
 		$registry = NV_oOS_Graphify_Remote_Registry::get_instance();
 		$sources  = $registry->get_active_sources();
-		$source   = null;
-		foreach ( $sources as $s ) {
-			if ( ( $s['_slug'] ?? '' ) === $slug ) {
-				$source = $s;
-				break;
-			}
-		}
 
-		if ( ! $source ) {
+		if ( ! isset( $sources[ $slug ] ) ) {
 			wp_send_json_error( __( 'Source not found or not enabled.', 'nvoos-graphify' ) );
 		}
 
-		$driver = $registry->get_driver( $source['driver'] ?? '' );
-		if ( ! $driver ) {
-			wp_send_json_error( __( 'Driver not found.', 'nvoos-graphify' ) );
-		}
-
-		$result = $driver->test_connection( $source );
+		$driver = $sources[ $slug ];
+		$result = $driver->test_connection();
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( $result->get_error_message() );
 		}

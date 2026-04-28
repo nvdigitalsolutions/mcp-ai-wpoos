@@ -38,8 +38,8 @@ class Test_Graphify_Remote extends WP_UnitTestCase {
 		$instance->setAccessible( true );
 		$instance->setValue( null, null );
 
-		// Reset the "drivers_initialized" flag.
-		$initialized = $reflection->getProperty( 'drivers_initialized' );
+		// Reset the "initialized" flag.
+		$initialized = $reflection->getProperty( 'initialized' );
 		$initialized->setAccessible( true );
 		$initialized->setValue( null, false );
 	}

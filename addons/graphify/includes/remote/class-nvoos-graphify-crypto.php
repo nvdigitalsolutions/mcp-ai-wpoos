@@ -107,6 +107,25 @@ class NV_oOS_Graphify_Crypto {
 	}
 
 	/**
+	 * Determine whether a config key is sensitive and should be encrypted.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $key Config field key.
+	 * @return bool True if the key contains a sensitive pattern.
+	 */
+	public static function is_sensitive_key( $key ) {
+		$key      = strtolower( (string) $key );
+		$patterns = array( 'token', 'password', 'secret', 'api_key', 'apikey', 'passwd', 'credential' );
+		foreach ( $patterns as $pattern ) {
+			if ( strpos( $key, $pattern ) !== false ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Derive a 32-byte encryption key from WordPress salts.
 	 *
 	 * @since 0.6.0
