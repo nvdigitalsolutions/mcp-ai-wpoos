@@ -66,6 +66,18 @@ When deploying NV oOS:
 6. Enable rate limiting for public-facing chat endpoints
 7. Monitor the plugin's activity logs for unusual behavior
 
+## Destructive Operations and Resource Consumption
+
+NV oOS is designed to grant AI assistants broad access to WordPress operations. **By design, it can be destructive and resource-intensive when not properly configured.**
+
+Examples of risks when misconfigured:
+- Bulk deletion or modification of posts, media, and users
+- Mass email dispatch to your user list
+- Unbounded API spending that triggers provider billing overages
+- Server CPU/memory exhaustion from concurrent agentic loops
+
+See [`WARRANTY.md`](WARRANTY.md) for a full breakdown of destructive operations, resource consumption risks, and mitigation recommendations aligned with industry standards (OWASP, NIST SP 800-53, ISO/IEC 27001, WordPress Plugin Handbook).
+
 ## Intellectual Property Notice
 
 NV oOS is developed and maintained by NV Digital Solutions (https://nvdigitalsolutions.com).
@@ -82,5 +94,5 @@ We appreciate the security research community's efforts in helping keep NV oOS s
 
 ---
 
-*This security policy is maintained by NV Digital Solutions.*
-*Last updated: March 2026*
+*This security policy is maintained by NV Digital Solutions.*  
+*Last updated: April 2026*
