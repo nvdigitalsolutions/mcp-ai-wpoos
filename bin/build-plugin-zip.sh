@@ -668,6 +668,16 @@ if [ "$BUILD_COMBINED" = true ]; then
     
     # Copy all plugin files (includes both base and pro)
     # Exclude mcp-ai-wpoos-base.php to prevent duplicate plugin detection in WordPress
+    #
+    # Note: The Document Generation toolkit (PDF/Word/Excel libraries — tcpdf, dompdf,
+    # phpspreadsheet, phpword, pdfjs-dist, exceljs, pdfkit, pdf-lib, pdf-parse,
+    # puppeteer-core, @remotion, etc.) is excluded from the combined zip to keep it
+    # under the 50 MB upload limit imposed by many hosts. Users who need PDF/Word/Excel
+    # generation install the separate "oos-toolkit-document-generation" add-on, which
+    # is built by bin/build-toolkit-addons.sh and ships those libraries on its own.
+    # Tools that depend on phpspreadsheet (mortgage calculator, equipment inventory
+    # report, Excel data import) gracefully return a `phpspreadsheet_missing` WP_Error
+    # when the toolkit is not installed.
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
@@ -752,6 +762,26 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'addons/pro/assets/vendor/axios' \
         --exclude 'addons/pro/assets/vendor/mathjs' \
         --exclude 'addons/pro/assets/vendor/prettier' \
+        --exclude 'addons/pro/vendor/tecnickcom' \
+        --exclude 'addons/pro/vendor/dompdf' \
+        --exclude 'addons/pro/vendor/thecodingmachine' \
+        --exclude 'addons/pro/vendor/smalot' \
+        --exclude 'addons/pro/vendor/markbaker' \
+        --exclude 'addons/pro/vendor/maennchen' \
+        --exclude 'addons/pro/vendor/sabberworm' \
+        --exclude 'addons/pro/vendor/masterminds' \
+        --exclude 'addons/pro/vendor/phpoffice/phpspreadsheet' \
+        --exclude 'addons/pro/vendor/phpoffice/phpword' \
+        --exclude 'addons/pro/vendor/phpoffice/math' \
+        --exclude 'addons/pro/assets/vendor/pdfjs-dist' \
+        --exclude 'addons/pro/assets/vendor/exceljs' \
+        --exclude 'addons/pro/assets/vendor/pdfkit' \
+        --exclude 'addons/pro/assets/vendor/pdf-lib' \
+        --exclude 'addons/pro/assets/vendor/pdf-parse' \
+        --exclude 'addons/pro/assets/vendor/puppeteer-core' \
+        --exclude 'addons/pro/assets/vendor/@remotion' \
+        --exclude 'addons/pro/assets/vendor/remotion' \
+        --exclude 'addons/pro/includes/tools/document-generation' \
         --exclude 'mcp-ai-wpoos-base.php' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
