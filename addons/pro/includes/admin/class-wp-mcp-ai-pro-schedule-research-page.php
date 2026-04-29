@@ -519,9 +519,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 	if (typeof window.wpMcpAiScheduleResearch === 'undefined') { return; }
 	var cfg = window.wpMcpAiScheduleResearch;
 
-	function escapeHtml(s){
-		return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
-			return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+	function escapeHtml(text){
+		return String(text == null ? '' : text).replace(/[&<>"']/g, function(c){
+			var map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
+			return map[c];
 		});
 	}
 
