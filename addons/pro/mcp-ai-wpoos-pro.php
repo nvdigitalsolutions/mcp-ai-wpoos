@@ -217,6 +217,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			// Note: Class instantiates itself at the bottom of the file.
 		}
 
+		// Load Research & Add Schedule admin page (sibling of Schedule Manager).
+		$schedule_research_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-schedule-research-page.php';
+		if ( file_exists( $schedule_research_page ) ) {
+			require_once $schedule_research_page;
+			// Class auto-initializes at the bottom of the file.
+		}
+
 		// Load Pro Webhook Status admin page (registers under NV oOS Pro Dashboard menu).
 		$webhook_status_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-webhook-status-page.php';
 		if ( file_exists( $webhook_status_page ) ) {
@@ -845,6 +852,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_List_Pro_Schedules'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-pro-schedules.php',
 			'WP_MCP_AI_Pro_Tool_Get_Schedule_Run_History'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-schedule-run-history.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Channel_Broadcast'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-schedule-channel-broadcast.php',
+			'WP_MCP_AI_Pro_Tool_Plan_Schedules_From_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-plan-schedules-from-workflow.php',
 			// iSAMS School Management System tool.
 			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
 			// Web Browser Automation tool (Playwright-based).
@@ -2074,6 +2082,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$pro_tools['list_pro_schedules']       = 'wordpress-core';
 		$pro_tools['get_schedule_run_history']      = 'wordpress-core';
 		$pro_tools['schedule_channel_broadcast']    = 'wordpress-core';
+		$pro_tools['plan_schedules_from_workflow']  = 'wordpress-core';
 
 		/**
 		 * Filter the Pro tool group assignments.

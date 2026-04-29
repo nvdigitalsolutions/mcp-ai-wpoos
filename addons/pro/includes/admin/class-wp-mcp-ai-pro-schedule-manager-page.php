@@ -126,6 +126,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager_Page' ) ) {
 					<?php esc_html_e( 'Pro Schedule Manager', 'mcp-ai-wpoos-pro' ); ?>
 					<span style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;margin-left:10px;text-transform:uppercase;letter-spacing:.5px;">PRO</span>
 				</h1>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=research-pro-schedule' ) ); ?>" class="page-title-action">
+					<?php esc_html_e( 'Research & Add Schedule', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
 
 				<?php
 				// Use the container-managed section instance so that we share the
