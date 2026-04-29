@@ -93,7 +93,7 @@ if ( $is_enabled && ! $is_base ) {
 /**
  * Load Architectural Design toolkit tools.
  *
- * Registers all 16 architectural design tools for Phase 2.10.
+ * Registers all 26 architectural design tools (Phase A: 16 + Phase B: 10).
  *
  * @since 1.1.0
  */
@@ -130,6 +130,22 @@ function wp_mcp_ai_load_architectural_design_tools() {
 	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-estimate-construction-cost.php';
 	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-generate-construction-timeline.php';
 
+	// Phase B — Regional Compliance tools (7 tools).
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-calculate-wind-loads.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-calculate-seismic-loads.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-validate-setbacks-and-far.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-check-uda-planning-compliance.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-check-jnbc-hurricane-compliance.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-check-us-ibc-irc-compliance.php';
+	require_once $tools_dir . 'regional-compliance/class-wp-mcp-ai-tool-generate-compliance-dossier.php';
+
+	// Phase B — Analysis depth tools (2 tools added to analysis-compliance/).
+	require_once $tools_dir . 'analysis-compliance/class-wp-mcp-ai-tool-analyze-natural-ventilation.php';
+	require_once $tools_dir . 'analysis-compliance/class-wp-mcp-ai-tool-analyze-daylight-and-solar-gain.php';
+
+	// Phase B — Sustainability tools (1 tool).
+	require_once $tools_dir . 'sustainability/class-wp-mcp-ai-tool-simulate-thermal-comfort.php';
+
 	// Register all tools with the tool registry.
 	$registry = wp_mcp_ai_get_tool_registry();
 
@@ -160,6 +176,22 @@ function wp_mcp_ai_load_architectural_design_tools() {
 			'WP_MCP_AI_Tool_Generate_Material_Schedule',
 			'WP_MCP_AI_Tool_Estimate_Construction_Cost',
 			'WP_MCP_AI_Tool_Generate_Construction_Timeline',
+
+			// Phase B — Regional Compliance.
+			'WP_MCP_AI_Tool_Calculate_Wind_Loads',
+			'WP_MCP_AI_Tool_Calculate_Seismic_Loads',
+			'WP_MCP_AI_Tool_Validate_Setbacks_And_Far',
+			'WP_MCP_AI_Tool_Check_UDA_Planning_Compliance',
+			'WP_MCP_AI_Tool_Check_JNBC_Hurricane_Compliance',
+			'WP_MCP_AI_Tool_Check_US_IBC_IRC_Compliance',
+			'WP_MCP_AI_Tool_Generate_Compliance_Dossier',
+
+			// Phase B — Analysis depth.
+			'WP_MCP_AI_Tool_Analyze_Natural_Ventilation',
+			'WP_MCP_AI_Tool_Analyze_Daylight_And_Solar_Gain',
+
+			// Phase B — Sustainability.
+			'WP_MCP_AI_Tool_Simulate_Thermal_Comfort',
 		);
 
 		foreach ( $tool_classes as $tool_class ) {

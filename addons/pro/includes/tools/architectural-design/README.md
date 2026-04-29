@@ -2,7 +2,7 @@
 
 > AI-assisted architectural design for tropical, hurricane-prone, and temperate jurisdictions — Sri Lanka (primary), Jamaica, and the United States.
 
-This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 16 production tools (with additional modules planned in subsequent phases) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, and cost estimation.
+This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 26 production tools (Phase A: 16 + Phase B: 10) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, and cost estimation.
 
 The toolkit follows the same architecture as the [CRE Debt & Securitization Toolkit](../cre-debt/README.md) and the Health & Wellness toolkit:
 
@@ -24,16 +24,18 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | Floor Planning & Space Design | `floor-planning/` | 4 |
 | 3D Modeling & Visualization | `visualization/` | 3 |
 | Documentation & Blueprints | `documentation/` | 3 |
-| Analysis & Compliance | `analysis-compliance/` | 3 |
+| Analysis & Compliance | `analysis-compliance/` | 5 |
 | Estimation & Scheduling | `estimation-scheduling/` | 3 |
-| Regional Compliance | `regional-compliance/` | _(Phase B — planned)_ |
-| Sustainability | `sustainability/` | _(Phase B — planned)_ |
+| Regional Compliance | `regional-compliance/` | 7 |
+| Sustainability | `sustainability/` | 1 |
 | Interoperability (IFC / gbXML / DWG) | `interoperability/` | _(Phase D — planned)_ |
 | Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | _(Phase D — planned)_ |
 
 ---
 
-## Tool inventory (Phase A — current)
+## Tool inventory (Phase A + Phase B — current)
+
+### Phase A — Foundations
 
 | Slug | Module | Capability flags |
 |---|---|---|
@@ -53,6 +55,21 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | `generate_material_schedule` | estimation-scheduling | `write`, `state-changing` |
 | `estimate_construction_cost` | estimation-scheduling | `read-only`, `cacheable` |
 | `generate_construction_timeline` | estimation-scheduling | `write`, `state-changing` |
+
+### Phase B — Regional Compliance & Analysis Depth
+
+| Slug | Module | Capability flags |
+|---|---|---|
+| `calculate_wind_loads` | regional-compliance | `read-only`, `cacheable` |
+| `calculate_seismic_loads` | regional-compliance | `read-only`, `cacheable` |
+| `validate_setbacks_and_far` | regional-compliance | `read-only`, `cacheable` |
+| `check_uda_planning_compliance` | regional-compliance | `read-only`, `cacheable` |
+| `check_jnbc_hurricane_compliance` | regional-compliance | `read-only`, `cacheable` |
+| `check_us_ibc_irc_compliance` | regional-compliance | `read-only`, `cacheable` |
+| `generate_compliance_dossier` | regional-compliance | `read-only`, `cacheable` |
+| `analyze_natural_ventilation` | analysis-compliance | `read-only`, `cacheable` |
+| `analyze_daylight_and_solar_gain` | analysis-compliance | `read-only`, `cacheable` |
+| `simulate_thermal_comfort` | sustainability | `read-only`, `cacheable` |
 
 Capability flag definitions follow [`includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php`](../../../../../includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php).
 
@@ -138,9 +155,8 @@ The toolkit is fully filterable for partner customisation:
 
 ## Roadmap
 
-Phase A (this milestone) lays the foundation. Subsequent phases:
+Phase A laid the foundation; **Phase B (this milestone)** delivers regional-compliance dispatch, wind/seismic load engines, ventilation/daylight/thermal-comfort analysis and per-country compliance dossiers. Subsequent phases:
 
-* **Phase B** — Regional Compliance module: `check_uda_planning_compliance`, `check_jnbc_hurricane_compliance`, `check_us_ibc_irc_compliance`, `calculate_seismic_loads`, `calculate_wind_loads`, `validate_setbacks_and_far`, `generate_compliance_dossier`. Plus `analyze_natural_ventilation`, `analyze_daylight_and_solar_gain`, `simulate_thermal_comfort`.
 * **Phase C** — Sustainability + costing depth: `generate_bill_of_quantities` (POMI / SMM7 / CSI), `compare_quotation_to_estimate`, `generate_value_engineering_options`, `score_edge_certification` (IFC EDGE), expanded LEED scoring.
 * **Phase D** — Interoperability + project delivery: `import_dwg_floor_plan`, `import_ifc_model`, `export_to_ifc`, `export_to_gbxml`, `generate_bim_execution_plan`, `manage_rfi_log`, `manage_submittal_log`, plus a `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
 * **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial).
