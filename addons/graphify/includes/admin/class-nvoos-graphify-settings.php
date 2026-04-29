@@ -508,7 +508,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php" style="margin-top:20px;">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_remote' ) );
+					self::do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_remote' ) );
 					submit_button( __( 'Save Remote Settings', 'nvoos-graphify' ) );
 					?>
 				</form>
@@ -517,7 +517,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php" style="margin-top:20px;">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_embeddings' ) );
+					self::do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_embeddings' ) );
 					submit_button( __( 'Save Embeddings Settings', 'nvoos-graphify' ) );
 					?>
 				</form>
@@ -525,7 +525,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered(
+					self::do_settings_sections_filtered(
 						self::PAGE_SLUG,
 						array( 'nvoos_graphify_general', 'nvoos_graphify_build', 'nvoos_graphify_display' )
 					);
