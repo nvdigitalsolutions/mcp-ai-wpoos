@@ -98,6 +98,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
+				'wp_ajax_wp_mcp_ai_clear_test_files'        => 'handle_clear_test_files',
+				'wp_ajax_wp_mcp_ai_clear_dev_files'         => 'handle_clear_dev_files',
 			);
 
 			$action          = current_action();
@@ -3774,6 +3776,259 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'models' => $models,
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to clear test files from the plugin directory.
+		 *
+		 * Removes PHPUnit test suites, fixtures, and configuration files to prepare
+		 * a cloned installation for production use.
+		 */
+		private function handle_clear_test_files() {
+			check_ajax_referer( 'wp_mcp_ai_clear_test_files', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$plugin_root = trailingslashit( WP_MCP_AI_PATH );
+
+			$test_paths = array(
+				'tests',
+				'phpunit.xml',
+				'phpunit.xml.dist',
+				'coverage',
+				'.phpunit.result.cache',
+				'.nyc_output',
+				'addons/pro/tests',
+				'addons/embedded/tests',
+			);
+
+			$removed = array();
+			$skipped = array();
+
+			foreach ( $test_paths as $relative_path ) {
+				$result = $this->recursive_delete( $plugin_root . $relative_path, $plugin_root );
+				if ( true === $result ) {
+					$removed[] = $relative_path;
+				} elseif ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				} else {
+					$skipped[] = $relative_path;
+				}
+			}
+
+			if ( empty( $removed ) ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'No test files found — already clean.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %d: number of paths removed */
+						_n(
+							'Successfully removed %d test path: %s',
+							'Successfully removed %d test paths: %s',
+							count( $removed ),
+							'mcp-ai-wpoos'
+						),
+						count( $removed ),
+						esc_html( implode( ', ', $removed ) )
+					),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to clear dev and build files from the plugin directory.
+		 *
+		 * Removes build tooling, documentation, CI configs, and dev scripts that are
+		 * not needed in production to make a cloned installation production-ready.
+		 */
+		private function handle_clear_dev_files() {
+			check_ajax_referer( 'wp_mcp_ai_clear_dev_files', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$plugin_root = trailingslashit( WP_MCP_AI_PATH );
+
+			$dev_paths = array(
+				// Documentation.
+				'docs',
+				// Examples / demos.
+				'examples',
+				'assets/examples',
+				// CI / GitHub metadata.
+				'.github',
+				'.git-branch-info',
+				// AI agent and editor configuration.
+				'.bmad',
+				'.codex',
+				'.context',
+				'.devcontainer',
+				'.wordpress-org',
+				'.idea',
+				'.vscode',
+				'.editorconfig',
+				'.eslintrc.json',
+				'.eslintignore',
+				'.browserslistrc',
+				'.nvmrc',
+				'.codecov.yml',
+				'.npmrc',
+				// Code-style / lint configs.
+				'phpcs.xml.dist',
+				'CODEOWNERS',
+				'MAINTAINER_MAP.md',
+				// JS/TS build tooling.
+				'package.json',
+				'package-lock.json',
+				'babel.config.js',
+				'cleancss.config.js',
+				'jest.config.js',
+				'esbuild.config.js',
+				'esbuild.config.pro.js',
+				'cosmos.config.json',
+				'cosmos.webpack.config.js',
+				'webpack.config.js',
+				'webpack.config.tma-builder.js',
+				'webpack.config.tma.js',
+				'webpack.config.workflow.js',
+				'tsconfig.json',
+				// Composer dev metadata.
+				'composer.lock',
+				'vendor-dev',
+				// JS dependencies.
+				'node_modules',
+				// Patches and dev scripts.
+				'patches',
+				'patches.lock.json',
+				// Source bundles.
+				'src',
+				// Docker.
+				'docker-compose.yml',
+				'Dockerfile',
+				// Dev scripts.
+				'bin',
+				// AI-generated archive material.
+				'archive',
+			);
+
+			$removed = array();
+			$skipped = array();
+
+			foreach ( $dev_paths as $relative_path ) {
+				$result = $this->recursive_delete( $plugin_root . $relative_path, $plugin_root );
+				if ( true === $result ) {
+					$removed[] = $relative_path;
+				} elseif ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				} else {
+					$skipped[] = $relative_path;
+				}
+			}
+
+			if ( empty( $removed ) ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'No dev/build files found — already clean.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %d: number of paths removed */
+						_n(
+							'Successfully removed %d dev/build path: %s',
+							'Successfully removed %d dev/build paths: %s',
+							count( $removed ),
+							'mcp-ai-wpoos'
+						),
+						count( $removed ),
+						esc_html( implode( ', ', $removed ) )
+					),
+				)
+			);
+		}
+
+		/**
+		 * Recursively delete a file or directory within the plugin root.
+		 *
+		 * Includes a path-traversal guard: refuses to delete anything outside
+		 * the plugin root directory. Returns true on successful removal, false
+		 * when the path does not exist (treated as already clean), and a WP_Error
+		 * if the path fails the security check.
+		 *
+		 * @param string $path        Absolute path to the file or directory to remove.
+		 * @param string $plugin_root Absolute path to the plugin root (with trailing slash).
+		 * @return true|false|WP_Error True on removal, false if not found, WP_Error on security failure.
+		 */
+		private function recursive_delete( $path, $plugin_root ) {
+			// Normalise both paths to prevent traversal tricks.
+			$real_root = realpath( $plugin_root );
+			$real_path = realpath( $path );
+
+			// Path does not exist — nothing to remove.
+			if ( false === $real_path ) {
+				return false;
+			}
+
+			// Security check: target must be inside the plugin root.
+			if ( false === $real_root || strpos( $real_path . DIRECTORY_SEPARATOR, $real_root . DIRECTORY_SEPARATOR ) !== 0 ) {
+				return new WP_Error(
+					'path_traversal',
+					sprintf(
+						/* translators: %s: filesystem path */
+						__( 'Security check failed: path is outside the plugin directory (%s).', 'mcp-ai-wpoos' ),
+						esc_html( $path )
+					)
+				);
+			}
+
+			// Remove a single file.
+			if ( is_file( $real_path ) || is_link( $real_path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- WP_Filesystem does not expose a reliable cross-platform recursive delete; direct unlink is intentional here.
+				unlink( $real_path );
+				return true;
+			}
+
+			// Remove a directory recursively.
+			if ( is_dir( $real_path ) ) {
+				$iterator = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator( $real_path, RecursiveDirectoryIterator::SKIP_DOTS ),
+					RecursiveIteratorIterator::CHILD_FIRST
+				);
+
+				foreach ( $iterator as $item ) {
+					if ( $item->isDir() && ! $item->isLink() ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- WP_Filesystem does not expose a reliable cross-platform recursive delete; direct rmdir is intentional here.
+						rmdir( $item->getRealPath() );
+					} else {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct unlink intentional; see above.
+						unlink( $item->getRealPath() );
+					}
+				}
+
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Direct rmdir intentional; see above.
+				rmdir( $real_path );
+				return true;
+			}
+
+			return false;
 		}
 	}
 }

@@ -1897,6 +1897,118 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				});
 				</script>
 			</div>
+
+			<!-- PRODUCTION CLEANUP SECTION -->
+			<div class="wp-mcp-ai-production-cleanup-section" style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
+				<h3><?php esc_html_e( 'Production Cleanup', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Remove development-only files from this cloned installation to make it production-ready. These actions are permanent on this server and cannot be undone; re-cloning the repository will restore the files.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-cleanup-actions" style="margin-top: 20px;">
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-clear-test-files-btn" style="color: #a00;">
+								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Clear Test Files', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Removes PHPUnit test suites and fixtures. Safe to clear on a production server; re-cloning the repo restores them.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-clear-dev-files-btn" style="color: #a00;">
+								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Clear Dev &amp; Build Files', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Removes build tooling, documentation, CI configs, and dev scripts not needed in production. The plugin continues to function normally after removal.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-cleanup-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performCleanup(action, buttonId, nonce) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-cleanup-message');
+						var originalText = $button.html();
+
+						// Disable both buttons.
+						$('#wp-mcp-ai-clear-test-files-btn, #wp-mcp-ai-clear-dev-files-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text.
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
+
+						// Hide any previous messages.
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: action,
+								nonce: nonce
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text.
+								$('#wp-mcp-ai-clear-test-files-btn, #wp-mcp-ai-clear-dev-files-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-clear-test-files-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will permanently delete the tests directory and all PHPUnit configuration files. This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performCleanup('wp_mcp_ai_clear_test_files', '#wp-mcp-ai-clear-test-files-btn', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_clear_test_files' ) ); ?>);
+						}
+					});
+
+					$('#wp-mcp-ai-clear-dev-files-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will permanently delete developer-only files (docs, build tools, CI configs, bin scripts). This cannot be undone on this server. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performCleanup('wp_mcp_ai_clear_dev_files', '#wp-mcp-ai-clear-dev-files-btn', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_clear_dev_files' ) ); ?>);
+						}
+					});
+				});
+				</script>
+			</div>
 			<?php
 		}
 
