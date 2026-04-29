@@ -118,6 +118,7 @@ declare -a TOOLKITS=(
     "site-creator|Site Creator Toolkit|enable_site_creator_toolkit|site-creator-toolkit|site-creator-toolkit-init.php|Advanced site creation with page builders, section builders, and widget builders.||"
     "healthcare-imaging|Healthcare Imaging Toolkit|enable_healthcare_imaging|_none_|healthcare-imaging-toolkit-init.php|DICOM medical imaging viewer with Cornerstone3D for PET/CT/MR studies.||"
     "media|Media Toolkit|enable_media_toolkit|_none_|media-toolkit-init.php|Image optimization, video processing, SVG vectorization, and math equation rendering.||"
+    "tcpdf|TCPDF Library Add-on|enable_tcpdf_toolkit|_none_|_none_|TCPDF library add-on (~28.7 MB) for PDF merging and watermarking. Required by the optional document-generation tools shipped in the combined oOS plugin (merge-pdfs, add-watermark-to-pdf). Ships only the tecnickcom/tcpdf vendor library — no tools or admin pages.||tecnickcom/tcpdf"
 )
 
 # ============================================================================
@@ -308,6 +309,15 @@ generate_bootstrapper() {
     local plugin_slug="oos-toolkit-${tk_id}"
     local constant_prefix
     constant_prefix=$(echo "$tk_id" | tr '[:lower:]-' '[:upper:]_')
+
+    # Vendor-only supplement toolkits (no tools dir, no init file) ship a
+    # Composer vendor library to fill in for the combined Pro distribution.
+    # They must match the Pro add-on's PHP requirement (8.1+) since their
+    # purpose is to support Pro tools that already require 8.1.
+    local requires_php="7.4"
+    if [ "$tk_tools_dir" = "_none_" ] && [ "$tk_init" = "_none_" ]; then
+        requires_php="8.1"
+    fi
     
     cat > "$output_file" << PHPEOF
 <?php
@@ -317,7 +327,7 @@ generate_bootstrapper() {
  * Description: ${tk_desc} Requires NV Digital Open Operator System (oOS) base plugin.
  * Version: ${VERSION}
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: ${requires_php}
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
@@ -336,8 +346,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent loading if the full Pro add-on is already active.
-if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+// Detect "vendor-only supplement" toolkits (no tools, no init file).
+// These exist solely to ship a Composer vendor library that the combined oOS
+// Pro distribution intentionally omits to keep its footprint small (e.g.,
+// tcpdf is ~28.7 MB). When Pro is active, a normal toolkit add-on would
+// duplicate functionality and should deactivate, but a vendor-only supplement
+// must STAY active so its autoloader can register the missing classes for
+// Pro's tools to consume.
+\$wp_mcp_ai_is_vendor_supplement_${tk_id//-/_} = ( '${tk_tools_dir}' === '_none_' && '${tk_init}' === '_none_' );
+
+// Prevent loading if the full Pro add-on is already active — unless this is a
+// vendor-only supplement add-on whose purpose is to provide a library that
+// Pro is missing.
+if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && ! \$wp_mcp_ai_is_vendor_supplement_${tk_id//-/_} ) {
 	add_action(
 		'admin_notices',
 		function () {
@@ -568,7 +589,10 @@ build_toolkit() {
     generate_bootstrapper "$tk_id" "$tk_name" "$tk_setting" "$tk_tools_dir" "$tk_init" "$tk_desc" "${build_dir}/${plugin_slug}.php" "$has_vendor"
     
     # 3. Copy the toolkit init file
-    if [ -f "${PRO_DIR}/includes/${tk_init}" ]; then
+    if [ "$tk_init" = "_none_" ]; then
+        # Vendor-only toolkit (e.g., tcpdf): no init file needed.
+        :
+    elif [ -f "${PRO_DIR}/includes/${tk_init}" ]; then
         cp "${PRO_DIR}/includes/${tk_init}" "${build_dir}/includes/"
     else
         echo "    ⚠️  Init file not found: includes/${tk_init}"
