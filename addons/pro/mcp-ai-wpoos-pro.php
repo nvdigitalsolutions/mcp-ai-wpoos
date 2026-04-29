@@ -680,6 +680,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 
 		// Load Pro tool files.
 		$pro_tools = array(
+			// Universal-operator math/logic tools (Boolean NAND + continuous EML).
+			'WP_MCP_AI_Tool_Evaluate_Logic_Gate'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-evaluate-logic-gate.php',
+			'WP_MCP_AI_Tool_Generate_Truth_Table'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-truth-table.php',
+			'WP_MCP_AI_Tool_Evaluate_Eml'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-evaluate-eml.php',
 			// Remote WordPress/WooCommerce Connection tool.
 			'WP_MCP_AI_Tool_Remote_WP_Connection'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Generic REST API Connection tool.

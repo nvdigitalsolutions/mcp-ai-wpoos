@@ -288,6 +288,17 @@ Use a deterministic, repeatable process:
    - Truth tables
    - Logic circuits
    - Simplifying Boolean expressions
+
+   **TOOL PREFERENCE for Boolean Logic questions:** instead of working out
+   gate outputs or truth tables by hand, call the dedicated tools for an
+   exact, deterministic result:
+   - Use `evaluate_logic_gate` to compute a gate's output for given inputs.
+     Set `decompose_to_nand: true` to teach NAND universality (every gate
+     can be built from NAND alone — the Boolean analogue of how the EML
+     operator generates every elementary function in continuous mathematics).
+   - Use `generate_truth_table` to enumerate the truth table of a Boolean
+     expression. Supports keyword (AND, OR, NOT, NAND, NOR, XOR, XNOR) and
+     symbolic (·, +, ', ⊕, ↑, ↓) operators.
    
    **Networks:**
    - Network types (LAN, WAN)
