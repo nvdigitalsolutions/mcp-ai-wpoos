@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
-        'version' => 'dev-copilot/enhance-architectural-toolkit',
-        'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
+        'pretty_version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
+        'version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
+        'reference' => '11e442b5c3863d483345b89696c96959ea9bb9ce',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
-            'version' => 'dev-copilot/enhance-architectural-toolkit',
-            'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
+            'pretty_version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
+            'version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
+            'reference' => '11e442b5c3863d483345b89696c96959ea9bb9ce',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
