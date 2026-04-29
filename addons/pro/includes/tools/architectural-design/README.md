@@ -1,132 +1,146 @@
-# Architectural Design Toolkit (Phase 2.10)
+# Architectural Design Toolkit
 
-This directory will contain 16 professional AI-powered architectural design tools for the NV oOS Pro toolkit.
+> AI-assisted architectural design for tropical, hurricane-prone, and temperate jurisdictions — Sri Lanka (primary), Jamaica, and the United States.
 
-## Tools Overview
+This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 16 production tools (with additional modules planned in subsequent phases) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, and cost estimation.
 
-### Floor Planning & Space Design (4 tools)
-1. **generate_floor_plan** - AI-powered floor plan generation from natural language requirements
-2. **optimize_space_layout** - Optimize room layouts for functionality, flow, and efficiency
-3. **create_floor_plan_variations** - Generate multiple layout options for comparison
-4. **convert_sketch_to_floor_plan** - Convert hand-drawn sketches to professional CAD plans
+The toolkit follows the same architecture as the [CRE Debt & Securitization Toolkit](../cre-debt/README.md) and the Health & Wellness toolkit:
 
-### 3D Modeling & Visualization (3 tools)
-5. **generate_3d_model** - Create 3D building models from floor plans
-6. **render_architectural_view** - Generate photorealistic renderings with materials and lighting
-7. **create_walkthrough_animation** - Generate virtual building tours and walkthroughs
+* **Module subdirectories** — tools are grouped by concern.
+* **Shared engine** — a single `WP_MCP_AI_Architectural_Engine` class provides industry-standard math (units, FAR, occupancy, wind/seismic, ventilation, cost rates).
+* **Regional code registry** — `WP_MCP_AI_Architectural_Codes` exposes structured rule packs for each jurisdiction so compliance tools dispatch real evaluations rather than hard-coded examples.
+* **Per-toolkit settings** — `wp_mcp_ai_arch_design_settings` stores defaults for country, units, code pack, currency and IFC version, separate from the main plugin options.
+* **CPT-backed entities** — projects, drawings and specifications are stored as `mcp_ai_arch_*` custom post types so tools share a single source of truth.
+* **Optional `is_available()` / `get_unavailable_reason()`** on each tool, mirroring CRE Debt, so the orchestrator can skip the toolkit cleanly when it is disabled.
 
-### Documentation & Blueprints (3 tools)
-8. **generate_construction_drawings** - Create professional blueprint sets
-9. **generate_detail_drawings** - Create construction detail sheets
-10. **export_architectural_documents** - Export to PDF, DWG, IFC, and 3D model formats
+> **Analytical / advisory output only.** This toolkit assists with early-stage design and review. **Engage a registered architect, chartered structural engineer, MEP engineer and quantity surveyor** before any submission to a planning authority or construction contract.
 
-### Analysis & Compliance (3 tools)
-11. **check_building_code_compliance** - Validate against zoning and building codes
-12. **analyze_structural_feasibility** - Basic structural analysis and load calculations
-13. **calculate_sustainability_metrics** - LEED scoring and energy efficiency analysis
+---
 
-### Estimation & Scheduling (3 tools)
-14. **generate_material_schedule** - Create comprehensive bill of materials
-15. **estimate_construction_cost** - AI-powered cost estimation with regional pricing
-16. **generate_construction_timeline** - Project scheduling with dependencies
+## Module map
 
-## Implementation Status
+| Module | Folder | Tools |
+|---|---|---|
+| Floor Planning & Space Design | `floor-planning/` | 4 |
+| 3D Modeling & Visualization | `visualization/` | 3 |
+| Documentation & Blueprints | `documentation/` | 3 |
+| Analysis & Compliance | `analysis-compliance/` | 3 |
+| Estimation & Scheduling | `estimation-scheduling/` | 3 |
+| Regional Compliance | `regional-compliance/` | _(Phase B — planned)_ |
+| Sustainability | `sustainability/` | _(Phase B — planned)_ |
+| Interoperability (IFC / gbXML / DWG) | `interoperability/` | _(Phase D — planned)_ |
+| Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | _(Phase D — planned)_ |
 
-- ✅ Settings page created
-- ✅ Init file created with tool registration
-- ✅ Settings tracking added
-- ✅ Directory structure created
-- ✅ All 16 tools implemented
-- ✅ WordPress coding standards compliance
-- ✅ PHPDoc documentation complete
-- ✅ Security: capability checks and sanitization
-- ✅ Error handling with WP_Error
+---
 
-## Phase Information
+## Tool inventory (Phase A — current)
 
-**Phase**: 2.10  
-**Component**: Architectural Design Toolkit  
-**Status**: Fully Implemented  
-**Tools Count**: 16 implemented
+| Slug | Module | Capability flags |
+|---|---|---|
+| `generate_floor_plan` | floor-planning | `read-only`, `cacheable`, `consumes-tokens` |
+| `optimize_space_layout` | floor-planning | `read-only`, `cacheable`, `consumes-tokens` |
+| `create_floor_plan_variations` | floor-planning | `read-only`, `cacheable`, `consumes-tokens` |
+| `convert_sketch_to_floor_plan` | floor-planning | `read-only`, `cacheable`, `consumes-tokens`, `requires-vision-model` |
+| `generate_3d_model` | visualization | `read-only`, `cacheable`, `consumes-tokens` |
+| `render_architectural_view` | visualization | `read-only`, `cacheable`, `consumes-tokens` |
+| `create_walkthrough_animation` | visualization | `read-only`, `cacheable`, `consumes-tokens` |
+| `generate_construction_drawings` | documentation | `write`, `state-changing` |
+| `generate_detail_drawings` | documentation | `write`, `state-changing` |
+| `export_architectural_documents` | documentation | `read-only`, `external-api` |
+| `check_building_code_compliance` | analysis-compliance | `read-only`, `cacheable` |
+| `analyze_structural_feasibility` | analysis-compliance | `read-only`, `cacheable` |
+| `calculate_sustainability_metrics` | analysis-compliance | `read-only`, `cacheable` |
+| `generate_material_schedule` | estimation-scheduling | `write`, `state-changing` |
+| `estimate_construction_cost` | estimation-scheduling | `read-only`, `cacheable` |
+| `generate_construction_timeline` | estimation-scheduling | `write`, `state-changing` |
 
-## Technical Details
+Capability flag definitions follow [`includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php`](../../../../../includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php).
 
-All tools implement `WP_MCP_AI_Tool_Interface` and include:
+---
 
-- Unique slug identifier
-- Human-readable name and description
-- JSON schema for parameters
-- `execute()` method with security checks
-- Capability flags for orchestration
-- Structured data returns for LLM consumption
+## Industry-standards alignment
 
-### Capability Flags
+The shared engine and code registry are aligned with these primary references:
 
-Tools declare capability flags to enable smart orchestration:
+### Sri Lanka (primary)
 
-- **pro** - Part of Pro tier
-- **requires-capability** - Requires WordPress capabilities
-- **requires-credentials** - Requires AI API credentials
-- **requires-vision-model** - Requires vision-capable AI
-- **write** - Creates/modifies data
-- **read-only** - Only reads data
-- **async** - May take significant time
-- **long-running** - May take minutes/hours
-- **background-only** - Must run in background
-- **consumes-tokens** - Uses AI tokens
-- **external-api** - Makes external API calls
-- **model-dependent** - Behavior varies by model
-- **non-deterministic** - Results may vary
-- **performance-impact** - May affect site performance
-- **large-response** - Returns large data sets
+* **UDA Planning & Building Regulations** — Urban Development Authority. Includes the 2021 baseline rules and the **Gazette 2430/13** revision effective 1 April 2025.
+* **SLS 947:2009** — Code of practice for ventilation in buildings (Sri Lanka Standards Institution).
+* **BS 6399-2 / IS 875-3** — Wind loading, referenced by Sri Lankan Standards Institution and the Institution of Engineers Sri Lanka (IESL).
+* **IS 1893** — Seismic design (referenced for Sri Lanka's low-to-moderate seismicity).
+* **NBRO** — Landslide hazard zonation (National Building Research Organisation).
+* **CIDA / ICTAD** — Construction Industry Development Authority cost indices (used in `WP_MCP_AI_Architectural_Engine::get_cost_rate()`).
+* **SLIA** — Sri Lanka Institute of Architects (registered architect signoff).
 
-### Example Usage
+### Jamaica
+
+* **Jamaica National Building Code (JNBC) 2018** — Bureau of Standards Jamaica; references ASCE 7 for wind/seismic.
+* **JS 35:1996** — Code of practice for natural ventilation.
+* **Parish council overlays** — pluggable via `wp_mcp_ai_arch_code_packs` filter.
+
+### United States
+
+* **IBC 2024 / IRC 2024** — International Code Council building / residential codes.
+* **IECC 2024** — International Energy Conservation Code.
+* **ASCE 7-22** — Minimum design loads (wind, seismic, snow, etc.).
+* **NFPA 101** — Life Safety Code.
+* **ADA 2010** — Accessibility standards.
+* **ASHRAE 90.1-2022 / 62.1 / 55** — Energy, ventilation, and thermal-comfort standards.
+
+### Cross-cutting
+
+* **buildingSMART IFC 4.3** and **gbXML** — open-BIM exchange formats (interoperability module — Phase D).
+* **CSI MasterFormat 2020 / UniFormat II / OmniClass** — classification of cost & specs.
+* **AIA E202 / E203** — BIM Execution Plan.
+* **ISO 19650** — Information management for the built environment.
+
+---
+
+## Settings option (`wp_mcp_ai_arch_design_settings`)
 
 ```php
-// Get tool from registry
-$registry = wp_mcp_ai_get_tool_registry();
-$tool = $registry->get_tool( 'generate_floor_plan' );
-
-// Execute with arguments
-$result = $tool->execute(
-    array(
-        'requirements' => '3 bedroom house with open kitchen',
-        'building_type' => 'residential',
-        'total_area' => 2000,
-        'output_format' => 'svg',
-    ),
-    array( 'user_id' => get_current_user_id() )
+array(
+    'default_country'     => 'LK',                 // 'LK' | 'JM' | 'US'
+    'default_unit_system' => 'metric',             // 'metric' | 'imperial'
+    'default_currency'    => 'LKR',                // ISO-4217
+    'default_code_pack'   => 'lk_uda_2021',        // see WP_MCP_AI_Architectural_Codes
+    'ifc_export_version'  => '4.3',
+    'masterformat_year'   => '2020',
+    'currency_rates'      => array(),              // optional override map
 );
 ```
 
-## Requirements
+Programmatic access: `WP_MCP_AI_Architectural_Engine::get_toolkit_settings()`. Filterable via `wp_mcp_ai_arch_toolkit_settings`.
 
-- PHP 7.4+
-- WordPress 6.0+
-- OpenAI API key (for AI-powered features)
-- Vision-capable AI model (for sketch conversion)
+---
 
-## File Structure
+## Extending the toolkit
 
-```
-architectural-design/
-├── README.md (this file)
-├── class-wp-mcp-ai-tool-analyze-structural-feasibility.php
-├── class-wp-mcp-ai-tool-calculate-sustainability-metrics.php
-├── class-wp-mcp-ai-tool-check-building-code-compliance.php
-├── class-wp-mcp-ai-tool-convert-sketch-to-floor-plan.php
-├── class-wp-mcp-ai-tool-create-floor-plan-variations.php
-├── class-wp-mcp-ai-tool-create-walkthrough-animation.php
-├── class-wp-mcp-ai-tool-estimate-construction-cost.php
-├── class-wp-mcp-ai-tool-export-architectural-documents.php
-├── class-wp-mcp-ai-tool-generate-3d-model.php
-├── class-wp-mcp-ai-tool-generate-construction-drawings.php
-├── class-wp-mcp-ai-tool-generate-construction-timeline.php
-├── class-wp-mcp-ai-tool-generate-detail-drawings.php
-├── class-wp-mcp-ai-tool-generate-floor-plan.php
-├── class-wp-mcp-ai-tool-generate-material-schedule.php
-├── class-wp-mcp-ai-tool-optimize-space-layout.php
-└── class-wp-mcp-ai-tool-render-architectural-view.php
-```
+The toolkit is fully filterable for partner customisation:
 
-Total: 3,406 lines of PHP code across 16 tool files.
+| Filter / Action | Purpose |
+|---|---|
+| `wp_mcp_ai_arch_code_packs` | Register additional jurisdictions (UK, India, GCC, …). |
+| `wp_mcp_ai_arch_default_code_packs` | Map a country to its canonical pack. |
+| `wp_mcp_ai_arch_currency_rates` | Override the FX rate table. |
+| `wp_mcp_ai_arch_cost_rates` | Override per-country cost-rate tables. |
+| `wp_mcp_ai_arch_cost_type_multipliers` | Override construction-type multipliers. |
+| `wp_mcp_ai_arch_wind_tables` | Refine wind-zone basic-speed tables. |
+| `wp_mcp_ai_arch_seismic_tables` | Refine seismic SDS tables. |
+| `wp_mcp_ai_arch_occupancy_factors` | Override IBC-style occupancy area factors. |
+| `wp_mcp_ai_arch_location_factor` | Plug in regional cost-index data. |
+| `wp_mcp_ai_arch_toolkit_settings` | Final-pass filter on the resolved settings array. |
+| `wp_mcp_ai_arch_before_compliance_check` | Hook in before any compliance run. |
+| `wp_mcp_ai_arch_after_compliance_check` | Hook in after any compliance run. |
+| `wp_mcp_ai_arch_after_cost_estimate` | Hook in after a cost estimate completes. |
+
+---
+
+## Roadmap
+
+Phase A (this milestone) lays the foundation. Subsequent phases:
+
+* **Phase B** — Regional Compliance module: `check_uda_planning_compliance`, `check_jnbc_hurricane_compliance`, `check_us_ibc_irc_compliance`, `calculate_seismic_loads`, `calculate_wind_loads`, `validate_setbacks_and_far`, `generate_compliance_dossier`. Plus `analyze_natural_ventilation`, `analyze_daylight_and_solar_gain`, `simulate_thermal_comfort`.
+* **Phase C** — Sustainability + costing depth: `generate_bill_of_quantities` (POMI / SMM7 / CSI), `compare_quotation_to_estimate`, `generate_value_engineering_options`, `score_edge_certification` (IFC EDGE), expanded LEED scoring.
+* **Phase D** — Interoperability + project delivery: `import_dwg_floor_plan`, `import_ifc_model`, `export_to_ifc`, `export_to_gbxml`, `generate_bim_execution_plan`, `manage_rfi_log`, `manage_submittal_log`, plus a `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
+* **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial).

@@ -100,61 +100,78 @@ if ( $is_enabled && ! $is_base ) {
 function wp_mcp_ai_load_architectural_design_tools() {
 	$tools_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/architectural-design/';
 
+	// Shared engine and code registry — load first so tools can rely on them.
+	require_once $tools_dir . 'class-wp-mcp-ai-architectural-engine.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-architectural-codes.php';
+
 	// Floor Planning & Space Design tools (4 tools).
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-floor-plan.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-optimize-space-layout.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-floor-plan-variations.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-convert-sketch-to-floor-plan.php';
+	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-generate-floor-plan.php';
+	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-optimize-space-layout.php';
+	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-create-floor-plan-variations.php';
+	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-convert-sketch-to-floor-plan.php';
 
 	// 3D Modeling & Visualization tools (3 tools).
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-3d-model.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-render-architectural-view.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-walkthrough-animation.php';
+	require_once $tools_dir . 'visualization/class-wp-mcp-ai-tool-generate-3d-model.php';
+	require_once $tools_dir . 'visualization/class-wp-mcp-ai-tool-render-architectural-view.php';
+	require_once $tools_dir . 'visualization/class-wp-mcp-ai-tool-create-walkthrough-animation.php';
 
 	// Documentation & Blueprints tools (3 tools).
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-construction-drawings.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-detail-drawings.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-export-architectural-documents.php';
+	require_once $tools_dir . 'documentation/class-wp-mcp-ai-tool-generate-construction-drawings.php';
+	require_once $tools_dir . 'documentation/class-wp-mcp-ai-tool-generate-detail-drawings.php';
+	require_once $tools_dir . 'documentation/class-wp-mcp-ai-tool-export-architectural-documents.php';
 
 	// Analysis & Compliance tools (3 tools).
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-check-building-code-compliance.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-structural-feasibility.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-calculate-sustainability-metrics.php';
+	require_once $tools_dir . 'analysis-compliance/class-wp-mcp-ai-tool-check-building-code-compliance.php';
+	require_once $tools_dir . 'analysis-compliance/class-wp-mcp-ai-tool-analyze-structural-feasibility.php';
+	require_once $tools_dir . 'analysis-compliance/class-wp-mcp-ai-tool-calculate-sustainability-metrics.php';
 
 	// Estimation & Scheduling tools (3 tools).
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-material-schedule.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-estimate-construction-cost.php';
-	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-construction-timeline.php';
+	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-generate-material-schedule.php';
+	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-estimate-construction-cost.php';
+	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-generate-construction-timeline.php';
 
 	// Register all tools with the tool registry.
 	$registry = wp_mcp_ai_get_tool_registry();
 
 	if ( $registry ) {
-		// Floor Planning & Space Design.
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Floor_Plan() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Optimize_Space_Layout() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Create_Floor_Plan_Variations() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan() );
+		$tool_classes = array(
+			// Floor Planning & Space Design.
+			'WP_MCP_AI_Tool_Generate_Floor_Plan',
+			'WP_MCP_AI_Tool_Optimize_Space_Layout',
+			'WP_MCP_AI_Tool_Create_Floor_Plan_Variations',
+			'WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan',
 
-		// 3D Modeling & Visualization.
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_3d_Model() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Render_Architectural_View() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Create_Walkthrough_Animation() );
+			// 3D Modeling & Visualization.
+			'WP_MCP_AI_Tool_Generate_3d_Model',
+			'WP_MCP_AI_Tool_Render_Architectural_View',
+			'WP_MCP_AI_Tool_Create_Walkthrough_Animation',
 
-		// Documentation & Blueprints.
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Construction_Drawings() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Detail_Drawings() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Export_Architectural_Documents() );
+			// Documentation & Blueprints.
+			'WP_MCP_AI_Tool_Generate_Construction_Drawings',
+			'WP_MCP_AI_Tool_Generate_Detail_Drawings',
+			'WP_MCP_AI_Tool_Export_Architectural_Documents',
 
-		// Analysis & Compliance.
-		$registry->register_tool( new WP_MCP_AI_Tool_Check_Building_Code_Compliance() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Analyze_Structural_Feasibility() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Calculate_Sustainability_Metrics() );
+			// Analysis & Compliance.
+			'WP_MCP_AI_Tool_Check_Building_Code_Compliance',
+			'WP_MCP_AI_Tool_Analyze_Structural_Feasibility',
+			'WP_MCP_AI_Tool_Calculate_Sustainability_Metrics',
 
-		// Estimation & Scheduling.
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Material_Schedule() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Estimate_Construction_Cost() );
-		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Construction_Timeline() );
+			// Estimation & Scheduling.
+			'WP_MCP_AI_Tool_Generate_Material_Schedule',
+			'WP_MCP_AI_Tool_Estimate_Construction_Cost',
+			'WP_MCP_AI_Tool_Generate_Construction_Timeline',
+		);
+
+		foreach ( $tool_classes as $tool_class ) {
+			if ( ! class_exists( $tool_class ) ) {
+				continue;
+			}
+			// Honour optional is_available() availability check.
+			if ( method_exists( $tool_class, 'is_available' ) && ! call_user_func( array( $tool_class, 'is_available' ) ) ) {
+				continue;
+			}
+			$registry->register_tool( new $tool_class() );
+		}
 	}
 }
 

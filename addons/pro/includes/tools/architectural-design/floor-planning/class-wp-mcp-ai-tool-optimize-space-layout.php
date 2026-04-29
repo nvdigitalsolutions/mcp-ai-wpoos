@@ -24,6 +24,35 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  */
 class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/* WP_MCP_AI_AVAILABILITY_BLOCK */
+	/**
+	 * Whether this tool is available for registration.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return bool True when the Architectural Design toolkit is enabled
+	 *              and the host plugin is not running in base mode.
+	 */
+	public static function is_available() {
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return false;
+		}
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_architectural_design_toolkit'] );
+	}
+
+	/**
+	 * Reason this tool is unavailable, if any.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'Architectural Design toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */
