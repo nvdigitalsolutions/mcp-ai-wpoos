@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-dee56b02-d27a-425f-bef8-f4dc5003a62c',
-        'version' => 'dev-copilot/rebuild-all-zips-dee56b02-d27a-425f-bef8-f4dc5003a62c',
-        'reference' => 'd06c7cb56609bb45d8ccc9e3fd32588412218d85',
+        'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+        'version' => 'dev-copilot/enhance-architectural-toolkit',
+        'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-dee56b02-d27a-425f-bef8-f4dc5003a62c',
-            'version' => 'dev-copilot/rebuild-all-zips-dee56b02-d27a-425f-bef8-f4dc5003a62c',
-            'reference' => 'd06c7cb56609bb45d8ccc9e3fd32588412218d85',
+            'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+            'version' => 'dev-copilot/enhance-architectural-toolkit',
+            'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

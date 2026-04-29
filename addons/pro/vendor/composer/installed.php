@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
+D        'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+        'version' => 'dev-copilot/enhance-architectural-toolkit',
+        'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
         'pretty_version' => 'dev-copilot/fix-xss-vulnerabilities-phpspreadsheet',
         'version' => 'dev-copilot/fix-xss-vulnerabilities-phpspreadsheet',
         'reference' => '53d972a90450bccfc2794157e55547cbc77c61aa',
@@ -92,6 +95,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
+            'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+            'version' => 'dev-copilot/enhance-architectural-toolkit',
+            'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
             'pretty_version' => 'dev-copilot/fix-xss-vulnerabilities-phpspreadsheet',
             'version' => 'dev-copilot/fix-xss-vulnerabilities-phpspreadsheet',
             'reference' => '53d972a90450bccfc2794157e55547cbc77c61aa',
