@@ -310,10 +310,14 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				);
 			case 'ln':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
-				// ln(x) = eml(1, eml(eml(1, x), 1)) — verified algebraically:
-				// inner_a = eml(1, x) = e − ln x.
-				// inner_b = eml(inner_a, 1) = exp(e − ln x) − 0 = e^e / x.
-				// outer    = eml(1, inner_b) = e − ln(e^e / x) = e − (e − ln x) = ln x.
+				// ln(x) = eml(1, eml(eml(1, x), 1)) — verified algebraically.
+				// Using e := exp(1) (Euler's number) and the definition
+				// eml(u, v) = exp(u) - ln(v):
+				//   inner_a = eml(1, x)        = exp(1) - ln(x)         = e - ln(x)
+				//   inner_b = eml(inner_a, 1)  = exp(e - ln(x)) - ln(1)
+				//                              = exp(e) * exp(-ln(x))   = exp(e) / x
+				//   outer   = eml(1, inner_b)  = exp(1) - ln(exp(e)/x)
+				//                              = e - (e - ln(x))        = ln(x).
 				$xnode = array( 'type' => 'VAR', 'name' => $x );
 				$one   = array( 'type' => 'NUM', 'value' => 1.0 );
 				$a     = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );

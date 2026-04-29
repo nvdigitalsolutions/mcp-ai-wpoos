@@ -584,8 +584,13 @@ class WP_MCP_AI_Tool_Generate_Truth_Table implements WP_MCP_AI_Tool_Interface, W
 				return $this->eval_ast( $node['left'], $env ) !== $this->eval_ast( $node['right'], $env );
 			case 'XNOR':
 				return $this->eval_ast( $node['left'], $env ) === $this->eval_ast( $node['right'], $env );
+			default:
+				// Defensive fallback. The parser only emits the node types
+				// listed above, so this branch is unreachable in normal use;
+				// returning false is the safe Boolean default and avoids
+				// silently propagating an unexpected truthy value.
+				return false;
 		}
-		return false;
 	}
 
 	/**
