@@ -21,11 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/class-wp-mcp-ai-architectural-project-cpt.php';
 require_once __DIR__ . '/class-wp-mcp-ai-architectural-drawing-cpt.php';
 require_once __DIR__ . '/class-wp-mcp-ai-architectural-specification-cpt.php';
+require_once __DIR__ . '/class-wp-mcp-ai-architectural-precedent-cpt.php';
 
 // Initialize CPTs - they have their own checks for enabled/base version.
 WP_MCP_AI_Architectural_Project_CPT::init();
 WP_MCP_AI_Architectural_Drawing_CPT::init();
 WP_MCP_AI_Architectural_Specification_CPT::init();
+WP_MCP_AI_Architectural_Precedent_CPT::init();
 
 // Load Research & Add and Settings pages for admin.
 if ( is_admin() ) {
@@ -165,6 +167,11 @@ function wp_mcp_ai_load_architectural_design_tools() {
 	require_once $tools_dir . 'project-delivery/class-wp-mcp-ai-tool-manage-rfi-log.php';
 	require_once $tools_dir . 'project-delivery/class-wp-mcp-ai-tool-manage-submittal-log.php';
 
+	// Phase E — Precedent library + semantic search (2 tools).
+	require_once $tools_dir . 'class-wp-mcp-ai-architectural-precedents-engine.php';
+	require_once $tools_dir . 'precedents/class-wp-mcp-ai-tool-manage-architectural-precedents.php';
+	require_once $tools_dir . 'precedents/class-wp-mcp-ai-tool-search-architectural-precedents.php';
+
 	// Register all tools with the tool registry.
 	$registry = wp_mcp_ai_get_tool_registry();
 
@@ -228,6 +235,10 @@ function wp_mcp_ai_load_architectural_design_tools() {
 			'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan',
 			'WP_MCP_AI_Tool_Manage_Rfi_Log',
 			'WP_MCP_AI_Tool_Manage_Submittal_Log',
+
+			// Phase E — Precedent library + semantic search.
+			'WP_MCP_AI_Tool_Manage_Architectural_Precedents',
+			'WP_MCP_AI_Tool_Search_Architectural_Precedents',
 		);
 
 		foreach ( $tool_classes as $tool_class ) {

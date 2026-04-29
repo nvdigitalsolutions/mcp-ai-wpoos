@@ -2,7 +2,7 @@
 
 > AI-assisted architectural design for tropical, hurricane-prone, and temperate jurisdictions — Sri Lanka (primary), Jamaica, and the United States.
 
-This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 37 production tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, certification scoring, cost engineering, and BIM interoperability + project delivery.
+This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 39 production tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7 + Phase E: 2) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, certification scoring, cost engineering, BIM interoperability + project delivery, and a precedent library with embedding-based semantic search.
 
 The toolkit follows the same architecture as the [CRE Debt & Securitization Toolkit](../cre-debt/README.md) and the Health & Wellness toolkit:
 
@@ -30,10 +30,12 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | Sustainability | `sustainability/` | 3 |
 | Interoperability (IFC / gbXML / DWG) | `interoperability/` | 4 |
 | Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | 3 |
+| Precedent library (semantic search) | `precedents/` | 2 |
+| Region-specific assistant blueprints | `examples/` | — (3 markdown blueprints) |
 
 ---
 
-## Tool inventory (Phase A + Phase B + Phase C + Phase D — current)
+## Tool inventory (Phase A + Phase B + Phase C + Phase D + Phase E — current)
 
 ### Phase A — Foundations
 
@@ -114,6 +116,31 @@ Phase D is backed by a dedicated engine — [`class-wp-mcp-ai-architectural-inte
 Binary DWG / IFC / IFCXML parsing is intentionally delegated to external converters (Open Design Alliance Teigha SDK, IfcOpenShell, or LibreDWG); the import tools accept already-decoded JSON payloads.
 
 > **Limitations.** Phase D produces structurally valid IFC / gbXML bodies suitable for downstream tooling (IfcOpenShell, BIMcollab Zoom, EnergyPlus, OpenStudio). Coordinated geometry — wall placements, surface adjacency graphs, opening cuts — must be authored downstream.
+
+### Phase E — Precedent library + semantic search
+
+| Slug | Module | Capability flags |
+|---|---|---|
+| `manage_architectural_precedents` | precedents | `write`, `state-changing` |
+| `search_architectural_precedents` | precedents | `read-only`, `cacheable`, `external-api` |
+
+Phase E adds the `mcp_ai_arch_precedent` custom post type for storing built case studies (title, narrative, country, building type, climate zone, sustainability rating, year, area, key features, references). The dedicated engine — [`class-wp-mcp-ai-architectural-precedents-engine.php`](class-wp-mcp-ai-architectural-precedents-engine.php) — exposes:
+
+- `build_corpus()` — concatenates the precedent's title, excerpt, narrative and meta into a single text blob suitable for embedding.
+- `embed_text()` — wraps the existing `WP_MCP_AI_Vector_Context_Service` and is filterable via `wp_mcp_ai_arch_precedent_embedding` (lets sites short-circuit the OpenAI call for tests, air-gapped deployments or alternate providers).
+- `cosine()` — local cosine-similarity helper used during search.
+- `keyword_score()` — deterministic keyword fallback used when embeddings are unavailable.
+- `regenerate_embedding_for_post()` — invoked automatically on every create / update to keep cached vectors fresh.
+
+The search tool returns a `mode` field of `embedding` (when the OpenAI API is reachable / the filter returned a vector) or `keyword` (deterministic fallback) so callers can detect graceful degradation.
+
+Three region-specific example assistant blueprints accompany the toolkit in [`examples/`](examples/):
+
+- [`LK-residential.md`](examples/LK-residential.md) — Sri Lanka tropical-residential workflow (UDA / EDGE / POMI BoQ).
+- [`JM-hurricane-resilient.md`](examples/JM-hurricane-resilient.md) — Jamaica hurricane-resilient commercial workflow (NBCJ / ASCE 7 hurricane / SMM7).
+- [`US-commercial.md`](examples/US-commercial.md) — United States commercial workflow (IBC 2021 / ASCE 7-22 / LEED v4 BD+C / CSI MasterFormat 2020).
+
+Each blueprint provides a suggested system prompt, a recommended tool allowlist, seed precedents to load, and a typical SD → CD → construction flow.
 
 ---
 
@@ -197,6 +224,4 @@ The toolkit is fully filterable for partner customisation:
 
 ## Roadmap
 
-Phase A laid the foundation; Phase B delivered regional-compliance dispatch, wind/seismic load engines, ventilation / daylight / thermal-comfort analysis and per-country compliance dossiers. Phase C delivered sustainability scoring (EDGE + LEED v4 BD+C) and cost-engineering depth (BoQ generation in POMI / SMM7 / CSI MasterFormat, value-engineering option library). **Phase D (this milestone)** delivers BIM interoperability (DWG / IFC / gbXML import-export) and project-delivery tooling (BEP, RFI log, submittal log). The remaining roadmap:
-
-* **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial), and an optional `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
+Phase A laid the foundation; Phase B delivered regional-compliance dispatch, wind/seismic load engines, ventilation / daylight / thermal-comfort analysis and per-country compliance dossiers. Phase C delivered sustainability scoring (EDGE + LEED v4 BD+C) and cost-engineering depth (BoQ generation in POMI / SMM7 / CSI MasterFormat, value-engineering option library). Phase D delivered BIM interoperability (DWG / IFC / gbXML import-export) and project-delivery tooling (BEP, RFI log, submittal log). **Phase E (this milestone — final phase)** delivers the architectural precedent library with embedding-based semantic search and three region-specific example assistant blueprints (LK residential, JM hurricane-resilient, US commercial). The toolkit roadmap is now complete; future enhancements will be tracked as discrete feature requests rather than additional phases.
