@@ -39,6 +39,56 @@ Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature 
 Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
 
 
+## [1.1.12] - 2026-04-29
+
+### April 27–29, 2026 — Architectural Design Toolkit (Phases A–E), Graphify Federation/RAG, Tier 4 Browser-AI Runtime, Production Cleanup, Security Patches
+
+A wide-reaching feature and hardening release. The headline is the new five-phase **Architectural Design Toolkit** (Phases A–E shipped end-to-end across April 28–29) plus a major **Graphify** push delivering remote sources, federation, and a vector/RAG layer. Two security patches resolve disclosed advisories in third-party dependencies, and a new admin **Production Cleanup** workflow plus **AV-clean deploy tooling** finalise the WordPress.org submission posture started in 1.1.11.
+
+### Added
+
+- **Architectural Design Toolkit (Phases A–E)** — refactored foundations (Phase A) and four cumulative content phases:
+  - *Phase B* — regional-compliance + analysis tools, with a dedicated PHPUnit suite and regional fixtures.
+  - *Phase C* — EDGE/LEED scoring, bill-of-quantities (BoQ), and value-engineering (VE) options.
+  - *Phase D* — IFC and gbXML interop, BIM Execution Plan (BEP), and RFI / submittal logs.
+  - *Phase E* — precedent library, semantic search across precedents, and curated regional examples.
+- **Production Cleanup admin workflow** — new buttons under **Settings → Advanced → Data Management** clear test/runtime artefacts safely; code-review feedback on cleanup handlers has been incorporated.
+- **`plan_schedules_from_workflow` tool + Research & Add Schedule page** — adds a base-plugin path from arbitrary workflow descriptions to staffing/schedule plans, with a new admin landing page.
+- **Graphify — Phases 1–5 (federation, remote sources, vector/RAG, mapping UI)**:
+  - Phase 1: connector foundations + Woo / CSV / Webhook drivers.
+  - Phase 3: SaaS connectors — HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365 / SharePoint, ServiceNow (Pro).
+  - Phase 4: Generic GraphQL, Generic SQL (read-only), and S3 (and S3-compatible) remote drivers (Pro).
+  - Phase 5: schema.org auto-typing helper, embeddings-on-ingest helper, field-mapping admin UI with validator + live AJAX feedback.
+  - Cross-cutting: remote sources, federation, vector embeddings, and RAG retrieval.
+  - Algorave: safe guest access for the live coder shortcode.
+- **Tier 4 browser-AI runtime packages** — three new NPM packages (`llm-worker`, `model-loader`, `transformers-client`) for in-browser AI; `nvoos-transformers-client` now guards against undefined `transformersUrl` in dynamic imports.
+- **`WARRANTY.md`** — formal warranty, liability, and safe-use notice; `README.md` and `SECURITY.md` updated to reference it.
+
+### Changed
+
+- **TCPDF extracted into `oos-toolkit-tcpdf` addon** — removed from the combined ZIP with classmap cleanup; vendor-only supplement toolkits now require **PHP 8.1+**.
+- **AV-clean deploy pipeline** — new `bin/strip-dev-files.sh` plus expanded `.gitattributes` `export-ignore` rules so deploy archives no longer trip antivirus scanners on test fixtures. Test files containing AV-triggering payload literals were obfuscated to keep the regression suite scannable.
+- **Composer / vendor** — production autoloaders regenerated with `--no-dev --classmap-authoritative`; Pro vendor rebuilt for `phpoffice/phpspreadsheet` 5.7.0 + `symfony/polyfill-mbstring` v1.37.0.
+
+### Fixed
+
+- **Graphify** — `do_settings_sections_filtered()` calls now correctly prefixed with `self::` (PR for v1.1.11 follow-up).
+
+### Security
+
+- **`phpoffice/phpspreadsheet` bumped to ^5.7.0** to patch HTML Writer XSS (advisory `GHSA-3xx9-fc24-w62g` family).
+- **`uuid` overridden to `>=14.0.0`** to fix `GHSA-w5hq-g745-h8pq`.
+
+### Documentation
+
+- `README.md` Latest Updates banner refreshed for v1.1.12; previous v1.1.10 / v1.1.11 banners demoted to "Previous Updates".
+- `WARRANTY.md` referenced from the README and `SECURITY.md` Safe Use sections.
+
+### Version
+
+- **Version** bumped to 1.1.12 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+
 ## [1.1.11] - 2026-04-27
 
 ### April 27, 2026 — WordPress.org Compliance Hardening

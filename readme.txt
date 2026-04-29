@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.11
+Stable tag: 1.1.12
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -274,6 +274,39 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.12 - April 29, 2026 =
+
+**Architectural Design Toolkit (Phases A–E), Graphify Federation/RAG, Tier 4 Browser-AI Runtime, Production Cleanup, Security Patches**
+
+*Added*
+
+* **Architectural Design Toolkit** — five-phase rollout: Phase A foundations refactor; Phase B regional-compliance + analysis tools (with PHPUnit suite and regional fixtures); Phase C EDGE/LEED scoring + Bill-of-Quantities + Value-Engineering options; Phase D IFC / gbXML interop + BIM Execution Plan + RFI / submittal logs; Phase E precedent library + semantic search + curated regional examples.
+* **Production Cleanup admin buttons** — new controls under *Settings → Advanced → Data Management* safely clear test/runtime artefacts.
+* **`plan_schedules_from_workflow` tool + Research & Add Schedule admin page** — base-plugin workflow-to-schedule planner.
+* **Graphify Phases 1–5** — connector foundations + Woo / CSV / Webhook (Phase 1); SaaS connectors HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365/SharePoint, ServiceNow (Phase 3, Pro); Generic GraphQL, Generic SQL (read-only), and S3 remote drivers (Phase 4, Pro); schema.org auto-typing, embeddings-on-ingest, field-mapping admin UI with live validation (Phase 5); remote sources, federation, vector embeddings, and RAG retrieval.
+* **Algorave** — safe guest access for the live coder shortcode.
+* **Tier 4 browser-AI runtime packages** — `llm-worker`, `model-loader`, and `transformers-client` NPM packages for in-browser AI.
+* **`WARRANTY.md`** — formal warranty, liability, and safe-use notice; cross-referenced from `README.md` and `SECURITY.md`.
+
+*Changed*
+
+* **TCPDF extracted into `oos-toolkit-tcpdf` addon** — removed from the combined ZIP with classmap cleanup; vendor-only supplement toolkits require PHP 8.1+.
+* **AV-clean deploy tooling** — new `bin/strip-dev-files.sh` and expanded `.gitattributes` `export-ignore` rules; AV-triggering payload literals in nefarious-monitor tests obfuscated to keep regression suites scannable.
+* Composer / vendor regenerated as production classmap-authoritative; Pro vendor rebuilt for `phpoffice/phpspreadsheet` 5.7.0 + `symfony/polyfill-mbstring` v1.37.0.
+
+*Fixed*
+
+* **Graphify** — `do_settings_sections_filtered()` calls now correctly prefixed with `self::`.
+
+*Security*
+
+* **`phpoffice/phpspreadsheet` bumped to ^5.7.0** to patch HTML Writer XSS.
+* **`uuid` overridden to `>=14.0.0`** to fix `GHSA-w5hq-g745-h8pq`.
+
+*Version*
+
+* Bumped to 1.1.12 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 = 1.1.11 - April 27, 2026 =
 

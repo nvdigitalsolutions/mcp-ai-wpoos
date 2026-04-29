@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.11  
-**Release Date:** 2026-04-27 (April 27, 2026 — April 2026 security audit summary published, production-ready vendor autoload, Veo 3.1 seed-parameter fix; v1.1.9: Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix, Chart.js handle normalization, Graphify addon restore, Orchestration Reference doc; v1.1.8: Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit)  
-**Latest Updates:** April 2026 (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) publishes the April 2026 security & compliance audit summary (no Critical findings; 5 High — 3 Fixed, 2 Partially Fixed; 14 Medium all Fixed; 21 Low; 10 Informational; 50 total). Production-ready vendor autoload (PR #4733) — deployable from a clean clone without a separate `composer install`. Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` fix (PR #4735) — `seed` is now sent only to Veo 2.0. Prior release (v1.1.9): Measurement subsystem GA across 12 sequenced PRs (stock metrics for tool-execution / chat-loop / agentic-loop / SSE, persistent metric event store with retention cron, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, read-only + writable Measurement dashboard, `wp mcp-ai measurement` WP-CLI runner with regression alerting); PHPUnit upgraded to 11 with WordPress-compat patches to fix argument-injection CVE **GHSA-qrr6-mg7r-m243** (CI PHP 8.1 → 8.2); Chart.js admin handle normalized to `wp-mcp-ai-chartjs`; Graphify Knowledge Graph addon v0.5.0 restored; new `docs/ORCHESTRATION_REFERENCE.md`.  
+**Version:** 1.1.12  
+**Release Date:** 2026-04-29 (April 29, 2026 — Architectural Design Toolkit Phases A–E, Graphify federation + RAG (Phases 1–5), Tier 4 browser-AI runtime packages, Production Cleanup admin workflow, `plan_schedules_from_workflow` tool, security patches for `phpspreadsheet` and `uuid`, TCPDF extracted into a separate addon, AV-clean deploy tooling, formal `WARRANTY.md`; v1.1.11: WordPress.org compliance hardening; v1.1.10: April 2026 security audit summary, production-ready vendor autoload, Veo 3.1 seed-parameter fix; v1.1.9: Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix)  
+**Latest Updates:** April 29, 2026 (v1.1.12) — **Architectural Design Toolkit** rolled out across five phases (A: foundations refactor; B: regional-compliance + analysis tools with PHPUnit suite; C: EDGE/LEED scoring + BoQ + VE options; D: IFC / gbXML interop + BEP + RFI/submittal logs; E: precedent library + semantic search + regional examples). **Graphify Phases 1–5** add remote sources, federation, vector embeddings, and RAG retrieval — including SaaS connectors (HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365/SharePoint, ServiceNow), Generic GraphQL / Generic SQL (read-only) / S3 remote drivers, schema.org auto-typing, embeddings-on-ingest, and a field-mapping admin UI with live validation. New **`plan_schedules_from_workflow`** base tool + Research & Add Schedule admin page. **Production Cleanup** buttons in *Settings → Advanced → Data Management*. **Tier 4 browser-AI runtime packages** (`llm-worker`, `model-loader`, `transformers-client`). **Security:** `phpoffice/phpspreadsheet` bumped to ^5.7.0 (HTML Writer XSS); `uuid` overridden to `>=14.0.0` (GHSA-w5hq-g745-h8pq). **TCPDF extracted** into `oos-toolkit-tcpdf` addon (vendor-only supplement toolkits now require PHP 8.1+). New **AV-clean deploy tooling** (`bin/strip-dev-files.sh` + `.gitattributes` `export-ignore` rules). Formal **`WARRANTY.md`** referenced from README and SECURITY.  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.10 — April 2026)](#-latest-updates-v1110--april-2026)
+- [🆕 Latest Updates (v1.1.12 — April 2026)](#-latest-updates-v1112--april-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -290,7 +290,40 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.10 — April 2026)
+## 🆕 Latest Updates (v1.1.12 — April 2026)
+
+### April 27–29, 2026 — Architectural Design Toolkit (Phases A–E), Graphify Federation/RAG, Tier 4 Browser-AI Runtime, Production Cleanup, Security Patches 🏗️🕸️🔒
+
+- ✅ **Architectural Design Toolkit — five-phase rollout**:
+  - *Phase A* — refactored toolkit foundations.
+  - *Phase B* — regional-compliance + analysis tools, with a dedicated PHPUnit suite and regional fixtures.
+  - *Phase C* — EDGE / LEED scoring, Bill-of-Quantities (BoQ), and Value-Engineering (VE) options.
+  - *Phase D* — IFC and gbXML interop, BIM Execution Plan (BEP), and RFI / submittal logs.
+  - *Phase E* — precedent library, semantic search across precedents, and curated regional examples.
+- ✅ **Graphify Phases 1–5 — federation, remote sources, vector / RAG, mapping UI**:
+  - *Phase 1* — connector foundations + Woo / CSV / Webhook drivers.
+  - *Phase 3* — SaaS connectors HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365 / SharePoint, ServiceNow (Pro).
+  - *Phase 4* — Generic GraphQL, Generic SQL (read-only), and S3 (and S3-compatible) remote drivers (Pro).
+  - *Phase 5* — schema.org auto-typing helper, embeddings-on-ingest helper, field-mapping admin UI with validator + live AJAX feedback.
+  - Cross-cutting: remote sources, federation, vector embeddings, and RAG retrieval. **Algorave** also gained safe guest access for the live coder shortcode.
+- ✅ **`plan_schedules_from_workflow` tool + Research & Add Schedule admin page** — base-plugin path from arbitrary workflow descriptions to staffing/schedule plans.
+- ✅ **Production Cleanup admin workflow** — new buttons under *Settings → Advanced → Data Management* clear test/runtime artefacts safely; cleanup handlers were tightened in response to code review.
+- ✅ **Tier 4 browser-AI runtime packages** — `llm-worker`, `model-loader`, and `transformers-client` NPM packages for in-browser AI; `nvoos-transformers-client` now guards against undefined `transformersUrl` in dynamic imports.
+- ✅ **Security patches** — `phpoffice/phpspreadsheet` bumped to **^5.7.0** to patch HTML Writer XSS; `uuid` overridden to **`>=14.0.0`** to fix `GHSA-w5hq-g745-h8pq`.
+- ✅ **TCPDF extracted into `oos-toolkit-tcpdf` addon** — pruned from the combined ZIP with classmap cleanup; vendor-only supplement toolkits now require **PHP 8.1+**.
+- ✅ **AV-clean deploy tooling** — new `bin/strip-dev-files.sh` plus expanded `.gitattributes` `export-ignore` rules so deploy archives no longer trip antivirus scanners on test fixtures. Test files containing AV-triggering payload literals were obfuscated to keep the regression suite scannable.
+- ✅ **Formal `WARRANTY.md`** — warranty, liability, and safe-use notice referenced from `README.md` and `SECURITY.md`.
+
+## 🆕 Previous Updates (v1.1.11 — April 27, 2026)
+
+### WordPress.org Compliance Hardening 🛡️
+
+- ✅ Dead support-forum URL fixed in `readme.txt` (now points at the canonical `nvdigital-open-operator-system-oos` slug).
+- ✅ Tool-count consistency: headline description and Base Plugin section both report `230+ tools`.
+- ✅ Missing `mcp` tag added to `Tags:` line.
+- ✅ `bin/build-wordpress-org-from-base.sh` and `bin/review-zips.sh` now verify the readme invariants and fail the build if a legacy `wp-mcp-ai` slug or unrewritten text-domain header survives.
+
+## 🆕 Previous Updates (v1.1.10 — April 2026)
 
 ### April 27, 2026 — Security Audit Summary, Production Vendor Autoload, Veo 3.1 Fix 🛡️
 
