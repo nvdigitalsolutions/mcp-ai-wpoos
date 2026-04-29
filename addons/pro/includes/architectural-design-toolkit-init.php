@@ -103,6 +103,7 @@ function wp_mcp_ai_load_architectural_design_tools() {
 	// Shared engine and code registry — load first so tools can rely on them.
 	require_once $tools_dir . 'class-wp-mcp-ai-architectural-engine.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-architectural-codes.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-architectural-sustainability.php';
 
 	// Floor Planning & Space Design tools (4 tools).
 	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-generate-floor-plan.php';
@@ -145,6 +146,12 @@ function wp_mcp_ai_load_architectural_design_tools() {
 
 	// Phase B — Sustainability tools (1 tool).
 	require_once $tools_dir . 'sustainability/class-wp-mcp-ai-tool-simulate-thermal-comfort.php';
+
+	// Phase C — Sustainability scoring & costing depth (4 tools).
+	require_once $tools_dir . 'sustainability/class-wp-mcp-ai-tool-score-edge-certification.php';
+	require_once $tools_dir . 'sustainability/class-wp-mcp-ai-tool-score-leed-v4-certification.php';
+	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-generate-bill-of-quantities.php';
+	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-propose-value-engineering-options.php';
 
 	// Register all tools with the tool registry.
 	$registry = wp_mcp_ai_get_tool_registry();
@@ -192,6 +199,12 @@ function wp_mcp_ai_load_architectural_design_tools() {
 
 			// Phase B — Sustainability.
 			'WP_MCP_AI_Tool_Simulate_Thermal_Comfort',
+
+			// Phase C — Sustainability scoring & costing depth.
+			'WP_MCP_AI_Tool_Score_Edge_Certification',
+			'WP_MCP_AI_Tool_Score_Leed_V4_Certification',
+			'WP_MCP_AI_Tool_Generate_Bill_Of_Quantities',
+			'WP_MCP_AI_Tool_Propose_Value_Engineering_Options',
 		);
 
 		foreach ( $tool_classes as $tool_class ) {

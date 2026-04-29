@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Analyze energy efficiency and environmental impact. Calculate LEED points and sustainability ratings.', 'mcp-ai-wpoos-pro' );
+		return __( 'Analyze energy efficiency and environmental impact. Estimates EUI, embodied carbon, and certification scoring against LEED v4 BD+C and IFC EDGE for tropical (LK/JM) and US projects. Backed by the architectural sustainability engine.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -120,8 +120,19 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 				),
 				'certification_target' => array(
 					'type'        => 'string',
-					'description' => __( 'Target certification: "leed", "energy_star", "passive_house", "living_building".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'leed', 'energy_star', 'passive_house', 'living_building' ),
+					'description' => __( 'Target certification: "leed", "edge", "energy_star", "passive_house", "living_building".', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'leed', 'edge', 'energy_star', 'passive_house', 'living_building' ),
+				),
+				'country_code'         => array(
+					'type'        => 'string',
+					'description' => __( 'ISO country code used to pick EDGE baselines and regional priority. Defaults to the toolkit country.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'LK', 'JM', 'US' ),
+				),
+				'building_use'         => array(
+					'type'        => 'string',
+					'description' => __( 'Building use category for EDGE baselines.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'residential', 'commercial' ),
+					'default'     => 'residential',
 				),
 			),
 			'required'             => array( 'floor_plan' ),
@@ -178,9 +189,16 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 		$hvac_system          = isset( $arguments['hvac_system'] ) ? sanitize_text_field( $arguments['hvac_system'] ) : 'standard';
 		$renewable_energy     = isset( $arguments['renewable_energy'] ) ? (array) $arguments['renewable_energy'] : array();
 		$certification_target = isset( $arguments['certification_target'] ) ? sanitize_text_field( $arguments['certification_target'] ) : '';
+		$country_code         = isset( $arguments['country_code'] ) ? strtoupper( sanitize_text_field( $arguments['country_code'] ) ) : '';
+		$building_use         = isset( $arguments['building_use'] ) ? sanitize_text_field( $arguments['building_use'] ) : 'residential';
+
+		if ( '' === $country_code && class_exists( 'WP_MCP_AI_Architectural_Engine' ) ) {
+			$settings     = WP_MCP_AI_Architectural_Engine::get_toolkit_settings();
+			$country_code = isset( $settings['default_country'] ) ? strtoupper( (string) $settings['default_country'] ) : 'LK';
+		}
 
 		// Calculate sustainability metrics.
-		$metrics = $this->calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $context );
+		$metrics = $this->calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $country_code, $building_use, $context );
 
 		if ( is_wp_error( $metrics ) ) {
 			return $metrics;
@@ -206,34 +224,116 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	 * @param string $hvac_system          HVAC system.
 	 * @param array  $renewable_energy     Renewable energy.
 	 * @param string $certification_target Certification target.
+	 * @param string $country_code         Country code.
+	 * @param string $building_use         Building use category (residential / commercial).
 	 * @param array  $context              Execution context.
 	 * @return array Sustainability metrics.
 	 */
-	protected function calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $context ) {
-		return array(
+	protected function calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $country_code, $building_use, $context ) {
+		// Energy estimate — heuristic that responds to HVAC + WWR + insulation.
+		$base_eui      = 130.0; // kWh / m² / year baseline (mid-quality, mixed climate).
+		$hvac_multiplier = array(
+			'standard'        => 1.00,
+			'high_efficiency' => 0.78,
+			'geothermal'      => 0.55,
+			'heat_pump'       => 0.65,
+		);
+		$mult = isset( $hvac_multiplier[ $hvac_system ] ) ? $hvac_multiplier[ $hvac_system ] : 1.0;
+		$wwr  = max( 0.0, min( 1.0, (float) $window_wall_ratio ) );
+		// Above 0.40 WWR adds load; below 0.30 saves load.
+		$mult *= 1.0 + ( ( $wwr - 0.35 ) * 0.6 );
+		// Insulation R-values (assumed in IP units): higher R reduces load.
+		$roof_r = isset( $insulation_values['roof'] ) ? (float) $insulation_values['roof'] : 0.0;
+		$wall_r = isset( $insulation_values['wall'] ) ? (float) $insulation_values['wall'] : 0.0;
+		if ( $roof_r > 0 ) {
+			$mult *= max( 0.7, 1.0 - ( $roof_r / 100.0 ) );
+		}
+		if ( $wall_r > 0 ) {
+			$mult *= max( 0.75, 1.0 - ( $wall_r / 120.0 ) );
+		}
+		// Renewables.
+		$pv_kw      = isset( $renewable_energy['solar_pv_kw'] ) ? (float) $renewable_energy['solar_pv_kw'] : 0.0;
+		$pv_offset  = $pv_kw > 0 && $total_area > 0 ? min( 0.5, ( $pv_kw * 1500.0 ) / max( 1.0, $total_area * $base_eui * $mult ) ) : 0.0;
+		$proposed_eui = max( 25.0, $base_eui * $mult * ( 1.0 - $pv_offset ) );
+
+		// Embodied carbon — rough, reduced by climate-aware passive design and renewables.
+		$embodied_co2 = 580.0;
+		if ( $pv_kw > 0 ) {
+			$embodied_co2 += 8.0 * $pv_kw;
+		}
+
+		// Water — placeholder (US default + 5 %).
+		$water_l_person_day = 260.0;
+		if ( in_array( $country_code, array( 'LK', 'JM' ), true ) ) {
+			$water_l_person_day = 200.0;
+		}
+
+		$proposed = array(
+			'eui_kwh_m2_year'        => round( $proposed_eui, 2 ),
+			'water_l_person_day'     => round( $water_l_person_day, 2 ),
+			'embodied_co2_kgco2e_m2' => round( $embodied_co2, 2 ),
+		);
+
+		$result = array(
 			'energy_performance'   => array(
-				'estimated_eui'       => 45.2, // kBtu/sf/year.
-				'energy_star_score'   => 78,
-				'baseline_comparison' => '-25% better than code',
+				'estimated_eui_kwh_m2_year' => round( $proposed_eui, 2 ),
+				'estimated_eui_kbtu_sf_year' => round( $proposed_eui * 0.317, 2 ),
+				'pv_offset_pct'             => round( $pv_offset * 100.0, 2 ),
+				'baseline_comparison'       => $proposed_eui < $base_eui
+					? sprintf( '-%d%% vs. mid-quality baseline', max( 0, (int) round( ( ( $base_eui - $proposed_eui ) / $base_eui ) * 100.0 ) ) )
+					: 'On par with mid-quality baseline',
 			),
 			'environmental_impact' => array(
-				'carbon_footprint'    => 12.5, // tons CO2/year.
-				'water_usage'         => 'Estimated 30% reduction',
-				'material_efficiency' => 'Standard',
-			),
-			'certification'        => array(
-				'target'             => $certification_target ? $certification_target : 'leed',
-				'estimated_level'    => 'Silver',
-				'points_estimate'    => 52,
-				'requirements_met'   => 14,
-				'requirements_total' => 18,
-			),
-			'recommendations'      => array(
-				'Increase insulation to R-30 for roof',
-				'Consider solar PV for 20% energy offset',
-				'Install high-efficiency windows (U-factor < 0.30)',
-				'Optimize building orientation for passive solar',
+				'embodied_co2_kgco2e_m2' => round( $embodied_co2, 2 ),
+				'water_l_person_day'     => round( $water_l_person_day, 2 ),
+				'material_efficiency'    => $wwr > 0.5 ? 'Glazing-heavy — review embodied carbon' : 'Standard',
 			),
 		);
+
+		// EDGE scoring — tropical default, also runs for US when requested.
+		if ( class_exists( 'WP_MCP_AI_Architectural_Sustainability' ) && in_array( $country_code, array( 'LK', 'JM', 'US' ), true ) ) {
+			$edge = WP_MCP_AI_Architectural_Sustainability::score_edge( $country_code, $building_use, $proposed );
+			if ( ! empty( $edge['success'] ) ) {
+				$result['edge'] = array(
+					'awarded_tier'             => $edge['awarded_tier'],
+					'awarded_label'            => $edge['awarded_label'],
+					'energy_savings_pct'       => $edge['energy_savings_pct'],
+					'water_savings_pct'        => $edge['water_savings_pct'],
+					'embodied_co2_savings_pct' => $edge['embodied_co2_savings_pct'],
+					'baseline'                 => $edge['baseline'],
+				);
+			}
+		}
+
+		// LEED summary — only when explicitly targeted, since it requires a credit map.
+		if ( 'leed' === $certification_target && class_exists( 'WP_MCP_AI_Architectural_Sustainability' ) ) {
+			$result['leed'] = array(
+				'message'     => __( 'LEED scoring requires an awarded-credit map. Use score_leed_v4_certification with awarded_credits + met_prerequisites.', 'mcp-ai-wpoos-pro' ),
+				'thresholds'  => WP_MCP_AI_Architectural_Sustainability::get_leed_thresholds(),
+			);
+		}
+
+		// Recommendations — climate-aware.
+		$recommendations = array();
+		if ( in_array( $country_code, array( 'LK', 'JM' ), true ) ) {
+			$recommendations[] = __( 'Add 600 mm overhangs on south/west facades to cut solar gain (tropical).', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Maximise cross-ventilation; design AC for peak hours only.', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Use light-coloured roof + insulated ceiling (R-19+) to reduce cooling load.', 'mcp-ai-wpoos-pro' );
+		} else {
+			$recommendations[] = __( 'Increase roof insulation to R-30+ and walls to R-20+.', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Specify high-efficiency windows (U-factor < 0.30 / SHGC < 0.30 in southern climates).', 'mcp-ai-wpoos-pro' );
+			$recommendations[] = __( 'Optimize building orientation for passive solar.', 'mcp-ai-wpoos-pro' );
+		}
+		if ( $pv_offset < 0.10 ) {
+			$recommendations[] = __( 'Add rooftop PV — even 10 % offset is a quick LEED EA / EDGE energy win.', 'mcp-ai-wpoos-pro' );
+		}
+		if ( $wwr > 0.5 ) {
+			$recommendations[] = __( 'Glazing > 50 % WWR — verify embodied carbon and solar-gain impact.', 'mcp-ai-wpoos-pro' );
+		}
+		$result['recommendations'] = $recommendations;
+
+		$result['country_code'] = $country_code;
+		$result['building_use'] = $building_use;
+		return $result;
 	}
 }

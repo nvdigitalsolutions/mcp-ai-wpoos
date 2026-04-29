@@ -2,7 +2,7 @@
 
 > AI-assisted architectural design for tropical, hurricane-prone, and temperate jurisdictions — Sri Lanka (primary), Jamaica, and the United States.
 
-This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 26 production tools (Phase A: 16 + Phase B: 10) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, and cost estimation.
+This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 30 production tools (Phase A: 16 + Phase B: 10 + Phase C: 4) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, certification scoring, and cost engineering.
 
 The toolkit follows the same architecture as the [CRE Debt & Securitization Toolkit](../cre-debt/README.md) and the Health & Wellness toolkit:
 
@@ -25,9 +25,9 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | 3D Modeling & Visualization | `visualization/` | 3 |
 | Documentation & Blueprints | `documentation/` | 3 |
 | Analysis & Compliance | `analysis-compliance/` | 5 |
-| Estimation & Scheduling | `estimation-scheduling/` | 3 |
+| Estimation & Scheduling | `estimation-scheduling/` | 5 |
 | Regional Compliance | `regional-compliance/` | 7 |
-| Sustainability | `sustainability/` | 1 |
+| Sustainability | `sustainability/` | 3 |
 | Interoperability (IFC / gbXML / DWG) | `interoperability/` | _(Phase D — planned)_ |
 | Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | _(Phase D — planned)_ |
 
@@ -70,6 +70,24 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | `analyze_natural_ventilation` | analysis-compliance | `read-only`, `cacheable` |
 | `analyze_daylight_and_solar_gain` | analysis-compliance | `read-only`, `cacheable` |
 | `simulate_thermal_comfort` | sustainability | `read-only`, `cacheable` |
+
+### Phase C — Sustainability scoring & costing depth
+
+| Slug | Module | Capability flags |
+|---|---|---|
+| `score_edge_certification` | sustainability | `read-only`, `cacheable` |
+| `score_leed_v4_certification` | sustainability | `read-only`, `cacheable` |
+| `generate_bill_of_quantities` | estimation-scheduling | `read-only`, `cacheable` |
+| `propose_value_engineering_options` | estimation-scheduling | `read-only`, `cacheable` |
+
+Phase C is backed by a dedicated engine — [`class-wp-mcp-ai-architectural-sustainability.php`](class-wp-mcp-ai-architectural-sustainability.php) — that exposes:
+
+- The full **LEED v4 BD+C** credit catalogue with per-category prerequisites and certification thresholds (`get_leed_v4_bdc_catalog()`, `get_leed_thresholds()`, `score_leed_v4_bdc()`).
+- **IFC EDGE** baselines for residential and commercial use across LK, JM, US, plus tier definitions and a savings calculator (`get_edge_baselines()`, `get_edge_tiers()`, `score_edge()`).
+- The **POMI / SMM7 / NRM2 / CSI MasterFormat 2020** classification catalogues with per-country preferred format dispatch (`get_boq_format_catalog()`, `preferred_boq_format()`).
+- A curated **value-engineering library** (`get_value_engineering_library()`) covering finishes, structure, envelope, foundation, and MEP substitutions with applicability tags per country.
+
+`calculate_sustainability_metrics` (Phase A) was refactored to delegate to the EDGE engine and to add tropical-climate-aware recommendations for LK/JM versus US.
 
 Capability flag definitions follow [`includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php`](../../../../../includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php).
 
@@ -155,8 +173,7 @@ The toolkit is fully filterable for partner customisation:
 
 ## Roadmap
 
-Phase A laid the foundation; **Phase B (this milestone)** delivers regional-compliance dispatch, wind/seismic load engines, ventilation/daylight/thermal-comfort analysis and per-country compliance dossiers. Subsequent phases:
+Phase A laid the foundation; Phase B delivered regional-compliance dispatch, wind/seismic load engines, ventilation / daylight / thermal-comfort analysis and per-country compliance dossiers. **Phase C (this milestone)** delivers sustainability scoring (EDGE + LEED v4 BD+C) and cost-engineering depth (BoQ generation in POMI / SMM7 / CSI MasterFormat, value-engineering option library). Subsequent phases:
 
-* **Phase C** — Sustainability + costing depth: `generate_bill_of_quantities` (POMI / SMM7 / CSI), `compare_quotation_to_estimate`, `generate_value_engineering_options`, `score_edge_certification` (IFC EDGE), expanded LEED scoring.
 * **Phase D** — Interoperability + project delivery: `import_dwg_floor_plan`, `import_ifc_model`, `export_to_ifc`, `export_to_gbxml`, `generate_bim_execution_plan`, `manage_rfi_log`, `manage_submittal_log`, plus a `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
 * **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial).
