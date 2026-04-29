@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
-        'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
-        'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-        'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
+        'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+        'version' => 'dev-copilot/enhance-architectural-toolkit',
+        'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -92,9 +92,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
-            'pretty_version' => 'dev-copilot/integrate-nv-boxpacker-service',
-            'version' => 'dev-copilot/integrate-nv-boxpacker-service',
-            'reference' => '00472d3c06ae6cd3b1eae3e5e2049c1efbe1b8e1',
+            'pretty_version' => 'dev-copilot/enhance-architectural-toolkit',
+            'version' => 'dev-copilot/enhance-architectural-toolkit',
+            'reference' => '002c66f2443eb31c49ef677393a35c1cbd7b2cf9',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
