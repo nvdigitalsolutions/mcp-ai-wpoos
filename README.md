@@ -28,6 +28,7 @@
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
+- [⚠️ Warranty & Safe Use](#%EF%B8%8F-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
@@ -134,6 +135,20 @@ The plugin works standalone with **224 base tools** and optionally extends throu
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
 **Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/).
+
+### ⚠️ Warranty & Safe Use
+
+> **We make every effort to keep NV oOS safe and secure — but by design, it can be destructive and resource-intensive when not properly configured.**
+
+NV oOS grants AI assistants access to powerful WordPress operations. The same capability that automates real work can cause irreversible harm if misconfigured:
+
+- **Destructive tools** — bulk content deletion, user management, file writes, mass email, WP-CLI, direct database operations
+- **API billing exposure** — uncapped AI provider calls can exhaust quotas and trigger unexpected charges
+- **Server resource exhaustion** — concurrent agentic loops and SSE streams can saturate CPU/memory on shared hosting
+
+**Before going live:** test on staging, take verified backups, apply least-privilege tool permissions, enable rate limiting, and review the system prompt of every public-facing assistant.
+
+📄 **Full details:** [`WARRANTY.md`](WARRANTY.md) — security commitment, "AS IS" disclaimer, destructive-operations table, resource-consumption guide, and mitigation checklist aligned with OWASP, NIST SP 800-53, ISO/IEC 27001, and the WordPress Plugin Developer Handbook.
 
 ## Patent Pending
 
