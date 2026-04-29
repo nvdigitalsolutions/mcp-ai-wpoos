@@ -93,7 +93,7 @@ if ( $is_enabled && ! $is_base ) {
 /**
  * Load Architectural Design toolkit tools.
  *
- * Registers all 26 architectural design tools (Phase A: 16 + Phase B: 10).
+ * Registers all 37 architectural design tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7).
  *
  * @since 1.1.0
  */
@@ -104,6 +104,7 @@ function wp_mcp_ai_load_architectural_design_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-architectural-engine.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-architectural-codes.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-architectural-sustainability.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-architectural-interop.php';
 
 	// Floor Planning & Space Design tools (4 tools).
 	require_once $tools_dir . 'floor-planning/class-wp-mcp-ai-tool-generate-floor-plan.php';
@@ -152,6 +153,17 @@ function wp_mcp_ai_load_architectural_design_tools() {
 	require_once $tools_dir . 'sustainability/class-wp-mcp-ai-tool-score-leed-v4-certification.php';
 	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-generate-bill-of-quantities.php';
 	require_once $tools_dir . 'estimation-scheduling/class-wp-mcp-ai-tool-propose-value-engineering-options.php';
+
+	// Phase D — Interoperability tools (4 tools).
+	require_once $tools_dir . 'interoperability/class-wp-mcp-ai-tool-import-dwg-floor-plan.php';
+	require_once $tools_dir . 'interoperability/class-wp-mcp-ai-tool-import-ifc-model.php';
+	require_once $tools_dir . 'interoperability/class-wp-mcp-ai-tool-export-to-ifc.php';
+	require_once $tools_dir . 'interoperability/class-wp-mcp-ai-tool-export-to-gbxml.php';
+
+	// Phase D — Project delivery tools (3 tools).
+	require_once $tools_dir . 'project-delivery/class-wp-mcp-ai-tool-generate-bim-execution-plan.php';
+	require_once $tools_dir . 'project-delivery/class-wp-mcp-ai-tool-manage-rfi-log.php';
+	require_once $tools_dir . 'project-delivery/class-wp-mcp-ai-tool-manage-submittal-log.php';
 
 	// Register all tools with the tool registry.
 	$registry = wp_mcp_ai_get_tool_registry();
@@ -205,6 +217,17 @@ function wp_mcp_ai_load_architectural_design_tools() {
 			'WP_MCP_AI_Tool_Score_Leed_V4_Certification',
 			'WP_MCP_AI_Tool_Generate_Bill_Of_Quantities',
 			'WP_MCP_AI_Tool_Propose_Value_Engineering_Options',
+
+			// Phase D — Interoperability.
+			'WP_MCP_AI_Tool_Import_Dwg_Floor_Plan',
+			'WP_MCP_AI_Tool_Import_Ifc_Model',
+			'WP_MCP_AI_Tool_Export_To_Ifc',
+			'WP_MCP_AI_Tool_Export_To_Gbxml',
+
+			// Phase D — Project delivery.
+			'WP_MCP_AI_Tool_Generate_Bim_Execution_Plan',
+			'WP_MCP_AI_Tool_Manage_Rfi_Log',
+			'WP_MCP_AI_Tool_Manage_Submittal_Log',
 		);
 
 		foreach ( $tool_classes as $tool_class ) {

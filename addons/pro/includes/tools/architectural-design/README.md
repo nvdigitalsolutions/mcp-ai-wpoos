@@ -2,7 +2,7 @@
 
 > AI-assisted architectural design for tropical, hurricane-prone, and temperate jurisdictions — Sri Lanka (primary), Jamaica, and the United States.
 
-This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 30 production tools (Phase A: 16 + Phase B: 10 + Phase C: 4) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, certification scoring, and cost engineering.
+This directory contains the **Architectural Design Toolkit** for NV oOS Pro: a suite of 37 production tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7) covering floor planning, 3D visualisation, documentation, regional code compliance, structural / sustainability analysis, certification scoring, cost engineering, and BIM interoperability + project delivery.
 
 The toolkit follows the same architecture as the [CRE Debt & Securitization Toolkit](../cre-debt/README.md) and the Health & Wellness toolkit:
 
@@ -28,12 +28,12 @@ The toolkit follows the same architecture as the [CRE Debt & Securitization Tool
 | Estimation & Scheduling | `estimation-scheduling/` | 5 |
 | Regional Compliance | `regional-compliance/` | 7 |
 | Sustainability | `sustainability/` | 3 |
-| Interoperability (IFC / gbXML / DWG) | `interoperability/` | _(Phase D — planned)_ |
-| Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | _(Phase D — planned)_ |
+| Interoperability (IFC / gbXML / DWG) | `interoperability/` | 4 |
+| Project Delivery (BEP / RFI / Submittal) | `project-delivery/` | 3 |
 
 ---
 
-## Tool inventory (Phase A + Phase B — current)
+## Tool inventory (Phase A + Phase B + Phase C + Phase D — current)
 
 ### Phase A — Foundations
 
@@ -90,6 +90,30 @@ Phase C is backed by a dedicated engine — [`class-wp-mcp-ai-architectural-sust
 `calculate_sustainability_metrics` (Phase A) was refactored to delegate to the EDGE engine and to add tropical-climate-aware recommendations for LK/JM versus US.
 
 Capability flag definitions follow [`includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php`](../../../../../includes/interfaces/class-wp-mcp-ai-tool-capability-flags-interface.php).
+
+### Phase D — Interoperability & project delivery
+
+| Slug | Module | Capability flags |
+|---|---|---|
+| `import_dwg_floor_plan` | interoperability | `read-only`, `cacheable` |
+| `import_ifc_model` | interoperability | `read-only`, `cacheable` |
+| `export_to_ifc` | interoperability | `read-only` |
+| `export_to_gbxml` | interoperability | `read-only` |
+| `generate_bim_execution_plan` | project-delivery | `read-only`, `cacheable` |
+| `manage_rfi_log` | project-delivery | `write`, `state-changing` |
+| `manage_submittal_log` | project-delivery | `write`, `state-changing` |
+
+Phase D is backed by a dedicated engine — [`class-wp-mcp-ai-architectural-interop.php`](class-wp-mcp-ai-architectural-interop.php) — that exposes:
+
+- A **canonical floor-plan normaliser** (`normalize_floor_plan()`) used by every import / export tool. Accepts converter output (DWG → JSON, IFC → JSON) and remaps synonyms (`rooms` → `spaces`, `doors` + `windows` → `openings`).
+- An **IFC 4.3 STEP-format builder** (`build_ifc()`) producing a valid STEP file body (HEADER + DATA) with a structurally complete IFC entity graph (`IfcProject` → `IfcSite` → `IfcBuilding` → `IfcBuildingStorey` → `IfcSpace` / `IfcWall` / `IfcDoor` / `IfcWindow`).
+- A **gbXML 6.01 builder** (`build_gbxml()`) producing well-formed XML for EnergyPlus / OpenStudio import.
+- A **BIM Execution Plan section catalogue** (`bep_section_catalog()`) aligned with AIA E202 / E203 and ISO 19650-2 (12 sections).
+- **RFI / submittal log helpers** (`read_log()`, `write_log()`, `next_log_id()`, `rfi_statuses()`, `submittal_statuses()`) backing post-meta logs on `mcp_ai_arch_proj` projects.
+
+Binary DWG / IFC / IFCXML parsing is intentionally delegated to external converters (Open Design Alliance Teigha SDK, IfcOpenShell, or LibreDWG); the import tools accept already-decoded JSON payloads.
+
+> **Limitations.** Phase D produces structurally valid IFC / gbXML bodies suitable for downstream tooling (IfcOpenShell, BIMcollab Zoom, EnergyPlus, OpenStudio). Coordinated geometry — wall placements, surface adjacency graphs, opening cuts — must be authored downstream.
 
 ---
 
@@ -173,7 +197,6 @@ The toolkit is fully filterable for partner customisation:
 
 ## Roadmap
 
-Phase A laid the foundation; Phase B delivered regional-compliance dispatch, wind/seismic load engines, ventilation / daylight / thermal-comfort analysis and per-country compliance dossiers. **Phase C (this milestone)** delivers sustainability scoring (EDGE + LEED v4 BD+C) and cost-engineering depth (BoQ generation in POMI / SMM7 / CSI MasterFormat, value-engineering option library). Subsequent phases:
+Phase A laid the foundation; Phase B delivered regional-compliance dispatch, wind/seismic load engines, ventilation / daylight / thermal-comfort analysis and per-country compliance dossiers. Phase C delivered sustainability scoring (EDGE + LEED v4 BD+C) and cost-engineering depth (BoQ generation in POMI / SMM7 / CSI MasterFormat, value-engineering option library). **Phase D (this milestone)** delivers BIM interoperability (DWG / IFC / gbXML import-export) and project-delivery tooling (BEP, RFI log, submittal log). The remaining roadmap:
 
-* **Phase D** — Interoperability + project delivery: `import_dwg_floor_plan`, `import_ifc_model`, `export_to_ifc`, `export_to_gbxml`, `generate_bim_execution_plan`, `manage_rfi_log`, `manage_submittal_log`, plus a `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
-* **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial).
+* **Phase E** — Documentation polish, region-specific example assistants (LK residential, JM hurricane-resilient, US commercial), and an optional `mcp_ai_arch_precedent` CPT with embedding-based semantic search.
