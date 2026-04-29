@@ -3840,7 +3840,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 							'mcp-ai-wpoos'
 						),
 						count( $removed ),
-						esc_html( implode( ', ', $removed ) )
+						implode( ', ', array_map( 'esc_html', $removed ) )
 					),
 				)
 			);
@@ -3959,7 +3959,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 							'mcp-ai-wpoos'
 						),
 						count( $removed ),
-						esc_html( implode( ', ', $removed ) )
+						implode( ', ', array_map( 'esc_html', $removed ) )
 					),
 				)
 			);
@@ -3978,7 +3978,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * @return true|false|WP_Error True on removal, false if not found, WP_Error on security failure.
 		 */
 		private function recursive_delete( $path, $plugin_root ) {
-			// Normalise both paths to prevent traversal tricks.
+			// Normalize both paths to prevent traversal tricks.
 			$real_root = realpath( $plugin_root );
 			$real_path = realpath( $path );
 
