@@ -201,6 +201,95 @@ Your driver must implement `NV_oOS_Graphify_Remote_Source_Interface`:
 
 ---
 
+## Agent Memory Bridge (Phase 4a)
+
+When this addon is active, every memory written by the NV oOS agent memory
+system is mirrored into the knowledge graph. This is fully additive — the
+agent's transient memory store remains the source of truth in Phase 4a and
+nothing about agent memory writes changes when the addon is deactivated.
+
+### What the bridge creates
+
+Subscribed action: `wp_mcp_ai_memory_stored` (fired by
+`WP_MCP_AI_Tool_Store_Agent_Context` and therefore by every item produced by
+`mine_agent_memory`).
+
+For each event the bridge upserts:
+
+| Node             | id format                         | Purpose                                            |
+|------------------|-----------------------------------|----------------------------------------------------|
+| `memory`         | `memory:<context_id>`             | The memory itself with verbatim content + metadata |
+| `agent`          | `agent:<sanitised-agent-id>`      | The agent that observed the memory                 |
+| `wing`           | `wing:<sanitised-wing>`           | A MemPalace wing scope                             |
+| `room`           | `room:<wing>:<room>`              | A MemPalace room inside a wing                     |
+
+And edges:
+
+| Source → Target                  | Relation       |
+|----------------------------------|----------------|
+| `memory:* → agent:*`             | `OBSERVED_BY`  |
+| `memory:* → wing:*`              | `MEMBER_OF`    |
+| `memory:* → room:*`              | `MEMBER_OF`    |
+| `room:* → wing:*`                | `MEMBER_OF`    |
+| `memory:* → post:<source_post>`  | `DERIVED_FROM` (when the memory was ingested from a WP post) |
+
+Each memory node also enqueues an embedding through the standard on-ingest
+cron pipeline, so memory vectors share the `embeddings` table and provider
+configuration with content vectors.
+
+### Graph-mode retrieval
+
+The agent-side `wake_up_context` tool gains a `mode` parameter
+(`auto` / `graph` / `transient`). In graph mode it asks the bridge for a
+ranked list of memory nodes built from:
+
+- 1-hop BFS expansion from `agent`, `wing`, and `room` anchor nodes;
+- keyword `LIKE` search across memory node labels;
+- cosine similarity against the embeddings table when a query is supplied.
+
+The ranked context-id list flows through the
+`wp_mcp_ai_wake_up_graph_context_ids` filter so plugins can post-process it,
+and the wake-up response includes a `retrieval_path` field (`graph` or
+`transient`) for observability.
+
+### Memory Palace admin preset
+
+The "Graph Explorer" tab now exposes two extra inputs — **Agent ID** and
+**Wing** — plus an **Apply** button that fades the rest of the graph and
+highlights the matching memory nodes (and their anchor nodes), giving
+operators a literal view of an agent's memory palace.
+
+### Programmatic surface
+
+```php
+// Subscribe to memory writes from a custom integration:
+add_action( 'wp_mcp_ai_memory_stored', function ( $payload ) {
+    // $payload['context_id'], $payload['agent_id'], $payload['wing'],
+    // $payload['room'], $payload['content'], $payload['source_post_id'], …
+} );
+
+// Run a graph-backed retrieval directly:
+$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph( array(
+    'agent_id' => 42,
+    'wing'     => 'client-acme',
+    'room'     => 'onboarding',
+    'query'    => 'activation flow',
+    'limit'    => 20,
+) );
+// → [ [ 'context_id' => 'ctx_…', 'score' => 1.23, 'via' => ['wing','vector'] ], … ]
+```
+
+### Out of scope for Phase 4a
+
+- Replacing Graphify's embedding generator with the agent-side Phase 3
+  provider system end-to-end (query embedding already uses it; ingest
+  embedding still uses Graphify's pipeline). Symmetry to be addressed in a
+  follow-up phase.
+- Cross-site memory federation. Free side-effect of Graphify's existing
+  federation, but turning it on by default requires a privacy review.
+
+---
+
 ## Security
 
 - All API credentials are encrypted with AES-256-GCM before storage

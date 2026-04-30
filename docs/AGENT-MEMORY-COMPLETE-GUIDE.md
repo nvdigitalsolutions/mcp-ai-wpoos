@@ -876,6 +876,108 @@ if (needsRollback) {
 
 ---
 
+## Graphify-Backed Memory (Phase 4a, optional)
+
+When the optional **NV oOS Graphify** addon is active, agent memory is mirrored
+into the Graphify knowledge graph in real time. This is **purely additive** —
+the transient store remains the source of truth in Phase 4a, and everything
+behaves identically to the standalone configuration when Graphify is not
+installed.
+
+### What gets projected
+
+Every successful `store_agent_context` call (and therefore every item written
+by `mine_agent_memory`) fires a new `wp_mcp_ai_memory_stored` action. Graphify
+subscribes to that action and creates:
+
+- a **`memory` node** keyed `memory:<context_id>`, carrying the verbatim
+  content, importance, tags, wing/room scope, agent id, and stored/expires
+  timestamps as node properties;
+- an `OBSERVED_BY` edge to the corresponding `agent:<agent_id>` node;
+- a `MEMBER_OF` edge to the `wing:<wing>` node when a wing is set;
+- a `MEMBER_OF` edge to the composite `room:<wing>:<room>` node when a room
+  is set, plus a `MEMBER_OF` edge from that room to the wing;
+- a `DERIVED_FROM` edge to the source post node when the memory was ingested
+  from a WordPress post (`content_source.type = "post"`);
+- a vector embedding pushed through the same on-ingest cron pipeline used by
+  Graphify's content embeddings, so memory vectors share the
+  `embeddings` table and provider configuration with the rest of the graph.
+
+If the Graphify addon is deactivated, the action still fires but has no
+listener, and the system continues to operate from the transient store with
+zero behaviour change.
+
+### Graph-mode retrieval (`wake_up_context`)
+
+`wake_up_context` accepts a new `mode` parameter:
+
+| Mode        | Behaviour                                                                                                                                                     |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `auto`      | (default) Use graph traversal when the Graphify bridge is loaded; otherwise fall back to the transient + cosine path.                                         |
+| `graph`     | Force graph traversal. Returns an error (`success: false`) when the Graphify addon is not active. Useful when callers explicitly want graph-ranked semantics. |
+| `transient` | Force the legacy transient + cosine path even when Graphify is loaded — handy for debugging and side-by-side comparisons.                                     |
+
+Graph traversal blends three signals into a single ranked list of memory
+context ids:
+
+1. **Anchor expansion** — every memory connected to the requested
+   `agent:<agent_id>`, `wing:<wing>`, and `room:<wing>:<room>` nodes via the
+   relations above is collected as a candidate. Wing/room anchors carry more
+   weight than agent anchors so scoped recall feels precise.
+2. **Keyword search** — when a `query` is supplied, `search_nodes()` runs a
+   `LIKE` match over memory node labels and adds matches to the candidate
+   set with a moderate boost.
+3. **Vector similarity** — when a `query` is supplied and embeddings are
+   enabled, the same `WP_MCP_AI_Vector_Context_Service` provider used for
+   transient cosine search produces a query vector. Cosine matches against
+   the Graphify `embeddings` table receive a positive boost.
+
+If the graph yields no candidates the wake-up tool transparently falls back to
+the legacy retrieval so an operator never sees an empty palace.
+
+The response gains a new `retrieval_path` field (`graph` or `transient`) so
+callers can observe which path serviced the request.
+
+### Filters and hooks introduced in Phase 4a
+
+| Hook                                    | Type   | When it fires                                                                                              |
+|-----------------------------------------|--------|------------------------------------------------------------------------------------------------------------|
+| `wp_mcp_ai_memory_stored`               | action | After every successful `store_agent_context` write; payload contract documented in the tool's PHPDoc.       |
+| `wp_mcp_ai_wake_up_graph_context_ids`   | filter | After graph retrieval ranks ids and before each one is fetched. Use to inject, reorder, or drop memories. |
+
+### Visualising the palace
+
+The Graphify admin "Graph Explorer" tab adds two new toolbar inputs and a
+**Memory Palace** preset:
+
+- **Agent ID** — the agent whose memories you want to highlight.
+- **Wing** — an optional wing scope. Combine with the agent for the classic
+  "Agent: X / Wing: Y" view.
+- **Apply** — fades the rest of the graph and highlights the matching
+  `memory` nodes (and their wing/agent anchor nodes).
+- **Clear** — clears both inputs and removes the highlight.
+
+The preset matches by node properties (`agent_id`, `wing`, `room`), so it
+works on the initial graph render without first having to click each node to
+load its edges.
+
+### Test coverage
+
+- `tests/test-mempalace-phase4a-graphify-bridge.php`
+  - asserts the `wp_mcp_ai_memory_stored` payload contract,
+  - asserts that `mine_agent_memory` produces one event per item,
+  - asserts the absent-path: store still succeeds with no listener,
+  - asserts the bridge handler is exception-safe,
+  - asserts `mode: 'graph'` errors gracefully without Graphify,
+  - asserts `mode: 'auto'` falls back to `transient` without Graphify,
+  - asserts `mode: 'transient'` forces the legacy path even when Graphify is
+    present,
+  - exercises the graph happy-path by injecting an ordered id list through
+    `wp_mcp_ai_wake_up_graph_context_ids` and verifying the renderer respects
+    the graph order.
+
+---
+
 ## Support
 
 - **Documentation**: See `/docs/RAG-ENHANCED-MEMORY-MANAGEMENT.md`
