@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
-        'version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
-        'reference' => '11e442b5c3863d483345b89696c96959ea9bb9ce',
+        'pretty_version' => 'dev-copilot/implement-eml-and-nand-functions',
+        'version' => 'dev-copilot/implement-eml-and-nand-functions',
+        'reference' => 'e39c8c3b3d4c394c86434dcd8b96baee5828e60b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
-            'version' => 'dev-copilot/fix-toolkit-folder-commit-issue',
-            'reference' => '11e442b5c3863d483345b89696c96959ea9bb9ce',
+            'pretty_version' => 'dev-copilot/implement-eml-and-nand-functions',
+            'version' => 'dev-copilot/implement-eml-and-nand-functions',
+            'reference' => 'e39c8c3b3d4c394c86434dcd8b96baee5828e60b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
