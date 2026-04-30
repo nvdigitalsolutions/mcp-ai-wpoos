@@ -95,7 +95,7 @@ if ( $is_enabled && ! $is_base ) {
 /**
  * Load Architectural Design toolkit tools.
  *
- * Registers all 37 architectural design tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7).
+ * Registers all 39 architectural design tools (Phase A: 16 + Phase B: 10 + Phase C: 4 + Phase D: 7 + Phase E: 2).
  *
  * @since 1.1.0
  */
