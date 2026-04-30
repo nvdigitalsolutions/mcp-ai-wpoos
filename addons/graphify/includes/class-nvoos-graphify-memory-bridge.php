@@ -311,6 +311,8 @@ class NV_oOS_Graphify_Memory_Bridge {
 	 * @since 0.7.0
 	 *
 	 * @param array $args {
+	 *     Retrieval arguments.
+	 *
 	 *     @type string $agent_id Agent identifier.
 	 *     @type string $wing     Optional wing scope.
 	 *     @type string $room     Optional room scope.

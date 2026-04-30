@@ -336,17 +336,17 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 		if ( empty( $result['success'] ) || empty( $result['contexts'] ) ) {
 			return array(
-				'success'         => true,
-				'message'         => __( 'No memories found for wake-up.', 'mcp-ai-wpoos' ),
-				'system_block'    => '',
-				'count'           => 0,
-				'truncated'       => 0,
-				'tokens_used'     => 0,
-				'token_budget'    => $token_budget,
-				'wing'            => $wing,
-				'room'            => $room,
-				'agent_id'        => $agent_id,
-				'retrieval_path'  => $retrieval_path,
+				'success'        => true,
+				'message'        => __( 'No memories found for wake-up.', 'mcp-ai-wpoos' ),
+				'system_block'   => '',
+				'count'          => 0,
+				'truncated'      => 0,
+				'tokens_used'    => 0,
+				'token_budget'   => $token_budget,
+				'wing'           => $wing,
+				'room'           => $room,
+				'agent_id'       => $agent_id,
+				'retrieval_path' => $retrieval_path,
 			);
 		}
 
