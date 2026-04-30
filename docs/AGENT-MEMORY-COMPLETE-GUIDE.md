@@ -1017,6 +1017,51 @@ load its edges.
 
 ---
 
+## Durable Backing Store (Phase 4b, optional)
+
+When JetEngine is active, agent memory is now persisted to a dedicated Custom Content Type (`ai_agent_memories`) **in addition to** the existing transient cache. This closes the durability gap where `wp cache flush` or a Redis restart could silently wipe memory.
+
+### How it works
+
+- Transients remain the primary read path — no latency change for `retrieve_agent_memory` / `wake_up_context`.
+- A bridge (`WP_MCP_AI_Agent_Memory_CCT_Bridge`) listens on `wp_mcp_ai_memory_stored` and `wp_mcp_ai_memory_deleted` and mirrors every write/delete to the CCT.
+- Failures are logged but never fatal — the transient store stays the source of truth.
+
+### Industry-standard schema
+
+The CCT schema aligns with mem0, Letta/MemGPT, Zep, and Cognee patterns:
+
+| Column | Origin | Notes |
+|---|---|---|
+| `context_id`, `agent_id` | mem0 / Letta | Stable identifiers used for dedupe |
+| `memory_tier` | Letta / Cognee | `working` / `episodic` / `semantic` / `procedural`; auto-classified from `context_type` if not supplied |
+| `wing`, `room` | Phase 4a / Cognee | Hierarchical scope |
+| `verbatim`, `importance` | mem0 | Immutability + relevance |
+| `transaction_time`, `valid_from`, `valid_until` | Zep | Bi-temporal validity |
+| `expires_at`, `ttl_seconds` | Letta | TTL anchor |
+| `source`, `source_post_id`, `source_url`, `source_type` | mem0 / Letta | Provenance |
+| `embedding_id`, `graph_node_id` | mem0 / Zep | Reserved for Phase 4c (vector + graph cross-refs) |
+
+### Hooks
+
+- `wp_mcp_ai_memory_stored` *(action, since 1.1.0)* — fired after a transient write; the CCT bridge subscribes here.
+- `wp_mcp_ai_memory_deleted` *(action, new in this phase)* — fired after a transient delete (lifecycle delete + prune paths). Listeners receive `{ context_id, agent_id, context_type, deleted_at }`.
+- `wp_mcp_ai_memory_cct_record` *(filter, new in this phase)* — mutate the CCT record before persistence. Use this for site-specific PII redaction or to attach a precomputed `embedding_id` / `graph_node_id`.
+
+### Dashboard surfacing
+
+The orchestration dashboard's agent-memory widget now exposes a **Persistent (CCT) / Cache only** card so operators can see at a glance how much memory is durable versus cache-only. When JetEngine is missing, the card prompts to install it.
+
+### Disabling the dual-write
+
+Either deactivate JetEngine (the bridge becomes a no-op) or remove the `wp_mcp_ai_memory_stored` listener:
+
+```php
+remove_action( 'wp_mcp_ai_memory_stored', array( 'WP_MCP_AI_Agent_Memory_CCT_Bridge', 'on_memory_stored' ), 20 );
+```
+
+---
+
 **Last Updated:** February 18, 2026  
 **Version:** 1.1.0  
 **Status:** Production Ready

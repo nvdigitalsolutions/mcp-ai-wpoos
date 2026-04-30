@@ -1523,6 +1523,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			'mined_count'            => $mined_count,
 			'bridge_active'          => class_exists( 'NV_oOS_Graphify_Memory_Bridge' ),
 			'retrieval_path'         => $this->get_retrieval_path_telemetry(),
+			'persistent_storage'     => $this->get_persistent_memory_stats(),
 		);
 
 		// Cache the results for 5 minutes.
@@ -1580,6 +1581,69 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Aggregate persistent (CCT) vs transient agent-memory counts.
+	 *
+	 * Phase 4b-4: surfaces durability of the agent-memory store. The
+	 * `ai_agent_memories` JetEngine CCT mirrors every transient write via
+	 * `WP_MCP_AI_Agent_Memory_CCT_Bridge`, so this returns:
+	 *   - `cct_count`        Rows in the durable CCT table (0 when JetEngine
+	 *                        is missing or the CCT hasn't been provisioned).
+	 *   - `available`        Whether the CCT table exists and is queryable.
+	 *   - `tier_breakdown`   Memory-tier distribution from CCT rows
+	 *                        (working/episodic/semantic/procedural).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array {
+	 *     @type int   $cct_count       Total rows in the durable CCT.
+	 *     @type bool  $available       True when the CCT table exists.
+	 *     @type array $tier_breakdown  Map of memory_tier => count.
+	 * }
+	 */
+	protected function get_persistent_memory_stats() {
+		$default = array(
+			'cct_count'      => 0,
+			'available'      => false,
+			'tier_breakdown' => array(),
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return $default;
+		}
+
+		global $wpdb;
+		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		// Table name comes from the JetEngine convention `{prefix}jet_cct_{slug}`
+		// where `$slug` is a class constant.
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			return $default;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+
+		$tiers = array();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results( "SELECT memory_tier, COUNT(*) AS n FROM `{$table}` GROUP BY memory_tier" );
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$tier_key           = isset( $row->memory_tier ) && '' !== $row->memory_tier ? (string) $row->memory_tier : 'unspecified';
+				$tiers[ $tier_key ] = isset( $row->n ) ? (int) $row->n : 0;
+			}
+		}
+
+		return array(
+			'cct_count'      => $count,
+			'available'      => true,
+			'tier_breakdown' => $tiers,
+		);
+	}
+
+	/**
 	 * Render agent memory statistics widget.
 	 *
 	 * Shows usage statistics for the new agent memory tools (Phase 4/5).
@@ -1599,6 +1663,11 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		$rooms_count            = isset( $stats['rooms_count'] ) ? (int) $stats['rooms_count'] : 0;
 		$mined_count            = isset( $stats['mined_count'] ) ? (int) $stats['mined_count'] : 0;
 		$bridge_active          = ! empty( $stats['bridge_active'] );
+		$persistent             = isset( $stats['persistent_storage'] ) && is_array( $stats['persistent_storage'] ) ? $stats['persistent_storage'] : array(
+			'cct_count'      => 0,
+			'available'      => false,
+			'tier_breakdown' => array(),
+		);
 		$retrieval_path         = isset( $stats['retrieval_path'] ) && is_array( $stats['retrieval_path'] ) ? $stats['retrieval_path'] : array(
 			'graph'     => 0,
 			'transient' => 0,
@@ -1679,6 +1748,30 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					<div class="stat-content">
 						<h3 class="memory-mined-count"><?php echo esc_html( number_format_i18n( $mined_count ) ); ?></h3>
 						<p><?php esc_html_e( 'Mined Memories', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+
+				<!-- Phase 4b: Persistent (CCT) vs cache (transient) split. -->
+				<?php
+				$persistent_count = isset( $persistent['cct_count'] ) ? (int) $persistent['cct_count'] : 0;
+				$persistent_avail = ! empty( $persistent['available'] );
+				$cache_only       = max( 0, $total_contexts - $persistent_count );
+				?>
+				<div class="memory-stat-card memory-stat-card--durable">
+					<div class="stat-icon">🗄️</div>
+					<div class="stat-content">
+						<h3>
+							<span class="memory-persistent-count"><?php echo esc_html( number_format_i18n( $persistent_count ) ); ?></span>
+							<small> / <span class="memory-cache-only-count"><?php echo esc_html( number_format_i18n( $cache_only ) ); ?></span></small>
+						</h3>
+						<p>
+							<?php esc_html_e( 'Persistent (CCT) / Cache only', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<?php if ( ! $persistent_avail ) : ?>
+							<small class="description">
+								<?php esc_html_e( 'Install JetEngine to enable durable agent-memory storage that survives object-cache flushes.', 'mcp-ai-wpoos' ); ?>
+							</small>
+						<?php endif; ?>
 					</div>
 				</div>
 			</div>
