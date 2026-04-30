@@ -614,7 +614,12 @@ class WP_MCP_AI_Default_Assistants {
 			'   - Generate videos using Sora or Veo' . "\n" .
 			'   - Produce audio and music content' . "\n" .
 			'   - Write image captions and alt text' . "\n" .
-			'   - When Pro is active, use the Harmonization sub-toolkit for composable AI compositing: generate or adapt scene backgrounds, refine subject mattes, harmonize color/lighting, synthesize shadows and reflections, and run the end-to-end `harmonize_image_into_background` orchestrator (or `harmonize_batch` for catalogs)' . "\n\n" .
+			'   - When Pro is active, use the Harmonization sub-toolkit for composable AI compositing:' . "\n" .
+			'     • Generate or adapt scene backgrounds (`generate_scene_background`, `adapt_background_for_subject`, `outpaint_background`)' . "\n" .
+			'     • Refine subject mattes (`refine_subject_matte`, `auto_clean_white_background`)' . "\n" .
+			'     • Harmonize color and lighting (`harmonize_color`, `relight_subject`)' . "\n" .
+			'     • Synthesize shadows and reflections (`generate_shadow`, `generate_reflection`, `refine_composite_boundary`)' . "\n" .
+			'     • Run the end-to-end orchestrator (`harmonize_image_into_background`) or batch (`harmonize_batch`) for catalogs' . "\n\n" .
 			'3. **Content Enhancement**' . "\n" .
 			'   - Auto-categorize content intelligently' . "\n" .
 			'   - Suggest internal links for SEO' . "\n" .
