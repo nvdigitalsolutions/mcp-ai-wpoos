@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-harmonization-tools',
+        'version' => 'dev-copilot/add-harmonization-tools',
+        'reference' => '7185b1566e3d020a27706edb532fb7d1e7fe5a59',
         'pretty_version' => 'dev-copilot/implement-eml-and-nand-functions',
         'version' => 'dev-copilot/implement-eml-and-nand-functions',
         'reference' => 'e39c8c3b3d4c394c86434dcd8b96baee5828e60b',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-harmonization-tools',
+            'version' => 'dev-copilot/add-harmonization-tools',
+            'reference' => '7185b1566e3d020a27706edb532fb7d1e7fe5a59',
             'pretty_version' => 'dev-copilot/implement-eml-and-nand-functions',
             'version' => 'dev-copilot/implement-eml-and-nand-functions',
             'reference' => 'e39c8c3b3d4c394c86434dcd8b96baee5828e60b',
