@@ -37,8 +37,17 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * OpenAI client instance.
 	 *
 	 * @var WP_MCP_AI_OpenAI_Client|null
+	 * @deprecated 1.1.0 Use the resolved embedding provider instead. Kept for
+	 *             backward compatibility with code that referenced this property.
 	 */
 	private $openai_client = null;
+
+	/**
+	 * Resolved embedding provider for the current request.
+	 *
+	 * @var WP_MCP_AI_Embedding_Provider_Interface|null
+	 */
+	private $embedding_provider = null;
 
 	/**
 	 * Embedding model to use.
@@ -85,52 +94,39 @@ class WP_MCP_AI_Vector_Context_Service {
 			return new WP_Error( 'empty_text', __( 'Context text cannot be empty.', 'mcp-ai-wpoos' ) );
 		}
 
+		// Resolve the active embedding provider before computing the cache key
+		// so cached vectors are scoped to {provider_id}:{model}.
+		$provider = $this->get_embedding_provider();
+		if ( is_wp_error( $provider ) ) {
+			return $provider;
+		}
+
+		$cache_key = self::CACHE_PREFIX . md5( $provider->get_id() . ':' . $provider->get_model() . ':' . $context_text );
+
 		// Check cache first.
 		if ( $use_cache ) {
-			$cache_key = self::CACHE_PREFIX . md5( $context_text );
-			$cached    = get_transient( $cache_key );
+			$cached = get_transient( $cache_key );
 			if ( false !== $cached ) {
 				return $cached;
 			}
 		}
 
-		// Get OpenAI client.
-		$client = $this->get_openai_client();
-		if ( is_wp_error( $client ) ) {
-			return $client;
+		// Generate embedding via the provider.
+		$embedding = $provider->embed( $context_text );
+		if ( is_wp_error( $embedding ) ) {
+			return $embedding;
 		}
 
-		// Generate embedding.
-		try {
-			$response = $client->create_embedding(
-				array(
-					'model' => self::EMBEDDING_MODEL,
-					'input' => $context_text,
-				)
-			);
-
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			// Extract embedding vector.
-			if ( isset( $response['data'][0]['embedding'] ) ) {
-				$embedding = $response['data'][0]['embedding'];
-
-				// Cache the embedding (30 days).
-				if ( $use_cache ) {
-					$cache_key = self::CACHE_PREFIX . md5( $context_text );
-					set_transient( $cache_key, $embedding, 30 * DAY_IN_SECONDS );
-				}
-
-				return $embedding;
-			}
-
-			return new WP_Error( 'invalid_response', __( 'Invalid embedding response from OpenAI.', 'mcp-ai-wpoos' ) );
-
-		} catch ( Exception $e ) {
-			return new WP_Error( 'embedding_error', $e->getMessage() );
+		if ( ! is_array( $embedding ) || empty( $embedding ) ) {
+			return new WP_Error( 'invalid_response', __( 'Embedding provider returned an empty vector.', 'mcp-ai-wpoos' ) );
 		}
+
+		// Cache the embedding (30 days).
+		if ( $use_cache ) {
+			set_transient( $cache_key, $embedding, 30 * DAY_IN_SECONDS );
+		}
+
+		return $embedding;
 	}
 
 	/**
@@ -577,7 +573,137 @@ class WP_MCP_AI_Vector_Context_Service {
 	}
 
 	/**
+	 * Resolve the active embedding provider for this request.
+	 *
+	 * Plugins can swap the provider via the
+	 * {@see 'wp_mcp_ai_embedding_provider'} filter. The default chooses
+	 * Ollama when an `ollama_endpoint_url` is configured but no OpenAI key is
+	 * set (so a freshly-installed local-first deployment "just works"), and
+	 * OpenAI in every other case (preserving previous behaviour for existing
+	 * installs).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return WP_MCP_AI_Embedding_Provider_Interface|WP_Error Provider instance
+	 *         on success, WP_Error when no provider can be resolved or
+	 *         configured.
+	 */
+	public function get_embedding_provider() {
+		if ( $this->embedding_provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) {
+			return $this->embedding_provider;
+		}
+
+		$this->ensure_provider_classes_loaded();
+
+		$default_provider = $this->resolve_default_provider();
+
+		/**
+		 * Filter the embedding provider used by the vector context service.
+		 *
+		 * Return any object implementing
+		 * {@see WP_MCP_AI_Embedding_Provider_Interface} to override the
+		 * default. Returning a non-implementing value falls back to the
+		 * default.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param WP_MCP_AI_Embedding_Provider_Interface|null $default_provider Default provider, or null when none is available.
+		 */
+		$provider = apply_filters( 'wp_mcp_ai_embedding_provider', $default_provider );
+
+		if ( ! ( $provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) ) {
+			$provider = $default_provider;
+		}
+
+		if ( ! ( $provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) ) {
+			return new WP_Error( 'no_embedding_provider', __( 'No embedding provider is configured. Configure an OpenAI API key or an Ollama endpoint.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( ! $provider->is_available() ) {
+			return new WP_Error(
+				'embedding_provider_unavailable',
+				sprintf(
+					/* translators: %s: provider id (e.g. "openai", "ollama"). */
+					__( 'Embedding provider "%s" is not configured.', 'mcp-ai-wpoos' ),
+					$provider->get_id()
+				)
+			);
+		}
+
+		$this->embedding_provider = $provider;
+		return $provider;
+	}
+
+	/**
+	 * Reset the cached embedding provider so the next call re-resolves it.
+	 *
+	 * Useful when settings change at runtime or in tests.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	public function reset_embedding_provider() {
+		$this->embedding_provider = null;
+		$this->openai_client      = null;
+	}
+
+	/**
+	 * Pick the default provider based on plugin configuration.
+	 *
+	 * @return WP_MCP_AI_Embedding_Provider_Interface|null
+	 */
+	private function resolve_default_provider() {
+		$settings    = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$has_openai  = ! empty( $settings['openai_api_key'] );
+		$has_ollama  = ! empty( $settings['ollama_endpoint_url'] );
+		$preference  = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
+
+		// Honour an explicit preference if its backend is available.
+		if ( 'ollama' === $preference && $has_ollama ) {
+			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+		if ( 'openai' === $preference && $has_openai ) {
+			return new WP_MCP_AI_Embedding_Provider_OpenAI();
+		}
+
+		// Auto-detect: prefer OpenAI when present (preserves prior behaviour
+		// for existing installs); fall back to Ollama for local-first sites.
+		if ( $has_openai ) {
+			return new WP_MCP_AI_Embedding_Provider_OpenAI();
+		}
+		if ( $has_ollama ) {
+			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Load the embedding-provider interface and built-in implementations
+	 * on demand. The interface lives outside the autoload classmap because
+	 * it is a sibling of `interface-wp-mcp-ai-tool.php` (also loaded on demand).
+	 *
+	 * @return void
+	 */
+	private function ensure_provider_classes_loaded() {
+		if ( ! interface_exists( 'WP_MCP_AI_Embedding_Provider_Interface' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-embedding-provider.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_OpenAI' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-openai.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_Ollama' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-ollama.php';
+		}
+	}
+
+	/**
 	 * Get OpenAI client instance.
+	 *
+	 * @deprecated 1.1.0 Use {@see self::get_embedding_provider()} instead.
+	 *                   Retained as a thin wrapper so external code that
+	 *                   reflectively reaches into this service keeps working.
 	 *
 	 * @return WP_MCP_AI_OpenAI_Client|WP_Error
 	 */
