@@ -245,6 +245,21 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'download_facebook_page_images',
 					'download_instagram_page_images',
 					'download_google_maps_images',
+					// Harmonization Sub-Toolkit (Pro - Image Production).
+					'generate_scene_background',
+					'adapt_background_for_subject',
+					'outpaint_background',
+					'refine_subject_matte',
+					'auto_clean_white_background',
+					'harmonize_color',
+					'relight_subject',
+					'generate_shadow',
+					'generate_reflection',
+					'refine_composite_boundary',
+					'analyze_scene_lighting',
+					'suggest_placement',
+					'harmonize_image_into_background',
+					'harmonize_batch',
 				),
 			),
 
@@ -665,7 +680,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'design_professional'       => array(
 				'name'        => __( '🎨 Design Professional', 'mcp-ai-wpoos' ),
-				'description' => __( 'Visual design, rendering, branding, creative production, and architectural design tools', 'mcp-ai-wpoos' ),
+				'description' => __( 'Visual design, rendering, branding, AI-compositing/harmonization, creative production, and architectural design tools (Phases A–E).', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Image generation.
 					'generate_openai_image',
@@ -702,7 +717,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_elementor_templates',
 					'import_elementor_template_kit',
 					'elementor',
-					// Architectural Design (Pro).
+					// Architectural Design (Pro) — Phase A.
 					'generate_floor_plan',
 					'optimize_space_layout',
 					'create_floor_plan_variations',
@@ -719,6 +734,48 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_material_schedule',
 					'estimate_construction_cost',
 					'generate_construction_timeline',
+					// Architectural Design (Pro) — Phase B Regional Compliance & Analysis.
+					'calculate_wind_loads',
+					'calculate_seismic_loads',
+					'validate_setbacks_and_far',
+					'check_uda_planning_compliance',
+					'check_jnbc_hurricane_compliance',
+					'check_us_ibc_irc_compliance',
+					'generate_compliance_dossier',
+					'analyze_natural_ventilation',
+					'analyze_daylight_and_solar_gain',
+					'simulate_thermal_comfort',
+					// Architectural Design (Pro) — Phase C Sustainability scoring & costing.
+					'score_edge_certification',
+					'score_leed_v4_certification',
+					'generate_bill_of_quantities',
+					'propose_value_engineering_options',
+					// Architectural Design (Pro) — Phase D Interoperability & delivery.
+					'import_dwg_floor_plan',
+					'import_ifc_model',
+					'export_to_ifc',
+					'export_to_gbxml',
+					'generate_bim_execution_plan',
+					'manage_rfi_log',
+					'manage_submittal_log',
+					// Architectural Design (Pro) — Phase E Precedent library.
+					'manage_architectural_precedents',
+					'search_architectural_precedents',
+					// Harmonization Sub-Toolkit (Pro - Image Production).
+					'generate_scene_background',
+					'adapt_background_for_subject',
+					'outpaint_background',
+					'refine_subject_matte',
+					'auto_clean_white_background',
+					'harmonize_color',
+					'relight_subject',
+					'generate_shadow',
+					'generate_reflection',
+					'refine_composite_boundary',
+					'analyze_scene_lighting',
+					'suggest_placement',
+					'harmonize_image_into_background',
+					'harmonize_batch',
 				),
 			),
 
@@ -1400,7 +1457,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'architect'                 => array(
 				'name'        => __( '🏗️ Architect', 'mcp-ai-wpoos' ),
-				'description' => __( 'Architectural design, planning, building codes, and construction documentation tools', 'mcp-ai-wpoos' ),
+				'description' => __( 'Architectural design, planning, building codes (Sri Lanka UDA, Jamaica JNBC, US IBC/IRC), structural & sustainability analysis, interoperability (DWG/IFC/gbXML), and project delivery — full Phase A–E coverage.', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Architectural Design (Pro) - Floor Planning & Space Design.
 					'generate_floor_plan',
@@ -1426,6 +1483,35 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_material_schedule',
 					'estimate_construction_cost',
 					'generate_construction_timeline',
+					// Phase B — Regional Compliance & Loads.
+					'calculate_wind_loads',
+					'calculate_seismic_loads',
+					'validate_setbacks_and_far',
+					'check_uda_planning_compliance',
+					'check_jnbc_hurricane_compliance',
+					'check_us_ibc_irc_compliance',
+					'generate_compliance_dossier',
+					// Phase B — Building physics analysis.
+					'analyze_natural_ventilation',
+					'analyze_daylight_and_solar_gain',
+					'simulate_thermal_comfort',
+					// Phase C — Sustainability certification & costing depth.
+					'score_edge_certification',
+					'score_leed_v4_certification',
+					'generate_bill_of_quantities',
+					'propose_value_engineering_options',
+					// Phase D — Interoperability (DWG/IFC/gbXML).
+					'import_dwg_floor_plan',
+					'import_ifc_model',
+					'export_to_ifc',
+					'export_to_gbxml',
+					// Phase D — Project delivery (BEP, RFI, submittals).
+					'generate_bim_execution_plan',
+					'manage_rfi_log',
+					'manage_submittal_log',
+					// Phase E — Precedent library + semantic search.
+					'manage_architectural_precedents',
+					'search_architectural_precedents',
 					// Cross-discipline integration (Pro).
 					'integrate_with_architect',
 					// Visual Design & Rendering.
@@ -1639,11 +1725,24 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Compliance & Analysis.
 					'check_building_code_compliance',
 					'calculate_sustainability_metrics',
+					'analyze_natural_ventilation',
+					'analyze_daylight_and_solar_gain',
+					'simulate_thermal_comfort',
+					'score_edge_certification',
+					'score_leed_v4_certification',
 					// Documentation.
 					'generate_construction_drawings',
 					'generate_detail_drawings',
 					'export_architectural_documents',
 					'pro_pdf_document',
+					// Costing depth.
+					'generate_bill_of_quantities',
+					'propose_value_engineering_options',
+					// Interoperability (CAD/BIM round-trip with architects).
+					'import_dwg_floor_plan',
+					'import_ifc_model',
+					// Precedent library (mood-board / spec research).
+					'search_architectural_precedents',
 					// Charts & Design Boards.
 					'create_chart',
 					// Research & Inspiration.
