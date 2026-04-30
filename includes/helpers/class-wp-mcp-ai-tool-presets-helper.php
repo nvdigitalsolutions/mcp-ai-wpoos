@@ -78,6 +78,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'aggregate_agent_results',
 					// Agent memory & context management.
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
@@ -1044,6 +1046,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'execute_workflow',
@@ -1062,6 +1065,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for patient context and medical history.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Health & Wellness Management (Pro).
 					'create_member',
@@ -1150,6 +1154,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for case context and precedents.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Research.
 					'web_search',
@@ -1196,6 +1201,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for student progress and course context.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Quiz Management (Pro).
 					'create_quiz',
@@ -1312,6 +1318,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for financial context and client information.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Financial Planning Toolkit tools.
 					'financial_health_score',
@@ -1374,6 +1381,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for research contexts.
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					// Research.
 					'web_search',
@@ -2553,6 +2562,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'delegate_to_a2a_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
@@ -2631,6 +2642,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_agent_team',
 					'delegate_to_agent',
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					// Research enhancement.
 					'aggregate_research_data',
@@ -2709,6 +2722,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'validate_reasoning_chain',
 					// Agent memory for coordination state.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					'prioritize_context',
 				),
@@ -2735,6 +2749,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'extract_structured_data',
 					'convert_html_to_markdown',
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Workflow health.
 					'check_workflow_health',
@@ -2767,6 +2782,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_research_report',
 					// Shared context for swarm coordination.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					// Health & capacity.
 					'calculate_orchestration_capacity',
@@ -2796,6 +2812,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'list_workflow_rules',
 					// Context passing between levels.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					'manage_context_lifecycle',
 					'prioritize_context',
@@ -2834,6 +2851,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_research_report',
 					// Context for review state.
 					'store_agent_context',
+					'wake_up_context',
 					'retrieve_agent_memory',
 					'memory_audit_trail',
 				),
@@ -3169,6 +3187,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'tools'       => array(
 					// Agent memory for research contexts.
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					// Research tools (Pro).
 					'research_post',
@@ -3334,6 +3354,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'delegate_to_agent',
 					'aggregate_agent_results',
 					'store_agent_context',
+					'wake_up_context',
+					'mine_agent_memory',
 					'retrieve_agent_memory',
 					// Generic integrations (Pro).
 					'generic_rest_api',

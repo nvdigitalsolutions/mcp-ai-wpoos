@@ -163,10 +163,18 @@ class NV_oOS_Graphify_Memory_Bridge {
 					'room'         => $room,
 					'importance'   => $importance,
 					'context_type' => $ctx_type,
+					// `memory_type` mirrors `context_type` under the LangMem-style
+					// taxonomy (semantic / episodic / procedural / fact / etc.) so
+					// downstream graph consumers can filter by either name.
+					'memory_type'  => $ctx_type,
 					'verbatim'     => $verbatim ? 1 : 0,
 					'tags'         => $tags,
 					'content'      => $short_content,
 					'stored_at'    => $stored_at,
+					// `created_at` is the conventional name across MemGPT/Letta,
+					// mem0, and LangMem. We keep `stored_at` for backwards
+					// compatibility and surface `created_at` as an alias.
+					'created_at'   => $stored_at,
 					'expires_at'   => $expires_at,
 				),
 				'expires_at'  => '' !== $expires_at ? $expires_at : null,
@@ -336,6 +344,45 @@ class NV_oOS_Graphify_Memory_Bridge {
 			return array();
 		}
 
+		/**
+		 * Filters the linear-combination weights used to merge the three
+		 * GraphRAG signals (anchor expansion, keyword match, vector cosine).
+		 *
+		 * Production GraphRAG systems (Microsoft GraphRAG, Neo4j, LlamaIndex
+		 * PropertyGraphIndex) all use a weighted-sum merge with tunable
+		 * weights — keyword 0.4–0.5, graph 0.2–0.3, vector 0.3–0.4 are the
+		 * common defaults in the 2025 surveys. We keep the three anchor tiers
+		 * (room > wing > agent) separate so room scoping can dominate when an
+		 * operator passes one.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param array $weights {
+		 *     @type float $agent   Per-memory boost for agent ownership.
+		 *     @type float $wing    Per-memory boost for wing membership.
+		 *     @type float $room    Per-memory boost for room membership.
+		 *     @type float $keyword Per-hit boost for label `LIKE` matches.
+		 *     @type float $vector  Multiplier applied to the cosine score.
+		 * }
+		 * @param array $args    Original retrieve_graph arguments.
+		 */
+		$weights = apply_filters(
+			'wp_mcp_ai_graph_score_weights',
+			array(
+				'agent'   => 0.1,
+				'wing'    => 0.4,
+				'room'    => 0.6,
+				'keyword' => 0.5,
+				'vector'  => 1.0,
+			),
+			$args
+		);
+		// Caller-supplied weights override the filter (per-query tuning, mirroring LlamaIndex's `top_k`/weight knobs).
+		if ( isset( $args['weights'] ) && is_array( $args['weights'] ) ) {
+			$weights = array_merge( $weights, array_filter( $args['weights'], 'is_numeric' ) );
+		}
+		$weights = array_map( 'floatval', $weights );
+
 		$scores = array(); // node_id => array(score, via[]).
 
 		$bump = static function ( &$scores, $node_id, $delta, $via ) {
@@ -358,14 +405,14 @@ class NV_oOS_Graphify_Memory_Bridge {
 		// weighted lowest so that scope/keyword/vector still dominate.
 		$agent_node_id = self::NODE_PREFIX_AGENT . sanitize_title_with_dashes( $agent_id );
 		foreach ( NV_oOS_Graphify_DB::get_neighbor_ids( $agent_node_id, 'OBSERVED_BY' ) as $nid ) {
-			$bump( $scores, $nid, 0.1, 'agent' );
+			$bump( $scores, $nid, $weights['agent'], 'agent' );
 		}
 
 		// 2. Anchor: wing.
 		if ( '' !== $wing ) {
 			$wing_node_id = self::NODE_PREFIX_WING . sanitize_title_with_dashes( $wing );
 			foreach ( NV_oOS_Graphify_DB::get_neighbor_ids( $wing_node_id, 'MEMBER_OF' ) as $nid ) {
-				$bump( $scores, $nid, 0.4, 'wing' );
+				$bump( $scores, $nid, $weights['wing'], 'wing' );
 			}
 		}
 
@@ -373,7 +420,7 @@ class NV_oOS_Graphify_Memory_Bridge {
 		if ( '' !== $wing && '' !== $room ) {
 			$room_node_id = self::NODE_PREFIX_ROOM . sanitize_title_with_dashes( $wing ) . ':' . sanitize_title_with_dashes( $room );
 			foreach ( NV_oOS_Graphify_DB::get_neighbor_ids( $room_node_id, 'MEMBER_OF' ) as $nid ) {
-				$bump( $scores, $nid, 0.6, 'room' );
+				$bump( $scores, $nid, $weights['room'], 'room' );
 			}
 		}
 
@@ -382,7 +429,7 @@ class NV_oOS_Graphify_Memory_Bridge {
 			$rows = NV_oOS_Graphify_DB::search_nodes( $query, 'memory', max( 50, $limit * 4 ) );
 			foreach ( $rows as $row ) {
 				if ( ! empty( $row->node_id ) ) {
-					$bump( $scores, $row->node_id, 0.5, 'keyword' );
+					$bump( $scores, $row->node_id, $weights['keyword'], 'keyword' );
 				}
 			}
 		}
@@ -394,8 +441,8 @@ class NV_oOS_Graphify_Memory_Bridge {
 				$matches = NV_oOS_Graphify_Embeddings::search( $query_vec, max( 20, $limit * 2 ) );
 				foreach ( $matches as $m ) {
 					if ( ! empty( $m['node_id'] ) ) {
-						// Cosine score is in -1..1 — clamp to a positive boost.
-						$bump( $scores, (string) $m['node_id'], max( 0.0, (float) $m['score'] ) * 1.0, 'vector' );
+						// Cosine score is in -1..1 — clamp to a positive boost, then apply weight.
+						$bump( $scores, (string) $m['node_id'], max( 0.0, (float) $m['score'] ) * $weights['vector'], 'vector' );
 					}
 				}
 			}

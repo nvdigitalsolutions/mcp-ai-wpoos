@@ -944,6 +944,36 @@ callers can observe which path serviced the request.
 |-----------------------------------------|--------|------------------------------------------------------------------------------------------------------------|
 | `wp_mcp_ai_memory_stored`               | action | After every successful `store_agent_context` write; payload contract documented in the tool's PHPDoc.       |
 | `wp_mcp_ai_wake_up_graph_context_ids`   | filter | After graph retrieval ranks ids and before each one is fetched. Use to inject, reorder, or drop memories. |
+| `wp_mcp_ai_graph_score_weights`         | filter | Tunes the linear-combination weights for the three GraphRAG signals (anchor / keyword / vector). Default `{agent:0.1, wing:0.4, room:0.6, keyword:0.5, vector:1.0}` follows the keyword 0.4–0.5 / graph 0.2–0.3 / vector 0.3–0.4 recipe documented for Microsoft GraphRAG, Neo4j, and LlamaIndex PropertyGraphIndex. Per-query overrides also accepted via `args.weights`. |
+
+### Standard memory-record fields (industry alignment)
+
+Each `memory:<context_id>` node carries the conventional fields used by MemGPT/Letta, mem0, and LangMem so downstream tooling can ingest them without translation:
+
+| Property      | Meaning                                                                                                  |
+|---------------|----------------------------------------------------------------------------------------------------------|
+| `created_at`  | Standard creation timestamp (alias of `stored_at`, kept for backwards compatibility).                     |
+| `memory_type` | LangMem-style taxonomy (semantic / episodic / procedural / fact / …); mirrors `context_type`.            |
+| `importance`  | `low` / `medium` / `high` / `critical`.                                                                  |
+| `agent_id`    | Multi-tenant scoping field.                                                                              |
+| `wing`/`room` | NV oOS scope fields used as anchors during graph retrieval.                                              |
+| `tags`        | Free-form tag list.                                                                                      |
+| `verbatim`    | `1` when the verbatim discipline was applied at ingest.                                                  |
+| `expires_at`  | Optional TTL (mirrors transient-store expiry).                                                           |
+
+### Retrieval-response observability (`via` provenance)
+
+When graph retrieval services a `wake_up_context` request, every entry in `memories_loaded` carries a `via` array listing which signals matched — one or more of `agent`, `wing`, `room`, `keyword`, `vector`. This mirrors the retrieval-log conventions exposed by mem0 and Letta and lets operators debug *why* a particular memory was surfaced.
+
+```jsonc
+{
+  "retrieval_path": "graph",
+  "memories_loaded": [
+    { "context_id": "ctx_…", "title": "…", "via": ["wing", "vector"] },
+    { "context_id": "ctx_…", "title": "…", "via": ["room", "keyword"] }
+  ]
+}
+```
 
 ### Visualising the palace
 

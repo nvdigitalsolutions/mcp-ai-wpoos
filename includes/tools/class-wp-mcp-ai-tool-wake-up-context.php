@@ -247,6 +247,9 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		$retrieval_path = 'transient';
 		$result         = null;
+		// Map of context_id => array of provenance signals ('agent','wing','room','keyword','vector')
+		// surfaced in the response for observability — same shape exposed by mem0/Letta retrieval logs.
+		$graph_via = array();
 
 		if ( $use_graph ) {
 			$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph(
@@ -258,6 +261,12 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'limit'    => $top_n,
 				)
 			);
+
+			foreach ( $ranked as $r ) {
+				if ( ! empty( $r['context_id'] ) ) {
+					$graph_via[ (string) $r['context_id'] ] = isset( $r['via'] ) && is_array( $r['via'] ) ? array_values( $r['via'] ) : array();
+				}
+			}
 
 			$context_ids = array_values(
 				array_filter(
@@ -423,13 +432,20 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'agent_id'        => $agent_id,
 			'retrieval_path'  => $retrieval_path,
 			'memories_loaded' => array_map(
-				static function ( $memory ) {
+				static function ( $memory ) use ( $graph_via ) {
+					$cid = isset( $memory['context_id'] ) ? $memory['context_id'] : '';
 					return array(
-						'context_id' => isset( $memory['context_id'] ) ? $memory['context_id'] : '',
+						'context_id' => $cid,
 						'title'      => isset( $memory['title'] ) ? $memory['title'] : '',
 						'importance' => isset( $memory['importance'] ) ? $memory['importance'] : 'medium',
 						'wing'       => isset( $memory['wing'] ) ? $memory['wing'] : '',
 						'room'       => isset( $memory['room'] ) ? $memory['room'] : '',
+						// Provenance: which retrieval signals matched this memory
+						// (graph mode only — empty array when the transient
+						// path serviced the request, since cosine search there
+						// is single-signal). Mirrors mem0/Letta retrieval-log
+						// observability conventions.
+						'via'        => isset( $graph_via[ $cid ] ) ? $graph_via[ $cid ] : array(),
 					);
 				},
 				array_slice( $contexts, 0, count( $rendered ) )
