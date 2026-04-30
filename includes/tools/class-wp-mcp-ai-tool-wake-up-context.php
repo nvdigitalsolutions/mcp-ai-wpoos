@@ -344,6 +344,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$result = $retrieve->execute( $retrieve_args, $context );
 		}
 		if ( empty( $result['success'] ) || empty( $result['contexts'] ) ) {
+			self::record_retrieval_telemetry( $retrieval_path );
 			return array(
 				'success'        => true,
 				'message'        => __( 'No memories found for wake-up.', 'mcp-ai-wpoos' ),
@@ -385,6 +386,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		if ( empty( $rendered ) ) {
+			self::record_retrieval_telemetry( $retrieval_path );
 			return array(
 				'success'        => true,
 				'message'        => __( 'Token budget too small to render any memory entries.', 'mcp-ai-wpoos' ),
@@ -419,6 +421,8 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		 * @param string     $room         Room scope (may be empty).
 		 */
 		$system_block = (string) apply_filters( 'wp_mcp_ai_wake_up_system_block', $system_block, $contexts, $agent_id, $wing, $room );
+
+		self::record_retrieval_telemetry( $retrieval_path );
 
 		return array(
 			'success'         => true,
@@ -576,5 +580,59 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'expensive'         => false,
 			'requires-approval' => false,
 		);
+	}
+
+	/**
+	 * Record a retrieval-path telemetry tick.
+	 *
+	 * Maintains a 7-day rolling tally of `retrieval_path` values returned by
+	 * this tool. Stored on the `wp_mcp_ai_wake_up_telemetry` option as a
+	 * date-keyed array (`Y-m-d` => path => count). The orchestration dashboard
+	 * reads this to show graph/transient mode mix.
+	 *
+	 * Older buckets (>7 days) are pruned each call so the option never grows
+	 * unbounded.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $path Retrieval path: `graph` or `transient`.
+	 * @return void
+	 */
+	public static function record_retrieval_telemetry( $path ) {
+		$path = is_string( $path ) ? $path : '';
+		if ( '' === $path ) {
+			return;
+		}
+		// Whitelist to keep the option schema tight.
+		$allowed = array( 'graph', 'transient' );
+		if ( ! in_array( $path, $allowed, true ) ) {
+			return;
+		}
+
+		$option_key = 'wp_mcp_ai_wake_up_telemetry';
+		$telemetry  = get_option( $option_key, array() );
+		if ( ! is_array( $telemetry ) ) {
+			$telemetry = array();
+		}
+
+		$today  = gmdate( 'Y-m-d' );
+		$cutoff = gmdate( 'Y-m-d', time() - ( 7 * DAY_IN_SECONDS ) );
+
+		// Increment today's bucket.
+		if ( ! isset( $telemetry[ $today ] ) || ! is_array( $telemetry[ $today ] ) ) {
+			$telemetry[ $today ] = array();
+		}
+		$current                      = isset( $telemetry[ $today ][ $path ] ) ? (int) $telemetry[ $today ][ $path ] : 0;
+		$telemetry[ $today ][ $path ] = $current + 1;
+
+		// Prune buckets older than the cutoff.
+		foreach ( array_keys( $telemetry ) as $bucket_date ) {
+			if ( ! is_string( $bucket_date ) || $bucket_date < $cutoff ) {
+				unset( $telemetry[ $bucket_date ] );
+			}
+		}
+
+		// `autoload=no` so this small stat never bloats every page load.
+		update_option( $option_key, $telemetry, false );
 	}
 }

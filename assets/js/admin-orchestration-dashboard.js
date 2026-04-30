@@ -48,6 +48,9 @@
 			// Refresh memory stats button
 			$('.refresh-memory-stats').on('click', this.refreshMemoryStats.bind(this));
 
+			// Phase 4a: Memory breakdown group-by toggle.
+			$(document).on('change', '.memory-group-by', this.handleMemoryGroupBy.bind(this));
+
 			// Workflow action buttons (delegated for dynamically created elements)
 			$(document).on('click', '.workflow-action-continue', this.handleContinueWorkflow.bind(this));
 			$(document).on('click', '.workflow-action-restart', this.handleRestartWorkflow.bind(this));
@@ -473,10 +476,21 @@
 						const stats = response.data.stats;
 						$('.memory-stat-card').eq(0).find('h3').text(stats.total_contexts.toLocaleString());
 						$('.memory-stat-card').eq(1).find('h3').text(stats.total_agents.toLocaleString());
-						$('.memory-stat-card').eq(2).find('h3').text(Object.keys(stats.contexts_by_type).length.toLocaleString());
+						$('.memory-stat-card').eq(2).find('h3').text(Object.keys(stats.contexts_by_type || {}).length.toLocaleString());
+
+						// Phase 4a: refresh wings/rooms + mined cards.
+						if (typeof stats.wings_count !== 'undefined') {
+							$('.memory-wings-count').text(Number(stats.wings_count).toLocaleString());
+						}
+						if (typeof stats.rooms_count !== 'undefined') {
+							$('.memory-rooms-count').text(Number(stats.rooms_count).toLocaleString());
+						}
+						if (typeof stats.mined_count !== 'undefined') {
+							$('.memory-mined-count').text(Number(stats.mined_count).toLocaleString());
+						}
 
 						// Update the contexts by type table if it exists
-						if (Object.keys(stats.contexts_by_type).length > 0) {
+						if (Object.keys(stats.contexts_by_type || {}).length > 0) {
 							OrchestrationDashboard.updateContextsTable(stats.contexts_by_type, stats.total_contexts);
 						}
 
@@ -509,7 +523,7 @@
 		 * @param {number} totalContexts Total number of contexts.
 		 */
 		updateContextsTable: function(contextsByType, totalContexts) {
-			const $tbody = $('.memory-contexts-breakdown tbody');
+			const $tbody = $('.memory-breakdown-pane[data-group-pane="type"] tbody');
 			if (!$tbody.length) {
 				return;
 			}
@@ -526,6 +540,33 @@
 					.append($('<td>').text(count.toLocaleString()))
 					.append($('<td>').text(percentage + '%'));
 				$tbody.append($row);
+			});
+		},
+
+		/**
+		 * Phase 4a: switch the visible memory-breakdown pane.
+		 *
+		 * @param {Event} e Change event from the .memory-group-by select.
+		 */
+		handleMemoryGroupBy: function(e) {
+			const $select = $(e.currentTarget);
+			const target = String($select.val() || 'type');
+			const $widget = $select.closest('.memory-contexts-breakdown');
+			if (!$widget.length) {
+				return;
+			}
+
+			$widget.attr('data-group', target);
+
+			$widget.find('.memory-breakdown-pane').each(function() {
+				const $pane = $(this);
+				const isActive = $pane.attr('data-group-pane') === target;
+				$pane.toggleClass('hidden', !isActive);
+				if (isActive) {
+					$pane.removeAttr('aria-hidden');
+				} else {
+					$pane.attr('aria-hidden', 'true');
+				}
 			});
 		},
 
