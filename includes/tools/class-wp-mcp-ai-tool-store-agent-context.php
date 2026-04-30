@@ -120,6 +120,19 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 					),
 					'required'    => array( 'title', 'content' ),
 				),
+				'wing'           => array(
+					'type'        => 'string',
+					'description' => __( 'Optional hierarchical scope for the project, person, or domain this memory belongs to (e.g. "client-acme", "personal", "team-alpha"). Inspired by MemPalace "wings". Used to scope retrieval before semantic ranking. When omitted, memory is unscoped and visible to all retrievals for the agent.', 'mcp-ai-wpoos' ),
+				),
+				'room'           => array(
+					'type'        => 'string',
+					'description' => __( 'Optional sub-scope within a wing for a topic cluster (e.g. "auth-flows", "billing", "onboarding"). Inspired by MemPalace "rooms". Used together with wing to narrow retrieval before semantic ranking.', 'mcp-ai-wpoos' ),
+				),
+				'verbatim'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, content is stored exactly as provided and downstream pre-store transforms (e.g. summarization filters) are skipped. Use for raw quotes, decisions, transcripts, or any text that must not be paraphrased. Defaults to false.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
 				'ttl'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Time to live in seconds (default: 30 days)', 'mcp-ai-wpoos' ),
@@ -193,6 +206,11 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		$context_data = $this->sanitize_context_data( $arguments['context_data'] );
 		$ttl          = isset( $arguments['ttl'] ) ? absint( $arguments['ttl'] ) : 2592000; // 30 days default.
 
+		// Sanitize MemPalace-inspired hierarchical scope and verbatim discipline fields.
+		$wing     = isset( $arguments['wing'] ) ? sanitize_text_field( $arguments['wing'] ) : '';
+		$room     = isset( $arguments['room'] ) ? sanitize_text_field( $arguments['room'] ) : '';
+		$verbatim = ! empty( $arguments['verbatim'] );
+
 		// Validate TTL bounds.
 		$ttl = max( 3600, min( 31536000, $ttl ) ); // Between 1 hour and 1 year.
 
@@ -239,6 +257,41 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		/**
+		 * Filter the context data before it is persisted.
+		 *
+		 * This is the canonical hook for pre-store transforms (e.g. summarization,
+		 * redaction, PII scrubbing). Listeners MUST respect the verbatim discipline:
+		 * when $verbatim is true, the data must be returned unchanged.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array      $context_data Sanitized context data (title, content, metadata, tags, importance, ...).
+		 * @param bool       $verbatim     When true, transforms must be a no-op.
+		 * @param string     $context_type The context type (learning, fact, ...).
+		 * @param int|string $agent_id     The agent identifier.
+		 * @param array      $arguments    The full original arguments passed to the tool.
+		 * @param array      $context      The execution context provided by the registry.
+		 */
+		$transformed_context_data = apply_filters(
+			'wp_mcp_ai_memory_pre_store_transform',
+			$context_data,
+			$verbatim,
+			$context_type,
+			$agent_id,
+			$arguments,
+			$context
+		);
+
+		// Verbatim contract: ignore any transformation when verbatim is requested.
+		if ( $verbatim ) {
+			$transformed_context_data = $context_data;
+		}
+
+		if ( is_array( $transformed_context_data ) && ! empty( $transformed_context_data['title'] ) && ! empty( $transformed_context_data['content'] ) ) {
+			$context_data = $transformed_context_data;
+		}
+
 		// Generate unique context ID.
 		$context_id = 'ctx_' . wp_generate_password( 12, false );
 
@@ -251,6 +304,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			'stored_at'    => current_time( 'mysql' ),
 			'expires_at'   => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
 			'ttl'          => $ttl,
+			'wing'         => $wing,
+			'room'         => $room,
+			'verbatim'     => $verbatim,
 		);
 
 		// Store context using transient (WordPress built-in caching).
@@ -273,6 +329,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			'expires_at' => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
 			'importance' => isset( $context_data['importance'] ) ? $context_data['importance'] : 'medium',
 			'tags'       => isset( $context_data['tags'] ) ? $context_data['tags'] : array(),
+			'wing'       => $wing,
+			'room'       => $room,
+			'verbatim'   => $verbatim,
 		);
 
 		// Store index with same TTL.
@@ -286,6 +345,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 			'message'         => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
 			'context_id'      => $context_id,
 			'agent_id'        => $agent_id,
+			'wing'            => $wing,
+			'room'            => $room,
+			'verbatim'        => $verbatim,
 			'stored_at'       => $context_record['stored_at'],
 			'expires_at'      => $context_record['expires_at'],
 			'ttl_seconds'     => $ttl,

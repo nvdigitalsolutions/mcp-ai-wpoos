@@ -53,9 +53,54 @@ The Agent Memory Management system now provides enterprise-grade capabilities fo
       "confidence": 0.95
     }
   },
+  "wing": "client-acme",
+  "room": "training-pipeline",
+  "verbatim": false,
   "ttl": 2592000
 }
 ```
+
+#### Hierarchical scoping (wings & rooms)
+
+Inspired by [MemPalace](https://github.com/MemPalace/mempalace), every stored memory can be tagged with two optional hierarchical scope fields:
+
+- **`wing`** — high-level scope, typically a project, person, or domain (`"client-acme"`, `"personal"`, `"team-alpha"`).
+- **`room`** — sub-scope inside a wing, typically a topic cluster (`"auth-flows"`, `"billing"`, `"onboarding"`).
+
+Drawers (the original content of each record) live unchanged inside `context_data.content`. Wings and rooms are stored on the record and mirrored in the agent index so retrieval can scope candidates **before** semantic ranking runs, dramatically improving recall on shared memory pools.
+
+When `wing` and/or `room` are omitted, the memory is unscoped and visible to all retrievals for the agent — the previous default behaviour.
+
+#### Verbatim-storage discipline
+
+Set `verbatim: true` to declare that the supplied `content` must be stored exactly as provided. The plugin then:
+
+1. Skips the `wp_mcp_ai_memory_pre_store_transform` filter so summarisers, redactors, or paraphrasers cannot alter the text.
+2. Persists the `verbatim` flag on the record so downstream consumers can honour the same contract.
+
+Use this for raw quotes, decisions, transcripts, or any text whose phrasing matters. The recommended pattern is **store raw, summarise on read**: write verbatim, then derive summaries at retrieval time when context budgets demand it.
+
+#### `wp_mcp_ai_memory_pre_store_transform` filter
+
+Plugins that want to transform context before it is persisted can hook this filter:
+
+```php
+add_filter(
+    'wp_mcp_ai_memory_pre_store_transform',
+    function ( $context_data, $verbatim, $context_type, $agent_id, $arguments, $context ) {
+        if ( $verbatim ) {
+            return $context_data; // Verbatim contract — must not modify.
+        }
+        // Example: append a content hash to metadata.
+        $context_data['metadata']['content_sha1'] = sha1( $context_data['content'] );
+        return $context_data;
+    },
+    10,
+    6
+);
+```
+
+The verbatim contract is enforced unconditionally by the tool itself: even if a poorly-behaved listener returns modified data, the tool will discard it whenever `verbatim === true`.
 
 ### Read (Retrieve Memory)
 
@@ -67,11 +112,35 @@ The Agent Memory Management system now provides enterprise-grade capabilities fo
   "query": "machine learning",
   "filters": {
     "importance": ["high", "critical"],
-    "context_types": ["learning", "insight"]
+    "context_types": ["learning", "insight"],
+    "wing": "client-acme",
+    "room": "training-pipeline"
   },
   "limit": 10
 }
 ```
+
+The optional `wing` and `room` filters are applied **before** semantic ranking, so they constrain the candidate pool rather than just re-ordering it. Combine them with `query` for the MemPalace-style "search this project, this topic, semantically" pattern.
+
+#### Hybrid retrieval scoring
+
+When semantic search runs through `WP_MCP_AI_Vector_Context_Service` (e.g. via `semantic_context_search`), each candidate's cosine similarity is layered with three optional, additive boosters:
+
+| Booster        | Default weight | Filter (weight)                                     | Filter (final value)                          |
+|----------------|---------------:|-----------------------------------------------------|-----------------------------------------------|
+| Keyword overlap | 0.10           | `wp_mcp_ai_memory_score_boost_keyword_weight`       | `wp_mcp_ai_memory_score_boost_keyword`        |
+| Temporal proximity | 0.05        | `wp_mcp_ai_memory_score_boost_temporal_weight`<br>`wp_mcp_ai_memory_score_boost_temporal_half_life` | `wp_mcp_ai_memory_score_boost_temporal`       |
+| Tag/wing/room exact-match | 0.10  | `wp_mcp_ai_memory_score_boost_exact_match_weight`   | `wp_mcp_ai_memory_score_boost_exact_match`    |
+
+Total booster contribution is capped (default `0.25`) via `wp_mcp_ai_memory_score_boost_total_cap`. To recover **pure** cosine-similarity ranking, set every weight filter to `0`:
+
+```php
+add_filter( 'wp_mcp_ai_memory_score_boost_keyword_weight',     '__return_zero' );
+add_filter( 'wp_mcp_ai_memory_score_boost_temporal_weight',    '__return_zero' );
+add_filter( 'wp_mcp_ai_memory_score_boost_exact_match_weight', '__return_zero' );
+```
+
+Search responses include both `similarity_score` (raw cosine) and `final_score` (after boosters) plus a `boost_breakdown` field for debugging.
 
 ### Update (Edit Memory)
 
