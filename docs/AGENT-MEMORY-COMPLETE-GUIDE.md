@@ -142,6 +142,56 @@ add_filter( 'wp_mcp_ai_memory_score_boost_exact_match_weight', '__return_zero' )
 
 Search responses include both `similarity_score` (raw cosine) and `final_score` (after boosters) plus a `boost_breakdown` field for debugging.
 
+#### Phase 2: Bulk ingest (`mine_agent_memory`)
+
+Mirrors MemPalace's `mempalace mine` workflow. One tool call ingests many records into the existing memory store, scoped to a wing/room and stored **verbatim by default**.
+
+| Source   | Behaviour                                                                                  |
+|----------|---------------------------------------------------------------------------------------------|
+| `posts`  | Runs a `WP_Query` against the chosen post type and stores each post's content + permalink. |
+| `urls`   | Fetches each URL via `wp_safe_remote_get`, strips scripts/styles, stores the plain text.   |
+| `text`   | Stores caller-supplied `{title, content, tags?, metadata?}` items as-is.                   |
+
+Long content is auto-chunked at `chunk_size` (default 4000 chars), preserving word boundaries; each chunk shares the source title with a `(part N/M)` suffix. The total number of records created in a single run is capped at 200. `dry_run: true` plans without writing.
+
+```json
+{
+  "agent_id": 123,
+  "source": "posts",
+  "wing": "client-acme",
+  "room": "onboarding",
+  "post_query": { "post_type": "kb_article", "posts_per_page": 50 },
+  "tags": ["mined", "kb"],
+  "verbatim": true
+}
+```
+
+Every write goes through `store_agent_context`, so `wp_mcp_ai_memory_pre_store_transform`, sanitization, and the verbatim contract all behave identically to a single-record store.
+
+#### Phase 2: Session wake-up (`wake_up_context`)
+
+A read-only tool that builds a labelled, token-budgeted memory block ready to prepend to the assistant's system prompt at session boot.
+
+```json
+{
+  "agent_id": 123,
+  "wing": "client-acme",
+  "top_n": 5,
+  "token_budget": 800,
+  "include_content": true
+}
+```
+
+Returns a `system_block` string plus accounting fields (`tokens_used`, `truncated`, `memories_loaded`). The block is bracketed by `=== Persistent Memory (auto-loaded at session start) ===` headers so the LLM can see clearly where its persistent memory begins and ends.
+
+| Filter                                | Purpose                                                          |
+|---------------------------------------|------------------------------------------------------------------|
+| `wp_mcp_ai_wake_up_top_n`             | Override the maximum number of memories considered.              |
+| `wp_mcp_ai_wake_up_token_budget`      | Override the token budget (≈4 chars per token).                  |
+| `wp_mcp_ai_wake_up_system_block`      | Reformat or wrap the rendered block before it is returned.       |
+
+Memories that overflow the budget are dropped (lowest-priority first) and reported in the `truncated` count, so the call is always TPM-safe. Pair this with `mine_agent_memory` and a wing per project to recreate MemPalace's "session loads only this client's drawers" experience.
+
 ### Update (Edit Memory)
 
 **Tool:** `manage_context_lifecycle` with action `update`
