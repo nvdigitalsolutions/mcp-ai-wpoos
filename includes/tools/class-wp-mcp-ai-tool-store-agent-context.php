@@ -290,6 +290,14 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( is_array( $transformed_context_data ) && ! empty( $transformed_context_data['title'] ) && ! empty( $transformed_context_data['content'] ) ) {
 			$context_data = $transformed_context_data;
+		} elseif ( ! $verbatim ) {
+			// A listener returned invalid data and we are not in verbatim mode.
+			// Help plugin developers diagnose their filter implementation.
+			_doing_it_wrong(
+				'wp_mcp_ai_memory_pre_store_transform',
+				esc_html__( 'Filter listeners must return an array with non-empty "title" and "content" keys. Returning unmodified context data instead.', 'mcp-ai-wpoos' ),
+				'1.1.0'
+			);
 		}
 
 		// Generate unique context ID.

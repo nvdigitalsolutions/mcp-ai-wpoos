@@ -410,6 +410,8 @@ class WP_MCP_AI_Vector_Context_Service {
 		 * @param float  $weight  The active weight.
 		 */
 		$keyword_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_keyword', $keyword_score, $context, $query, $keyword_weight );
+		// Clamp to [0, weight] so a misbehaving filter cannot dominate cosine similarity.
+		$keyword_score = max( 0.0, min( $keyword_weight, $keyword_score ) );
 
 		// --- Temporal booster: exponential decay favoring recent memories. ---
 		/**
@@ -451,6 +453,8 @@ class WP_MCP_AI_Vector_Context_Service {
 		 * @param float $weight  The active weight.
 		 */
 		$temporal_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal', $temporal_score, $context, $half_life, $temporal_weight );
+		// Clamp to [0, weight].
+		$temporal_score = max( 0.0, min( $temporal_weight, $temporal_score ) );
 
 		// --- Exact-match booster: tag, wing, room matches between filters and record. ---
 		/**
@@ -503,6 +507,8 @@ class WP_MCP_AI_Vector_Context_Service {
 		 * @param float $weight  The active weight.
 		 */
 		$exact_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_exact_match', $exact_score, $context, $filters, $exact_weight );
+		// Clamp to [0, weight].
+		$exact_score = max( 0.0, min( $exact_weight, $exact_score ) );
 
 		// Cap total booster contribution to avoid overwhelming the cosine baseline.
 		/**
