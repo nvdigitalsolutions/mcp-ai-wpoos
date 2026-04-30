@@ -44,6 +44,13 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/image-production/.
+
+	// Load the harmonization sub-toolkit (14 new tools that complement the existing
+	// `product_actualization` end-to-end tool with composable harmonization primitives).
+	$harmonization_init = WP_MCP_AI_PRO_PATH . 'includes/tools/image-production/harmonization/harmonization-init.php';
+	if ( file_exists( $harmonization_init ) ) {
+		require_once $harmonization_init;
+	}
 }
 
 // Initialize Image Template CPT.
