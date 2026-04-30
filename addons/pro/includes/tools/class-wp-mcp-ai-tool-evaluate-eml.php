@@ -8,18 +8,34 @@
  *
  * was introduced by Andrzej Odrzywołek (Institute of Theoretical Physics,
  * Jagiellonian University) in "All elementary functions from a single
- * operator". With the constant `1` it generates the standard repertoire of a
- * scientific calculator — constants such as e, π, i; arithmetic +, −, ×, ÷;
- * exponentiation; and the usual transcendental and algebraic functions. Every
- * such expression becomes a binary tree of identical nodes following the
- * grammar `S → 1 | eml(S, S)`, which is the continuous analogue of how every
- * Boolean expression becomes a binary tree of NAND gates.
+ * operator" (arXiv:2603.21852, 2026). With the constant `1` and computations
+ * carried out over the complex domain (principal branch), EML generates the
+ * standard scientific-calculator repertoire — constants such as e, π and i,
+ * arithmetic +, −, ×, ÷, exponentiation, and the usual transcendental /
+ * algebraic functions. Every EML expression is a binary tree of identical
+ * nodes following the grammar `S → 1 | eml(S, S)`, the continuous analogue
+ * of how every Boolean expression becomes a binary tree of NAND gates.
+ *
+ * Scope of this tool. To stay correct in IEEE-754 floats without explicit
+ * branch-cut tracking, the `evaluate` mode runs strictly on the real axis and
+ * rejects ln-domain violations. Consequently, the `decompose` catalogue here
+ * exposes only the **real-valued** identities published by Odrzywołek:
+ *
+ *  - exp, ln (Eq. (5)), e, the constant 1, and 0 (Figure 2);
+ *  - the four arithmetic primitives in Table 4 — sub, neg, inv, mul.
+ *
+ * Trigonometric, hyperbolic, π, i, √, etc., are out of scope: the paper
+ * proves these only over ℂ via Euler's formula and a complex variant
+ * `ceml(x, y) = exp(x) − Log(y)` whose principal-branch implementation
+ * disagrees with the real-derivation chain at e.g. x = −1 by 2πi. Adding
+ * them safely requires modelling complex-`eml` with branch-cut tracking,
+ * which is deliberately deferred.
  *
  * This tool exposes two modes:
  *
  *  - `evaluate`: parse and numerically evaluate an EML expression tree.
- *  - `decompose`: emit a canonical EML tree for a given elementary function
- *                 using the paper's constructive identities.
+ *  - `decompose`: emit a canonical EML tree for one of the supported
+ *                 functions using the paper's constructive identities.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.5.0
@@ -64,7 +80,7 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Evaluate or decompose expressions using the universal binary operator eml(x, y) = exp(x) − ln(y) introduced by Odrzywołek (2024). With the constant 1, EML generates every elementary function — the continuous-mathematics analogue of NAND universality.', 'mcp-ai-wpoos-pro' );
+		return __( 'Evaluate or decompose expressions using the universal binary operator eml(x, y) = exp(x) − ln(y) introduced by Odrzywołek (arXiv:2603.21852, 2026). With the constant 1, EML generates every elementary function over the complex domain — the continuous-mathematics analogue of NAND universality. This tool runs strictly over the reals: decompose mode encodes only the paper-published real-valued identities (one, e, exp, ln per Eq. (5), and zero, sub, neg, inv, mul per Table 4 / Figure 2). Trigonometric, π, i, √ and other complex-valued constants/functions are not supported here because their paper proofs require explicit branch-cut tracking.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -91,8 +107,8 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'function'   => array(
 					'type'        => 'string',
-					'enum'        => array( 'exp', 'ln', 'one', 'e' ),
-					'description' => __( 'Function to decompose for decompose mode. Only identities published in the paper are encoded.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'exp', 'ln', 'one', 'e', 'zero', 'neg', 'inv', 'sub', 'mul' ),
+					'description' => __( 'Function to decompose for decompose mode. Only identities published in the paper are encoded (Eq. (5), Figure 2 and Table 4 of Odrzywołek 2026).', 'mcp-ai-wpoos-pro' ),
 				),
 				'arity_args' => array(
 					'type'        => 'array',
@@ -223,15 +239,26 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * Handle the `decompose` mode.
 	 *
 	 * Only paper-published identities are encoded:
-	 *  - `exp(x) = eml(x, 1)`
-	 *  - `ln(x)  = eml(1, eml(eml(1, x), 1))`
-	 *  - `e      = eml(1, 1)`
-	 *  - `one    = 1`
 	 *
-	 * Other functions are documented in the paper's Appendix table; this tool
-	 * deliberately does not fabricate decompositions for functions whose
-	 * identities are not encoded here. Future revisions may add them as the
-	 * upstream catalogue is transcribed.
+	 *  - `one`  = 1                                               (terminal)
+	 *  - `e`    = eml(1, 1)                                        (Figure 2, K=3)
+	 *  - `exp(x)` = eml(x, 1)                                      (Figure 2, K=3)
+	 *  - `ln(x)`  = eml(1, eml(eml(1, x), 1))                      (Eq. (5), K=7)
+	 *  - `zero`   = eml(1, eml(eml(1, 1), 1))                      (Eq. (5) at z=1, K=7)
+	 *  - `sub(x,y)` = eml(eml(1, eml(eml(1, x), 1)), eml(y, 1))    (Table 4, K=11; requires x > 0)
+	 *  - `neg(x)`   = eml(eml(1, eml(eml(1, eml(1, eml(x, 1))), 1)), eml(eml(1, 1), 1))
+	 *                                                              (Table 4, K=17; requires 0 < x < e)
+	 *  - `inv(x)`   = eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), eml(eml(1, 1), 1)), 1)
+	 *                                                              (Table 4, K=17; requires 0 < x < e^e)
+	 *  - `mul(x,y)` = eml(eml(1, eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), y), 1)), 1)
+	 *                                                              (Table 4, K=17; requires 0 < x < e^e and y > 0)
+	 *
+	 * Functions whose paper proofs require complex arithmetic (trig, π, i,
+	 * hyperbolic, √, …) are deliberately not encoded: the paper proves them
+	 * via Euler's formula and a complex variant `ceml(x,y) = exp(x) − Log(y)`,
+	 * and the unconditional complex form is *false* at x = −1 due to the 2πi
+	 * branch discrepancy. A real-valued evaluator cannot host them without
+	 * modelling complex-`eml` with explicit branch tracking.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array|WP_Error
@@ -290,45 +317,124 @@ class WP_MCP_AI_Tool_Evaluate_Eml implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return array|WP_Error
 	 */
 	private function lookup_decomposition( $function, array $args ) {
+		$one = array( 'type' => 'NUM', 'value' => 1.0 );
+
 		switch ( $function ) {
 			case 'one':
-				return array( 'type' => 'NUM', 'value' => 1.0 );
+				return $one;
 			case 'e':
 				// e = exp(1) = eml(1, 1) — verify: e^1 − ln 1 = e − 0 = e.
+				// (Odrzywołek 2026, Figure 2, K=3.)
 				return array(
 					'type'  => 'EML',
-					'left'  => array( 'type' => 'NUM', 'value' => 1.0 ),
-					'right' => array( 'type' => 'NUM', 'value' => 1.0 ),
+					'left'  => $one,
+					'right' => $one,
 				);
 			case 'exp':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
 				// exp(x) = eml(x, 1) — since ln 1 = 0.
+				// (Odrzywołek 2026, Figure 2, K=3.)
 				return array(
 					'type'  => 'EML',
 					'left'  => array( 'type' => 'VAR', 'name' => $x ),
-					'right' => array( 'type' => 'NUM', 'value' => 1.0 ),
+					'right' => $one,
 				);
 			case 'ln':
 				$x = isset( $args[0] ) ? $args[0] : 'x';
 				// ln(x) = eml(1, eml(eml(1, x), 1)) — verified algebraically.
-				// Using e := exp(1) (Euler's number) and the definition
-				// eml(u, v) = exp(u) - ln(v):
-				//   inner_a = eml(1, x)        = exp(1) - ln(x)         = e - ln(x)
-				//   inner_b = eml(inner_a, 1)  = exp(e - ln(x)) - ln(1)
-				//                              = exp(e) * exp(-ln(x))   = exp(e) / x
-				//   outer   = eml(1, inner_b)  = exp(1) - ln(exp(e)/x)
-				//                              = e - (e - ln(x))        = ln(x).
+				// (Odrzywołek 2026, Eq. (5), K=7. Domain: x > 0.)
+				// Using e := exp(1) and the definition eml(u, v) = exp(u) - ln(v):
+				//   inner_a = eml(1, x)        = e - ln(x)
+				//   inner_b = eml(inner_a, 1)  = exp(e - ln(x)) = exp(e) / x
+				//   outer   = eml(1, inner_b)  = e - (e - ln(x)) = ln(x).
 				$xnode = array( 'type' => 'VAR', 'name' => $x );
-				$one   = array( 'type' => 'NUM', 'value' => 1.0 );
 				$a     = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );
 				$b     = array( 'type' => 'EML', 'left' => $a, 'right' => $one );
 				return array( 'type' => 'EML', 'left' => $one, 'right' => $b );
+			case 'zero':
+				// 0 = ln(1) via Eq. (5) at z = 1, giving the pure EML tree
+				//   eml(1, eml(eml(1, 1), 1))
+				// (Odrzywołek 2026, Figure 2, K=7. Total domain.)
+				$ee = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
+				$bb = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
+				return array( 'type' => 'EML', 'left' => $one, 'right' => $bb );
+			case 'sub':
+				// x − y = eml(eml(1, eml(eml(1, x), 1)), eml(y, 1))
+				// Chain: eml(ln(x), exp(y)) = (e^{ln x}) − ln(e^y) = x − y.
+				// (Odrzywołek 2026, Table 4, K=11. Domain: x > 0; y unrestricted in ℝ.)
+				$x     = isset( $args[0] ) ? $args[0] : 'x';
+				$y     = isset( $args[1] ) ? $args[1] : 'y';
+				$xnode = array( 'type' => 'VAR', 'name' => $x );
+				$ynode = array( 'type' => 'VAR', 'name' => $y );
+				// Build ln(x) sub-tree: eml(1, eml(eml(1, x), 1)).
+				$ln_a    = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );
+				$ln_b    = array( 'type' => 'EML', 'left' => $ln_a, 'right' => $one );
+				$ln_x    = array( 'type' => 'EML', 'left' => $one, 'right' => $ln_b );
+				// exp(y) = eml(y, 1).
+				$exp_y = array( 'type' => 'EML', 'left' => $ynode, 'right' => $one );
+				return array( 'type' => 'EML', 'left' => $ln_x, 'right' => $exp_y );
+			case 'neg':
+				// −x = eml(eml(1, eml(eml(1, eml(1, eml(x, 1))), 1)), eml(eml(1, 1), 1))
+				// Chain (numbered as in the paper / Lean formalization):
+				//   X4 = eml(x, 1)        = exp(x)
+				//   X3 = eml(1, X4)       = e − x
+				//   X2 = eml(1, X3)       = e − ln(e − x)
+				//   X1 = eml(X2, 1)       = exp(X2)
+				//   LEFT  = eml(1, X1)    = e − exp(X2) = ln(e − x)
+				//   RIGHT = eml(eml(1,1), 1) = exp(e)
+				//   −x = eml(LEFT, RIGHT) = exp(ln(e − x)) − ln(exp(e))
+				//                         = (e − x) − e = −x.
+				// (Odrzywołek 2026, Table 4. Domain: x < e ≈ 2.718, so that
+				//  e − x > 0 and the inner ln is real.)
+				$x      = isset( $args[0] ) ? $args[0] : 'x';
+				$xnode  = array( 'type' => 'VAR', 'name' => $x );
+				$exp_x  = array( 'type' => 'EML', 'left' => $xnode, 'right' => $one );
+				$x3     = array( 'type' => 'EML', 'left' => $one, 'right' => $exp_x );
+				$x2     = array( 'type' => 'EML', 'left' => $one, 'right' => $x3 );
+				$x1     = array( 'type' => 'EML', 'left' => $x2, 'right' => $one );
+				$left   = array( 'type' => 'EML', 'left' => $one, 'right' => $x1 );
+				$ee     = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
+				$exp_e  = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
+				return array( 'type' => 'EML', 'left' => $left, 'right' => $exp_e );
+			case 'inv':
+				// 1/x = eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), eml(eml(1, 1), 1)), 1)
+				// Chain: exp(−ln(x)) = 1/x.
+				// (Odrzywołek 2026, Table 4. Domain: 0 < x < e^e ≈ 15.154,
+				//  so that ln(x) < e and the intermediate e − ln(x) is positive.)
+				$x       = isset( $args[0] ) ? $args[0] : 'x';
+				$xnode   = array( 'type' => 'VAR', 'name' => $x );
+				$e_lnx_a = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode ); // e − ln(x)
+				$e_lnx_b = array( 'type' => 'EML', 'left' => $one, 'right' => $e_lnx_a ); // e − ln(e−ln x)
+				$e_lnx_c = array( 'type' => 'EML', 'left' => $e_lnx_b, 'right' => $one ); // exp(...)
+				$ln_e_lnx = array( 'type' => 'EML', 'left' => $one, 'right' => $e_lnx_c ); // ln(e − ln x)
+				$ee      = array( 'type' => 'EML', 'left' => $one, 'right' => $one );
+				$exp_e   = array( 'type' => 'EML', 'left' => $ee, 'right' => $one );
+				$neg_lnx = array( 'type' => 'EML', 'left' => $ln_e_lnx, 'right' => $exp_e ); // −ln(x)
+				return array( 'type' => 'EML', 'left' => $neg_lnx, 'right' => $one ); // exp(−ln x) = 1/x
+			case 'mul':
+				// x · y = eml(eml(1, eml(eml(eml(1, eml(eml(1, eml(1, x)), 1)), y), 1)), 1)
+				// Chain: shares the inv prefix to obtain ln(e − ln x), then
+				//   eml(ln(e − ln x), y) = (e − ln x) − ln y = e − ln(xy)
+				// and exp ∘ ln recovers x·y.
+				// (Odrzywołek 2026, Table 4. Domain: x, y > 0 and x < e^e.)
+				$x     = isset( $args[0] ) ? $args[0] : 'x';
+				$y     = isset( $args[1] ) ? $args[1] : 'y';
+				$xnode = array( 'type' => 'VAR', 'name' => $x );
+				$ynode = array( 'type' => 'VAR', 'name' => $y );
+				$a     = array( 'type' => 'EML', 'left' => $one, 'right' => $xnode );      // e − ln x
+				$b     = array( 'type' => 'EML', 'left' => $one, 'right' => $a );           // e − ln(e − ln x)
+				$c     = array( 'type' => 'EML', 'left' => $b, 'right' => $one );           // exp(...)
+				$d     = array( 'type' => 'EML', 'left' => $one, 'right' => $c );           // ln(e − ln x)
+				$e2    = array( 'type' => 'EML', 'left' => $d, 'right' => $ynode );         // (e − ln x) − ln y
+				$f     = array( 'type' => 'EML', 'left' => $e2, 'right' => $one );          // exp(e − ln(xy))
+				$g     = array( 'type' => 'EML', 'left' => $one, 'right' => $f );           // ln(xy)
+				return array( 'type' => 'EML', 'left' => $g, 'right' => $one );             // exp(ln(xy)) = xy
 		}
 		return new WP_Error(
 			'wp_mcp_ai_unsupported_decomposition',
 			/* translators: %s: function name */
 			sprintf(
-				__( 'Decomposition for "%s" is not encoded in this tool. See the paper\'s Appendix table for the full catalogue.', 'mcp-ai-wpoos-pro' ),
+				__( 'Decomposition for "%s" is not encoded in this tool. See the paper\'s Table 4 / Figure 2 for the full catalogue.', 'mcp-ai-wpoos-pro' ),
 				$function
 			)
 		);

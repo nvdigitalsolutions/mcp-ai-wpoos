@@ -212,6 +212,213 @@ class Test_Tool_Evaluate_Eml extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test: decompose zero (Eq. (5) at z=1, Figure 2, K=7).
+	 *
+	 * Also exercises the nullary-argument path: omitting `arity_args`
+	 * entirely must succeed because `zero` takes no inputs.
+	 */
+	public function test_decompose_zero() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'     => 'decompose',
+				'function' => 'zero',
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r );
+		$this->assertSame( 'eml(1, eml(eml(1, 1), 1))', $r['canonical'] );
+		$this->assertSame( 7, $r['size'] );
+		$round = $tool->execute(
+			array(
+				'mode'       => 'evaluate',
+				'expression' => $r['canonical'],
+			)
+		);
+		$this->assertEqualsWithDelta( 0.0, $round['value'], 1e-12 );
+
+		// Explicitly empty arity_args must also succeed.
+		$r2 = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'zero',
+				'arity_args' => array(),
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r2 );
+		$this->assertSame( $r['canonical'], $r2['canonical'] );
+	}
+
+	/**
+	 * Test: decompose sub (Table 4, K=11). Domain x > 0.
+	 */
+	public function test_decompose_sub_round_trip() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'sub',
+				'arity_args' => array( 'x', 'y' ),
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r );
+		$this->assertSame( 11, $r['size'] );
+
+		foreach ( array( array( 5.0, 2.0 ), array( 0.5, 1.7 ), array( 10.0, 3.0 ) ) as $pair ) {
+			list( $x, $y ) = $pair;
+			$round         = $tool->execute(
+				array(
+					'mode'       => 'evaluate',
+					'expression' => $r['canonical'],
+					'variables'  => array(
+						'x' => $x,
+						'y' => $y,
+					),
+				)
+			);
+			$this->assertEqualsWithDelta( $x - $y, $round['value'], 1e-10 );
+		}
+	}
+
+	/**
+	 * Test: decompose neg (Table 4). Domain 0 < x < e.
+	 */
+	public function test_decompose_neg_round_trip() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'neg',
+				'arity_args' => array( 'x' ),
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r );
+
+		foreach ( array( 0.5, 1.0, 2.0, 2.5 ) as $x ) {
+			$round = $tool->execute(
+				array(
+					'mode'       => 'evaluate',
+					'expression' => $r['canonical'],
+					'variables'  => array( 'x' => $x ),
+				)
+			);
+			$this->assertEqualsWithDelta( -$x, $round['value'], 1e-10 );
+		}
+	}
+
+	/**
+	 * Test: neg out-of-domain (x >= e) yields a domain error.
+	 */
+	public function test_decompose_neg_out_of_domain() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'neg',
+				'arity_args' => array( 'x' ),
+			)
+		);
+		// x = 3 > e ⇒ inner ln of (e − x) is undefined ⇒ domain error.
+		$round = $tool->execute(
+			array(
+				'mode'       => 'evaluate',
+				'expression' => $r['canonical'],
+				'variables'  => array( 'x' => 3.0 ),
+			)
+		);
+		$this->assertWPError( $round );
+	}
+
+	/**
+	 * Test: decompose inv (Table 4). Domain 0 < x < e^e.
+	 */
+	public function test_decompose_inv_round_trip() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'inv',
+				'arity_args' => array( 'x' ),
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r );
+
+		foreach ( array( 0.25, 0.5, 1.0, 2.0, 5.0, 10.0 ) as $x ) {
+			$round = $tool->execute(
+				array(
+					'mode'       => 'evaluate',
+					'expression' => $r['canonical'],
+					'variables'  => array( 'x' => $x ),
+				)
+			);
+			$this->assertEqualsWithDelta( 1.0 / $x, $round['value'], 1e-10 );
+		}
+	}
+
+	/**
+	 * Test: inv out-of-domain (x >= e^e ≈ 15.15) yields a domain error.
+	 */
+	public function test_decompose_inv_out_of_domain() {
+		$this->maybe_skip();
+		$tool  = $this->get_tool();
+		$r     = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'inv',
+				'arity_args' => array( 'x' ),
+			)
+		);
+		$round = $tool->execute(
+			array(
+				'mode'       => 'evaluate',
+				'expression' => $r['canonical'],
+				'variables'  => array( 'x' => 20.0 ),
+			)
+		);
+		$this->assertWPError( $round );
+	}
+
+	/**
+	 * Test: decompose mul (Table 4). Domain x, y > 0 and x < e^e.
+	 */
+	public function test_decompose_mul_round_trip() {
+		$this->maybe_skip();
+		$tool = $this->get_tool();
+		$r    = $tool->execute(
+			array(
+				'mode'       => 'decompose',
+				'function'   => 'mul',
+				'arity_args' => array( 'x', 'y' ),
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $r );
+
+		foreach ( array(
+			array( 2.0, 3.0 ),
+			array( 0.5, 4.0 ),
+			array( 1.5, 1.5 ),
+			array( 7.0, 0.25 ),
+		) as $pair ) {
+			list( $x, $y ) = $pair;
+			$round         = $tool->execute(
+				array(
+					'mode'       => 'evaluate',
+					'expression' => $r['canonical'],
+					'variables'  => array(
+						'x' => $x,
+						'y' => $y,
+					),
+				)
+			);
+			$this->assertEqualsWithDelta( $x * $y, $round['value'], 1e-9 );
+		}
+	}
+
+	/**
 	 * Test: depth cap.
 	 */
 	public function test_depth_cap() {
