@@ -1,17 +1,34 @@
 # Architectural Design Toolkit
 
-> AI-assisted architectural design with regional code compliance for **Sri Lanka (primary), Jamaica, and the United States**. Floor plans, 3D models, construction drawings, material schedules, code compliance, and cost estimation.
+> AI-assisted architectural design with regional code compliance for **Sri Lanka (primary), Jamaica, and the United States**. Floor plans, 3D models, construction drawings, material schedules, regional code compliance (UDA / JNBC / IBC-IRC), structural & sustainability analysis, certification scoring (EDGE, LEED v4), BIM interoperability (DWG / IFC / gbXML), project delivery (BEP, RFI, submittals), and a searchable precedent library.
 
 | | |
 |---|---|
 | **Activation setting** | `enable_architectural_design_toolkit` |
 | **Admin location** | NV oOS → Settings → Pro Features → Architectural Design |
 | **Toolkit settings** | `wp_mcp_ai_arch_design_settings` (default country, units, currency, code pack) |
-| **Tools (Phase A)** | 16 |
-| **Custom Post Types** | Architectural Project, Drawing, Specification |
+| **Tools (Phase A–E, all shipped)** | 39 |
+| **Custom Post Types** | Architectural Project, Drawing, Specification, Precedent |
 | **Source** | `addons/pro/includes/tools/architectural-design/` |
 
 > **Analytical / advisory output only.** Engage a registered architect (e.g. SLIA in Sri Lanka, Jamaican Institute of Architects in Jamaica, or AIA in the US), chartered structural engineer, MEP engineer, and quantity surveyor before any planning submission or construction contract.
+
+---
+
+## What this toolkit does
+
+The Architectural Design Toolkit turns NV oOS into an end-to-end **AI co-pilot for the building lifecycle** — from initial massing through regulator-ready submission packages and post-tender delivery management. It is organised as a stack of composable tools (each registered with the standard tool registry) that share a single project model:
+
+* **Conceptual design** — generate, vary, and optimise floor plans; translate hand sketches into vector plans; produce 3D massing and architectural renderings; create walkthrough animations.
+* **Construction documentation** — synthesise full construction drawing sets, detail drawings, material schedules, and an automated construction timeline; export packaged documents.
+* **Regional code compliance** — wind & seismic load calculations, setback / FAR validation, and country-specific code checks for Sri Lanka (UDA Planning & Building Regulations + 2025 gazette), Jamaica (JNBC 2018 with hurricane-zone overlays), and the US (IBC 2024, IRC 2024, IECC 2024, ASCE 7-22, ADA 2010). A consolidated `generate_compliance_dossier` rolls every check into a regulator-ready report.
+* **Building physics & sustainability** — natural-ventilation, daylight & solar-gain, and thermal-comfort simulations; quantitative sustainability metrics; certification scoring against IFC EDGE and LEED v4.
+* **Cost & schedule depth** — construction-cost estimation, full bill of quantities, value-engineering option proposals, and timeline scheduling.
+* **Interoperability** — round-trip with CAD/BIM ecosystems via DWG floor-plan import, IFC 4.3 import/export, and gbXML export for energy-analysis tools.
+* **Project delivery** — BIM Execution Plan generation (AIA E202/E203 / ISO 19650 aligned), RFI log management, and submittal log management.
+* **Precedent library** — searchable, semantic-indexed precedent CPT (`mcp_ai_arch_precedent`) for case studies, materials, details, and design-pattern reuse.
+
+A shared `WP_MCP_AI_Architectural_Engine` provides industry-standard math (units, FAR, occupancy, wind/seismic, ventilation, cost rates), `WP_MCP_AI_Architectural_Codes` exposes structured regional rule packs, and `WP_MCP_AI_Architectural_Precedents_Engine` powers semantic search over the precedent corpus.
 
 ---
 
@@ -19,19 +36,19 @@
 
 Tools are grouped by concern, mirroring the [CRE Debt Toolkit](cre-debt.md):
 
-| Module | Folder | Tools |
-|---|---|---|
-| Floor Planning & Space Design | `floor-planning/` | 4 |
-| 3D Modeling & Visualization | `visualization/` | 3 |
-| Documentation & Blueprints | `documentation/` | 3 |
-| Analysis & Compliance | `analysis-compliance/` | 3 |
-| Estimation & Scheduling | `estimation-scheduling/` | 3 |
-| Regional Compliance | `regional-compliance/` | _(Phase B — planned)_ |
-| Sustainability | `sustainability/` | _(Phase B — planned)_ |
-| Interoperability | `interoperability/` | _(Phase D — planned)_ |
-| Project Delivery | `project-delivery/` | _(Phase D — planned)_ |
-
-A shared `WP_MCP_AI_Architectural_Engine` provides industry-standard math (units, FAR, occupancy, wind/seismic, ventilation, cost rates), and `WP_MCP_AI_Architectural_Codes` exposes structured regional rule packs.
+| Module | Folder | Tools | Phase |
+|---|---|---|---|
+| Floor Planning & Space Design | `floor-planning/` | 4 | A |
+| 3D Modeling & Visualization | `visualization/` | 3 | A |
+| Documentation & Blueprints | `documentation/` | 3 | A |
+| Analysis & Compliance | `analysis-compliance/` | 5 | A + B |
+| Estimation & Scheduling | `estimation-scheduling/` | 5 | A + C |
+| Regional Compliance | `regional-compliance/` | 7 | B |
+| Sustainability | `sustainability/` | 3 | B + C |
+| Interoperability | `interoperability/` | 4 | D |
+| Project Delivery | `project-delivery/` | 3 | D |
+| Precedents | `precedents/` | 2 | E |
+| **Total** | | **39** | **A–E shipped** |
 
 ---
 
@@ -40,7 +57,13 @@ A shared `WP_MCP_AI_Architectural_Engine` provides industry-standard math (units
 - **Floor plans & layouts:** `generate_floor_plan`, `convert_sketch_to_floor_plan`, `create_floor_plan_variations`, `optimize_space_layout`
 - **3D & rendering:** `generate_3d_model`, `render_architectural_view`, `create_walkthrough_animation`
 - **Construction docs:** `generate_construction_drawings`, `generate_detail_drawings`, `generate_material_schedule`, `generate_construction_timeline`, `export_architectural_documents`
-- **Analysis & compliance:** `analyze_structural_feasibility`, `check_building_code_compliance`, `calculate_sustainability_metrics`, `estimate_construction_cost`
+- **Analysis & compliance (Phase A):** `analyze_structural_feasibility`, `check_building_code_compliance`, `calculate_sustainability_metrics`, `estimate_construction_cost`
+- **Regional compliance (Phase B):** `calculate_wind_loads`, `calculate_seismic_loads`, `validate_setbacks_and_far`, `check_uda_planning_compliance`, `check_jnbc_hurricane_compliance`, `check_us_ibc_irc_compliance`, `generate_compliance_dossier`
+- **Building physics (Phase B):** `analyze_natural_ventilation`, `analyze_daylight_and_solar_gain`, `simulate_thermal_comfort`
+- **Sustainability scoring & costing depth (Phase C):** `score_edge_certification`, `score_leed_v4_certification`, `generate_bill_of_quantities`, `propose_value_engineering_options`
+- **Interoperability (Phase D):** `import_dwg_floor_plan`, `import_ifc_model`, `export_to_ifc`, `export_to_gbxml`
+- **Project delivery (Phase D):** `generate_bim_execution_plan`, `manage_rfi_log`, `manage_submittal_log`
+- **Precedent library (Phase E):** `manage_architectural_precedents`, `search_architectural_precedents`
 
 ---
 
@@ -81,11 +104,12 @@ A shared `WP_MCP_AI_Architectural_Engine` provides industry-standard math (units
 
 ### Custom post types
 
-| CPT slug |
-|---|
-| `mcp_ai_arch_project` |
-| `mcp_ai_arch_drawing` |
-| `mcp_ai_arch_spec` |
+| CPT slug | Purpose |
+|---|---|
+| `mcp_ai_arch_project` | Architectural project root record |
+| `mcp_ai_arch_drawing` | Generated/imported drawing or model |
+| `mcp_ai_arch_spec` | Specification / schedule entry |
+| `mcp_ai_arch_precedent` | Precedent-library entry (Phase E) |
 
 Tool source: `addons/pro/includes/tools/architectural-design/`.
 
