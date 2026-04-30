@@ -126,6 +126,12 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'description' => __( 'When true, include the full content of each memory in the rendered block. When false, only the title and metadata are rendered (smallest possible block).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
+				'mode'            => array(
+					'type'        => 'string',
+					'description' => __( 'Retrieval strategy. "auto" (default) uses graph traversal when the Graphify addon is active, and falls back to the transient + cosine path otherwise. "graph" forces graph traversal (errors if Graphify is unavailable). "transient" forces the legacy path even when Graphify is present.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'auto', 'graph', 'transient' ),
+					'default'     => 'auto',
+				),
 			),
 			'required'             => array( 'agent_id' ),
 			'additionalProperties' => false,
@@ -154,6 +160,10 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$top_n           = isset( $arguments['top_n'] ) ? max( 1, min( 50, absint( $arguments['top_n'] ) ) ) : self::DEFAULT_TOP_N;
 		$token_budget    = isset( $arguments['token_budget'] ) ? max( 50, min( 8000, absint( $arguments['token_budget'] ) ) ) : self::DEFAULT_TOKEN_BUDGET;
 		$include_content = isset( $arguments['include_content'] ) ? (bool) $arguments['include_content'] : true;
+		$mode            = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'auto';
+		if ( ! in_array( $mode, array( 'auto', 'graph', 'transient' ), true ) ) {
+			$mode = 'auto';
+		}
 
 		/**
 		 * Filter the maximum number of memories considered for wake-up before
@@ -220,7 +230,110 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$retrieve_args['query'] = $query;
 		}
 
-		$result = $retrieve->execute( $retrieve_args, $context );
+		// Resolve whether the graph path should be used.
+		$graphify_available = class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+		$use_graph          = false;
+		if ( 'graph' === $mode ) {
+			if ( ! $graphify_available ) {
+				return array(
+					'success' => false,
+					'message' => __( 'Graph mode requested but the Graphify addon is not active.', 'mcp-ai-wpoos' ),
+				);
+			}
+			$use_graph = true;
+		} elseif ( 'auto' === $mode && $graphify_available ) {
+			$use_graph = true;
+		}
+
+		$retrieval_path = 'transient';
+		$result         = null;
+
+		if ( $use_graph ) {
+			$ranked = NV_oOS_Graphify_Memory_Bridge::retrieve_graph(
+				array(
+					'agent_id' => $agent_id,
+					'wing'     => $wing,
+					'room'     => $room,
+					'query'    => $query,
+					'limit'    => $top_n,
+				)
+			);
+
+			$context_ids = array_values(
+				array_filter(
+					array_map(
+						static function ( $r ) {
+							return isset( $r['context_id'] ) ? (string) $r['context_id'] : '';
+						},
+						$ranked
+					)
+				)
+			);
+
+			/**
+			 * Filter the ordered context_id list produced by graph retrieval
+			 * before each memory is fetched from the underlying store.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param string[]   $context_ids Ordered list of context ids.
+			 * @param array      $ranked      Raw graph-retrieval scores: [{context_id, score, via}].
+			 * @param int|string $agent_id    Agent identifier.
+			 * @param string     $wing        Wing scope (may be empty).
+			 * @param string     $room        Room scope (may be empty).
+			 * @param string     $query       Query string (may be empty).
+			 */
+			$context_ids = (array) apply_filters(
+				'wp_mcp_ai_wake_up_graph_context_ids',
+				$context_ids,
+				$ranked,
+				$agent_id,
+				$wing,
+				$room,
+				$query
+			);
+
+			if ( ! empty( $context_ids ) ) {
+				// Fetch each memory by id using the existing single-id retrieval
+				// surface; this keeps filters/expiry handling consistent with
+				// the legacy path while preserving graph-determined order.
+				$contexts = array();
+				foreach ( $context_ids as $cid ) {
+					$single = $retrieve->execute(
+						array(
+							'agent_id'   => $agent_id,
+							'context_id' => $cid,
+						),
+						$context
+					);
+					if ( empty( $single['success'] ) || empty( $single['contexts'] ) ) {
+						continue;
+					}
+					$record = $single['contexts'][0];
+					if ( ! $this->matches_wake_filters( $record, $filters ) ) {
+						continue;
+					}
+					$contexts[] = $record;
+					if ( count( $contexts ) >= $top_n ) {
+						break;
+					}
+				}
+
+				if ( ! empty( $contexts ) ) {
+					$result         = array(
+						'success'  => true,
+						'contexts' => $contexts,
+						'count'    => count( $contexts ),
+					);
+					$retrieval_path = 'graph';
+				}
+			}
+			// Falls through to legacy retrieval when the graph yields nothing.
+		}
+
+		if ( null === $result ) {
+			$result = $retrieve->execute( $retrieve_args, $context );
+		}
 		if ( empty( $result['success'] ) || empty( $result['contexts'] ) ) {
 			return array(
 				'success'         => true,
@@ -233,6 +346,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'wing'            => $wing,
 				'room'            => $room,
 				'agent_id'        => $agent_id,
+				'retrieval_path'  => $retrieval_path,
 			);
 		}
 
@@ -263,16 +377,17 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		if ( empty( $rendered ) ) {
 			return array(
-				'success'      => true,
-				'message'      => __( 'Token budget too small to render any memory entries.', 'mcp-ai-wpoos' ),
-				'system_block' => '',
-				'count'        => 0,
-				'truncated'    => $truncated,
-				'tokens_used'  => 0,
-				'token_budget' => $token_budget,
-				'wing'         => $wing,
-				'room'         => $room,
-				'agent_id'     => $agent_id,
+				'success'        => true,
+				'message'        => __( 'Token budget too small to render any memory entries.', 'mcp-ai-wpoos' ),
+				'system_block'   => '',
+				'count'          => 0,
+				'truncated'      => $truncated,
+				'tokens_used'    => 0,
+				'token_budget'   => $token_budget,
+				'wing'           => $wing,
+				'room'           => $room,
+				'agent_id'       => $agent_id,
+				'retrieval_path' => $retrieval_path,
 			);
 		}
 
@@ -306,6 +421,7 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'wing'            => $wing,
 			'room'            => $room,
 			'agent_id'        => $agent_id,
+			'retrieval_path'  => $retrieval_path,
 			'memories_loaded' => array_map(
 				static function ( $memory ) {
 					return array(
@@ -379,6 +495,38 @@ class WP_MCP_AI_Tool_Wake_Up_Context implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return 0;
 		}
 		return (int) ceil( mb_strlen( $text ) / 4 );
+	}
+
+	/**
+	 * Apply the subset of wake-up filters that the graph path may not have
+	 * already enforced (context_types and min_importance) against a flattened
+	 * memory record returned by retrieve_agent_memory.
+	 *
+	 * Wing/room are already enforced by the graph anchors, and tag/date
+	 * filters are not exposed by the wake-up schema in Phase 4a.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $record  Flattened memory record (from format_context_result).
+	 * @param array $filters Filters built earlier in execute().
+	 * @return bool True when the record satisfies the filters.
+	 */
+	private function matches_wake_filters( array $record, array $filters ) {
+		if ( ! empty( $filters['context_types'] ) && is_array( $filters['context_types'] ) ) {
+			$type = isset( $record['context_type'] ) ? (string) $record['context_type'] : '';
+			if ( ! in_array( $type, $filters['context_types'], true ) ) {
+				return false;
+			}
+		}
+
+		if ( ! empty( $filters['importance'] ) && is_array( $filters['importance'] ) ) {
+			$importance = isset( $record['importance'] ) ? (string) $record['importance'] : 'medium';
+			if ( ! in_array( $importance, $filters['importance'], true ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

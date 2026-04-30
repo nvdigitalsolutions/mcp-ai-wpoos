@@ -348,6 +348,72 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		// Invalidate dashboard memory stats cache to show updated data immediately.
 		delete_transient( 'wp_mcp_ai_agent_memory_stats' );
 
+		// Derive source pointers from the caller-supplied content_source for the event payload.
+		$src_post_id = 0;
+		$src_url     = '';
+		$src_type    = '';
+		if ( ! empty( $arguments['content_source'] ) && is_array( $arguments['content_source'] ) ) {
+			$src_type = isset( $arguments['content_source']['type'] ) ? sanitize_key( $arguments['content_source']['type'] ) : '';
+			if ( 'post' === $src_type && ! empty( $arguments['content_source']['post_id'] ) ) {
+				$src_post_id = absint( $arguments['content_source']['post_id'] );
+			}
+			if ( 'url' === $src_type && ! empty( $arguments['content_source']['url'] ) ) {
+				$src_url = esc_url_raw( $arguments['content_source']['url'] );
+			}
+		}
+
+		/**
+		 * Fires after a memory has been persisted to the transient store.
+		 *
+		 * Subscribers can use this to mirror the memory into a secondary store
+		 * (e.g. the Graphify knowledge-graph addon, an external vector DB, or
+		 * an analytics pipeline). The transient remains the source of truth in
+		 * Phase 4a — listeners are advisory and must be tolerant of failure.
+		 *
+		 * Payload keys:
+		 *   - context_id      string   Stable identifier (`ctx_*`).
+		 *   - agent_id        int|str  Agent post ID or virtual agent slug.
+		 *   - context_type    string   Sanitized type slug (e.g. `learning`, `fact`).
+		 *   - content         string   Final stored content (post-transform unless verbatim).
+		 *   - title           string   Final stored title.
+		 *   - importance      string   `low|medium|high|critical` (defaults to `medium`).
+		 *   - tags            array    Normalised tag list.
+		 *   - wing            string   MemPalace wing scope (may be empty).
+		 *   - room            string   MemPalace room scope (may be empty).
+		 *   - verbatim        bool     Verbatim discipline flag.
+		 *   - source_post_id  int      WordPress post ID (0 when not derived from a post).
+		 *   - source_url      string   Source URL (empty when not URL-derived).
+		 *   - source_type     string   `vector_store|post|url|''` from content_source.
+		 *   - stored_at       string   MySQL timestamp.
+		 *   - expires_at      string   MySQL timestamp.
+		 *   - ttl             int      Time-to-live in seconds.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array $payload Normalised event payload (see above).
+		 */
+		do_action(
+			'wp_mcp_ai_memory_stored',
+			array(
+				'context_id'     => $context_id,
+				'agent_id'       => $agent_id,
+				'context_type'   => $context_type,
+				'content'        => isset( $context_data['content'] ) ? (string) $context_data['content'] : '',
+				'title'          => isset( $context_data['title'] ) ? (string) $context_data['title'] : '',
+				'importance'     => isset( $context_data['importance'] ) ? (string) $context_data['importance'] : 'medium',
+				'tags'           => isset( $context_data['tags'] ) && is_array( $context_data['tags'] ) ? array_values( $context_data['tags'] ) : array(),
+				'wing'           => $wing,
+				'room'           => $room,
+				'verbatim'       => $verbatim,
+				'source_post_id' => $src_post_id,
+				'source_url'     => $src_url,
+				'source_type'    => $src_type,
+				'stored_at'      => $context_record['stored_at'],
+				'expires_at'     => $context_record['expires_at'],
+				'ttl'            => $ttl,
+			)
+		);
+
 		return array(
 			'success'         => true,
 			'message'         => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),
