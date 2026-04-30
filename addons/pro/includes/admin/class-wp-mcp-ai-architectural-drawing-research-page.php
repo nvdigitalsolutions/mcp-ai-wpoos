@@ -206,6 +206,30 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 								<?php esc_html_e( 'Add Drawing Manually', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-architectural-design-toolkit-settings' ) ); ?>" class="button">
+								<?php esc_html_e( 'Toolkit Documentation', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
+					</div>
+
+					<div class="wp-mcp-ai-research-related" style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 12px 16px; margin: 20px 0;">
+						<h3 style="margin-top: 0;"><?php esc_html_e( 'Related Pro Toolkits', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p style="margin: 4px 0 8px;">
+							<?php esc_html_e( 'These pro toolkits use the same enhanced Research & Add experience and pair well with architectural drawings:', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<p style="margin: 4px 0;">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_project&page=research-project' ) ); ?>" class="button button-small">
+								<span class="dashicons dashicons-portfolio" style="vertical-align: middle;"></span>
+								<?php esc_html_e( 'Project Management — Research & Add', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
+						<p style="margin: 4px 0;">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_member&page=health-records-consolidate' ) ); ?>" class="button button-small">
+								<span class="dashicons dashicons-heart" style="vertical-align: middle;"></span>
+								<?php esc_html_e( 'Health & Wellness — Consolidate & Add', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
 					</div>
 
 					<div class="drawing-types-reference" style="background: #f0f6fc; border-left: 4px solid #0073aa; padding: 12px 16px; margin: 20px 0;">
