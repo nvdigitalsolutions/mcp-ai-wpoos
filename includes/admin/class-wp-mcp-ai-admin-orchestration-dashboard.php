@@ -1287,7 +1287,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		<div
 			class="<?php echo esc_attr( $pane_classes ); ?>"
 			data-group-pane="<?php echo esc_attr( $group_key ); ?>"
-			<?php echo $is_active ? '' : 'aria-hidden="true"'; ?>
+			<?php
+			if ( ! $is_active ) :
+				?>
+				aria-hidden="true"<?php endif; ?>
 		>
 			<?php if ( empty( $counts ) ) : ?>
 				<p class="description">
