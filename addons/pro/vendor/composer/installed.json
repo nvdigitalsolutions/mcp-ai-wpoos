@@ -1458,6 +1458,6 @@
             "install-path": "../thiagoalessio/tesseract_ocr"
         }
     ],
-    "dev": true,
+    "dev": false,
     "dev-package-names": []
 }
