@@ -1423,6 +1423,15 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached ) {
+			// Always recompute `bridge_active` because Graphify can be
+			// activated/deactivated at any time and the class_exists() check is
+			// cheap. Without this, a stale `false` from before Graphify was
+			// enabled would survive for up to 5 minutes after activation,
+			// causing the dashboard to incorrectly show "Graphify Memory
+			// Bridge: not installed" even though the add-on is active.
+			if ( is_array( $cached ) ) {
+				$cached['bridge_active'] = class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+			}
 			return $cached;
 		}
 

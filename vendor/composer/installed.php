@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-graphify-memory-bridge-error',
+        'version' => 'dev-copilot/fix-graphify-memory-bridge-error',
+        'reference' => '8956fe18018c3a10c6fa0d1c0d44d77bc32bc5b5',
         'pretty_version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
         'version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
         'reference' => '22668630a6e54ed441748b498608851a305a9003',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-graphify-memory-bridge-error',
+            'version' => 'dev-copilot/fix-graphify-memory-bridge-error',
+            'reference' => '8956fe18018c3a10c6fa0d1c0d44d77bc32bc5b5',
             'pretty_version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
             'version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
             'reference' => '22668630a6e54ed441748b498608851a305a9003',

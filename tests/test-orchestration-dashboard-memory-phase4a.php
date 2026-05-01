@@ -199,6 +199,49 @@ class Test_Orchestration_Dashboard_Memory_Phase4a extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Bridge flag must be recomputed on cache hits so that activating the
+	 * Graphify add-on after the dashboard was first viewed does not leave a
+	 * stale `false` baked into the 5-minute transient cache.
+	 *
+	 * Regression: dashboard reported "Graphify Memory Bridge: not installed"
+	 * for up to 5 minutes after Graphify was activated.
+	 */
+	public function test_bridge_active_recomputed_on_cache_hit() {
+		// Seed the cache with a stale false (simulates dashboard view before
+		// the Graphify add-on was activated).
+		$stale = array(
+			'total_contexts'         => 0,
+			'total_agents'           => 0,
+			'contexts_by_type'       => array(),
+			'contexts_by_wing'       => array(),
+			'contexts_by_importance' => array(),
+			'wings_count'            => 0,
+			'rooms_count'            => 0,
+			'mined_count'            => 0,
+			'bridge_active'          => false,
+			'retrieval_path'         => array(
+				'graph'     => 0,
+				'transient' => 0,
+				'total'     => 0,
+			),
+			'persistent_storage'     => array(
+				'cct_count'      => 0,
+				'available'      => false,
+				'tier_breakdown' => array(),
+			),
+		);
+		set_transient( 'wp_mcp_ai_agent_memory_stats', $stale, 5 * MINUTE_IN_SECONDS );
+
+		$stats = $this->invoke( 'get_agent_memory_stats' );
+
+		// Cached payload was returned (total_contexts is the cached zero, not
+		// a recomputed value), but `bridge_active` is the live class-existence
+		// state.
+		$this->assertSame( 0, $stats['total_contexts'] );
+		$this->assertSame( class_exists( 'NV_oOS_Graphify_Memory_Bridge' ), $stats['bridge_active'] );
+	}
+
+	/**
 	 * `record_retrieval_telemetry()` accumulates 7-day rolling totals.
 	 */
 	public function test_record_retrieval_telemetry_aggregates_into_stats() {
