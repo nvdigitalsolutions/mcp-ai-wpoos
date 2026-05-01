@@ -195,7 +195,7 @@ abstract class WP_MCP_AI_Tool_Harmonization_Base implements
 
 		if ( 'openai' === $provider && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
-			$result = $client->edit_image( $path, $prompt, array( 'model' => 'gpt-image-1' ) );
+			$result = $client->edit_image( $path, $prompt, array( 'model' => 'gpt-image-2' ) );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}

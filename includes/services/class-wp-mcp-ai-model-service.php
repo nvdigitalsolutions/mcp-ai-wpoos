@@ -976,7 +976,7 @@ class WP_MCP_AI_Model_Service {
 				'latest'    => 'gpt-5.4',
 				'budget'    => 'gpt-5.4-mini',
 				'vision'    => 'gpt-4.1',
-				'image'     => 'gpt-image-1.5',
+				'image'     => 'gpt-image-2',
 				'audio_in'  => 'gpt-4o-mini-transcribe',
 				'audio_out' => 'gpt-4o-mini-tts',
 			),

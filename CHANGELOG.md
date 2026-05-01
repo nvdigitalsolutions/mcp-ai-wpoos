@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Added — OpenAI Images 2.0 (`gpt-image-2`) support
+
+OpenAI released **gpt-image-2** ("ChatGPT Images 2.0") in April 2026 with native 2K resolution, multi-image coherency, near-flawless multilingual text rendering, and broader aspect-ratio support. The plugin now supports it as a first-class image model and uses it as the default.
+
+- New default image model is `gpt-image-2` across the base plugin and Pro image tools (was `gpt-image-1.5`). Existing sites with a saved `openai_image_model` setting are unaffected — the change only impacts fresh installs and tools that pinned a hardcoded `gpt-image-1` default.
+- `WP_MCP_AI_OpenAI_Client::image_model_supports_response_format()` and the internal quality-normalization logic now recognise `gpt-image-2` as part of the `gpt-image` family (uses `low|medium|high|auto`, does not accept the `response_format` parameter).
+- `WP_MCP_AI_Tool_Generate_OpenAI_Image` allows three new 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square 2K), `2048x1152` (16:9 widescreen), `1152x2048` (9:16 vertical). Cost and token-estimation tables updated accordingly.
+- Admin settings (Providers section + standalone image settings page) expose `gpt-image-2` in the model dropdown labelled "Images 2.0 (Recommended)" and the new 2K size options.
+- Pro tools updated: `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` now default to `gpt-image-2`.
+- Filterable extension points unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`.
+- New PHPUnit coverage in `tests/test-openai-image-tool.php` verifies `gpt-image-2` is the new default, is treated as a `gpt-image` family member for quality remapping (e.g. `hd` → `high`), and that it never receives a `response_format` parameter on the wire.
+
 ### Added — QMS + PARA Methodology Integration (Pro)
 
 Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
