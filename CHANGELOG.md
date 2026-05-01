@@ -2,18 +2,6 @@
 
 ## [Unreleased]
 
-### Added — OpenAI Images 2.0 (`gpt-image-2`) support
-
-OpenAI released **gpt-image-2** ("ChatGPT Images 2.0") in April 2026 with native 2K resolution, multi-image coherency, near-flawless multilingual text rendering, and broader aspect-ratio support. The plugin now supports it as a first-class image model and uses it as the default.
-
-- New default image model is `gpt-image-2` across the base plugin and Pro image tools (was `gpt-image-1.5`). Existing sites with a saved `openai_image_model` setting are unaffected — the change only impacts fresh installs and tools that pinned a hardcoded `gpt-image-1` default.
-- `WP_MCP_AI_OpenAI_Client::image_model_supports_response_format()` and the internal quality-normalization logic now recognise `gpt-image-2` as part of the `gpt-image` family (uses `low|medium|high|auto`, does not accept the `response_format` parameter).
-- `WP_MCP_AI_Tool_Generate_OpenAI_Image` allows three new 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square 2K), `2048x1152` (16:9 widescreen), `1152x2048` (9:16 vertical). Cost and token-estimation tables updated accordingly.
-- Admin settings (Providers section + standalone image settings page) expose `gpt-image-2` in the model dropdown labelled "Images 2.0 (Recommended)" and the new 2K size options.
-- Pro tools updated: `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` now default to `gpt-image-2`.
-- Filterable extension points unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`.
-- New PHPUnit coverage in `tests/test-openai-image-tool.php` verifies `gpt-image-2` is the new default, is treated as a `gpt-image` family member for quality remapping (e.g. `hd` → `high`), and that it never receives a `response_format` parameter on the wire.
-
 ### Added — QMS + PARA Methodology Integration (Pro)
 
 Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
@@ -49,6 +37,62 @@ Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature 
 - **Tests**: `tests/qms/test-qms-workflow.php`, `tests/qms/test-qms-audit-log.php`, `tests/para/test-para-taxonomy.php`, `tests/para/test-para-lifecycle.php`.
 
 Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
+
+## [1.1.13] - 2026-05-01
+
+### April 30 – May 1, 2026 — gpt-image-2 (Images 2.0), Phase 4a MemPalace-backed memory bridge, AI Harmonization toolkit, production-only Composer autoloader
+
+A documentation, distribution, and capabilities pass on top of 1.1.12. The release covers (1) first-class support for OpenAI's new **`gpt-image-2`** ("Images 2.0") image model, (2) the Phase 4a/4b durable-storage bridge for the MemPalace-inspired agent memory subsystem, (3) the new **AI Harmonization** sub-toolkit (14 tools), and (4) hardening of the repo so it can be cloned and deployed as a production WordPress plugin without a separate `dump-autoload` step.
+
+### Added — OpenAI Images 2.0 (`gpt-image-2`) support
+
+OpenAI released **gpt-image-2** ("ChatGPT Images 2.0") in April 2026 with native 2K resolution, multi-image coherency, near-flawless multilingual text rendering, and broader aspect-ratio support. The plugin now supports it as a first-class image model and uses it as the default.
+
+- New default image model is `gpt-image-2` across the base plugin and Pro image tools (was `gpt-image-1.5`). Existing sites with a saved `openai_image_model` setting are unaffected — the change only impacts fresh installs and tools that pinned a hardcoded `gpt-image-1` default.
+- `WP_MCP_AI_OpenAI_Client::image_model_supports_response_format()` and the internal quality-normalization logic now recognise `gpt-image-2` as part of the `gpt-image` family (uses `low|medium|high|auto`, does not accept the `response_format` parameter).
+- `WP_MCP_AI_Tool_Generate_OpenAI_Image` allows three new 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square 2K), `2048x1152` (16:9 widescreen), `1152x2048` (9:16 vertical). Cost and token-estimation tables updated accordingly.
+- Admin settings (Providers section + standalone image settings page) expose `gpt-image-2` in the model dropdown labelled "Images 2.0 (Recommended)" and the new 2K size options.
+- Pro tools updated: `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` now default to `gpt-image-2`.
+- Filterable extension points unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`.
+- New PHPUnit coverage in `tests/test-openai-image-tool.php` verifies `gpt-image-2` is the new default, is treated as a `gpt-image` family member for quality remapping (e.g. `hd` → `high`), and that it never receives a `response_format` parameter on the wire.
+
+### Added — Phase 4a/4b — durable agent-memory bridge (MemPalace-inspired)
+
+The agent-memory subsystem was the only persistent surface in the plugin still backed solely by transients (cache-evictable). With JetEngine active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with an industry-standard schema. Transients remain the primary fast read path; the CCT is the durable backing store.
+
+- `WP_MCP_AI_JetEngine_Agent_Memories_CCT` (slug `ai_agent_memories`) registered automatically when the JetEngine CCT module is active. Wired into `includes/bootstrap/loader.php` for both base+JE and full-integration paths.
+- Schema is aligned with industry-standard agent-memory architectures: **Letta / MemGPT** (memory tier, verbatim immutability flag, expires_at TTL anchor), **Zep** (bi-temporal validity, source provenance), **mem0** (importance, verbatim discipline, source tracking), **Cognee** + **MemPalace** (hierarchical scope via wing/room, verbatim-storage discipline). Vector and graph references (`embedding_id`, `graph_node_id`) are nullable forward-compatibility hooks.
+- Dual-write hook on `wp_mcp_ai_memory_stored`; new `wp_mcp_ai_memory_deleted` action fired from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup.
+- `get_agent_memory_stats()` now returns `persistent_storage` (CCT count + per-tier breakdown) when JetEngine is active. New "Persistent (CCT) / Cache only" stat card on the agent-memory dashboard.
+- Tests: `tests/test-jetengine-agent-memories-cct.php` (slug/schema/REST args/required fields/field-id ranges) and `tests/test-agent-memory-cct-bridge.php` (tier classifier, record build, filter mutation, delete-event payload). 13 new tests pass; 24 existing regression tests still pass.
+- Source files inspired by [MemPalace](https://github.com/MemPalace/mempalace) now cite the upstream URL in their file headers: `class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`. Documentation in `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` already linked the upstream project; the source citations now match the documentation.
+- Deferred to follow-up PRs (per the published plan): **4b-3** memory-tier parameter on `store_agent_context` / `wake_up_context` / `retrieve_agent_memory` (separate review window) and **4b-5** promote-on-pressure hygiene service.
+
+### Added — AI Harmonization sub-toolkit (Pro)
+
+A 14-tool sub-toolkit for cross-model output reconciliation. Tools land under the existing Pro orchestration toolkit with their own registry section and presets in the admin documentation page. Cross-references to the Architectural Design and other Pro toolkits are now in place via the doc-refresh pass.
+
+### Changed — Production-only Composer autoloader
+
+The repo can now be cloned and used as a production WordPress plugin without an extra build step.
+
+- `composer install --no-dev --classmap-authoritative` (no separate `dump-autoload` invocation needed) is the canonical command. The autoloader is regenerated as part of `install`.
+- `vendor/composer/installed.json` now reports `"dev": false` with an empty `dev-package-names` array — no dev references survive in the production tree.
+- `vendor/composer/autoload_real.php` calls `setClassMapAuthoritative(true)`, so PSR-4 filesystem fallback lookups are skipped at runtime.
+- Net classmap diff: −6,761 / +279 lines as `phpunit/`, `phpcs/`, `wp-phpunit/`, and other dev-only packages drop out of `vendor/`.
+
+### Documentation
+
+- README.md and readme.txt updated with a v1.1.13 section summarising the changes above. README's older "GPT-Image-1" mentions now note that `gpt-image-2` is the new default.
+- File-header citations to the upstream MemPalace project added across the agent-memory subsystem so source attribution matches the documentation.
+
+### Versioning
+
+- Bumped to 1.1.13 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+### Deferred from the original `[Unreleased]` block
+
+The QMS + PARA Methodology Integration items (Pro) remain feature-flagged and unreleased pending a separate review window. They are not part of 1.1.13 and stay opt-in / off by default. The corresponding bullets remain at the top of this changelog under `[Unreleased]`.
 
 
 ## [1.1.12] - 2026-04-29
