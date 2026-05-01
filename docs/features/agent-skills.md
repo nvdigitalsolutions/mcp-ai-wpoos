@@ -185,8 +185,34 @@ The Pro add-on's dedicated **Skill Manager** page adds:
 - **Upload SKILL.md** — drag-and-drop a `SKILL.md` file directly
 - **Upload ZIP** — upload a ZIP archive containing a `{skill-name}/SKILL.md` directory structure
 - **Install from URL** — fetch a `SKILL.md` from any public HTTPS URL
+- **Browse Catalogues** — install skills one-click from registered remote catalogue sources (see below)
 - **Inline editor** — create or edit `SKILL.md` content in a browser-based CodeMirror editor with Markdown syntax highlighting
 - **Delete** — uninstall a skill and remove it from all assigned assistants
+
+### Skill Catalogues (Pro)
+
+A *catalogue* is a public Git repository (currently GitHub-only) containing one or more `SKILL.md` files. Pre-seeded with:
+
+- **`Lonsdale201/wp-agent-skills`** — MIT-licensed WordPress-developer catalogue (security audits, REST/HTML/i18n APIs, plugin scaffold, WooCommerce, JetEngine, JetFormBuilder, WP Rocket).
+- **`anthropics/skills`** — Anthropic's own catalogue of general-purpose skills.
+
+Manage sources at **Assistants → Skill Settings → Catalogues**. Each source carries an `id`, `owner`, `repo`, and `ref` (branch, tag, or commit SHA — pin to a SHA for reproducibility).
+
+Each source is read in this order:
+
+1. If a top-level `catalogue.json` exists in the repo at the registered ref, its `skills[]` list is used directly.
+2. Otherwise the **GitHub Git Tree API** is walked to discover every `SKILL.md` and the manifest is built on-the-fly.
+
+Manifests are cached in WordPress transients (24-hour TTL by default; filterable with `wp_mcp_ai_skill_catalogue_manifest_ttl`) and refreshed daily by a `wp_mcp_ai_skill_catalogue_refresh` WP-Cron job (`wp_mcp_ai_skill_catalogue_refresh_cadence` filter).
+
+**Security**: catalogue fetches reuse the same SSRF-safe HTTPS-only helper that protects `/skills/install-url` (private/loopback/reserved-IP rejection, DNS-rebind pinning, response-size cap), and the actual skill install funnels through `WP_MCP_AI_Skill_Registry::install_skill()` so the existing extension allowlist + decompression-bomb cap apply unchanged. Only paths present in the manifest may be installed — user-supplied paths are rejected.
+
+**REST endpoints** (admin-only, `manage_options`):
+
+- `GET /wp-json/mcp-ai-pro/v1/catalogues` — list registered sources.
+- `GET /wp-json/mcp-ai-pro/v1/catalogues/{id}/skills` — manifest for one source (with `installed` and `update_available` flags per skill).
+- `POST /wp-json/mcp-ai-pro/v1/catalogues/{id}/install` — install one skill by repo path.
+- `POST /wp-json/mcp-ai-pro/v1/catalogues/{id}/refresh` — force-refresh a source's manifest cache.
 
 ---
 

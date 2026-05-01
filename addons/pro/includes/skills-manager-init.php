@@ -37,3 +37,19 @@ if ( is_admin() ) {
 // ── REST API controller ───────────────────────────────────────────────────────
 require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-skill-manager-rest-controller.php';
 new WP_MCP_AI_Skill_Manager_REST_Controller();
+
+// ── Catalogue service + REST + cron (Phase 2) ─────────────────────────────────
+require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-skill-catalogue-service.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php';
+new WP_MCP_AI_Skill_Catalogue_REST_Controller();
+
+// Bind the daily refresh hook and ensure the event is scheduled.
+add_action( WP_MCP_AI_Skill_Catalogue_Service::CRON_HOOK, array( 'WP_MCP_AI_Skill_Catalogue_Service', 'handle_cron' ) );
+add_action(
+	'init',
+	function () {
+		// Schedule on first init after activation; cheap no-op once scheduled.
+		WP_MCP_AI_Skill_Catalogue_Service::schedule_cron();
+	},
+	20
+);

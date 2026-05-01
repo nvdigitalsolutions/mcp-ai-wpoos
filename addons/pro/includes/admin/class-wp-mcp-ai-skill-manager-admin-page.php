@@ -156,7 +156,7 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		// Determine active tab.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab switching; no state change.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'list';
-		$valid_tabs = array( 'list', 'install', 'editor', 'research-skill' );
+		$valid_tabs = array( 'list', 'install', 'editor', 'research-skill', 'browse' );
 		if ( ! in_array( $active_tab, $valid_tabs, true ) ) {
 			$active_tab = 'list';
 		}
@@ -201,6 +201,11 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 				   class="nav-tab <?php echo 'install' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Upload &amp; Install', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=browse' ) ); ?>"
+				   class="nav-tab <?php echo 'browse' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-cloud" style="font-size:16px;vertical-align:text-bottom;"></span>
+					<?php esc_html_e( 'Browse Catalogues', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=editor' ) ); ?>"
 				   class="nav-tab <?php echo 'editor' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Skill Editor', 'mcp-ai-wpoos-pro' ); ?>
@@ -233,6 +238,11 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			<?php /* ── Tab: Builder ── */ ?>
 			<div id="tab-research-skill" class="tab-content <?php echo 'research-skill' === $active_tab ? 'active' : ''; ?>">
 				<?php self::render_tab_research(); ?>
+			</div>
+
+			<?php /* ── Tab: Browse Catalogues ── */ ?>
+			<div id="tab-browse" class="tab-content <?php echo 'browse' === $active_tab ? 'active' : ''; ?>">
+				<?php self::render_tab_browse(); ?>
 			</div>
 		</div>
 
@@ -1455,5 +1465,204 @@ array(
 		}
 
 		return WP_MCP_AI_Skill_Registry::instance();
+	}
+
+	/**
+	 * Render the "Browse Catalogues" tab.
+	 *
+	 * The tab is a thin client over the Catalogue REST API: it lists registered
+	 * sources, fetches their manifests, and lets admins one-click-install each
+	 * skill. The actual install funnels through the registry's hardened pipeline
+	 * (extension allowlist + decompression cap), so this UI carries no extra
+	 * security surface beyond a nonce-gated REST call.
+	 *
+	 * @since 1.11.0
+	 * @return void
+	 */
+	private static function render_tab_browse() {
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Catalogue_Service' ) ) {
+			?>
+			<p><?php esc_html_e( 'Skill Catalogue service is not available on this site.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php
+			return;
+		}
+
+		$service = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$sources = $service->get_sources();
+
+		// Inline a small JS payload that the browse-tab script will read for
+		// REST URL + nonce. We reuse the existing wp-mcp-ai-skill-manager script
+		// handle so we do not need a separate enqueue.
+		$rest_root = esc_url_raw( rest_url( 'mcp-ai-pro/v1/catalogues' ) );
+		$rest_nonce = wp_create_nonce( 'wp_rest' );
+		?>
+		<div class="wp-mcp-ai-skill-browse">
+			<h2><?php esc_html_e( 'Browse Catalogue', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php
+				$settings_url = esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-skill-settings&tab=catalogues' ) );
+				printf(
+					/* translators: %s: link to the Catalogues settings tab */
+					wp_kses_post( __( 'Install skills from registered remote catalogues. Add, remove, or pin sources on the <a href="%s">Catalogues settings tab</a>.', 'mcp-ai-wpoos-pro' ) ),
+					$settings_url // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_url'd above.
+				);
+				?>
+			</p>
+
+			<?php if ( empty( $sources ) ) : ?>
+				<p><?php esc_html_e( 'No catalogue sources are registered yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<p>
+					<label for="wp-mcp-ai-skill-browse-source"><strong><?php esc_html_e( 'Source:', 'mcp-ai-wpoos-pro' ); ?></strong></label>
+					<select id="wp-mcp-ai-skill-browse-source">
+						<?php foreach ( $sources as $src ) : ?>
+							<option value="<?php echo esc_attr( $src['id'] ); ?>"><?php echo esc_html( $src['label'] . ' (' . $src['owner'] . '/' . $src['repo'] . '@' . $src['ref'] . ')' ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<button type="button" class="button" id="wp-mcp-ai-skill-browse-refresh">
+						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</p>
+
+				<div id="wp-mcp-ai-skill-browse-status" class="notice notice-info inline" style="display:none;"></div>
+
+				<table class="wp-list-table widefat fixed striped" id="wp-mcp-ai-skill-browse-table" style="margin-top:12px;">
+					<thead>
+						<tr>
+							<th scope="col" style="width:22%;"><?php esc_html_e( 'Skill', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:12%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:14%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td colspan="4"><em><?php esc_html_e( 'Select a source above to load its skill list.', 'mcp-ai-wpoos-pro' ); ?></em></td>
+						</tr>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+
+		<script>
+		(function () {
+			var root = <?php echo wp_json_encode( $rest_root ); ?>;
+			var nonce = <?php echo wp_json_encode( $rest_nonce ); ?>;
+			var sel = document.getElementById( 'wp-mcp-ai-skill-browse-source' );
+			var btn = document.getElementById( 'wp-mcp-ai-skill-browse-refresh' );
+			var table = document.getElementById( 'wp-mcp-ai-skill-browse-table' );
+			var status = document.getElementById( 'wp-mcp-ai-skill-browse-status' );
+			if ( ! sel || ! table ) {
+				return;
+			}
+			var tbody = table.querySelector( 'tbody' );
+
+			function setStatus( msg, isError ) {
+				if ( ! status ) { return; }
+				status.style.display = msg ? 'block' : 'none';
+				status.className = 'notice ' + ( isError ? 'notice-error' : 'notice-info' ) + ' inline';
+				status.textContent = msg || '';
+			}
+
+			function escapeHtml( s ) {
+				return String( s == null ? '' : s )
+					.replace( /&/g, '&amp;' )
+					.replace( /</g, '&lt;' )
+					.replace( />/g, '&gt;' )
+					.replace( /"/g, '&quot;' )
+					.replace( /'/g, '&#39;' );
+			}
+
+			function loadSkills( force ) {
+				var id = sel.value;
+				if ( ! id ) { return; }
+				setStatus( <?php echo wp_json_encode( __( 'Loading catalogue…', 'mcp-ai-wpoos-pro' ) ); ?> );
+				tbody.innerHTML = '<tr><td colspan="4"><em>' + escapeHtml( <?php echo wp_json_encode( __( 'Loading…', 'mcp-ai-wpoos-pro' ) ); ?> ) + '</em></td></tr>';
+				var url = root + '/' + encodeURIComponent( id ) + '/skills' + ( force ? '?force=1' : '' );
+				fetch( url, { headers: { 'X-WP-Nonce': nonce }, credentials: 'same-origin' } )
+					.then( function ( r ) { return r.json().then( function ( j ) { return { ok: r.ok, data: j }; } ); } )
+					.then( function ( res ) {
+						if ( ! res.ok ) {
+							var msg = res.data && res.data.message ? res.data.message : <?php echo wp_json_encode( __( 'Failed to load catalogue.', 'mcp-ai-wpoos-pro' ) ); ?>;
+							setStatus( msg, true );
+							tbody.innerHTML = '<tr><td colspan="4"><em>' + escapeHtml( msg ) + '</em></td></tr>';
+							return;
+						}
+						setStatus( '' );
+						var skills = ( res.data && res.data.skills ) || [];
+						if ( ! skills.length ) {
+							tbody.innerHTML = '<tr><td colspan="4"><em>' + escapeHtml( <?php echo wp_json_encode( __( 'No skills found in this catalogue.', 'mcp-ai-wpoos-pro' ) ); ?> ) + '</em></td></tr>';
+							return;
+						}
+						tbody.innerHTML = '';
+						skills.forEach( function ( sk ) {
+							var tr = document.createElement( 'tr' );
+							var statusLabel = sk.installed
+								? ( sk.update_available
+									? '<span class="skill-badge" style="background:#e7a900;color:#fff;">' + escapeHtml( <?php echo wp_json_encode( __( 'Update', 'mcp-ai-wpoos-pro' ) ); ?> ) + '</span>'
+									: '<span class="skill-badge" style="background:#46b450;color:#fff;">' + escapeHtml( <?php echo wp_json_encode( __( 'Installed', 'mcp-ai-wpoos-pro' ) ); ?> ) + '</span>' )
+								: '<span class="skill-badge">' + escapeHtml( <?php echo wp_json_encode( __( 'Available', 'mcp-ai-wpoos-pro' ) ); ?> ) + '</span>';
+							var actionLabel = sk.installed && ! sk.update_available
+								? <?php echo wp_json_encode( __( 'Reinstall', 'mcp-ai-wpoos-pro' ) ); ?>
+								: ( sk.update_available
+									? <?php echo wp_json_encode( __( 'Update', 'mcp-ai-wpoos-pro' ) ); ?>
+									: <?php echo wp_json_encode( __( 'Install', 'mcp-ai-wpoos-pro' ) ); ?> );
+							tr.innerHTML =
+								'<td><strong>' + escapeHtml( sk.name ) + '</strong><br><code>' + escapeHtml( sk.path ) + '</code></td>' +
+								'<td>' + escapeHtml( sk.description || '' ) + '</td>' +
+								'<td>' + statusLabel + '</td>' +
+								'<td><button type="button" class="button button-small wp-mcp-ai-skill-browse-install" data-path="' + escapeHtml( sk.path ) + '">' + escapeHtml( actionLabel ) + '</button></td>';
+							tbody.appendChild( tr );
+						} );
+					} )
+					.catch( function ( e ) {
+						setStatus( ( e && e.message ) || 'Network error.', true );
+					} );
+			}
+
+			tbody.addEventListener( 'click', function ( ev ) {
+				var btn = ev.target.closest && ev.target.closest( '.wp-mcp-ai-skill-browse-install' );
+				if ( ! btn ) { return; }
+				var id = sel.value;
+				var path = btn.getAttribute( 'data-path' );
+				if ( ! id || ! path ) { return; }
+				btn.disabled = true;
+				var origText = btn.textContent;
+				btn.textContent = <?php echo wp_json_encode( __( 'Installing…', 'mcp-ai-wpoos-pro' ) ); ?>;
+				fetch( root + '/' + encodeURIComponent( id ) + '/install', {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+					body: JSON.stringify( { path: path } )
+				} )
+					.then( function ( r ) { return r.json().then( function ( j ) { return { ok: r.ok, data: j }; } ); } )
+					.then( function ( res ) {
+						if ( ! res.ok ) {
+							btn.disabled = false;
+							btn.textContent = origText;
+							setStatus( ( res.data && res.data.message ) || <?php echo wp_json_encode( __( 'Install failed.', 'mcp-ai-wpoos-pro' ) ); ?>, true );
+							return;
+						}
+						btn.textContent = <?php echo wp_json_encode( __( 'Installed', 'mcp-ai-wpoos-pro' ) ); ?>;
+						setStatus( <?php echo wp_json_encode( __( 'Skill installed successfully.', 'mcp-ai-wpoos-pro' ) ); ?>, false );
+						// Reload the table to reflect installed state.
+						loadSkills( false );
+					} )
+					.catch( function ( e ) {
+						btn.disabled = false;
+						btn.textContent = origText;
+						setStatus( ( e && e.message ) || 'Network error.', true );
+					} );
+			} );
+
+			sel.addEventListener( 'change', function () { loadSkills( false ); } );
+			if ( btn ) {
+				btn.addEventListener( 'click', function () { loadSkills( true ); } );
+			}
+			// Auto-load the first source on tab open.
+			loadSkills( false );
+		})();
+		</script>
+		<?php
 	}
 }
