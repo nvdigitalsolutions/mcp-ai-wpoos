@@ -206,7 +206,7 @@ class WP_MCP_AI_Default_Assistants {
 			array(
 				'slug'          => 'content-drafter',
 				'title'         => __( 'The Content Drafter', 'mcp-ai-wpoos' ),
-				'description'   => __( 'Sequential synthesis specialist. Generates human-readable content based on structured data from Parser. Creates posts, generates media (images, videos, audio), optimizes excerpts, and ensures content quality. Focuses on creativity and engagement.', 'mcp-ai-wpoos' ),
+				'description'   => __( 'Sequential synthesis specialist. Generates human-readable content based on structured data from Parser. Creates posts, generates media (images, videos, audio), runs the Pro Harmonization compositing pipeline, optimizes excerpts, and ensures content quality. Focuses on creativity and engagement.', 'mcp-ai-wpoos' ),
 				'system_prompt' => self::get_drafter_prompt(),
 				'tools'         => array_merge(
 					array(
@@ -249,6 +249,21 @@ class WP_MCP_AI_Default_Assistants {
 						'post_google_business_update',
 						'post_linkedin',
 						'post_tiktok',
+						// Pro - Harmonization Sub-Toolkit (Image Production).
+						'harmonize_image_into_background',
+						'harmonize_batch',
+						'harmonize_color',
+						'relight_subject',
+						'generate_shadow',
+						'generate_reflection',
+						'generate_scene_background',
+						'adapt_background_for_subject',
+						'outpaint_background',
+						'refine_subject_matte',
+						'refine_composite_boundary',
+						'auto_clean_white_background',
+						'analyze_scene_lighting',
+						'suggest_placement',
 						// Pro - GSD × BMAD Phase 2 (Product Manager) Tools.
 						'generate_research_report',
 						'extract_structured_data',
@@ -594,11 +609,17 @@ class WP_MCP_AI_Default_Assistants {
 			'   - Draft WordPress posts with proper structure' . "\n" .
 			'   - Generate compelling excerpts and summaries' . "\n" .
 			'   - Optimize content for readability and engagement' . "\n\n" .
-			'2. **Media Generation**' . "\n" .
+			'2. **Media Generation & Compositing**' . "\n" .
 			'   - Create images via OpenAI, Gemini, or Cloudflare AI' . "\n" .
 			'   - Generate videos using Sora or Veo' . "\n" .
 			'   - Produce audio and music content' . "\n" .
-			'   - Write image captions and alt text' . "\n\n" .
+			'   - Write image captions and alt text' . "\n" .
+			'   - When Pro is active, use the Harmonization sub-toolkit for composable AI compositing:' . "\n" .
+			'     • Generate or adapt scene backgrounds (`generate_scene_background`, `adapt_background_for_subject`, `outpaint_background`)' . "\n" .
+			'     • Refine subject mattes (`refine_subject_matte`, `auto_clean_white_background`)' . "\n" .
+			'     • Harmonize color and lighting (`harmonize_color`, `relight_subject`)' . "\n" .
+			'     • Synthesize shadows and reflections (`generate_shadow`, `generate_reflection`, `refine_composite_boundary`)' . "\n" .
+			'     • Run the end-to-end orchestrator (`harmonize_image_into_background`) or batch (`harmonize_batch`) for catalogs' . "\n\n" .
 			'3. **Content Enhancement**' . "\n" .
 			'   - Auto-categorize content intelligently' . "\n" .
 			'   - Suggest internal links for SEO' . "\n" .

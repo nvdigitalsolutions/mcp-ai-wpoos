@@ -1113,8 +1113,74 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		// Other models should NOT support style.
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'gpt-image-1' ) );
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'gpt-image-1.5' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'gpt-image-2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'GPT-IMAGE-2' ) ); // Case insensitive.
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'GPT-IMAGE-1.5' ) ); // Case insensitive.
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'dall-e-2' ) );
 		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_style( 'DALL-E-2' ) );
+	}
+
+	/**
+	 * Test that gpt-image-2 (Images 2.0) is recognized as the current default
+	 * and is treated as a member of the gpt-image family for quality + response_format handling.
+	 */
+	public function test_gpt_image_2_is_recognized_and_default() {
+		// Tool default model is gpt-image-2.
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
+		$this->assertSame( 'gpt-image-2', WP_MCP_AI_Tool_Generate_OpenAI_Image::DEFAULT_MODEL );
+
+		// gpt-image-2 should NOT support response_format (matches gpt-image-1/1.5 behavior).
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'GPT-IMAGE-2' ) );
+
+		// Quality normalization: gpt-image-2 accepts low/medium/high/auto, maps DALL-E values.
+		$captured_request = null;
+		$filter_callback  = function ( $preempt, $args ) use ( &$captured_request ) {
+			$captured_request = $args;
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'data' => array(
+							array(
+								'b64_json' => base64_encode( 'image-bytes' ),
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		try {
+			$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+			$defaults['openai_api_key'] = 'sk-test';
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+			$client = new WP_MCP_AI_OpenAI_Client();
+
+			// Sending DALL-E 'hd' value with gpt-image-2 should be remapped to 'high'.
+			$result = $client->generate_image(
+				'A 2K poster with crisp text.',
+				array(
+					'model'   => 'gpt-image-2',
+					'quality' => 'hd',
+				)
+			);
+
+			$this->assertNotInstanceOf( 'WP_Error', $result );
+			$this->assertNotNull( $captured_request );
+			$payload = json_decode( $captured_request['body'], true );
+			$this->assertSame( 'gpt-image-2', $payload['model'] );
+			$this->assertSame( 'high', $payload['quality'] );
+			// gpt-image-2 must NOT receive a response_format parameter.
+			$this->assertArrayNotHasKey( 'response_format', $payload );
+		} finally {
+			remove_filter( 'pre_http_request', $filter_callback, 10 );
+		}
 	}
 }

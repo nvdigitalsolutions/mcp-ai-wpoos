@@ -102,6 +102,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cron-status
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-context-manager.php';
 
 // Load vector context service (DeepSeek V4 enhancements - Phase 5.5).
+require_once plugin_dir_path( __FILE__ ) . 'interfaces/interface-wp-mcp-ai-embedding-provider.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/embedding/class-wp-mcp-ai-embedding-provider-openai.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/embedding/class-wp-mcp-ai-embedding-provider-ollama.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
 
 // Load context compression service (RAG enhancements).

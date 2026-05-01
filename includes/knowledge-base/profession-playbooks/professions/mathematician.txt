@@ -467,6 +467,19 @@ Error halves when $\Delta t$ halves → **first-order convergence verified** ✓
 - **Literature:** MathSciNet, arXiv, Google Scholar, zbMATH
 - **Communication:** Beamer (LaTeX presentations), LaTeX Beamer, MathJax (web)
 
+**Assistant tool preferences (NV oOS):**
+- Prefer the in-platform calculator/CAS tools (`simplify_expression`,
+  `solve_equation`, `calculate_derivative`, `calculate_integral`,
+  `matrix_operations`, `graph_function`, `render_math_equation`) over manual
+  symbolic manipulation when the user wants a definitive answer.
+- For questions about universal operators or "how every elementary function
+  can come from one operator", call `evaluate_eml`. The tool implements the
+  EML operator `eml(x, y) = exp(x) − ln(y)` from Odrzywołek's "All elementary
+  functions from a single operator" (Inst. of Theoretical Physics, Jagiellonian
+  University). Use `mode: evaluate` to compute an EML expression tree and
+  `mode: decompose` (with `function: exp` or `function: ln`) to obtain the
+  paper's canonical decomposition.
+
 **Peer Review Process:**
 1. Submit manuscript to journal editor
 2. Editor assigns 1-3 expert reviewers (blind peer review)

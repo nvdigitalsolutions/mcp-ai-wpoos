@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.11  
-**Release Date:** 2026-04-27 (April 27, 2026 — April 2026 security audit summary published, production-ready vendor autoload, Veo 3.1 seed-parameter fix; v1.1.9: Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix, Chart.js handle normalization, Graphify addon restore, Orchestration Reference doc; v1.1.8: Erlang C Workforce Management Tools, full tool-reference audit, WordPress.org compliance re-audit)  
-**Latest Updates:** April 2026 (v1.1.10) — New [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) publishes the April 2026 security & compliance audit summary (no Critical findings; 5 High — 3 Fixed, 2 Partially Fixed; 14 Medium all Fixed; 21 Low; 10 Informational; 50 total). Production-ready vendor autoload (PR #4733) — deployable from a clean clone without a separate `composer install`. Veo 3.1 `generate_veo_video` `INVALID_ARGUMENT` fix (PR #4735) — `seed` is now sent only to Veo 2.0. Prior release (v1.1.9): Measurement subsystem GA across 12 sequenced PRs (stock metrics for tool-execution / chat-loop / agentic-loop / SSE, persistent metric event store with retention cron, eval harness with verifier-independence enforcement, Pro rubric presets + counterfactual runner, OTel JSON exporter, budget envelopes, read-only + writable Measurement dashboard, `wp mcp-ai measurement` WP-CLI runner with regression alerting); PHPUnit upgraded to 11 with WordPress-compat patches to fix argument-injection CVE **GHSA-qrr6-mg7r-m243** (CI PHP 8.1 → 8.2); Chart.js admin handle normalized to `wp-mcp-ai-chartjs`; Graphify Knowledge Graph addon v0.5.0 restored; new `docs/ORCHESTRATION_REFERENCE.md`.  
+**Version:** 1.1.13  
+**Release Date:** 2026-05-01 (May 1, 2026 — OpenAI **`gpt-image-2`** / Images 2.0 as new default image model with native 2K aspect-ratio support, **Phase 4a/4b durable agent-memory bridge** mirroring transient memory into a JetEngine `ai_agent_memories` Custom Content Type with industry-standard schema (Letta / Zep / mem0 / Cognee / [MemPalace](https://github.com/MemPalace/mempalace)), **AI Harmonization** 14-tool sub-toolkit (Pro), production-only Composer autoloader (`composer install --no-dev --classmap-authoritative` — no separate `dump-autoload`); v1.1.12: Architectural Design Toolkit Phases A–E, Graphify federation + RAG (Phases 1–5), Tier 4 browser-AI runtime packages, Production Cleanup admin workflow, `plan_schedules_from_workflow` tool, security patches for `phpspreadsheet` and `uuid`, TCPDF extracted into a separate addon, AV-clean deploy tooling, formal `WARRANTY.md`; v1.1.11: WordPress.org compliance hardening; v1.1.10: April 2026 security audit summary, production-ready vendor autoload, Veo 3.1 seed-parameter fix; v1.1.9: Measurement Subsystem GA, PHPUnit 11 upgrade with CVE fix)  
+**Latest Updates:** May 1, 2026 (v1.1.13) — **OpenAI `gpt-image-2` (Images 2.0)** is now the default image model across the base plugin and Pro image tools, with native 2K aspect-ratio support (`2048x2048`, `2048x1152`, `1152x2048`); existing sites with a saved `openai_image_model` setting are unaffected. **Phase 4a/4b durable agent-memory bridge** — when JetEngine is active, every transient memory write is now mirrored into the durable `ai_agent_memories` CCT with a schema aligned to Letta / Zep / mem0 / Cognee / [MemPalace](https://github.com/MemPalace/mempalace) (transients remain the primary fast read path; new `wp_mcp_ai_memory_deleted` action; "Persistent (CCT) / Cache only" stat card on the agent-memory dashboard). **AI Harmonization sub-toolkit** — 14 new Pro tools for cross-model output reconciliation, with admin docs cross-linked to the Architectural Design and other Pro toolkits. **Production-only Composer autoloader** — `composer install --no-dev --classmap-authoritative` (no separate `dump-autoload`) regenerates the autoloader; `vendor/composer/installed.json` is now `"dev": false` with an empty `dev-package-names`, and `setClassMapAuthoritative(true)` is enabled so the repo can be cloned and used as a production WordPress plugin without an extra build step. Source citations to the upstream MemPalace project added across the agent-memory subsystem to match the documentation.  
 **MCP Specification:** 2024-11-05 (Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,10 +24,11 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (v1.1.10 — April 2026)](#-latest-updates-v1110--april-2026)
+- [🆕 Latest Updates (v1.1.13 — May 2026)](#-latest-updates-v1113--may-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
+- [⚠️ Warranty & Safe Use](#%EF%B8%8F-warranty--safe-use)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
@@ -134,6 +135,20 @@ The plugin works standalone with **224 base tools** and optionally extends throu
 **This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
 **Latest audit:** See [`docs/compliance/SECURITY_AUDIT_2026_04.md`](docs/compliance/SECURITY_AUDIT_2026_04.md) — the published summary of the April 2026 security & compliance code review (no Critical findings; 5 High items, 3 Fixed and 2 Partially Fixed). Full deliverables under [`docs/audit/2026-04/`](docs/audit/2026-04/).
+
+### ⚠️ Warranty & Safe Use
+
+> **We make every effort to keep NV oOS safe and secure — but by design, it can be destructive and resource-intensive when not properly configured.**
+
+NV oOS grants AI assistants access to powerful WordPress operations. The same capability that automates real work can cause irreversible harm if misconfigured:
+
+- **Destructive tools** — bulk content deletion, user management, file writes, mass email, WP-CLI, direct database operations
+- **API billing exposure** — uncapped AI provider calls can exhaust quotas and trigger unexpected charges
+- **Server resource exhaustion** — concurrent agentic loops and SSE streams can saturate CPU/memory on shared hosting
+
+**Before going live:** test on staging, take verified backups, apply least-privilege tool permissions, enable rate limiting, and review the system prompt of every public-facing assistant.
+
+📄 **Full details:** [`WARRANTY.md`](WARRANTY.md) — security commitment, "AS IS" disclaimer, destructive-operations table, resource-consumption guide, and mitigation checklist aligned with OWASP, NIST SP 800-53, ISO/IEC 27001, and the WordPress Plugin Developer Handbook.
 
 ## Patent Pending
 
@@ -275,7 +290,54 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (v1.1.10 — April 2026)
+## 🆕 Latest Updates (v1.1.13 — May 2026)
+
+### April 30 – May 1, 2026 — OpenAI `gpt-image-2` (Images 2.0), Phase 4a/4b durable agent-memory bridge, AI Harmonization toolkit, production-only Composer autoloader 🎨🧠🛠️
+
+- ✅ **OpenAI `gpt-image-2` (Images 2.0)** — first-class support added in [`WP_MCP_AI_OpenAI_Client`](includes/openai/class-wp-mcp-ai-openai-client.php) and [`WP_MCP_AI_Tool_Generate_OpenAI_Image`](includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php), now the default image model across the base plugin and Pro image tools. New 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square), `2048x1152` (16:9), `1152x2048` (9:16). Cost / token tables and admin model dropdowns ("Images 2.0 (Recommended)") updated to match. Pro tools `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` default to `gpt-image-2` as well. Existing sites with a saved `openai_image_model` setting are unaffected. Filters unchanged: `wp_mcp_ai_openai_image_models`, `wp_mcp_ai_openai_image_sizes`, `wp_mcp_ai_image_model_supports_response_format`, `wp_mcp_ai_image_model_supports_style`. New PHPUnit `test_gpt_image_2_is_recognized_and_default` covers the default, the `hd → high` quality remap, and the suppression of `response_format` on the wire.
+
+- ✅ **Phase 4a/4b — durable agent-memory bridge (MemPalace-inspired)** — agent memory was the only persistent surface in the plugin still backed solely by transients (cache-evictable). With JetEngine active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with an industry-standard schema combining ideas from **Letta / MemGPT** (memory tier, verbatim immutability flag, expires_at TTL anchor), **Zep** (bi-temporal validity, source provenance), **mem0** (importance, verbatim discipline, source tracking), **Cognee**, and [**MemPalace**](https://github.com/MemPalace/mempalace) (hierarchical scope via wing/room, verbatim-storage discipline). Transients remain the primary fast read path; the CCT is the durable backing store. Vector and graph references (`embedding_id`, `graph_node_id`) are nullable forward-compatibility hooks. New `wp_mcp_ai_memory_deleted` action fires from `manage_context_lifecycle` delete path with subscriber-driven CCT cleanup. The agent-memory dashboard now surfaces a **"Persistent (CCT) / Cache only"** stat card. Source files inspired by MemPalace now cite the upstream project in their file headers so attribution matches `docs/AGENT-MEMORY-COMPLETE-GUIDE.md`. Tests: `tests/test-jetengine-agent-memories-cct.php` + `tests/test-agent-memory-cct-bridge.php` (13 new tests; 24 existing regression tests still pass).
+
+- ✅ **AI Harmonization sub-toolkit (Pro)** — 14 new Pro tools for cross-model output reconciliation, registered alongside the existing orchestration toolkit with their own registry section and admin-doc presets. The Architectural Design Toolkit and other Pro toolkits' in-app docs were refreshed in the same pass to cross-link the new harmonization workflows.
+
+- ✅ **Production-only Composer autoloader** — the repo can now be cloned and used as a production WordPress plugin without an extra build step. `composer install --no-dev --classmap-authoritative` (no separate `dump-autoload` invocation needed) regenerates the autoloader as part of `install`. `vendor/composer/installed.json` now reports `"dev": false` with an empty `dev-package-names` array — no dev references survive in the production tree. `vendor/composer/autoload_real.php` calls `setClassMapAuthoritative(true)`, so PSR-4 filesystem fallback lookups are skipped at runtime. Net classmap diff: −6,761 / +279 lines as `phpunit/`, `phpcs/`, `wp-phpunit/`, and other dev-only packages drop out of `vendor/`.
+
+- ⚠️ **Deferred (still in `[Unreleased]`)**: the QMS (ISO 9001:2015 Clause 7.5) + PARA (Tiago Forte) Methodology Integration subsystems remain feature-flagged and pending a separate review window. They are not part of 1.1.13.
+
+## 🆕 Previous Updates (v1.1.12 — April 2026)
+
+### April 27–29, 2026 — Architectural Design Toolkit (Phases A–E), Graphify Federation/RAG, Tier 4 Browser-AI Runtime, Production Cleanup, Security Patches 🏗️🕸️🔒
+
+- ✅ **Architectural Design Toolkit — five-phase rollout**:
+  - *Phase A* — refactored toolkit foundations.
+  - *Phase B* — regional-compliance + analysis tools, with a dedicated PHPUnit suite and regional fixtures.
+  - *Phase C* — EDGE / LEED scoring, Bill-of-Quantities (BoQ), and Value-Engineering (VE) options.
+  - *Phase D* — IFC and gbXML interop, BIM Execution Plan (BEP), and RFI / submittal logs.
+  - *Phase E* — precedent library, semantic search across precedents, and curated regional examples.
+- ✅ **Graphify Phases 1–5 — federation, remote sources, vector / RAG, mapping UI**:
+  - *Phase 1* — connector foundations + Woo / CSV / Webhook drivers.
+  - *Phase 3* — SaaS connectors HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365 / SharePoint, ServiceNow (Pro).
+  - *Phase 4* — Generic GraphQL, Generic SQL (read-only), and S3 (and S3-compatible) remote drivers (Pro).
+  - *Phase 5* — schema.org auto-typing helper, embeddings-on-ingest helper, field-mapping admin UI with validator + live AJAX feedback.
+  - Cross-cutting: remote sources, federation, vector embeddings, and RAG retrieval. **Algorave** also gained safe guest access for the live coder shortcode.
+- ✅ **`plan_schedules_from_workflow` tool + Research & Add Schedule admin page** — base-plugin path from arbitrary workflow descriptions to staffing/schedule plans.
+- ✅ **Production Cleanup admin workflow** — new buttons under *Settings → Advanced → Data Management* clear test/runtime artefacts safely; cleanup handlers were tightened in response to code review.
+- ✅ **Tier 4 browser-AI runtime packages** — `llm-worker`, `model-loader`, and `transformers-client` NPM packages for in-browser AI; `nvoos-transformers-client` now guards against undefined `transformersUrl` in dynamic imports.
+- ✅ **Security patches** — `phpoffice/phpspreadsheet` bumped to **^5.7.0** to patch HTML Writer XSS; `uuid` overridden to **`>=14.0.0`** to fix `GHSA-w5hq-g745-h8pq`.
+- ✅ **TCPDF extracted into `oos-toolkit-tcpdf` addon** — pruned from the combined ZIP with classmap cleanup; vendor-only supplement toolkits now require **PHP 8.1+**.
+- ✅ **AV-clean deploy tooling** — new `bin/strip-dev-files.sh` plus expanded `.gitattributes` `export-ignore` rules so deploy archives no longer trip antivirus scanners on test fixtures. Test files containing AV-triggering payload literals were obfuscated to keep the regression suite scannable.
+- ✅ **Formal `WARRANTY.md`** — warranty, liability, and safe-use notice referenced from `README.md` and `SECURITY.md`.
+
+## 🆕 Previous Updates (v1.1.11 — April 27, 2026)
+
+### WordPress.org Compliance Hardening 🛡️
+
+- ✅ Dead support-forum URL fixed in `readme.txt` (now points at the canonical `nvdigital-open-operator-system-oos` slug).
+- ✅ Tool-count consistency: headline description and Base Plugin section both report `230+ tools`.
+- ✅ Missing `mcp` tag added to `Tags:` line.
+- ✅ `bin/build-wordpress-org-from-base.sh` and `bin/review-zips.sh` now verify the readme invariants and fail the build if a legacy `wp-mcp-ai` slug or unrewritten text-domain header survives.
+
+## 🆕 Previous Updates (v1.1.10 — April 2026)
 
 ### April 27, 2026 — Security Audit Summary, Production Vendor Autoload, Veo 3.1 Fix 🛡️
 
@@ -2224,7 +2286,7 @@ The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio
 
 | Capability | Model | Size or duration limits | Notes |
 | --- | --- | --- | --- |
-| Image generation | `gpt-image-1` | Up to 2048×2048 output (square) or proportional 1024/512 variants | Produces photorealistic or illustrative renders; respect OpenAI’s safety filters when prompting. |
+| Image generation | `gpt-image-2` (default) / `gpt-image-1.5` / `gpt-image-1` / `dall-e-3` | Up to 2048×2048 output (square) or 2048×1152 / 1152×2048 (16:9 / 9:16) for `gpt-image-2`; proportional 1024 / 512 variants for older models | `gpt-image-2` ("Images 2.0") is the default as of v1.1.13 — native 2K resolution, multi-image coherency, and accurate multilingual text rendering. Older models remain selectable. Respect OpenAI's safety filters when prompting. |
 | Text-to-speech | `gpt-4o-mini-tts` | Up to ~4,096 input tokens per request | Generates natural-sounding speech in multiple voices; longer scripts should be chunked into multiple calls. |
 | Speech-to-text | `gpt-4o-mini-transcribe` | Optimised for recordings ≤ 90 minutes | Handles multilingual transcription and translation; large files are automatically chunked client-side before upload. |
 

@@ -888,7 +888,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$size    = $this->aspect_ratio_to_size( $aspect_ratio );
 		$options = array(
 			'size'  => $size,
-			'model' => 'gpt-image-1',
+			'model' => 'gpt-image-2',
 		);
 
 		$result = $client->edit_image( $product_path, $prompt, $options );

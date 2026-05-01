@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.11
+Stable tag: 1.1.13
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -274,6 +274,63 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.13 - May 1, 2026 =
+
+**OpenAI `gpt-image-2` (Images 2.0), Phase 4a/4b durable agent-memory bridge (MemPalace-inspired), AI Harmonization sub-toolkit, production-only Composer autoloader**
+
+*Added*
+
+* **OpenAI `gpt-image-2` (Images 2.0)** — first-class support and the new default image model across the base plugin and Pro image tools (was `gpt-image-1.5`). Existing sites with a saved `openai_image_model` setting are unaffected. New 2K aspect-ratio sizes for `gpt-image-2`: `2048x2048` (square 2K), `2048x1152` (16:9 widescreen), `1152x2048` (9:16 vertical). Cost / token-estimation tables and admin model dropdowns ("Images 2.0 (Recommended)") updated to match. Pro tools `generate_architectural_drawing`, `product_actualization`, harmonization base, and `generate_scene_background` default to `gpt-image-2`.
+* **Phase 4a/4b — durable agent-memory bridge** — when JetEngine is active, every transient memory write is now mirrored into a durable `ai_agent_memories` Custom Content Type with a schema aligned to industry-standard agent-memory architectures: Letta / MemGPT (memory tier, verbatim immutability flag, expires_at TTL anchor), Zep (bi-temporal validity, source provenance), mem0 (importance, verbatim discipline, source tracking), Cognee, and [MemPalace](https://github.com/MemPalace/mempalace) (hierarchical scope via wing/room, verbatim-storage discipline). Transients remain the primary fast read path. New `wp_mcp_ai_memory_deleted` action; "Persistent (CCT) / Cache only" stat card on the agent-memory dashboard.
+* **AI Harmonization sub-toolkit (Pro)** — 14 new Pro tools for cross-model output reconciliation. Admin docs cross-link the Architectural Design and other Pro toolkits.
+
+*Changed*
+
+* **Production-only Composer autoloader** — `composer install --no-dev --classmap-authoritative` (no separate `dump-autoload` invocation) regenerates the autoloader as part of `install`. `vendor/composer/installed.json` now reports `"dev": false` with an empty `dev-package-names` array — no dev references survive in the production tree. `vendor/composer/autoload_real.php` calls `setClassMapAuthoritative(true)`, so PSR-4 filesystem fallback lookups are skipped at runtime. Net classmap diff: −6,761 / +279 lines as `phpunit/`, `phpcs/`, `wp-phpunit/`, and other dev-only packages drop out of `vendor/`. The repo can now be cloned and used as a production WordPress plugin without an extra build step.
+* **Source citations to MemPalace** — file headers across the agent-memory subsystem (`class-wp-mcp-ai-tool-store-agent-context.php`, `class-wp-mcp-ai-tool-wake-up-context.php`, `class-wp-mcp-ai-tool-mine-agent-memory.php`, `class-wp-mcp-ai-jetengine-agent-memories-cct.php`, `interface-wp-mcp-ai-embedding-provider.php`, `class-wp-mcp-ai-embedding-provider-openai.php`, `class-wp-mcp-ai-embedding-provider-ollama.php`, `class-wp-mcp-ai-vector-context-service.php`) now cite the upstream project URL so source attribution matches `docs/AGENT-MEMORY-COMPLETE-GUIDE.md`.
+
+*Tests*
+
+* `tests/test-openai-image-tool.php` — new `test_gpt_image_2_is_recognized_and_default` covers the default, the `hd → high` quality remap, and the suppression of `response_format` on the wire. `test_image_model_supports_style` extended.
+* `tests/test-jetengine-agent-memories-cct.php` (slug/schema/REST args/required fields/field-id ranges) and `tests/test-agent-memory-cct-bridge.php` (tier classifier, record build, filter mutation, delete-event payload). 13 new tests; 24 existing regression tests still pass.
+
+*Version*
+
+* Bumped to 1.1.13 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
+
+= 1.1.12 - April 29, 2026 =
+
+**Architectural Design Toolkit (Phases A–E), Graphify Federation/RAG, Tier 4 Browser-AI Runtime, Production Cleanup, Security Patches**
+
+*Added*
+
+* **Architectural Design Toolkit** — five-phase rollout: Phase A foundations refactor; Phase B regional-compliance + analysis tools (with PHPUnit suite and regional fixtures); Phase C EDGE/LEED scoring + Bill-of-Quantities + Value-Engineering options; Phase D IFC / gbXML interop + BIM Execution Plan + RFI / submittal logs; Phase E precedent library + semantic search + curated regional examples.
+* **Production Cleanup admin buttons** — new controls under *Settings → Advanced → Data Management* safely clear test/runtime artefacts.
+* **`plan_schedules_from_workflow` tool + Research & Add Schedule admin page** — base-plugin workflow-to-schedule planner.
+* **Graphify Phases 1–5** — connector foundations + Woo / CSV / Webhook (Phase 1); SaaS connectors HubSpot, GitHub, Slack, Google Drive, Jira, Zendesk, M365/SharePoint, ServiceNow (Phase 3, Pro); Generic GraphQL, Generic SQL (read-only), and S3 remote drivers (Phase 4, Pro); schema.org auto-typing, embeddings-on-ingest, field-mapping admin UI with live validation (Phase 5); remote sources, federation, vector embeddings, and RAG retrieval.
+* **Algorave** — safe guest access for the live coder shortcode.
+* **Tier 4 browser-AI runtime packages** — `llm-worker`, `model-loader`, and `transformers-client` NPM packages for in-browser AI.
+* **`WARRANTY.md`** — formal warranty, liability, and safe-use notice; cross-referenced from `README.md` and `SECURITY.md`.
+
+*Changed*
+
+* **TCPDF extracted into `oos-toolkit-tcpdf` addon** — removed from the combined ZIP with classmap cleanup; vendor-only supplement toolkits require PHP 8.1+.
+* **AV-clean deploy tooling** — new `bin/strip-dev-files.sh` and expanded `.gitattributes` `export-ignore` rules; AV-triggering payload literals in nefarious-monitor tests obfuscated to keep regression suites scannable.
+* Composer / vendor regenerated as production classmap-authoritative; Pro vendor rebuilt for `phpoffice/phpspreadsheet` 5.7.0 + `symfony/polyfill-mbstring` v1.37.0.
+
+*Fixed*
+
+* **Graphify** — `do_settings_sections_filtered()` calls now correctly prefixed with `self::`.
+
+*Security*
+
+* **`phpoffice/phpspreadsheet` bumped to ^5.7.0** to patch HTML Writer XSS.
+* **`uuid` overridden to `>=14.0.0`** to fix `GHSA-w5hq-g745-h8pq`.
+
+*Version*
+
+* Bumped to 1.1.12 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 = 1.1.11 - April 27, 2026 =
 
@@ -761,6 +818,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
+
+= 1.1.13 =
+OpenAI **`gpt-image-2` (Images 2.0)** is now the default image model with native 2K aspect-ratio support. Phase 4a/4b adds a durable agent-memory bridge that mirrors transient memory into a JetEngine `ai_agent_memories` CCT (industry-standard schema; transients still primary read path). New AI Harmonization sub-toolkit (14 Pro tools). Production-only Composer autoloader so the repo can be cloned as a deployable plugin (`composer install --no-dev --classmap-authoritative` — no separate `dump-autoload`). Existing sites with a saved image-model setting are unaffected. Safe upgrade.
 
 = 1.1.9 =
 Measurement subsystem ships GA: stock metrics, eval suites, regression alerting, persistent metric store, and `wp mcp-ai measurement` CLI. New `mcp_ai_metric_events` table is dropped on uninstall when `Delete data on uninstall` is enabled. PHPUnit upgraded to 11 to resolve argument-injection CVE GHSA-qrr6-mg7r-m243 (test-suite only; affects CI/dev environments). No breaking changes for runtime plugin users; safe upgrade.

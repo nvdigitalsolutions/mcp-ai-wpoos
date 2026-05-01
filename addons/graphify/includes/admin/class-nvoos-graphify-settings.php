@@ -483,7 +483,19 @@ class NV_oOS_Graphify_Settings {
 						<option value="term"><?php esc_html_e( 'Terms', 'nvoos-graphify' ); ?></option>
 						<option value="topic"><?php esc_html_e( 'Topics', 'nvoos-graphify' ); ?></option>
 						<option value="entity"><?php esc_html_e( 'Entities', 'nvoos-graphify' ); ?></option>
+						<option value="memory"><?php esc_html_e( 'Memories', 'nvoos-graphify' ); ?></option>
+						<option value="agent"><?php esc_html_e( 'Agents', 'nvoos-graphify' ); ?></option>
+						<option value="wing"><?php esc_html_e( 'Wings', 'nvoos-graphify' ); ?></option>
+						<option value="room"><?php esc_html_e( 'Rooms', 'nvoos-graphify' ); ?></option>
 					</select>
+					<input type="text" id="nvoos-graphify-agent-filter" placeholder="<?php esc_attr_e( 'Agent ID…', 'nvoos-graphify' ); ?>" style="width:140px;">
+					<input type="text" id="nvoos-graphify-wing-filter" placeholder="<?php esc_attr_e( 'Wing…', 'nvoos-graphify' ); ?>" style="width:120px;">
+					<button id="nvoos-graphify-memory-preset-btn" class="button" title="<?php esc_attr_e( 'Show only the agent / wing combination above', 'nvoos-graphify' ); ?>">
+						<?php esc_html_e( 'Apply', 'nvoos-graphify' ); ?>
+					</button>
+					<button id="nvoos-graphify-memory-clear-btn" class="button">
+						<?php esc_html_e( 'Clear', 'nvoos-graphify' ); ?>
+					</button>
 					<button id="nvoos-graphify-fit-btn" class="button"><?php esc_html_e( 'Fit', 'nvoos-graphify' ); ?></button>
 					<button id="nvoos-graphify-relayout-btn" class="button"><?php esc_html_e( 'Relayout', 'nvoos-graphify' ); ?></button>
 					<button id="nvoos-graphify-export-png-btn" class="button"><?php esc_html_e( 'Export PNG', 'nvoos-graphify' ); ?></button>
@@ -508,7 +520,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php" style="margin-top:20px;">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_remote' ) );
+					self::do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_remote' ) );
 					submit_button( __( 'Save Remote Settings', 'nvoos-graphify' ) );
 					?>
 				</form>
@@ -517,7 +529,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php" style="margin-top:20px;">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_embeddings' ) );
+					self::do_settings_sections_filtered( self::PAGE_SLUG, array( 'nvoos_graphify_embeddings' ) );
 					submit_button( __( 'Save Embeddings Settings', 'nvoos-graphify' ) );
 					?>
 				</form>
@@ -525,7 +537,7 @@ class NV_oOS_Graphify_Settings {
 				<form method="post" action="options.php">
 					<?php
 					settings_fields( 'nvoos_graphify_settings_group' );
-					do_settings_sections_filtered(
+					self::do_settings_sections_filtered(
 						self::PAGE_SLUG,
 						array( 'nvoos_graphify_general', 'nvoos_graphify_build', 'nvoos_graphify_display' )
 					);

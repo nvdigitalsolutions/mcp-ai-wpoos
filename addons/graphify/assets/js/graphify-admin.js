@@ -24,7 +24,11 @@
 		place:        '#1abc9c',
 		organization: '#2980b9',
 		user:         '#c0392b',
-		media:        '#7f8c8d'
+		media:        '#7f8c8d',
+		memory:       '#f1c40f',
+		agent:        '#16a085',
+		wing:         '#8e44ad',
+		room:         '#27ae60'
 	};
 
 	/**
@@ -65,6 +69,16 @@
 
 			$.each( nodes, function ( _, n ) {
 				nodeIds[ n.node_id ] = true;
+				// Parse properties JSON so the memory-palace preset can match
+				// without first requiring edges to be loaded for each node.
+				var props = {};
+				if ( n.properties ) {
+					if ( typeof n.properties === 'string' ) {
+						try { props = JSON.parse( n.properties ); } catch ( e ) { props = {}; }
+					} else if ( typeof n.properties === 'object' ) {
+						props = n.properties;
+					}
+				}
 				elements.push( {
 					data: {
 						id:           n.node_id,
@@ -73,7 +87,10 @@
 						degree:       parseInt( n.degree, 10 ) || 1,
 						community_id: n.community_id || '',
 						url:          n.url || '',
-						color:        colorForType( n.type )
+						color:        colorForType( n.type ),
+						agent_id:     props.agent_id || '',
+						wing:         props.wing || '',
+						room:         props.room || ''
 					}
 				} );
 			} );
@@ -319,6 +336,72 @@
 		cy.nodes().filter( function ( n ) {
 			return n.data( 'type' ) === type;
 		} ).removeClass( 'faded' ).addClass( 'highlighted' );
+	} );
+
+	// -------------------------------------------------------------------------
+	// Memory palace preset — Agent: X / Wing: Y
+	// -------------------------------------------------------------------------
+
+	$( document ).on( 'click', '#nvoos-graphify-memory-preset-btn', function () {
+		if ( ! cy ) {
+			return;
+		}
+		var agent = $.trim( $( '#nvoos-graphify-agent-filter' ).val() || '' );
+		var wing  = $.trim( $( '#nvoos-graphify-wing-filter' ).val() || '' );
+
+		if ( ! agent && ! wing ) {
+			cy.elements().removeClass( 'faded highlighted' );
+			return;
+		}
+
+		// Match memory nodes whose properties carry the agent_id and/or wing.
+		// Comparison is case-insensitive and trimmed to be forgiving.
+		var norm = function ( s ) {
+			return ( s || '' ).toString().toLowerCase().trim();
+		};
+		var agentN = norm( agent );
+		var wingN  = norm( wing );
+
+		cy.elements().addClass( 'faded' ).removeClass( 'highlighted' );
+
+		var matched = cy.nodes().filter( function ( n ) {
+			if ( n.data( 'type' ) !== 'memory' ) {
+				return false;
+			}
+			if ( agentN && norm( n.data( 'agent_id' ) ) !== agentN ) {
+				return false;
+			}
+			if ( wingN && norm( n.data( 'wing' ) ) !== wingN ) {
+				return false;
+			}
+			return true;
+		} );
+
+		matched.removeClass( 'faded' ).addClass( 'highlighted' );
+		// Light up immediate neighbourhood (when edges are loaded for the node).
+		matched.connectedEdges().removeClass( 'faded' );
+		matched.neighborhood().nodes().removeClass( 'faded' );
+
+		// Light up the wing/agent anchor nodes so the palace anatomy is visible.
+		cy.nodes().filter( function ( n ) {
+			var t = n.data( 'type' );
+			if ( wingN && t === 'wing' && norm( n.data( 'label' ) ) === wingN ) {
+				return true;
+			}
+			if ( agentN && t === 'agent' && norm( n.data( 'agent_id' ) ) === agentN ) {
+				return true;
+			}
+			return false;
+		} ).removeClass( 'faded' ).addClass( 'highlighted' );
+	} );
+
+	$( document ).on( 'click', '#nvoos-graphify-memory-clear-btn', function () {
+		if ( ! cy ) {
+			return;
+		}
+		$( '#nvoos-graphify-agent-filter' ).val( '' );
+		$( '#nvoos-graphify-wing-filter' ).val( '' );
+		cy.elements().removeClass( 'faded highlighted' );
 	} );
 
 	// -------------------------------------------------------------------------

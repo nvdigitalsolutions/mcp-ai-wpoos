@@ -30,7 +30,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_Tool_Image_Response;
 
-	const DEFAULT_MODEL         = 'gpt-image-1.5';
+	const DEFAULT_MODEL         = 'gpt-image-2';
 	const DEFAULT_PROVIDER      = 'openai';
 	const DEFAULT_DRAWING_TYPE  = 'floor_plan';
 	const DEFAULT_STYLE         = 'technical';
@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'AI model to use. For OpenAI: gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-2.5-flash-image.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'AI model to use. For OpenAI: gpt-image-2 (Images 2.0, recommended), gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-2.5-flash-image.', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'size'               => array(
@@ -1090,7 +1090,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'openai', 'gemini' ),
-				'models'    => array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-2.5-flash-image' ),
+				'models'    => array( 'gpt-image-2', 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-2.5-flash-image' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(

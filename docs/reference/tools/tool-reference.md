@@ -386,6 +386,17 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 
 - **Product Actualization** (`product_actualization`) composites product images into AI-generated scenes or short videos while preserving original product pixels. Image mode creates static composited images. Video mode uses Google Gemini VEO to animate the scene around the product. Features automatic background removal, shadows, and reflections. Perfect for lifestyle marketing shots, social ads, and product visualization. Requires PHP Imagick or GD extension. Video mode requires Google Gemini API.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php†L17-L300】
 
+### Harmonization Sub-Toolkit (Pro)
+
+A composable set of 14 tools that decompose `product_actualization` into reusable primitives. Lives under `addons/pro/includes/tools/image-production/harmonization/`. See [`docs/harmonization-architecture.md`](../../harmonization-architecture.md) for the full pipeline.
+
+- **Background-handling** — `generate_scene_background` (text→background), `adapt_background_for_subject` (declutter / blur / inpaint a landing zone), `outpaint_background` (extend canvas to a new aspect ratio).
+- **Foreground / matte** — `refine_subject_matte` (alpha feathering, halo suppression), `auto_clean_white_background` (catalog/white-cyc → transparent PNG with smart anti-aliasing).
+- **Harmonization primitives** — `harmonize_color` (Reinhard mean/std, histogram, AI neural), `relight_subject` (re-illuminate to match background lighting), `generate_shadow` (contact + cast shadow layer), `generate_reflection` (ground/surface reflection layer), `refine_composite_boundary` (edge-aware feather + optional AI polish on a 1-2 px boundary band).
+- **Helpers** — `analyze_scene_lighting` (heuristic + optional AI vision lighting estimate), `suggest_placement` (top-3 placement bounding boxes via saliency).
+- **Orchestrator** — `harmonize_image_into_background` (end-to-end pipeline; each stage individually toggleable; `polish_strength` is the single opt-in for whole-frame AI modification — original product pixels remain the source of truth otherwise).
+- **Batch** — `harmonize_batch` (orchestrator over a list of subjects sharing one background; max 50 per call).
+
 ### Product Price Discovery (Pro)
 
 - **Lookup Product Price** (`lookup_product_price`) provides multi-source product price discovery and comparison. Works like Google Lens Shopping, Amazon Visual Search, and browser price comparison extensions. Accepts product images via Google Cloud Vision identification. Processes documents (invoices/quotes) in PDF, Word, Excel, TXT, CSV formats with LLM-powered line item extraction. Supports single URLs or batch URLs for multi-retailer price comparison. Extracts pricing from Schema.org structured data, CSS selectors, or regex patterns. Supports multiple retailers (Amazon, Walmart, eBay, Target) with extensible filter system. Returns normalized pricing data including currency, availability, and timestamps. Requires Crawl4AI integration. Optional Google Cloud Vision for image recognition. See comprehensive guide: [Product Price Lookup Guide](../../guides/user/assistants/PRODUCT-PRICE-LOOKUP-GUIDE.md).【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-lookup-product-price.php†L17-L400】

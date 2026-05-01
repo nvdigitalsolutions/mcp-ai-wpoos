@@ -4188,7 +4188,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_openai_image_model_field() {
 			$settings = self::get_settings();
 			$models   = $this->get_openai_image_model_choices();
-			$current  = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
+			$current  = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-2';
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_model]" class="regular-text">
 			<?php foreach ( $models as $value => $label ) : ?>
@@ -4234,7 +4234,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images. Use gpt-image qualities (low, medium, high, auto) for gpt-image-1/1.5 models, or DALL-E qualities (standard, hd) for DALL-E 2/3 models.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images. Use gpt-image qualities (low, medium, high, auto) for gpt-image-1/1.5/2 models, or DALL-E qualities (standard, hd) for DALL-E 2/3 models.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4245,7 +4245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings                 = self::get_settings();
 			$response_formats         = $this->get_openai_image_response_format_choices();
 			$current                  = isset( $settings['openai_image_response_format'] ) ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
-			$model                    = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
+			$model                    = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-2';
 			$supports_response_format = true;
 
 			if ( class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
@@ -5784,7 +5784,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_model_choices() {
 			$models = array(
-				'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'mcp-ai-wpoos' ),
+				'gpt-image-2'   => __( 'GPT-Image-2 — Images 2.0 (Recommended)', 'mcp-ai-wpoos' ),
+				'gpt-image-1.5' => __( 'GPT-Image-1.5', 'mcp-ai-wpoos' ),
 				'gpt-image-1'   => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
 				'dall-e-3'      => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
 				'dall-e-2'      => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
@@ -5794,7 +5795,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( ! is_array( $models ) || empty( $models ) ) {
 				$models = array(
-					'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'mcp-ai-wpoos' ),
+					'gpt-image-2'   => __( 'GPT-Image-2 — Images 2.0 (Recommended)', 'mcp-ai-wpoos' ),
+					'gpt-image-1.5' => __( 'GPT-Image-1.5', 'mcp-ai-wpoos' ),
 					'gpt-image-1'   => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
 					'dall-e-3'      => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
 					'dall-e-2'      => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
@@ -5814,6 +5816,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'1024x1024' => __( '1024 × 1024 (square)', 'mcp-ai-wpoos' ),
 				'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'mcp-ai-wpoos' ),
 				'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'mcp-ai-wpoos' ),
+				'2048x2048' => __( '2048 × 2048 (square 2K — gpt-image-2)', 'mcp-ai-wpoos' ),
+				'2048x1152' => __( '2048 × 1152 (16:9 widescreen — gpt-image-2)', 'mcp-ai-wpoos' ),
+				'1152x2048' => __( '1152 × 2048 (9:16 vertical — gpt-image-2)', 'mcp-ai-wpoos' ),
 				'auto'      => __( 'Auto (let OpenAI decide)', 'mcp-ai-wpoos' ),
 			);
 
@@ -5824,6 +5829,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'1024x1024' => __( '1024 × 1024 (square)', 'mcp-ai-wpoos' ),
 					'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'mcp-ai-wpoos' ),
 					'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'mcp-ai-wpoos' ),
+					'2048x2048' => __( '2048 × 2048 (square 2K — gpt-image-2)', 'mcp-ai-wpoos' ),
+					'2048x1152' => __( '2048 × 1152 (16:9 widescreen — gpt-image-2)', 'mcp-ai-wpoos' ),
+					'1152x2048' => __( '1152 × 2048 (9:16 vertical — gpt-image-2)', 'mcp-ai-wpoos' ),
 					'auto'      => __( 'Auto (let OpenAI decide)', 'mcp-ai-wpoos' ),
 				);
 			}

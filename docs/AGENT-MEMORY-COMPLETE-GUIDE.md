@@ -53,9 +53,54 @@ The Agent Memory Management system now provides enterprise-grade capabilities fo
       "confidence": 0.95
     }
   },
+  "wing": "client-acme",
+  "room": "training-pipeline",
+  "verbatim": false,
   "ttl": 2592000
 }
 ```
+
+#### Hierarchical scoping (wings & rooms)
+
+Inspired by [MemPalace](https://github.com/MemPalace/mempalace), every stored memory can be tagged with two optional hierarchical scope fields:
+
+- **`wing`** — high-level scope, typically a project, person, or domain (`"client-acme"`, `"personal"`, `"team-alpha"`).
+- **`room`** — sub-scope inside a wing, typically a topic cluster (`"auth-flows"`, `"billing"`, `"onboarding"`).
+
+Drawers (the original content of each record) live unchanged inside `context_data.content`. Wings and rooms are stored on the record and mirrored in the agent index so retrieval can scope candidates **before** semantic ranking runs, dramatically improving recall on shared memory pools.
+
+When `wing` and/or `room` are omitted, the memory is unscoped and visible to all retrievals for the agent — the previous default behaviour.
+
+#### Verbatim-storage discipline
+
+Set `verbatim: true` to declare that the supplied `content` must be stored exactly as provided. The plugin then:
+
+1. Skips the `wp_mcp_ai_memory_pre_store_transform` filter so summarisers, redactors, or paraphrasers cannot alter the text.
+2. Persists the `verbatim` flag on the record so downstream consumers can honour the same contract.
+
+Use this for raw quotes, decisions, transcripts, or any text whose phrasing matters. The recommended pattern is **store raw, summarise on read**: write verbatim, then derive summaries at retrieval time when context budgets demand it.
+
+#### `wp_mcp_ai_memory_pre_store_transform` filter
+
+Plugins that want to transform context before it is persisted can hook this filter:
+
+```php
+add_filter(
+    'wp_mcp_ai_memory_pre_store_transform',
+    function ( $context_data, $verbatim, $context_type, $agent_id, $arguments, $context ) {
+        if ( $verbatim ) {
+            return $context_data; // Verbatim contract — must not modify.
+        }
+        // Example: append a content hash to metadata.
+        $context_data['metadata']['content_sha1'] = sha1( $context_data['content'] );
+        return $context_data;
+    },
+    10,
+    6
+);
+```
+
+The verbatim contract is enforced unconditionally by the tool itself: even if a poorly-behaved listener returns modified data, the tool will discard it whenever `verbatim === true`.
 
 ### Read (Retrieve Memory)
 
@@ -67,11 +112,115 @@ The Agent Memory Management system now provides enterprise-grade capabilities fo
   "query": "machine learning",
   "filters": {
     "importance": ["high", "critical"],
-    "context_types": ["learning", "insight"]
+    "context_types": ["learning", "insight"],
+    "wing": "client-acme",
+    "room": "training-pipeline"
   },
   "limit": 10
 }
 ```
+
+The optional `wing` and `room` filters are applied **before** semantic ranking, so they constrain the candidate pool rather than just re-ordering it. Combine them with `query` for the MemPalace-style "search this project, this topic, semantically" pattern.
+
+#### Hybrid retrieval scoring
+
+When semantic search runs through `WP_MCP_AI_Vector_Context_Service` (e.g. via `semantic_context_search`), each candidate's cosine similarity is layered with three optional, additive boosters:
+
+| Booster        | Default weight | Filter (weight)                                     | Filter (final value)                          |
+|----------------|---------------:|-----------------------------------------------------|-----------------------------------------------|
+| Keyword overlap | 0.10           | `wp_mcp_ai_memory_score_boost_keyword_weight`       | `wp_mcp_ai_memory_score_boost_keyword`        |
+| Temporal proximity | 0.05        | `wp_mcp_ai_memory_score_boost_temporal_weight`<br>`wp_mcp_ai_memory_score_boost_temporal_half_life` | `wp_mcp_ai_memory_score_boost_temporal`       |
+| Tag/wing/room exact-match | 0.10  | `wp_mcp_ai_memory_score_boost_exact_match_weight`   | `wp_mcp_ai_memory_score_boost_exact_match`    |
+
+Total booster contribution is capped (default `0.25`) via `wp_mcp_ai_memory_score_boost_total_cap`. To recover **pure** cosine-similarity ranking, set every weight filter to `0`:
+
+```php
+add_filter( 'wp_mcp_ai_memory_score_boost_keyword_weight',     '__return_zero' );
+add_filter( 'wp_mcp_ai_memory_score_boost_temporal_weight',    '__return_zero' );
+add_filter( 'wp_mcp_ai_memory_score_boost_exact_match_weight', '__return_zero' );
+```
+
+Search responses include both `similarity_score` (raw cosine) and `final_score` (after boosters) plus a `boost_breakdown` field for debugging.
+
+#### Phase 2: Bulk ingest (`mine_agent_memory`)
+
+Mirrors MemPalace's `mempalace mine` workflow. One tool call ingests many records into the existing memory store, scoped to a wing/room and stored **verbatim by default**.
+
+| Source   | Behaviour                                                                                  |
+|----------|---------------------------------------------------------------------------------------------|
+| `posts`  | Runs a `WP_Query` against the chosen post type and stores each post's content + permalink. |
+| `urls`   | Fetches each URL via `wp_safe_remote_get`, strips scripts/styles, stores the plain text.   |
+| `text`   | Stores caller-supplied `{title, content, tags?, metadata?}` items as-is.                   |
+
+Long content is auto-chunked at `chunk_size` (default 4000 chars), preserving word boundaries; each chunk shares the source title with a `(part N/M)` suffix. The total number of records created in a single run is capped at 200. `dry_run: true` plans without writing.
+
+```json
+{
+  "agent_id": 123,
+  "source": "posts",
+  "wing": "client-acme",
+  "room": "onboarding",
+  "post_query": { "post_type": "kb_article", "posts_per_page": 50 },
+  "tags": ["mined", "kb"],
+  "verbatim": true
+}
+```
+
+Every write goes through `store_agent_context`, so `wp_mcp_ai_memory_pre_store_transform`, sanitization, and the verbatim contract all behave identically to a single-record store.
+
+#### Phase 2: Session wake-up (`wake_up_context`)
+
+A read-only tool that builds a labelled, token-budgeted memory block ready to prepend to the assistant's system prompt at session boot.
+
+```json
+{
+  "agent_id": 123,
+  "wing": "client-acme",
+  "top_n": 5,
+  "token_budget": 800,
+  "include_content": true
+}
+```
+
+Returns a `system_block` string plus accounting fields (`tokens_used`, `truncated`, `memories_loaded`). The block is bracketed by `=== Persistent Memory (auto-loaded at session start) ===` headers so the LLM can see clearly where its persistent memory begins and ends.
+
+| Filter                                | Purpose                                                          |
+|---------------------------------------|------------------------------------------------------------------|
+| `wp_mcp_ai_wake_up_top_n`             | Override the maximum number of memories considered.              |
+| `wp_mcp_ai_wake_up_token_budget`      | Override the token budget (≈4 chars per token).                  |
+| `wp_mcp_ai_wake_up_system_block`      | Reformat or wrap the rendered block before it is returned.       |
+
+Memories that overflow the budget are dropped (lowest-priority first) and reported in the `truncated` count, so the call is always TPM-safe. Pair this with `mine_agent_memory` and a wing per project to recreate MemPalace's "session loads only this client's drawers" experience.
+
+#### Phase 3: Pluggable embedding provider (local-first via Ollama)
+
+Embedding generation in `WP_MCP_AI_Vector_Context_Service` is now resolved through a pluggable provider that implements `WP_MCP_AI_Embedding_Provider_Interface` (`get_id()`, `get_model()`, `is_available()`, `embed( $text )`). Two providers ship in core:
+
+| Provider                                     | When picked by default                                 | Default model              |
+|----------------------------------------------|--------------------------------------------------------|----------------------------|
+| `WP_MCP_AI_Embedding_Provider_OpenAI`        | `openai_api_key` is set (auto-selected when both are configured — preserves prior behaviour). | `text-embedding-3-small`   |
+| `WP_MCP_AI_Embedding_Provider_Ollama`        | Only `ollama_endpoint_url` is set (no OpenAI key), or `embedding_provider` setting is `ollama`. | `nomic-embed-text`         |
+
+Set the explicit preference by saving `embedding_provider` (`'openai'` or `'ollama'`) in the plugin's settings option, or override entirely from PHP:
+
+```php
+add_filter( 'wp_mcp_ai_embedding_provider', function () {
+    return new WP_MCP_AI_Embedding_Provider_Ollama( 'http://gpu-host.lan:11434', 'mxbai-embed-large' );
+} );
+```
+
+Other filters:
+
+| Filter                                              | Purpose                                                    |
+|-----------------------------------------------------|------------------------------------------------------------|
+| `wp_mcp_ai_embedding_provider_openai_model`         | Override the OpenAI embedding model id.                    |
+| `wp_mcp_ai_embedding_provider_ollama_model`         | Override the Ollama embedding model id.                    |
+| `wp_mcp_ai_embedding_provider_ollama_endpoint`      | Override the Ollama base URL.                              |
+| `wp_mcp_ai_embedding_provider_ollama_timeout`       | HTTP timeout (seconds) for Ollama embedding calls.         |
+
+Cache keys are now scoped to `{provider_id}:{model}:{md5(text)}`, so switching backends never returns vectors generated by a different model. Call `WP_MCP_AI_Vector_Context_Service::get_instance()->reset_embedding_provider()` to force re-resolution after a runtime settings change.
+
+The Ollama provider POSTs to `{endpoint}/api/embeddings` via `wp_safe_remote_post` and accepts both the canonical `{embedding: [...]}` response and the plural `{embeddings: [[...]]}` form some forks return.
 
 ### Update (Edit Memory)
 
@@ -727,12 +876,189 @@ if (needsRollback) {
 
 ---
 
+## Graphify-Backed Memory (Phase 4a, optional)
+
+When the optional **NV oOS Graphify** addon is active, agent memory is mirrored
+into the Graphify knowledge graph in real time. This is **purely additive** —
+the transient store remains the source of truth in Phase 4a, and everything
+behaves identically to the standalone configuration when Graphify is not
+installed.
+
+### What gets projected
+
+Every successful `store_agent_context` call (and therefore every item written
+by `mine_agent_memory`) fires a new `wp_mcp_ai_memory_stored` action. Graphify
+subscribes to that action and creates:
+
+- a **`memory` node** keyed `memory:<context_id>`, carrying the verbatim
+  content, importance, tags, wing/room scope, agent id, and stored/expires
+  timestamps as node properties;
+- an `OBSERVED_BY` edge to the corresponding `agent:<agent_id>` node;
+- a `MEMBER_OF` edge to the `wing:<wing>` node when a wing is set;
+- a `MEMBER_OF` edge to the composite `room:<wing>:<room>` node when a room
+  is set, plus a `MEMBER_OF` edge from that room to the wing;
+- a `DERIVED_FROM` edge to the source post node when the memory was ingested
+  from a WordPress post (`content_source.type = "post"`);
+- a vector embedding pushed through the same on-ingest cron pipeline used by
+  Graphify's content embeddings, so memory vectors share the
+  `embeddings` table and provider configuration with the rest of the graph.
+
+If the Graphify addon is deactivated, the action still fires but has no
+listener, and the system continues to operate from the transient store with
+zero behaviour change.
+
+### Graph-mode retrieval (`wake_up_context`)
+
+`wake_up_context` accepts a new `mode` parameter:
+
+| Mode        | Behaviour                                                                                                                                                     |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `auto`      | (default) Use graph traversal when the Graphify bridge is loaded; otherwise fall back to the transient + cosine path.                                         |
+| `graph`     | Force graph traversal. Returns an error (`success: false`) when the Graphify addon is not active. Useful when callers explicitly want graph-ranked semantics. |
+| `transient` | Force the legacy transient + cosine path even when Graphify is loaded — handy for debugging and side-by-side comparisons.                                     |
+
+Graph traversal blends three signals into a single ranked list of memory
+context ids:
+
+1. **Anchor expansion** — every memory connected to the requested
+   `agent:<agent_id>`, `wing:<wing>`, and `room:<wing>:<room>` nodes via the
+   relations above is collected as a candidate. Wing/room anchors carry more
+   weight than agent anchors so scoped recall feels precise.
+2. **Keyword search** — when a `query` is supplied, `search_nodes()` runs a
+   `LIKE` match over memory node labels and adds matches to the candidate
+   set with a moderate boost.
+3. **Vector similarity** — when a `query` is supplied and embeddings are
+   enabled, the same `WP_MCP_AI_Vector_Context_Service` provider used for
+   transient cosine search produces a query vector. Cosine matches against
+   the Graphify `embeddings` table receive a positive boost.
+
+If the graph yields no candidates the wake-up tool transparently falls back to
+the legacy retrieval so an operator never sees an empty palace.
+
+The response gains a new `retrieval_path` field (`graph` or `transient`) so
+callers can observe which path serviced the request.
+
+### Filters and hooks introduced in Phase 4a
+
+| Hook                                    | Type   | When it fires                                                                                              |
+|-----------------------------------------|--------|------------------------------------------------------------------------------------------------------------|
+| `wp_mcp_ai_memory_stored`               | action | After every successful `store_agent_context` write; payload contract documented in the tool's PHPDoc.       |
+| `wp_mcp_ai_wake_up_graph_context_ids`   | filter | After graph retrieval ranks ids and before each one is fetched. Use to inject, reorder, or drop memories. |
+| `wp_mcp_ai_graph_score_weights`         | filter | Tunes the linear-combination weights for the three GraphRAG signals (anchor / keyword / vector). Default `{agent:0.1, wing:0.4, room:0.6, keyword:0.5, vector:1.0}` follows the keyword 0.4–0.5 / graph 0.2–0.3 / vector 0.3–0.4 recipe documented for Microsoft GraphRAG, Neo4j, and LlamaIndex PropertyGraphIndex. Per-query overrides also accepted via `args.weights`. |
+
+### Standard memory-record fields (industry alignment)
+
+Each `memory:<context_id>` node carries the conventional fields used by MemGPT/Letta, mem0, and LangMem so downstream tooling can ingest them without translation:
+
+| Property      | Meaning                                                                                                  |
+|---------------|----------------------------------------------------------------------------------------------------------|
+| `created_at`  | Standard creation timestamp (alias of `stored_at`, kept for backwards compatibility).                     |
+| `memory_type` | LangMem-style taxonomy (semantic / episodic / procedural / fact / …); mirrors `context_type`.            |
+| `importance`  | `low` / `medium` / `high` / `critical`.                                                                  |
+| `agent_id`    | Multi-tenant scoping field.                                                                              |
+| `wing`/`room` | NV oOS scope fields used as anchors during graph retrieval.                                              |
+| `tags`        | Free-form tag list.                                                                                      |
+| `verbatim`    | `1` when the verbatim discipline was applied at ingest.                                                  |
+| `expires_at`  | Optional TTL (mirrors transient-store expiry).                                                           |
+
+### Retrieval-response observability (`via` provenance)
+
+When graph retrieval services a `wake_up_context` request, every entry in `memories_loaded` carries a `via` array listing which signals matched — one or more of `agent`, `wing`, `room`, `keyword`, `vector`. This mirrors the retrieval-log conventions exposed by mem0 and Letta and lets operators debug *why* a particular memory was surfaced.
+
+```jsonc
+{
+  "retrieval_path": "graph",
+  "memories_loaded": [
+    { "context_id": "ctx_…", "title": "…", "via": ["wing", "vector"] },
+    { "context_id": "ctx_…", "title": "…", "via": ["room", "keyword"] }
+  ]
+}
+```
+
+### Visualising the palace
+
+The Graphify admin "Graph Explorer" tab adds two new toolbar inputs and a
+**Memory Palace** preset:
+
+- **Agent ID** — the agent whose memories you want to highlight.
+- **Wing** — an optional wing scope. Combine with the agent for the classic
+  "Agent: X / Wing: Y" view.
+- **Apply** — fades the rest of the graph and highlights the matching
+  `memory` nodes (and their wing/agent anchor nodes).
+- **Clear** — clears both inputs and removes the highlight.
+
+The preset matches by node properties (`agent_id`, `wing`, `room`), so it
+works on the initial graph render without first having to click each node to
+load its edges.
+
+### Test coverage
+
+- `tests/test-mempalace-phase4a-graphify-bridge.php`
+  - asserts the `wp_mcp_ai_memory_stored` payload contract,
+  - asserts that `mine_agent_memory` produces one event per item,
+  - asserts the absent-path: store still succeeds with no listener,
+  - asserts the bridge handler is exception-safe,
+  - asserts `mode: 'graph'` errors gracefully without Graphify,
+  - asserts `mode: 'auto'` falls back to `transient` without Graphify,
+  - asserts `mode: 'transient'` forces the legacy path even when Graphify is
+    present,
+  - exercises the graph happy-path by injecting an ordered id list through
+    `wp_mcp_ai_wake_up_graph_context_ids` and verifying the renderer respects
+    the graph order.
+
+---
+
 ## Support
 
 - **Documentation**: See `/docs/RAG-ENHANCED-MEMORY-MANAGEMENT.md`
 - **Tool Reference**: See `/docs/tool-reference.md`
 - **API Reference**: See `/docs/rest-api.md`
 - **Issues**: GitHub Issues
+
+---
+
+## Durable Backing Store (Phase 4b, optional)
+
+When JetEngine is active, agent memory is now persisted to a dedicated Custom Content Type (`ai_agent_memories`) **in addition to** the existing transient cache. This closes the durability gap where `wp cache flush` or a Redis restart could silently wipe memory.
+
+### How it works
+
+- Transients remain the primary read path — no latency change for `retrieve_agent_memory` / `wake_up_context`.
+- A bridge (`WP_MCP_AI_Agent_Memory_CCT_Bridge`) listens on `wp_mcp_ai_memory_stored` and `wp_mcp_ai_memory_deleted` and mirrors every write/delete to the CCT.
+- Failures are logged but never fatal — the transient store stays the source of truth.
+
+### Industry-standard schema
+
+The CCT schema aligns with mem0, Letta/MemGPT, Zep, and Cognee patterns:
+
+| Column | Origin | Notes |
+|---|---|---|
+| `context_id`, `agent_id` | mem0 / Letta | Stable identifiers used for dedupe |
+| `memory_tier` | Letta / Cognee | `working` / `episodic` / `semantic` / `procedural`; auto-classified from `context_type` if not supplied |
+| `wing`, `room` | Phase 4a / Cognee | Hierarchical scope |
+| `verbatim`, `importance` | mem0 | Immutability + relevance |
+| `transaction_time`, `valid_from`, `valid_until` | Zep | Bi-temporal validity |
+| `expires_at`, `ttl_seconds` | Letta | TTL anchor |
+| `source`, `source_post_id`, `source_url`, `source_type` | mem0 / Letta | Provenance |
+| `embedding_id`, `graph_node_id` | mem0 / Zep | Reserved for Phase 4c (vector + graph cross-refs) |
+
+### Hooks
+
+- `wp_mcp_ai_memory_stored` *(action, since 1.1.0)* — fired after a transient write; the CCT bridge subscribes here.
+- `wp_mcp_ai_memory_deleted` *(action, new in this phase)* — fired after a transient delete (lifecycle delete + prune paths). Listeners receive `{ context_id, agent_id, context_type, deleted_at }`.
+- `wp_mcp_ai_memory_cct_record` *(filter, new in this phase)* — mutate the CCT record before persistence. Use this for site-specific PII redaction or to attach a precomputed `embedding_id` / `graph_node_id`.
+
+### Dashboard surfacing
+
+The orchestration dashboard's agent-memory widget now exposes a **Persistent (CCT) / Cache only** card so operators can see at a glance how much memory is durable versus cache-only. When JetEngine is missing, the card prompts to install it.
+
+### Disabling the dual-write
+
+Either deactivate JetEngine (the bridge becomes a no-op) or remove the `wp_mcp_ai_memory_stored` listener:
+
+```php
+remove_action( 'wp_mcp_ai_memory_stored', array( 'WP_MCP_AI_Agent_Memory_CCT_Bridge', 'on_memory_stored' ), 20 );
+```
 
 ---
 

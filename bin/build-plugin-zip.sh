@@ -752,6 +752,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'addons/pro/assets/vendor/axios' \
         --exclude 'addons/pro/assets/vendor/mathjs' \
         --exclude 'addons/pro/assets/vendor/prettier' \
+        --exclude 'addons/pro/vendor/tecnickcom' \
         --exclude 'mcp-ai-wpoos-base.php' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
@@ -822,6 +823,33 @@ if [ "$BUILD_COMBINED" = true ]; then
     # This provides better debugging experience while maintaining optimal production performance.
     echo "✓ Keeping both minified and unminified assets for SCRIPT_DEBUG support"
     
+    # ------------------------------------------------------------------
+    # Prune tecnickcom/tcpdf (~28.7 MB) from the combined zip.
+    #
+    # tcpdf is the single largest vendor dependency and is only used by two
+    # optional pro tools (merge-pdfs, add-watermark-to-pdf) that already
+    # gracefully degrade when the library is missing via
+    # `class_exists( '\TCPDF' )` checks. Users who need PDF merge/watermark
+    # functionality install the dedicated `oos-toolkit-tcpdf` add-on, which
+    # ships only the tcpdf vendor library and registers its own autoloader.
+    #
+    # The rsync exclude above removes the vendor source. Below we also strip
+    # tcpdf entries from the Composer autoload classmap so that
+    # `class_exists( '\TCPDF' )` returns false cleanly without emitting an
+    # `include(): Failed opening` warning when the autoloader resolves a
+    # classmap entry to a missing file.
+    # ------------------------------------------------------------------
+    COMBINED_VENDOR_COMPOSER="build/${COMBINED_SLUG}/addons/pro/vendor/composer"
+    if [ -f "${COMBINED_VENDOR_COMPOSER}/autoload_classmap.php" ]; then
+        sed -i.bak '/tecnickcom\/tcpdf/d' "${COMBINED_VENDOR_COMPOSER}/autoload_classmap.php"
+        rm -f "${COMBINED_VENDOR_COMPOSER}/autoload_classmap.php.bak"
+    fi
+    if [ -f "${COMBINED_VENDOR_COMPOSER}/autoload_static.php" ]; then
+        sed -i.bak '/tecnickcom\/tcpdf/d' "${COMBINED_VENDOR_COMPOSER}/autoload_static.php"
+        rm -f "${COMBINED_VENDOR_COMPOSER}/autoload_static.php.bak"
+    fi
+    echo "✓ Excluded tecnickcom/tcpdf vendor (ships in oos-toolkit-tcpdf add-on)"
+
     # Remove README.md (readme.txt is the WordPress.org standard)
     if [ -f "build/${COMBINED_SLUG}/README.md" ]; then
         rm -f "build/${COMBINED_SLUG}/README.md"
