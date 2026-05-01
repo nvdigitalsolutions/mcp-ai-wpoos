@@ -5,6 +5,8 @@
  * Provides semantic search capabilities for agent contexts using
  * OpenAI embeddings and cosine similarity.
  * Part of DeepSeek V4-inspired multi-agent orchestration enhancements (Phase 5.5).
+ * Hybrid scoring boosters are inspired by the MemPalace project
+ * (https://github.com/MemPalace/mempalace).
  *
  * @package WP_MCP_AI
  * @since 1.1.0

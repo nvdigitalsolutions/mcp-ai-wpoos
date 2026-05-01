@@ -6,7 +6,8 @@
  * `/api/embeddings` endpoint. Enables MemPalace-style "no data leaves the
  * server" memory operation.
  *
- * MemPalace-inspired Phase 3 enhancement.
+ * Phase 3 enhancement inspired by the MemPalace project
+ * (https://github.com/MemPalace/mempalace).
  *
  * @package WP_MCP_AI
  * @since 1.1.0

@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Generate_Scene_Background extends WP_MCP_AI_Tool_Harmonizat
 				$prompt,
 				array(
 					'size'  => $this->aspect_to_openai_size( $aspect ),
-					'model' => 'gpt-image-1',
+					'model' => 'gpt-image-2',
 				)
 			);
 			if ( is_wp_error( $result ) ) {
