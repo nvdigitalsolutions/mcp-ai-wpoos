@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
         'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-        'reference' => 'd4f352ad7c8124e4d311299b2b70368cfd3efa25',
+        'reference' => 'bacb166ac13a34999e4e14debcdbd4391805932c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
             'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-            'reference' => 'd4f352ad7c8124e4d311299b2b70368cfd3efa25',
+            'reference' => 'bacb166ac13a34999e4e14debcdbd4391805932c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

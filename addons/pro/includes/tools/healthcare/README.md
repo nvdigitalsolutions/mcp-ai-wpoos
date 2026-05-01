@@ -29,7 +29,7 @@ This directory mirrors the [Architectural Design Toolkit](../architectural-desig
 | Checkups | `checkups/` | Health & Wellness | Phase A |
 | Policies | `policies/` | Health & Wellness | Phase A |
 | Reminders, research & guides | `reminders-research/` | Health & Wellness | Phase A |
-| Vitals | `vitals/` | Medical Vitals | Phase A |
+| Vitals | `vitals/` | Medical Vitals | Phase A → B |
 | Imaging | `imaging/` | Medical Imaging | Phase A |
 | Interoperability (FHIR / HL7 / CCDA / DICOMweb) | `interoperability/` | cross-cutting | Phase A → E |
 | Region/specialty assistant blueprints | `examples/` | — | Phase E |
@@ -49,9 +49,9 @@ The healthcare toolkit follows the same A→E roadmap as the Architectural Desig
 
 Introduces the unified umbrella, the shared engine / codes / FHIR / audit / capabilities classes, the `wp_mcp_ai_healthcare_settings` option, the unified bootstrap (`includes/healthcare-toolkit-init.php`), and a backwards-compatible forwarder that preserves the old `healthcare-imaging-toolkit-init.php` entry point.  No new tools are introduced and no existing tool slugs change.
 
-### Phase B — Medical Vitals depth
+### Phase B — Medical Vitals depth ✅
 
-Promotes vital logs to a CPT, adds age / sex / species-aware reference ranges, introduces `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_percentile`, a vaccination schedule engine (CDC / WHO / AAFP small-animal), and broadens `import_vitals` with CSV + Apple Health + Google Fit + Withings via the existing remote-connection patterns.  Adds `wp_mcp_ai_healthcare_before_vital_log` / `…_after_vital_log` hooks.
+Adds `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_percentile`, and `get_vaccination_schedule` (backed by `WP_MCP_AI_Healthcare_Vaccination_Schedules` with CDC paediatric / CDC adult / WHO EPI / AAFP feline / AAHA canine packs).  Promotes vital logs to the auxiliary `mcp_ai_hc_vital_log` CPT (existing options + JetEngine CCT storage continues to work as the primary store).  Fires `wp_mcp_ai_healthcare_before_vital_log` and `wp_mcp_ai_healthcare_after_vital_log` hooks from `log_vital_signs`.  Broader CSV / Apple Health / Google Fit / Withings imports for `import_vitals` are tracked for a Phase B follow-up.
 
 ### Phase C — Health & Wellness breadth
 

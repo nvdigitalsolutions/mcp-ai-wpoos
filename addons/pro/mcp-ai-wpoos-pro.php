@@ -1056,6 +1056,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			}
 		}
 
+		// Add Medical Vitals sub-toolkit (Phase B) tools if enabled.
+		// Defaults to the value of `enable_health_wellness_management` for
+		// backwards compatibility (see WP_MCP_AI_Healthcare_Engine).
+		$vitals_enabled = array_key_exists( 'enable_medical_vitals', $settings )
+			? ! empty( $settings['enable_medical_vitals'] )
+			: ! empty( $settings['enable_health_wellness_management'] );
+		if ( $vitals_enabled ) {
+			$vitals_tools = array(
+				'WP_MCP_AI_Tool_Flag_Abnormal_Vitals'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-flag-abnormal-vitals.php',
+				'WP_MCP_AI_Tool_Analyze_Vital_Trends'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-analyze-vital-trends.php',
+				'WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-compute-bmi-and-growth-percentile.php',
+				'WP_MCP_AI_Tool_Get_Vaccination_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-get-vaccination-schedule.php',
+			);
+			$pro_tools    = array_merge( $pro_tools, $vitals_tools );
+		}
+
 		// Add Healthcare Imaging tools if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
 			$imaging_tools = array(
@@ -2034,6 +2050,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
 			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
 			$pro_tools['parse_health_information']     = 'wordpress-core';
+		}
+
+		// Add Medical Vitals (Phase B) tool mappings if enabled.
+		$vitals_mappings_enabled = array_key_exists( 'enable_medical_vitals', $settings )
+			? ! empty( $settings['enable_medical_vitals'] )
+			: ! empty( $settings['enable_health_wellness_management'] );
+		if ( $vitals_mappings_enabled ) {
+			$pro_tools['flag_abnormal_vitals']             = 'wordpress-core';
+			$pro_tools['analyze_vital_trends']             = 'wordpress-core';
+			$pro_tools['compute_bmi_and_growth_percentile'] = 'wordpress-core';
+			$pro_tools['get_vaccination_schedule']         = 'wordpress-core';
 		}
 
 		// Add Healthcare Imaging tool mappings if enabled.

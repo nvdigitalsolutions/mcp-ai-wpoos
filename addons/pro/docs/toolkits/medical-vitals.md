@@ -9,7 +9,7 @@
 |---|---|
 | **Activation setting** | `enable_medical_vitals` (defaults to `enable_health_wellness_management` for backwards compatibility) |
 | **Admin location** | NV oOS → Settings → Pro Features → Healthcare → Medical Vitals |
-| **Custom Post Types** | shares `mcp_ai_member`; vital logs are stored as JetEngine CCT today, promoted to a CPT in Phase B |
+| **Custom Post Types** | shares `mcp_ai_member`; vital logs continue to live in options + JetEngine CCT, with a new auxiliary `mcp_ai_hc_vital_log` CPT registered when Medical Vitals is enabled |
 | **Status** | ⚠️ **PHI when used clinically — see compliance notes below.** |
 
 ---
@@ -22,10 +22,23 @@ veterinary practices, and personal use.  Sub-toolkit A of the
 
 * **Vital sign logging** — `log_vital_signs` (heart rate, blood pressure, temperature, respiratory rate, SpO₂).
 * **Health metrics** — `log_health_metrics` (weight, glucose, custom metrics).
-* **Imports** — `import_vitals` (CSV today; Apple Health / Google Fit / Withings in Phase B).
-* **Vaccination tracking** — `track_vaccinations` against CDC CVX codes.
+* **Trend analysis** — `analyze_vital_trends` (Phase B) returns min/max/mean and direction summaries.
+* **Abnormal-value review** — `flag_abnormal_vitals` (Phase B) labels readings against age/sex/species-aware ranges.
+* **Body composition** — `compute_bmi_and_growth_percentile` (Phase B) returns adult BMI category plus a coarse paediatric growth band.
+* **Vaccination scheduling** — `get_vaccination_schedule` (Phase B) reads the new CDC / WHO / AAFP / AAHA pack registry; `track_vaccinations` records administered doses against CDC CVX codes.
+* **Imports** — `import_vitals` (CSV today; Apple Health / Google Fit / Withings tracked for a future Phase B follow-up).
 * **Medication schedules** — `get_medication_schedule` per member.
 * **Charts & reminders** — `generate_health_chart`, `create_health_reminder`.
+
+### New hooks (Phase B)
+
+| Hook | Type | When |
+|---|---|---|
+| `wp_mcp_ai_healthcare_before_vital_log` | filter | Just before `log_vital_signs` writes; receives `( $arguments, $member_id, $context )` and returns the (possibly mutated) arguments. |
+| `wp_mcp_ai_healthcare_after_vital_log` | action | After persistence; receives `( $response, $member_id, $arguments, $context )`. |
+| `wp_mcp_ai_healthcare_vaccination_schedules` | filter | Lets partner code add or override vaccination pack definitions. |
+| `wp_mcp_ai_healthcare_growth_percentile` | filter | Lets partner code override the resolved growth band returned by `compute_bmi_and_growth_percentile`. |
+| `wp_mcp_ai_healthcare_vital_log_cpt_args` | filter | Lets partner code customise the `mcp_ai_hc_vital_log` CPT registration. |
 
 ---
 
@@ -51,7 +64,7 @@ veterinary practices, and personal use.  Sub-toolkit A of the
 ## Roadmap (per the unified toolkit)
 
 * **Phase A — Foundations.**  Sub-toolkit lives under the unified Healthcare Toolkit umbrella; shares engine, codes, FHIR builders, audit ledger, and capability map with Health & Wellness and Imaging.
-* **Phase B — Depth.**  Promotes vital logs to a CPT (`mcp_ai_hc_vital_log`); adds `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_percentile`, vaccination schedule engine, and broadens `import_vitals` to Apple Health / Google Fit / Withings.
+* **Phase B — Depth.**  ✅ Adds `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_percentile`, and `get_vaccination_schedule` (CDC paediatric / CDC adult / WHO EPI / AAFP feline / AAHA canine packs); promotes vital logs to the auxiliary `mcp_ai_hc_vital_log` CPT (existing options/CCT storage continues to work); fires `wp_mcp_ai_healthcare_before_vital_log` and `wp_mcp_ai_healthcare_after_vital_log` hooks. CSV / Apple Health / Google Fit / Withings imports for `import_vitals` are tracked for a follow-up.
 
 See [`addons/pro/includes/tools/healthcare/README.md`](../../includes/tools/healthcare/README.md) for the full A→E roadmap.
 

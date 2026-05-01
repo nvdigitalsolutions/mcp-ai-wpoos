@@ -51,7 +51,14 @@ if ( ! empty( $wp_mcp_ai_settings['enable_healthcare_imaging'] ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging-init.php';
 }
 
-// Sub-toolkit A: Medical Vitals — currently piggy-backs on Health & Wellness
-// but exposes its own toggle for forward compatibility.  Phase B will move
-// vital-log registration into a dedicated init file.
-unset( $wp_mcp_ai_settings );
+// Sub-toolkit A: Medical Vitals (Phase B).
+// Defaults to the value of `enable_health_wellness_management` for BC.
+$wp_mcp_ai_vitals_enabled = array_key_exists( 'enable_medical_vitals', $wp_mcp_ai_settings )
+	? ! empty( $wp_mcp_ai_settings['enable_medical_vitals'] )
+	: ! empty( $wp_mcp_ai_settings['enable_health_wellness_management'] );
+if ( $wp_mcp_ai_vitals_enabled ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-healthcare-vaccination-schedules.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-healthcare-vital-log-cpt.php';
+	WP_MCP_AI_Healthcare_Vital_Log_CPT::init();
+}
+unset( $wp_mcp_ai_vitals_enabled, $wp_mcp_ai_settings );
