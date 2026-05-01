@@ -70,6 +70,8 @@ it is a workflow and review tool that sits alongside them.
 
 ## Related docs
 
+- [Healthcare Toolkit umbrella](../../includes/tools/healthcare/README.md) — shared engine, codes, FHIR builders, audit ledger, capability map
 - [Pro Toolkits index](README.md)
 - [Health & Wellness Management](health-wellness.md) — non-clinical health tracking
+- [Medical Vitals](medical-vitals.md) — vitals tracking sub-toolkit
 - [Password Vault](password-vault.md) — secure storage of PACS / DICOMweb credentials

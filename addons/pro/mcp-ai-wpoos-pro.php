@@ -459,13 +459,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Quiz Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
-		// Load Health and Wellness Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
-
-		// Load Healthcare Imaging Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-imaging-toolkit-init.php';
-		}
+		// Load Healthcare Toolkit (unified umbrella for Medical Vitals,
+		// Health & Wellness, and Healthcare Imaging).  The unified
+		// bootstrap eagerly loads shared infrastructure (engine, codes,
+		// FHIR builders, audit ledger, capability map) and conditionally
+		// loads each sub-toolkit based on its `enable_*` setting.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-toolkit-init.php';
 
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';

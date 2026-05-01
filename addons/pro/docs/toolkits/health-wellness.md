@@ -61,7 +61,9 @@ defaults are usually appropriate.
 
 ## Related docs
 
+- [Healthcare Toolkit umbrella](../../includes/tools/healthcare/README.md) — shared engine, codes, FHIR builders, audit ledger, capability map
 - [Pro Toolkits index](README.md)
-- [Healthcare Imaging](healthcare-imaging.md)
+- [Medical Vitals](medical-vitals.md) — vitals tracking sub-toolkit
+- [Healthcare Imaging](healthcare-imaging.md) — DICOM-aware imaging viewer
 - [`addons/pro/docs/HEALTH_WELLNESS_IMPLEMENTATION.md`](../HEALTH_WELLNESS_IMPLEMENTATION.md)
 - [`addons/pro/docs/MIGRATION_MEDICAL_RECORD_POST_TYPE.md`](../MIGRATION_MEDICAL_RECORD_POST_TYPE.md)
