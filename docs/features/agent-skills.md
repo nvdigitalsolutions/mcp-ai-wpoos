@@ -167,6 +167,25 @@ You have the following specialized skills loaded. Use them when relevant to the 
 
 Skills are composable — you can assign as many as you need to a single assistant.
 
+### Progressive disclosure (opt-in)
+
+The default mode above is **eager**: every assigned skill's full body is injected into the system prompt on every turn. That keeps things simple, but it also fills the context window even when no assigned skill is relevant.
+
+Each assistant has a **"Use progressive disclosure"** checkbox in its Skills meta box. When enabled:
+
+1. The system prompt only receives a short catalogue (skill name + description) under an `# Available Skills` heading — full instructions are NOT included.
+2. The base plugin auto-registers a `load_skill` tool. When the model decides a skill applies, it calls `load_skill({ name: "<skill-name>" })` and the full SKILL.md instructions are returned in the tool result.
+3. The model uses those instructions for the rest of the turn.
+
+This matches the pattern described at [agentskills.io](https://agentskills.io/specification) and is recommended whenever an assistant has more than a handful of assigned skills.
+
+**Security model for `load_skill`:**
+
+- The skill must be installed in the registry.
+- The skill must be assigned to the current assistant via the Skills meta box. The model cannot load skills outside the administrator-approved list, even if it knows the slug.
+- When called outside an assistant context (direct `/tools` REST call), the calling user must be authenticated (`read` capability).
+- Loads are observable through the `wp_mcp_ai_skill_loaded` action, which receives `( string $skill_name, int $assistant_id )`.
+
 ---
 
 ## Managing Skills

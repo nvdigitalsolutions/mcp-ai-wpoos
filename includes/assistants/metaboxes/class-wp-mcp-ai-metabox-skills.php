@@ -102,6 +102,8 @@ class WP_MCP_AI_Metabox_Skills extends WP_MCP_AI_Metabox_Base {
 			$assigned_skills = array();
 		}
 
+		$progressive = (bool) get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_SKILLS_PROGRESSIVE, true );
+
 		// Get available skills from the registry.
 		$registry         = WP_MCP_AI_Skill_Registry::instance();
 		$available_skills = $registry->get_all_skills();
@@ -191,6 +193,16 @@ class WP_MCP_AI_Metabox_Skills extends WP_MCP_AI_Metabox_Base {
 
 				<p class="description" style="margin-top: 10px;">
 					<?php esc_html_e( 'Selected skills will have their instructions injected into the system prompt alongside any custom instructions and roles.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<p style="margin-top: 14px;">
+					<label>
+						<input type="checkbox" name="wp_mcp_ai_skills_progressive" value="1" <?php checked( $progressive, true ); ?> />
+						<?php esc_html_e( 'Use progressive disclosure (recommended for many skills)', 'mcp-ai-wpoos' ); ?>
+					</label>
+				</p>
+				<p class="description" style="margin-left: 24px;">
+					<?php esc_html_e( 'When enabled, only a short skill catalogue is injected into the system prompt; the model retrieves a skill\'s full instructions on demand by calling the load_skill tool. This keeps the per-turn context window small even when many skills are assigned.', 'mcp-ai-wpoos' ); ?>
 				</p>
 			<?php endif; ?>
 		</div>

@@ -386,6 +386,52 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * Build a lightweight skills *index* for system-prompt injection.
+	 *
+	 * Unlike `build_skills_prompt()`, this method does NOT include the full
+	 * `SKILL.md` instructions — only the skill name and description. The model
+	 * is told to call the `load_skill` tool to fetch the full instructions on
+	 * demand. This is the "progressive disclosure" pattern described at
+	 * https://agentskills.io/specification: it keeps the per-turn context
+	 * window small even when many skills are assigned.
+	 *
+	 * @since 1.11.0
+	 * @param array $skill_names Array of skill name strings to include in the index.
+	 * @return string Compact skill catalogue, or '' when there are no usable skills.
+	 */
+	public function build_skills_index_prompt( $skill_names ) {
+		if ( ! is_array( $skill_names ) || empty( $skill_names ) ) {
+			return '';
+		}
+
+		$this->load_skills();
+
+		$entries = array();
+		foreach ( $skill_names as $name ) {
+			$skill = $this->get_skill( $name );
+			if ( ! $skill || empty( $skill['name'] ) ) {
+				continue;
+			}
+			$desc = isset( $skill['description'] ) ? trim( (string) $skill['description'] ) : '';
+			if ( '' === $desc ) {
+				$desc = __( '(no description)', 'mcp-ai-wpoos' );
+			}
+			$entries[] = sprintf( '- **%s** — %s', $skill['name'], $desc );
+		}
+
+		if ( empty( $entries ) ) {
+			return '';
+		}
+
+		$prompt  = "# Available Skills\n\n";
+		$prompt .= "You have access to the following specialised skills. Each entry below is only a short summary — the full step-by-step instructions are NOT loaded yet.\n\n";
+		$prompt .= "When a user request matches one of these skills, call the `load_skill` tool with the skill's name to retrieve the full instructions before proceeding. Do not invent skill behaviour from the summary alone.\n\n";
+		$prompt .= implode( "\n", $entries );
+
+		return $prompt;
+	}
+
+	/**
 	 * Build system prompt text from selected skill names.
 	 *
 	 * @since 1.7.0
