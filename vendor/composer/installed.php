@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/memory-enhancement-integration',
         'version' => 'dev-copilot/memory-enhancement-integration',
-        'reference' => '8dad4adfacbc0f49ada52faba70c062c2035b113',
+        'reference' => '3406b7b99d199bbf0bcdc33b6e0698239ab086a8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/memory-enhancement-integration',
             'version' => 'dev-copilot/memory-enhancement-integration',
-            'reference' => '8dad4adfacbc0f49ada52faba70c062c2035b113',
+            'reference' => '3406b7b99d199bbf0bcdc33b6e0698239ab086a8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
