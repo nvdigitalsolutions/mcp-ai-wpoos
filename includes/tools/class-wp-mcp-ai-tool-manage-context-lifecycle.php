@@ -438,6 +438,18 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			if ( 0 === $access_count && $stored_time < $threshold_time ) {
 				$transient_key = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context['context_id'] );
 				delete_transient( $transient_key );
+
+				/** This action is documented in this file. */
+				do_action(
+					'wp_mcp_ai_memory_deleted',
+					array(
+						'context_id'   => $context['context_id'],
+						'agent_id'     => $agent_id,
+						'context_type' => isset( $context['context_type'] ) ? (string) $context['context_type'] : '',
+						'deleted_at'   => current_time( 'mysql' ),
+					)
+				);
+
 				++$pruned_count;
 			}
 		}
@@ -623,6 +635,33 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			// Invalidate dashboard memory stats cache to show updated data immediately.
 			delete_transient( 'wp_mcp_ai_agent_memory_stats' );
 		}
+
+		/**
+		 * Fires after a memory has been removed from the transient store.
+		 *
+		 * Mirrors the `wp_mcp_ai_memory_stored` event so durable mirrors
+		 * (e.g. the `ai_agent_memories` JetEngine CCT, external vector DBs)
+		 * can keep their state in sync with the transient source of truth.
+		 *
+		 * Payload keys:
+		 *   - context_id   string Stable identifier (`ctx_*`).
+		 *   - agent_id     int|str Agent post ID or virtual agent slug.
+		 *   - context_type string Sanitized type slug.
+		 *   - deleted_at   string MySQL timestamp.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array $payload Normalised event payload (see above).
+		 */
+		do_action(
+			'wp_mcp_ai_memory_deleted',
+			array(
+				'context_id'   => $context_id,
+				'agent_id'     => $agent_id,
+				'context_type' => isset( $context['context_type'] ) ? (string) $context['context_type'] : '',
+				'deleted_at'   => current_time( 'mysql' ),
+			)
+		);
 
 		if ( $deleted ) {
 			return array(

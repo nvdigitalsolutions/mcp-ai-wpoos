@@ -37,8 +37,17 @@ class WP_MCP_AI_Vector_Context_Service {
 	 * OpenAI client instance.
 	 *
 	 * @var WP_MCP_AI_OpenAI_Client|null
+	 * @deprecated 1.1.0 Use the resolved embedding provider instead. Kept for
+	 *             backward compatibility with code that referenced this property.
 	 */
 	private $openai_client = null;
+
+	/**
+	 * Resolved embedding provider for the current request.
+	 *
+	 * @var WP_MCP_AI_Embedding_Provider_Interface|null
+	 */
+	private $embedding_provider = null;
 
 	/**
 	 * Embedding model to use.
@@ -85,52 +94,39 @@ class WP_MCP_AI_Vector_Context_Service {
 			return new WP_Error( 'empty_text', __( 'Context text cannot be empty.', 'mcp-ai-wpoos' ) );
 		}
 
+		// Resolve the active embedding provider before computing the cache key
+		// so cached vectors are scoped to {provider_id}:{model}.
+		$provider = $this->get_embedding_provider();
+		if ( is_wp_error( $provider ) ) {
+			return $provider;
+		}
+
+		$cache_key = self::CACHE_PREFIX . md5( $provider->get_id() . ':' . $provider->get_model() . ':' . $context_text );
+
 		// Check cache first.
 		if ( $use_cache ) {
-			$cache_key = self::CACHE_PREFIX . md5( $context_text );
-			$cached    = get_transient( $cache_key );
+			$cached = get_transient( $cache_key );
 			if ( false !== $cached ) {
 				return $cached;
 			}
 		}
 
-		// Get OpenAI client.
-		$client = $this->get_openai_client();
-		if ( is_wp_error( $client ) ) {
-			return $client;
+		// Generate embedding via the provider.
+		$embedding = $provider->embed( $context_text );
+		if ( is_wp_error( $embedding ) ) {
+			return $embedding;
 		}
 
-		// Generate embedding.
-		try {
-			$response = $client->create_embedding(
-				array(
-					'model' => self::EMBEDDING_MODEL,
-					'input' => $context_text,
-				)
-			);
-
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			// Extract embedding vector.
-			if ( isset( $response['data'][0]['embedding'] ) ) {
-				$embedding = $response['data'][0]['embedding'];
-
-				// Cache the embedding (30 days).
-				if ( $use_cache ) {
-					$cache_key = self::CACHE_PREFIX . md5( $context_text );
-					set_transient( $cache_key, $embedding, 30 * DAY_IN_SECONDS );
-				}
-
-				return $embedding;
-			}
-
-			return new WP_Error( 'invalid_response', __( 'Invalid embedding response from OpenAI.', 'mcp-ai-wpoos' ) );
-
-		} catch ( Exception $e ) {
-			return new WP_Error( 'embedding_error', $e->getMessage() );
+		if ( ! is_array( $embedding ) || empty( $embedding ) ) {
+			return new WP_Error( 'invalid_response', __( 'Embedding provider returned an empty vector.', 'mcp-ai-wpoos' ) );
 		}
+
+		// Cache the embedding (30 days).
+		if ( $use_cache ) {
+			set_transient( $cache_key, $embedding, 30 * DAY_IN_SECONDS );
+		}
+
+		return $embedding;
 	}
 
 	/**
@@ -184,17 +180,23 @@ class WP_MCP_AI_Vector_Context_Service {
 			// Calculate cosine similarity.
 			$similarity = $this->cosine_similarity( $query_embedding, $context_embedding );
 
+			// Apply MemPalace-inspired hybrid scoring boosters.
+			$boost_breakdown = $this->calculate_score_boosters( $context, $query, $filters );
+			$boosted_score   = max( 0.0, min( 1.0, $similarity + $boost_breakdown['total'] ) );
+
 			$scored_contexts[] = array(
 				'context'    => $context,
 				'similarity' => $similarity,
+				'boosters'   => $boost_breakdown,
+				'final'      => $boosted_score,
 			);
 		}
 
-		// Sort by similarity (highest first).
+		// Sort by hybrid score (highest first).
 		usort(
 			$scored_contexts,
 			function ( $a, $b ) {
-				return $b['similarity'] <=> $a['similarity'];
+				return $b['final'] <=> $a['final'];
 			}
 		);
 
@@ -212,8 +214,17 @@ class WP_MCP_AI_Vector_Context_Service {
 				'content'          => isset( $context['data']['content'] ) ? $context['data']['content'] : '',
 				'importance'       => isset( $context['data']['importance'] ) ? $context['data']['importance'] : 'medium',
 				'tags'             => isset( $context['data']['tags'] ) ? $context['data']['tags'] : array(),
+				'wing'             => isset( $context['wing'] ) ? $context['wing'] : '',
+				'room'             => isset( $context['room'] ) ? $context['room'] : '',
 				'stored_at'        => $context['stored_at'],
 				'similarity_score' => round( $scored['similarity'], 4 ),
+				'boost_score'      => round( $scored['boosters']['total'], 4 ),
+				'final_score'      => round( $scored['final'], 4 ),
+				'boost_breakdown'  => array(
+					'keyword'     => round( $scored['boosters']['keyword'], 4 ),
+					'temporal'    => round( $scored['boosters']['temporal'], 4 ),
+					'exact_match' => round( $scored['boosters']['exact_match'], 4 ),
+				),
 			);
 		}
 
@@ -318,6 +329,204 @@ class WP_MCP_AI_Vector_Context_Service {
 	}
 
 	/**
+	 * Calculate MemPalace-inspired hybrid scoring boosters for a context.
+	 *
+	 * Layers three optional, additive signals on top of the cosine-similarity
+	 * baseline so retrieval can match the keyword + temporal + exact-match
+	 * heuristics described in MemPalace's hybrid pipeline. Each booster has
+	 * a default weight (held to a small magnitude relative to similarity) and
+	 * a dedicated filter so users can disable, tune, or replace it.
+	 *
+	 * Defaults are conservative: keyword 0.10 max, temporal 0.05 max,
+	 * exact_match 0.10 max, total capped at 0.25. Setting any of the
+	 * `*_weight` filters to 0 disables that booster entirely; the pure
+	 * cosine-similarity ranking is recovered by setting all three to 0.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $context Context record (with 'data', 'stored_at', 'wing', 'room').
+	 * @param string $query   The user query.
+	 * @param array  $filters Optional retrieval filters (wing, room, tags) used by the exact-match booster.
+	 * @return array {
+	 *     Score breakdown.
+	 *
+	 *     @type float $keyword     Keyword overlap booster (post-weight).
+	 *     @type float $temporal    Temporal-proximity booster (post-weight).
+	 *     @type float $exact_match Tag/wing/room exact-match booster (post-weight).
+	 *     @type float $total       Sum, clipped to a configurable cap.
+	 * }
+	 */
+	private function calculate_score_boosters( $context, $query, $filters = array() ) {
+		$title   = isset( $context['data']['title'] ) ? (string) $context['data']['title'] : '';
+		$content = isset( $context['data']['content'] ) ? (string) $context['data']['content'] : '';
+		$tags    = isset( $context['data']['tags'] ) && is_array( $context['data']['tags'] ) ? $context['data']['tags'] : array();
+		$wing    = isset( $context['wing'] ) ? (string) $context['wing'] : '';
+		$room    = isset( $context['room'] ) ? (string) $context['room'] : '';
+
+		// --- Keyword booster: term-overlap ratio between query and title+content. ---
+		/**
+		 * Filter the maximum weight of the keyword-overlap booster.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float  $weight  Max contribution to the final score (0..1).
+		 * @param array  $context Context record being scored.
+		 * @param string $query   Query string.
+		 */
+		$keyword_weight = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_keyword_weight', 0.10, $context, $query );
+		$keyword_score  = 0.0;
+		if ( $keyword_weight > 0 && '' !== $query ) {
+			$query_lower = strtolower( $query );
+			$query_terms = array_filter(
+				array_unique( preg_split( '/\s+/', $query_lower ) ),
+				static function ( $term ) {
+					return strlen( $term ) >= 3;
+				}
+			);
+			$total_terms = count( $query_terms );
+			if ( $total_terms > 0 ) {
+				$haystack = strtolower( $title . ' ' . $content );
+				$matches  = 0;
+				foreach ( $query_terms as $term ) {
+					if ( false !== strpos( $haystack, $term ) ) {
+						++$matches;
+					}
+				}
+				$keyword_score = ( $matches / $total_terms ) * $keyword_weight;
+			}
+		}
+		/**
+		 * Filter the final keyword-overlap booster value for a context.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float  $score   Computed booster value (already weighted).
+		 * @param array  $context Context record being scored.
+		 * @param string $query   Query string.
+		 * @param float  $weight  The active weight.
+		 */
+		$keyword_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_keyword', $keyword_score, $context, $query, $keyword_weight );
+		// Clamp to [0, weight] so a misbehaving filter cannot dominate cosine similarity.
+		$keyword_score = max( 0.0, min( $keyword_weight, $keyword_score ) );
+
+		// --- Temporal booster: exponential decay favoring recent memories. ---
+		/**
+		 * Filter the maximum weight of the temporal-proximity booster.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float $weight Max contribution to the final score (0..1).
+		 */
+		$temporal_weight = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_weight', 0.05, $context, $query );
+
+		/**
+		 * Filter the half-life (in seconds) used by the temporal booster.
+		 *
+		 * Defaults to 30 days: a memory stored 30 days ago contributes half its
+		 * temporal weight; one stored 60 days ago contributes a quarter; and so on.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param int $half_life Half-life in seconds.
+		 */
+		$half_life       = (int) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal_half_life', 30 * DAY_IN_SECONDS );
+		$temporal_score  = 0.0;
+		$stored_at_iso   = isset( $context['stored_at'] ) ? (string) $context['stored_at'] : '';
+		$stored_ts       = $stored_at_iso ? strtotime( $stored_at_iso ) : 0;
+		if ( $temporal_weight > 0 && $stored_ts > 0 && $half_life > 0 ) {
+			$age_seconds    = max( 0, time() - $stored_ts );
+			$decay          = pow( 0.5, $age_seconds / $half_life );
+			$temporal_score = $temporal_weight * $decay;
+		}
+		/**
+		 * Filter the final temporal-proximity booster value for a context.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float $score   Computed booster value (already weighted).
+		 * @param array $context Context record being scored.
+		 * @param int   $half_life Half-life used.
+		 * @param float $weight  The active weight.
+		 */
+		$temporal_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_temporal', $temporal_score, $context, $half_life, $temporal_weight );
+		// Clamp to [0, weight].
+		$temporal_score = max( 0.0, min( $temporal_weight, $temporal_score ) );
+
+		// --- Exact-match booster: tag, wing, room matches between filters and record. ---
+		/**
+		 * Filter the maximum weight of the exact-match (tag/wing/room) booster.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float $weight Max contribution to the final score (0..1).
+		 */
+		$exact_weight = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_exact_match_weight', 0.10, $context, $query );
+		$exact_score  = 0.0;
+		if ( $exact_weight > 0 ) {
+			$signals = 0;
+			$matched = 0;
+
+			if ( ! empty( $filters['wing'] ) ) {
+				++$signals;
+				if ( '' !== $wing && 0 === strcasecmp( $wing, (string) $filters['wing'] ) ) {
+					++$matched;
+				}
+			}
+			if ( ! empty( $filters['room'] ) ) {
+				++$signals;
+				if ( '' !== $room && 0 === strcasecmp( $room, (string) $filters['room'] ) ) {
+					++$matched;
+				}
+			}
+			if ( ! empty( $filters['tags'] ) && is_array( $filters['tags'] ) ) {
+				++$signals;
+				$tags_lower         = array_map( 'strtolower', array_map( 'strval', $tags ) );
+				$filter_tags_lower  = array_map( 'strtolower', array_map( 'strval', $filters['tags'] ) );
+				$tag_intersect      = array_intersect( $tags_lower, $filter_tags_lower );
+				if ( ! empty( $tag_intersect ) ) {
+					++$matched;
+				}
+			}
+
+			if ( $signals > 0 ) {
+				$exact_score = ( $matched / $signals ) * $exact_weight;
+			}
+		}
+		/**
+		 * Filter the final exact-match booster value for a context.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float $score   Computed booster value (already weighted).
+		 * @param array $context Context record being scored.
+		 * @param array $filters Retrieval filters used.
+		 * @param float $weight  The active weight.
+		 */
+		$exact_score = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_exact_match', $exact_score, $context, $filters, $exact_weight );
+		// Clamp to [0, weight].
+		$exact_score = max( 0.0, min( $exact_weight, $exact_score ) );
+
+		// Cap total booster contribution to avoid overwhelming the cosine baseline.
+		/**
+		 * Filter the maximum total contribution of all boosters combined.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float $cap     Upper bound for the summed booster contribution.
+		 * @param array $context Context record being scored.
+		 */
+		$total_cap = (float) apply_filters( 'wp_mcp_ai_memory_score_boost_total_cap', 0.25, $context );
+		$total     = max( 0.0, min( $total_cap, $keyword_score + $temporal_score + $exact_score ) );
+
+		return array(
+			'keyword'     => $keyword_score,
+			'temporal'    => $temporal_score,
+			'exact_match' => $exact_score,
+			'total'       => $total,
+		);
+	}
+
+	/**
 	 * Calculate cosine similarity between two vectors.
 	 *
 	 * @param array $vec_a First vector.
@@ -364,7 +573,137 @@ class WP_MCP_AI_Vector_Context_Service {
 	}
 
 	/**
+	 * Resolve the active embedding provider for this request.
+	 *
+	 * Plugins can swap the provider via the
+	 * {@see 'wp_mcp_ai_embedding_provider'} filter. The default chooses
+	 * Ollama when an `ollama_endpoint_url` is configured but no OpenAI key is
+	 * set (so a freshly-installed local-first deployment "just works"), and
+	 * OpenAI in every other case (preserving previous behaviour for existing
+	 * installs).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return WP_MCP_AI_Embedding_Provider_Interface|WP_Error Provider instance
+	 *         on success, WP_Error when no provider can be resolved or
+	 *         configured.
+	 */
+	public function get_embedding_provider() {
+		if ( $this->embedding_provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) {
+			return $this->embedding_provider;
+		}
+
+		$this->ensure_provider_classes_loaded();
+
+		$default_provider = $this->resolve_default_provider();
+
+		/**
+		 * Filter the embedding provider used by the vector context service.
+		 *
+		 * Return any object implementing
+		 * {@see WP_MCP_AI_Embedding_Provider_Interface} to override the
+		 * default. Returning a non-implementing value falls back to the
+		 * default.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param WP_MCP_AI_Embedding_Provider_Interface|null $default_provider Default provider, or null when none is available.
+		 */
+		$provider = apply_filters( 'wp_mcp_ai_embedding_provider', $default_provider );
+
+		if ( ! ( $provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) ) {
+			$provider = $default_provider;
+		}
+
+		if ( ! ( $provider instanceof WP_MCP_AI_Embedding_Provider_Interface ) ) {
+			return new WP_Error( 'no_embedding_provider', __( 'No embedding provider is configured. Configure an OpenAI API key or an Ollama endpoint.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( ! $provider->is_available() ) {
+			return new WP_Error(
+				'embedding_provider_unavailable',
+				sprintf(
+					/* translators: %s: provider id (e.g. "openai", "ollama"). */
+					__( 'Embedding provider "%s" is not configured.', 'mcp-ai-wpoos' ),
+					$provider->get_id()
+				)
+			);
+		}
+
+		$this->embedding_provider = $provider;
+		return $provider;
+	}
+
+	/**
+	 * Reset the cached embedding provider so the next call re-resolves it.
+	 *
+	 * Useful when settings change at runtime or in tests.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return void
+	 */
+	public function reset_embedding_provider() {
+		$this->embedding_provider = null;
+		$this->openai_client      = null;
+	}
+
+	/**
+	 * Pick the default provider based on plugin configuration.
+	 *
+	 * @return WP_MCP_AI_Embedding_Provider_Interface|null
+	 */
+	private function resolve_default_provider() {
+		$settings    = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$has_openai  = ! empty( $settings['openai_api_key'] );
+		$has_ollama  = ! empty( $settings['ollama_endpoint_url'] );
+		$preference  = isset( $settings['embedding_provider'] ) ? (string) $settings['embedding_provider'] : '';
+
+		// Honour an explicit preference if its backend is available.
+		if ( 'ollama' === $preference && $has_ollama ) {
+			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+		if ( 'openai' === $preference && $has_openai ) {
+			return new WP_MCP_AI_Embedding_Provider_OpenAI();
+		}
+
+		// Auto-detect: prefer OpenAI when present (preserves prior behaviour
+		// for existing installs); fall back to Ollama for local-first sites.
+		if ( $has_openai ) {
+			return new WP_MCP_AI_Embedding_Provider_OpenAI();
+		}
+		if ( $has_ollama ) {
+			return new WP_MCP_AI_Embedding_Provider_Ollama();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Load the embedding-provider interface and built-in implementations
+	 * on demand. The interface lives outside the autoload classmap because
+	 * it is a sibling of `interface-wp-mcp-ai-tool.php` (also loaded on demand).
+	 *
+	 * @return void
+	 */
+	private function ensure_provider_classes_loaded() {
+		if ( ! interface_exists( 'WP_MCP_AI_Embedding_Provider_Interface' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-embedding-provider.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_OpenAI' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-openai.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Embedding_Provider_Ollama' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/embedding/class-wp-mcp-ai-embedding-provider-ollama.php';
+		}
+	}
+
+	/**
 	 * Get OpenAI client instance.
+	 *
+	 * @deprecated 1.1.0 Use {@see self::get_embedding_provider()} instead.
+	 *                   Retained as a thin wrapper so external code that
+	 *                   reflectively reaches into this service keeps working.
 	 *
 	 * @return WP_MCP_AI_OpenAI_Client|WP_Error
 	 */

@@ -101,6 +101,14 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 							'type'        => 'string',
 							'description' => __( 'Only contexts stored before this date (YYYY-MM-DD)', 'mcp-ai-wpoos' ),
 						),
+						'wing'          => array(
+							'type'        => 'string',
+							'description' => __( 'Only contexts stored under this wing (project/person scope). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
+						),
+						'room'           => array(
+							'type'        => 'string',
+							'description' => __( 'Only contexts stored under this room (topic cluster within a wing). Applied before semantic ranking.', 'mcp-ai-wpoos' ),
+						),
 					),
 				),
 				'limit'                => array(
@@ -361,6 +369,22 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
+		// Wing filter (exact match, case-insensitive). Empty record wing never matches a non-empty filter.
+		if ( ! empty( $filters['wing'] ) ) {
+			$record_wing = isset( $context_record['wing'] ) ? (string) $context_record['wing'] : '';
+			if ( '' === $record_wing || strcasecmp( $record_wing, (string) $filters['wing'] ) !== 0 ) {
+				return false;
+			}
+		}
+
+		// Room filter (exact match, case-insensitive).
+		if ( ! empty( $filters['room'] ) ) {
+			$record_room = isset( $context_record['room'] ) ? (string) $context_record['room'] : '';
+			if ( '' === $record_room || strcasecmp( $record_room, (string) $filters['room'] ) !== 0 ) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -468,6 +492,9 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'metadata'     => isset( $context_record['data']['metadata'] ) ? $context_record['data']['metadata'] : array(),
 			'tags'         => isset( $context_record['data']['tags'] ) ? $context_record['data']['tags'] : array(),
 			'importance'   => isset( $context_record['data']['importance'] ) ? $context_record['data']['importance'] : 'medium',
+			'wing'         => isset( $context_record['wing'] ) ? $context_record['wing'] : '',
+			'room'         => isset( $context_record['room'] ) ? $context_record['room'] : '',
+			'verbatim'     => ! empty( $context_record['verbatim'] ),
 			'stored_at'    => $context_record['stored_at'],
 			'expires_at'   => $context_record['expires_at'],
 		);

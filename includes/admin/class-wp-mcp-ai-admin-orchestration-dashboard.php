@@ -1259,6 +1259,157 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Render a single breakdown table for the memory widget.
+	 *
+	 * Used for the Phase 4a group-by toggle (type / wing / importance). Hidden
+	 * panes carry an `aria-hidden="true"` attribute and a `hidden` class so they
+	 * remain accessible to assistive tech as inactive tab panels.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $group_key       Group identifier matching the `<select>` value.
+	 * @param string $column_label    Localised label for the first column header.
+	 * @param array  $counts          Map of bucket label => count.
+	 * @param int    $total_contexts  Grand total used for percentage calculation.
+	 * @param bool   $is_active       Whether this is the initially-visible pane.
+	 * @return void
+	 */
+	protected function render_breakdown_table( $group_key, $column_label, array $counts, $total_contexts, $is_active ) {
+		// Sort by count descending so the largest bucket is on top.
+		arsort( $counts );
+
+		$pane_classes = 'memory-breakdown-pane';
+		if ( ! $is_active ) {
+			$pane_classes .= ' hidden';
+		}
+
+		?>
+		<div
+			class="<?php echo esc_attr( $pane_classes ); ?>"
+			data-group-pane="<?php echo esc_attr( $group_key ); ?>"
+			<?php
+			if ( ! $is_active ) :
+				?>
+				aria-hidden="true"<?php endif; ?>
+		>
+			<?php if ( empty( $counts ) ) : ?>
+				<p class="description">
+					<?php esc_html_e( 'No data available for this grouping.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php else : ?>
+				<table class="widefat">
+					<thead>
+						<tr>
+							<th><?php echo esc_html( $column_label ); ?></th>
+							<th><?php esc_html_e( 'Count', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Percentage', 'mcp-ai-wpoos' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						foreach ( $counts as $bucket => $count ) :
+							$percentage = $total_contexts > 0 ? round( ( $count / $total_contexts ) * 100, 1 ) : 0;
+							?>
+							<tr>
+								<td><strong><?php echo esc_html( ucfirst( (string) $bucket ) ); ?></strong></td>
+								<td><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
+								<td><?php echo esc_html( $percentage ); ?>%</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the retrieval-path mini-chart.
+	 *
+	 * Visualises the 7-day rolling mix of `wake_up_context` retrieval paths
+	 * (graph vs transient) as a single horizontal stacked bar plus textual
+	 * percentages. Lets operators see at a glance whether the Graphify bridge
+	 * is actually doing work or whether requests are silently falling through
+	 * to the legacy transient-only path.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $telemetry {
+	 *     Telemetry totals for the rolling 7-day window.
+	 *
+	 *     @type int $graph     Count of graph-mode retrievals.
+	 *     @type int $transient Count of transient-mode retrievals.
+	 *     @type int $total     Sum across paths.
+	 * }
+	 * @return void
+	 */
+	protected function render_retrieval_path_chart( array $telemetry ) {
+		$graph     = isset( $telemetry['graph'] ) ? (int) $telemetry['graph'] : 0;
+		$transient = isset( $telemetry['transient'] ) ? (int) $telemetry['transient'] : 0;
+		$total     = isset( $telemetry['total'] ) ? (int) $telemetry['total'] : ( $graph + $transient );
+
+		$graph_pct     = $total > 0 ? round( ( $graph / $total ) * 100, 1 ) : 0;
+		$transient_pct = $total > 0 ? round( ( $transient / $total ) * 100, 1 ) : 0;
+
+		?>
+		<div class="memory-retrieval-path">
+			<div class="memory-retrieval-path-header">
+				<h4><?php esc_html_e( 'Retrieval Path Mix', 'mcp-ai-wpoos' ); ?> <span class="memory-retrieval-path-window">(<?php esc_html_e( 'last 7 days', 'mcp-ai-wpoos' ); ?>)</span></h4>
+			</div>
+
+			<?php if ( $total <= 0 ) : ?>
+				<p class="description">
+					<?php esc_html_e( 'No wake_up_context calls recorded in the last 7 days.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php else : ?>
+				<div class="memory-retrieval-path-bar" role="img" aria-label="
+				<?php
+					echo esc_attr(
+						sprintf(
+							/* translators: 1: graph percentage, 2: transient percentage */
+							__( 'Retrieval path mix: graph %1$s%%, transient %2$s%%.', 'mcp-ai-wpoos' ),
+							number_format_i18n( $graph_pct, 1 ),
+							number_format_i18n( $transient_pct, 1 )
+						)
+					);
+				?>
+				">
+					<span
+						class="memory-retrieval-path-bar-segment memory-retrieval-path-bar-segment--graph"
+						style="width: <?php echo esc_attr( (float) $graph_pct ); ?>%;"
+					></span>
+					<span
+						class="memory-retrieval-path-bar-segment memory-retrieval-path-bar-segment--transient"
+						style="width: <?php echo esc_attr( (float) $transient_pct ); ?>%;"
+					></span>
+				</div>
+				<p class="memory-retrieval-path-legend">
+					<span class="memory-retrieval-path-swatch memory-retrieval-path-swatch--graph"></span>
+					<?php
+					printf(
+						/* translators: 1: percentage, 2: count */
+						esc_html__( 'graph: %1$s%% (%2$s)', 'mcp-ai-wpoos' ),
+						esc_html( number_format_i18n( $graph_pct, 1 ) ),
+						esc_html( number_format_i18n( $graph ) )
+					);
+					?>
+					<span class="memory-retrieval-path-separator">·</span>
+					<span class="memory-retrieval-path-swatch memory-retrieval-path-swatch--transient"></span>
+					<?php
+					printf(
+						/* translators: 1: percentage, 2: count */
+						esc_html__( 'transient: %1$s%% (%2$s)', 'mcp-ai-wpoos' ),
+						esc_html( number_format_i18n( $transient_pct, 1 ) ),
+						esc_html( number_format_i18n( $transient ) )
+					);
+					?>
+				</p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Get agent memory statistics.
 	 *
 	 * Retrieves stats from cache or calculates them fresh.
@@ -1288,8 +1439,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			)
 		);
 
-		$contexts_by_type = array();
-		$total_agents     = 0;
+		$contexts_by_type       = array();
+		$contexts_by_wing       = array();
+		$contexts_by_importance = array();
+		$rooms_by_wing          = array();
+		$mined_count            = 0;
+		$total_agents           = 0;
 
 		foreach ( $transients as $transient ) {
 			$index = maybe_unserialize( $transient->option_value );
@@ -1297,27 +1452,195 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				++$total_agents;
 				$total_contexts += count( $index );
 
-				// Count by type.
 				foreach ( $index as $context_id => $context_meta ) {
-					$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
+					if ( ! is_array( $context_meta ) ) {
+						continue;
+					}
+
+					// Count by type (existing behaviour).
+					$type = isset( $context_meta['type'] ) && '' !== $context_meta['type'] ? (string) $context_meta['type'] : 'generic';
 					if ( ! isset( $contexts_by_type[ $type ] ) ) {
 						$contexts_by_type[ $type ] = 0;
 					}
 					++$contexts_by_type[ $type ];
+
+					// Count by importance (Phase 4a).
+					$importance = isset( $context_meta['importance'] ) && '' !== $context_meta['importance']
+						? (string) $context_meta['importance']
+						: 'medium';
+					if ( ! isset( $contexts_by_importance[ $importance ] ) ) {
+						$contexts_by_importance[ $importance ] = 0;
+					}
+					++$contexts_by_importance[ $importance ];
+
+					// Count by wing (Phase 4a). Empty wing reported as "(unscoped)".
+					$wing_raw = isset( $context_meta['wing'] ) ? (string) $context_meta['wing'] : '';
+					$wing_key = '' === $wing_raw ? '(unscoped)' : $wing_raw;
+					if ( ! isset( $contexts_by_wing[ $wing_key ] ) ) {
+						$contexts_by_wing[ $wing_key ] = 0;
+					}
+					++$contexts_by_wing[ $wing_key ];
+
+					// Track rooms per wing for the (wing, room) cardinality count.
+					$room_raw = isset( $context_meta['room'] ) ? (string) $context_meta['room'] : '';
+					if ( '' !== $room_raw ) {
+						if ( ! isset( $rooms_by_wing[ $wing_key ] ) ) {
+							$rooms_by_wing[ $wing_key ] = array();
+						}
+						$rooms_by_wing[ $wing_key ][ $room_raw ] = true;
+					}
+
+					// Count mined memories (`mine_agent_memory` stores with verbatim=true).
+					if ( ! empty( $context_meta['verbatim'] ) ) {
+						++$mined_count;
+					}
 				}
 			}
 		}
 
+		// Distinct wing count excludes the synthetic "(unscoped)" bucket so the
+		// card answers "how many real wings have content?".
+		$wings_count = 0;
+		foreach ( array_keys( $contexts_by_wing ) as $wing_key ) {
+			if ( '(unscoped)' !== $wing_key ) {
+				++$wings_count;
+			}
+		}
+
+		$rooms_count = 0;
+		foreach ( $rooms_by_wing as $rooms ) {
+			$rooms_count += count( $rooms );
+		}
+
 		$stats = array(
-			'total_contexts'   => $total_contexts,
-			'total_agents'     => $total_agents,
-			'contexts_by_type' => $contexts_by_type,
+			'total_contexts'         => $total_contexts,
+			'total_agents'           => $total_agents,
+			'contexts_by_type'       => $contexts_by_type,
+			'contexts_by_wing'       => $contexts_by_wing,
+			'contexts_by_importance' => $contexts_by_importance,
+			'wings_count'            => $wings_count,
+			'rooms_count'            => $rooms_count,
+			'mined_count'            => $mined_count,
+			'bridge_active'          => class_exists( 'NV_oOS_Graphify_Memory_Bridge' ),
+			'retrieval_path'         => $this->get_retrieval_path_telemetry(),
+			'persistent_storage'     => $this->get_persistent_memory_stats(),
 		);
 
 		// Cache the results for 5 minutes.
 		set_transient( $cache_key, $stats, 5 * MINUTE_IN_SECONDS );
 
 		return $stats;
+	}
+
+	/**
+	 * Aggregate `wake_up_context` retrieval-path telemetry into a 7-day total.
+	 *
+	 * Reads the rolling buckets written by
+	 * `WP_MCP_AI_Tool_Wake_Up_Context::record_retrieval_telemetry()` and
+	 * collapses them to a flat `path => count` array, plus a `total` for
+	 * percentage rendering. The tool keeps the bucket window pruned, so we
+	 * just sum what's there.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array {
+	 *     @type int $graph     Count of `graph` retrievals.
+	 *     @type int $transient Count of `transient` retrievals.
+	 *     @type int $total     Sum across known paths.
+	 * }
+	 */
+	protected function get_retrieval_path_telemetry() {
+		$telemetry = get_option( 'wp_mcp_ai_wake_up_telemetry', array() );
+		if ( ! is_array( $telemetry ) ) {
+			$telemetry = array();
+		}
+
+		$totals = array(
+			'graph'     => 0,
+			'transient' => 0,
+		);
+
+		$cutoff = gmdate( 'Y-m-d', time() - ( 7 * DAY_IN_SECONDS ) );
+
+		foreach ( $telemetry as $bucket_date => $paths ) {
+			if ( ! is_string( $bucket_date ) || $bucket_date < $cutoff ) {
+				continue;
+			}
+			if ( ! is_array( $paths ) ) {
+				continue;
+			}
+			foreach ( $totals as $path => $_count ) {
+				if ( isset( $paths[ $path ] ) ) {
+					$totals[ $path ] += (int) $paths[ $path ];
+				}
+			}
+		}
+
+		$totals['total'] = $totals['graph'] + $totals['transient'];
+		return $totals;
+	}
+
+	/**
+	 * Aggregate persistent (CCT) vs transient agent-memory counts.
+	 *
+	 * Phase 4b-4: surfaces durability of the agent-memory store. The
+	 * `ai_agent_memories` JetEngine CCT mirrors every transient write via
+	 * `WP_MCP_AI_Agent_Memory_CCT_Bridge`, so this returns:
+	 *   - `cct_count`        Rows in the durable CCT table (0 when JetEngine
+	 *                        is missing or the CCT hasn't been provisioned).
+	 *   - `available`        Whether the CCT table exists and is queryable.
+	 *   - `tier_breakdown`   Memory-tier distribution from CCT rows
+	 *                        (working/episodic/semantic/procedural).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array {
+	 *     @type int   $cct_count       Total rows in the durable CCT.
+	 *     @type bool  $available       True when the CCT table exists.
+	 *     @type array $tier_breakdown  Map of memory_tier => count.
+	 * }
+	 */
+	protected function get_persistent_memory_stats() {
+		$default = array(
+			'cct_count'      => 0,
+			'available'      => false,
+			'tier_breakdown' => array(),
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return $default;
+		}
+
+		global $wpdb;
+		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		// Table name comes from the JetEngine convention `{prefix}jet_cct_{slug}`
+		// where `$slug` is a class constant.
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			return $default;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$table}`" );
+
+		$tiers = array();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results( "SELECT memory_tier, COUNT(*) AS n FROM `{$table}` GROUP BY memory_tier" );
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$tier_key           = isset( $row->memory_tier ) && '' !== $row->memory_tier ? (string) $row->memory_tier : 'unspecified';
+				$tiers[ $tier_key ] = isset( $row->n ) ? (int) $row->n : 0;
+			}
+		}
+
+		return array(
+			'cct_count'      => $count,
+			'available'      => true,
+			'tier_breakdown' => $tiers,
+		);
 	}
 
 	/**
@@ -1331,12 +1654,51 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	protected function render_agent_memory_stats() {
 		$stats = $this->get_agent_memory_stats();
 
-		$total_contexts   = $stats['total_contexts'];
-		$total_agents     = $stats['total_agents'];
-		$contexts_by_type = $stats['contexts_by_type'];
+		$total_contexts         = isset( $stats['total_contexts'] ) ? (int) $stats['total_contexts'] : 0;
+		$total_agents           = isset( $stats['total_agents'] ) ? (int) $stats['total_agents'] : 0;
+		$contexts_by_type       = isset( $stats['contexts_by_type'] ) && is_array( $stats['contexts_by_type'] ) ? $stats['contexts_by_type'] : array();
+		$contexts_by_wing       = isset( $stats['contexts_by_wing'] ) && is_array( $stats['contexts_by_wing'] ) ? $stats['contexts_by_wing'] : array();
+		$contexts_by_importance = isset( $stats['contexts_by_importance'] ) && is_array( $stats['contexts_by_importance'] ) ? $stats['contexts_by_importance'] : array();
+		$wings_count            = isset( $stats['wings_count'] ) ? (int) $stats['wings_count'] : 0;
+		$rooms_count            = isset( $stats['rooms_count'] ) ? (int) $stats['rooms_count'] : 0;
+		$mined_count            = isset( $stats['mined_count'] ) ? (int) $stats['mined_count'] : 0;
+		$bridge_active          = ! empty( $stats['bridge_active'] );
+		$persistent             = isset( $stats['persistent_storage'] ) && is_array( $stats['persistent_storage'] ) ? $stats['persistent_storage'] : array(
+			'cct_count'      => 0,
+			'available'      => false,
+			'tier_breakdown' => array(),
+		);
+		$retrieval_path         = isset( $stats['retrieval_path'] ) && is_array( $stats['retrieval_path'] ) ? $stats['retrieval_path'] : array(
+			'graph'     => 0,
+			'transient' => 0,
+			'total'     => 0,
+		);
+
+		$graph_explorer_url = $bridge_active ? admin_url( 'admin.php?page=nvoos-graphify' ) : '';
 
 		?>
 		<div class="agent-memory-stats-widget">
+			<!-- Phase 4a: Graphify Memory Bridge status pill. -->
+			<div class="memory-bridge-status">
+				<?php if ( $bridge_active ) : ?>
+					<span class="memory-bridge-pill memory-bridge-pill--active">
+						<span class="dashicons dashicons-networking" aria-hidden="true"></span>
+						<?php esc_html_e( 'Graphify Memory Bridge: active', 'mcp-ai-wpoos' ); ?>
+					</span>
+					<a href="<?php echo esc_url( $graph_explorer_url ); ?>" class="button button-small">
+						<?php esc_html_e( 'Open Graph Explorer', 'mcp-ai-wpoos' ); ?>
+					</a>
+				<?php else : ?>
+					<span class="memory-bridge-pill memory-bridge-pill--inactive">
+						<span class="dashicons dashicons-marker" aria-hidden="true"></span>
+						<?php esc_html_e( 'Graphify Memory Bridge: not installed', 'mcp-ai-wpoos' ); ?>
+					</span>
+					<span class="description">
+						<?php esc_html_e( 'Install the NV oOS Graphify add-on to enable graph-mode retrieval.', 'mcp-ai-wpoos' ); ?>
+					</span>
+				<?php endif; ?>
+			</div>
+
 			<div class="memory-stats-header">
 				<button type="button" class="button button-secondary refresh-memory-stats" title="<?php esc_attr_e( 'Refresh memory statistics', 'mcp-ai-wpoos' ); ?>">
 					<span class="dashicons dashicons-update"></span>
@@ -1367,34 +1729,75 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 						<p><?php esc_html_e( 'Context Types Used', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				</div>
+
+				<!-- Phase 4a: Wings/Rooms card. -->
+				<div class="memory-stat-card memory-stat-card--wings">
+					<div class="stat-icon">🏛️</div>
+					<div class="stat-content">
+						<h3>
+							<span class="memory-wings-count"><?php echo esc_html( number_format_i18n( $wings_count ) ); ?></span>
+							<small> / <span class="memory-rooms-count"><?php echo esc_html( number_format_i18n( $rooms_count ) ); ?></span></small>
+						</h3>
+						<p><?php esc_html_e( 'Wings / Rooms', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+
+				<!-- Phase 4a: Mined memories card. -->
+				<div class="memory-stat-card memory-stat-card--mined">
+					<div class="stat-icon">⛏️</div>
+					<div class="stat-content">
+						<h3 class="memory-mined-count"><?php echo esc_html( number_format_i18n( $mined_count ) ); ?></h3>
+						<p><?php esc_html_e( 'Mined Memories', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+
+				<!-- Phase 4b: Persistent (CCT) vs cache (transient) split. -->
+				<?php
+				$persistent_count = isset( $persistent['cct_count'] ) ? (int) $persistent['cct_count'] : 0;
+				$persistent_avail = ! empty( $persistent['available'] );
+				$cache_only       = max( 0, $total_contexts - $persistent_count );
+				?>
+				<div class="memory-stat-card memory-stat-card--durable">
+					<div class="stat-icon">🗄️</div>
+					<div class="stat-content">
+						<h3>
+							<span class="memory-persistent-count"><?php echo esc_html( number_format_i18n( $persistent_count ) ); ?></span>
+							<small> / <span class="memory-cache-only-count"><?php echo esc_html( number_format_i18n( $cache_only ) ); ?></span></small>
+						</h3>
+						<p>
+							<?php esc_html_e( 'Persistent (CCT) / Cache only', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<?php if ( ! $persistent_avail ) : ?>
+							<small class="description">
+								<?php esc_html_e( 'Install JetEngine to enable durable agent-memory storage that survives object-cache flushes.', 'mcp-ai-wpoos' ); ?>
+							</small>
+						<?php endif; ?>
+					</div>
+				</div>
 			</div>
 
+			<!-- Phase 4a: Retrieval-path mini-chart (7-day rolling). -->
+			<?php $this->render_retrieval_path_chart( $retrieval_path ); ?>
+
 			<?php if ( ! empty( $contexts_by_type ) ) : ?>
-				<div class="memory-contexts-breakdown">
-					<h4><?php esc_html_e( 'Contexts by Type', 'mcp-ai-wpoos' ); ?></h4>
-					<table class="widefat">
-						<thead>
-							<tr>
-								<th><?php esc_html_e( 'Context Type', 'mcp-ai-wpoos' ); ?></th>
-								<th><?php esc_html_e( 'Count', 'mcp-ai-wpoos' ); ?></th>
-								<th><?php esc_html_e( 'Percentage', 'mcp-ai-wpoos' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php
-							// Sort by count descending.
-							arsort( $contexts_by_type );
-							foreach ( $contexts_by_type as $type => $count ) :
-								$percentage = $total_contexts > 0 ? round( ( $count / $total_contexts ) * 100, 1 ) : 0;
-								?>
-								<tr>
-									<td><strong><?php echo esc_html( ucfirst( $type ) ); ?></strong></td>
-									<td><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
-									<td><?php echo esc_html( $percentage ); ?>%</td>
-								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
+				<div class="memory-contexts-breakdown" data-group="type">
+					<div class="memory-breakdown-header">
+						<h4><?php esc_html_e( 'Memory Breakdown', 'mcp-ai-wpoos' ); ?></h4>
+						<label class="memory-group-by-label">
+							<?php esc_html_e( 'Group by:', 'mcp-ai-wpoos' ); ?>
+							<select class="memory-group-by">
+								<option value="type"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></option>
+								<option value="wing"<?php echo empty( $contexts_by_wing ) ? ' disabled' : ''; ?>><?php esc_html_e( 'Wing', 'mcp-ai-wpoos' ); ?></option>
+								<option value="importance"<?php echo empty( $contexts_by_importance ) ? ' disabled' : ''; ?>><?php esc_html_e( 'Importance', 'mcp-ai-wpoos' ); ?></option>
+							</select>
+						</label>
+					</div>
+
+					<?php
+					$this->render_breakdown_table( 'type', __( 'Context Type', 'mcp-ai-wpoos' ), $contexts_by_type, $total_contexts, true );
+					$this->render_breakdown_table( 'wing', __( 'Wing', 'mcp-ai-wpoos' ), $contexts_by_wing, $total_contexts, false );
+					$this->render_breakdown_table( 'importance', __( 'Importance', 'mcp-ai-wpoos' ), $contexts_by_importance, $total_contexts, false );
+					?>
 				</div>
 			<?php else : ?>
 				<div class="memory-empty-state">
