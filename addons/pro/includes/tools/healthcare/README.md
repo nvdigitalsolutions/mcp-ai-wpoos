@@ -57,9 +57,18 @@ Adds `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_per
 
 Adds six cross-cutting Health & Wellness tools that close the gaps called out in [`addons/pro/docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md`](../../../docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md): `check_member_allergies`, `get_health_timeline`, `link_prescription_to_record`, `verify_prescription_interactions` (RxNorm-aligned offline registry, filter-extensible to RxNav), `generate_visit_summary`, and `merge_duplicate_members`.  `manage_care_plan` was already present.  Filters added: `wp_mcp_ai_healthcare_interaction_pairs`, `wp_mcp_ai_healthcare_rxnorm_lookup`, `wp_mcp_ai_healthcare_member_child_meta_map`.  Action added: `wp_mcp_ai_healthcare_after_merge_members`.
 
-### Phase D — Imaging depth
+### Phase D — Imaging depth ✅
 
-Adds DICOMweb (QIDO-RS / WADO-RS / STOW-RS) connection helper, `import_dicom_study`, `export_dicom_study`, `attach_radiology_report`, `compare_imaging_studies` (prior/current), DICOM SR generation, and per-modality viewer hanging-protocols.
+Adds a DICOMweb client (PS3.18: QIDO-RS, WADO-RS, STOW-RS) and six imaging tools wired to the existing `enable_healthcare_imaging` toggle:
+
+* `connect_dicomweb` — configure / test / disconnect a DICOMweb endpoint (basic + bearer auth, redacted secrets).
+* `import_dicom_study` — pull a remote study by UID into the local `mcp_ai_imaging_study` CPT (metadata-only mirror).
+* `export_dicom_study` — push a stored study back to the configured endpoint via STOW-RS, running through `wp_mcp_ai_healthcare_before_imaging_export` for de-identification.
+* `attach_radiology_report` — attach a findings/impression report (auto-creates the `mcp_ai_radiology_report` CPT) with optional minimal DICOM SR (Basic Text SR, SOP Class `1.2.840.10008.5.1.4.1.1.88.11`) JSON generation.
+* `compare_imaging_studies` — diff prior vs current studies (modality / dates / series / instance counts / impressions).
+* `get_imaging_hanging_protocol` — per-modality default viewer layouts for CT, MR, CR/DX, US, MG, NM, PT and SR; filter-extensible for partner viewers.
+
+New filters: `wp_mcp_ai_healthcare_dicomweb_connection`, `wp_mcp_ai_healthcare_dicomweb_request_args`, `wp_mcp_ai_healthcare_hanging_protocols`.  New actions: `wp_mcp_ai_healthcare_after_dicom_import`, `wp_mcp_ai_healthcare_after_imaging_export`.
 
 ### Phase E — Interoperability & assistant blueprints
 
