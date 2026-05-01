@@ -1,0 +1,329 @@
+<?php
+/**
+ * Dual-write bridge from agent-memory transients to the JetEngine CCT.
+ *
+ * Phase 4b-2: subscribes to `wp_mcp_ai_memory_stored` and
+ * `wp_mcp_ai_memory_deleted` to mirror agent memory into the durable
+ * `ai_agent_memories` Custom Content Type. The transient store remains the
+ * primary read path — this bridge is advisory and tolerates failure
+ * (logged, never thrown). The mirror exists so memory survives object-cache
+ * evictions and is visible to JetEngine UI / REST / export tooling.
+ *
+ * Industry-standard mapping persisted on every write:
+ *   - `memory_tier` (Letta/Cognee) — auto-classified from `context_type` when
+ *     the caller didn't supply it, otherwise honoured verbatim.
+ *   - `transaction_time` (Zep) — equal to the transient `stored_at`.
+ *   - `valid_from` / `valid_until` (Zep bi-temporal) — default to
+ *     `stored_at` / `expires_at`; callers can override via the
+ *     `wp_mcp_ai_memory_cct_record` filter.
+ *   - `source` (mem0/Letta) — defaults to the firing tool name when known.
+ *
+ * @package WP_MCP_AI
+ * @author    NV Digital Solutions
+ * @copyright Copyright (c) 2025-2026 NV Digital Solutions
+ * @license   GPL-3.0-or-later
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Mirror agent-memory writes to the durable JetEngine CCT.
+ */
+class WP_MCP_AI_Agent_Memory_CCT_Bridge {
+
+	/**
+	 * Subscribe to the memory lifecycle hooks.
+	 */
+	public static function bootstrap() {
+		add_action( 'wp_mcp_ai_memory_stored', array( __CLASS__, 'on_memory_stored' ), 20, 1 );
+		add_action( 'wp_mcp_ai_memory_deleted', array( __CLASS__, 'on_memory_deleted' ), 20, 1 );
+	}
+
+	/**
+	 * Auto-classify a context_type into one of the four standard memory tiers.
+	 *
+	 * Mirrors Letta's "core vs archival" split and Cognee's
+	 * working/episodic/semantic/procedural taxonomy. The mapping is
+	 * intentionally conservative: anything that smells like a tool-call log
+	 * goes to `procedural`, time-bounded session items to `episodic`, factual
+	 * statements to `semantic`, and live working state to `working`.
+	 *
+	 * Callers can override the auto-classification by passing an explicit
+	 * `memory_tier` in the event payload (Phase 4b-3 will surface this on
+	 * `store_agent_context`).
+	 *
+	 * @param string $context_type Sanitized context type slug.
+	 * @return string One of working|episodic|semantic|procedural.
+	 */
+	public static function classify_tier( $context_type ) {
+		$context_type = is_string( $context_type ) ? strtolower( $context_type ) : '';
+
+		$procedural = array( 'tool_call', 'tool_history', 'procedure', 'workflow', 'skill', 'action' );
+		$episodic   = array( 'session', 'conversation', 'episode', 'event', 'decision', 'learning', 'observation' );
+		$working    = array( 'working', 'scratch', 'scratchpad', 'draft' );
+
+		if ( in_array( $context_type, $procedural, true ) ) {
+			return 'procedural';
+		}
+		if ( in_array( $context_type, $episodic, true ) ) {
+			return 'episodic';
+		}
+		if ( in_array( $context_type, $working, true ) ) {
+			return 'working';
+		}
+
+		// Default tier for facts, preferences, identities, knowledge, merged
+		// memories, and anything else that should persist beyond a session.
+		return 'semantic';
+	}
+
+	/**
+	 * Build the CCT record from a `wp_mcp_ai_memory_stored` event payload.
+	 *
+	 * Public so the test suite and downstream listeners can reuse the exact
+	 * mapping logic without reaching into private state.
+	 *
+	 * @param array $event Event payload as documented on the action hook.
+	 * @return array Record ready for `update_item()`.
+	 */
+	public static function build_record_from_event( array $event ) {
+		$context_id   = isset( $event['context_id'] ) ? (string) $event['context_id'] : '';
+		$agent_id     = isset( $event['agent_id'] ) ? (string) $event['agent_id'] : '';
+		$context_type = isset( $event['context_type'] ) ? (string) $event['context_type'] : '';
+
+		$memory_tier = isset( $event['memory_tier'] ) && '' !== $event['memory_tier']
+			? sanitize_key( (string) $event['memory_tier'] )
+			: self::classify_tier( $context_type );
+
+		$tags = array();
+		if ( isset( $event['tags'] ) && is_array( $event['tags'] ) ) {
+			foreach ( $event['tags'] as $tag ) {
+				if ( is_scalar( $tag ) && '' !== (string) $tag ) {
+					$tags[] = sanitize_text_field( (string) $tag );
+				}
+			}
+		}
+
+		$stored_at  = isset( $event['stored_at'] ) ? (string) $event['stored_at'] : current_time( 'mysql' );
+		$expires_at = isset( $event['expires_at'] ) ? (string) $event['expires_at'] : '';
+
+		// Default bi-temporal validity = stored_at .. expires_at (Zep convention).
+		$valid_from  = $stored_at;
+		$valid_until = $expires_at;
+
+		$source = isset( $event['source'] ) && '' !== $event['source']
+			? sanitize_text_field( (string) $event['source'] )
+			: 'store_agent_context';
+
+		$record = array(
+			'cct_status'       => 'publish',
+			'context_id'       => sanitize_text_field( $context_id ),
+			'agent_id'         => sanitize_text_field( $agent_id ),
+			'memory_tier'      => sanitize_key( $memory_tier ),
+			'context_type'     => sanitize_text_field( $context_type ),
+			'wing'             => isset( $event['wing'] ) ? sanitize_text_field( (string) $event['wing'] ) : '',
+			'room'             => isset( $event['room'] ) ? sanitize_text_field( (string) $event['room'] ) : '',
+			'title'            => isset( $event['title'] ) ? sanitize_text_field( (string) $event['title'] ) : '',
+			'content'          => isset( $event['content'] ) ? wp_kses_post( (string) $event['content'] ) : '',
+			'tags'             => wp_json_encode( $tags ),
+			'importance'       => isset( $event['importance'] ) ? sanitize_key( (string) $event['importance'] ) : 'medium',
+			'verbatim'         => ! empty( $event['verbatim'] ) ? 1 : 0,
+			'transaction_time' => $stored_at,
+			'valid_from'       => $valid_from,
+			'valid_until'      => $valid_until,
+			'expires_at'       => $expires_at,
+			'ttl_seconds'      => isset( $event['ttl'] ) ? absint( $event['ttl'] ) : 0,
+			'source'           => $source,
+			'source_post_id'   => isset( $event['source_post_id'] ) ? absint( $event['source_post_id'] ) : 0,
+			'source_url'       => isset( $event['source_url'] ) ? esc_url_raw( (string) $event['source_url'] ) : '',
+			'source_type'      => isset( $event['source_type'] ) ? sanitize_key( (string) $event['source_type'] ) : '',
+			'embedding_id'     => isset( $event['embedding_id'] ) ? sanitize_text_field( (string) $event['embedding_id'] ) : '',
+			'graph_node_id'    => isset( $event['graph_node_id'] ) ? sanitize_text_field( (string) $event['graph_node_id'] ) : '',
+			'metadata'         => isset( $event['metadata'] ) && is_array( $event['metadata'] ) ? wp_json_encode( $event['metadata'] ) : '',
+		);
+
+		/**
+		 * Filter the agent-memory CCT record before it is persisted.
+		 *
+		 * Useful for site-specific PII redaction, custom provenance fields,
+		 * or attaching a precomputed embedding/graph node ID.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array $record CCT record ready for update_item().
+		 * @param array $event  Original `wp_mcp_ai_memory_stored` event payload.
+		 */
+		$record = apply_filters( 'wp_mcp_ai_memory_cct_record', $record, $event );
+
+		return is_array( $record ) ? $record : array();
+	}
+
+	/**
+	 * Listener: mirror a stored memory into the CCT.
+	 *
+	 * Tolerant of every failure mode — JetEngine missing, CCT not registered,
+	 * handler unavailable, or the underlying DB write rejecting the record.
+	 *
+	 * @param array $event Event payload from `wp_mcp_ai_memory_stored`.
+	 * @return void
+	 */
+	public static function on_memory_stored( $event ) {
+		if ( ! is_array( $event ) || empty( $event['context_id'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return;
+		}
+
+		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
+
+		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
+			return;
+		}
+
+		$record = self::build_record_from_event( $event );
+
+		if ( empty( $record ) ) {
+			return;
+		}
+
+		// If a row already exists for this context_id (e.g. a follow-up store
+		// from the same context), update it rather than creating a duplicate.
+		$existing_id = self::find_existing_id_for_context( (string) $event['context_id'] );
+		if ( $existing_id ) {
+			$record['_ID'] = $existing_id;
+		}
+
+		try {
+			$result = $handler->update_item( $record );
+			if ( is_wp_error( $result ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Agent memory CCT bridge: failed to mirror memory.',
+					array(
+						'context_id'    => $event['context_id'],
+						'agent_id'      => isset( $event['agent_id'] ) ? $event['agent_id'] : '',
+						'error_code'    => $result->get_error_code(),
+						'error_message' => $result->get_error_message(),
+					)
+				);
+			}
+		} catch ( Throwable $exception ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Agent memory CCT bridge: exception while mirroring memory.',
+					array(
+						'context_id' => $event['context_id'],
+						'message'    => $exception->getMessage(),
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Listener: tear down the CCT row when its transient counterpart is deleted.
+	 *
+	 * @param array $event Event payload from `wp_mcp_ai_memory_deleted`. Must
+	 *                     include `context_id`; `agent_id` is informational.
+	 * @return void
+	 */
+	public static function on_memory_deleted( $event ) {
+		if ( ! is_array( $event ) || empty( $event['context_id'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return;
+		}
+
+		$handler = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_item_handler();
+
+		if ( ! is_object( $handler ) ) {
+			return;
+		}
+
+		$existing_id = self::find_existing_id_for_context( (string) $event['context_id'] );
+
+		if ( ! $existing_id ) {
+			return;
+		}
+
+		try {
+			if ( method_exists( $handler, 'delete_item' ) ) {
+				$handler->delete_item( $existing_id );
+			} elseif ( method_exists( $handler, 'update_item' ) ) {
+				// Fallback for older JetEngine: soft-delete by emptying content.
+				$handler->update_item(
+					array(
+						'_ID'         => $existing_id,
+						'cct_status'  => 'trash',
+						'valid_until' => current_time( 'mysql' ),
+					)
+				);
+			}
+		} catch ( Throwable $exception ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Agent memory CCT bridge: exception while deleting mirror row.',
+					array(
+						'context_id' => $event['context_id'],
+						'message'    => $exception->getMessage(),
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Locate an existing CCT row by `context_id`.
+	 *
+	 * Direct DB query is necessary because JetEngine doesn't expose a "find
+	 * by meta" path on the CCT handler in earlier versions. Result is cached
+	 * for the request lifetime to avoid duplicate queries during update bursts.
+	 *
+	 * @param string $context_id Stable memory identifier.
+	 * @return int|null Row `_ID` when found, null otherwise.
+	 */
+	protected static function find_existing_id_for_context( $context_id ) {
+		static $cache = array();
+
+		if ( '' === $context_id ) {
+			return null;
+		}
+
+		if ( array_key_exists( $context_id, $cache ) ) {
+			return $cache[ $context_id ];
+		}
+
+		global $wpdb;
+		$slug = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		// Table name is constructed from the JetEngine convention
+		// `{prefix}jet_cct_{slug}` and `$slug` comes from a class constant.
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+
+		// Confirm the table exists before querying (CCT may not be registered yet).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			$cache[ $context_id ] = null;
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row_id = $wpdb->get_var(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT _ID FROM `{$table}` WHERE context_id = %s LIMIT 1",
+				$context_id
+			)
+		);
+
+		$cache[ $context_id ] = $row_id ? (int) $row_id : null;
+		return $cache[ $context_id ];
+	}
+}
+
+WP_MCP_AI_Agent_Memory_CCT_Bridge::bootstrap();

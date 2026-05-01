@@ -83,6 +83,7 @@ require_once NVOOS_GRAPHIFY_PATH . 'includes/remote/drivers/class-nvoos-graphify
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-remote-enricher.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings.php';
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-embeddings-on-ingest.php';
+require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify-memory-bridge.php';
 
 require_once NVOOS_GRAPHIFY_PATH . 'includes/class-nvoos-graphify.php';
 

@@ -1333,6 +1333,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Manage_Context_Lifecycle'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-context-lifecycle.php',
 				'WP_MCP_AI_Tool_Batch_Manage_Memory'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-batch-manage-memory.php',
 				'WP_MCP_AI_Tool_Memory_Audit_Trail'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-memory-audit-trail.php',
+				// MemPalace-inspired Phase 2: bulk ingest + session wake-up loader.
+				'WP_MCP_AI_Tool_Mine_Agent_Memory'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-mine-agent-memory.php',
+				'WP_MCP_AI_Tool_Wake_Up_Context'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-wake-up-context.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
