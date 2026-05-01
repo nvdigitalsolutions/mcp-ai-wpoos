@@ -70,9 +70,19 @@ Adds a DICOMweb client (PS3.18: QIDO-RS, WADO-RS, STOW-RS) and six imaging tools
 
 New filters: `wp_mcp_ai_healthcare_dicomweb_connection`, `wp_mcp_ai_healthcare_dicomweb_request_args`, `wp_mcp_ai_healthcare_hanging_protocols`.  New actions: `wp_mcp_ai_healthcare_after_dicom_import`, `wp_mcp_ai_healthcare_after_imaging_export`.
 
-### Phase E — Interoperability & assistant blueprints
+### Phase E — Interoperability & assistant blueprints ✅
 
-Adds `import_fhir_bundle`, `export_ccda_document`, `import_hl7v2_message`, `connect_to_ehr` (Epic / Cerner OAuth via the Pro credentials vault), and four region/specialty assistant blueprints in [`examples/`](examples/): general-clinic, veterinary-practice, personal-health-tracker, radiology-review.  Marks the toolkit roadmap complete.
+Adds the final interoperability surface and four ready-to-import assistant blueprints. Marks the toolkit roadmap complete.
+
+* `import_fhir_bundle` — parses a FHIR R4 Bundle JSON, upserts `Patient` → `mcp_ai_member`, and routes `AllergyIntolerance` / `Condition` / `MedicationStatement` / `MedicationRequest` / `Immunization` to their CPTs. Unknown resourceTypes are reported back via `skipped`. Resource handlers are pluggable via `wp_mcp_ai_healthcare_fhir_resource_handlers`.
+* `export_ccda_document` — builds a minimal HL7 C-CDA R2.1 Continuity of Care Document (LOINC `34133-9`) for a member with Allergies / Medications / Problems / Immunizations narrative blocks. Output is filterable via `wp_mcp_ai_healthcare_ccda_document`.
+* `import_hl7v2_message` — dependency-free pipe-delimited (ER7) parser for `ADT^A04`, `ADT^A08`, and `ORU^R01`. Upserts patients from `PID` and creates observation records from `OBX`. Parsed segment map is exposed via `wp_mcp_ai_healthcare_hl7v2_segments`.
+* `connect_to_ehr` — manages Epic / Cerner / generic SMART-on-FHIR client_credentials connections under `wp_mcp_ai_ehr_connections` (configure / test / get / disconnect). Filter `wp_mcp_ai_healthcare_ehr_credentials` lets the Pro password vault take over storage.
+* Four assistant blueprints in [`examples/`](examples/): `general-clinic.json`, `veterinary-practice.json`, `personal-health-tracker.json`, `radiology-review.json`.
+
+New filters: `wp_mcp_ai_healthcare_fhir_resource_handlers`, `wp_mcp_ai_healthcare_ccda_document`, `wp_mcp_ai_healthcare_hl7v2_segments`, `wp_mcp_ai_healthcare_ehr_credentials`.
+
+🎯 **Toolkit roadmap complete (Phases A–E).**
 
 ---
 

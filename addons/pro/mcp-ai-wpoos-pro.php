@@ -1104,6 +1104,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools = array_merge( $pro_tools, $imaging_tools );
 		}
 
+		// Add Healthcare Interoperability tools (Phase E) — gated on health & wellness toggle.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$interop_tools = array(
+				'WP_MCP_AI_Tool_Import_FHIR_Bundle'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
+				'WP_MCP_AI_Tool_Export_CCDA_Document'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
+				'WP_MCP_AI_Tool_Import_HL7v2_Message'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
+				'WP_MCP_AI_Tool_Connect_To_EHR'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $interop_tools );
+		}
+
 		// Vehicle Estimation tools — always available Pro tools.
 		$vehicle_tools = array(
 			'WP_MCP_AI_Tool_VIN_Decode'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-vin-decode.php',
@@ -2104,6 +2115,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['attach_radiology_report']        = 'wordpress-core';
 			$pro_tools['compare_imaging_studies']        = 'wordpress-core';
 			$pro_tools['get_imaging_hanging_protocol']   = 'wordpress-core';
+		}
+
+		// Add Healthcare Interoperability tool mappings (Phase E) if H&W is enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$pro_tools['import_fhir_bundle']    = 'wordpress-core';
+			$pro_tools['export_ccda_document']  = 'wordpress-core';
+			$pro_tools['import_hl7v2_message']  = 'wordpress-core';
+			$pro_tools['connect_to_ehr']        = 'external-tools';
 		}
 
 		// Vehicle Estimation tool mappings — always available.
