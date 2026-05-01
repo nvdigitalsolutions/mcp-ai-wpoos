@@ -2,34 +2,83 @@
 
 > **Specification:** [agentskills.io](https://agentskills.io/specification)  
 > **Since:** 1.7.0  
-> **Available in:** Base plugin (skill registry + 16 bundled skills) and Pro add-on (Skill Manager UI)
+> **Available in:** Base plugin (skill registry + 44 bundled skills) and Pro add-on (Skill Manager UI + extra plugin-ecosystem skills)
 
 Agent Skills are portable, reusable behaviour packages that teach an assistant how to handle a specific class of task. Each skill is a single `SKILL.md` file — standard Markdown with a small YAML frontmatter block — stored under `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant runs, any skills assigned to it are automatically injected into the system prompt so the model knows exactly when and how to use them.
 
 ---
 
-## 16 Pre-Built Skills (Base Plugin)
+## Pre-Built Skills (Base Plugin)
 
-The base plugin ships with **16 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all 16 skills are available on every install.
+The base plugin ships with **44 pre-built skills** inside `includes/bundled-skills/`. They are copied to `wp-content/uploads/mcp-ai-skills/` automatically on first plugin activation. **No Pro add-on is required** — all base skills are available on every install.
+
+### General-purpose skills (Anthropic-authored)
 
 | Skill slug | Description |
 |---|---|
 | `algorithmic-art` | Generates algorithmic art using p5.js with seeded randomness and interactive parameters |
 | `brand-guidelines` | Applies Anthropic's official brand colours and typography to any artifact |
+| `browser-use` | Drives a browser via Playwright to research, scrape, or interact with web apps |
 | `canvas-design` | Creates beautiful visual art in PNG/PDF documents using design philosophy |
+| `code-reviewer` | Reviews code for quality, simplicity, and maintainability before presenting it |
 | `doc-coauthoring` | Guides users through a structured co-authoring workflow for documentation |
 | `docx` | Creates, reads, edits, and manipulates Word `.docx` files |
+| `excalidraw-diagram` | Creates Excalidraw-style diagrams via the JSON spec |
 | `frontend-design` | Produces distinctive, production-grade frontend interfaces with high design quality |
 | `internal-comms` | Drafts all kinds of internal communications (memos, announcements, updates) |
+| `karpathy-coding-principles` | Coding behaviour guidelines distilled from Andrej Karpathy's observations |
 | `mcp-builder` | Guides creation of high-quality MCP (Model Context Protocol) servers |
 | `pdf` | Handles any PDF task — creation, reading, editing, and form filling |
+| `planetscale` | PlanetScale-specific schema, branching, and deploy-request workflow |
 | `pptx` | Handles any `.pptx` PowerPoint file as input or output |
+| `remotion` | Builds React-driven programmatic video using Remotion |
+| `shannon` | Authorisation, capability, and access-control reasoning helper |
 | `skill-creator` | Creates, modifies, and measures the performance of other skills |
 | `slack-gif-creator` | Creates animated GIFs optimised for Slack with design best practices |
 | `theme-factory` | Applies consistent visual themes to slides, docs, and other artifacts |
+| `valyu` | Valyu-API research and retrieval skill |
 | `web-artifacts-builder` | Builds elaborate multi-component HTML artifacts for Claude.ai |
 | `webapp-testing` | Tests local web applications using Playwright browser automation |
 | `xlsx` | Handles any spreadsheet file as primary input or output |
+
+### WordPress-developer skills
+
+Curated from the MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) catalogue (see [`includes/bundled-skills/THIRD_PARTY_NOTICES.md`](../../includes/bundled-skills/THIRD_PARTY_NOTICES.md) for attribution and license text).
+
+**Security & quality**
+
+| Skill slug | Description |
+|---|---|
+| `wp-security-audit` | Audits PHP code for the most common WP plugin/theme security mistakes (nonces, caps, sanitization, XSS, SQL, AJAX nopriv, redirects) |
+| `wp-security-deep` | Deeper second-pass review for object injection, SSRF, CSRF on GET, mass assignment, file include, mail/zip injection, timing comparison, and TOCTOU races |
+| `wp-security-secrets` | Reviews secret handling — hardcoded credentials, weak token randomness, password storage, cookie flags, secrets in logs |
+| `wp-i18n-audit` | Audits translation correctness — text domain, escape order with placeholders, translator comments, JS i18n |
+
+**Core WordPress APIs**
+
+| Skill slug | Description |
+|---|---|
+| `wp-rest-api` | Idiomatic REST controllers, schema, permission callbacks, sanitize/validate args |
+| `wp-abilities-api` | Building abilities exposed to AI tools and the WP Abilities Manager |
+| `wp-html-api` | Safe HTML manipulation with the WP HTML API processor |
+| `wp-utf8-text` | UTF-8-safe text manipulation, length and slicing without `mb_*` pitfalls |
+| `wp-query-cache` | `WP_Query` caching, `cache_results`, `update_post_meta_cache`, and object-cache patterns |
+
+**Plugin scaffolding (`plugin-scaffold/*`)**
+
+| Skill slug | Description |
+|---|---|
+| `wp-action-scheduler` | Scheduling background work with Action Scheduler (vs `wp_schedule_event`) |
+| `wp-plugin-architecture` | Plugin architecture patterns — namespaces, autoloaders, service container |
+| `wp-plugin-assets-loading` | `wp_enqueue_script`/`wp_enqueue_style` patterns, conditional loading, dependencies |
+| `wp-plugin-bootstrap` | The mainfile pattern — entry point, constants, dependency check, init hook |
+| `wp-plugin-cron` | `wp_schedule_event`, `wp_schedule_single_event`, hook registration timing |
+| `wp-plugin-dto` | Data-transfer-object pattern for plugin internals |
+| `wp-plugin-hooks` | Hook design — naming, parameter design, applying vs doing, removal patterns |
+| `wp-plugin-lifecycle` | Activation, deactivation, uninstall, upgrade routines and DB versioning |
+| `wp-plugin-options-storage` | `get_option`/`update_option` patterns, autoload flags, schema migration |
+| `wp-plugin-presenter` | Presenter pattern for separating template logic from data |
+| `wp-plugin-rewrite-rules` | `add_rewrite_rule`, `add_rewrite_endpoint`, query var registration, flush timing |
 
 ### Re-installing Bundled Skills
 
@@ -38,6 +87,26 @@ If a bundled skill is accidentally deleted or you want to reset customisations:
 1. Go to **Settings → Advanced → Skill Management**
 2. Click **Install Bundled Skills** to add any missing skills without touching existing ones, or
 3. Click **Force Reinstall Bundled Skills** to reset all bundled skills to their shipped versions (custom edits to bundled skills will be overwritten).
+
+---
+
+## Pre-Built Skills (Pro Add-on)
+
+When the Pro add-on is active it contributes additional bundled skills under `addons/pro/includes/bundled-skills/`. These are installed alongside the base skills on Pro activation and use the same registry and uploads directory as base skills.
+
+**Google Workspace CLI (Pro-exclusive, in-house)**
+
+`gws-calendar`, `gws-docs`, `gws-drive`, `gws-gmail`, `gws-gmail-send`, `gws-meet`, `gws-shared`, `gws-sheets`, `gws-tasks`, `gws-workflow`, `gws-workflow-standup-report`.
+
+**Plugin-ecosystem skills** (curated from MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) — see [`addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`](../../addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md)):
+
+- **WooCommerce** — `wc-coupon-dynamic`, `wc-customer-and-sessions`, `wc-emails-classic`, `wc-hpos-compatibility`, `wc-payment-gateway`, `wc-product-search-select`, `wc-rest-api-v4`, `wc-shipping-method`, `wc-shipping-providers`, `wc-stripe-add-payment-method`, `wc-variations-data`, `wc-variations-pricing-filters`
+- **WooCommerce Memberships / Subscriptions** — `wcm-access-discounts`, `wcm-data-model-subscriptions-link`, `wcm-membership-hooks`, `wcs-data-model-switching-gifting`, `wcs-renewal-scheduler`, `wcs-subscription-hooks`
+- **JetEngine** — `je-dynamic-visibility-condition`, `je-listings-callback`, `je-query-builder-custom-type`
+- **JetFormBuilder** — `jfb-action-events`, `jfb-action-external-api`, `jfb-action-item-decorator`, `jfb-action-messages`, `jfb-form-action`, `jfb-form-sidebar-panel`, `jfb-settings-tab`
+- **WP Rocket** — `wp-rocket-cache-invalidation`, `wp-rocket-cache-rejection-and-filters`
+
+These plugin-ecosystem skills don't require the matching plugin to be installed in order to *load* them — assistants can still produce code referencing them. They're shipped in Pro because they pair naturally with the Pro tools that operate against the same plugins.
 
 ---
 
@@ -63,6 +132,11 @@ Use headings, lists, and code blocks to convey the expected behaviour clearly.
 | `name` | ✅ | 64 chars | Becomes the skill's slug; must be filesystem-safe |
 | `description` | ✅ | 1 024 chars | Shown in the Skills meta box and Skill Manager list |
 | `compatibility` | ❌ | 500 chars | Informational only; not enforced at runtime |
+| `license` | ❌ | — | SPDX identifier for the skill (e.g. `MIT`, `GPL-3.0-or-later`) |
+| `source` | ❌ | — | URL pointing to the upstream source for re-distributed skills |
+| `source-license` | ❌ | — | License of the upstream source if different from `license` |
+
+> **Parser note.** NV oOS ships a deliberately minimal YAML reader so it doesn't pull in a full YAML library. It supports flat `key: value` pairs and one-level indented maps. **Multi-line folded scalars and YAML lists (`- item` syntax) are not supported** — keep `description` on a single line and avoid list-valued frontmatter fields. Skills curated from upstream catalogues are pre-normalised to this format when bundled.
 
 ---
 

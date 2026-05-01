@@ -566,7 +566,13 @@ class WP_MCP_AI_Skill_Registry {
 				continue;
 			}
 
-			$result = $this->install_skill( $content );
+			// Collect any companion files (reference.md, examples, JSON, images, etc.)
+			// shipped alongside SKILL.md in the bundled directory, so that skill bodies
+			// referencing `reference.md` or other resources resolve once the skill is
+			// installed in uploads. Filtered by ALLOWED_EXTRA_EXTENSIONS in install_skill().
+			$extra_files = $this->collect_companion_files( $dir );
+
+			$result = $this->install_skill( $content, $extra_files );
 			if ( is_wp_error( $result ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: skill name, 2: error message */
@@ -584,6 +590,56 @@ class WP_MCP_AI_Skill_Registry {
 			'skipped'   => $skipped,
 			'errors'    => $errors,
 		);
+	}
+
+	/**
+	 * Collect companion files shipped alongside a bundled SKILL.md.
+	 *
+	 * Walks the skill folder recursively and returns an associative array of
+	 * { relative_path => contents } suitable for passing to `install_skill()`.
+	 * The SKILL.md itself is excluded because it is written separately.
+	 * `install_skill()` enforces the extension allowlist and decompression-size
+	 * cap, so this method does not need to filter or limit what it returns.
+	 *
+	 * @since 1.7.3
+	 * @param string $dir Absolute path to a skill folder.
+	 * @return array Associative array of relative paths to file contents.
+	 */
+	private function collect_companion_files( $dir ) {
+		$files = array();
+		if ( ! is_dir( $dir ) ) {
+			return $files;
+		}
+
+		$dir = rtrim( $dir, "/\\" );
+		$base_len = strlen( $dir ) + 1;
+
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS )
+			);
+		} catch ( UnexpectedValueException $e ) {
+			return $files;
+		}
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info->isFile() ) {
+				continue;
+			}
+			$abs = $file_info->getPathname();
+			$rel = str_replace( '\\', '/', substr( $abs, $base_len ) );
+			if ( '' === $rel || 'SKILL.md' === $rel ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+			$contents = file_get_contents( $abs );
+			if ( false === $contents ) {
+				continue;
+			}
+			$files[ $rel ] = $contents;
+		}
+
+		return $files;
 	}
 
 	/**
