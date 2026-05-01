@@ -914,7 +914,7 @@
 		var csCfg = cfg.cornerstone || {};
 		var coreUrl = csCfg.coreUrl || 'https://esm.sh/@cornerstonejs/core@1.86.1';
 		var toolsUrl = csCfg.toolsUrl || 'https://esm.sh/@cornerstonejs/tools@1.86.1?external=@cornerstonejs/core';
-		var dicomLoaderUrl = csCfg.dicomLoaderUrl || 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core,dicom-parser,xmlbuilder2';
+		var dicomLoaderUrl = csCfg.dicomLoaderUrl || 'https://esm.sh/@cornerstonejs/dicom-image-loader@1.86.0?external=@cornerstonejs/core';
 
 		Promise.all( [
 			import( coreUrl ),

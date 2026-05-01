@@ -213,7 +213,13 @@ class WP_MCP_AI_Imaging_Admin_Page {
 		return array(
 			'core'                  => self::CORNERSTONE_CORE_CDN,
 			'tools'                 => self::CORNERSTONE_TOOLS_CDN . '?external=@cornerstonejs/core',
-			'dicomLoader'           => self::CORNERSTONE_DICOM_LOADER_CDN . '?external=@cornerstonejs/core,dicom-parser,xmlbuilder2',
+			// Only @cornerstonejs/core is externalised so that tools and
+			// dicom-image-loader share a single core instance via the importmap.
+			// dicom-parser and xmlbuilder2 are CommonJS internally and cannot be
+			// externalised in an ESM bundle without esbuild emitting a runtime
+			// `require("dicom-parser")` shim that throws "Dynamic require ... is
+			// not supported".  Letting esm.sh inline them keeps the bundle ESM-pure.
+			'dicomLoader'           => self::CORNERSTONE_DICOM_LOADER_CDN . '?external=@cornerstonejs/core',
 			'importCornerstone'     => self::CORNERSTONE_CORE_CDN,
 			'importDicomParser'     => self::DICOM_PARSER_CDN,
 			'importXmlbuilder2'     => self::XMLBUILDER2_CDN,
