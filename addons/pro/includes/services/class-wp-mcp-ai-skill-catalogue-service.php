@@ -661,7 +661,10 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 	 * SSRF-safe HTTPS GET. Mirrors the controller's existing protections:
 	 *  - HTTPS only.
 	 *  - Resolve hostname; reject private/loopback/reserved IPs.
-	 *  - Pin the resolved IP into the URL (DNS-rebind defence).
+	 *  - Pin the resolved IP at the cURL level via CURLOPT_RESOLVE (DNS-rebind
+	 *    defence) while preserving the hostname in the URL so TLS SNI and
+	 *    certificate SAN validation continue to work.
+	 *  - Disallow redirects so the pinned host cannot be bypassed.
 	 *  - Enforce response-size cap.
 	 *
 	 * @since 1.11.0
@@ -688,28 +691,41 @@ class WP_MCP_AI_Skill_Catalogue_Service {
 			return new WP_Error( 'wp_mcp_ai_skill_catalogue_ssrf', __( 'Catalogue host resolves to a private or reserved address.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$path  = wp_parse_url( $url, PHP_URL_PATH );
-		$query = wp_parse_url( $url, PHP_URL_QUERY );
-		$port  = wp_parse_url( $url, PHP_URL_PORT );
-		$pinned_url = 'https://' . $resolved_ip . ( $port ? ':' . (int) $port : '' ) . ( $path ? $path : '' ) . ( $query ? '?' . $query : '' );
+		// DNS-rebind defence: keep the hostname in the URL (so TLS SNI and
+		// certificate SAN matching work) but pin the DNS resolution at the
+		// cURL level via CURLOPT_RESOLVE. Previous versions rewrote the URL
+		// to use the resolved IP directly, which caused
+		// `cURL error 60: SSL: no alternative certificate subject name`
+		// because cURL validated the certificate against the IP literal.
+		$port = wp_parse_url( $url, PHP_URL_PORT );
+		$port = $port ? (int) $port : 443;
 
 		$default_headers = array(
-			'Host'       => $host,
 			'User-Agent' => 'WP-MCP-AI-Skill-Catalogue/' . ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.0.0' ) . ' (WordPress/' . get_bloginfo( 'version' ) . ')',
 			'Accept'     => 'text/plain, application/json, */*;q=0.5',
 		);
 		$headers = array_merge( $default_headers, is_array( $headers ) ? $headers : array() );
 
+		$resolve_entry = $host . ':' . $port . ':' . $resolved_ip;
+		$curl_pin      = static function ( $handle ) use ( $resolve_entry ) {
+			if ( is_resource( $handle ) || ( is_object( $handle ) && $handle instanceof \CurlHandle ) ) {
+				curl_setopt( $handle, CURLOPT_RESOLVE, array( $resolve_entry ) );
+			}
+		};
+		add_action( 'http_api_curl', $curl_pin, 10, 1 );
+
 		$response = wp_remote_get(
-			$pinned_url,
+			$url,
 			array(
 				'timeout'             => self::HTTP_TIMEOUT,
-				'redirection'         => 0, // Disallow redirects to keep IP-pinning effective.
+				'redirection'         => 0, // Disallow redirects to keep DNS pinning effective.
 				'limit_response_size' => self::MAX_RESPONSE_BYTES,
 				'headers'             => $headers,
 				'sslverify'           => true,
 			)
 		);
+
+		remove_action( 'http_api_curl', $curl_pin, 10 );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
