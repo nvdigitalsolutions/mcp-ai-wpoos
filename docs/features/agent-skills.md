@@ -188,6 +188,42 @@ This matches the pattern described at [agentskills.io](https://agentskills.io/sp
 
 ---
 
+## Skill Packs
+
+A **skill pack** is a curated, named collection of related skills that ships as a single addressable unit. Use them when you want to install several related skills with one click and describe them as a coherent capability ("WordPress Developer", "Document Authoring", etc.).
+
+The base plugin ships two packs out of the box:
+
+| Pack slug | Members |
+|---|---|
+| `wordpress-developer` | `wp-abilities-api`, `wp-action-scheduler`, `wp-html-api`, `wp-i18n-audit`, `wp-plugin-architecture`, `wp-plugin-assets-loading`, `wp-rest-api`, `wp-security-audit`, `wp-security-deep` |
+| `document-authoring`  | `docx`, `pdf`, `pptx`, `doc-coauthoring`, `internal-comms` |
+
+**Install a pack** via *Settings → NV oOS → Advanced → Skill Management → Skill Packs*: each row shows the pack name, member skills, the installed-vs-total count, and an *Install Pack* button. Members already present in `wp-content/uploads/mcp-ai-skills/` are skipped (existing customisations are preserved).
+
+**Register your own pack** with the `wp_mcp_ai_skill_packs` filter:
+
+```php
+add_filter(
+    'wp_mcp_ai_skill_packs',
+    function ( $packs ) {
+        $packs['my-team-pack'] = array(
+            'slug'        => 'my-team-pack',
+            'name'        => __( 'My Team Pack', 'my-textdomain' ),
+            'description' => __( 'Skills my team always wants on every assistant.', 'my-textdomain' ),
+            'skills'      => array( 'wp-rest-api', 'wp-security-audit', 'docx' ),
+        );
+        return $packs;
+    }
+);
+```
+
+Pack installation runs through the existing bundled-skills pipeline, so SKILL.md companion files (reference docs, examples, JSON, images) are copied alongside the body. Each install attempt fires the `wp_mcp_ai_skill_pack_installed` action with `( $slug, $installed, $skipped, $errors )` for observability.
+
+> Skill packs only handle *installation*. Assignment to an assistant continues to use the per-skill checkbox UI in the Skills meta box.
+
+---
+
 ## Managing Skills
 
 ### Base Plugin (Settings → Advanced → Skill Management)

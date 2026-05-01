@@ -701,6 +701,84 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * Install a single bundled skill (with companion files) by name.
+	 *
+	 * Searches the supplied source directories — falling back to the base
+	 * plugin's bundled-skills directory and the Pro add-on's, when present —
+	 * for a `{$skill_name}/SKILL.md`, then installs that skill via
+	 * `install_skill()`. Used by the skill-pack registry so packs can
+	 * install only their members without copying every bundled skill.
+	 *
+	 * @since 1.11.0
+	 * @param string        $skill_name  Skill folder name (e.g. `wp-rest-api`).
+	 * @param array|null    $source_dirs Optional list of bundled-skill root directories to search.
+	 *                                   When null/empty the registry's own roots (base + Pro when defined) are used.
+	 * @return true|WP_Error True on success, WP_Error on failure (including not found).
+	 */
+	public function install_bundled_skill_by_name( $skill_name, $source_dirs = null ) {
+		$skill_name = sanitize_key( (string) $skill_name );
+		if ( '' === $skill_name ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_invalid_name',
+				__( 'Invalid skill name.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( ! is_array( $source_dirs ) || empty( $source_dirs ) ) {
+			$source_dirs = array();
+			$base_dir    = $this->get_bundled_skills_dir();
+			if ( is_string( $base_dir ) && is_dir( $base_dir ) ) {
+				$source_dirs[] = $base_dir;
+			}
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_dir = trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills';
+				if ( is_dir( $pro_dir ) ) {
+					$source_dirs[] = $pro_dir;
+				}
+			}
+		}
+
+		$skill_dir = '';
+		foreach ( $source_dirs as $dir ) {
+			if ( ! is_string( $dir ) || ! is_dir( $dir ) ) {
+				continue;
+			}
+			$candidate = trailingslashit( $dir ) . $skill_name;
+			if ( is_dir( $candidate ) && file_exists( $candidate . '/SKILL.md' ) ) {
+				$skill_dir = $candidate;
+				break;
+			}
+		}
+
+		if ( '' === $skill_dir ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_not_bundled',
+				/* translators: %s: skill slug */
+				sprintf( __( 'Bundled skill not found: %s', 'mcp-ai-wpoos' ), $skill_name )
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+		$content = file_get_contents( $skill_dir . '/SKILL.md' );
+		if ( false === $content ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_read_failed',
+				/* translators: %s: skill slug */
+				sprintf( __( 'Failed to read bundled skill: %s', 'mcp-ai-wpoos' ), $skill_name )
+			);
+		}
+
+		$extra_files = $this->collect_companion_files( $skill_dir );
+		$result      = $this->install_skill( $content, $extra_files );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Reset the singleton instance (for testing purposes).
 	 *
 	 * @since 1.7.0

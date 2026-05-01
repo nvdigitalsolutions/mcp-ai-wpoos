@@ -94,6 +94,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_seed_orchestration'     => 'handle_seed_orchestration',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 				'wp_ajax_wp_mcp_ai_refresh_skills'         => 'handle_refresh_skills',
+				'wp_ajax_wp_mcp_ai_install_skill_pack'     => 'handle_install_skill_pack',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
@@ -3680,6 +3681,74 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					/* translators: %d: Number of skills that failed to uninstall */
 					__( 'Failed to uninstall: %d', 'mcp-ai-wpoos' ),
 					count( $uninstall_errors )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message'   => $message,
+					'installed' => $result['installed'],
+					'skipped'   => $result['skipped'],
+					'errors'    => count( $result['errors'] ),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to install a skill pack (Phase 4).
+		 *
+		 * Installs every member of the requested pack from the bundled-skills
+		 * directories. Already-installed skills are reported as skipped.
+		 *
+		 * @since 1.11.0
+		 * @return void
+		 */
+		private function handle_install_skill_pack() {
+			check_ajax_referer( 'wp_mcp_ai_install_skill_pack', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			$pack_slug = isset( $_POST['pack_slug'] ) ? sanitize_key( wp_unslash( $_POST['pack_slug'] ) ) : '';
+			if ( '' === $pack_slug ) {
+				wp_send_json_error( array( 'message' => __( 'Missing pack identifier.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
+			}
+
+			$result = WP_MCP_AI_Skill_Pack_Registry::instance()->install_pack( $pack_slug );
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+				return;
+			}
+
+			$message = sprintf(
+				/* translators: 1: pack slug, 2: installed count, 3: skipped count */
+				__( 'Pack "%1$s" processed. Installed: %2$d, Skipped: %3$d', 'mcp-ai-wpoos' ),
+				$pack_slug,
+				$result['installed'],
+				$result['skipped']
+			);
+			if ( ! empty( $result['errors'] ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: error count */
+					__( 'Errors: %d', 'mcp-ai-wpoos' ),
+					count( $result['errors'] )
 				);
 			}
 
