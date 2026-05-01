@@ -53,9 +53,9 @@ Introduces the unified umbrella, the shared engine / codes / FHIR / audit / capa
 
 Adds `analyze_vital_trends`, `flag_abnormal_vitals`, `compute_bmi_and_growth_percentile`, and `get_vaccination_schedule` (backed by `WP_MCP_AI_Healthcare_Vaccination_Schedules` with CDC paediatric / CDC adult / WHO EPI / AAFP feline / AAHA canine packs).  Promotes vital logs to the auxiliary `mcp_ai_hc_vital_log` CPT (existing options + JetEngine CCT storage continues to work as the primary store).  Fires `wp_mcp_ai_healthcare_before_vital_log` and `wp_mcp_ai_healthcare_after_vital_log` hooks from `log_vital_signs`.  Broader CSV / Apple Health / Google Fit / Withings imports for `import_vitals` are tracked for a Phase B follow-up.
 
-### Phase C — Health & Wellness breadth
+### Phase C — Health & Wellness breadth ✅
 
-Closes the gaps already noted in [`addons/pro/docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md`](../../../docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md): adds `check_member_allergies`, `get_health_timeline`, `link_prescription_to_record`, `manage_care_plan`, `verify_prescription_interactions` (RxNorm-backed), `generate_visit_summary`, `merge_duplicate_members`.
+Adds six cross-cutting Health & Wellness tools that close the gaps called out in [`addons/pro/docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md`](../../../docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md): `check_member_allergies`, `get_health_timeline`, `link_prescription_to_record`, `verify_prescription_interactions` (RxNorm-aligned offline registry, filter-extensible to RxNav), `generate_visit_summary`, and `merge_duplicate_members`.  `manage_care_plan` was already present.  Filters added: `wp_mcp_ai_healthcare_interaction_pairs`, `wp_mcp_ai_healthcare_rxnorm_lookup`, `wp_mcp_ai_healthcare_member_child_meta_map`.  Action added: `wp_mcp_ai_healthcare_after_merge_members`.
 
 ### Phase D — Imaging depth
 

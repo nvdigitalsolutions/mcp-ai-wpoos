@@ -1072,6 +1072,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools    = array_merge( $pro_tools, $vitals_tools );
 		}
 
+		// Add Health & Wellness breadth (Phase C) tools if enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$wellness_tools = array(
+				'WP_MCP_AI_Tool_Check_Member_Allergies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-check-member-allergies.php',
+				'WP_MCP_AI_Tool_Get_Health_Timeline'              => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-get-health-timeline.php',
+				'WP_MCP_AI_Tool_Link_Prescription_To_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-link-prescription-to-record.php',
+				'WP_MCP_AI_Tool_Verify_Prescription_Interactions' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-verify-prescription-interactions.php',
+				'WP_MCP_AI_Tool_Generate_Visit_Summary'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-generate-visit-summary.php',
+				'WP_MCP_AI_Tool_Merge_Duplicate_Members'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-merge-duplicate-members.php',
+			);
+			$pro_tools      = array_merge( $pro_tools, $wellness_tools );
+		}
+
 		// Add Healthcare Imaging tools if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
 			$imaging_tools = array(
@@ -2050,6 +2063,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
 			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
 			$pro_tools['parse_health_information']     = 'wordpress-core';
+
+			// Phase C — Health & Wellness breadth.
+			$pro_tools['check_member_allergies']            = 'wordpress-core';
+			$pro_tools['get_health_timeline']               = 'wordpress-core';
+			$pro_tools['link_prescription_to_record']       = 'wordpress-core';
+			$pro_tools['verify_prescription_interactions']  = 'wordpress-core';
+			$pro_tools['generate_visit_summary']            = 'wordpress-core';
+			$pro_tools['merge_duplicate_members']           = 'wordpress-core';
 		}
 
 		// Add Medical Vitals (Phase B) tool mappings if enabled.
