@@ -6,7 +6,8 @@
  * Wraps the existing {@see WP_MCP_AI_OpenAI_Client::create_embedding()} call so
  * the vector service can stay provider-agnostic.
  *
- * MemPalace-inspired Phase 3 enhancement.
+ * Phase 3 enhancement inspired by the MemPalace project
+ * (https://github.com/MemPalace/mempalace).
  *
  * @package WP_MCP_AI
  * @since 1.1.0

@@ -17,6 +17,8 @@
  *     and explicit provenance via `source`.
  *   - mem0: importance (relevance), verbatim discipline, source tracking.
  *   - Cognee: hierarchical scope via wing/room (already present in Phase 4a).
+ *   - MemPalace (https://github.com/MemPalace/mempalace): wings/rooms naming
+ *     and verbatim-storage discipline applied throughout this CCT schema.
  *
  * Vector and graph references (`embedding_id`, `graph_node_id`) are nullable
  * forward-compatibility hooks for the deferred Phase 4c work.

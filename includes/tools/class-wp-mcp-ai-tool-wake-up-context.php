@@ -2,10 +2,11 @@
 /**
  * Tool that produces a "wake-up" context block for assistant boot.
  *
- * MemPalace-inspired Phase 2 enhancement. Retrieves the top-N most-relevant
- * memories for a given agent (optionally scoped to a wing/room) and returns
- * them formatted as a labeled block ready to be prepended to the system
- * prompt.
+ * Inspired by the MemPalace project (https://github.com/MemPalace/mempalace),
+ * which the WordPress plugin's hierarchical memory model is loosely modelled on.
+ * Phase 2 enhancement: retrieves the top-N most-relevant memories for a given
+ * agent (optionally scoped to a wing/room) and returns them formatted as a
+ * labeled block ready to be prepended to the system prompt.
  *
  * @package WP_MCP_AI
  * @since 1.1.0

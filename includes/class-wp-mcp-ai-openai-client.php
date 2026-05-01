@@ -40,14 +40,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-			// The gpt-image-1 and gpt-image-1.5 models do NOT support the response_format parameter.
-			// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
-			// Default to true for backward compatibility, but explicitly block gpt-image-1/1.5.
+			// gpt-image-1, gpt-image-1.5, and gpt-image-2 do NOT support the response_format parameter
+			// (they always return base64 in the data[].b64_json field). DALL·E variants do.
+			// Default to true for backward compatibility, but explicitly block the gpt-image family.
 			$supported = true;
 
-			// Check if this is the gpt-image-1 or gpt-image-1.5 model (case-insensitive).
 			$model_lower = strtolower( $model );
-			if ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower ) {
+			if ( in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true ) ) {
 				$supported = false;
 			}
 			/**
@@ -63,7 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * Determine whether a given image model accepts the style parameter.
 		 *
 		 * The style parameter (natural or vivid) is only supported by DALL-E 3.
-		 * Other models (gpt-image-1, gpt-image-1.5, dall-e-2) do not support this parameter.
+		 * Other models (gpt-image-1, gpt-image-1.5, gpt-image-2, dall-e-2) do not support this parameter.
 		 *
 		 * @param string $model Image model identifier.
 		 * @return bool
@@ -1790,15 +1789,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
+			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-2';
 			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
 
 			// Determine model-specific default quality.
-			// gpt-image-1/1.5 models default to 'medium', DALL-E models default to 'standard'.
+			// gpt-image-1/1.5/2 models default to 'medium', DALL-E models default to 'standard'.
 			$model_for_quality = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
 			$model_for_quality = strtolower( $model_for_quality );
-			$default_quality   = ( 'gpt-image-1' === $model_for_quality || 'gpt-image-1.5' === $model_for_quality ) ? 'medium' : 'standard';
+			$default_quality   = in_array( $model_for_quality, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true ) ? 'medium' : 'standard';
 
 			// Allow settings to override if a valid quality is configured.
 			if ( isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ) {
@@ -1815,10 +1814,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Normalize quality values based on the model being used.
 			// Different OpenAI image models accept different quality parameter values:
-			// - gpt-image-1/1.5 accept: 'low', 'medium', 'high', 'auto'
+			// - gpt-image-1/1.5/2 accept: 'low', 'medium', 'high', 'auto'
 			// - DALL-E 2/3 accept: 'standard', 'hd'.
 			$model_lower        = strtolower( $model );
-			$is_gpt_image_model = ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower );
+			$is_gpt_image_model = in_array( $model_lower, array( 'gpt-image-1', 'gpt-image-1.5', 'gpt-image-2' ), true );
 
 			if ( $is_gpt_image_model ) {
 				// For gpt-image models, validate and use quality values directly.
@@ -2424,7 +2423,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$response_format = 'b64_json';
 			}
 
-			// gpt-image-1 and gpt-image-1.5 do not accept the response_format parameter.
+			// gpt-image-1, gpt-image-1.5, and gpt-image-2 do not accept the response_format parameter.
 			$model_supports_response_format = self::image_model_supports_response_format( $model );
 
 			// Prepare multipart form data.

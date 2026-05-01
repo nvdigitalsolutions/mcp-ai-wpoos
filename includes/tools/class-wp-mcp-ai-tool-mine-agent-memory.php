@@ -2,9 +2,10 @@
 /**
  * Tool for mining/bulk-ingesting agent memory from various sources.
  *
- * MemPalace-inspired Phase 2 enhancement. Takes a source (post type query,
- * URL list, or raw text array), chunks long content, and bulk-creates
- * verbatim memory records scoped to a chosen wing/room.
+ * Inspired by the MemPalace project (https://github.com/MemPalace/mempalace).
+ * Phase 2 enhancement: takes a source (post type query, URL list, or raw text
+ * array), chunks long content, and bulk-creates verbatim memory records scoped
+ * to a chosen wing/room.
  *
  * @package WP_MCP_AI
  * @since 1.1.0

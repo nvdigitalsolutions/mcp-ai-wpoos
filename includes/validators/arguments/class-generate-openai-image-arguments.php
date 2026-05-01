@@ -71,7 +71,7 @@ class GenerateOpenAIImageArguments {
 	 *
 	 * Different models support different quality values:
 	 * - DALL-E 2/3: 'standard', 'hd'
-	 * - gpt-image-1/1.5: 'low', 'medium', 'high', 'auto'
+	 * - gpt-image-1/1.5/2: 'low', 'medium', 'high', 'auto'
 	 *
 	 * @var string|null
 	 */

@@ -4,6 +4,8 @@
  *
  * Allows AI assistants to store important context for future retrieval.
  * Part of DeepSeek V4-inspired multi-agent orchestration enhancements (Phase 4/5).
+ * The hierarchical `wing` / `room` scoping fields are inspired by the
+ * MemPalace project (https://github.com/MemPalace/mempalace).
  *
  * @package WP_MCP_AI
  * @since 1.1.0

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
+        'version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
+        'reference' => '22668630a6e54ed441748b498608851a305a9003',
         'pretty_version' => 'dev-copilot/memory-enhancement-integration',
         'version' => 'dev-copilot/memory-enhancement-integration',
         'reference' => '1a4574c83472016465b6317cb140ff16ee5180b4',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
+            'version' => 'dev-copilot/update-plugin-tools-for-openai-image-2-0',
+            'reference' => '22668630a6e54ed441748b498608851a305a9003',
             'pretty_version' => 'dev-copilot/memory-enhancement-integration',
             'version' => 'dev-copilot/memory-enhancement-integration',
             'reference' => '1a4574c83472016465b6317cb140ff16ee5180b4',
