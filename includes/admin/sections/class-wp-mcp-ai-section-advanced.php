@@ -1811,6 +1811,98 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<?php
+				// Phase 4 — Skill Packs UI.
+				if ( ! class_exists( 'WP_MCP_AI_Skill_Pack_Registry' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
+				}
+				$skill_packs       = WP_MCP_AI_Skill_Pack_Registry::instance()->get_packs();
+				$skill_pack_nonce  = wp_create_nonce( 'wp_mcp_ai_install_skill_pack' );
+				$installed_skills_lookup = array();
+				foreach ( $installed_skills as $_iskill ) {
+					if ( isset( $_iskill['name'] ) ) {
+						$installed_skills_lookup[ $_iskill['name'] ] = true;
+					}
+				}
+				if ( ! empty( $skill_packs ) ) :
+					?>
+				<div class="wp-mcp-ai-skill-packs-actions" style="margin-top: 30px;">
+					<h4><?php esc_html_e( 'Skill Packs', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Install a curated bundle of related skills with one click. Already-installed skills are preserved.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<table class="widefat striped" style="margin-top: 10px;">
+						<thead>
+							<tr>
+								<th style="width: 28%;"><?php esc_html_e( 'Pack', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Skills', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 14%;"><?php esc_html_e( 'Installed', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 16%;"><?php esc_html_e( 'Action', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $skill_packs as $pack ) :
+								$pack_skill_count = count( $pack['skills'] );
+								$pack_installed   = 0;
+								foreach ( $pack['skills'] as $member ) {
+									if ( isset( $installed_skills_lookup[ $member ] ) ) {
+										++$pack_installed;
+									}
+								}
+								?>
+								<tr>
+									<td>
+										<strong><?php echo esc_html( $pack['name'] ); ?></strong>
+										<br />
+										<code style="font-size: 11px;"><?php echo esc_html( $pack['slug'] ); ?></code>
+										<?php if ( ! empty( $pack['description'] ) ) : ?>
+											<p class="description" style="margin: 4px 0 0;"><?php echo esc_html( $pack['description'] ); ?></p>
+										<?php endif; ?>
+									</td>
+									<td>
+										<?php
+										$badges = array();
+										foreach ( $pack['skills'] as $member ) {
+											$badges[] = '<code style="display: inline-block; margin: 2px;">' . esc_html( $member ) . '</code>';
+										}
+										echo wp_kses(
+											implode( ' ', $badges ),
+											array( 'code' => array( 'style' => array() ) )
+										);
+										?>
+									</td>
+									<td>
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: 1: installed count, 2: total count */
+												__( '%1$d / %2$d', 'mcp-ai-wpoos' ),
+												$pack_installed,
+												$pack_skill_count
+											)
+										);
+										?>
+									</td>
+									<td>
+										<button type="button"
+											class="button button-secondary wp-mcp-ai-install-skill-pack-btn"
+											data-pack="<?php echo esc_attr( $pack['slug'] ); ?>">
+											<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+											<?php esc_html_e( 'Install Pack', 'mcp-ai-wpoos' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<div id="wp-mcp-ai-skill-pack-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+				<?php endif; ?>
+
+				<?php
 				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
 				?>
 				<script type="text/javascript">
@@ -1893,6 +1985,47 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will remove and reinstall all bundled skills, resetting them to their default versions. Any customizations to bundled skills will be lost. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performSkillsAction('force_install_bundled', '#wp-mcp-ai-force-install-bundled-skills-btn');
 						}
+					});
+
+					// Skill Packs (Phase 4).
+					$('.wp-mcp-ai-install-skill-pack-btn').on('click', function(e) {
+						e.preventDefault();
+						var $btn = $(this);
+						var pack = $btn.data('pack');
+						var originalText = $btn.html();
+						var $message = $('#wp-mcp-ai-skill-pack-message');
+
+						$('.wp-mcp-ai-install-skill-pack-btn').prop('disabled', true).addClass('disabled');
+						$btn.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_install_skill_pack',
+								pack_slug: pack,
+								nonce: <?php echo wp_json_encode( $skill_pack_nonce ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message.removeClass('notice-error notice-warning').addClass('notice-success').find('p').html(response.data.message);
+									$message.show();
+									setTimeout(function() { location.reload(); }, 1800);
+								} else {
+									$message.removeClass('notice-success notice-warning').addClass('notice-error').find('p').html((response.data && response.data.message) || <?php echo wp_json_encode( __( 'Pack install failed.', 'mcp-ai-wpoos' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message.removeClass('notice-success notice-warning').addClass('notice-error').find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								$('.wp-mcp-ai-install-skill-pack-btn').prop('disabled', false).removeClass('disabled');
+								$btn.html(originalText);
+							}
+						});
 					});
 				});
 				</script>

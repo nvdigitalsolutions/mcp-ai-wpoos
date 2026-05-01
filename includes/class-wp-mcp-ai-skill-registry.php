@@ -386,6 +386,52 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * Build a lightweight skills *index* for system-prompt injection.
+	 *
+	 * Unlike `build_skills_prompt()`, this method does NOT include the full
+	 * `SKILL.md` instructions — only the skill name and description. The model
+	 * is told to call the `load_skill` tool to fetch the full instructions on
+	 * demand. This is the "progressive disclosure" pattern described at
+	 * https://agentskills.io/specification: it keeps the per-turn context
+	 * window small even when many skills are assigned.
+	 *
+	 * @since 1.11.0
+	 * @param array $skill_names Array of skill name strings to include in the index.
+	 * @return string Compact skill catalogue, or '' when there are no usable skills.
+	 */
+	public function build_skills_index_prompt( $skill_names ) {
+		if ( ! is_array( $skill_names ) || empty( $skill_names ) ) {
+			return '';
+		}
+
+		$this->load_skills();
+
+		$entries = array();
+		foreach ( $skill_names as $name ) {
+			$skill = $this->get_skill( $name );
+			if ( ! $skill || empty( $skill['name'] ) ) {
+				continue;
+			}
+			$desc = isset( $skill['description'] ) ? trim( (string) $skill['description'] ) : '';
+			if ( '' === $desc ) {
+				$desc = __( '(no description)', 'mcp-ai-wpoos' );
+			}
+			$entries[] = sprintf( '- **%s** — %s', $skill['name'], $desc );
+		}
+
+		if ( empty( $entries ) ) {
+			return '';
+		}
+
+		$prompt  = "# Available Skills\n\n";
+		$prompt .= "You have access to the following specialised skills. Each entry below is only a short summary — the full step-by-step instructions are NOT loaded yet.\n\n";
+		$prompt .= "When a user request matches one of these skills, call the `load_skill` tool with the skill's name to retrieve the full instructions before proceeding. Do not invent skill behaviour from the summary alone.\n\n";
+		$prompt .= implode( "\n", $entries );
+
+		return $prompt;
+	}
+
+	/**
 	 * Build system prompt text from selected skill names.
 	 *
 	 * @since 1.7.0
@@ -566,7 +612,13 @@ class WP_MCP_AI_Skill_Registry {
 				continue;
 			}
 
-			$result = $this->install_skill( $content );
+			// Collect any companion files (reference.md, examples, JSON, images, etc.)
+			// shipped alongside SKILL.md in the bundled directory, so that skill bodies
+			// referencing `reference.md` or other resources resolve once the skill is
+			// installed in uploads. Filtered by ALLOWED_EXTRA_EXTENSIONS in install_skill().
+			$extra_files = $this->collect_companion_files( $dir );
+
+			$result = $this->install_skill( $content, $extra_files );
 			if ( is_wp_error( $result ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: skill name, 2: error message */
@@ -587,6 +639,56 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * Collect companion files shipped alongside a bundled SKILL.md.
+	 *
+	 * Walks the skill folder recursively and returns an associative array of
+	 * { relative_path => contents } suitable for passing to `install_skill()`.
+	 * The SKILL.md itself is excluded because it is written separately.
+	 * `install_skill()` enforces the extension allowlist and decompression-size
+	 * cap, so this method does not need to filter or limit what it returns.
+	 *
+	 * @since 1.7.3
+	 * @param string $dir Absolute path to a skill folder.
+	 * @return array Associative array of relative paths to file contents.
+	 */
+	private function collect_companion_files( $dir ) {
+		$files = array();
+		if ( ! is_dir( $dir ) ) {
+			return $files;
+		}
+
+		$dir = rtrim( $dir, "/\\" );
+		$base_len = strlen( $dir ) + 1;
+
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS )
+			);
+		} catch ( UnexpectedValueException $e ) {
+			return $files;
+		}
+
+		foreach ( $iterator as $file_info ) {
+			if ( ! $file_info->isFile() ) {
+				continue;
+			}
+			$abs = $file_info->getPathname();
+			$rel = str_replace( '\\', '/', substr( $abs, $base_len ) );
+			if ( '' === $rel || 'SKILL.md' === $rel ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+			$contents = file_get_contents( $abs );
+			if ( false === $contents ) {
+				continue;
+			}
+			$files[ $rel ] = $contents;
+		}
+
+		return $files;
+	}
+
+	/**
 	 * Get the path to the bundled skills directory.
 	 *
 	 * @since 1.7.1
@@ -596,6 +698,84 @@ class WP_MCP_AI_Skill_Registry {
 		return defined( 'WP_MCP_AI_PATH' )
 			? trailingslashit( WP_MCP_AI_PATH ) . 'includes/bundled-skills'
 			: '';
+	}
+
+	/**
+	 * Install a single bundled skill (with companion files) by name.
+	 *
+	 * Searches the supplied source directories — falling back to the base
+	 * plugin's bundled-skills directory and the Pro add-on's, when present —
+	 * for a `{$skill_name}/SKILL.md`, then installs that skill via
+	 * `install_skill()`. Used by the skill-pack registry so packs can
+	 * install only their members without copying every bundled skill.
+	 *
+	 * @since 1.11.0
+	 * @param string        $skill_name  Skill folder name (e.g. `wp-rest-api`).
+	 * @param array|null    $source_dirs Optional list of bundled-skill root directories to search.
+	 *                                   When null/empty the registry's own roots (base + Pro when defined) are used.
+	 * @return true|WP_Error True on success, WP_Error on failure (including not found).
+	 */
+	public function install_bundled_skill_by_name( $skill_name, $source_dirs = null ) {
+		$skill_name = sanitize_key( (string) $skill_name );
+		if ( '' === $skill_name ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_invalid_name',
+				__( 'Invalid skill name.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( ! is_array( $source_dirs ) || empty( $source_dirs ) ) {
+			$source_dirs = array();
+			$base_dir    = $this->get_bundled_skills_dir();
+			if ( is_string( $base_dir ) && is_dir( $base_dir ) ) {
+				$source_dirs[] = $base_dir;
+			}
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_dir = trailingslashit( WP_MCP_AI_PRO_PATH ) . 'includes/bundled-skills';
+				if ( is_dir( $pro_dir ) ) {
+					$source_dirs[] = $pro_dir;
+				}
+			}
+		}
+
+		$skill_dir = '';
+		foreach ( $source_dirs as $dir ) {
+			if ( ! is_string( $dir ) || ! is_dir( $dir ) ) {
+				continue;
+			}
+			$candidate = trailingslashit( $dir ) . $skill_name;
+			if ( is_dir( $candidate ) && file_exists( $candidate . '/SKILL.md' ) ) {
+				$skill_dir = $candidate;
+				break;
+			}
+		}
+
+		if ( '' === $skill_dir ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_not_bundled',
+				/* translators: %s: skill slug */
+				sprintf( __( 'Bundled skill not found: %s', 'mcp-ai-wpoos' ), $skill_name )
+			);
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+		$content = file_get_contents( $skill_dir . '/SKILL.md' );
+		if ( false === $content ) {
+			return new WP_Error(
+				'wp_mcp_ai_skill_read_failed',
+				/* translators: %s: skill slug */
+				sprintf( __( 'Failed to read bundled skill: %s', 'mcp-ai-wpoos' ), $skill_name )
+			);
+		}
+
+		$extra_files = $this->collect_companion_files( $skill_dir );
+		$result      = $this->install_skill( $content, $extra_files );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return true;
 	}
 
 	/**
