@@ -132,7 +132,7 @@ class Test_Healthcare_Vitals extends WP_UnitTestCase {
 	 */
 	public function test_bmi_growth_tool_outputs() {
 		$tool_path = dirname( __DIR__, 2 ) . '/includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-compute-bmi-and-growth-percentile.php';
-		require_once dirname( __DIR__, 3 ) . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
+		require_once dirname( __DIR__, 4 ) . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
 		require_once $tool_path;
 		$tool = new WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile();
 		$this->assertSame( 'compute_bmi_and_growth_percentile', $tool->get_slug() );
@@ -169,7 +169,7 @@ class Test_Healthcare_Vitals extends WP_UnitTestCase {
 	 * get_vaccination_schedule tool auto-picks pack and returns due/upcoming.
 	 */
 	public function test_get_vaccination_schedule_tool() {
-		require_once dirname( __DIR__, 3 ) . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
+		require_once dirname( __DIR__, 4 ) . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
 		$tool_path = dirname( __DIR__, 2 ) . '/includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-get-vaccination-schedule.php';
 		require_once $tool_path;
 

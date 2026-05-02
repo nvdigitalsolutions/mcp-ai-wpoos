@@ -5,7 +5,7 @@
  * @package WP_MCP_AI_Pro
  */
 
-$base = dirname( __DIR__, 3 );
+$base = dirname( __DIR__, 4 );
 require_once $base . '/includes/interfaces/interface-wp-mcp-ai-tool.php';
 
 $interop_dir = dirname( __DIR__, 2 ) . '/includes/tools/healthcare/interop';
