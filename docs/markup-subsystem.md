@@ -20,6 +20,27 @@ private protocol:
 | **W3C Web Annotation Data Model** | Canonical interchange envelope (`@context: http://www.w3.org/ns/anno.jsonld`) with `SvgSelector`, `FragmentSelector`, `TextQuoteSelector`, `TextPositionSelector`. |
 | **Image-mask conventions used by OpenAI / Gemini / Stability** | RGBA PNG, alpha=0 inside the edit region, alpha=255 outside. Existing inpainting tools accept the result with **zero parameter changes**. |
 
+## Configuration
+
+The markup subsystem is **enabled by default**. Site administrators
+can toggle it from **NV oOS Settings → Tools & Features → Enable
+Markup Subsystem**, which writes to `wp_mcp_ai_settings.markup_enabled`.
+
+When disabled:
+
+- `WP_MCP_AI_Markup_Loop_Interceptor::is_enabled()` returns `false`.
+- The pre-execution filter (`wp_mcp_ai_pre_execute_tool`) returns
+  `null` and tools execute with whatever arguments the model already
+  supplied — no canvas elicitation is ever surfaced.
+- Already-issued URL-mode fallback links still resolve via the REST
+  controller until they expire from the store.
+
+The toggle reads from `get_option( 'wp_mcp_ai_settings' )` directly
+(not the merged-defaults accessor) so installations that have never
+visited the settings screen continue to use the
+`wp_mcp_ai_markup_enabled` filter default (`true`) until the option
+is materialized by saving any settings tab.
+
 ## Architecture
 
 ```
