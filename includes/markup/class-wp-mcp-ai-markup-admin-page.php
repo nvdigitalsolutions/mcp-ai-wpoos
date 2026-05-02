@@ -103,18 +103,18 @@ class WP_MCP_AI_Markup_Admin_Page {
 		}
 
 		$config = array(
-			'requestId'   => $request_id,
-			'fetchUrl'    => '' === $request_id ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/markup/' . rawurlencode( $request_id ) ) ),
-			'submitUrl'   => '' === $request_id ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/markup/' . rawurlencode( $request_id ) . '/submit' ) ),
-			'nonce'       => wp_create_nonce( 'wp_rest' ),
-			'strings'     => array(
-				'pageTitle'    => __( 'Markup Editor', 'mcp-ai-wpoos' ),
-				'loading'      => __( 'Loading markup request…', 'mcp-ai-wpoos' ),
-				'notFound'     => __( 'Markup request not found, expired, or already submitted.', 'mcp-ai-wpoos' ),
-				'missingId'    => __( 'No request ID provided.', 'mcp-ai-wpoos' ),
-				'submitted'    => __( 'Markup submitted. You may close this tab.', 'mcp-ai-wpoos' ),
-				'cancelled'    => __( 'Markup cancelled.', 'mcp-ai-wpoos' ),
-				'fetchError'   => __( 'Could not load markup request.', 'mcp-ai-wpoos' ),
+			'requestId' => $request_id,
+			'fetchUrl'  => '' === $request_id ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/markup/' . rawurlencode( $request_id ) ) ),
+			'submitUrl' => '' === $request_id ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/markup/' . rawurlencode( $request_id ) . '/submit' ) ),
+			'nonce'     => wp_create_nonce( 'wp_rest' ),
+			'strings'   => array(
+				'pageTitle'  => __( 'Markup Editor', 'mcp-ai-wpoos' ),
+				'loading'    => __( 'Loading markup request…', 'mcp-ai-wpoos' ),
+				'notFound'   => __( 'Markup request not found, expired, or already submitted.', 'mcp-ai-wpoos' ),
+				'missingId'  => __( 'No request ID provided.', 'mcp-ai-wpoos' ),
+				'submitted'  => __( 'Markup submitted. You may close this tab.', 'mcp-ai-wpoos' ),
+				'cancelled'  => __( 'Markup cancelled.', 'mcp-ai-wpoos' ),
+				'fetchError' => __( 'Could not load markup request.', 'mcp-ai-wpoos' ),
 			),
 		);
 		wp_add_inline_script(
@@ -132,8 +132,8 @@ class WP_MCP_AI_Markup_Admin_Page {
 					<p><?php echo esc_html( $config['strings']['loading'] ); ?></p>
 				</div>
 				<div id="wp-mcp-ai-markup-admin-host"
-					 data-markup-host="<?php echo esc_attr( $request_id ); ?>"
-					 class="wp-mcp-ai-markup-admin__host"></div>
+					data-markup-host="<?php echo esc_attr( $request_id ); ?>"
+					class="wp-mcp-ai-markup-admin__host"></div>
 				<script>
 				(function () {
 					if ( ! window.wpMcpAiMarkupAdmin || ! window.wpMcpAiMarkupAdmin.fetchUrl ) {

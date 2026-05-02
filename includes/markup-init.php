@@ -75,12 +75,12 @@ add_action(
 	'wp_enqueue_scripts',
 	static function () {
 		if ( ! class_exists( 'WP_MCP_AI_Markup_Loop_Interceptor' ) ||
-			 ! WP_MCP_AI_Markup_Loop_Interceptor::is_enabled() ) {
+			! WP_MCP_AI_Markup_Loop_Interceptor::is_enabled() ) {
 			return;
 		}
 		$chat_handle = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? 'wp-mcp-ai-chat' : 'wp-mcp-ai-chat';
 		if ( wp_script_is( $chat_handle, 'enqueued' ) ||
-			 wp_script_is( $chat_handle, 'registered' ) ) {
+			wp_script_is( $chat_handle, 'registered' ) ) {
 			WP_MCP_AI_Markup_Assets::enqueue_widget();
 		}
 	},
