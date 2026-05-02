@@ -1,9 +1,9 @@
 # Markup Subsystem
 
 > **Status:** Foundation (PR 1) ✅ · Chat canvas widget (PR 2) ✅ · First
-> markup-aware tools — `edit_openai_image` (PR 4) and `crop_image`
-> (PR 4b) ✅ · `document_pdf` mode (PR 3) and Settings UI (PR 5)
-> deferred to follow-up PRs.
+> markup-aware tools — `edit_openai_image` (PR 4), `crop_image`
+> (PR 4b), `edit_gemini_image` (PR 4c) ✅ · `document_pdf` mode (PR 3)
+> and Settings UI (PR 5) deferred to follow-up PRs.
 
 The Markup Subsystem lets tools hand back an **editable canvas** in the
 chat surface so the user can visually explain what they want
@@ -74,6 +74,7 @@ existing tool interface. The first first-party adopters are:
 |------|------|-----------------|-----------------|
 | `edit_openai_image` (`includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php`) | `mask` | `request_user_mask` | `mask_attachment_id` → injected as `mask_id` |
 | `crop_image` (`includes/tools/class-wp-mcp-ai-tool-crop-image.php`) | `crop` | `request_user_crop` | `crop_rect` → denormalized to pixel `x/y/width/height` |
+| `edit_gemini_image` (`includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php`) | `region` | `request_user_region` | `region_rect` → denormalized + appended as a prompt directive (Gemini has no native mask channel) and persisted on `target_region` |
 
 Both follow the same lifecycle: when the opt-in flag is set and no
 deterministic alternative is supplied, `needs_markup()` returns a
