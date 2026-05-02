@@ -1,19 +1,24 @@
 <?php
 /**
- * Healthcare Imaging Toolkit Initialization
+ * Healthcare Imaging Toolkit Initialization — Backwards-Compatibility Shim
  *
- * Bootstraps the Medical Imaging Viewer module when the
- * `enable_healthcare_imaging` setting is enabled.
+ * The imaging toolkit boot logic moved into the unified healthcare toolkit
+ * bootstrap at `addons/pro/includes/healthcare-toolkit-init.php` together
+ * with shared infrastructure (engine, codes, FHIR builders, audit ledger,
+ * capability map) and the per-sub-toolkit init files.
  *
- * Loads in this order:
- *  1. Capabilities helper (static – no hooks needed at this point)
- *  2. Audit log class (static)
- *  3. DICOM metadata extractor (static)
- *  4. Imaging Study CPT class + registers CPT
- *  5. REST controller (hooked to rest_api_init)
- *  6. Admin page (hooked to admin_menu via its own init())
+ * This file is preserved so any partner code that still does
+ * `require_once …/healthcare-imaging-toolkit-init.php;` keeps working.  It
+ * forwards to the unified bootstrap which is idempotent (it uses
+ * `require_once`/option-gated loads internally).
  *
- * @package WP_MCP_AI_Pro
+ * Scheduled for removal two minor versions after 1.3.0; partners should
+ * migrate to depending on `healthcare-toolkit-init.php` (or simply on the
+ * Pro plugin being active).
+ *
+ * @package    WP_MCP_AI_Pro
+ * @since      1.3.0
+ * @deprecated 1.3.0 Use `healthcare-toolkit-init.php` instead.
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
@@ -23,57 +28,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// F-PRIV-03: On multisite, the healthcare imaging toolkit must only run on
-// sites where an administrator has explicitly acknowledged PHI handling
-// obligations by setting the wp_mcp_ai_phi_acknowledged setting to true.
-if ( is_multisite() ) {
-	$_phi_settings = get_option( 'wp_mcp_ai_settings', array() );
-	if ( empty( $_phi_settings['wp_mcp_ai_phi_acknowledged'] ) ) {
-		return;
-	}
-	unset( $_phi_settings );
-}
-
-// Load capability helper.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-imaging-capabilities.php';
-
-// Load HIPAA-aligned audit log class.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-imaging-audit-log.php';
-
-// Load lightweight DICOM metadata extractor.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-dicom-metadata.php';
-
-// Load Imaging Study CPT and register it.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-imaging-study-cpt.php';
-WP_MCP_AI_Imaging_Study_CPT::init();
-
-// Add custom capabilities to administrator on first load.
-add_action(
-	'init',
-	static function () {
-		WP_MCP_AI_Imaging_Capabilities::add_caps();
-	},
-	1
-);
-
-// Load and register REST controller.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-imaging-rest-controller.php';
-add_action(
-	'rest_api_init',
-	static function () {
-		$controller = new WP_MCP_AI_Imaging_REST_Controller();
-		$controller->register_routes();
-	}
-);
-
-// Load admin page when in WP admin context.
-if ( is_admin() ) {
-	$settings      = get_option( 'wp_mcp_ai_settings', array() );
-	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-	if ( ! $is_base || $is_pro_active ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-imaging-admin-page.php';
-		WP_MCP_AI_Imaging_Admin_Page::init();
-	}
-}
+require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-toolkit-init.php';

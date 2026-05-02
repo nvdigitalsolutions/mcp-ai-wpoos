@@ -41,6 +41,72 @@
 		return TYPE_COLORS[ type ] || '#95a5a6';
 	}
 
+	/**
+	 * Convert a slug (e.g. "shop_order") into a humanised label
+	 * ("Shop order"). Used as a fallback when no localized label is
+	 * provided for a node type.
+	 *
+	 * @param  {string} slug Type slug.
+	 * @return {string} Humanised label.
+	 */
+	function humanizeSlug( slug ) {
+		if ( ! slug ) {
+			return '';
+		}
+		var spaced = slug.toString().replace( /[-_]+/g, ' ' ).trim();
+		return spaced.charAt( 0 ).toUpperCase() + spaced.slice( 1 );
+	}
+
+	/**
+	 * Repopulate the Graph Explorer's "type" filter dropdown so it reflects
+	 * the node types actually present in the loaded graph (including
+	 * custom post types and JetEngine CCTs). The previously selected value
+	 * is preserved when possible.
+	 *
+	 * @param  {Object} typesSeen Map of {type: true} for every type observed
+	 *                            in the loaded nodes.
+	 * @return {void}
+	 */
+	function populateTypeFilter( typesSeen ) {
+		var $select = $( '#nvoos-graphify-type-filter' );
+		if ( ! $select.length ) {
+			return;
+		}
+
+		var labels        = ( config && config.type_labels ) || {};
+		var i18n          = ( config && config.i18n ) || {};
+		var allTypesLabel = i18n.all_types || 'All types';
+		var previous      = $select.val();
+
+		var slugs = [];
+		for ( var key in typesSeen ) {
+			if ( Object.prototype.hasOwnProperty.call( typesSeen, key ) ) {
+				slugs.push( key );
+			}
+		}
+
+		// Sort alphabetically by display label so the dropdown is stable.
+		slugs.sort( function ( a, b ) {
+			var la = labels[ a ] || humanizeSlug( a );
+			var lb = labels[ b ] || humanizeSlug( b );
+			return la.localeCompare( lb );
+		} );
+
+		var html = '<option value="">' + $( '<div/>' ).text( allTypesLabel ).html() + '</option>';
+		$.each( slugs, function ( _, slug ) {
+			var label = labels[ slug ] || humanizeSlug( slug );
+			html += '<option value="' + $( '<div/>' ).text( slug ).html() + '">' +
+				$( '<div/>' ).text( label ).html() + '</option>';
+		} );
+
+		$select.html( html );
+
+		// Preserve previous selection if still applicable.
+		if ( previous && typesSeen[ previous ] ) {
+			$select.val( previous );
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// Graph explorer
 	// -------------------------------------------------------------------------
@@ -66,9 +132,13 @@
 		} ).done( function ( nodes ) {
 			var nodeIds = {};
 			var elements = [];
+			var typesSeen = {};
 
 			$.each( nodes, function ( _, n ) {
 				nodeIds[ n.node_id ] = true;
+				if ( n.type ) {
+					typesSeen[ n.type ] = true;
+				}
 				// Parse properties JSON so the memory-palace preset can match
 				// without first requiring edges to be loaded for each node.
 				var props = {};
@@ -104,6 +174,7 @@
 			} ).always( function () {
 				// We don't have a dedicated /edges endpoint; load them per-node lazily
 				// (edges appear when a node is clicked). For the initial render, show nodes only.
+				populateTypeFilter( typesSeen );
 				initCytoscape( $container, elements );
 			} );
 		} ).fail( function () {
@@ -425,8 +496,36 @@
 			}
 		} ).done( function ( response ) {
 			if ( response.success ) {
-				var d = response.data;
-				$status.text( 'Done! ' + d.nodes_upserted + ' nodes, ' + d.edges_upserted + ' edges.' );
+				var d = response.data || {};
+				var msg = 'Done! ' + ( d.nodes_upserted || 0 ) + ' nodes, ' + ( d.edges_upserted || 0 ) + ' edges.';
+
+				// Per-source detection breakdown — surfaces zero-detection
+				// problems (e.g. JetEngine CCTs not appearing) directly in
+				// the admin UI so users don't need to read DB meta.
+				var parts = [];
+				if ( typeof d.posts_detected !== 'undefined' ) {
+					parts.push( 'posts: ' + ( d.posts_detected || 0 ) );
+				}
+				if ( typeof d.ccts_detected !== 'undefined' ) {
+					parts.push( 'CCTs: ' + ( d.ccts_detected || 0 ) );
+				}
+				if ( typeof d.terms_detected !== 'undefined' ) {
+					parts.push( 'terms: ' + ( d.terms_detected || 0 ) );
+				}
+				if ( typeof d.users_detected !== 'undefined' ) {
+					parts.push( 'users: ' + ( d.users_detected || 0 ) );
+				}
+				if ( typeof d.media_detected !== 'undefined' ) {
+					parts.push( 'media: ' + ( d.media_detected || 0 ) );
+				}
+				if ( parts.length ) {
+					msg += ' Detected — ' + parts.join( ', ' ) + '.';
+				}
+				if ( d.ccts_skipped_reason ) {
+					msg += ' CCTs skipped: ' + d.ccts_skipped_reason + '.';
+				}
+
+				$status.text( msg );
 				// Reload graph explorer.
 				loadGraph();
 			} else {

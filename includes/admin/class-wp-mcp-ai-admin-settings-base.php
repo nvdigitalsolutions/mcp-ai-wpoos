@@ -296,6 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'lm_studio_model'                      => '',
 				'default_assistant'                    => 0,
 				'enable_logging'                       => false,
+				'markup_enabled'                       => true,
 				'default_model'                        => 'gpt-4.1',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
 				'default_provider'                     => 'openai',

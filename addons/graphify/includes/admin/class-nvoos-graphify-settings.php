@@ -124,43 +124,169 @@ class NV_oOS_Graphify_Settings {
 	}
 
 	/**
+	 * Map of tab slug => list of setting keys rendered on that tab's form.
+	 *
+	 * Used by {@see sanitize_settings()} to decide which keys may be
+	 * overwritten by a submission, so that saving one tab does not wipe
+	 * values controlled by the other tabs.
+	 *
+	 * @since 0.7.10
+	 *
+	 * @return array<string,string[]>
+	 */
+	private static function get_tab_field_map() {
+		return array(
+			// "General" tab renders general + build + display sections.
+			'general'    => array(
+				'enabled',
+				'semantic_extraction',
+				'incremental_builds',
+				'auto_rebuild',
+				'rebuild_schedule',
+				'openai_api_key',
+				'schema_injection',
+				'related_content',
+				'cytoscape_height',
+				'max_display_nodes',
+				'max_related',
+			),
+			'remote'     => array(
+				'remote_enrich_enabled',
+				'remote_enrich_budget',
+				'remote_enrich_async',
+			),
+			'embeddings' => array(
+				'embeddings_enabled',
+				'embeddings_model',
+			),
+		);
+	}
+
+	/**
+	 * Sanitize a single setting key from the raw submission.
+	 *
+	 * Centralised so that {@see sanitize_settings()} can apply per-key
+	 * sanitisation only to the keys belonging to the submitted tab, while
+	 * preserving values from other tabs untouched.
+	 *
+	 * @since 0.7.10
+	 *
+	 * @param string $key Setting key.
+	 * @param array  $raw Raw submitted settings array.
+	 * @return mixed Sanitized value.
+	 */
+	private static function sanitize_field( $key, array $raw ) {
+		switch ( $key ) {
+			case 'enabled':
+			case 'semantic_extraction':
+			case 'incremental_builds':
+			case 'auto_rebuild':
+			case 'schema_injection':
+			case 'related_content':
+			case 'remote_enrich_enabled':
+			case 'remote_enrich_async':
+			case 'embeddings_enabled':
+				return ! empty( $raw[ $key ] ) ? 1 : 0;
+
+			case 'rebuild_schedule':
+				$allowed = array( 'hourly', 'twicedaily', 'daily', 'weekly' );
+				$value   = isset( $raw[ $key ] ) ? $raw[ $key ] : 'daily';
+				return in_array( $value, $allowed, true ) ? $value : 'daily';
+
+			case 'openai_api_key':
+				return sanitize_text_field( isset( $raw[ $key ] ) ? $raw[ $key ] : '' );
+
+			case 'cytoscape_height':
+				return sanitize_text_field( isset( $raw[ $key ] ) ? $raw[ $key ] : '600px' );
+
+			case 'max_display_nodes':
+				return max( 50, min( 2000, absint( isset( $raw[ $key ] ) ? $raw[ $key ] : 300 ) ) );
+
+			case 'max_related':
+				return max( 1, min( 10, absint( isset( $raw[ $key ] ) ? $raw[ $key ] : 5 ) ) );
+
+			case 'remote_enrich_budget':
+				return max( 1, min( 500, absint( isset( $raw[ $key ] ) ? $raw[ $key ] : 50 ) ) );
+
+			case 'embeddings_model':
+				$allowed = array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' );
+				$value   = isset( $raw[ $key ] ) ? $raw[ $key ] : '';
+				return in_array( $value, $allowed, true ) ? $value : 'text-embedding-3-small';
+		}
+
+		// Defensive default: any key not explicitly handled above is not part
+		// of the tab field map (see {@see get_tab_field_map()}) and should not
+		// be written. Returning null lets {@see sanitize_settings()} skip it.
+		return null;
+	}
+
+	/**
+	 * Detect the tab being saved from the WP referer (`_wp_http_referer`).
+	 *
+	 * The settings page renders one form per tab, so the referer tells us
+	 * which tab's fields were actually present in the submission.
+	 *
+	 * @since 0.7.10
+	 *
+	 * @return string One of: 'general', 'remote', 'embeddings'.
+	 */
+	private static function detect_submitted_tab() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Tab detection only; the option update itself is nonce-protected by options.php.
+		$referer = isset( $_REQUEST['_wp_http_referer'] ) ? esc_url_raw( wp_unslash( $_REQUEST['_wp_http_referer'] ) ) : '';
+		if ( ! is_string( $referer ) || '' === $referer ) {
+			return 'general';
+		}
+
+		$query = wp_parse_url( $referer, PHP_URL_QUERY );
+		if ( ! is_string( $query ) || '' === $query ) {
+			return 'general';
+		}
+
+		$args = array();
+		wp_parse_str( $query, $args );
+		$tab = isset( $args['tab'] ) ? sanitize_key( $args['tab'] ) : 'general';
+
+		$map = self::get_tab_field_map();
+		return isset( $map[ $tab ] ) ? $tab : 'general';
+	}
+
+	/**
 	 * Sanitize incoming settings array.
+	 *
+	 * The settings page splits fields across three tabs that each submit
+	 * their own form to `options.php`. We must merge the submitted tab's
+	 * fields into the existing stored option instead of rebuilding the
+	 * whole array — otherwise saving one tab silently zeros out every
+	 * checkbox controlled by the other tabs.
 	 *
 	 * @since 0.5.0
 	 *
 	 * @param array $raw Submitted form data.
-	 * @return array Sanitized settings.
+	 * @return array Sanitized settings merged with previously-stored values.
 	 */
 	public static function sanitize_settings( $raw ) {
-		$sanitized                        = array();
-		$sanitized['enabled']             = ! empty( $raw['enabled'] ) ? 1 : 0;
-		$sanitized['semantic_extraction'] = ! empty( $raw['semantic_extraction'] ) ? 1 : 0;
-		$sanitized['incremental_builds']  = ! empty( $raw['incremental_builds'] ) ? 1 : 0;
-		$sanitized['auto_rebuild']        = ! empty( $raw['auto_rebuild'] ) ? 1 : 0;
-		$sanitized['schema_injection']    = ! empty( $raw['schema_injection'] ) ? 1 : 0;
-		$sanitized['related_content']     = ! empty( $raw['related_content'] ) ? 1 : 0;
+		if ( ! is_array( $raw ) ) {
+			$raw = array();
+		}
 
-		$allowed_schedules             = array( 'hourly', 'twicedaily', 'daily', 'weekly' );
-		$sanitized['rebuild_schedule'] = in_array( $raw['rebuild_schedule'] ?? 'daily', $allowed_schedules, true )
-			? $raw['rebuild_schedule'] : 'daily';
+		// Start from the currently-stored option (with defaults filled in)
+		// so any field not part of the submitted tab keeps its value.
+		$existing = NV_oOS_Graphify::get_settings();
 
-		$sanitized['openai_api_key']    = sanitize_text_field( $raw['openai_api_key'] ?? '' );
-		$sanitized['cytoscape_height']  = sanitize_text_field( $raw['cytoscape_height'] ?? '600px' );
-		$sanitized['max_display_nodes'] = max( 50, min( 2000, absint( $raw['max_display_nodes'] ?? 300 ) ) );
-		$sanitized['max_related']       = max( 1, min( 10, absint( $raw['max_related'] ?? 5 ) ) );
+		$tab    = self::detect_submitted_tab();
+		$map    = self::get_tab_field_map();
+		$keys   = isset( $map[ $tab ] ) ? $map[ $tab ] : $map['general'];
+		$merged = $existing;
 
-		// Remote enrichment fields.
-		$sanitized['remote_enrich_enabled'] = ! empty( $raw['remote_enrich_enabled'] ) ? 1 : 0;
-		$sanitized['remote_enrich_budget']  = max( 1, min( 500, absint( $raw['remote_enrich_budget'] ?? 50 ) ) );
-		$sanitized['remote_enrich_async']   = ! empty( $raw['remote_enrich_async'] ) ? 1 : 0;
+		foreach ( $keys as $key ) {
+			$value = self::sanitize_field( $key, $raw );
+			if ( null === $value ) {
+				continue;
+			}
+			$merged[ $key ] = $value;
+		}
 
-		// Embeddings fields.
-		$sanitized['embeddings_enabled'] = ! empty( $raw['embeddings_enabled'] ) ? 1 : 0;
-		$allowed_models                  = array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' );
-		$sanitized['embeddings_model']   = in_array( $raw['embeddings_model'] ?? '', $allowed_models, true )
-			? $raw['embeddings_model'] : 'text-embedding-3-small';
-
-		return $sanitized;
+		return $merged;
 	}
 
 	// -------------------------------------------------------------------------
@@ -391,14 +517,60 @@ class NV_oOS_Graphify_Settings {
 			'nvoos-graphify-admin',
 			'nvoosGraphifyAdmin',
 			array(
-				'rest_url'   => esc_url_raw( rest_url( 'nvoos-graphify/v1' ) ),
-				'nonce'      => wp_create_nonce( 'wp_rest' ),
-				'ajax_url'   => admin_url( 'admin-ajax.php' ),
-				'ajax_nonce' => wp_create_nonce( 'nvoos_graphify_admin' ),
-				'height'     => esc_js( $settings['cytoscape_height'] ),
-				'max_nodes'  => absint( $settings['max_display_nodes'] ),
+				'rest_url'    => esc_url_raw( rest_url( 'nvoos-graphify/v1' ) ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'ajax_url'    => admin_url( 'admin-ajax.php' ),
+				'ajax_nonce'  => wp_create_nonce( 'nvoos_graphify_admin' ),
+				'height'      => esc_js( $settings['cytoscape_height'] ),
+				'max_nodes'   => absint( $settings['max_display_nodes'] ),
+				'type_labels' => self::get_type_labels(),
+				'i18n'        => array(
+					'all_types' => __( 'All types', 'nvoos-graphify' ),
+				),
 			)
 		);
+	}
+
+	/**
+	 * Build a slug => label map for every node type that may appear in the
+	 * graph. Includes the built-in semantic node types (term, topic, entity,
+	 * memory, agent, wing, room) plus every public custom post type / CCT
+	 * registered on the site, so the Graph Explorer's type filter can present
+	 * a friendly label for each.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @return array<string,string>
+	 */
+	private static function get_type_labels() {
+		$labels = array(
+			'term'   => __( 'Terms', 'nvoos-graphify' ),
+			'topic'  => __( 'Topics', 'nvoos-graphify' ),
+			'entity' => __( 'Entities', 'nvoos-graphify' ),
+			'memory' => __( 'Memories', 'nvoos-graphify' ),
+			'agent'  => __( 'Agents', 'nvoos-graphify' ),
+			'wing'   => __( 'Wings', 'nvoos-graphify' ),
+			'room'   => __( 'Rooms', 'nvoos-graphify' ),
+		);
+
+		// Include every public post type (built-in and custom) so CPTs and
+		// JetEngine-registered content types show up in the filter when
+		// nodes for them exist in the graph.
+		$post_type_objects = get_post_types( array( 'public' => true ), 'objects' );
+		foreach ( $post_type_objects as $slug => $object ) {
+			if ( 'attachment' === $slug ) {
+				continue;
+			}
+			$plural = isset( $object->labels->name ) && '' !== $object->labels->name
+				? $object->labels->name
+				: $object->label;
+			if ( '' === $plural ) {
+				$plural = ucwords( str_replace( array( '_', '-' ), ' ', $slug ) );
+			}
+			$labels[ $slug ] = $plural;
+		}
+
+		return $labels;
 	}
 
 	// -------------------------------------------------------------------------
@@ -478,15 +650,6 @@ class NV_oOS_Graphify_Settings {
 					<input type="text" id="nvoos-graphify-search" placeholder="<?php esc_attr_e( 'Search nodes…', 'nvoos-graphify' ); ?>">
 					<select id="nvoos-graphify-type-filter">
 						<option value=""><?php esc_html_e( 'All types', 'nvoos-graphify' ); ?></option>
-						<option value="post"><?php esc_html_e( 'Posts', 'nvoos-graphify' ); ?></option>
-						<option value="page"><?php esc_html_e( 'Pages', 'nvoos-graphify' ); ?></option>
-						<option value="term"><?php esc_html_e( 'Terms', 'nvoos-graphify' ); ?></option>
-						<option value="topic"><?php esc_html_e( 'Topics', 'nvoos-graphify' ); ?></option>
-						<option value="entity"><?php esc_html_e( 'Entities', 'nvoos-graphify' ); ?></option>
-						<option value="memory"><?php esc_html_e( 'Memories', 'nvoos-graphify' ); ?></option>
-						<option value="agent"><?php esc_html_e( 'Agents', 'nvoos-graphify' ); ?></option>
-						<option value="wing"><?php esc_html_e( 'Wings', 'nvoos-graphify' ); ?></option>
-						<option value="room"><?php esc_html_e( 'Rooms', 'nvoos-graphify' ); ?></option>
 					</select>
 					<input type="text" id="nvoos-graphify-agent-filter" placeholder="<?php esc_attr_e( 'Agent ID…', 'nvoos-graphify' ); ?>" style="width:140px;">
 					<input type="text" id="nvoos-graphify-wing-filter" placeholder="<?php esc_attr_e( 'Wing…', 'nvoos-graphify' ); ?>" style="width:120px;">

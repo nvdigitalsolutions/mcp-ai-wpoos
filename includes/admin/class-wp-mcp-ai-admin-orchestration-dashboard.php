@@ -1429,10 +1429,42 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			// enabled would survive for up to 5 minutes after activation,
 			// causing the dashboard to incorrectly show "Graphify Memory
 			// Bridge: not installed" even though the add-on is active.
+			//
+			// Same applies to `persistent_storage.available`: when JetEngine
+			// (or its agent-memory CCT table) becomes available after the
+			// dashboard was first rendered, the stale `available => false`
+			// would otherwise keep the JetEngine "Install…" notice up for
+			// the lifetime of the cache.
 			if ( is_array( $cached ) ) {
 				$cached['bridge_active'] = class_exists( 'NV_oOS_Graphify_Memory_Bridge' );
+
+				$persistent_cached = isset( $cached['persistent_storage'] ) && is_array( $cached['persistent_storage'] )
+					? $cached['persistent_storage']
+					: array();
+				$cached_available  = ! empty( $persistent_cached['available'] );
+				$live_available    = $this->is_persistent_memory_available();
+
+				if ( $cached_available !== $live_available ) {
+					// Availability flipped since the cache was written.
+					// Drop the cache entirely so the next call recomputes
+					// the row count + tier breakdown against the now-live
+					// CCT table (or stops querying it if it disappeared).
+					delete_transient( $cache_key );
+				} else {
+					$cached['persistent_storage'] = array_merge(
+						array(
+							'cct_count'      => 0,
+							'available'      => false,
+							'tier_breakdown' => array(),
+						),
+						$persistent_cached,
+						array( 'available' => $live_available )
+					);
+					return $cached;
+				}
+			} else {
+				return $cached;
 			}
-			return $cached;
 		}
 
 		global $wpdb;
@@ -1587,6 +1619,33 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		$totals['total'] = $totals['graph'] + $totals['transient'];
 		return $totals;
+	}
+
+	/**
+	 * Cheap "is the agent-memory CCT actually queryable right now?" probe.
+	 *
+	 * Used on cache hits to detect when JetEngine (or its CCT table) has
+	 * become available since the cached stats were written, without
+	 * paying the full {@see get_persistent_memory_stats()} cost. Issues a
+	 * single `SHOW TABLES LIKE` query.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True when the JetEngine agent-memory CCT table exists.
+	 */
+	protected function is_persistent_memory_available() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Agent_Memories_CCT' ) ) {
+			return false;
+		}
+
+		global $wpdb;
+		$slug  = WP_MCP_AI_JetEngine_Agent_Memories_CCT::get_slug();
+		$table = $wpdb->prefix . 'jet_cct_' . $slug;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+
+		return $exists === $table;
 	}
 
 	/**

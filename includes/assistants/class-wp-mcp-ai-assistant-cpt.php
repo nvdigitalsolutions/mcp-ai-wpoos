@@ -42,6 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
 		const META_PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
 		const META_SKILLS                  = '_wp_mcp_ai_skills';
+		const META_SKILLS_PROGRESSIVE      = '_wp_mcp_ai_skills_progressive';
 		const META_MCP_APPS                = '_wp_mcp_ai_mcp_apps';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
@@ -4489,6 +4490,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				} else {
 					update_post_meta( $post_id, self::META_SKILLS, $skills );
 				}
+
+				// Progressive-disclosure flag (opt-in; defaults to off).
+				$progressive = ! empty( $_POST['wp_mcp_ai_skills_progressive'] );
+				if ( $progressive ) {
+					update_post_meta( $post_id, self::META_SKILLS_PROGRESSIVE, 1 );
+				} else {
+					delete_post_meta( $post_id, self::META_SKILLS_PROGRESSIVE );
+				}
 			}
 
 			// Handle MCP Apps meta (delegated to metabox save).
@@ -4869,8 +4878,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Build prompt from Agent Skills if assigned.
 			$skills = get_post_meta( $assistant_id, self::META_SKILLS, true );
 			if ( is_array( $skills ) && ! empty( $skills ) ) {
-				$registry      = WP_MCP_AI_Skill_Registry::instance();
-				$skills_prompt = $registry->build_skills_prompt( $skills );
+				$registry = WP_MCP_AI_Skill_Registry::instance();
+				// Progressive disclosure: inject only the lightweight index;
+				// the LLM pulls full instructions on demand via the
+				// `load_skill` tool. Default behaviour (eager full-instruction
+				// injection) is preserved for backward compatibility.
+				$progressive   = (bool) get_post_meta( $assistant_id, self::META_SKILLS_PROGRESSIVE, true );
+				$skills_prompt = $progressive
+					? $registry->build_skills_index_prompt( $skills )
+					: $registry->build_skills_prompt( $skills );
 				if ( ! empty( $skills_prompt ) ) {
 					if ( ! empty( $config['system_prompt'] ) ) {
 						$config['system_prompt'] .= "\n\n---\n\n" . $skills_prompt;

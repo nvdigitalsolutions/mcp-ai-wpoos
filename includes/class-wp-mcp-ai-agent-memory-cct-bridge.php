@@ -142,6 +142,15 @@ class WP_MCP_AI_Agent_Memory_CCT_Bridge {
 			'embedding_id'     => isset( $event['embedding_id'] ) ? sanitize_text_field( (string) $event['embedding_id'] ) : '',
 			'graph_node_id'    => isset( $event['graph_node_id'] ) ? sanitize_text_field( (string) $event['graph_node_id'] ) : '',
 			'metadata'         => isset( $event['metadata'] ) && is_array( $event['metadata'] ) ? wp_json_encode( $event['metadata'] ) : '',
+			// MemPalace Capture Framework Phase A — privacy / consent envelope.
+			'sensitivity'      => isset( $event['sensitivity'] ) ? sanitize_key( (string) $event['sensitivity'] ) : '',
+			'consent_basis'    => isset( $event['consent_basis'] ) ? sanitize_key( (string) $event['consent_basis'] ) : '',
+			'subject_refs'     => isset( $event['subject_refs'] ) && is_array( $event['subject_refs'] )
+				? wp_json_encode( array_values( array_filter( array_map( 'sanitize_text_field', $event['subject_refs'] ) ) ) )
+				: '',
+			'attachments'      => isset( $event['attachments'] ) && is_array( $event['attachments'] )
+				? wp_json_encode( $event['attachments'] )
+				: '',
 		);
 
 		/**

@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **April 2026** · Version: **1.0**
+> Last reviewed: **May 2026** · Version: **1.2**
 
 ### Related Files
 
@@ -27,6 +27,7 @@ These are the AI assistants that human maintainers invoke when working on the re
 |-------|----------|-------------|---------|-------|
 | **Claude Code** | Anthropic | [`CLAUDE.md`](CLAUDE.md) | Manual / Copilot Coding Agent | Full codebase — code generation, review, refactoring, docs |
 | **GitHub Copilot** | GitHub / OpenAI | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | IDE completions, Copilot Chat, PR reviews | Inline suggestions, chat Q&A, PR summaries |
+| **GitHub Custom Agents** | GitHub | [`.github/agents/*.agent.md`](.github/agents/) | Auto-discovered by GitHub Copilot Coding Agent and compatible runtimes | Role-specific agents — see each `*.agent.md` for scope |
 | **OpenAI Codex** | OpenAI | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox tasks | Sandbox-based code generation and testing |
 
 ### Internal BMAD Agents (GSD × BMAD Workflow)
@@ -43,6 +44,22 @@ The NV oOS plugin itself includes an agentic multi-agent system for structured f
 | `nv-oos-qa-engineer` | QA Engineer (Quinn) | The SEO & Compliance Auditor | 6, 8 | [`.bmad/agents/nv-oos-qa-engineer.yaml`](.bmad/agents/nv-oos-qa-engineer.yaml) |
 
 Team composition and scale-adaptive usage are defined in [`.bmad/teams/feature-development.yaml`](.bmad/teams/feature-development.yaml).
+
+### Agent Skills (runtime — distinct from coding agents)
+
+Independent of the coding-time agents above, the plugin also exposes **Agent Skills** (per the [agentskills.io](https://agentskills.io/specification) specification) as a runtime mechanism. These are not AI agents themselves — they are portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can load on demand. They are mentioned here so coding agents do not confuse them with the BMAD or external agent ecosystem.
+
+| Aspect | Details |
+|--------|---------|
+| **Format** | A single `SKILL.md` per skill — Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata). Stored on disk under `wp-content/uploads/mcp-ai-skills/{slug}/SKILL.md` after install. |
+| **Bundled with base** | `includes/bundled-skills/` — general-purpose Anthropic-authored skills + the new `wp-abilities-api` skill. |
+| **Bundled with Pro** | `addons/pro/includes/bundled-skills/` — 28+ WordPress-developer skills curated from [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) (WooCommerce, JetEngine, JetFormBuilder, WP Rocket, etc.) plus a `THIRD_PARTY_NOTICES.md`. |
+| **Remote catalogues (Pro)** | [`WP_MCP_AI_Skill_Catalogue_Service`](addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php) and [`WP_MCP_AI_Skill_Catalogue_REST_Controller`](addons/pro/includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php) (`mcp-ai-pro/v1/catalogues/*`) install skills directly from registered public GitHub repos. SSRF-safe HTTPS-only fetcher. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. |
+| **Progressive disclosure** | Each assistant has a "Use progressive disclosure" checkbox; when on, the system prompt sees only `# Available Skills` (name + description) and the model calls the base-plugin `load_skill({ name })` tool to retrieve the full SKILL.md only when needed. |
+| **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
+| **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative). |
+
+When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 
 ---
 
@@ -74,6 +91,24 @@ Every agent session loads these two files:
 Active features get a context file in `.context/active/[feature].md`. These are created at Phase 0, updated during development, and archived to `.context/archive/` at Phase 9.
 
 Template: [`.context/templates/active-feature-template.md`](.context/templates/)
+
+### Layering rule for `.github/agents/*.agent.md`
+
+GitHub Custom Agent files (`.github/agents/*.agent.md`) are auto-discovered by GitHub's runtime and must stay small and role-specific. They sit on top of — not in place of — the canonical context above.
+
+> **Layering rule:** `.github/agents/*.agent.md` files contain **only** agent-specific metadata (frontmatter: `name`, `description`, `tools`, `model`) and agent-specific behavior (scope, what to refuse, invocation examples, success criteria). They **MUST NOT** restate naming conventions, security rules, PHP-compat rules, tool patterns, or architecture. Instead, they link to the canonical sources:
+>
+> - [`AGENTS.md`](AGENTS.md) — inventory + coordination + handoff protocol
+> - [`CLAUDE.md`](CLAUDE.md) — PHP compat, naming, tool pattern, security
+> - [`.context/conventions.md`](.context/conventions.md) + [`.context/security-checklist.md`](.context/security-checklist.md) — always required reading
+> - The relevant subsystem file(s) from `.context/` based on the agent's scope
+
+This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md` / `.github/agents/`, and preserves `AGENTS.md` as the single source of truth.
+
+**Template + examples:**
+
+- Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 12-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
 
 ---
 
@@ -190,6 +225,8 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
 | New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
 | New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
+| New or changed GitHub Custom Agent | `.github/agents/*.agent.md` (per layering rule in §2), `AGENTS.md` (agent inventory in §1) — must be in the same PR |
+| New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 
 ### Review cadence
 

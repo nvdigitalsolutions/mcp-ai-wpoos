@@ -178,6 +178,12 @@ composer.phar
 !addons/pro/assets/js/research-bundle.min.js
 !addons/pro/assets/js/research-bundle.min.js.map
 
+# Keep vendored 3rd-party libraries (Konva, etc.) used by the markup subsystem.
+# These are MIT-licensed npm releases bundled locally for WordPress.org compliance
+# (no CDN loads). See assets/js/vendor/konva/README.md.
+!assets/js/vendor/**/*.min.js
+!assets/js/vendor/**/*.js
+
 # Keep the TMA standalone markdown renderer which is served directly to Telegram WebView.
 !addons/pro/assets/js/tma-markdown.min.js
 

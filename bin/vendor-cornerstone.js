@@ -143,7 +143,13 @@ const entries = [
 		name: 'cornerstone-dicom-loader',
 		entry: 'entry-dicom-loader.js',
 		code: 'export * from "@cornerstonejs/dicom-image-loader";\n',
-		external: [ '@cornerstonejs/core', 'dicom-parser', 'xmlbuilder2' ],
+		// Only @cornerstonejs/core is kept external so tools and dicom-loader
+		// share a single core instance via the importmap.  dicom-parser and
+		// xmlbuilder2 are CommonJS internally; externalising them causes
+		// esbuild to emit a runtime `__require()` shim that throws
+		// "Dynamic require of \"dicom-parser\" is not supported".  Inlining
+		// them (~140 KB) keeps the bundle ESM-pure and reliable.
+		external: [ '@cornerstonejs/core' ],
 	},
 ];
 

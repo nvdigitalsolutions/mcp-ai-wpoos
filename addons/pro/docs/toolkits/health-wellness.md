@@ -33,6 +33,24 @@ veterinary practices, and personal use:
 `create_health_reminder`, `compile_health_research_data`, `generate_health_chart`,
 `export_fhir_data`.
 
+### Phase C — Health & Wellness breadth (added in 1.4.0)
+
+Six cross-cutting tools that close the gaps called out in
+[`docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md`](../../docs/PRO_TOOLKIT_ENHANCEMENT_REVIEW.md):
+
+| Tool | What it does |
+|---|---|
+| `check_member_allergies` | Quick lookup that answers _"is this member allergic to X?"_ across one or more candidate allergens, returning severity, reactions, diagnosed dates, and the unmatched queries. |
+| `get_health_timeline` | Chronological feed for a member combining `mcp_ai_med_record`, `mcp_ai_prescription`, `mcp_ai_checkup`, `mcp_ai_allergy`, and (when Phase B is enabled) `mcp_ai_hc_vital_log`. Date-range and event-type filters. |
+| `link_prescription_to_record` | Stores bidirectional links between prescriptions and medical records (`_prescription_record_ids` / `_medical_record_prescription_ids`). Validates that both sides reference the same member. Supports `link`, `unlink`, `list`. |
+| `verify_prescription_interactions` | Screens an active medication list (or any list passed in `medications`) for known drug-drug interactions using a curated, RxNorm-aligned offline registry. Filterable via `wp_mcp_ai_healthcare_interaction_pairs`; partner code can wire `wp_mcp_ai_healthcare_rxnorm_lookup` to RxNav for live RxCUI resolution. |
+| `generate_visit_summary` | Discharge-style summary for a member + date range, returning structured data and (optionally) Markdown. |
+| `merge_duplicate_members` | Re-parents allergies, prescriptions, checkups, medical records, and vital logs from a duplicate `mcp_ai_member` to a survivor, then trashes (or permanently deletes) the duplicate. Supports `dry_run`. Fires `wp_mcp_ai_healthcare_after_merge_members`. |
+
+The post-meta map used by `merge_duplicate_members` is filterable via
+`wp_mcp_ai_healthcare_member_child_meta_map`, so partner code can extend
+the merge sweep to cover custom CPTs.
+
 ---
 
 ## Activation
@@ -61,7 +79,9 @@ defaults are usually appropriate.
 
 ## Related docs
 
+- [Healthcare Toolkit umbrella](../../includes/tools/healthcare/README.md) — shared engine, codes, FHIR builders, audit ledger, capability map
 - [Pro Toolkits index](README.md)
-- [Healthcare Imaging](healthcare-imaging.md)
+- [Medical Vitals](medical-vitals.md) — vitals tracking sub-toolkit
+- [Healthcare Imaging](healthcare-imaging.md) — DICOM-aware imaging viewer
 - [`addons/pro/docs/HEALTH_WELLNESS_IMPLEMENTATION.md`](../HEALTH_WELLNESS_IMPLEMENTATION.md)
 - [`addons/pro/docs/MIGRATION_MEDICAL_RECORD_POST_TYPE.md`](../MIGRATION_MEDICAL_RECORD_POST_TYPE.md)

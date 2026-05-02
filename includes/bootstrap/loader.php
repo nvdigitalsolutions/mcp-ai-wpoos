@@ -194,6 +194,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-pack-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nvidia-client.php';
@@ -268,6 +269,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
+require_once WP_MCP_AI_PATH . 'includes/markup-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
@@ -348,6 +350,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-agent-memories-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
 }
+
+// MemPalace Capture Framework Phase A — capture service + tier manager are
+// transport-agnostic (work on transient-only sites too), so they always load.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-capture-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-manager.php';
 
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';

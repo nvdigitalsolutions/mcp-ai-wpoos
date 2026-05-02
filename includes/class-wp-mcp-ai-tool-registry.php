@@ -1227,6 +1227,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_User_Info'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
 				'WP_MCP_AI_Tool_Get_Site_Summary'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
 				'WP_MCP_AI_Tool_Count_Tokens'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-count-tokens.php',
+				'WP_MCP_AI_Tool_Load_Skill'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-load-skill.php',
 				// OpenAI API Integration - Phase 1 Tools.
 				'WP_MCP_AI_Tool_List_OpenAI_Files'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-openai-files.php',
 				'WP_MCP_AI_Tool_Get_OpenAI_File_Details'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-openai-file-details.php',
@@ -1336,6 +1337,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// MemPalace-inspired Phase 2: bulk ingest + session wake-up loader.
 				'WP_MCP_AI_Tool_Mine_Agent_Memory'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-mine-agent-memory.php',
 				'WP_MCP_AI_Tool_Wake_Up_Context'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-wake-up-context.php',
+				// MemPalace Capture Framework Phase A8: hierarchical recall.
+				'WP_MCP_AI_Tool_Recall_Memory'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-recall-memory.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).

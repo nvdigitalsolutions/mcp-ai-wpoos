@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Added — Markup Subsystem (Base, 1.3.0)
+
+A new in-the-loop image / document markup system that lets tools pause the agentic loop, surface a canvas widget in the chat UI for the user to draw on, and resume the same tool call with the rasterised mask / crop / region polygon.
+
+- **Loop integration**: `WP_MCP_AI_Markup_Loop_Interceptor` short-circuits any tool that implements `WP_MCP_AI_Markup_Aware_Tool_Interface` and emits a `markup_elicitation` SSE frame instead of the tool result. The chat client persists a `request_id` and resumes the call once the user submits the markup. Master toggle: `wp_mcp_ai_markup_enabled` filter.
+- **Chat canvas widget** auto-enqueued whenever the main chat bundle is on the page — supports `mask`, `crop`, and `region` modes against image targets.
+- **Markup-aware tools**: `edit_openai_image` (`mask`), `crop_image` (`crop`), `edit_gemini_image` (`region`).
+- **REST controller** (`/wp-json/mcp-ai/v1/markup/{request_id}`) accepts a W3C Web Annotation envelope, runs `WP_MCP_AI_Markup_Validator` + `WP_MCP_AI_Markup_Rasterizer`, and re-invokes the source tool with the resulting artifacts in the execution context.
+- **Settings UI** toggle under **NV oOS → Settings → General**.
+- **Telemetry**: bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
+- **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags. Read access requires `edit_posts`; reset requires `manage_options`.
+- **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
+- **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+- **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
+- **Docs**: `docs/markup-subsystem.md` walks through the end-to-end flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+
 ### Added — QMS + PARA Methodology Integration (Pro)
 
 Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
@@ -37,6 +53,38 @@ Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature 
 - **Tests**: `tests/qms/test-qms-workflow.php`, `tests/qms/test-qms-audit-log.php`, `tests/para/test-para-taxonomy.php`, `tests/para/test-para-lifecycle.php`.
 
 Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
+
+## [1.1.14] - 2026-05-02
+
+### May 1–2, 2026 — Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), follow-up fixes
+
+A documentation, capabilities, and stability pass on top of 1.1.13. The release covers (1) the **Agent Skills Phases 1–4** rollout — bundled WordPress-developer skills, a `load_skill` progressive-disclosure tool, curated skill packs, and remote skill catalogues (Pro) — and (2) three follow-up fixes for the orchestration dashboard, the new skill-catalogue fetcher, and the Pro Medical Imaging Viewer.
+
+### Added — Agent Skills Phases 1–4 (PR #4771)
+
+The Agent Skills surface (per the [agentskills.io](https://agentskills.io/specification) specification) is now end-to-end across base + Pro:
+
+- **Phase 1 — Bundled WP-developer skills + companion-file install**: 28+ new `SKILL.md` files curated from the MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) catalogue, covering WooCommerce (HPOS, payment gateways, REST API v4, shipping, Stripe, variations, customer & sessions, classic emails, coupons, product search/select), WooCommerce Memberships (access discounts, subscriptions linkage, hooks), WooCommerce Subscriptions (renewal scheduler, switching/gifting data model, hooks), JetEngine (dynamic visibility, listings callbacks, query builder custom types), JetFormBuilder (action events, external API, item decorator, messages, form actions, sidebar panels, settings tabs), and WP Rocket (cache invalidation, rejection filters). Base plugin gains a `wp-abilities-api` skill. New `THIRD_PARTY_NOTICES.md` files in both `includes/bundled-skills/` and `addons/pro/includes/bundled-skills/` carry attribution and license text.
+- **Phase 2 — Remote skill catalogues (Pro)**: new `WP_MCP_AI_Skill_Catalogue_Service` (`addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php`) discovers `SKILL.md` files in registered public Git repositories using the GitHub trees API, supports `catalogue.json` manifests when present, caches manifests in 24-hour transients, and refreshes them daily via the `wp_mcp_ai_skill_catalogue_refresh` WP-Cron job. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. New `WP_MCP_AI_Skill_Catalogue_REST_Controller` exposes admin-only endpoints under the `mcp-ai-pro/v1` namespace (`/catalogues`, `/catalogues/{id}/skills`, `/catalogues/{id}/install`, `/catalogues/{id}/refresh`). All catalogue fetches reuse the SSRF-safe HTTPS-only helper that protects `/skills/install-url`, the existing extension allowlist, and the decompression-bomb cap.
+- **Phase 3 — Progressive disclosure (`load_skill` tool)**: each assistant gains a "Use progressive disclosure" checkbox on its Skills metabox. When enabled, the system prompt receives only a short `# Available Skills` catalogue (skill name + description) and the model calls the new base-plugin `load_skill({ name })` tool when it decides a skill applies — at which point the full SKILL.md is returned in the tool result. This dramatically reduces baseline context cost for skill-heavy assistants.
+- **Phase 4 — Skill packs**: curated, named collections of related skills addressable as a single unit ("WordPress Developer", "Document Authoring", etc.). Skill manager admin UI gains tabs for browsing catalogues, managing packs, and editing individual skills.
+- **Filters & hooks**: `wp_mcp_ai_skill_catalogue_manifest_ttl` (transient TTL), `wp_mcp_ai_skill_catalogue_refresh_cadence` (cron schedule).
+- **Documentation**: `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
+
+### Fixed
+
+- **Graphify Memory Bridge — stale "not installed" status (#4769)** — the orchestration dashboard's Phase 4a memory-bridge widget could report "not installed" even after the bridge had been activated, due to a stale-cache `bridge_active` recomputation path. Cache invalidation now runs on bridge activation/deactivation and the widget re-reads the live status. Regression covered by `tests/test-orchestration-dashboard-stale-cache.php`.
+- **cURL SSL error 60 fetching remote skill catalogues (#4772)** — the new catalogue-fetcher (Phase 2) could fail with `cURL error 60: SSL certificate problem` on hosts with outdated CA bundles when reaching `api.github.com` and `raw.githubusercontent.com`. The HTTP layer now uses WordPress's `wp_remote_get()` certificate bundle path consistently and surfaces a structured `WP_Error` instead of a fatal request failure when verification still fails.
+- **"Dynamic require of dicom-parser" in Medical Imaging Viewer (#4773)** — the Pro Medical Imaging Viewer bundle could fail at runtime with `Dynamic require of "dicom-parser" is not supported` when loaded from the Pro `build/` directory. The viewer now imports `dicom-parser` statically so the esbuild output no longer relies on a runtime CommonJS shim.
+
+### Build
+
+- **All distribution ZIPs rebuilt at v1.1.13 (#4775)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the six standalone toolkit add-on ZIPs.
+- **Production autoloader reaffirmed (#4774)** — `vendor/composer/installed.json` and the autoload classmap regenerated with `composer install --no-dev --classmap-authoritative` to confirm the production posture established in 1.1.13.
+
+### Versioning
+
+- The plugin version constant remains 1.1.13. This 1.1.14 entry documents post-release PRs that ship as part of the next packaged release; the `WP_MCP_AI_VERSION` constant, plugin header, `package.json`, and `readme.txt` Stable tag will be bumped together when the next ZIP is cut.
 
 ## [1.1.13] - 2026-05-01
 

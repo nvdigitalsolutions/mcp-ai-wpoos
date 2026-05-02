@@ -78,7 +78,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 
 		$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 		$this->assertNotEmpty( $dirs );
-		$this->assertGreaterThanOrEqual( 23, count( $dirs ) );
+		$this->assertGreaterThanOrEqual( 44, count( $dirs ) );
 	}
 
 	/**
@@ -118,7 +118,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'skipped', $result );
 		$this->assertArrayHasKey( 'errors', $result );
 
-		$this->assertGreaterThanOrEqual( 23, $result['installed'] );
+		$this->assertGreaterThanOrEqual( 44, $result['installed'] );
 		$this->assertSame( 0, $result['skipped'] );
 		$this->assertEmpty( $result['errors'] );
 	}
@@ -131,10 +131,11 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$registry->install_bundled_skills();
 
 		$skills = $registry->get_all_skills();
-		$this->assertGreaterThanOrEqual( 23, count( $skills ) );
+		$this->assertGreaterThanOrEqual( 44, count( $skills ) );
 
-		// Check some known skill names.
+		// Check some known skill names — covers Anthropic-authored and curated WP skills.
 		$expected_skills = array(
+			// Anthropic-authored.
 			'algorithmic-art',
 			'brand-guidelines',
 			'canvas-design',
@@ -149,6 +150,22 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 			'planetscale',
 			'excalidraw-diagram',
 			'shannon',
+			// Curated WordPress-developer skills (Lonsdale201/wp-agent-skills, MIT).
+			'wp-security-audit',
+			'wp-security-deep',
+			'wp-security-secrets',
+			'wp-i18n-audit',
+			'wp-rest-api',
+			'wp-abilities-api',
+			'wp-html-api',
+			'wp-utf8-text',
+			'wp-query-cache',
+			'wp-action-scheduler',
+			'wp-plugin-architecture',
+			'wp-plugin-bootstrap',
+			'wp-plugin-hooks',
+			'wp-plugin-lifecycle',
+			'wp-plugin-options-storage',
 		);
 		foreach ( $expected_skills as $name ) {
 			$this->assertArrayHasKey( $name, $skills, "Skill '$name' not found in registry" );
@@ -163,7 +180,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 
 		// First install.
 		$first_result = $registry->install_bundled_skills();
-		$this->assertGreaterThanOrEqual( 23, $first_result['installed'] );
+		$this->assertGreaterThanOrEqual( 44, $first_result['installed'] );
 
 		// Reset in-memory cache but keep files on disk.
 		WP_MCP_AI_Skill_Registry::reset();
@@ -172,7 +189,7 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		// Second install should skip all.
 		$second_result = $registry->install_bundled_skills();
 		$this->assertSame( 0, $second_result['installed'] );
-		$this->assertGreaterThanOrEqual( 23, $second_result['skipped'] );
+		$this->assertGreaterThanOrEqual( 44, $second_result['skipped'] );
 	}
 
 	/**
@@ -203,6 +220,39 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$shannon = $registry->get_skill( 'shannon' );
 		$this->assertNotNull( $shannon, 'shannon skill should be installed' );
 		$this->assertStringContainsString( 'authorization', strtolower( $shannon['instructions'] ) );
+
+		// Verify curated WP-developer skills (sourced from Lonsdale201/wp-agent-skills, MIT).
+		$wp_security = $registry->get_skill( 'wp-security-audit' );
+		$this->assertNotNull( $wp_security, 'wp-security-audit skill should be installed' );
+		$this->assertNotEmpty( $wp_security['instructions'] );
+		$this->assertSame( 'MIT', $wp_security['license'] );
+		$this->assertStringContainsString( 'WordPress', $wp_security['description'] );
+
+		$wp_rest = $registry->get_skill( 'wp-rest-api' );
+		$this->assertNotNull( $wp_rest, 'wp-rest-api skill should be installed' );
+		$this->assertNotEmpty( $wp_rest['instructions'] );
+
+		$wp_bootstrap = $registry->get_skill( 'wp-plugin-bootstrap' );
+		$this->assertNotNull( $wp_bootstrap, 'wp-plugin-bootstrap skill should be installed' );
+		$this->assertNotEmpty( $wp_bootstrap['instructions'] );
+	}
+
+	/**
+	 * Test that the third-party notices file is shipped alongside bundled skills.
+	 *
+	 * Required by the upstream MIT license for redistribution.
+	 */
+	public function test_bundled_skills_third_party_notices_present() {
+		$registry    = WP_MCP_AI_Skill_Registry::instance();
+		$bundled_dir = $registry->get_bundled_skills_dir();
+		$notices     = $bundled_dir . '/THIRD_PARTY_NOTICES.md';
+
+		$this->assertFileExists( $notices, 'THIRD_PARTY_NOTICES.md is required for license compliance' );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Test reading local file.
+		$content = file_get_contents( $notices );
+		$this->assertStringContainsString( 'MIT License', $content );
+		$this->assertStringContainsString( 'Lonsdale201', $content );
 	}
 
 	/**
@@ -247,6 +297,91 @@ class WP_MCP_AI_Bundled_Skills_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, $result['installed'] );
 		$this->assertSame( 0, $result['skipped'] );
 		$this->assertNotEmpty( $result['errors'] );
+	}
+
+	/**
+	 * Test that companion files (e.g. reference.md) shipped alongside a
+	 * bundled SKILL.md are also copied to the uploads directory.
+	 *
+	 * Several of the curated WordPress-developer skills (e.g. wp-security-audit)
+	 * ship a `reference.md` alongside `SKILL.md` and reference it from the
+	 * instructions body. This test guards the behaviour that the bundled-skills
+	 * installer copies those companion files into uploads so the references
+	 * resolve at runtime.
+	 */
+	public function test_bundled_skills_install_companion_files() {
+		$registry    = WP_MCP_AI_Skill_Registry::instance();
+		$bundled_dir = $registry->get_bundled_skills_dir();
+
+		// Find any bundled skill that ships at least one companion file.
+		$skill_with_companion = null;
+		$companion_filename   = null;
+		foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $dir ) {
+			$companions = array_filter(
+				glob( $dir . '/*' ) ?: array(),
+				static function ( $path ) {
+					return is_file( $path ) && 'SKILL.md' !== basename( $path );
+				}
+			);
+			if ( ! empty( $companions ) ) {
+				$skill_with_companion = basename( $dir );
+				$companion_filename   = basename( reset( $companions ) );
+				break;
+			}
+		}
+
+		if ( null === $skill_with_companion ) {
+			$this->markTestSkipped( 'No bundled skill with companion files found.' );
+			return;
+		}
+
+		$registry->install_bundled_skills();
+
+		$installed_dir = trailingslashit( $registry->get_skills_dir() ) . $skill_with_companion;
+		$this->assertFileExists(
+			$installed_dir . '/' . $companion_filename,
+			"Companion file '$companion_filename' should be copied for skill '$skill_with_companion'"
+		);
+	}
+
+	/**
+	 * via the same SKILL.md parser used at runtime.
+	 *
+	 * The Pro directory ships alongside the Pro add-on and is installed via
+	 * `install_bundled_skills_from_dir()` on Pro activation. It is exercised
+	 * here at the *parser* level so the test runs on Base-only PR CI as well
+	 * (no Pro init required).
+	 */
+	public function test_pro_bundled_skills_parse_cleanly() {
+		$pro_dir = dirname( __DIR__ ) . '/addons/pro/includes/bundled-skills';
+		if ( ! is_dir( $pro_dir ) ) {
+			$this->markTestSkipped( 'Pro bundled-skills directory not present.' );
+			return;
+		}
+
+		$dirs = glob( $pro_dir . '/*', GLOB_ONLYDIR );
+		$this->assertNotEmpty( $dirs, 'Pro bundled-skills directory should contain skill folders.' );
+
+		$parser = new WP_MCP_AI_Skill_Parser();
+		foreach ( $dirs as $dir ) {
+			$skill_file = $dir . '/SKILL.md';
+			$skill_name = basename( $dir );
+			$this->assertFileExists( $skill_file, "SKILL.md missing for Pro skill $skill_name" );
+
+			$parsed = $parser->parse_file( $skill_file );
+			$this->assertNotWPError( $parsed, "SKILL.md parse failed for Pro skill $skill_name" );
+			$this->assertSame(
+				$skill_name,
+				$parsed['name'],
+				"Pro folder name '$skill_name' does not match skill name '{$parsed['name']}'"
+			);
+		}
+
+		// Pro directory must ship the third-party notices file (license compliance).
+		$this->assertFileExists(
+			$pro_dir . '/THIRD_PARTY_NOTICES.md',
+			'Pro bundled-skills THIRD_PARTY_NOTICES.md is required for license compliance'
+		);
 	}
 
 	/**

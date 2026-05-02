@@ -650,7 +650,25 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			 */
 			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
-			$result = $tool->execute( $prepared_arguments, $context );
+			/**
+			 * Filter that allows interceptors (e.g. the markup subsystem) to
+			 * short-circuit tool execution. When the filter returns a non-null
+			 * value, that value is used as the tool result and `execute()` is
+			 * skipped.
+			 *
+			 * @since 1.3.0
+			 * @param mixed                    $short_circuit Default null. Non-null short-circuits.
+			 * @param WP_MCP_AI_Tool_Interface $tool          Tool being executed.
+			 * @param array                    $prepared_arguments Tool arguments.
+			 * @param array                    $context       Execution context.
+			 */
+			$short_circuit = apply_filters( 'wp_mcp_ai_pre_execute_tool', null, $tool, $prepared_arguments, $context );
+
+			if ( null !== $short_circuit ) {
+				$result = $short_circuit;
+			} else {
+				$result = $tool->execute( $prepared_arguments, $context );
+			}
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

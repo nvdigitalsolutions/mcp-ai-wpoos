@@ -57,7 +57,12 @@ class NV_oOS_Graphify_Builder {
 		// 1. Detect content.
 		$detected = NV_oOS_Graphify_Detector::detect( $incremental );
 
-		$post_count = count( $detected['posts'] );
+		$post_count          = count( $detected['posts'] );
+		$ccts_detected       = isset( $detected['ccts'] ) ? count( (array) $detected['ccts'] ) : 0;
+		$terms_detected      = isset( $detected['terms'] ) ? count( (array) $detected['terms'] ) : 0;
+		$users_detected      = isset( $detected['users'] ) ? count( (array) $detected['users'] ) : 0;
+		$media_detected      = isset( $detected['media'] ) ? count( (array) $detected['media'] ) : 0;
+		$ccts_skipped_reason = NV_oOS_Graphify_Detector::get_last_ccts_skip_reason();
 
 		// 2. Structural extraction.
 		$structural = NV_oOS_Graphify_Structural_Extractor::extract( $detected );
@@ -72,6 +77,15 @@ class NV_oOS_Graphify_Builder {
 			if ( ! $async_semantic ) {
 				$semantic_nodes = NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_result['nodes'] );
 				$semantic_edges = NV_oOS_Graphify_DB::batch_upsert_edges( $sem_result['edges'] );
+			}
+		}
+
+		// 3b. Semantic extraction for JetEngine CCT items (same gating).
+		if ( $semantic && ! empty( $detected['ccts'] ) ) {
+			$sem_cct_result = NV_oOS_Graphify_Semantic_Extractor::extract_ccts( $detected['ccts'], $async_semantic );
+			if ( ! $async_semantic ) {
+				$semantic_nodes += NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_cct_result['nodes'] );
+				$semantic_edges += NV_oOS_Graphify_DB::batch_upsert_edges( $sem_cct_result['edges'] );
 			}
 		}
 
@@ -104,16 +118,22 @@ class NV_oOS_Graphify_Builder {
 		delete_transient( 'nvoos_graphify_report' );
 
 		$summary = array(
-			'success'         => true,
-			'posts_processed' => $post_count,
-			'nodes_upserted'  => $node_count,
-			'edges_upserted'  => $edge_count,
-			'semantic_nodes'  => $semantic_nodes,
-			'semantic_edges'  => $semantic_edges,
-			'async_semantic'  => $async_semantic,
-			'remote_nodes'    => $remote_nodes,
-			'remote_edges'    => $remote_edges,
-			'build_completed' => $completed,
+			'success'             => true,
+			'posts_processed'     => $post_count,
+			'posts_detected'      => $post_count,
+			'ccts_detected'       => $ccts_detected,
+			'terms_detected'      => $terms_detected,
+			'users_detected'      => $users_detected,
+			'media_detected'      => $media_detected,
+			'ccts_skipped_reason' => $ccts_skipped_reason,
+			'nodes_upserted'      => $node_count,
+			'edges_upserted'      => $edge_count,
+			'semantic_nodes'      => $semantic_nodes,
+			'semantic_edges'      => $semantic_edges,
+			'async_semantic'      => $async_semantic,
+			'remote_nodes'        => $remote_nodes,
+			'remote_edges'        => $remote_edges,
+			'build_completed'     => $completed,
 		);
 
 		NV_oOS_Graphify_DB::set_meta( 'last_build_summary', $summary );

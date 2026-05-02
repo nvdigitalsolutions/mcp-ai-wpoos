@@ -63,6 +63,7 @@ class NV_oOS_Graphify {
 		add_action( self::CRON_BUILD_HOOK, array( __CLASS__, 'run_scheduled_build' ) );
 		add_action( self::CRON_ENRICH_HOOK, array( __CLASS__, 'run_scheduled_enrich' ) );
 		add_action( 'nvoos_graphify_cron_semantic_extract', array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch' ) );
+		add_action( NV_oOS_Graphify_Semantic_Extractor::CRON_ACTION_CCT, array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch_ccts' ) );
 		NV_oOS_Graphify_Embeddings_On_Ingest::register();
 		NV_oOS_Graphify_Memory_Bridge::register();
 	}
@@ -697,7 +698,12 @@ class NV_oOS_Graphify {
 
 		foreach ( $neighbors as $nid ) {
 			$n = NV_oOS_Graphify_DB::get_node( $nid );
-			if ( $n && $n->post_id && $n->url && in_array( $n->type, array( 'post', 'page' ), true ) ) {
+			// Show every neighbour that is backed by a real, linkable WordPress
+			// post — i.e. has a numeric post_id and a public URL. This covers
+			// `post`, `page` and every public CPT (including JetEngine CPTs)
+			// while still excluding term/user/media/CCT/semantic nodes which
+			// store post_id = 0.
+			if ( $n && $n->post_id && $n->url ) {
 				$post_nodes[] = $n;
 			}
 		}

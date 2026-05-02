@@ -19,11 +19,20 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-tool.php';
 
 /**
  * Provides a tool for editing images via OpenAI's DALL-E API.
+ *
+ * Implements {@see WP_MCP_AI_Markup_Aware_Tool_Interface} so callers can
+ * request a user-painted mask via the markup subsystem when no `mask_id`
+ * has been supplied. When `request_user_mask` is set to true and no
+ * mask is available, the agentic loop is short-circuited with a markup
+ * elicitation; once the user submits their mask, `consume_markup()`
+ * injects the rasterized mask attachment ID back into the arguments
+ * and execution proceeds normally.
  */
-class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -58,38 +67,43 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'type'       => 'object',
 			'properties' => array_merge(
 				array(
-					'image_id'        => array(
+					'image_id'          => array(
 						'type'        => 'integer',
 						'description' => __( 'WordPress attachment ID of the image to edit.', 'mcp-ai-wpoos' ),
 					),
-					'prompt'          => array(
+					'prompt'            => array(
 						'type'        => 'string',
 						'description' => __( 'Description of the desired edits to the image.', 'mcp-ai-wpoos' ),
 					),
-					'mask_id'         => array(
+					'mask_id'           => array(
 						'type'        => 'integer',
 						'description' => __( 'Optional: WordPress attachment ID of a mask image (transparent areas will be edited).', 'mcp-ai-wpoos' ),
 					),
-					'model'           => array(
+					'request_user_mask' => array(
+						'type'        => 'boolean',
+						'description' => __( 'When true and no mask_id is provided, pause execution and ask the user to paint a mask in chat. The painted mask is rasterized and used automatically.', 'mcp-ai-wpoos' ),
+						'default'     => false,
+					),
+					'model'             => array(
 						'type'        => 'string',
 						'description' => __( 'OpenAI model to use for editing.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'dall-e-2' ),
 						'default'     => 'dall-e-2',
 					),
-					'n'               => array(
+					'n'                 => array(
 						'type'        => 'integer',
 						'description' => __( 'Number of edited images to generate.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10,
 						'default'     => 1,
 					),
-					'size'            => array(
+					'size'              => array(
 						'type'        => 'string',
 						'description' => __( 'Size of the edited image.', 'mcp-ai-wpoos' ),
 						'enum'        => array( '256x256', '512x512', '1024x1024' ),
 						'default'     => '1024x1024',
 					),
-					'response_format' => array(
+					'response_format'   => array(
 						'type'        => 'string',
 						'description' => __( 'Format for the response.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'url', 'b64_json' ),
@@ -381,5 +395,91 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'requires-capability',
 			'modifies-state',
 		);
+	}
+
+	/**
+	 * Decide whether to elicit a mask from the user before editing.
+	 *
+	 * Returns a markup request when:
+	 *  - `image_id` is provided and refers to an image attachment;
+	 *  - `mask_id` is missing or invalid; and
+	 *  - the caller opted in by setting `request_user_mask` to true.
+	 *
+	 * Otherwise null is returned and execution proceeds normally.
+	 *
+	 * @param array $arguments Tool arguments as the LLM provided them.
+	 * @param array $context   Execution context.
+	 * @return WP_MCP_AI_Markup_Request|null
+	 */
+	public function needs_markup( array $arguments, array $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Markup_Request' ) ) {
+			return null;
+		}
+		// Opt-in only — backwards compatible with all existing callers.
+		if ( empty( $arguments['request_user_mask'] ) ) {
+			return null;
+		}
+		// Caller already supplied a mask — no elicitation needed.
+		if ( ! empty( $arguments['mask_id'] ) ) {
+			return null;
+		}
+		if ( empty( $arguments['image_id'] ) ) {
+			return null;
+		}
+		$image_id = absint( $arguments['image_id'] );
+		if ( ! $image_id || ! wp_attachment_is_image( $image_id ) ) {
+			return null;
+		}
+
+		$instructions = isset( $arguments['prompt'] ) && '' !== $arguments['prompt']
+			? sprintf(
+				/* translators: %s: edit prompt */
+				__( 'Paint over the area you want to edit. Prompt: %s', 'mcp-ai-wpoos' ),
+				sanitize_textarea_field( (string) $arguments['prompt'] )
+			)
+			: __( 'Paint over the area of the image you want OpenAI to regenerate.', 'mcp-ai-wpoos' );
+
+		try {
+			return new WP_MCP_AI_Markup_Request(
+				array(
+					'tool_slug'      => $this->get_slug(),
+					'target_type'    => 'image',
+					'mode'           => 'mask',
+					'target'         => array( 'attachment_id' => $image_id ),
+					'instructions'   => $instructions,
+					'tool_arguments' => $arguments,
+					'tool_context'   => $context,
+					'assistant_id'   => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
+				)
+			);
+		} catch ( Exception $e ) {
+			// Invalid request — fall through to normal execution.
+			return null;
+		}
+	}
+
+	/**
+	 * Resume execution with a user-painted mask.
+	 *
+	 * The rasterizer stores the mask as a WordPress attachment and
+	 * exposes the ID via `mask_attachment_id`. We inject it into
+	 * `mask_id`, clear the elicitation flag to prevent infinite loops,
+	 * and re-run `execute()`.
+	 *
+	 * @param array                   $arguments Original tool arguments.
+	 * @param WP_MCP_AI_Markup_Result $result    Validated markup result.
+	 * @param array                   $context   Execution context.
+	 * @return mixed Tool result (same shape as `execute()`).
+	 */
+	public function consume_markup( array $arguments, WP_MCP_AI_Markup_Result $result, array $context ) {
+		$mask_id = (int) $result->get_artifact( 'mask_attachment_id', 0 );
+		if ( $mask_id > 0 && wp_attachment_is_image( $mask_id ) ) {
+			$arguments['mask_id'] = $mask_id;
+		}
+		// Critical: clear the elicitation flag so re-execution does not
+		// trigger another markup request on the same call.
+		$arguments['request_user_mask'] = false;
+
+		return $this->execute( $arguments, $context );
 	}
 }

@@ -136,6 +136,11 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 			$this->save_settings();
 		}
 
+		// Handle catalogue source updates (separate nonce).
+		if ( isset( $_POST['wp_mcp_ai_skill_catalogues_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_skill_catalogues_nonce'] ) ), 'wp_mcp_ai_skill_catalogues' ) ) {
+			$this->save_catalogues();
+		}
+
 		// Get active tab.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; no state change.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
@@ -160,6 +165,9 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 						break;
 					case 'installed':
 						$this->render_installed_tab();
+						break;
+					case 'catalogues':
+						$this->render_catalogues_tab();
 						break;
 					case 'help':
 						$this->render_help_tab();
@@ -235,6 +243,7 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 			'overview'      => __( 'Overview', 'mcp-ai-wpoos-pro' ),
 			'configuration' => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
 			'installed'     => __( 'Installed Skills', 'mcp-ai-wpoos-pro' ),
+			'catalogues'    => __( 'Catalogues', 'mcp-ai-wpoos-pro' ),
 			'help'          => __( 'Help & Documentation', 'mcp-ai-wpoos-pro' ),
 		);
 
@@ -564,6 +573,164 @@ class WP_MCP_AI_Skill_Settings_Admin_Page {
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		wp_safe_redirect( add_query_arg( 'settings-updated', 'true', admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=configuration' ) ) );
+		exit;
+	}
+
+	/**
+	 * Render the Catalogues tab — registered remote skill catalogue sources.
+	 *
+	 * @since 1.11.0
+	 * @return void
+	 */
+	protected function render_catalogues_tab() {
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Catalogue_Service' ) ) {
+			?>
+			<div class="skill-card">
+				<p><?php esc_html_e( 'Skill catalogue service is not available.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		$service = WP_MCP_AI_Skill_Catalogue_Service::instance();
+		$sources = $service->get_sources();
+		?>
+		<div class="skill-card">
+			<h2><?php esc_html_e( 'Skill Catalogues', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Register one or more remote catalogues of SKILL.md files. The Skill Manager Browse tab pulls its list from these sources, and a daily background refresh keeps "update available" badges accurate.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only redirect flag, no state change. ?>
+			<?php if ( isset( $_GET['catalogues-updated'] ) && 'true' === $_GET['catalogues-updated'] ) : ?>
+				<div class="notice notice-success inline">
+					<p><?php esc_html_e( 'Catalogue sources saved.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<form method="post" action="">
+				<?php wp_nonce_field( 'wp_mcp_ai_skill_catalogues', 'wp_mcp_ai_skill_catalogues_nonce' ); ?>
+
+				<table class="wp-list-table widefat fixed striped" id="wp-mcp-ai-skill-catalogues-table">
+					<thead>
+						<tr>
+							<th scope="col" style="width:18%;"><?php esc_html_e( 'ID', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Label', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:14%;"><?php esc_html_e( 'Owner', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:14%;"><?php esc_html_e( 'Repo', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:10%;"><?php esc_html_e( 'Ref', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:14%;"><?php esc_html_e( 'Last refreshed', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th scope="col" style="width:5%;"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						// Always render at least one empty row so admins can add a new entry.
+						$rows = $sources;
+						$rows[] = array(
+							'id'             => '',
+							'label'          => '',
+							'type'           => 'github',
+							'owner'          => '',
+							'repo'           => '',
+							'ref'            => 'main',
+							'manifest_path'  => '',
+							'last_refreshed' => 0,
+						);
+						foreach ( $rows as $idx => $src ) :
+							$last = ! empty( $src['last_refreshed'] ) ? human_time_diff( (int) $src['last_refreshed'], time() ) . ' ' . esc_html__( 'ago', 'mcp-ai-wpoos-pro' ) : esc_html__( 'never', 'mcp-ai-wpoos-pro' );
+						?>
+						<tr>
+							<td>
+								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][id]" value="<?php echo esc_attr( $src['id'] ); ?>" class="regular-text" pattern="[a-z0-9][a-z0-9_-]*" placeholder="my-catalogue">
+							</td>
+							<td>
+								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][label]" value="<?php echo esc_attr( $src['label'] ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Human-friendly label', 'mcp-ai-wpoos-pro' ); ?>">
+							</td>
+							<td>
+								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][owner]" value="<?php echo esc_attr( $src['owner'] ); ?>" class="regular-text" placeholder="github-org">
+							</td>
+							<td>
+								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][repo]" value="<?php echo esc_attr( $src['repo'] ); ?>" class="regular-text" placeholder="repo-name">
+							</td>
+							<td>
+								<input type="text" name="catalogues[<?php echo (int) $idx; ?>][ref]" value="<?php echo esc_attr( $src['ref'] ); ?>" class="regular-text" placeholder="main">
+							</td>
+							<td><?php echo esc_html( $last ); ?></td>
+							<td>
+								<label>
+									<input type="checkbox" name="catalogues[<?php echo (int) $idx; ?>][delete]" value="1">
+									<?php esc_html_e( 'Remove', 'mcp-ai-wpoos-pro' ); ?>
+								</label>
+							</td>
+						</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+
+				<p class="description" style="margin-top:10px;">
+					<?php esc_html_e( 'Only public GitHub repositories are supported. Refs may be a branch, tag, or full commit SHA. Pin to a SHA for reproducibility.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+
+				<p class="submit">
+					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Save catalogues', 'mcp-ai-wpoos-pro' ); ?>">
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-skill-manager&tab=browse' ) ); ?>" class="button">
+						<?php esc_html_e( 'Browse skills →', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Persist catalogue source updates posted from the Catalogues tab.
+	 *
+	 * Nonce verification is performed in render_page() before this method runs.
+	 *
+	 * @since 1.11.0
+	 * @return void
+	 */
+	private function save_catalogues() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Catalogue_Service' ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
+		$raw = isset( $_POST['catalogues'] ) && is_array( $_POST['catalogues'] ) ? wp_unslash( $_POST['catalogues'] ) : array();
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		$cleaned = array();
+		foreach ( $raw as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			if ( ! empty( $entry['delete'] ) ) {
+				continue;
+			}
+			// Skip rows that are completely empty (e.g. the trailing add-row left blank).
+			$id    = isset( $entry['id'] ) ? (string) $entry['id'] : '';
+			$owner = isset( $entry['owner'] ) ? (string) $entry['owner'] : '';
+			$repo  = isset( $entry['repo'] ) ? (string) $entry['repo'] : '';
+			if ( '' === trim( $id ) && '' === trim( $owner ) && '' === trim( $repo ) ) {
+				continue;
+			}
+			$cleaned[] = array(
+				'id'    => $id,
+				'label' => isset( $entry['label'] ) ? (string) $entry['label'] : '',
+				'type'  => 'github',
+				'owner' => $owner,
+				'repo'  => $repo,
+				'ref'   => isset( $entry['ref'] ) ? (string) $entry['ref'] : 'main',
+			);
+		}
+
+		WP_MCP_AI_Skill_Catalogue_Service::instance()->save_sources( $cleaned );
+
+		wp_safe_redirect( add_query_arg( 'catalogues-updated', 'true', admin_url( 'edit.php?post_type=mcp_ai_assistant&page=' . self::PAGE_SLUG . '&tab=catalogues' ) ) );
 		exit;
 	}
 }
