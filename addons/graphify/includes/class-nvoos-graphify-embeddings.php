@@ -196,6 +196,15 @@ class NV_oOS_Graphify_Embeddings {
 		// Fallback: OpenAI embeddings API.
 		if ( null === $vector ) {
 			$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+			// NV oOS stores the OpenAI key inside the `wp_mcp_ai_settings` array,
+			// not as a top-level option, so check that location before falling back
+			// to the legacy top-level option name.
+			if ( empty( $api_key ) ) {
+				$nvoos_settings = get_option( 'wp_mcp_ai_settings', array() );
+				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
+					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
+				}
+			}
 			if ( empty( $api_key ) && function_exists( 'wp_mcp_ai_get_option' ) ) {
 				$api_key = wp_mcp_ai_get_option( 'openai_api_key', '' );
 			}
@@ -266,6 +275,7 @@ class NV_oOS_Graphify_Embeddings {
 		}
 
 		$processed = 0;
+		$failed    = 0;
 		foreach ( $nodes as $node ) {
 			$text = $node->label;
 			if ( ! empty( $node->properties ) ) {
@@ -274,19 +284,28 @@ class NV_oOS_Graphify_Embeddings {
 					$text .= ' ' . $props['excerpt'];
 				}
 			}
-			self::generate_and_store( $node->node_id, $text );
-			$processed++;
+			$ok = self::generate_and_store( $node->node_id, $text );
+			if ( $ok ) {
+				$processed++;
+			} else {
+				$failed++;
+			}
 		}
 
-		$remaining = count( $nodes ) >= $limit;
+		$total_seen = $processed + $failed;
+		$remaining  = $total_seen >= $limit;
 		if ( $remaining ) {
-			update_option( 'nvoos_graphify_reindex_offset', $offset + $processed );
+			update_option( 'nvoos_graphify_reindex_offset', $offset + $total_seen );
 			wp_schedule_single_event( time() + 60, 'nvoos_graphify_cron_reindex_embeddings' );
 		} else {
 			delete_option( 'nvoos_graphify_reindex_offset' );
 		}
 
-		return array( 'processed' => $processed, 'remaining' => $remaining );
+		return array(
+			'processed' => $processed,
+			'failed'    => $failed,
+			'remaining' => $remaining,
+		);
 	}
 
 	/**
