@@ -22,6 +22,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NV_oOS_Graphify_Detector {
 
 	/**
+	 * Default per-type cap on the number of CCT items pulled into the graph.
+	 *
+	 * High-volume content types (e.g. agent memories) can otherwise dominate
+	 * the graph; this cap keeps build times bounded while still covering
+	 * typical content sites. Override via the
+	 * `nvoos_graphify_cct_items_limit` filter.
+	 *
+	 * @since 0.7.0
+	 * @var int
+	 */
+	const DEFAULT_CCT_ITEMS_LIMIT = 1000;
+
+	/**
 	 * Collect all content items that should be represented as nodes.
 	 *
 	 * @since 0.5.0
@@ -41,11 +54,12 @@ class NV_oOS_Graphify_Detector {
 		}
 
 		$posts = self::detect_posts( $since );
+		$ccts  = self::detect_ccts( $since );
 		$terms = self::detect_terms( $posts );
-		$users = self::detect_users( $posts );
+		$users = self::detect_users( $posts, $ccts );
 		$media = self::detect_media( $posts );
 
-		return compact( 'posts', 'terms', 'users', 'media' );
+		return compact( 'posts', 'ccts', 'terms', 'users', 'media' );
 	}
 
 	// -------------------------------------------------------------------------
@@ -89,15 +103,58 @@ class NV_oOS_Graphify_Detector {
 	/**
 	 * Return the default public post types to index.
 	 *
+	 * Includes any post type registered with `public => true` OR
+	 * `show_in_rest => true`. JetEngine-registered CPTs are frequently
+	 * configured as REST-only (admin-managed data), so relying solely on
+	 * the `public` flag would silently exclude them. The WordPress core
+	 * "system" post types (revisions, navigation menu items, block
+	 * patterns, FSE templates, etc.) are excluded.
+	 *
+	 * Sites can override the list with the
+	 * `nvoos_graphify_indexed_post_types` filter.
+	 *
 	 * @since 0.5.0
 	 *
 	 * @return string[]
 	 */
 	public static function get_default_post_types() {
-		$public_types = get_post_types( array( 'public' => true ), 'names' );
-		// Exclude 'attachment' by default — media is handled separately.
-		unset( $public_types['attachment'] );
-		return array_values( $public_types );
+		$candidates = array_unique(
+			array_merge(
+				array_keys( get_post_types( array( 'public' => true ), 'names' ) ),
+				array_keys( get_post_types( array( 'show_in_rest' => true ), 'names' ) )
+			)
+		);
+
+		// Built-in WordPress system post types that should never be indexed
+		// — internal storage for menus, the block editor, FSE, privacy
+		// requests, and customizer changesets.
+		$system_blacklist = array(
+			'attachment',
+			'revision',
+			'nav_menu_item',
+			'custom_css',
+			'customize_changeset',
+			'oembed_cache',
+			'user_request',
+			'wp_block',
+			'wp_template',
+			'wp_template_part',
+			'wp_global_styles',
+			'wp_navigation',
+		);
+
+		$post_types = array_values( array_diff( $candidates, $system_blacklist ) );
+
+		/**
+		 * Filter the list of post types indexed by the knowledge graph.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param string[] $post_types Sanitised post type slugs.
+		 */
+		$post_types = apply_filters( 'nvoos_graphify_indexed_post_types', $post_types );
+
+		return array_values( array_filter( array_map( 'sanitize_key', (array) $post_types ) ) );
 	}
 
 	// -------------------------------------------------------------------------
@@ -143,20 +200,31 @@ class NV_oOS_Graphify_Detector {
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Return author user objects for the supplied posts.
+	 * Return author user objects for the supplied posts and CCT items.
 	 *
 	 * @since 0.5.0
 	 *
 	 * @param WP_Post[] $posts Posts to inspect.
+	 * @param array     $ccts  Optional CCT item rows from {@see detect_ccts()}.
 	 * @return WP_User[]
 	 */
-	public static function detect_users( array $posts ) {
-		if ( empty( $posts ) ) {
-			return array();
+	public static function detect_users( array $posts, array $ccts = array() ) {
+		$author_ids = array();
+
+		if ( ! empty( $posts ) ) {
+			$author_ids = array_merge(
+				$author_ids,
+				array_map( 'absint', wp_list_pluck( $posts, 'post_author' ) )
+			);
 		}
 
-		$author_ids = array_unique( array_map( 'absint', wp_list_pluck( $posts, 'post_author' ) ) );
-		$author_ids = array_filter( $author_ids );
+		foreach ( $ccts as $row ) {
+			if ( ! empty( $row['item']['cct_author_id'] ) ) {
+				$author_ids[] = absint( $row['item']['cct_author_id'] );
+			}
+		}
+
+		$author_ids = array_unique( array_filter( $author_ids ) );
 
 		$users = array();
 		foreach ( $author_ids as $uid ) {
@@ -211,6 +279,156 @@ class NV_oOS_Graphify_Detector {
 	}
 
 	// -------------------------------------------------------------------------
+	// JetEngine Custom Content Type (CCT) detection
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Return JetEngine Custom Content Type items that should be indexed.
+	 *
+	 * JetEngine CCTs live in dedicated `{prefix}jet_cct_{slug}` tables and
+	 * are invisible to {@see get_post_types()} / {@see get_posts()}, so they
+	 * have to be enumerated through the JetEngine API.
+	 *
+	 * Each returned row is shaped:
+	 *   array(
+	 *     'type' => string  CCT slug (sanitised),
+	 *     'name' => string  Human-readable type name,
+	 *     'item' => array   Associative-array CCT item (includes `_ID`,
+	 *                       `cct_status`, `cct_created`, `cct_modified`,
+	 *                       `cct_author_id`, plus user-defined fields).
+	 *   )
+	 *
+	 * @since 0.7.0
+	 *
+	 * @param string $since Optional ISO-8601 datetime; only items modified
+	 *                      after this point are returned (incremental builds).
+	 * @return array[]
+	 */
+	public static function detect_ccts( $since = '' ) {
+		if ( ! function_exists( 'jet_engine' ) ) {
+			return array();
+		}
+
+		$engine = jet_engine();
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'get_module' ) ) {
+			return array();
+		}
+
+		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			return array();
+		}
+
+		$module = $module_wrapper->instance;
+		if ( empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			return array();
+		}
+
+		$types = $module->manager->get_content_types();
+		if ( empty( $types ) || ! is_array( $types ) ) {
+			return array();
+		}
+
+		/**
+		 * Filter the maximum number of items pulled from each CCT type.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param int $limit Maximum items per CCT type.
+		 */
+		$per_type_limit = (int) apply_filters( 'nvoos_graphify_cct_items_limit', self::DEFAULT_CCT_ITEMS_LIMIT );
+		if ( $per_type_limit <= 0 ) {
+			$per_type_limit = self::DEFAULT_CCT_ITEMS_LIMIT;
+		}
+
+		// Build the indexed-slug allowlist once, before iterating.
+		$default_slugs = array_map( 'sanitize_key', wp_list_pluck( $types, 'slug' ) );
+		$default_slugs = array_values( array_filter( $default_slugs ) );
+
+		/**
+		 * Filter the list of CCT slugs indexed by the knowledge graph.
+		 *
+		 * Return an empty array to disable CCT indexing entirely, or a subset
+		 * of slugs to index only specific content types.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param string[] $slugs Sanitised CCT slugs.
+		 */
+		$indexed_slugs = apply_filters( 'nvoos_graphify_indexed_cct_slugs', $default_slugs );
+		$indexed_slugs = array_map( 'sanitize_key', (array) $indexed_slugs );
+
+		$rows = array();
+
+		foreach ( $types as $type ) {
+			$slug = '';
+			if ( ! empty( $type->slug ) ) {
+				$slug = $type->slug;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+				$slug = $type->args['slug'];
+			}
+			$slug = sanitize_key( $slug );
+			if ( '' === $slug ) {
+				continue;
+			}
+
+			if ( ! in_array( $slug, $indexed_slugs, true ) ) {
+				continue;
+			}
+
+			// Resolve human-readable name.
+			$name = '';
+			if ( ! empty( $type->name ) ) {
+				$name = $type->name;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+				$name = $type->args['name'];
+			} else {
+				$name = $slug;
+			}
+
+			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
+				continue;
+			}
+
+			if ( method_exists( $type->db, 'set_format_flag' ) ) {
+				$type->db->set_format_flag( ARRAY_A );
+			}
+
+			$filter_args = array();
+			if ( $since ) {
+				// JetEngine's query() supports comparison operators via array
+				// values shaped as ['key' => '...', 'value' => '...', 'compare' => '>'].
+				$filter_args[] = array(
+					'key'     => 'cct_modified',
+					'value'   => sanitize_text_field( $since ),
+					'compare' => '>',
+				);
+			}
+
+			$items = $type->db->query( $filter_args, $per_type_limit, 0 );
+			if ( ! is_array( $items ) || empty( $items ) ) {
+				continue;
+			}
+
+			foreach ( $items as $item ) {
+				if ( is_object( $item ) ) {
+					$item = (array) $item;
+				}
+				if ( ! is_array( $item ) || empty( $item['_ID'] ) ) {
+					continue;
+				}
+				$rows[] = array(
+					'type' => $slug,
+					'name' => $name,
+					'item' => $item,
+				);
+			}
+		}
+
+		return $rows;
+	}
+
+	// -------------------------------------------------------------------------
 	// Node ID helpers
 	// -------------------------------------------------------------------------
 
@@ -262,6 +480,128 @@ class NV_oOS_Graphify_Detector {
 	 */
 	public static function media_node_id( $attachment_id ) {
 		return 'media_' . absint( $attachment_id );
+	}
+
+	/**
+	 * Generate a stable node_id for a JetEngine CCT item.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @param string $slug    CCT slug.
+	 * @param int    $item_id Item ID (the `_ID` column).
+	 * @return string
+	 */
+	public static function cct_node_id( $slug, $item_id ) {
+		return 'cct_' . sanitize_key( $slug ) . '_' . absint( $item_id );
+	}
+
+	/**
+	 * Fetch a single JetEngine CCT item by slug + numeric ID.
+	 *
+	 * Used by the semantic extractor's cron handler to re-hydrate a CCT
+	 * row from a tiny `[ slug, id ]` payload (keeps cron args small and
+	 * avoids stale snapshots).
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param string $slug    CCT slug.
+	 * @param int    $item_id Item `_ID` column value.
+	 * @return array|null {
+	 *     @type string $type CCT slug (sanitised).
+	 *     @type string $name Human-readable type name.
+	 *     @type array  $item CCT row (associative array).
+	 * } NULL when JetEngine isn't loaded, the slug is unknown, or the row is missing.
+	 */
+	public static function get_cct_item( $slug, $item_id ) {
+		$slug    = sanitize_key( $slug );
+		$item_id = absint( $item_id );
+		if ( '' === $slug || 0 === $item_id ) {
+			return null;
+		}
+		if ( ! function_exists( 'jet_engine' ) ) {
+			return null;
+		}
+
+		$engine = jet_engine();
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'get_module' ) ) {
+			return null;
+		}
+
+		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			return null;
+		}
+
+		$module = $module_wrapper->instance;
+		if ( empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			return null;
+		}
+
+		$types = $module->manager->get_content_types();
+		if ( empty( $types ) || ! is_array( $types ) ) {
+			return null;
+		}
+
+		foreach ( $types as $type ) {
+			$type_slug = '';
+			if ( ! empty( $type->slug ) ) {
+				$type_slug = $type->slug;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+				$type_slug = $type->args['slug'];
+			}
+			$type_slug = sanitize_key( $type_slug );
+			if ( $type_slug !== $slug ) {
+				continue;
+			}
+
+			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
+				return null;
+			}
+
+			if ( method_exists( $type->db, 'set_format_flag' ) ) {
+				$type->db->set_format_flag( ARRAY_A );
+			}
+
+			$rows = $type->db->query(
+				array(
+					array(
+						'key'   => '_ID',
+						'value' => $item_id,
+					),
+				),
+				1,
+				0
+			);
+
+			if ( ! is_array( $rows ) || empty( $rows ) ) {
+				return null;
+			}
+
+			$item = $rows[0];
+			if ( is_object( $item ) ) {
+				$item = (array) $item;
+			}
+			if ( ! is_array( $item ) || empty( $item['_ID'] ) ) {
+				return null;
+			}
+
+			$name = '';
+			if ( ! empty( $type->name ) ) {
+				$name = $type->name;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+				$name = $type->args['name'];
+			} else {
+				$name = $slug;
+			}
+
+			return array(
+				'type' => $slug,
+				'name' => $name,
+				'item' => $item,
+			);
+		}
+
+		return null;
 	}
 
 	/**

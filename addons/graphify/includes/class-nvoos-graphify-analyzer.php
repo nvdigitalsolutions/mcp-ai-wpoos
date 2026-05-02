@@ -463,14 +463,20 @@ class NV_oOS_Graphify_Analyzer {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// Find pairs of nodes in the same community that aren't directly linked.
+		// Restricting to `post_id > 0` covers every real WordPress post (post,
+		// page, and any public/REST-visible CPT, including JetEngine CPTs)
+		// while excluding term/user/media/CCT/semantic nodes — which all
+		// carry post_id = 0 and either have no permalink or are not the
+		// kind of "link target" a "missing internal link" recommendation
+		// would apply to.
 		$candidates = $wpdb->get_results(
 			"SELECT a.node_id AS a_id, a.label AS a_label, b.node_id AS b_id, b.label AS b_label,
 			        a.community_id AS community_id
 			 FROM {$nodes_table} a
 			 JOIN {$nodes_table} b ON b.community_id = a.community_id AND b.node_id > a.node_id
 			 WHERE a.community_id != ''
-			   AND a.type IN ('post','page')
-			   AND b.type IN ('post','page')
+			   AND a.post_id > 0
+			   AND b.post_id > 0
 			   AND NOT EXISTS (
 			       SELECT 1 FROM {$edges_table} e
 			       WHERE (e.source_node_id = a.node_id AND e.target_node_id = b.node_id)
