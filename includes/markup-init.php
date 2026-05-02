@@ -142,3 +142,44 @@ add_filter(
 		return array_values( array_unique( $types ) );
 	}
 );
+
+/**
+ * Register the `/markup-stats` slash command once the default command
+ * set has been loaded. Runs on `wp_mcp_ai_default_slash_commands_loaded`
+ * so the slash-command init file does not need to know about markup.
+ */
+add_action(
+	'wp_mcp_ai_default_slash_commands_loaded',
+	static function ( $handler ) {
+		if ( ! is_object( $handler ) || ! method_exists( $handler, 'register' ) ) {
+			return;
+		}
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-markup-stats.php';
+
+		$command = new WP_MCP_AI_Slash_Command_Markup_Stats();
+		$handler->register(
+			'markup-stats',
+			array(
+				'handler'     => array( $command, 'execute' ),
+				'description' => __( 'Show markup subsystem telemetry — totals, per-tool / per-mode breakdowns, and last-seen timestamps.', 'mcp-ai-wpoos' ),
+				'usage'       => '/markup-stats [--verbose|-v] [--json] [--reset]',
+				'capability'  => 'edit_posts',
+				'aliases'     => array( 'markup' ),
+				'parameters'  => array(
+					'--verbose' => array(
+						'description' => __( 'Show every per-tool / per-mode row instead of the top 5.', 'mcp-ai-wpoos' ),
+						'required'    => false,
+					),
+					'--json'    => array(
+						'description' => __( 'Return the raw summary as JSON for programmatic consumption.', 'mcp-ai-wpoos' ),
+						'required'    => false,
+					),
+					'--reset'   => array(
+						'description' => __( 'Reset the telemetry counters (requires manage_options).', 'mcp-ai-wpoos' ),
+						'required'    => false,
+					),
+				),
+			)
+		);
+	}
+);

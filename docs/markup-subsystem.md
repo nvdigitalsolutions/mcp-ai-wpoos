@@ -210,6 +210,20 @@ $summary = WP_MCP_AI_Markup_Telemetry::get_summary();
 // $summary['last_seen']['completed']                  -> unix timestamp
 ```
 
+### CLI / chat surface
+
+A `/markup-stats` slash command (alias `/markup`) renders the summary
+as a Markdown table inside any chat surface that supports slash
+commands. Flags:
+
+| Flag | Effect |
+|------|--------|
+| `--verbose` / `-v` | Show every per-tool / per-mode row instead of the top 5. |
+| `--json` | Return the raw summary as JSON in the message field (still includes the parsed array under `data`). |
+| `--reset` | Clear the counters (requires `manage_options`). |
+
+Required capability for read access: `edit_posts`.
+
 ## Security model
 
 * **Capability gate**: `edit_posts` for staff submissions; guest
