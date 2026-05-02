@@ -38,6 +38,38 @@ Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature 
 
 Feature flags (both default off; opt-in): `enable_qms_compliance`, `enable_para_organization`. All new behavior is additive — existing tools and toolkits continue to work unchanged when the flags are off.
 
+## [1.1.14] - 2026-05-02
+
+### May 1–2, 2026 — Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), follow-up fixes
+
+A documentation, capabilities, and stability pass on top of 1.1.13. The release covers (1) the **Agent Skills Phases 1–4** rollout — bundled WordPress-developer skills, a `load_skill` progressive-disclosure tool, curated skill packs, and remote skill catalogues (Pro) — and (2) three follow-up fixes for the orchestration dashboard, the new skill-catalogue fetcher, and the Pro Medical Imaging Viewer.
+
+### Added — Agent Skills Phases 1–4 (PR #4771)
+
+The Agent Skills surface (per the [agentskills.io](https://agentskills.io/specification) specification) is now end-to-end across base + Pro:
+
+- **Phase 1 — Bundled WP-developer skills + companion-file install**: 28+ new `SKILL.md` files curated from the MIT-licensed [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) catalogue, covering WooCommerce (HPOS, payment gateways, REST API v4, shipping, Stripe, variations, customer & sessions, classic emails, coupons, product search/select), WooCommerce Memberships (access discounts, subscriptions linkage, hooks), WooCommerce Subscriptions (renewal scheduler, switching/gifting data model, hooks), JetEngine (dynamic visibility, listings callbacks, query builder custom types), JetFormBuilder (action events, external API, item decorator, messages, form actions, sidebar panels, settings tabs), and WP Rocket (cache invalidation, rejection filters). Base plugin gains an `wp-abilities-api` skill. New `THIRD_PARTY_NOTICES.md` files in both `includes/bundled-skills/` and `addons/pro/includes/bundled-skills/` carry attribution and license text.
+- **Phase 2 — Remote skill catalogues (Pro)**: new `WP_MCP_AI_Skill_Catalogue_Service` (`addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php`) discovers `SKILL.md` files in registered public Git repositories using the GitHub trees API, supports `catalogue.json` manifests when present, caches manifests in 24-hour transients, and refreshes them daily via the `wp_mcp_ai_skill_catalogue_refresh` WP-Cron job. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. New `WP_MCP_AI_Skill_Catalogue_REST_Controller` exposes admin-only endpoints under the `mcp-ai-pro/v1` namespace (`/catalogues`, `/catalogues/{id}/skills`, `/catalogues/{id}/install`, `/catalogues/{id}/refresh`). All catalogue fetches reuse the SSRF-safe HTTPS-only helper that protects `/skills/install-url`, the existing extension allowlist, and the decompression-bomb cap.
+- **Phase 3 — Progressive disclosure (`load_skill` tool)**: each assistant gains a "Use progressive disclosure" checkbox on its Skills metabox. When enabled, the system prompt receives only a short `# Available Skills` catalogue (skill name + description) and the model calls the new base-plugin `load_skill({ name })` tool when it decides a skill applies — at which point the full SKILL.md is returned in the tool result. This dramatically reduces baseline context cost for skill-heavy assistants.
+- **Phase 4 — Skill packs**: curated, named collections of related skills addressable as a single unit ("WordPress Developer", "Document Authoring", etc.). Skill manager admin UI gains tabs for browsing catalogues, managing packs, and editing individual skills.
+- **Filters & hooks**: `wp_mcp_ai_skill_catalogue_manifest_ttl` (transient TTL), `wp_mcp_ai_skill_catalogue_refresh_cadence` (cron schedule).
+- **Documentation**: `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
+
+### Fixed
+
+- **Graphify Memory Bridge — stale "not installed" status (#4769)** — the orchestration dashboard's Phase 4a memory-bridge widget could report "not installed" even after the bridge had been activated, due to a stale-cache `bridge_active` recomputation path. Cache invalidation now runs on bridge activation/deactivation and the widget re-reads the live status. Regression covered by `tests/test-orchestration-dashboard-stale-cache.php`.
+- **cURL SSL error 60 fetching remote skill catalogues (#4772)** — the new catalogue-fetcher (Phase 2) could fail with `cURL error 60: SSL certificate problem` on hosts with outdated CA bundles when reaching `api.github.com` and `raw.githubusercontent.com`. The HTTP layer now uses WordPress's `wp_remote_get()` certificate bundle path consistently and surfaces a structured `WP_Error` instead of a fatal request failure when verification still fails.
+- **"Dynamic require of dicom-parser" in Medical Imaging Viewer (#4773)** — the Pro Medical Imaging Viewer bundle could fail at runtime with `Dynamic require of "dicom-parser" is not supported` when loaded from the Pro `build/` directory. The viewer now imports `dicom-parser` statically so the esbuild output no longer relies on a runtime CommonJS shim.
+
+### Build
+
+- **All distribution ZIPs rebuilt at v1.1.13 (#4775)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the six standalone toolkit add-on ZIPs.
+- **Production autoloader reaffirmed (#4774)** — `vendor/composer/installed.json` and the autoload classmap regenerated with `composer install --no-dev --classmap-authoritative` to confirm the production posture established in 1.1.13.
+
+### Versioning
+
+- The plugin version constant remains 1.1.13. This 1.1.14 entry documents post-release PRs that ship as part of the next packaged release; the `WP_MCP_AI_VERSION` constant, plugin header, `package.json`, and `readme.txt` Stable tag will be bumped together when the next ZIP is cut.
+
 ## [1.1.13] - 2026-05-01
 
 ### April 30 – May 1, 2026 — gpt-image-2 (Images 2.0), Phase 4a MemPalace-backed memory bridge, AI Harmonization toolkit, production-only Composer autoloader
