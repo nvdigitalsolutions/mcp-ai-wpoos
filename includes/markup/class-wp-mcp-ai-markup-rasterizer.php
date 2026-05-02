@@ -376,11 +376,14 @@ class WP_MCP_AI_Markup_Rasterizer {
 			// Hardening: prevent listing and execution.
 			$htaccess = $private_dir . '/.htaccess';
 			if ( ! file_exists( $htaccess ) ) {
-				file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				// Best-effort hardening: ignore failures (e.g. read-only host).
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				@file_put_contents( $htaccess, "Options -Indexes\nDeny from all\n" );
 			}
 			$index = $private_dir . '/index.php';
 			if ( ! file_exists( $index ) ) {
-				file_put_contents( $index, "<?php // Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				@file_put_contents( $index, "<?php // Silence is golden.\n" );
 			}
 		}
 

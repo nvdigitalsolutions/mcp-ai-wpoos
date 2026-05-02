@@ -192,10 +192,16 @@ class WP_MCP_AI_Markup_Validator {
 				'points' => $clean_points,
 			);
 			if ( isset( $item['shape']['stroke'] ) ) {
-				$cleaned['shape']['stroke'] = sanitize_hex_color( (string) $item['shape']['stroke'] );
+				$stroke = sanitize_hex_color( (string) $item['shape']['stroke'] );
+				if ( null !== $stroke ) {
+					$cleaned['shape']['stroke'] = $stroke;
+				}
 			}
 			if ( isset( $item['shape']['fill'] ) ) {
-				$cleaned['shape']['fill'] = sanitize_hex_color( (string) $item['shape']['fill'] );
+				$fill = sanitize_hex_color( (string) $item['shape']['fill'] );
+				if ( null !== $fill ) {
+					$cleaned['shape']['fill'] = $fill;
+				}
 			}
 		}
 		return $cleaned;
