@@ -9,7 +9,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # 800+ total built-in tool implementations (≈220 base + ≈580 pro; counts are approximate — `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+│   ├── tools/            # ~830 total built-in tool implementations (~195 base + ~635 pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 │   ├── elementor/        # Elementor widget integrations
 │   ├── integrations/     # Third-party plugin integrations
 │   └── crawler/          # Crawl4AI integration
@@ -256,8 +256,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): 165 core tools, no third-party dependencies
-- **Full Version**: All 800+ tools including WooCommerce, JetEngine, and Pro addons (≈220 base + ≈580 pro; counts are approximate)
+- **Base Version** (default): ~195 core tools, no third-party dependencies
+- **Full Version**: ~830 tools (~195 base + ~635 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 

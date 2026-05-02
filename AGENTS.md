@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **April 2026** · Version: **1.0**
+> Last reviewed: **May 2026** · Version: **1.1**
 
 ### Related Files
 
@@ -43,6 +43,22 @@ The NV oOS plugin itself includes an agentic multi-agent system for structured f
 | `nv-oos-qa-engineer` | QA Engineer (Quinn) | The SEO & Compliance Auditor | 6, 8 | [`.bmad/agents/nv-oos-qa-engineer.yaml`](.bmad/agents/nv-oos-qa-engineer.yaml) |
 
 Team composition and scale-adaptive usage are defined in [`.bmad/teams/feature-development.yaml`](.bmad/teams/feature-development.yaml).
+
+### Agent Skills (runtime — distinct from coding agents)
+
+Independent of the coding-time agents above, the plugin also exposes **Agent Skills** (per the [agentskills.io](https://agentskills.io/specification) specification) as a runtime mechanism. These are not AI agents themselves — they are portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can load on demand. They are mentioned here so coding agents do not confuse them with the BMAD or external agent ecosystem.
+
+| Aspect | Details |
+|--------|---------|
+| **Format** | A single `SKILL.md` per skill — Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata). Stored on disk under `wp-content/uploads/mcp-ai-skills/{slug}/SKILL.md` after install. |
+| **Bundled with base** | `includes/bundled-skills/` — general-purpose Anthropic-authored skills + the new `wp-abilities-api` skill. |
+| **Bundled with Pro** | `addons/pro/includes/bundled-skills/` — 28+ WordPress-developer skills curated from [`Lonsdale201/wp-agent-skills`](https://github.com/Lonsdale201/wp-agent-skills) (WooCommerce, JetEngine, JetFormBuilder, WP Rocket, etc.) plus a `THIRD_PARTY_NOTICES.md`. |
+| **Remote catalogues (Pro)** | [`WP_MCP_AI_Skill_Catalogue_Service`](addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php) and [`WP_MCP_AI_Skill_Catalogue_REST_Controller`](addons/pro/includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php) (`mcp-ai-pro/v1/catalogues/*`) install skills directly from registered public GitHub repos. SSRF-safe HTTPS-only fetcher. Pre-seeded with `Lonsdale201/wp-agent-skills` and `anthropics/skills`. |
+| **Progressive disclosure** | Each assistant has a "Use progressive disclosure" checkbox; when on, the system prompt sees only `# Available Skills` (name + description) and the model calls the base-plugin `load_skill({ name })` tool to retrieve the full SKILL.md only when needed. |
+| **Skill packs** | Curated, named bundles of related skills (e.g. "WordPress Developer") addressable as a single install unit via the Skill Manager admin UI. |
+| **Reference** | [`docs/features/agent-skills.md`](docs/features/agent-skills.md) (full Phases 1–4 narrative). |
+
+When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 
 ---
 
@@ -190,6 +206,7 @@ If an AI agent produces code with a security vulnerability, report it through th
 | New BMAD agent or workflow change | `.bmad/agents/*.yaml`, `AGENTS.md`, `.bmad/teams/feature-development.yaml` |
 | New subsystem context | `.context/`, `AGENTS.md` (context-loading table) |
 | New external AI agent | `AGENTS.md` (agent inventory), `MAINTAINER_MAP.md` (AI coordination section) |
+| New bundled skill or skill pack | Add `SKILL.md` under `includes/bundled-skills/` (base) or `addons/pro/includes/bundled-skills/` (Pro); update the corresponding `THIRD_PARTY_NOTICES.md` if curated from an upstream catalogue; document in `docs/features/agent-skills.md` |
 
 ### Review cadence
 

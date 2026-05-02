@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **April 2026**
+> Last reviewed: **May 2026**
 
 ### Related Files
 
@@ -65,7 +65,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
   ├─ Load npm-integration-filters.php   (Node.js microservice bridges)
   ├─ Load Pro CDN loader, CPT meta schema, product type helper,
   │   remote connection manager, ERP connector
-  ├─ Register Pro tool classes (354+ tools via pro.php class-loader)
+  ├─ Register Pro tool classes (~635 tools via pro.php class-loader)
   └─ do_action('wp_mcp_ai_pro_init')
 ```
 
@@ -73,7 +73,7 @@ wp_mcp_ai_pro_init()   (at plugins_loaded priority 15)
 
 | Constant | Default | Effect |
 |---|---|---|
-| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = 165-tool base only; `false` = full 519-tool mode |
+| `WP_MCP_AI_BASE_VERSION` | `true` | `true` = base-only (~195 tool classes); `false` = full ~830-tool mode (~195 base + ~635 Pro) |
 | `WP_MCP_AI_FILE` | (plugin file path) | Used by lifecycle hooks |
 | `WP_MCP_AI_PRO_VERSION` | set by Pro | Prevents double-loading of Pro addon |
 | `WP_DEBUG` | WordPress default | Enables extra error logging throughout |
@@ -93,7 +93,7 @@ mcp-ai-wpoos/
 │   ├─ class-wp-mcp-ai-plugin.php  ← Main singleton, DI container wiring
 │   ├─ class-wp-mcp-ai-container.php + container-helpers.php  ← Service locator / DI
 │   │
-│   ├─ tools/                  ← Tool classes (217 class files; 165 enabled in base mode)
+│   ├─ tools/                  ← Tool classes (~234 class files; ~195 extend the tool base class)
 │   │   └─ class-wp-mcp-ai-tool-{name}.php   (one file per tool)
 │   │   └─ orchestration/      ← Tool routing / multi-tool orchestration
 │   │
@@ -121,7 +121,7 @@ mcp-ai-wpoos/
 ├─ addons/pro/
 │   ├─ mcp-ai-wpoos-pro.php    ← Pro entry point (no WP plugin header in repo)
 │   └─ includes/
-│       ├─ tools/              ← 354+ pro tool classes (same naming convention)
+│       ├─ tools/              ← ~635 pro tool classes (same naming convention)
 │       ├─ admin/              ← Pro admin pages (Pro Dashboard, imaging admin…)
 │       ├─ rest/               ← Pro REST controllers (channels, TMA, social…)
 │       ├─ integrations/       ← WooCommerce, Shopify, social media, Google, GitHub
@@ -220,7 +220,7 @@ npm run rebuild:all               # Rebuild all three ZIPs
 | | Base | Pro |
 |---|---|---|
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
-| **Tools** | 165 core tools | +354 Pro tools = **519 total** |
+| **Tools** | ~195 core tools | +~635 Pro tools = **~830 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (PHP 8.1+ deps: phpspreadsheet, etc.) |
 | **JS build** | `esbuild.config.js` | `esbuild.config.pro.js` |
@@ -240,12 +240,13 @@ npm run rebuild:all               # Rebuild all three ZIPs
 - **Health & wellness** – 27 tools (vitals, vaccinations, health records, DICOM)
 - **Finance / ERP** – ERP connector, financial tools
 - **Telegram Mini Apps** – TMA template builder and 8 built-in templates
+- **Agent Skills (base + Pro)** – progressive-disclosure `load_skill` tool (base), bundled `SKILL.md` library (28+ Pro skills + 1 base skill curated from `Lonsdale201/wp-agent-skills` and `anthropics/skills`), Pro Skill Catalogue Service + REST controller for one-click installs from registered public GitHub repos, curated skill packs. See [`docs/features/agent-skills.md`](docs/features/agent-skills.md).
 
 ### How Pro loads in a cloned repo
 
-Because `addons/pro/mcp-ai-wpoos-pro.php` **has no WordPress plugin header** in the repository, WordPress does not see it as a separate plugin. Instead, `wp_mcp_ai_maybe_load_pro_addon()` (called from `includes/class-wp-mcp-ai-plugin.php`) detects the file and requires it automatically. This means the full 519-tool set is active in a fresh clone without any extra activation step.
+Because `addons/pro/mcp-ai-wpoos-pro.php` **has no WordPress plugin header** in the repository, WordPress does not see it as a separate plugin. Instead, `wp_mcp_ai_maybe_load_pro_addon()` (called from `includes/class-wp-mcp-ai-plugin.php`) detects the file and requires it automatically. This means the full ~830-tool set is active in a fresh clone without any extra activation step.
 
-To test the 165-tool base-only mode, add this to `wp-config.php`:
+To test the ~195-tool base-only mode, add this to `wp-config.php`:
 
 ```php
 define( 'WP_MCP_AI_BASE_VERSION', true );
@@ -287,6 +288,7 @@ The `docs/` directory contains **570+ files** (including implementation history,
 | Path | Purpose |
 |---|---|
 | `docs/integrations/` | Third-party integration guides |
+| `docs/features/agent-skills.md` | Agent Skills end-to-end reference (Phases 1–4: bundled skills, remote catalogues, progressive disclosure, skill packs) |
 | `docs/reference/` | REST API, hooks, settings reference |
 | `docs/guides/` | How-to guides for specific workflows |
 | `docs/ADR_001_module_boundaries.md` | Architecture Decision Record #1 — module boundaries |
