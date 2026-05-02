@@ -177,9 +177,28 @@ class NV_oOS_Graphify_Structural_Extractor {
 				$node_id = NV_oOS_Graphify_Detector::cct_node_id( $slug, $item_id );
 
 				// Resolve a sensible label from the most common title-like fields,
-				// falling back to "{Type Name} #{ID}" when nothing matches.
+				// falling back to "{Type Name} #{ID}" when nothing matches. The
+				// candidate field list is filterable so sites with bespoke CCT
+				// schemas can point at their own primary-name column.
+				$label_fields = array( '_title', 'title', 'name', 'cct_name', 'label' );
+				/**
+				 * Filter the ordered list of CCT item fields checked when
+				 * resolving a node label.
+				 *
+				 * @since 0.7.0
+				 *
+				 * @param string[] $label_fields Field names checked in order.
+				 * @param string   $slug         CCT slug.
+				 * @param array    $item         CCT item row (associative array).
+				 */
+				$label_fields = apply_filters( 'nvoos_graphify_cct_label_fields', $label_fields, $slug, $item );
+
 				$label = '';
-				foreach ( array( '_title', 'title', 'name', 'cct_name', 'label' ) as $field ) {
+				foreach ( (array) $label_fields as $field ) {
+					$field = (string) $field;
+					if ( '' === $field ) {
+						continue;
+					}
 					if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
 						$label = (string) $item[ $field ];
 						break;

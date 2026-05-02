@@ -22,6 +22,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NV_oOS_Graphify_Detector {
 
 	/**
+	 * Default per-type cap on the number of CCT items pulled into the graph.
+	 *
+	 * High-volume content types (e.g. agent memories) can otherwise dominate
+	 * the graph; this cap keeps build times bounded while still covering
+	 * typical content sites. Override via the
+	 * `nvoos_graphify_cct_items_limit` filter.
+	 *
+	 * @since 0.7.0
+	 * @var int
+	 */
+	const DEFAULT_CCT_ITEMS_LIMIT = 1000;
+
+	/**
 	 * Collect all content items that should be represented as nodes.
 	 *
 	 * @since 0.5.0
@@ -319,21 +332,33 @@ class NV_oOS_Graphify_Detector {
 		/**
 		 * Filter the maximum number of items pulled from each CCT type.
 		 *
-		 * High-volume CCTs (e.g. agent memories) can otherwise dominate
-		 * the graph; the default cap of 1000 keeps build times bounded
-		 * while still covering typical content sites.
-		 *
 		 * @since 0.7.0
 		 *
 		 * @param int $limit Maximum items per CCT type.
 		 */
-		$per_type_limit = (int) apply_filters( 'nvoos_graphify_cct_items_limit', 1000 );
+		$per_type_limit = (int) apply_filters( 'nvoos_graphify_cct_items_limit', self::DEFAULT_CCT_ITEMS_LIMIT );
 		if ( $per_type_limit <= 0 ) {
-			$per_type_limit = 1000;
+			$per_type_limit = self::DEFAULT_CCT_ITEMS_LIMIT;
 		}
 
-		$rows         = array();
-		$indexed_slugs = null;
+		// Build the indexed-slug allowlist once, before iterating.
+		$default_slugs = array_map( 'sanitize_key', wp_list_pluck( $types, 'slug' ) );
+		$default_slugs = array_values( array_filter( $default_slugs ) );
+
+		/**
+		 * Filter the list of CCT slugs indexed by the knowledge graph.
+		 *
+		 * Return an empty array to disable CCT indexing entirely, or a subset
+		 * of slugs to index only specific content types.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param string[] $slugs Sanitised CCT slugs.
+		 */
+		$indexed_slugs = apply_filters( 'nvoos_graphify_indexed_cct_slugs', $default_slugs );
+		$indexed_slugs = array_map( 'sanitize_key', (array) $indexed_slugs );
+
+		$rows = array();
 
 		foreach ( $types as $type ) {
 			$slug = '';
@@ -347,6 +372,10 @@ class NV_oOS_Graphify_Detector {
 				continue;
 			}
 
+			if ( ! in_array( $slug, $indexed_slugs, true ) ) {
+				continue;
+			}
+
 			// Resolve human-readable name.
 			$name = '';
 			if ( ! empty( $type->name ) ) {
@@ -355,28 +384,6 @@ class NV_oOS_Graphify_Detector {
 				$name = $type->args['name'];
 			} else {
 				$name = $slug;
-			}
-
-			if ( null === $indexed_slugs ) {
-				$default_slugs = array_map( 'sanitize_key', wp_list_pluck( $types, 'slug' ) );
-				$default_slugs = array_values( array_filter( $default_slugs ) );
-
-				/**
-				 * Filter the list of CCT slugs indexed by the knowledge graph.
-				 *
-				 * Return an empty array to disable CCT indexing entirely,
-				 * or a subset of slugs to index only specific content types.
-				 *
-				 * @since 0.7.0
-				 *
-				 * @param string[] $slugs Sanitised CCT slugs.
-				 */
-				$filtered      = apply_filters( 'nvoos_graphify_indexed_cct_slugs', $default_slugs );
-				$indexed_slugs = array_map( 'sanitize_key', (array) $filtered );
-			}
-
-			if ( ! in_array( $slug, $indexed_slugs, true ) ) {
-				continue;
 			}
 
 			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
