@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/create-markup-subsystem',
         'version' => 'dev-copilot/create-markup-subsystem',
-        'reference' => 'a7b3793a0461b176a6a0d0116b9d399a1803fb76',
+        'reference' => '9678fb13dc6a7042d650fc92f44a16166ff65bc8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,7 +76,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/create-markup-subsystem',
             'version' => 'dev-copilot/create-markup-subsystem',
-            'reference' => 'a7b3793a0461b176a6a0d0116b9d399a1803fb76',
+            'reference' => '9678fb13dc6a7042d650fc92f44a16166ff65bc8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

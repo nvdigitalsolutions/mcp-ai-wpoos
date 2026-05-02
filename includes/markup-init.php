@@ -25,6 +25,8 @@ require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-validator.
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-rasterizer.php';
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-loop-interceptor.php';
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-rest-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-assets.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-admin-page.php';
 
 /**
  * Wire the markup subsystem hooks.
@@ -48,6 +50,56 @@ add_action(
 		$controller = new WP_MCP_AI_Markup_REST_Controller();
 		$controller->register_routes();
 	}
+);
+
+/**
+ * Register markup assets early so chat surfaces and the admin fallback
+ * page can enqueue them on demand.
+ */
+add_action(
+	'init',
+	static function () {
+		if ( class_exists( 'WP_MCP_AI_Markup_Assets' ) && function_exists( 'wp_register_script' ) ) {
+			WP_MCP_AI_Markup_Assets::register();
+		}
+	},
+	5
+);
+
+/**
+ * Auto-enqueue the chat client integration shim alongside the main
+ * chat bundle so SSE `markup_elicitation` events render the canvas
+ * widget without modifications to the chat bundle.
+ */
+add_action(
+	'wp_enqueue_scripts',
+	static function () {
+		if ( ! class_exists( 'WP_MCP_AI_Markup_Loop_Interceptor' ) ||
+			 ! WP_MCP_AI_Markup_Loop_Interceptor::is_enabled() ) {
+			return;
+		}
+		$chat_handle = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? 'wp-mcp-ai-chat' : 'wp-mcp-ai-chat';
+		if ( wp_script_is( $chat_handle, 'enqueued' ) ||
+			 wp_script_is( $chat_handle, 'registered' ) ) {
+			WP_MCP_AI_Markup_Assets::enqueue_widget();
+		}
+	},
+	20
+);
+
+/**
+ * Mount the admin fallback page (used by URL-mode elicitation).
+ */
+add_action(
+	'init',
+	static function () {
+		if ( ! is_admin() ) {
+			return;
+		}
+		$page = new WP_MCP_AI_Markup_Admin_Page();
+		$page->register();
+	},
+	30
 );
 
 /**

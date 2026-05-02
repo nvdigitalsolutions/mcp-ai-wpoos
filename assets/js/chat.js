@@ -9550,6 +9550,32 @@
             return;
         }
 
+        // Markup elicitation: dispatch a dedicated event so the markup
+        // subsystem (loaded lazily) can render the inline canvas widget
+        // inside the assistant bubble. This dispatch is independent of
+        // the cptTools allowlist below.
+        if (result && typeof result === 'object' && result.type === 'markup_elicitation' && result.request_id) {
+            try {
+                const markupEvent = new CustomEvent('wp-mcp-ai-chat:tool-result', {
+                    bubbles: true,
+                    detail: {
+                        toolName: toolName,
+                        result: result
+                    }
+                });
+                if (state.container) {
+                    state.container.dispatchEvent(markupEvent);
+                } else {
+                    document.dispatchEvent(markupEvent);
+                }
+            } catch (markupErr) {
+                // Non-fatal — surface in console for debugging only.
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] Markup elicitation dispatch failed', markupErr);
+                }
+            }
+        }
+
         // Only store results for CPT-related research tools
         const cptTools = [
             'research_quiz_topic',
