@@ -2,6 +2,11 @@
 
 This directory contains practical examples demonstrating how to use the WP MCP AI plugin features.
 
+## Subdirectories
+
+- **[`agents/`](./agents/)** — copy-ready examples of slim, layered `.github/agents/*.agent.md` files. See [`agents/README.md`](./agents/README.md) and the canonical template at [`.context/templates/agent-file-template.md`](../.context/templates/agent-file-template.md).
+- **`workflows/`** — example workflow YAML definitions for the workflow runner.
+
 ## Embedded Function Calling Examples
 
 The `embedded-function-calling-example.html` and `embedded-function-calling-example.js` files demonstrate how to use function calling (tool calling) with the embedded WebLLM client.

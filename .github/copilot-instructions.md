@@ -2,6 +2,19 @@
 
 This repository contains **Open Operator System (NV oOS)**, a WordPress plugin that provides an AI Assistant framework integrating with OpenAI GPT models, Gemini, Ollama, and MCP (Model Context Protocol) tools.
 
+## Multi-Agent Awareness
+
+This repo is developed by multiple AI agents. Before doing work, be aware of:
+
+- **`AGENTS.md`** — single source of truth for the agent inventory, context-loading strategy, and inter-agent coordination rules.
+- **`CLAUDE.md`** — Claude Code's per-turn context (naming conventions, PHP-compat, security, tool patterns, architecture).
+- **`.github/agents/*.agent.md`** — GitHub Custom Agents auto-discovered by Copilot Coding Agent and compatible runtimes. Each file declares one role-specific agent (its scope, tools, triggers). Per the layering rule in [`AGENTS.md` §2](../AGENTS.md), these files are intentionally slim — they **do not** restate naming/security/PHP-compat rules, so always cross-reference `AGENTS.md` + `CLAUDE.md` + `.context/` for those.
+- **`.context/*.md`** — subsystem context files loaded on-demand by all agents (conventions, security checklist, REST API, tool registry, chat UI, testing, Pro vs Base).
+- **`.bmad/agents/*.yaml`** — internal BMAD workflow agents that run inside NV oOS assistants (not coding-time agents).
+
+When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
+
+
 ## Repository Structure
 
 ```
