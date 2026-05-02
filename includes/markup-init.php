@@ -27,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-loop-inter
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-rest-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-assets.php';
 require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-admin-page.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/class-wp-mcp-ai-markup-telemetry.php';
 
 /**
  * Wire the markup subsystem hooks.
@@ -40,6 +41,9 @@ add_action(
 	static function () {
 		$interceptor = new WP_MCP_AI_Markup_Loop_Interceptor();
 		$interceptor->register();
+
+		$telemetry = new WP_MCP_AI_Markup_Telemetry();
+		$telemetry->register();
 	},
 	20
 );
@@ -119,5 +123,22 @@ add_action(
 	static function () {
 		$store = new WP_MCP_AI_Markup_Store();
 		$store->cleanup_expired();
+	}
+);
+
+/**
+ * Allow the markup_* event types produced by WP_MCP_AI_Markup_Telemetry
+ * to flow into the recent-activity feed when logging is enabled.
+ */
+add_filter(
+	'wp_mcp_ai_recent_activity_types',
+	static function ( $types ) {
+		if ( ! is_array( $types ) ) {
+			$types = array();
+		}
+		foreach ( WP_MCP_AI_Markup_Telemetry::outcomes() as $outcome ) {
+			$types[] = 'markup_' . $outcome;
+		}
+		return array_values( array_unique( $types ) );
 	}
 );

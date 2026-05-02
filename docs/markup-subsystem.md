@@ -186,6 +186,30 @@ The subsystem is enabled by default. Site admins can disable it via
 the `wp_mcp_ai_settings['markup_enabled']` option (toggle to `false`),
 or via the `wp_mcp_ai_markup_enabled` filter when no setting is saved.
 
+## Observability
+
+`WP_MCP_AI_Markup_Telemetry` (auto-registered from
+`includes/markup-init.php`) subscribes to the four lifecycle actions
+and aggregates outcome / per-tool / per-mode counters into the
+`wp_mcp_ai_markup_telemetry` option (non-autoloaded). Each event also
+flows through `WP_MCP_AI_Logger::log_event()` under the `markup_*`
+event-type family (`markup_created`, `markup_submitted`,
+`markup_validated`, `markup_completed`, `markup_cancelled`,
+`markup_invalid`, `markup_tool_error`) so the existing recent-activity
+buffer surfaces them when logging is enabled.
+
+Per-tool and per-mode buckets are capped (100 / 32 distinct keys) and
+overflow into a single `_other` bucket so the option cannot grow
+unbounded.
+
+```php
+$summary = WP_MCP_AI_Markup_Telemetry::get_summary();
+// $summary['counts']['completed']    -> int
+// $summary['tools']['edit_openai_image']['completed'] -> int
+// $summary['modes']['mask']['completed']              -> int
+// $summary['last_seen']['completed']                  -> unix timestamp
+```
+
 ## Security model
 
 * **Capability gate**: `edit_posts` for staff submissions; guest
