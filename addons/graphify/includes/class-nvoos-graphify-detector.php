@@ -35,6 +35,34 @@ class NV_oOS_Graphify_Detector {
 	const DEFAULT_CCT_ITEMS_LIMIT = 1000;
 
 	/**
+	 * Reason the last CCT detection pass returned no rows, if any.
+	 *
+	 * Populated by {@see detect_ccts()} when an early-exit branch is taken
+	 * (JetEngine missing, CCT module missing, no content types registered,
+	 * etc.). Surfaced in the build summary so admins can see why their
+	 * JetEngine CCTs aren't appearing in the graph.
+	 *
+	 * @since 0.7.x
+	 * @var string
+	 */
+	private static $last_ccts_skip_reason = '';
+
+	/**
+	 * Return the reason CCT detection was skipped on the most recent
+	 * {@see detect_ccts()} call, if any.
+	 *
+	 * The reason is reset at the top of each detect_ccts() invocation,
+	 * so callers always observe the value from the most recent run.
+	 *
+	 * @since 0.7.x
+	 *
+	 * @return string Empty string when CCT detection ran normally.
+	 */
+	public static function get_last_ccts_skip_reason() {
+		return self::$last_ccts_skip_reason;
+	}
+
+	/**
 	 * Collect all content items that should be represented as nodes.
 	 *
 	 * @since 0.5.0
@@ -305,27 +333,34 @@ class NV_oOS_Graphify_Detector {
 	 * @return array[]
 	 */
 	public static function detect_ccts( $since = '' ) {
+		self::$last_ccts_skip_reason = '';
+
 		if ( ! function_exists( 'jet_engine' ) ) {
+			self::$last_ccts_skip_reason = 'jetengine_not_active';
 			return array();
 		}
 
 		$engine = jet_engine();
 		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'get_module' ) ) {
+			self::$last_ccts_skip_reason = 'jetengine_modules_unavailable';
 			return array();
 		}
 
 		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
 		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			self::$last_ccts_skip_reason = 'cct_module_inactive';
 			return array();
 		}
 
 		$module = $module_wrapper->instance;
 		if ( empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			self::$last_ccts_skip_reason = 'cct_manager_unavailable';
 			return array();
 		}
 
 		$types = $module->manager->get_content_types();
 		if ( empty( $types ) || ! is_array( $types ) ) {
+			self::$last_ccts_skip_reason = 'no_content_types_registered';
 			return array();
 		}
 
@@ -423,6 +458,10 @@ class NV_oOS_Graphify_Detector {
 					'item' => $item,
 				);
 			}
+		}
+
+		if ( empty( $rows ) && '' === self::$last_ccts_skip_reason ) {
+			self::$last_ccts_skip_reason = 'all_content_types_empty_or_unindexed';
 		}
 
 		return $rows;
