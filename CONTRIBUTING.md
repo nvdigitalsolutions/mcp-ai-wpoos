@@ -200,6 +200,7 @@ Not every change requires the full workflow. Choose based on complexity:
   - [ ] ABSPATH guard on all new PHP files
 - [ ] Documentation updated if needed
 - [ ] Base vs Pro gating correct
+- [ ] If `.github/agents/*.agent.md` was added or changed, the Agent Inventory in `AGENTS.md` §1 was updated in the same PR, and the file follows the layering rule in `AGENTS.md` §2 (no duplicated naming/security/PHP-compat content)
 
 #### Release Gate (Phase 7)
 

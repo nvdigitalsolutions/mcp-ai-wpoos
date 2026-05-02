@@ -297,8 +297,11 @@ This repository is developed by multiple AI coding agents. You (Claude Code) are
 |-------|-------------|----------------------|
 | **Claude Code** | This file (`CLAUDE.md`) | — |
 | **GitHub Copilot** | `.github/copilot-instructions.md` | Shares coding standards, tool patterns |
+| **GitHub Custom Agents** | `.github/agents/*.agent.md` | Role-specific only — defers to `AGENTS.md` / `CLAUDE.md` / `.context/` for shared rules (see layering rule below) |
 | **OpenAI Codex** | `.codex/startup.sh` | Sandbox bootstrap only |
 | **BMAD Agents** | `.bmad/agents/*.yaml` | Specialized workflow roles (6 agents) |
+
+**Layering rule for `.github/agents/`:** Those files hold only agent-specific metadata + behavior (frontmatter, scope, examples, refusals). They MUST NOT restate naming/security/PHP-compat/architecture rules — those live in `AGENTS.md`, `CLAUDE.md`, and `.context/`. If you (Claude Code) are asked to author or edit a `*.agent.md` file, keep it slim and link to the canonical sources. See [`AGENTS.md` §2 "Layering rule"](AGENTS.md) for the full rule.
 
 **Key points for Claude Code sessions:**
 - Load `.context/conventions.md` + `.context/security-checklist.md` at minimum for every session.
