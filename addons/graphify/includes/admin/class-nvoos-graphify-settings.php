@@ -439,7 +439,7 @@ class NV_oOS_Graphify_Settings {
 				? $object->labels->name
 				: $object->label;
 			if ( '' === $plural ) {
-				$plural = ucfirst( str_replace( array( '_', '-' ), ' ', $slug ) );
+				$plural = ucwords( str_replace( array( '_', '-' ), ' ', $slug ) );
 			}
 			$labels[ $slug ] = $plural;
 		}
