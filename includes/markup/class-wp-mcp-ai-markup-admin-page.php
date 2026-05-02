@@ -102,6 +102,25 @@ class WP_MCP_AI_Markup_Admin_Page {
 			$request_id = '';
 		}
 
+		// Server-side ownership check: only render the editor scaffold when
+		// the request exists in the store *and* belongs to the current user.
+		// This prevents low-entropy request IDs from being enumerated through
+		// the rendered HTML — invalid IDs and IDs belonging to other users
+		// produce the same "not found" view. The downstream REST handler is
+		// still the authoritative gate for actual reads/writes.
+		$request_status = '';
+		if ( '' !== $request_id && class_exists( 'WP_MCP_AI_Markup_Store' ) ) {
+			$store     = new WP_MCP_AI_Markup_Store();
+			$persisted = $store->get( $request_id );
+			if ( ! $persisted instanceof WP_MCP_AI_Markup_Request ) {
+				$request_status = 'not_found';
+			} elseif ( $persisted->get_user_id() > 0 &&
+						(int) $persisted->get_user_id() !== get_current_user_id() ) {
+				// Belongs to another user — render the same "not found" view to avoid leaking ownership.
+				$request_status = 'not_found';
+			}
+		}
+
 		$config = array(
 			'requestId' => $request_id,
 			'fetchUrl'  => '' === $request_id ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/markup/' . rawurlencode( $request_id ) ) ),
@@ -127,6 +146,8 @@ class WP_MCP_AI_Markup_Admin_Page {
 			<h1><?php echo esc_html( $config['strings']['pageTitle'] ); ?></h1>
 			<?php if ( '' === $request_id ) : ?>
 				<div class="notice notice-error"><p><?php echo esc_html( $config['strings']['missingId'] ); ?></p></div>
+			<?php elseif ( 'not_found' === $request_status ) : ?>
+				<div class="notice notice-error"><p><?php echo esc_html( $config['strings']['notFound'] ); ?></p></div>
 			<?php else : ?>
 				<div id="wp-mcp-ai-markup-admin-status" class="notice notice-info">
 					<p><?php echo esc_html( $config['strings']['loading'] ); ?></p>
