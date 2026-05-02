@@ -164,6 +164,77 @@ class NV_oOS_Graphify_Structural_Extractor {
 			);
 		}
 
+		// Build JetEngine CCT nodes.
+		if ( ! empty( $detected['ccts'] ) && is_array( $detected['ccts'] ) ) {
+			foreach ( $detected['ccts'] as $row ) {
+				if ( empty( $row['item']['_ID'] ) || empty( $row['type'] ) ) {
+					continue;
+				}
+
+				$slug    = sanitize_key( $row['type'] );
+				$item    = $row['item'];
+				$item_id = absint( $item['_ID'] );
+				$node_id = NV_oOS_Graphify_Detector::cct_node_id( $slug, $item_id );
+
+				// Resolve a sensible label from the most common title-like fields,
+				// falling back to "{Type Name} #{ID}" when nothing matches.
+				$label = '';
+				foreach ( array( '_title', 'title', 'name', 'cct_name', 'label' ) as $field ) {
+					if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
+						$label = (string) $item[ $field ];
+						break;
+					}
+				}
+				if ( '' === $label ) {
+					$type_name = ! empty( $row['name'] ) ? $row['name'] : $slug;
+					/* translators: 1: CCT type name, 2: numeric item ID. */
+					$label = sprintf( __( '%1$s #%2$d', 'nvoos-graphify' ), $type_name, $item_id );
+				}
+
+				$properties = array(
+					'cct_slug' => $slug,
+					'cct_name' => isset( $row['name'] ) ? (string) $row['name'] : $slug,
+				);
+				foreach ( array( 'cct_status', 'cct_created', 'cct_modified' ) as $meta_key ) {
+					if ( isset( $item[ $meta_key ] ) ) {
+						$properties[ $meta_key ] = is_scalar( $item[ $meta_key ] )
+							? (string) $item[ $meta_key ]
+							: '';
+					}
+				}
+
+				$content_source = '';
+				foreach ( array( 'content', 'description', 'body', 'message', 'text' ) as $field ) {
+					if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
+						$content_source = (string) $item[ $field ];
+						break;
+					}
+				}
+
+				$nodes[] = array(
+					'node_id'      => $node_id,
+					'label'        => $label,
+					'type'         => 'cct_' . $slug,
+					'post_id'      => 0,
+					'url'          => '',
+					'properties'   => $properties,
+					'content_hash' => hash( 'sha256', $label . '|' . $content_source ),
+				);
+
+				// AUTHORED_BY edge when the CCT carries an author column.
+				if ( ! empty( $item['cct_author_id'] ) ) {
+					$author_node_id = NV_oOS_Graphify_Detector::user_node_id( $item['cct_author_id'] );
+					$edges[]        = array(
+						'source_node_id' => $node_id,
+						'target_node_id' => $author_node_id,
+						'relation'       => 'AUTHORED_BY',
+						'confidence'     => 1.0,
+						'provenance'     => 'EXTRACTED',
+					);
+				}
+			}
+		}
+
 		return compact( 'nodes', 'edges' );
 	}
 
