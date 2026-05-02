@@ -224,6 +224,25 @@ commands. Flags:
 
 Required capability for read access: `edit_posts`.
 
+### Admin dashboard
+
+A read-only **NV oOS → Markup Telemetry** submenu page renders the
+same summary as a server-rendered HTML dashboard:
+
+- Top row: **Created**, **Completed**, **Cancelled**, and a colour-coded
+  **Completion rate** card.
+- All seven outcome buckets in a single sortable-style table with
+  per-bucket "last seen" relative timestamps.
+- **By tool** and **By mode** breakdown tables sorted by `created`
+  (descending), tie-broken by `completed`.
+- A `Reset counters` form using `admin_post_wp_mcp_ai_reset_markup_telemetry`
+  with a nonce. The same `manage_options` check is enforced inside the
+  handler.
+
+The page slug is `wp-mcp-ai-markup-telemetry`. It is registered from
+`includes/markup-init.php` via `WP_MCP_AI_Admin_Markup_Telemetry_Page`
+and only mounts when `is_admin()` is true.
+
 ## Security model
 
 * **Capability gate**: `edit_posts` for staff submissions; guest

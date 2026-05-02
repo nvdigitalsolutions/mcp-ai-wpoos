@@ -92,7 +92,8 @@ add_action(
 );
 
 /**
- * Mount the admin fallback page (used by URL-mode elicitation).
+ * Mount the admin fallback page (used by URL-mode elicitation) and the
+ * read-only markup telemetry dashboard.
  */
 add_action(
 	'init',
@@ -102,6 +103,10 @@ add_action(
 		}
 		$page = new WP_MCP_AI_Markup_Admin_Page();
 		$page->register();
+
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-markup-telemetry-page.php';
+		$telemetry_page = new WP_MCP_AI_Admin_Markup_Telemetry_Page();
+		$telemetry_page->register();
 	},
 	30
 );
