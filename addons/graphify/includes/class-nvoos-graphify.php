@@ -697,7 +697,12 @@ class NV_oOS_Graphify {
 
 		foreach ( $neighbors as $nid ) {
 			$n = NV_oOS_Graphify_DB::get_node( $nid );
-			if ( $n && $n->post_id && $n->url && in_array( $n->type, array( 'post', 'page' ), true ) ) {
+			// Show every neighbour that is backed by a real, linkable WordPress
+			// post — i.e. has a numeric post_id and a public URL. This covers
+			// `post`, `page` and every public CPT (including JetEngine CPTs)
+			// while still excluding term/user/media/CCT/semantic nodes which
+			// store post_id = 0.
+			if ( $n && $n->post_id && $n->url ) {
 				$post_nodes[] = $n;
 			}
 		}
