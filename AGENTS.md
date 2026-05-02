@@ -105,6 +105,11 @@ GitHub Custom Agent files (`.github/agents/*.agent.md`) are auto-discovered by G
 
 This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md` / `.github/agents/`, and preserves `AGENTS.md` as the single source of truth.
 
+**Template + examples:**
+
+- Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — includes a read-only reviewer (`wp-rest-reviewer.agent.md`) and a writer (`tool-author.agent.md`) covering the read-only/writer and Base/Pro axes.
+
 ---
 
 ## 3. Agent Capabilities and Limitations
