@@ -263,7 +263,7 @@ class WP_MCP_AI_Memory_Tier_Manager {
 		}
 
 		try {
-			$handler->update_item(
+			$update_result = $handler->update_item(
 				array(
 					'_ID'      => (int) $record['_ID'],
 					// Phase A `tier` is stored alongside Letta-style memory_tier
@@ -281,13 +281,28 @@ class WP_MCP_AI_Memory_Tier_Manager {
 					),
 				)
 			);
+
+			if ( is_wp_error( $update_result ) && class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Memory tier manager: CCT update failed; transition event was still emitted.',
+					array(
+						'transition'    => $payload,
+						'cct_row_id'    => (int) $record['_ID'],
+						'error_code'    => $update_result->get_error_code(),
+						'error_message' => $update_result->get_error_message(),
+						'partial'       => true,
+					)
+				);
+			}
 		} catch ( Throwable $exception ) {
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_error(
-					'Memory tier manager: failed to persist transition.',
+					'Memory tier manager: exception during CCT update; transition event was still emitted.',
 					array(
-						'context_id' => $payload['context_id'],
+						'transition' => $payload,
+						'cct_row_id' => (int) $record['_ID'],
 						'message'    => $exception->getMessage(),
+						'partial'    => true,
 					)
 				);
 			}

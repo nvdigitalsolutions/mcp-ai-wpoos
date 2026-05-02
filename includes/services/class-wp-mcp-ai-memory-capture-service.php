@@ -170,7 +170,7 @@ class WP_MCP_AI_Memory_Capture_Service {
 
 			if ( ! empty( $result['context_id'] ) ) {
 				$context_id              = (string) $result['context_id'];
-				$transformed['stored_at'] = isset( $result['stored_at'] ) ? (string) $result['stored_at'] : current_time( 'mysql' );
+				$transformed['stored_at']  = isset( $result['stored_at'] ) ? (string) $result['stored_at'] : current_time( 'mysql', true );
 				$transformed['expires_at'] = isset( $result['expires_at'] ) ? (string) $result['expires_at'] : $transformed['expires_at'];
 			}
 		}
@@ -306,10 +306,13 @@ class WP_MCP_AI_Memory_Capture_Service {
 			$ttl = DAY_IN_SECONDS;
 		}
 
-		$now         = current_time( 'mysql' );
+		$now         = current_time( 'mysql', true );
 		$recorded_at = isset( $envelope['recorded_at'] ) ? sanitize_text_field( (string) $envelope['recorded_at'] ) : $now;
 		$valid_from  = isset( $envelope['valid_from'] ) ? sanitize_text_field( (string) $envelope['valid_from'] ) : $recorded_at;
 		$valid_until = isset( $envelope['valid_until'] ) ? sanitize_text_field( (string) $envelope['valid_until'] ) : '';
+		// Use GMT throughout so `expires_at`, `valid_from`, and `recorded_at`
+		// share one time source (avoids "expires before it was stored" bugs
+		// on sites where the WP timezone differs from UTC).
 		$expires_at  = gmdate( 'Y-m-d H:i:s', time() + $ttl );
 		if ( '' === $valid_until ) {
 			$valid_until = $expires_at;
