@@ -391,14 +391,60 @@ class NV_oOS_Graphify_Settings {
 			'nvoos-graphify-admin',
 			'nvoosGraphifyAdmin',
 			array(
-				'rest_url'   => esc_url_raw( rest_url( 'nvoos-graphify/v1' ) ),
-				'nonce'      => wp_create_nonce( 'wp_rest' ),
-				'ajax_url'   => admin_url( 'admin-ajax.php' ),
-				'ajax_nonce' => wp_create_nonce( 'nvoos_graphify_admin' ),
-				'height'     => esc_js( $settings['cytoscape_height'] ),
-				'max_nodes'  => absint( $settings['max_display_nodes'] ),
+				'rest_url'    => esc_url_raw( rest_url( 'nvoos-graphify/v1' ) ),
+				'nonce'       => wp_create_nonce( 'wp_rest' ),
+				'ajax_url'    => admin_url( 'admin-ajax.php' ),
+				'ajax_nonce'  => wp_create_nonce( 'nvoos_graphify_admin' ),
+				'height'      => esc_js( $settings['cytoscape_height'] ),
+				'max_nodes'   => absint( $settings['max_display_nodes'] ),
+				'type_labels' => self::get_type_labels(),
+				'i18n'        => array(
+					'all_types' => __( 'All types', 'nvoos-graphify' ),
+				),
 			)
 		);
+	}
+
+	/**
+	 * Build a slug => label map for every node type that may appear in the
+	 * graph. Includes the built-in semantic node types (term, topic, entity,
+	 * memory, agent, wing, room) plus every public custom post type / CCT
+	 * registered on the site, so the Graph Explorer's type filter can present
+	 * a friendly label for each.
+	 *
+	 * @since 0.7.0
+	 *
+	 * @return array<string,string>
+	 */
+	private static function get_type_labels() {
+		$labels = array(
+			'term'   => __( 'Terms', 'nvoos-graphify' ),
+			'topic'  => __( 'Topics', 'nvoos-graphify' ),
+			'entity' => __( 'Entities', 'nvoos-graphify' ),
+			'memory' => __( 'Memories', 'nvoos-graphify' ),
+			'agent'  => __( 'Agents', 'nvoos-graphify' ),
+			'wing'   => __( 'Wings', 'nvoos-graphify' ),
+			'room'   => __( 'Rooms', 'nvoos-graphify' ),
+		);
+
+		// Include every public post type (built-in and custom) so CPTs and
+		// JetEngine-registered content types show up in the filter when
+		// nodes for them exist in the graph.
+		$post_type_objects = get_post_types( array( 'public' => true ), 'objects' );
+		foreach ( $post_type_objects as $slug => $object ) {
+			if ( 'attachment' === $slug ) {
+				continue;
+			}
+			$plural = isset( $object->labels->name ) && '' !== $object->labels->name
+				? $object->labels->name
+				: $object->label;
+			if ( '' === $plural ) {
+				$plural = ucfirst( str_replace( array( '_', '-' ), ' ', $slug ) );
+			}
+			$labels[ $slug ] = $plural;
+		}
+
+		return $labels;
 	}
 
 	// -------------------------------------------------------------------------
@@ -478,15 +524,6 @@ class NV_oOS_Graphify_Settings {
 					<input type="text" id="nvoos-graphify-search" placeholder="<?php esc_attr_e( 'Search nodes…', 'nvoos-graphify' ); ?>">
 					<select id="nvoos-graphify-type-filter">
 						<option value=""><?php esc_html_e( 'All types', 'nvoos-graphify' ); ?></option>
-						<option value="post"><?php esc_html_e( 'Posts', 'nvoos-graphify' ); ?></option>
-						<option value="page"><?php esc_html_e( 'Pages', 'nvoos-graphify' ); ?></option>
-						<option value="term"><?php esc_html_e( 'Terms', 'nvoos-graphify' ); ?></option>
-						<option value="topic"><?php esc_html_e( 'Topics', 'nvoos-graphify' ); ?></option>
-						<option value="entity"><?php esc_html_e( 'Entities', 'nvoos-graphify' ); ?></option>
-						<option value="memory"><?php esc_html_e( 'Memories', 'nvoos-graphify' ); ?></option>
-						<option value="agent"><?php esc_html_e( 'Agents', 'nvoos-graphify' ); ?></option>
-						<option value="wing"><?php esc_html_e( 'Wings', 'nvoos-graphify' ); ?></option>
-						<option value="room"><?php esc_html_e( 'Rooms', 'nvoos-graphify' ); ?></option>
 					</select>
 					<input type="text" id="nvoos-graphify-agent-filter" placeholder="<?php esc_attr_e( 'Agent ID…', 'nvoos-graphify' ); ?>" style="width:140px;">
 					<input type="text" id="nvoos-graphify-wing-filter" placeholder="<?php esc_attr_e( 'Wing…', 'nvoos-graphify' ); ?>" style="width:120px;">
