@@ -747,6 +747,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_PARA_List_Areas'              => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-list-areas.php',
 			'WP_MCP_AI_Tool_PARA_Weekly_Review'           => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-weekly-review.php',
 			'WP_MCP_AI_Tool_PARA_Promote_Resource_To_Project' => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-para-promote-resource-to-project.php',
+			// MemPalace capture tool (Phase B1) — decision/status/ADR.
+			'WP_MCP_AI_Tool_PM_Capture_Decision'          => WP_MCP_AI_PRO_PATH . 'includes/tools/project-management/class-wp-mcp-ai-tool-pm-capture-decision.php',
 			// QMS (ISO 9001:2015 Clause 7.5) tools (Pro feature - v1.2.0).
 			'WP_MCP_AI_Tool_QMS_Create_Controlled_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-create-controlled-document.php',
 			'WP_MCP_AI_Tool_QMS_Submit_For_Review'        => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-qms-submit-for-review.php',
@@ -880,6 +882,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Search_Upwork_Jobs'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-search-upwork-jobs.php',
 				'WP_MCP_AI_Tool_Score_Upwork_Job'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-score-upwork-job.php',
 				'WP_MCP_AI_Tool_Draft_Upwork_Proposal' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-draft-upwork-proposal.php',
+				// MemPalace capture tool (Phase B1).
+				'WP_MCP_AI_Tool_CRM_Capture_Interaction' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-capture-interaction.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
@@ -1081,6 +1085,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Verify_Prescription_Interactions' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-verify-prescription-interactions.php',
 				'WP_MCP_AI_Tool_Generate_Visit_Summary'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-generate-visit-summary.php',
 				'WP_MCP_AI_Tool_Merge_Duplicate_Members'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-merge-duplicate-members.php',
+				// MemPalace capture tool (Phase B1) — clinical encounter (PHI, tier=core).
+				'WP_MCP_AI_Tool_Health_Capture_Encounter'         => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/class-wp-mcp-ai-tool-health-capture-encounter.php',
 			);
 			$pro_tools      = array_merge( $pro_tools, $wellness_tools );
 		}
@@ -1254,6 +1260,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Create_Content_Calendar'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-content-calendar.php',
 				'WP_MCP_AI_Tool_Generate_Post_Ideas'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-generate-post-ideas.php',
 				'WP_MCP_AI_Tool_Social_Listening_Trends'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-social-listening-trends.php',
+				// MemPalace capture tool (Phase B1) — voice + post performance.
+				'WP_MCP_AI_Tool_Social_Capture_Post_Performance' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-social-capture-post-performance.php',
 			);
 			$pro_tools                  = array_merge( $pro_tools, $social_media_toolkit_tools );
 		}
@@ -1468,6 +1476,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Excel data tools.
 				'WP_MCP_AI_Tool_Excel_Data_Import'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-import.php',
 				'WP_MCP_AI_Tool_Excel_Data_Export'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-export.php',
+				// MemPalace capture tool (Phase B1) — style + drafts; allows summarisation discipline.
+				'WP_MCP_AI_Tool_DocGen_Capture_Style_Memory' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-docgen-capture-style-memory.php',
 			);
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}
