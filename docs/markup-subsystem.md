@@ -1,8 +1,8 @@
 # Markup Subsystem
 
-> **Status:** Foundation (PR 1) — classes, REST routes, and hooks are
-> shipped. The chat canvas widget (PR 2) and the Pro toolkit wiring
-> (PR 3) build on top of this layer.
+> **Status:** Foundation (PR 1) ✅ · Chat canvas widget (PR 2) ✅ · First
+> markup-aware tool — `edit_openai_image` (PR 4) ✅ · `document_pdf`
+> mode (PR 3) and Settings UI (PR 5) deferred to follow-up PRs.
 
 The Markup Subsystem lets tools hand back an **editable canvas** in the
 chat surface so the user can visually explain what they want
@@ -67,7 +67,17 @@ private protocol:
 ## Tool authoring
 
 Implement `WP_MCP_AI_Markup_Aware_Tool_Interface` alongside the
-existing tool interface:
+existing tool interface. The first first-party adopter is the
+`edit_openai_image` tool (`includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php`),
+which exposes a new optional `request_user_mask` boolean parameter:
+when set to `true` and no `mask_id` has been provided, the tool
+short-circuits the agentic loop with a `mask`-mode markup elicitation
+on the source image. The user's painted mask is rasterized into an
+RGBA PNG (alpha=0 inside the painted region) and the resulting
+attachment ID is fed back into the tool as `mask_id` before
+`execute()` is re-invoked.
+
+Other markup-aware tools follow the same pattern:
 
 ```php
 class WP_MCP_AI_Tool_Image_Inpainting
