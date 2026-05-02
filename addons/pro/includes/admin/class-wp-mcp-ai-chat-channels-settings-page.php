@@ -131,30 +131,58 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			return;
 		}
 
-		$asset_file = WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.asset.php';
+		$build_dir = WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/';
+		$build_url = WP_MCP_AI_PRO_URL . 'build/tma-template-builder/';
+		$js_file   = $build_dir . 'tma-template-builder.js';
+		$css_file  = $build_dir . 'tma-template-builder.css';
 
-		if ( ! file_exists( $asset_file ) ) {
-			// Assets should always be present; log for debugging if missing.
+		if ( ! file_exists( $js_file ) ) {
+			// Bundle should always be present; log for debugging if missing.
 			error_log( 'WP_MCP_AI: TMA Template Builder compiled assets not found. Re-activate the plugin or contact support.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			return;
 		}
 
-		$asset = require $asset_file;
+		/*
+		 * The TMA Template Builder bundle is produced by webpack.config.tma.js,
+		 * which intentionally strips the DependencyExtractionWebpackPlugin so
+		 * that React, ReactDOM and the @wordpress/element wrapper are bundled
+		 * directly into the standalone IIFE. As a result, no companion
+		 * `*.asset.php` manifest is emitted. We therefore declare an empty
+		 * dependency array and derive a cache-busting version from filemtime,
+		 * falling back to the plugin's version constant when filemtime fails
+		 * (e.g. permission issues or stat races).
+		 */
+		$asset_file = $build_dir . 'tma-template-builder.asset.php';
+		if ( file_exists( $asset_file ) ) {
+			$asset            = require $asset_file;
+			$js_dependencies  = isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
+			$asset_version    = isset( $asset['version'] ) ? $asset['version'] : null;
+		} else {
+			$js_dependencies = array();
+			$asset_version   = null;
+		}
+
+		if ( empty( $asset_version ) ) {
+			$mtime         = @filemtime( $js_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$asset_version = $mtime ? (string) $mtime : ( defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : false );
+		}
 
 		wp_enqueue_script(
 			'mcp-ai-tma-template-builder',
-			WP_MCP_AI_PRO_URL . 'build/tma-template-builder/tma-template-builder.js',
-			$asset['dependencies'],
-			$asset['version'],
+			$build_url . 'tma-template-builder.js',
+			$js_dependencies,
+			$asset_version,
 			true
 		);
 
-		wp_enqueue_style(
-			'mcp-ai-tma-template-builder',
-			WP_MCP_AI_PRO_URL . 'build/tma-template-builder/tma-template-builder.css',
-			array(),
-			$asset['version']
-		);
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style(
+				'mcp-ai-tma-template-builder',
+				$build_url . 'tma-template-builder.css',
+				array(),
+				$asset_version
+			);
+		}
 
 		// Localize data for the React component.
 		wp_localize_script(
