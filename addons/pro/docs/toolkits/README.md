@@ -74,9 +74,15 @@ Each page below covers:
 
 ## Healthcare & Compliance
 
+The three healthcare sub-toolkits share a unified umbrella under
+[`addons/pro/includes/tools/healthcare/`](../../includes/tools/healthcare/README.md):
+shared engine, codes registry, FHIR R4 builders, PHI audit ledger, and
+capability map.
+
 | Toolkit | Setting | Tools | Doc |
 |---|---|---|---|
-| Health & Wellness Management | `enable_health_wellness_management` | 15+ | [health-wellness.md](health-wellness.md) |
+| Medical Vitals | `enable_medical_vitals` | 7+ | [medical-vitals.md](medical-vitals.md) |
+| Health & Wellness Management | `enable_health_wellness_management` | 30+ | [health-wellness.md](health-wellness.md) |
 | Healthcare Imaging | `enable_healthcare_imaging` | viewer + REST | [healthcare-imaging.md](healthcare-imaging.md) |
 | Regulatory Registration | `enable_regulatory_registration_toolkit` | 59 | [regulatory-registration.md](regulatory-registration.md) |
 

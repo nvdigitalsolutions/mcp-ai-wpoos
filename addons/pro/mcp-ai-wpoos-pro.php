@@ -459,13 +459,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Quiz Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
-		// Load Health and Wellness Management CPT registration (Pro feature).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
-
-		// Load Healthcare Imaging Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-imaging-toolkit-init.php';
-		}
+		// Load Healthcare Toolkit (unified umbrella for Medical Vitals,
+		// Health & Wellness, and Healthcare Imaging).  The unified
+		// bootstrap eagerly loads shared infrastructure (engine, codes,
+		// FHIR builders, audit ledger, capability map) and conditionally
+		// loads each sub-toolkit based on its `enable_*` setting.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/healthcare-toolkit-init.php';
 
 		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
@@ -1057,13 +1056,63 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			}
 		}
 
+		// Add Medical Vitals sub-toolkit (Phase B) tools if enabled.
+		// Defaults to the value of `enable_health_wellness_management` for
+		// backwards compatibility (see WP_MCP_AI_Healthcare_Engine).
+		$vitals_enabled = array_key_exists( 'enable_medical_vitals', $settings )
+			? ! empty( $settings['enable_medical_vitals'] )
+			: ! empty( $settings['enable_health_wellness_management'] );
+		if ( $vitals_enabled ) {
+			$vitals_tools = array(
+				'WP_MCP_AI_Tool_Flag_Abnormal_Vitals'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-flag-abnormal-vitals.php',
+				'WP_MCP_AI_Tool_Analyze_Vital_Trends'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-analyze-vital-trends.php',
+				'WP_MCP_AI_Tool_Compute_BMI_And_Growth_Percentile' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-compute-bmi-and-growth-percentile.php',
+				'WP_MCP_AI_Tool_Get_Vaccination_Schedule'       => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/vitals/class-wp-mcp-ai-tool-get-vaccination-schedule.php',
+			);
+			$pro_tools    = array_merge( $pro_tools, $vitals_tools );
+		}
+
+		// Add Health & Wellness breadth (Phase C) tools if enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$wellness_tools = array(
+				'WP_MCP_AI_Tool_Check_Member_Allergies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-check-member-allergies.php',
+				'WP_MCP_AI_Tool_Get_Health_Timeline'              => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-get-health-timeline.php',
+				'WP_MCP_AI_Tool_Link_Prescription_To_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-link-prescription-to-record.php',
+				'WP_MCP_AI_Tool_Verify_Prescription_Interactions' => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-verify-prescription-interactions.php',
+				'WP_MCP_AI_Tool_Generate_Visit_Summary'           => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-generate-visit-summary.php',
+				'WP_MCP_AI_Tool_Merge_Duplicate_Members'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/wellness/class-wp-mcp-ai-tool-merge-duplicate-members.php',
+			);
+			$pro_tools      = array_merge( $pro_tools, $wellness_tools );
+		}
+
 		// Add Healthcare Imaging tools if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
+			// Helper: DICOMweb HTTP client (not a tool — required by Phase D tools).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-dicomweb-client.php';
+
 			$imaging_tools = array(
-				'WP_MCP_AI_Tool_Manage_Imaging_Studies'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
-				'WP_MCP_AI_Tool_Interpret_Imaging_Study'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-interpret-imaging-study.php',
+				'WP_MCP_AI_Tool_Manage_Imaging_Studies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-imaging-studies.php',
+				'WP_MCP_AI_Tool_Interpret_Imaging_Study'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-interpret-imaging-study.php',
+				// Phase D — DICOMweb depth.
+				'WP_MCP_AI_Tool_Connect_DICOMweb'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-connect-dicomweb.php',
+				'WP_MCP_AI_Tool_Import_DICOM_Study'               => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-import-dicom-study.php',
+				'WP_MCP_AI_Tool_Export_DICOM_Study'               => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-export-dicom-study.php',
+				'WP_MCP_AI_Tool_Attach_Radiology_Report'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-attach-radiology-report.php',
+				'WP_MCP_AI_Tool_Compare_Imaging_Studies'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-compare-imaging-studies.php',
+				'WP_MCP_AI_Tool_Get_Imaging_Hanging_Protocol'     => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/imaging/class-wp-mcp-ai-tool-get-imaging-hanging-protocol.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $imaging_tools );
+		}
+
+		// Add Healthcare Interoperability tools (Phase E) — gated on health & wellness toggle.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$interop_tools = array(
+				'WP_MCP_AI_Tool_Import_FHIR_Bundle'      => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-fhir-bundle.php',
+				'WP_MCP_AI_Tool_Export_CCDA_Document'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-export-ccda-document.php',
+				'WP_MCP_AI_Tool_Import_HL7v2_Message'    => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-import-hl7v2-message.php',
+				'WP_MCP_AI_Tool_Connect_To_EHR'          => WP_MCP_AI_PRO_PATH . 'includes/tools/healthcare/interop/class-wp-mcp-ai-tool-connect-to-ehr.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $interop_tools );
 		}
 
 		// Vehicle Estimation tools — always available Pro tools.
@@ -2035,12 +2084,45 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// AI-Assisted Data Entry (agentic flow tools for guided CPT population).
 			$pro_tools['guide_health_record_creation'] = 'wordpress-core';
 			$pro_tools['parse_health_information']     = 'wordpress-core';
+
+			// Phase C — Health & Wellness breadth.
+			$pro_tools['check_member_allergies']            = 'wordpress-core';
+			$pro_tools['get_health_timeline']               = 'wordpress-core';
+			$pro_tools['link_prescription_to_record']       = 'wordpress-core';
+			$pro_tools['verify_prescription_interactions']  = 'wordpress-core';
+			$pro_tools['generate_visit_summary']            = 'wordpress-core';
+			$pro_tools['merge_duplicate_members']           = 'wordpress-core';
+		}
+
+		// Add Medical Vitals (Phase B) tool mappings if enabled.
+		$vitals_mappings_enabled = array_key_exists( 'enable_medical_vitals', $settings )
+			? ! empty( $settings['enable_medical_vitals'] )
+			: ! empty( $settings['enable_health_wellness_management'] );
+		if ( $vitals_mappings_enabled ) {
+			$pro_tools['flag_abnormal_vitals']             = 'wordpress-core';
+			$pro_tools['analyze_vital_trends']             = 'wordpress-core';
+			$pro_tools['compute_bmi_and_growth_percentile'] = 'wordpress-core';
+			$pro_tools['get_vaccination_schedule']         = 'wordpress-core';
 		}
 
 		// Add Healthcare Imaging tool mappings if enabled.
 		if ( ! empty( $settings['enable_healthcare_imaging'] ) ) {
-			$pro_tools['manage_imaging_studies']   = 'wordpress-core';
-			$pro_tools['interpret_imaging_study']  = 'wordpress-core';
+			$pro_tools['manage_imaging_studies']         = 'wordpress-core';
+			$pro_tools['interpret_imaging_study']        = 'wordpress-core';
+			$pro_tools['connect_dicomweb']               = 'external-tools';
+			$pro_tools['import_dicom_study']             = 'external-tools';
+			$pro_tools['export_dicom_study']             = 'external-tools';
+			$pro_tools['attach_radiology_report']        = 'wordpress-core';
+			$pro_tools['compare_imaging_studies']        = 'wordpress-core';
+			$pro_tools['get_imaging_hanging_protocol']   = 'wordpress-core';
+		}
+
+		// Add Healthcare Interoperability tool mappings (Phase E) if H&W is enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$pro_tools['import_fhir_bundle']    = 'wordpress-core';
+			$pro_tools['export_ccda_document']  = 'wordpress-core';
+			$pro_tools['import_hl7v2_message']  = 'wordpress-core';
+			$pro_tools['connect_to_ehr']        = 'external-tools';
 		}
 
 		// Vehicle Estimation tool mappings — always available.

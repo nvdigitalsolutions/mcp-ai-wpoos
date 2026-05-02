@@ -4,6 +4,28 @@
 
 This implementation creates a comprehensive Health and Wellness management system for the Open Operator System (NV oOS), inspired by modern AI health platforms like Claude for Healthcare and ChatGPT Health. The system provides secure, AI-powered management of health records, appointments, prescriptions, and wellness data for both people and pets.
 
+## Healthcare Toolkit Umbrella (Phase A — 1.3.0)
+
+Health & Wellness is one of three sub-toolkits under the unified
+[Healthcare Toolkit umbrella](../includes/tools/healthcare/README.md):
+
+| Sub-toolkit | Setting | Doc |
+|---|---|---|
+| Medical Vitals | `enable_medical_vitals` | [`docs/toolkits/medical-vitals.md`](toolkits/medical-vitals.md) |
+| Health & Wellness | `enable_health_wellness_management` | [`docs/toolkits/health-wellness.md`](toolkits/health-wellness.md) |
+| Healthcare Imaging | `enable_healthcare_imaging` | [`docs/toolkits/healthcare-imaging.md`](toolkits/healthcare-imaging.md) |
+
+The umbrella ships shared infrastructure used by all three sub-toolkits:
+
+* `WP_MCP_AI_Healthcare_Engine` — units, identity, settings, reference ranges
+* `WP_MCP_AI_Healthcare_Codes` — ICD-10-CM, SNOMED CT, LOINC, RxNorm, CVX, CPT, DICOM modalities
+* `WP_MCP_AI_Healthcare_FHIR` — FHIR R4 resource builders
+* `WP_MCP_AI_Healthcare_Audit` — unified PHI audit ledger
+* `WP_MCP_AI_Healthcare_Capabilities` — clinical role-to-capability map
+* `wp_mcp_ai_healthcare_settings` — per-toolkit settings option
+
+The unified bootstrap lives at `addons/pro/includes/healthcare-toolkit-init.php`.  The previous `healthcare-imaging-toolkit-init.php` is a deprecated forwarder that includes the new bootstrap; partner code that requires it directly continues to work.
+
 ## Architecture
 
 ### Custom Post Types (CPTs)

@@ -575,6 +575,22 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to log vital signs.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		/**
+		 * Fires before a vitals log entry is persisted.
+		 *
+		 * Allows partner code to mutate the incoming arguments (e.g. unit
+		 * conversion, de-identification, contextual enrichment) prior to
+		 * write.  Filters $arguments and returns the mutated array.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param array $arguments Tool arguments destined for storage.
+		 * @param int   $member_id Target member post ID.
+		 * @param array $context   Tool execution context.
+		 */
+		$arguments = apply_filters( 'wp_mcp_ai_healthcare_before_vital_log', $arguments, $member_id, $context );
+		do_action( 'wp_mcp_ai_healthcare_before_vital_log_action', $arguments, $member_id, $context );
+
 		$measurement_date = isset( $arguments['measurement_date'] ) ? sanitize_text_field( $arguments['measurement_date'] ) : current_time( 'Y-m-d' );
 		$measurement_time = isset( $arguments['measurement_time'] ) ? sanitize_text_field( $arguments['measurement_time'] ) : current_time( 'H:i' );
 
@@ -1031,7 +1047,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Check for abnormal values and generate alerts.
 		$alerts = $this->generate_alerts( $measurements );
 
-		return array(
+		$response = array(
 			'success'           => true,
 			'message'           => __( 'Vital signs logged successfully.', 'mcp-ai-wpoos-pro' ),
 			'entry_id'          => $entry_id,
@@ -1044,6 +1060,37 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'measurements'      => $measurements,
 			'alerts'            => $alerts,
 		);
+
+		// Mirror into the auxiliary `mcp_ai_hc_vital_log` CPT when registered.
+		// The existing options/CCT storage above remains the primary store.
+		if ( class_exists( 'WP_MCP_AI_Healthcare_Vital_Log_CPT' ) ) {
+			$cpt_id = WP_MCP_AI_Healthcare_Vital_Log_CPT::insert(
+				$member_id,
+				array(
+					'measurement_date' => $measurement_date,
+					'measurement_time' => $measurement_time,
+					'measurements'     => $measurements,
+					'source'           => $source,
+				)
+			);
+			if ( ! is_wp_error( $cpt_id ) && $cpt_id > 0 ) {
+				$response['hc_vital_log_id'] = (int) $cpt_id;
+			}
+		}
+
+		/**
+		 * Fires after a vitals log entry has been persisted.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param array $response  Tool response payload.
+		 * @param int   $member_id Target member post ID.
+		 * @param array $arguments Original tool arguments (post-filter).
+		 * @param array $context   Tool execution context.
+		 */
+		do_action( 'wp_mcp_ai_healthcare_after_vital_log', $response, $member_id, $arguments, $context );
+
+		return $response;
 	}
 
 	/**

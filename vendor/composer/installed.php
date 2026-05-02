@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/integrate-industry-standards-search',
-        'version' => 'dev-copilot/integrate-industry-standards-search',
-        'reference' => '1707fa312e71f222f650ab28822db6db550a35f7',
+        'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
+        'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
+        'reference' => 'fe6da506831bfbd16771f506c6b6978211475c0a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/integrate-industry-standards-search',
-            'version' => 'dev-copilot/integrate-industry-standards-search',
-            'reference' => '1707fa312e71f222f650ab28822db6db550a35f7',
+            'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
+            'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
+            'reference' => 'fe6da506831bfbd16771f506c6b6978211475c0a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
