@@ -4780,7 +4780,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
-				$result = $tool->execute( $prepared_arguments, $context );
+				/**
+				 * Filter that allows interceptors (e.g. the markup subsystem) to
+				 * short-circuit tool execution. When the filter returns a non-null
+				 * value, that value is used as the tool result and `execute()` is
+				 * skipped.
+				 *
+				 * @since 1.3.0
+				 * @param mixed                    $short_circuit Default null.
+				 * @param WP_MCP_AI_Tool_Interface $tool          Tool being executed.
+				 * @param array                    $prepared_arguments Tool arguments.
+				 * @param array                    $context       Execution context.
+				 */
+				$short_circuit = apply_filters( 'wp_mcp_ai_pre_execute_tool', null, $tool, $prepared_arguments, $context );
+
+				if ( null !== $short_circuit ) {
+					$result = $short_circuit;
+				} else {
+					$result = $tool->execute( $prepared_arguments, $context );
+				}
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
@@ -9876,7 +9894,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
-				$result = $tool->execute( $arguments, $context );
+				/**
+				 * Filter that allows interceptors (e.g. the markup subsystem) to
+				 * short-circuit tool execution inside the agentic loop. When the
+				 * filter returns a non-null value, that value is used as the
+				 * tool result and `execute()` is skipped.
+				 *
+				 * @since 1.3.0
+				 * @param mixed                    $short_circuit Default null.
+				 * @param WP_MCP_AI_Tool_Interface $tool          Tool being executed.
+				 * @param array                    $arguments     Tool arguments.
+				 * @param array                    $context       Execution context.
+				 */
+				$short_circuit = apply_filters( 'wp_mcp_ai_pre_execute_tool', null, $tool, $arguments, $context );
+
+				if ( null !== $short_circuit ) {
+					$result = $short_circuit;
+				} else {
+					$result = $tool->execute( $arguments, $context );
+				}
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );

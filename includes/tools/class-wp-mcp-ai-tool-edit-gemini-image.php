@@ -22,11 +22,25 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
+require_once WP_MCP_AI_PATH . 'includes/markup/interface-wp-mcp-ai-markup-aware-tool.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
+ *
+ * Implements {@see WP_MCP_AI_Markup_Aware_Tool_Interface} so the LLM
+ * can defer the *region of interest* to the user. When
+ * `request_user_region` is set and a source attachment is resolvable,
+ * `needs_markup()` short-circuits the agentic loop with a
+ * `region`-mode markup elicitation. Because Gemini has no native mask
+ * channel, the user's painted rectangle is communicated through
+ * **prompt augmentation**: `consume_markup()` denormalizes the rect to
+ * pixel coordinates, appends an explicit "Apply changes only within
+ * the region x=…, y=…, width=…, height=… (out of WxH pixels)"
+ * directive to the prompt, persists the rect on `target_region` for
+ * downstream observability, clears the elicitation flag, and re-runs
+ * `execute()`.
  */
-class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
+class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface, WP_MCP_AI_Markup_Aware_Tool_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
@@ -79,54 +93,59 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'type'                 => 'object',
 			'properties'           => array_merge(
 				array(
-					'prompt'           => array(
+					'prompt'              => array(
 						'type'        => 'string',
 						'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'mcp-ai-wpoos' ),
 					),
-					'attachment_id'    => array(
+					'attachment_id'       => array(
 						'type'        => 'integer',
 						'description' => __( 'WordPress attachment ID of the image to edit.', 'mcp-ai-wpoos' ),
 					),
-					'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'mcp-ai-wpoos' ) ),
-					'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ) ),
-					'image_url'        => array(
+					'file_id'             => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'mcp-ai-wpoos' ) ),
+					'url'                 => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ) ),
+					'image_url'           => array(
 						'type'        => 'string',
 						'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'mcp-ai-wpoos' ),
 					),
-					'image_data'       => array(
+					'image_data'          => array(
 						'type'        => 'string',
 						'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'mcp-ai-wpoos' ),
 					),
-					'source_mime_type' => array(
+					'source_mime_type'    => array(
 						'type'        => 'string',
 						'description' => __( 'MIME type of the source image data (required when using image_data).', 'mcp-ai-wpoos' ),
 					),
-					'model'            => array(
+					'model'               => array(
 						'type'        => 'string',
 						'description' => __( 'Gemini image model to use.', 'mcp-ai-wpoos' ),
 						'default'     => $defaults['model'],
 					),
-					'aspect_ratio'     => array(
+					'aspect_ratio'        => array(
 						'type'        => 'string',
 						'description' => __( 'Aspect ratio for the edited image.', 'mcp-ai-wpoos' ),
 						'enum'        => $aspect_choices,
 						'default'     => $defaults['aspect_ratio'],
 					),
-					'mime_type'        => array(
+					'mime_type'           => array(
 						'type'        => 'string',
 						'description' => __( 'Preferred MIME type for the saved image.', 'mcp-ai-wpoos' ),
 						'enum'        => $mime_choices,
 						'default'     => $defaults['mime_type'],
 					),
-					'file_name'        => array(
+					'file_name'           => array(
 						'type'        => 'string',
 						'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 					),
-					'timeout'          => array(
+					'timeout'             => array(
 						'type'        => 'integer',
 						'description' => __( 'Override the Gemini request timeout in seconds.', 'mcp-ai-wpoos' ),
 						'minimum'     => 5,
 						'maximum'     => 300,
+					),
+					'request_user_region' => array(
+						'type'        => 'boolean',
+						'description' => __( 'When true, pause execution and ask the user to draw a rectangle on the source image marking the region to edit. Because Gemini has no native mask channel, the rectangle is converted to an explicit prompt directive ("Apply changes only within the region x=…, y=…, width=…, height=…") so the model focuses its edit on that area.', 'mcp-ai-wpoos' ),
+						'default'     => false,
 					),
 				),
 				$this->get_output_format_parameter_schema()
@@ -1420,5 +1439,170 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * Decide whether to elicit an edit region from the user.
+	 *
+	 * Returns a markup request when:
+	 *  - `request_user_region` is true; and
+	 *  - no `target_region` rectangle was already supplied; and
+	 *  - the source attachment resolves to an image; and
+	 *  - the markup classes are available (foundation PR loaded).
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return WP_MCP_AI_Markup_Request|null
+	 */
+	public function needs_markup( array $arguments, array $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Markup_Request' ) ) {
+			return null;
+		}
+		if ( empty( $arguments['request_user_region'] ) ) {
+			return null;
+		}
+		// Caller already specified the region — nothing to elicit.
+		if ( ! empty( $arguments['target_region'] ) && is_array( $arguments['target_region'] ) ) {
+			return null;
+		}
+
+		// Reuse the same enrichment path as execute() so
+		// chat-message-derived attachment IDs are honoured here too.
+		$enriched      = $this->enrich_arguments_from_messages( $arguments, $context );
+		$attachment_id = isset( $enriched['attachment_id'] ) ? absint( $enriched['attachment_id'] ) : 0;
+		if ( $attachment_id <= 0 ) {
+			$candidate_url = '';
+			if ( ! empty( $enriched['url'] ) ) {
+				$candidate_url = (string) $enriched['url'];
+			} elseif ( ! empty( $enriched['image_url'] ) ) {
+				$candidate_url = (string) $enriched['image_url'];
+			}
+			if ( '' !== $candidate_url && method_exists( $this, 'resolve_attachment_id_from_url' ) ) {
+				$resolved = $this->resolve_attachment_id_from_url( $candidate_url );
+				if ( is_int( $resolved ) && $resolved > 0 ) {
+					$attachment_id = $resolved;
+				}
+			}
+		}
+		if ( $attachment_id <= 0 || ! wp_attachment_is_image( $attachment_id ) ) {
+			return null;
+		}
+
+		$meta = wp_get_attachment_metadata( $attachment_id );
+		$w    = isset( $meta['width'] ) ? (int) $meta['width'] : 0;
+		$h    = isset( $meta['height'] ) ? (int) $meta['height'] : 0;
+
+		$prompt       = isset( $arguments['prompt'] ) ? sanitize_textarea_field( (string) $arguments['prompt'] ) : '';
+		$instructions = '' !== $prompt
+			? sprintf(
+				/* translators: %s: edit prompt */
+				__( 'Drag a rectangle around the area you want Gemini to edit. Prompt: %s', 'mcp-ai-wpoos' ),
+				$prompt
+			)
+			: __( 'Drag a rectangle around the area you want Gemini to edit.', 'mcp-ai-wpoos' );
+
+		try {
+			return new WP_MCP_AI_Markup_Request(
+				array(
+					'tool_slug'      => $this->get_slug(),
+					'target_type'    => 'image',
+					'mode'           => 'region',
+					'target'         => array(
+						'attachment_id' => $attachment_id,
+						'width'         => $w,
+						'height'        => $h,
+					),
+					'instructions'   => $instructions,
+					'tool_arguments' => $arguments,
+					'tool_context'   => $context,
+					'assistant_id'   => isset( $context['assistant_id'] ) ? (int) $context['assistant_id'] : 0,
+				)
+			);
+		} catch ( Exception $e ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Resume execution with a user-painted edit region.
+	 *
+	 * Gemini Nano Banana does not accept a discrete mask channel like
+	 * OpenAI image edit, so we communicate the region through prompt
+	 * augmentation. The rasterizer returns `region_rect` as
+	 * `{x, y, width, height, normalized}`. We:
+	 *  1. Denormalize to pixel coordinates against the request target
+	 *     dimensions when `normalized` is true.
+	 *  2. Append an explicit "Apply changes only within the region
+	 *     x=…, y=…, width=…, height=… (out of WxH pixels)" directive
+	 *     to the prompt so the model focuses its edit on that area.
+	 *  3. Persist the rect on `target_region` for downstream
+	 *     observability and to short-circuit re-elicitation.
+	 *  4. Clear `request_user_region` to prevent infinite loops, then
+	 *     re-invoke `execute()`.
+	 *
+	 * @param array                   $arguments Original tool arguments.
+	 * @param WP_MCP_AI_Markup_Result $result    Validated markup result.
+	 * @param array                   $context   Execution context.
+	 * @return mixed Tool result.
+	 */
+	public function consume_markup( array $arguments, WP_MCP_AI_Markup_Result $result, array $context ) {
+		$rect = $result->get_artifact( 'region_rect', array() );
+		if ( is_array( $rect ) && isset( $rect['width'], $rect['height'] ) && $rect['width'] > 0 && $rect['height'] > 0 ) {
+			$target = $result->get_request()->get_target();
+			$img_w  = isset( $target['width'] ) ? (int) $target['width'] : 0;
+			$img_h  = isset( $target['height'] ) ? (int) $target['height'] : 0;
+
+			if ( ! empty( $rect['normalized'] ) && $img_w > 0 && $img_h > 0 ) {
+				$px_x = (int) round( (float) $rect['x'] * $img_w );
+				$px_y = (int) round( (float) $rect['y'] * $img_h );
+				$px_w = max( 1, (int) round( (float) $rect['width'] * $img_w ) );
+				$px_h = max( 1, (int) round( (float) $rect['height'] * $img_h ) );
+			} else {
+				$px_x = (int) round( (float) $rect['x'] );
+				$px_y = (int) round( (float) $rect['y'] );
+				$px_w = max( 1, (int) round( (float) $rect['width'] ) );
+				$px_h = max( 1, (int) round( (float) $rect['height'] ) );
+			}
+
+			$arguments['target_region'] = array(
+				'x'            => $px_x,
+				'y'            => $px_y,
+				'width'        => $px_w,
+				'height'       => $px_h,
+				'image_width'  => $img_w,
+				'image_height' => $img_h,
+			);
+
+			$base_prompt = isset( $arguments['prompt'] ) ? (string) $arguments['prompt'] : '';
+			if ( $img_w > 0 && $img_h > 0 ) {
+				$directive = sprintf(
+					/* translators: 1: x, 2: y, 3: width, 4: height, 5: image width, 6: image height */
+					__( 'Apply the changes only within the rectangular region at x=%1$d, y=%2$d, width=%3$d, height=%4$d (out of %5$dx%6$d pixels). Leave the rest of the image untouched.', 'mcp-ai-wpoos' ),
+					$px_x,
+					$px_y,
+					$px_w,
+					$px_h,
+					$img_w,
+					$img_h
+				);
+			} else {
+				$directive = sprintf(
+					/* translators: 1: x, 2: y, 3: width, 4: height */
+					__( 'Apply the changes only within the rectangular region at x=%1$d, y=%2$d, width=%3$d, height=%4$d pixels. Leave the rest of the image untouched.', 'mcp-ai-wpoos' ),
+					$px_x,
+					$px_y,
+					$px_w,
+					$px_h
+				);
+			}
+
+			$arguments['prompt'] = '' !== trim( $base_prompt )
+				? trim( $base_prompt ) . "\n\n" . $directive
+				: $directive;
+		}
+		// Prevent re-elicitation on the recursive call.
+		$arguments['request_user_region'] = false;
+
+		return $this->execute( $arguments, $context );
 	}
 }

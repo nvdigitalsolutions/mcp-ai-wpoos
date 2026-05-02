@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/create-markup-subsystem',
+        'version' => 'dev-copilot/create-markup-subsystem',
+        'reference' => 'be7f0f4d1de6cd974bfcee92127e6ae2c23b0839',
         'pretty_version' => 'dev-copilot/review-plugin-graph-data-tool',
         'version' => 'dev-copilot/review-plugin-graph-data-tool',
         'reference' => '1760c658a27ce22ac0cab6584d78e73e5aff04f2',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/create-markup-subsystem',
+            'version' => 'dev-copilot/create-markup-subsystem',
+            'reference' => 'be7f0f4d1de6cd974bfcee92127e6ae2c23b0839',
             'pretty_version' => 'dev-copilot/review-plugin-graph-data-tool',
             'version' => 'dev-copilot/review-plugin-graph-data-tool',
             'reference' => '1760c658a27ce22ac0cab6584d78e73e5aff04f2',

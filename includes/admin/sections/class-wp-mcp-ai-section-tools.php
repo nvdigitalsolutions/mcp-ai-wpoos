@@ -111,6 +111,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'markup_enabled'                         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Markup Subsystem', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Allow tools to elicit visual markup (masks, crops, regions) from the user', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Master switch for the markup subsystem. When enabled, markup-aware tools such as edit_openai_image (mask), crop_image (crop) and edit_gemini_image (region) can pause the agentic loop and ask the user to draw on an image in the chat canvas. Turn this off to disable elicitation site-wide; affected tools will fall back to executing with whatever arguments the model already supplied.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 				'group_email_capability'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Send Group Email Capability', 'mcp-ai-wpoos' ),
