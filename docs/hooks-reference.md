@@ -22,6 +22,7 @@
 12. [Crawler & Search Hooks](#crawler--search-hooks)
 13. [Video Generation Hooks](#video-generation-hooks)
 14. [Erlang C & Queue Operations Hooks](#erlang-c--queue-operations-hooks)
+15. [Markup Subsystem Hooks](#markup-subsystem-hooks)
 
 ---
 
@@ -937,3 +938,94 @@ add_action( 'wp_mcp_ai_model_catalog_suggestions_updated', function ( $diff ) {
     // Notify ops channel, auto-apply additions, etc.
 } );
 ```
+
+---
+
+## Markup Subsystem Hooks
+
+The markup subsystem (introduced in 1.3.0) lets tools pause the agentic loop, ask the user to draw on an image / region, and resume with the rasterised result. See `docs/markup-subsystem.md` for the end-to-end flow.
+
+### Filter: `wp_mcp_ai_markup_enabled`
+Master kill-switch, evaluated by `WP_MCP_AI_Markup_Loop_Interceptor::is_enabled()`. Default `true`. Return `false` to disable the loop interceptor entirely (existing pending requests still resolve through the REST controller, but no new ones are created).
+
+```php
+add_filter( 'wp_mcp_ai_markup_enabled', function ( $enabled ) {
+    if ( wp_is_maintenance_mode() ) {
+        return false;
+    }
+    return $enabled;
+} );
+```
+
+### Action: `wp_mcp_ai_markup_request_created`
+Fires when the loop interceptor has persisted a fresh request and is about to short-circuit the tool call back to the chat surface as a `markup_elicitation` SSE event.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$request` | `WP_MCP_AI_Markup_Request` | Immutable request value object — `request_id`, `tool_slug`, `mode`, `target_type`, `target`, `context`, `expires_at`. |
+| `$tool` | `object\|null` | The tool instance that triggered the request, or `null` for non-class invocations. |
+
+```php
+add_action( 'wp_mcp_ai_markup_request_created', function ( $request, $tool ) {
+    error_log( 'Markup request created for tool: ' . $request->get_tool_slug() );
+}, 10, 2 );
+```
+
+### Action: `wp_mcp_ai_markup_submitted`
+Fires inside `POST /markup/{request_id}` after the request has been loaded but before annotation validation runs. Use this for audit logging — the payload is still untrusted at this point.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The pending request being resolved. |
+
+### Action: `wp_mcp_ai_markup_validated`
+Fires once the W3C Web Annotation envelope has passed `WP_MCP_AI_Markup_Validator::validate()` and is safe to consume. Receives the validator's normalised output.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+| `$cleaned` | `array` | Validator-normalised annotation array. |
+
+### Action: `wp_mcp_ai_markup_resolved`
+Fires exactly once per request lifecycle to indicate terminal state. The recorder + slash command + admin dashboard all subscribe to this hook via the `WP_MCP_AI_Markup_Telemetry` aggregator.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$record` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+| `$outcome` | `string` | One of `completed`, `cancelled`, `invalid`, `tool_error`. |
+
+```php
+add_action( 'wp_mcp_ai_markup_resolved', function ( $record, $outcome ) {
+    if ( 'completed' !== $outcome ) {
+        my_alerting_service_notify( $record->get_tool_slug(), $outcome );
+    }
+}, 10, 2 );
+```
+
+### Filter: `wp_mcp_ai_markup_widget_payload`
+Mutates the SSE payload sent to the chat canvas widget. Useful for adding tenant-specific defaults, branding strings, or extra widget hints.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$payload` | `array` | Widget payload — `request_id`, `mode`, `target_type`, `target`, `widget`, `expires_at`. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being broadcast. |
+
+### Filter: `wp_mcp_ai_markup_mcp_elicitation`
+Mutates the MCP `elicitation/create` envelope sent to external MCP clients. Mirrors `wp_mcp_ai_markup_widget_payload` but for the over-the-wire MCP shape.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$elicitation` | `array` | MCP elicitation payload. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being broadcast. |
+
+### Filter: `wp_mcp_ai_markup_rasterized_artifacts`
+Mutates the artifacts produced by `WP_MCP_AI_Markup_Rasterizer::rasterize()` before they are passed to the tool's `execute()` method as the `markup_artifacts` context entry. Use this to attach extra files (e.g. provenance manifests) or strip mask attachments before tool consumption.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `$artifacts` | `array` | Rasteriser output — `mask_attachment_id`, `crop_box`, `region_polygon`, etc. |
+| `$annotation` | `array` | Validated annotation that produced the artifacts. |
+| `$request` | `WP_MCP_AI_Markup_Request` | The request being resolved. |
+
+### Filter: `wp_mcp_ai_recent_activity_types`
+Not markup-specific, but the markup-init bootstrap appends `markup_created`, `markup_submitted`, `markup_validated`, `markup_completed`, `markup_cancelled`, `markup_invalid`, and `markup_tool_error` to this list so the activity feed surfaces markup events when logging is enabled.

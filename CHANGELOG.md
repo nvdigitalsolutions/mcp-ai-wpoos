@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Added — Markup Subsystem (Base, 1.3.0)
+
+A new in-the-loop image / document markup system that lets tools pause the agentic loop, surface a canvas widget in the chat UI for the user to draw on, and resume the same tool call with the rasterised mask / crop / region polygon.
+
+- **Loop integration**: `WP_MCP_AI_Markup_Loop_Interceptor` short-circuits any tool that implements `WP_MCP_AI_Markup_Aware_Tool_Interface` and emits a `markup_elicitation` SSE frame instead of the tool result. The chat client persists a `request_id` and resumes the call once the user submits the markup. Master toggle: `wp_mcp_ai_markup_enabled` filter.
+- **Chat canvas widget** auto-enqueued whenever the main chat bundle is on the page — supports `mask`, `crop`, and `region` modes against image targets.
+- **Markup-aware tools**: `edit_openai_image` (`mask`), `crop_image` (`crop`), `edit_gemini_image` (`region`).
+- **REST controller** (`/wp-json/mcp-ai/v1/markup/{request_id}`) accepts a W3C Web Annotation envelope, runs `WP_MCP_AI_Markup_Validator` + `WP_MCP_AI_Markup_Rasterizer`, and re-invokes the source tool with the resulting artifacts in the execution context.
+- **Settings UI** toggle under **NV oOS → Settings → General**.
+- **Telemetry**: bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
+- **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags. Read access requires `edit_posts`; reset requires `manage_options`.
+- **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
+- **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+- **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
+- **Docs**: `docs/markup-subsystem.md` walks through the end-to-end flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+
 ### Added — QMS + PARA Methodology Integration (Pro)
 
 Two opt-in subsystems layered onto existing Pro toolkits, both gated by feature flags so behavior is unchanged when off.
