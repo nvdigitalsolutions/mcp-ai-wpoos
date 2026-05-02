@@ -562,6 +562,45 @@ class WP_MCP_AI_JetEngine_Agent_Memories_CCT {
 					'rows'        => 4,
 				)
 			),
+			// MemPalace Capture Framework Phase A — privacy / consent envelope.
+			self::build_field(
+				++$base_id,
+				'sensitivity',
+				__( 'Sensitivity', 'mcp-ai-wpoos' ),
+				'text',
+				array(
+					'description' => __( 'Sensitivity classification (e.g. public | internal | confidential | phi | pii | privileged). Drives redaction + retention ceilings.', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'consent_basis',
+				__( 'Consent Basis', 'mcp-ai-wpoos' ),
+				'text',
+				array(
+					'description' => __( 'Lawful basis for storage (e.g. consent | contract | legitimate-interest | legal-obligation | vital-interest | public-task). GDPR Art. 6 mapping.', 'mcp-ai-wpoos' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'subject_refs',
+				__( 'Subject Refs', 'mcp-ai-wpoos' ),
+				'textarea',
+				array(
+					'description' => __( 'JSON-encoded list of data-subject references (member IDs, account IDs, matter IDs) the memory is about. Used for per-subject right-to-be-forgotten.', 'mcp-ai-wpoos' ),
+					'rows'        => 2,
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'attachments',
+				__( 'Attachments', 'mcp-ai-wpoos' ),
+				'textarea',
+				array(
+					'description' => __( 'JSON-encoded list of attachment refs (attachment_id, sha256, mime). Stored alongside the memory record without duplicating binary content.', 'mcp-ai-wpoos' ),
+					'rows'        => 3,
+				)
+			),
 		);
 
 		foreach ( $fields as &$field ) {
