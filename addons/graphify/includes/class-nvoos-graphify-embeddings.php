@@ -202,7 +202,7 @@ class NV_oOS_Graphify_Embeddings {
 			if ( empty( $api_key ) ) {
 				$nvoos_settings = get_option( 'wp_mcp_ai_settings', array() );
 				if ( is_array( $nvoos_settings ) && ! empty( $nvoos_settings['openai_api_key'] ) ) {
-					$api_key = $nvoos_settings['openai_api_key'];
+					$api_key = sanitize_text_field( $nvoos_settings['openai_api_key'] );
 				}
 			}
 			if ( empty( $api_key ) && function_exists( 'wp_mcp_ai_get_option' ) ) {
