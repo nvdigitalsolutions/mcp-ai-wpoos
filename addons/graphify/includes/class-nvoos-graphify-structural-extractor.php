@@ -176,43 +176,12 @@ class NV_oOS_Graphify_Structural_Extractor {
 				$item_id = absint( $item['_ID'] );
 				$node_id = NV_oOS_Graphify_Detector::cct_node_id( $slug, $item_id );
 
-				// Resolve a sensible label from the most common title-like fields,
-				// falling back to "{Type Name} #{ID}" when nothing matches. The
-				// candidate field list is filterable so sites with bespoke CCT
-				// schemas can point at their own primary-name column.
-				$label_fields = array( '_title', 'title', 'name', 'cct_name', 'label' );
-				/**
-				 * Filter the ordered list of CCT item fields checked when
-				 * resolving a node label.
-				 *
-				 * @since 0.7.0
-				 *
-				 * @param string[] $label_fields Field names checked in order.
-				 * @param string   $slug         CCT slug.
-				 * @param array    $item         CCT item row (associative array).
-				 */
-				$label_fields = apply_filters( 'nvoos_graphify_cct_label_fields', $label_fields, $slug, $item );
-
-				$label = '';
-				foreach ( (array) $label_fields as $field ) {
-					$field = (string) $field;
-					if ( '' === $field ) {
-						continue;
-					}
-					if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
-						$label = (string) $item[ $field ];
-						break;
-					}
-				}
-				if ( '' === $label ) {
-					$type_name = ! empty( $row['name'] ) ? $row['name'] : $slug;
-					/* translators: 1: CCT type name, 2: numeric item ID. */
-					$label = sprintf( __( '%1$s #%2$d', 'nvoos-graphify' ), $type_name, $item_id );
-				}
+				$type_name = isset( $row['name'] ) ? (string) $row['name'] : '';
+				$label     = self::resolve_cct_label( $slug, $item, $type_name );
 
 				$properties = array(
 					'cct_slug' => $slug,
-					'cct_name' => isset( $row['name'] ) ? (string) $row['name'] : $slug,
+					'cct_name' => '' !== $type_name ? $type_name : $slug,
 				);
 				foreach ( array( 'cct_status', 'cct_created', 'cct_modified' ) as $meta_key ) {
 					if ( isset( $item[ $meta_key ] ) ) {
@@ -222,13 +191,7 @@ class NV_oOS_Graphify_Structural_Extractor {
 					}
 				}
 
-				$content_source = '';
-				foreach ( array( 'content', 'description', 'body', 'message', 'text' ) as $field ) {
-					if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
-						$content_source = (string) $item[ $field ];
-						break;
-					}
-				}
+				$content_source = self::resolve_cct_content( $item );
 
 				$nodes[] = array(
 					'node_id'      => $node_id,
@@ -255,6 +218,103 @@ class NV_oOS_Graphify_Structural_Extractor {
 		}
 
 		return compact( 'nodes', 'edges' );
+	}
+
+	// -------------------------------------------------------------------------
+	// CCT field resolvers (shared with the semantic extractor)
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Resolve a human-readable label for a JetEngine CCT item.
+	 *
+	 * Scans the most common title-like columns in order and falls back to
+	 * `"{Type Name} #{ID}"` when nothing matches. The candidate field list
+	 * is filterable via {@see 'nvoos_graphify_cct_label_fields'} so sites
+	 * with bespoke CCT schemas can point at their own primary-name column.
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param string $slug      CCT slug (sanitised).
+	 * @param array  $item      CCT item row (associative array).
+	 * @param string $type_name Optional human-readable type name used in the fallback label.
+	 * @return string
+	 */
+	public static function resolve_cct_label( $slug, array $item, $type_name = '' ) {
+		$slug = sanitize_key( $slug );
+
+		$label_fields = array( '_title', 'title', 'name', 'cct_name', 'label' );
+		/**
+		 * Filter the ordered list of CCT item fields checked when
+		 * resolving a node label.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param string[] $label_fields Field names checked in order.
+		 * @param string   $slug         CCT slug.
+		 * @param array    $item         CCT item row (associative array).
+		 */
+		$label_fields = apply_filters( 'nvoos_graphify_cct_label_fields', $label_fields, $slug, $item );
+
+		$label = '';
+		foreach ( (array) $label_fields as $field ) {
+			$field = (string) $field;
+			if ( '' === $field ) {
+				continue;
+			}
+			if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
+				$label = (string) $item[ $field ];
+				break;
+			}
+		}
+
+		if ( '' === $label ) {
+			$item_id   = isset( $item['_ID'] ) ? absint( $item['_ID'] ) : 0;
+			$type_name = '' !== $type_name ? $type_name : $slug;
+			/* translators: 1: CCT type name, 2: numeric item ID. */
+			$label = sprintf( __( '%1$s #%2$d', 'nvoos-graphify' ), $type_name, $item_id );
+		}
+
+		return $label;
+	}
+
+	/**
+	 * Resolve the primary content field for a JetEngine CCT item.
+	 *
+	 * Returns the first non-empty scalar value from the conventional
+	 * content/description/body columns. The candidate list is filterable
+	 * via {@see 'nvoos_graphify_cct_content_fields'} so semantic extraction
+	 * can target the right column on bespoke schemas.
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param array $item CCT item row (associative array).
+	 * @return string Content text, or '' when no content-like column is populated.
+	 */
+	public static function resolve_cct_content( array $item ) {
+		$content_fields = array( 'content', 'description', 'body', 'message', 'text' );
+		/**
+		 * Filter the ordered list of CCT item fields checked when
+		 * resolving the body/content text used for hashing and
+		 * semantic extraction.
+		 *
+		 * @since 0.7.1
+		 *
+		 * @param string[] $content_fields Field names checked in order.
+		 * @param array    $item           CCT item row (associative array).
+		 */
+		$content_fields = apply_filters( 'nvoos_graphify_cct_content_fields', $content_fields, $item );
+
+		foreach ( (array) $content_fields as $field ) {
+			$field = (string) $field;
+			if ( '' === $field ) {
+				continue;
+			}
+			if ( ! empty( $item[ $field ] ) && is_scalar( $item[ $field ] ) ) {
+				return (string) $item[ $field ];
+			}
+		}
+
+		return '';
 	}
 
 	// -------------------------------------------------------------------------

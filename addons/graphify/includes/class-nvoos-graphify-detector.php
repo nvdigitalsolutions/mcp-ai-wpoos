@@ -496,6 +496,115 @@ class NV_oOS_Graphify_Detector {
 	}
 
 	/**
+	 * Fetch a single JetEngine CCT item by slug + numeric ID.
+	 *
+	 * Used by the semantic extractor's cron handler to re-hydrate a CCT
+	 * row from a tiny `[ slug, id ]` payload (keeps cron args small and
+	 * avoids stale snapshots).
+	 *
+	 * @since 0.7.1
+	 *
+	 * @param string $slug    CCT slug.
+	 * @param int    $item_id Item `_ID` column value.
+	 * @return array|null {
+	 *     @type string $type CCT slug (sanitised).
+	 *     @type string $name Human-readable type name.
+	 *     @type array  $item CCT row (associative array).
+	 * } NULL when JetEngine isn't loaded, the slug is unknown, or the row is missing.
+	 */
+	public static function get_cct_item( $slug, $item_id ) {
+		$slug    = sanitize_key( $slug );
+		$item_id = absint( $item_id );
+		if ( '' === $slug || 0 === $item_id ) {
+			return null;
+		}
+		if ( ! function_exists( 'jet_engine' ) ) {
+			return null;
+		}
+
+		$engine = jet_engine();
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'get_module' ) ) {
+			return null;
+		}
+
+		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			return null;
+		}
+
+		$module = $module_wrapper->instance;
+		if ( empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			return null;
+		}
+
+		$types = $module->manager->get_content_types();
+		if ( empty( $types ) || ! is_array( $types ) ) {
+			return null;
+		}
+
+		foreach ( $types as $type ) {
+			$type_slug = '';
+			if ( ! empty( $type->slug ) ) {
+				$type_slug = $type->slug;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['slug'] ) ) {
+				$type_slug = $type->args['slug'];
+			}
+			$type_slug = sanitize_key( $type_slug );
+			if ( $type_slug !== $slug ) {
+				continue;
+			}
+
+			if ( empty( $type->db ) || ! method_exists( $type->db, 'query' ) ) {
+				return null;
+			}
+
+			if ( method_exists( $type->db, 'set_format_flag' ) ) {
+				$type->db->set_format_flag( ARRAY_A );
+			}
+
+			$rows = $type->db->query(
+				array(
+					array(
+						'key'   => '_ID',
+						'value' => $item_id,
+					),
+				),
+				1,
+				0
+			);
+
+			if ( ! is_array( $rows ) || empty( $rows ) ) {
+				return null;
+			}
+
+			$item = $rows[0];
+			if ( is_object( $item ) ) {
+				$item = (array) $item;
+			}
+			if ( ! is_array( $item ) || empty( $item['_ID'] ) ) {
+				return null;
+			}
+
+			$name = '';
+			if ( ! empty( $type->name ) ) {
+				$name = $type->name;
+			} elseif ( ! empty( $type->args ) && ! empty( $type->args['name'] ) ) {
+				$name = $type->args['name'];
+			} else {
+				$name = $slug;
+			}
+
+			return array(
+				'type' => $slug,
+				'name' => $name,
+				'item' => $item,
+			);
+		}
+
+		return null;
+	}
+
+	/**
 	 * Generate a stable node_id for a named entity or topic string.
 	 *
 	 * Uses a short hash so labels with special characters remain safe to store.

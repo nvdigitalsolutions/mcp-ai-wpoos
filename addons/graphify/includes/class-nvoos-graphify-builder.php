@@ -75,6 +75,15 @@ class NV_oOS_Graphify_Builder {
 			}
 		}
 
+		// 3b. Semantic extraction for JetEngine CCT items (same gating).
+		if ( $semantic && ! empty( $detected['ccts'] ) ) {
+			$sem_cct_result = NV_oOS_Graphify_Semantic_Extractor::extract_ccts( $detected['ccts'], $async_semantic );
+			if ( ! $async_semantic ) {
+				$semantic_nodes += NV_oOS_Graphify_DB::batch_upsert_nodes( $sem_cct_result['nodes'] );
+				$semantic_edges += NV_oOS_Graphify_DB::batch_upsert_edges( $sem_cct_result['edges'] );
+			}
+		}
+
 		// 3.5. Remote enrichment (async; skipped when no sources are configured).
 		$remote_nodes = 0;
 		$remote_edges = 0;

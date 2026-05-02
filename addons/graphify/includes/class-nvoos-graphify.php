@@ -63,6 +63,7 @@ class NV_oOS_Graphify {
 		add_action( self::CRON_BUILD_HOOK, array( __CLASS__, 'run_scheduled_build' ) );
 		add_action( self::CRON_ENRICH_HOOK, array( __CLASS__, 'run_scheduled_enrich' ) );
 		add_action( 'nvoos_graphify_cron_semantic_extract', array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch' ) );
+		add_action( NV_oOS_Graphify_Semantic_Extractor::CRON_ACTION_CCT, array( 'NV_oOS_Graphify_Semantic_Extractor', 'handle_cron_batch_ccts' ) );
 		NV_oOS_Graphify_Embeddings_On_Ingest::register();
 		NV_oOS_Graphify_Memory_Bridge::register();
 	}
