@@ -108,7 +108,7 @@ This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.
 **Template + examples:**
 
 - Canonical (empty) template: [`.context/templates/agent-file-template.md`](.context/templates/agent-file-template.md)
-- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — includes a read-only reviewer (`wp-rest-reviewer.agent.md`) and a writer (`tool-author.agent.md`) covering the read-only/writer and Base/Pro axes.
+- Filled-in copy-ready examples: [`examples/agents/`](examples/agents/) — a 12-agent roster covering every major NV oOS subsystem, split between read-only reviewers (REST, security, WP.org compliance, PHP compat) and writers (tools, slash commands, chat UI, PHPUnit tests, agent skills, addon maintenance, release engineering, docs). See [`examples/agents/README.md`](examples/agents/README.md) for the full table.
 
 ---
 
