@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-        'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-        'reference' => 'fe6da506831bfbd16771f506c6b6978211475c0a',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-bf7d650c-4917-47eb-b8eb-01865b2e2d1f',
+        'version' => 'dev-copilot/rebuild-all-zips-bf7d650c-4917-47eb-b8eb-01865b2e2d1f',
+        'reference' => 'a7b3793a0461b176a6a0d0116b9d399a1803fb76',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-            'version' => 'dev-copilot/fix-healthcare-toolkit-folder-issue',
-            'reference' => 'fe6da506831bfbd16771f506c6b6978211475c0a',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-bf7d650c-4917-47eb-b8eb-01865b2e2d1f',
+            'version' => 'dev-copilot/rebuild-all-zips-bf7d650c-4917-47eb-b8eb-01865b2e2d1f',
+            'reference' => 'a7b3793a0461b176a6a0d0116b9d399a1803fb76',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
