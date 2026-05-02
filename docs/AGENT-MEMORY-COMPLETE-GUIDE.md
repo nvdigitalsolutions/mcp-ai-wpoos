@@ -1062,6 +1062,88 @@ remove_action( 'wp_mcp_ai_memory_stored', array( 'WP_MCP_AI_Agent_Memory_CCT_Bri
 
 ---
 
-**Last Updated:** February 18, 2026  
-**Version:** 1.1.0  
-**Status:** Production Ready
+## Capture surfaces by toolkit (MemPalace Capture Framework — Phase A)
+
+Phase A introduces a single, MemPalace-aligned entry point for every per-toolkit "capture" tool to land memory into the existing `ai_agent_memories` store: `WP_MCP_AI_Memory_Capture_Service::store()`. The service does not parallel the agent-memory subsystem — it writes a real MemPalace record and emits the canonical `wp_mcp_ai_memory_stored` event so every existing subscriber (the CCT bridge, the Graphify Memory Palace bridge, `wake_up_context`, the audit trail) reacts with no glue code.
+
+### Envelope (revised, MemPalace-aligned)
+
+| Field | Required | Notes |
+|---|---|---|
+| `agent_id` | yes | Owning assistant / virtual agent |
+| `wing` | yes | MemPalace project / client / matter / patient / deal scope |
+| `room` | yes | Topic within the wing (`vitals`, `pleadings`, `covenants`, …) |
+| `tier` | no | `core` \| `recall` \| `archival` (default `recall`) |
+| `verbatim` | no | Default `true`. Only summarisation tools may set `false`. |
+| `importance` | no | 0.0–1.0, drives promotion / truncation order |
+| `valid_from` / `valid_until` | no | Zep bi-temporal validity. Contradiction = new record + old's `valid_until` set, never overwrite. |
+| `expires_at`, `ttl` | no | TTL anchor (Letta). |
+| `sensitivity` | no | `public` \| `internal` \| `confidential` \| `pii` \| `privileged` \| `phi` |
+| `consent_basis` | no | GDPR Art. 6 mapping (`consent`, `contract`, `legitimate-interest`, …) |
+| `subject_refs` | no | Data-subject IDs (member, account, matter) for per-subject right-to-be-forgotten |
+| `attachments` | no | `{ attachment_id, sha256, mime, url }[]` — refs only, no binary duplication |
+
+The previously documented Phase 4b columns (`memory_tier` Letta-axis, `transaction_time`, `embedding_id`, `graph_node_id`, …) remain — Phase A composes on top of them rather than replacing them.
+
+### Tier lifecycle (A7)
+
+`WP_MCP_AI_Memory_Tier_Manager` runs daily via WP-Cron (`wp_mcp_ai_memory_tier_sweep` hook) and:
+
+- **Promotes** `recall` → `core` when **importance ≥ 0.7 AND access_count ≥ 3** (both required — guards against `core` becoming a dumping ground).
+- **Demotes** `core` → `recall` after 30 days of inactivity, `recall` → `archival` after 60 days.
+- Enforces a per-wing `core` cap (default 50, filterable: `wp_mcp_ai_memory_core_cap_per_wing`).
+- **Never deletes verbatim records.** Only TTL purges them, with a tombstone in the audit trail.
+- Emits `wp_mcp_ai_memory_tier_transition` for every transition.
+
+### Hierarchical recall (A8) — `recall_memory` tool
+
+The new `recall_memory` tool implements MemPalace's headline behaviour — *"this client's drawers always open"*:
+
+1. Wing pre-filter (required): candidate pool = that wing only.
+2. Optional `room` narrows further.
+3. BM25 + vector + graph proximity ranking (where available).
+4. **All `tier=core` records of the wing are always returned**, regardless of similarity score.
+5. Bi-temporal `as_of` parameter for historical queries (default = now).
+
+### Per-wing retention overrides (A4)
+
+The `wp_mcp_ai_wing_retention_overrides` option (and matching filter) carries per-wing ceilings:
+
+```php
+update_option( 'wp_mcp_ai_wing_retention_overrides', array(
+    'patient/*' => array(
+        'ttl'                  => YEAR_IN_SECONDS * 7, // HIPAA retention
+        'tier_ceiling'         => 'core',
+        'sensitivity_ceiling'  => 'phi',
+        'consent_basis_default'=> 'consent',
+    ),
+    'marketing/q3' => array(
+        'ttl'                  => 90 * DAY_IN_SECONDS,
+        'tier_ceiling'         => 'recall',
+    ),
+) );
+```
+
+The strictest of (caller-supplied, wing default, site default) wins. Wildcard prefixes (`patient/*`) are supported.
+
+### Phase B — per-toolkit capture tools (forthcoming)
+
+Each Pro toolkit will ship a capture tool that calls `WP_MCP_AI_Memory_Capture_Service::store()` with toolkit-specific defaults:
+
+| Toolkit | Wing default | Room defaults |
+|---|---|---|
+| Healthcare | `patient/{member_id}` | `vitals`, `allergies`, `prescriptions`, `imaging`, `notes` |
+| Law Firm | `matter/{matter_id}` | `pleadings`, `correspondence`, `research`, `billable` |
+| Financial Planning | `client/{client_id}` | `meetings`, `market`, `holdings`, `ips` |
+| CRE Debt | `deal/{deal_id}` | `covenants`, `valuations`, `term-sheet`, `closing` |
+| CRM | `account/{account_id}` | `interactions`, `objections`, `next-actions` |
+| Project Management | `project/{project_id}` | `decisions`, `status`, `adr` |
+| (others — see plan in PR description) | | |
+
+Decision-grade content (`pm_capture_decision`, `architect_capture_design_rationale`, `law_capture_matter_event`, `regreg_capture_filing_event`) is born at `tier=core`. Performance / observation content (`social_capture_post_performance`, `analytics_capture_insight`) is born at `tier=recall`. Bulk telemetry is born `archival`.
+
+---
+
+**Last Updated:** May 2, 2026  
+**Version:** 1.2.0  
+**Status:** Phase A (framework) production-ready; Phase B (per-toolkit) in flight

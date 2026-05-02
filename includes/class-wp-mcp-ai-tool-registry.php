@@ -1337,6 +1337,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// MemPalace-inspired Phase 2: bulk ingest + session wake-up loader.
 				'WP_MCP_AI_Tool_Mine_Agent_Memory'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-mine-agent-memory.php',
 				'WP_MCP_AI_Tool_Wake_Up_Context'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-wake-up-context.php',
+				// MemPalace Capture Framework Phase A8: hierarchical recall.
+				'WP_MCP_AI_Tool_Recall_Memory'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-recall-memory.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).

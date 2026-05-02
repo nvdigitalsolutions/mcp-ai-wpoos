@@ -1,7 +1,7 @@
 # NV oOS (Open Operator System) — Claude Code Context
 
 > **This file is loaded every turn by Claude Code.** Keep it focused and actionable.
-> Last reviewed: **April 2026** · Version: **2.1**
+> Last reviewed: **May 2026** · Version: **2.2**
 
 ### Related Files
 
@@ -17,7 +17,7 @@
 
 ## What This Is
 
-NV oOS is a **WordPress plugin** providing an AI Assistant framework with 800+ tools (live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
+NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~830 tools (~195 base + ~635 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()`), MCP protocol support, multi-provider AI (OpenAI, Gemini, Ollama), and Server-Sent Events streaming.
 
 ## PHP Compatibility — Critical
 
@@ -50,8 +50,8 @@ includes/
 ├── bootstrap/                          ← Boot: constants → autoload → hooks → loader
 ├── class-wp-mcp-ai-plugin.php          ← Main singleton + DI container
 ├── class-wp-mcp-ai-rest.php            ← Core REST API + agentic loop
-├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (800+ tools)
-├── tools/                              ← 165 base tool implementations
+├── class-wp-mcp-ai-tool-registry.php   ← Tool registry singleton (~830 tools total)
+├── tools/                              ← base tool implementations (~195 classes; live count is authoritative)
 ├── services/                           ← 20+ service classes
 ├── admin/                              ← WordPress admin UI
 ├── slash-commands/                     ← /help, /ship, /compact, /context, etc.
@@ -61,7 +61,7 @@ includes/
 addons/pro/
 ├── mcp-ai-wpoos-pro.php                ← Pro entry (auto-loaded, no WP plugin header)
 └── includes/
-    ├── tools/                          ← 348+ pro tools
+    ├── tools/                          ← ~635+ pro tools
     └── ...                             ← Pro admin, REST, services
 ```
 
@@ -114,7 +114,7 @@ return new WP_Error( 'error_code', __( 'Error message.', 'mcp-ai-wpoos' ) );
 
 - **Base:** Core WordPress functionality, no third-party APIs, useful to any site
 - **Pro:** Paid APIs (Shopify, Upwork), optional plugins (JetEngine, WooCommerce), healthcare, enterprise
-- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (≈220 base tools) or `false` (all 800+; counts are approximate — the registry is authoritative)
+- **Constants:** `WP_MCP_AI_BASE_VERSION = true` (~195 base tool classes) or `false` (~830 total; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 - **Guard:** `if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) { /* pro code */ }`
 
 ## Key Architecture Patterns
@@ -157,6 +157,18 @@ Located in `includes/slash-commands/commands/`.
 
 RFC 6202-compliant: `STREAMING_CHUNK_SIZE = 50`, `RETRY_INTERVAL_MS = 3000`.
 Client can close connection to interrupt. Job cancellation supported.
+
+### Agent Skills
+
+Portable behaviour packages (`SKILL.md` files) that any NV oOS assistant can load on demand. Per the [agentskills.io](https://agentskills.io/specification) spec: a Markdown body with a small YAML frontmatter (`name`, `description`, optional metadata).
+
+- **Discovery — base bundled skills:** `includes/bundled-skills/{slug}/SKILL.md`. Copied to `wp-content/uploads/mcp-ai-skills/` on first activation.
+- **Discovery — Pro bundled skills:** `addons/pro/includes/bundled-skills/{slug}/SKILL.md`. The 28+ WordPress-developer skills curated from `Lonsdale201/wp-agent-skills` live here.
+- **Third-party attribution:** any new bundled skill curated from an upstream catalogue must add an entry to the corresponding `THIRD_PARTY_NOTICES.md` (`includes/bundled-skills/THIRD_PARTY_NOTICES.md` or `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`) with attribution + license text.
+- **Progressive disclosure:** assistants with the "Use progressive disclosure" checkbox enabled receive only a short `# Available Skills` catalogue (name + description) in their system prompt. The base-plugin `load_skill({ name })` tool returns the full SKILL.md only when the model decides a skill applies.
+- **Remote catalogues (Pro):** [`WP_MCP_AI_Skill_Catalogue_Service`](addons/pro/includes/services/class-wp-mcp-ai-skill-catalogue-service.php) discovers skills in registered public Git repos via the GitHub trees API. [`WP_MCP_AI_Skill_Catalogue_REST_Controller`](addons/pro/includes/rest/class-wp-mcp-ai-skill-catalogue-rest-controller.php) exposes `mcp-ai-pro/v1/catalogues/*` endpoints. SSRF-safe HTTPS-only fetcher; reuses the existing extension allowlist and decompression-bomb cap.
+- **Filters:** `wp_mcp_ai_skill_catalogue_manifest_ttl`, `wp_mcp_ai_skill_catalogue_refresh_cadence`.
+- **Reference:** `docs/features/agent-skills.md` (full Phases 1–4 narrative).
 
 ## Build & Test Commands
 

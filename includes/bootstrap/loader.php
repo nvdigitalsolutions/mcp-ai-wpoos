@@ -351,6 +351,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-agent-memory-cct-bridge.php';
 }
 
+// MemPalace Capture Framework Phase A — capture service + tier manager are
+// transport-agnostic (work on transient-only sites too), so they always load.
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-capture-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-memory-tier-manager.php';
+
 // Elementor integration is available for all versions.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
