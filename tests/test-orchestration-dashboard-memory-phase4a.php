@@ -242,6 +242,53 @@ class Test_Orchestration_Dashboard_Memory_Phase4a extends WP_UnitTestCase {
 	}
 
 	/**
+	 * `persistent_storage.available` must be re-checked on cache hits so
+	 * that activating JetEngine (or its agent-memory CCT table) after the
+	 * dashboard was first viewed does not leave a stale `false` baked into
+	 * the 5-minute transient cache.
+	 *
+	 * Regression: dashboard reported "Install JetEngine to enable durable
+	 * agent-memory storage…" for up to 5 minutes after JetEngine became
+	 * available, even though the orchestration page knows the plugin is
+	 * active.
+	 */
+	public function test_persistent_storage_available_recomputed_on_cache_hit() {
+		// Seed the cache with a stale `available => false` (simulates the
+		// dashboard being viewed before JetEngine / its CCT table existed).
+		$stale = array(
+			'total_contexts'         => 0,
+			'total_agents'           => 0,
+			'contexts_by_type'       => array(),
+			'contexts_by_wing'       => array(),
+			'contexts_by_importance' => array(),
+			'wings_count'            => 0,
+			'rooms_count'            => 0,
+			'mined_count'            => 0,
+			'bridge_active'          => false,
+			'retrieval_path'         => array(
+				'graph'     => 0,
+				'transient' => 0,
+				'total'     => 0,
+			),
+			'persistent_storage'     => array(
+				'cct_count'      => 0,
+				'available'      => false,
+				'tier_breakdown' => array(),
+			),
+		);
+		set_transient( 'wp_mcp_ai_agent_memory_stats', $stale, 5 * MINUTE_IN_SECONDS );
+
+		$stats = $this->invoke( 'get_agent_memory_stats' );
+
+		$live_available = $this->invoke( 'is_persistent_memory_available' );
+		$this->assertSame(
+			$live_available,
+			! empty( $stats['persistent_storage']['available'] ),
+			'persistent_storage.available should track live CCT-table existence, not the cached value.'
+		);
+	}
+
+	/**
 	 * `record_retrieval_telemetry()` accumulates 7-day rolling totals.
 	 */
 	public function test_record_retrieval_telemetry_aggregates_into_stats() {
