@@ -1,8 +1,9 @@
 # Markup Subsystem
 
 > **Status:** Foundation (PR 1) ✅ · Chat canvas widget (PR 2) ✅ · First
-> markup-aware tool — `edit_openai_image` (PR 4) ✅ · `document_pdf`
-> mode (PR 3) and Settings UI (PR 5) deferred to follow-up PRs.
+> markup-aware tools — `edit_openai_image` (PR 4) and `crop_image`
+> (PR 4b) ✅ · `document_pdf` mode (PR 3) and Settings UI (PR 5)
+> deferred to follow-up PRs.
 
 The Markup Subsystem lets tools hand back an **editable canvas** in the
 chat surface so the user can visually explain what they want
@@ -67,15 +68,19 @@ private protocol:
 ## Tool authoring
 
 Implement `WP_MCP_AI_Markup_Aware_Tool_Interface` alongside the
-existing tool interface. The first first-party adopter is the
-`edit_openai_image` tool (`includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php`),
-which exposes a new optional `request_user_mask` boolean parameter:
-when set to `true` and no `mask_id` has been provided, the tool
-short-circuits the agentic loop with a `mask`-mode markup elicitation
-on the source image. The user's painted mask is rasterized into an
-RGBA PNG (alpha=0 inside the painted region) and the resulting
-attachment ID is fed back into the tool as `mask_id` before
-`execute()` is re-invoked.
+existing tool interface. The first first-party adopters are:
+
+| Tool | Mode | Opt-in argument | Result artifact |
+|------|------|-----------------|-----------------|
+| `edit_openai_image` (`includes/tools/class-wp-mcp-ai-tool-edit-openai-image.php`) | `mask` | `request_user_mask` | `mask_attachment_id` → injected as `mask_id` |
+| `crop_image` (`includes/tools/class-wp-mcp-ai-tool-crop-image.php`) | `crop` | `request_user_crop` | `crop_rect` → denormalized to pixel `x/y/width/height` |
+
+Both follow the same lifecycle: when the opt-in flag is set and no
+deterministic alternative is supplied, `needs_markup()` returns a
+`WP_MCP_AI_Markup_Request`; the agentic loop short-circuits and shows
+the canvas widget; `consume_markup()` merges the rasterized artifact
+into the original arguments, clears the opt-in flag (loop-safety), and
+re-invokes `execute()`.
 
 Other markup-aware tools follow the same pattern:
 
