@@ -2485,6 +2485,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			/**
+			 * Filter the resolved system prompt just before it is consumed by
+			 * the chat path. The harness Prompt Cue injector subscribes to
+			 * this hook to prepend cues from the assistant's harness profile.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param string $system_prompt The system prompt as resolved so far.
+			 * @param int    $assistant_id  Assistant post ID (0 if none).
+			 * @param array  $context       Surface context: { surface: 'rest_chat', request: WP_REST_Request }.
+			 */
+			$assistant_config['system_prompt'] = (string) apply_filters(
+				'wp_mcp_ai_resolved_system_prompt',
+				isset( $assistant_config['system_prompt'] ) ? (string) $assistant_config['system_prompt'] : '',
+				isset( $assistant_id ) ? (int) $assistant_id : 0,
+				array(
+					'surface' => 'rest_chat',
+					'request' => $request,
+				)
+			);
+
 			// If additional_tools are provided (for context-specific tools like research pages), merge them into the assistant's tools.
 			$additional_tools = $request->get_param( 'additional_tools' );
 			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
