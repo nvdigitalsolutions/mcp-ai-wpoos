@@ -829,8 +829,13 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 		}
 
 		// Cap input so a single beacon can't trigger an unbounded token bill.
+		// Use mb_strcut() so we don't split a multi-byte UTF-8 character.
 		if ( strlen( $content ) > self::SUMMARIZE_MAX_INPUT_BYTES ) {
-			$content = substr( $content, 0, self::SUMMARIZE_MAX_INPUT_BYTES );
+			if ( function_exists( 'mb_strcut' ) ) {
+				$content = mb_strcut( $content, 0, self::SUMMARIZE_MAX_INPUT_BYTES, 'UTF-8' );
+			} else {
+				$content = substr( $content, 0, self::SUMMARIZE_MAX_INPUT_BYTES );
+			}
 		}
 
 		$model = 'gpt-4o-mini';
