@@ -161,7 +161,9 @@ class WP_MCP_AI_Slash_Command_Status {
 	 * @return string
 	 */
 	private function render_report( array $data ) {
-		$out = "## System Status\n\n";
+		$out  = "## System Status\n\n";
+		$out .= "| Component | Status |\n";
+		$out .= "|-----------|--------|\n";
 
 		// Async health section.
 		$health        = isset( $data['async_health'] ) ? $data['async_health'] : array();
@@ -178,11 +180,6 @@ class WP_MCP_AI_Slash_Command_Status {
 		$pending   = isset( $counts['pending'] ) ? (int) $counts['pending'] : 0;
 		$active    = isset( $counts['active'] ) ? (int) $counts['active'] : 0;
 		$jobs_icon = ! $jobs_ok ? '⚠️' : ( $failed > 0 ? '❌' : '✅' );
-		$out      .= "| --- | --- |\n";
-		$out       = "## System Status\n\n";
-		$out      .= "| Component | Status |\n";
-		$out      .= "|-----------|--------|\n";
-		$out      .= sprintf( "| Async Health | %s %s |\n", $health_icon, esc_html( $health_status ) );
 		$out      .= sprintf( "| Job Queue | %s pending: %d, active: %d, failed: %d |\n", $jobs_icon, $pending, $active, $failed );
 
 		// Tool registry section.
