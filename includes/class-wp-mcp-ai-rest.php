@@ -4079,7 +4079,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * chat client can announce a "🧠 Memory" toast as soon as the tool runs
 		 * (G8 Phase 2), rather than waiting for the assistant bubble to render.
 		 *
-		 * @since 1.2.0
+		 * @since 1.1.14
 		 *
 		 * @param string $tool_name OpenAI-style tool function name.
 		 * @return string|null 'retrieved' / 'stored' / null when the tool is not
