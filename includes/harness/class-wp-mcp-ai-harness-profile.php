@@ -60,7 +60,8 @@ class WP_MCP_AI_Harness_Profile {
 				'max_iters' => 1,
 			),
 			'tools'     => array(
-				'router' => 'fixed',
+				'router'         => 'fixed',
+				'preset_weights' => array(),
 			),
 			'retrieval' => array(
 				'enabled'           => false,
@@ -133,6 +134,34 @@ class WP_MCP_AI_Harness_Profile {
 		if ( isset( $raw['tools'] ) && is_array( $raw['tools'] ) ) {
 			$router                 = isset( $raw['tools']['router'] ) ? sanitize_key( (string) $raw['tools']['router'] ) : 'fixed';
 			$out['tools']['router'] = in_array( $router, array( 'fixed', 'scored' ), true ) ? $router : 'fixed';
+
+			// Layer C preset-weights matrix: preset_slug → float weight, clamped to [-5, 5].
+			// Preset slugs are taken at face value (sanitize_key only) — the canonical
+			// list lives in WP_MCP_AI_Tool_Presets_Helper, but profiles may reference
+			// presets that have been hidden or come from a Pro addon. Unknown slugs
+			// simply have no effect at scoring time.
+			if ( isset( $raw['tools']['preset_weights'] ) && is_array( $raw['tools']['preset_weights'] ) ) {
+				$weights = array();
+				foreach ( $raw['tools']['preset_weights'] as $preset_slug => $weight ) {
+					$slug = sanitize_key( (string) $preset_slug );
+					if ( '' === $slug ) {
+						continue;
+					}
+					$value = (float) $weight;
+					if ( $value < -5.0 ) {
+						$value = -5.0;
+					}
+					if ( $value > 5.0 ) {
+						$value = 5.0;
+					}
+					if ( 0.0 === $value ) {
+						// Drop zero entries to keep the stored profile compact.
+						continue;
+					}
+					$weights[ $slug ] = $value;
+				}
+				$out['tools']['preset_weights'] = $weights;
+			}
 		}
 
 		if ( isset( $raw['retrieval'] ) && is_array( $raw['retrieval'] ) ) {

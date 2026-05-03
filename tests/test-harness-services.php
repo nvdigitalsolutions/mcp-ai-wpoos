@@ -276,6 +276,102 @@ class Test_Harness_Tool_Router extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Layer C preset-weights matrix: a tool that belongs to a weighted preset
+	 * receives the preset's weight added to its base score.
+	 */
+	public function test_preset_weight_boosts_tool_in_that_family() {
+		// `web_search` is a member of `agentic_workflow`, `research`, and
+		// `seo_marketing` in the canonical preset library.
+		$tool = $this->build_stub_tool( 'web_search', array( 'read-only', 'external-api' ) );
+		$base = WP_MCP_AI_Tool_Router_Harness::score_tool( $tool, 'research' );
+
+		$boosted = WP_MCP_AI_Tool_Router_Harness::score_tool(
+			$tool,
+			'research',
+			array(),
+			array( 'agentic_workflow' => 2.5 )
+		);
+
+		$this->assertEqualsWithDelta( $base + 2.5, $boosted, 0.0001 );
+	}
+
+	/**
+	 * A tool slug that is not present in any preset must not gain (or lose)
+	 * any score from the preset-weights matrix.
+	 */
+	public function test_preset_weight_ignored_for_tool_outside_family() {
+		$tool = $this->build_stub_tool( 'made_up_tool_xyz', array( 'read-only' ) );
+		$base = WP_MCP_AI_Tool_Router_Harness::score_tool( $tool, 'general' );
+
+		$weighted = WP_MCP_AI_Tool_Router_Harness::score_tool(
+			$tool,
+			'general',
+			array(),
+			array( 'agentic_workflow' => 5.0 )
+		);
+
+		$this->assertEqualsWithDelta( $base, $weighted, 0.0001 );
+	}
+
+	/**
+	 * Negative preset weights must dampen tools in that family (Goodhart
+	 * mitigation — admins can opt out of an entire family).
+	 */
+	public function test_negative_preset_weight_dampens_family() {
+		$tool = $this->build_stub_tool( 'web_search', array( 'read-only', 'external-api' ) );
+		$base = WP_MCP_AI_Tool_Router_Harness::score_tool( $tool, 'research' );
+
+		$dampened = WP_MCP_AI_Tool_Router_Harness::score_tool(
+			$tool,
+			'research',
+			array(),
+			array( 'agentic_workflow' => -3.0 )
+		);
+
+		$this->assertEqualsWithDelta( $base - 3.0, $dampened, 0.0001 );
+	}
+
+	/**
+	 * Profile sanitizer must clamp preset weights into [-5, 5], drop zero
+	 * entries, and reject non-string slugs without erroring.
+	 */
+	public function test_profile_sanitizer_clamps_and_normalizes_preset_weights() {
+		$raw = array(
+			'enabled' => true,
+			'tools'   => array(
+				'router'         => 'scored',
+				'preset_weights' => array(
+					'agentic_workflow' => 2.5,
+					'ecommerce'        => 99.0,   // clamp to 5.
+					'content_writing'  => -42.0,  // clamp to -5.
+					'site_management'  => 0,      // dropped.
+					''                 => 1.0,    // empty slug dropped.
+				),
+			),
+		);
+
+		$clean = WP_MCP_AI_Harness_Profile::sanitize( $raw );
+
+		$this->assertArrayHasKey( 'preset_weights', $clean['tools'] );
+		$weights = $clean['tools']['preset_weights'];
+		$this->assertEqualsWithDelta( 2.5, $weights['agentic_workflow'], 0.0001 );
+		$this->assertEqualsWithDelta( 5.0, $weights['ecommerce'], 0.0001 );
+		$this->assertEqualsWithDelta( -5.0, $weights['content_writing'], 0.0001 );
+		$this->assertArrayNotHasKey( 'site_management', $weights );
+		$this->assertArrayNotHasKey( '', $weights );
+	}
+
+	/**
+	 * Existing 3-arg call sites of score_tool() must continue to work
+	 * unchanged (back-compat for the public Pro-extension surface).
+	 */
+	public function test_score_tool_three_arg_signature_still_works() {
+		$tool  = $this->build_stub_tool( 'compat', array( 'read-only' ) );
+		$score = WP_MCP_AI_Tool_Router_Harness::score_tool( $tool, 'qa', array( 'compat' => 1.0 ) );
+		$this->assertGreaterThan( 1.0, $score );
+	}
+
+	/**
 	 * Build a stub tool with the given slug and capability flags.
 	 *
 	 * @param string $slug  Tool slug.

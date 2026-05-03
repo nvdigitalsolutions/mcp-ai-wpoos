@@ -112,6 +112,11 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		$refine       = isset( $profile['refine'] ) && is_array( $profile['refine'] ) ? $profile['refine'] : array();
 		$memory       = isset( $profile['memory'] ) && is_array( $profile['memory'] ) ? $profile['memory'] : array();
 		$router_value = isset( $tools['router'] ) ? (string) $tools['router'] : 'fixed';
+		$preset_weights = ( isset( $tools['preset_weights'] ) && is_array( $tools['preset_weights'] ) ) ? $tools['preset_weights'] : array();
+		$tool_presets   = array();
+		if ( class_exists( 'WP_MCP_AI_Tool_Presets_Helper' ) ) {
+			$tool_presets = (array) WP_MCP_AI_Tool_Presets_Helper::get_presets();
+		}
 		$evals_enabled = isset( $profile['evals_enabled'] ) && is_array( $profile['evals_enabled'] ) ? $profile['evals_enabled'] : array();
 		$eval_suites   = array();
 		$eval_last     = array();
@@ -244,6 +249,56 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 					<?php esc_html_e( 'Scored', 'mcp-ai-wpoos' ); ?>
 				</label>
 			</p>
+			<?php if ( ! empty( $tool_presets ) ) : ?>
+				<details style="margin-top: 10px;"<?php echo ( 'scored' === $router_value && ! empty( $preset_weights ) ) ? ' open' : ''; ?>>
+					<summary style="cursor: pointer; font-weight: 600;">
+						<?php esc_html_e( 'Preferred tool families (advanced)', 'mcp-ai-wpoos' ); ?>
+					</summary>
+					<p class="description" style="margin-top: 8px;">
+						<?php esc_html_e( 'Bias the scored router toward (or away from) entire families of tools, defined by the assistant tool presets. A weight of 0 (default) leaves the family neutral; positive values boost every tool in that preset and negative values dampen them. Range -5 … 5. Only applied when the router mode above is set to “Scored”.', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<table class="widefat striped" style="max-width: 600px;">
+						<thead>
+							<tr>
+								<th scope="col"><?php esc_html_e( 'Preset (tool family)', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col" style="width: 100px;"><?php esc_html_e( 'Weight', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php
+						foreach ( $tool_presets as $preset_slug => $preset ) :
+							$preset_key = sanitize_key( (string) $preset_slug );
+							if ( '' === $preset_key ) {
+								continue;
+							}
+							$current = isset( $preset_weights[ $preset_key ] ) ? (float) $preset_weights[ $preset_key ] : 0.0;
+							$label   = isset( $preset['name'] ) ? (string) $preset['name'] : $preset_key;
+							$desc    = isset( $preset['description'] ) ? (string) $preset['description'] : '';
+							?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $label ); ?></strong>
+									<?php if ( '' !== $desc ) : ?>
+										<br /><span class="description"><?php echo esc_html( $desc ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td>
+									<input
+										type="number"
+										step="0.1"
+										min="-5"
+										max="5"
+										name="wp_mcp_ai_harness_profile[tools][preset_weights][<?php echo esc_attr( $preset_key ); ?>]"
+										value="<?php echo esc_attr( (string) $current ); ?>"
+										style="width: 80px;"
+									/>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
+				</details>
+			<?php endif; ?>
 		</fieldset>
 
 		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
@@ -459,8 +514,10 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 
 		// Tool router (Layer C).
 		$tools_raw        = isset( $raw['tools'] ) && is_array( $raw['tools'] ) ? $raw['tools'] : array();
+		$preset_weights_raw = isset( $tools_raw['preset_weights'] ) && is_array( $tools_raw['preset_weights'] ) ? $tools_raw['preset_weights'] : array();
 		$payload['tools'] = array(
-			'router' => isset( $tools_raw['router'] ) ? (string) $tools_raw['router'] : 'fixed',
+			'router'         => isset( $tools_raw['router'] ) ? (string) $tools_raw['router'] : 'fixed',
+			'preset_weights' => $preset_weights_raw,
 		);
 
 		// Retrieval (Layer D).
