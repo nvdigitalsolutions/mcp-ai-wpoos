@@ -43,7 +43,7 @@ permissions:
 env:
   PLUGIN_SLUG: wp-mcp-ai
   PLUGIN_NAME: "WP Open Operator System"
-  # The WordPress.org directory slug (matches the nvdigital-open-operator-system-oos-*.zip produced by rebuild-all-zips.sh)
+  # The WordPress.org directory slug (matches the nvdigital-open-operator-system-oos-{VERSION}.zip produced by rebuild-all-zips.sh)
   WPORG_SLUG: nvdigital-open-operator-system-oos
 
 jobs:
@@ -222,8 +222,16 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ needs.build.outputs.version }}"
-          # Use the WordPress.org base package produced by rebuild-all-zips.sh
+          # Use the WordPress.org base package produced by rebuild-all-zips.sh:
+          #   build/nvdigital-open-operator-system-oos-{VERSION}.zip
+          #   contains: nvdigital-open-operator-system-oos/ (plugin directory)
           ZIP_FILE="build/${WPORG_SLUG}-${VERSION}.zip"
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "❌ WP.org ZIP not found: $ZIP_FILE"
+            echo "   Available ZIPs in build/:"
+            ls build/*.zip 2>/dev/null || echo "   (none)"
+            exit 1
+          fi
           mkdir -p /tmp/wp/wp-content/plugins
           unzip -q -o "${ZIP_FILE}" -d /tmp/wp/wp-content/plugins/
           ls /tmp/wp/wp-content/plugins/
