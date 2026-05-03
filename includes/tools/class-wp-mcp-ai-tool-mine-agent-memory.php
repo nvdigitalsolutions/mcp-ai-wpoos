@@ -833,7 +833,15 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 			substr( $session_key, 0, 12 )
 		);
 
-		$content_hash = hash( 'sha256', $session_key . '|' . $message_range['start'] . '-' . $message_range['end'] . '|' . $rendered );
+		// Cap input to the hash function to bound memory pressure on
+		// pathological long sessions. 1 MiB is far beyond any realistic
+		// rendered transcript and still produces a stable hash because it
+		// always covers the full prefix.
+		$hash_input = $session_key . '|' . $message_range['start'] . '-' . $message_range['end'] . '|' . $rendered;
+		if ( strlen( $hash_input ) > 1048576 ) {
+			$hash_input = substr( $hash_input, 0, 1048576 );
+		}
+		$content_hash = hash( 'sha256', $hash_input );
 
 		return array(
 			array(
@@ -991,10 +999,27 @@ class WP_MCP_AI_Tool_Mine_Agent_Memory implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $retrieve ) {
 			return $set;
 		}
+
+		/**
+		 * Filters how many of the most-recent agent memory records are
+		 * scanned when building the transcript dedupe lookup. Sites that
+		 * mine very high-volume transcript histories may want to raise this
+		 * to keep the "skip duplicates" guarantee strong; sites with a tight
+		 * memory budget may want to lower it.
+		 *
+		 * @param int        $limit    Default scan limit (1000).
+		 * @param int|string $agent_id Agent identifier the lookup is for.
+		 * @param string     $field    Metadata field being collected
+		 *                             (`transcript_content_hash` or
+		 *                             `transcript_session_key`).
+		 */
+		$limit = (int) apply_filters( 'wp_mcp_ai_mine_transcripts_dedupe_scan_limit', 1000, $agent_id, $field );
+		$limit = max( 1, $limit );
+
 		$lookup = $retrieve->execute(
 			array(
 				'agent_id' => $agent_id,
-				'limit'    => 200,
+				'limit'    => $limit,
 			),
 			array()
 		);
