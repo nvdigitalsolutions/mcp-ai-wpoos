@@ -236,6 +236,8 @@ See [`docs/hooks-reference.md` → LLM Harness Hooks](hooks-reference.md#llm-har
 - `wp_mcp_ai_pii_filter_patterns` (filter)
 - `wp_mcp_ai_resolved_system_prompt` (filter — chat-client integration)
 - `wp_mcp_ai_harness_inject_cue_slugs` (filter — late-stage cue substitution)
+- `wp_mcp_ai_harness_eval_generator` (filter — Layer G generator binding)
+- `wp_mcp_ai_harness_eval_completed` (action — fired after a scheduled run)
 
 ---
 
@@ -307,9 +309,9 @@ Coverage areas:
 
 The plan is staged. The following remain as follow-up stories:
 
-- Layer A admin UI: shipped as `WP_MCP_AI_Metabox_Harness_Profile` on the Assistant edit screen. Surfaces the `enabled` toggle, the cue checkbox grid (sourced from the Cue Library), the per-request cost ceiling, and per-layer fieldsets for Layers B (best-of-N reasoning), C (tool router mode), D (retrieval + require-citations), E (self-refine + max iterations), and F (memory scoping + task class + PII filter).
+- Layer A admin UI: shipped as `WP_MCP_AI_Metabox_Harness_Profile` on the Assistant edit screen. Surfaces the `enabled` toggle, the cue checkbox grid (sourced from the Cue Library), the per-request cost ceiling, and per-layer fieldsets for Layers B (best-of-N reasoning), C (tool router mode), D (retrieval + require-citations), E (self-refine + max iterations), F (memory scoping + task class + PII filter), and G (eval-suite selection + last-run timestamps).
 - Layer C "preferred tool families" matrix in the assistant edit screen.
-- Layer G profile-driven invocation. The eval framework is already present; the wiring from `harness_profile.evals_enabled` to a scheduled run is a small follow-up.
+- Layer G profile-driven invocation: shipped as `WP_MCP_AI_Harness_Eval_Scheduler`. The scheduler walks every assistant with `harness_profile.enabled` + non-empty `evals_enabled` on a daily cron (`wp_mcp_ai_harness_eval_tick`), looks up each suite from `WP_MCP_AI_Eval_Suite_Registry`, runs it via `WP_MCP_AI_Eval_Runner` using a generator obtained from the `wp_mcp_ai_harness_eval_generator` filter, and records summaries to both the suite-scoped `WP_MCP_AI_Eval_Run_Store` (trend history, regression-detector input) and a per-assistant post meta `_wp_mcp_ai_harness_last_evals` (admin-UI "last result" column). When no generator is wired up, the run is skipped — never errored — preserving the behaviour-preserving guarantee. Sites can also call `run_suite_for_assistant( $assistant_id, $suite_slug )` directly for one-off runs from a dashboard button or WP-CLI command.
 - Layer H curriculum export (Pro).
 - The "Harness Lift" report card (Pro leaderboard widget).
 

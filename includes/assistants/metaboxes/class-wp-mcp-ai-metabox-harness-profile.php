@@ -112,6 +112,17 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		$refine       = isset( $profile['refine'] ) && is_array( $profile['refine'] ) ? $profile['refine'] : array();
 		$memory       = isset( $profile['memory'] ) && is_array( $profile['memory'] ) ? $profile['memory'] : array();
 		$router_value = isset( $tools['router'] ) ? (string) $tools['router'] : 'fixed';
+		$evals_enabled = isset( $profile['evals_enabled'] ) && is_array( $profile['evals_enabled'] ) ? $profile['evals_enabled'] : array();
+		$eval_suites   = array();
+		$eval_last     = array();
+		if ( class_exists( 'WP_MCP_AI_Eval_Suite_Registry' ) ) {
+			$registry = WP_MCP_AI_Eval_Suite_Registry::get_instance();
+			$registry->boot();
+			$eval_suites = $registry->all();
+		}
+		if ( class_exists( 'WP_MCP_AI_Harness_Eval_Scheduler' ) ) {
+			$eval_last = WP_MCP_AI_Harness_Eval_Scheduler::get_last_runs( $assistant_id );
+		}
 
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		?>
@@ -341,6 +352,56 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 			</p>
 		</fieldset>
 
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Evaluation Suites (Layer G)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Select eval suites that should run for this assistant on the daily harness cron. Suites are registered via the `wp_mcp_ai_register_eval_suites` hook. The actual generation step (the callable that produces a model output for a case) is wired up via the `wp_mcp_ai_harness_eval_generator` filter — without it, scheduled runs are skipped with a logged notice.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<?php if ( empty( $eval_suites ) ) : ?>
+				<p><em><?php esc_html_e( 'No eval suites are registered.', 'mcp-ai-wpoos' ); ?></em></p>
+			<?php else : ?>
+				<ul style="list-style: none; padding: 0; margin: 0;">
+					<?php foreach ( $eval_suites as $suite_slug => $suite ) : ?>
+						<?php
+						$slug_str = (string) $suite_slug;
+						$label    = method_exists( $suite, 'get_label' ) ? (string) $suite->get_label() : $slug_str;
+						$desc     = method_exists( $suite, 'get_description' ) ? (string) $suite->get_description() : '';
+						$last     = isset( $eval_last[ $slug_str ] ) ? $eval_last[ $slug_str ] : null;
+						?>
+						<li style="margin: 6px 0;">
+							<label>
+								<input
+									type="checkbox"
+									name="wp_mcp_ai_harness_profile[evals_enabled][]"
+									value="<?php echo esc_attr( $slug_str ); ?>"
+									<?php checked( in_array( $slug_str, $evals_enabled, true ) ); ?>
+								/>
+								<strong><?php echo esc_html( $label ); ?></strong>
+								<code style="color: #646970;"><?php echo esc_html( $slug_str ); ?></code>
+								<?php if ( '' !== $desc ) : ?>
+									<span style="color: #646970;"> — <?php echo esc_html( $desc ); ?></span>
+								<?php endif; ?>
+								<?php if ( is_array( $last ) && ! empty( $last['started_at'] ) ) : ?>
+									<br />
+									<small style="color: #8c8f94; margin-left: 22px;">
+										<?php
+										echo esc_html(
+											sprintf(
+												/* translators: %s: human-readable time-ago */
+												__( 'Last run: %s ago', 'mcp-ai-wpoos' ),
+												human_time_diff( (int) $last['started_at'] )
+											)
+										);
+										?>
+									</small>
+								<?php endif; ?>
+							</label>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+		</fieldset>
+
 		<?php
 		$this->render_documentation_link();
 	}
@@ -427,10 +488,17 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 			'pii_filter' => null === $memory_raw ? true : ! empty( $memory_raw['pii_filter'] ),
 		);
 
+		// Eval suites (Layer G). Unchecked checkboxes don't appear in
+		// $_POST, so an absent `evals_enabled` key resolves to an empty
+		// list. The profile sanitizer drops invalid slugs.
+		$payload['evals_enabled'] = isset( $raw['evals_enabled'] ) && is_array( $raw['evals_enabled'] )
+			? $raw['evals_enabled']
+			: array();
+
 		// Preserve fields that aren't (yet) surfaced in the UI so saving
 		// from this metabox doesn't silently reset them.
 		$existing = WP_MCP_AI_Harness_Profile::get( (int) $post_id );
-		foreach ( array( 'evals_enabled', 'verifiers' ) as $passthrough ) {
+		foreach ( array( 'verifiers' ) as $passthrough ) {
 			if ( isset( $existing[ $passthrough ] ) && ! isset( $payload[ $passthrough ] ) ) {
 				$payload[ $passthrough ] = $existing[ $passthrough ];
 			}
