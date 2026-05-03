@@ -70,6 +70,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-timeout-detection-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-profession-playbook-loader.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-transcript-mining-job.php';
 
 // Load security manager.
 require_once plugin_dir_path( __FILE__ ) . 'class-wp-mcp-ai-security-manager.php';
