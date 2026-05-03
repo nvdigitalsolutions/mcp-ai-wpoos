@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.13
+Stable tag: 1.1.14
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -277,7 +277,23 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 = 1.1.14 - May 2, 2026 =
 
-**Agent Skills v2 — progressive disclosure + skill packs + remote catalogues, follow-up fixes**
+**Agent Skills v2 (progressive disclosure + skill packs + remote catalogues), Markup Subsystem (Base), MemPalace Capture Framework Phases A + B1, Graphify CPT/CCT integration suite, follow-up fixes**
+
+*Added — Markup Subsystem (Base, PR #4778)*
+
+A new in-the-loop image / document markup system that lets tools pause the agentic loop, surface a Konva canvas widget in the chat UI for the user to draw on, and resume the same tool call with the rasterised mask / crop / region polygon.
+
+* **Loop integration** — `WP_MCP_AI_Markup_Loop_Interceptor` short-circuits any tool that implements `WP_MCP_AI_Markup_Aware_Tool_Interface` and emits a `markup_elicitation` SSE frame instead of the tool result. The chat client persists a `request_id` and resumes the call once the user submits the markup. Master toggle: `wp_mcp_ai_markup_enabled` filter.
+* **Chat canvas widget** auto-enqueued whenever the main chat bundle is on the page — supports `mask`, `crop`, and `region` modes against image targets.
+* **Markup-aware tools** — `edit_openai_image` (`mask`), `crop_image` (`crop`), `edit_gemini_image` (`region`).
+* **REST controller** — `/wp-json/mcp-ai/v1/markup/{request_id}` accepts a W3C Web Annotation envelope, runs `WP_MCP_AI_Markup_Validator` + `WP_MCP_AI_Markup_Rasterizer`, and re-invokes the source tool with the resulting artifacts in the execution context.
+* **Settings UI** toggle under **NV oOS → Settings → General**.
+* **Telemetry** — bounded option `wp_mcp_ai_markup_telemetry` aggregates per-tool / per-mode counters and last-seen timestamps for seven outcome buckets.
+* **Slash command** `/markup-stats` (alias `/markup`) renders the summary as Markdown with `--verbose`, `--json`, and `--reset` flags.
+* **Admin dashboard** under **NV oOS → Markup Telemetry** renders the same summary as a server-rendered HTML table with a colour-coded completion-rate card, per-tool / per-mode breakdowns, relative `last_seen` timestamps, and a nonce-protected `Reset counters` form.
+* **Hooks** (4 actions, 4 filters): `wp_mcp_ai_markup_request_created`, `wp_mcp_ai_markup_submitted`, `wp_mcp_ai_markup_validated`, `wp_mcp_ai_markup_resolved`, `wp_mcp_ai_markup_enabled`, `wp_mcp_ai_markup_widget_payload`, `wp_mcp_ai_markup_mcp_elicitation`, `wp_mcp_ai_markup_rasterized_artifacts`. Documented in `docs/hooks-reference.md`.
+* **Daily cleanup** cron (`wp_mcp_ai_markup_cleanup`) prunes expired markup transients and orphan mask attachments.
+* Reference: `docs/markup-subsystem.md`.
 
 *Added — Agent Skills Phases 1–4 (PR #4771)*
 
@@ -287,25 +303,57 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 * **Phase 4 — Skill packs**: curated, named collections of related skills addressable as a single unit ("WordPress Developer", "Document Authoring", etc.). The Skill Manager admin UI gains tabs for browsing catalogues, managing packs, and editing individual skills.
 * Filters: `wp_mcp_ai_skill_catalogue_manifest_ttl`, `wp_mcp_ai_skill_catalogue_refresh_cadence`.
 
+*Added — MemPalace Capture Framework Phases A + B1*
+
+* **Phase A — foundation** — base capture interface, lifecycle hooks, and shared time-source / tier-logging utilities, with a follow-up review fix for time consistency and tier-logging payload shape.
+* **Phase B1 — five highest-leverage capture tools** that write into the durable `ai_agent_memories` Custom Content Type through the Phase 4a/4b bridge shipped in 1.1.13.
+* See `docs/AGENT-MEMORY-COMPLETE-GUIDE.md` for the unified MemPalace / Letta / Zep / mem0 / Cognee schema rationale.
+
+*Added — Graphify CPT/CCT integration suite*
+
+JetEngine custom post types and Custom Content Types are now first-class citizens across every Graphify surface.
+
+* **Knowledge graph builds (#4779)** — JetEngine CPTs and CCTs are detected, structured (`cct_{slug}` nodes + `AUTHORED_BY` edges), and semantically embedded end-to-end through dedicated cache prefixes and cron actions.
+* **Graph Explorer type filter** — JetEngine CPTs and CCTs now appear alongside core post types in the Explorer's type filter.
+* **Related-content widget + recommendations** expanded to all CPTs (audit follow-up).
+* **Semantic extractor extended to JetEngine CCT items (#4781)**.
+* **Re-index All Nodes** button on the embeddings tab now triggers a full re-index of every Graphify node.
+* **Per-source detection counts + CCT skip reason** surfaced on the embeddings/diagnostics screens.
+* **Settings persistence on tabbed admin page (#4784)** — Graphify settings now persist correctly across tab switches.
+* JS escaping fix (#4780): extracted constant, hoisted filter, added a label-field filter for downstream customisation.
+* `ucwords` for multi-word post-type slug fallback so `case_study` produces `Case Study` instead of `Case_study`.
+
+*Added — Agent context system (.github/agents/ + examples/agents/)*
+
+* `.github/agents/` is now a layered context surface — each `*.agent.md` carries only role-specific metadata + behavior and links to `AGENTS.md`, `CLAUDE.md`, and `.context/` for shared rules. Slim template at `.context/templates/agent-file-template.md`; copy-ready examples under `examples/agents/`.
+* New 10-agent roster covers the full NV oOS surface (REST reviewer, security reviewer, WP.org compliance auditor, PHP-compat reviewer, tool author, slash-command author, chat-UI author, PHPUnit test author, agent-skill curator, addon maintainer, release engineer, docs maintainer). See `examples/agents/README.md`.
+
 *Fixed*
 
+* **Markup subsystem — server-side ownership check on admin fallback page** — a markup `request_id` issued for one user can no longer be opened by another.
+* **Markup subsystem — null-safe hex color, best-effort hardening file writes** — review-pass hardening on the rasteriser path.
 * **Graphify Memory Bridge stale "not installed" status (#4769)** — the orchestration dashboard's Phase 4a memory-bridge widget could report "not installed" even after the bridge had been activated, due to a stale-cache `bridge_active` recomputation path. Cache invalidation now runs on activation/deactivation and the widget re-reads the live status. Regression covered by `tests/test-orchestration-dashboard-stale-cache.php`.
+* **Orchestration dashboard — JetEngine availability recomputed on cache hit** — `get_agent_memory_stats()` caches results for 5 min; both `bridge_active` (Graphify) and `persistent_storage.available` (JetEngine CCT) are now re-checked on cache hit so the dashboard no longer reports "not installed" for up to 5 minutes after the underlying plugin is activated.
+* **Pro Mini App Builder — TMA bundle enqueue when `asset.php` is missing** — the Telegram Mini App bundle now enqueues correctly even when the build pipeline does not emit a sibling `asset.php` manifest, so the builder loads on a clean install.
 * **cURL SSL error 60 fetching remote skill catalogues (#4772)** — the new catalogue-fetcher (Phase 2) could fail with `cURL error 60: SSL certificate problem` on hosts with outdated CA bundles when reaching `api.github.com` and `raw.githubusercontent.com`. The HTTP layer now uses WordPress's `wp_remote_get()` certificate bundle path consistently and surfaces a structured `WP_Error` instead of a fatal request failure when verification still fails.
 * **"Dynamic require of dicom-parser" in Medical Imaging Viewer (#4773)** — the Pro Medical Imaging Viewer bundle could fail at runtime with `Dynamic require of "dicom-parser" is not supported`. The viewer now imports `dicom-parser` statically so the esbuild output no longer relies on a runtime CommonJS shim.
+* **Stored embeddings display (#4787)** — the stored-embeddings admin display rendered incorrectly under certain dataset shapes; it now degrades gracefully and surfaces accurate counts.
 
 *Build*
 
-* **All distribution ZIPs rebuilt at v1.1.13 (#4775)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the six standalone toolkit add-on ZIPs.
+* **All distribution ZIPs rebuilt at v1.1.13 (#4775, #4782)** — `bin/rebuild-all-zips.sh` regenerated the four original (`mcp-ai-wpoos-base|pro|combined|core`) and four WordPress.org (`nvdigital-open-operator-system-oos-*`) packages plus the standalone toolkit add-on ZIPs (19 toolkit ZIPs in the v1.1.13 rebuild pass).
 * **Production autoloader reaffirmed (#4774)** — `vendor/composer/installed.json` and the autoload classmap regenerated with `composer install --no-dev --classmap-authoritative` to confirm the production posture established in 1.1.13.
 
 *Documentation*
 
+* `docs/markup-subsystem.md` (new) walks through the end-to-end markup flow, REST contract, validator rules, rasteriser output shape, and observability surfaces.
+* `docs/hooks-reference.md` extended with the 4 markup actions + 4 markup filters.
 * `docs/features/agent-skills.md` updated end-to-end with the Phases 1–4 narrative.
-* `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total).
+* `README.md`, `MAINTAINER_MAP.md`, `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` refreshed with v1.1.14 and reconciled tool counts (~195 base / ~635 Pro / ~830 total — the live registry via `WP_MCP_AI_Tool_Registry::get_tools()` remains authoritative).
 
 *Versioning*
 
-* The plugin version constant remains 1.1.13 in this commit. The `WP_MCP_AI_VERSION` constant, plugin header, `package.json`, and `readme.txt` Stable tag will be bumped together to 1.1.14 when the next ZIP is cut.
+* Bumped to 1.1.14 across plugin header (`mcp-ai-wpoos.php`), `WP_MCP_AI_VERSION` constant (`includes/bootstrap/constants.php`), `package.json`, `package-lock.json`, `readme.txt` Stable tag, and `CHANGELOG.md`.
 
 = 1.1.13 - May 1, 2026 =
 
@@ -850,6 +898,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
+
+= 1.1.14 =
+**Markup Subsystem (Base)** — tools can now pause the agentic loop, surface a Konva canvas in the chat for the user to draw on, and resume with the rasterised mask / crop / region. Three tools (`edit_openai_image`, `crop_image`, `edit_gemini_image`) are markup-aware out of the box. New **NV oOS → Markup Telemetry** dashboard, `/markup-stats` slash command, and 4 actions + 4 filters. **Agent Skills v2** ships progressive disclosure (`load_skill` tool), curated skill packs, and remote skill catalogues (Pro). **MemPalace Capture Framework Phases A + B1** layer five capture tools onto the durable agent-memory bridge from 1.1.13. **Graphify** now treats JetEngine CPTs and CCTs as first-class citizens in the knowledge graph, Graph Explorer, related-content widget, and embeddings re-index path. Plus follow-up fixes to the orchestration dashboard, the Pro Mini App Builder enqueue path, the skill-catalogue cURL fetcher, the Pro Medical Imaging Viewer bundle, and the stored-embeddings admin display. Safe upgrade.
 
 = 1.1.13 =
 OpenAI **`gpt-image-2` (Images 2.0)** is now the default image model with native 2K aspect-ratio support. Phase 4a/4b adds a durable agent-memory bridge that mirrors transient memory into a JetEngine `ai_agent_memories` CCT (industry-standard schema; transients still primary read path). New AI Harmonization sub-toolkit (14 Pro tools). Production-only Composer autoloader so the repo can be cloned as a deployable plugin (`composer install --no-dev --classmap-authoritative` — no separate `dump-autoload`). Existing sites with a saved image-model setting are unaffected. Safe upgrade.
