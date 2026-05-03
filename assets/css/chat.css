@@ -3680,7 +3680,9 @@
     }
 }
 
-/* The chat container needs `position:relative` for the drawer to anchor to it. */
+/* The chat container needs `position: relative` for the absolutely-positioned
+ * memory drawer (above) to anchor inside the chat surface. Kept here, next
+ * to the drawer rules, so the relationship is obvious to future editors. */
 .wp-mcp-ai-chat__container {
     position: relative;
 }

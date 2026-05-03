@@ -588,9 +588,15 @@
 		}
 
 		function removeItemById(id) {
-			const node = list.querySelector('[data-context-id="' + window.CSS.escape(id) + '"]');
-			if (node && node.parentNode) {
-				node.parentNode.removeChild(node);
+			// Filter children rather than building a selector to avoid any
+			// selector-string concatenation. CSS.escape would also be safe,
+			// but iterating is simpler and survives any future schema change.
+			const children = Array.prototype.slice.call(list.children);
+			for (let i = 0; i < children.length; i++) {
+				if (children[i].getAttribute('data-context-id') === String(id)) {
+					list.removeChild(children[i]);
+					break;
+				}
 			}
 			if (!list.children.length) {
 				emptyState.hidden = false;

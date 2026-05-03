@@ -75,13 +75,6 @@ describe( 'chat-memory-drawer', () => {
 		document.body.innerHTML = '';
 		delete window.wpMcpAiChatMemory;
 		delete window.wpMcpAiChatMemoryDrawer;
-		// Polyfill CSS.escape for jsdom (used to build [data-context-id="..."] selectors).
-		if ( ! window.CSS ) {
-			window.CSS = {};
-		}
-		if ( ! window.CSS.escape ) {
-			window.CSS.escape = ( s ) => String( s ).replace( /([\\!"#$%&'()*+,./:;<=>?@[\]^`{|}~-])/g, '\\$1' );
-		}
 		window.confirm = jest.fn( () => true );
 		// eslint-disable-next-line no-eval
 		eval( drawerCode );
