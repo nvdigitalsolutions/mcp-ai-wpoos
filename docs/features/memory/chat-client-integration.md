@@ -259,16 +259,26 @@ tracked as follow-up work:
   `POST /chat-memory/store` so the existing permission gates and audit
   trail apply. **Phase 2** (true LLM-side summarisation instead of
   verbatim capture) is still deferred.
-- **G8 SSE `memory_event` frames** — **partial (toast shipped).** A
-  transient toast is now announced inside `decorateMessageWithBadge` whenever
-  the assistant message's `payload.tool_calls` includes a memory tool —
-  "🧠 Used long-term memory.", "🧠 Saved a memory." or "🧠 Used and saved
-  long-term memory." depending on which tools fired. The toast is
-  one-shot per bubble (idempotent via `data-wp-mcp-ai-memory-toast="1"`)
-  and rides on the existing inline tool-call metadata, so no SSE plumbing
-  or polling is required. A pure server-side `memory_event` SSE frame is
-  still deferred — the inline-metadata approach already covers the
-  user-visible objective.
+- **G8 SSE `memory_event` frames** — **shipped.** Two paths now feed the
+  same "🧠 Memory" toast:
+  1. **End-of-stream (inline metadata).** `decorateMessageWithBadge` inspects
+     `payload.tool_calls` on the assistant bubble and announces a single
+     toast — "🧠 Used long-term memory.", "🧠 Saved a memory.", or
+     "🧠 Used and saved long-term memory." Idempotent per bubble via
+     `data-wp-mcp-ai-memory-toast="1"` so streaming re-decorations never
+     double-announce. Used for non-streaming responses.
+  2. **Mid-stream (server SSE).** `handle_chat_request_with_streaming` now
+     emits a `memory_event` SSE frame (`{ action, tool_name, tool_id }`)
+     immediately after each `tool_execution` event whose tool is classified
+     by `classify_memory_tool_action()` as a retriever
+     (`recall_memory`, `wake_up_context`, `semantic_context_search`,
+     `retrieve_agent_memory`) or a writer (`store_agent_context`,
+     `update_agent_memory`, `capture_memory`). The chat.js SSE router
+     forwards the frame to `wpMcpAiChatMemoryDrawer.handleSseMemoryEvent()`,
+     which fires the toast immediately and bumps a small pending counter.
+     The end-of-stream decorator drains that counter and skips its own
+     toast for the same turn (the badge is still drawn) so users never see
+     a duplicate notification.
 - **G11 Drawer-driven export** — **shipped.** New "Export" button next to
   Refresh on the Memories tab. Calls `recall()` with the active scope
   (wing/room/query) and a high `limit` (200), wraps the records in a small

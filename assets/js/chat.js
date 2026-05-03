@@ -14285,6 +14285,21 @@
                             handleStatusEvent(state, data);
                         } else if (eventType === 'tool_execution') {
                             handleToolExecutionEvent(state, data);
+                        } else if (eventType === 'memory_event') {
+                            // G8 Phase 2 — mid-stream "🧠 Memory" toast.
+                            // The server emits this frame as soon as a memory
+                            // tool runs; the drawer's end-of-stream decorator
+                            // suppresses its own toast for the same turn.
+                            if (window.wpMcpAiChatMemoryDrawer
+                                && typeof window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent === 'function') {
+                                try {
+                                    window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent(data);
+                                } catch (e) {
+                                    if (window.console && console.warn) {
+                                        console.warn('[NV oOS] memory_event SSE handler failed:', e);
+                                    }
+                                }
+                            }
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {

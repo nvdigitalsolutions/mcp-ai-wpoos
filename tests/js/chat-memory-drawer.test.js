@@ -634,6 +634,65 @@ describe( 'chat-memory-drawer', () => {
 		} );
 	} );
 
+	describe( 'SSE memory_event handler (G8 Phase 2)', () => {
+		function getToasts() {
+			const region = document.getElementById( 'wp-mcp-ai-memory-toasts' );
+			return region ? region.querySelectorAll( '[data-testid="wp-mcp-ai-memory-toast"]' ) : [];
+		}
+
+		test( 'fires the "used" toast for action=retrieved', () => {
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'retrieved', tool_name: 'recall_memory' } );
+			const toasts = getToasts();
+			expect( toasts.length ).toBe( 1 );
+			expect( toasts[ 0 ].textContent ).toMatch( /Used long-term memory/ );
+		} );
+
+		test( 'fires the "saved" toast for action=stored', () => {
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'stored', tool_name: 'store_agent_context' } );
+			const toasts = getToasts();
+			expect( toasts.length ).toBe( 1 );
+			expect( toasts[ 0 ].textContent ).toMatch( /Saved a memory/ );
+		} );
+
+		test( 'is a no-op on missing or unknown action', () => {
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( null );
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( {} );
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'banana' } );
+			expect( getToasts().length ).toBe( 0 );
+		} );
+
+		test( 'suppresses the end-of-stream decorator toast for the same turn', () => {
+			// Server frame fires first.
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'retrieved' } );
+			expect( getToasts().length ).toBe( 1 );
+			// End-of-stream decoration arrives — should NOT add a second toast,
+			// but should still draw the badge.
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [ { tool: 'recall_memory' } ] );
+			expect( getToasts().length ).toBe( 1 );
+			expect( bubble.querySelector( '.wp-mcp-ai-memory-badge' ) ).not.toBeNull();
+			expect( bubble.getAttribute( 'data-wp-mcp-ai-memory-toast' ) ).toBe( '1' );
+		} );
+
+		test( 'two SSE frames suppress two end-of-stream decorator toasts', () => {
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'retrieved' } );
+			window.wpMcpAiChatMemoryDrawer.handleSseMemoryEvent( { action: 'stored' } );
+			expect( getToasts().length ).toBe( 2 );
+			const b1 = document.createElement( 'div' );
+			const b2 = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( b1, [ { tool: 'recall_memory' } ] );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( b2, [ { tool: 'store_agent_context' } ] );
+			// Still 2 — both bubbles' toasts were suppressed.
+			expect( getToasts().length ).toBe( 2 );
+		} );
+
+		test( 'decorator falls back to its own toast when no SSE frame fired (non-streaming)', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [ { tool: 'recall_memory' } ] );
+			expect( getToasts().length ).toBe( 1 );
+		} );
+	} );
+
 	describe( 'auto-summary on conversation close (G6)', () => {
 		/**
 		 * Install a wpMcpAiChatStorage stub returning a small transcript.

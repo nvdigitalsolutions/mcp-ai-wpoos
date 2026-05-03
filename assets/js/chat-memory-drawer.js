@@ -55,6 +55,52 @@
 		'capture_memory'
 	];
 
+	// G8 Phase 2 — counter of mid-stream `memory_event` SSE toasts that have
+	// already fired for the in-flight assistant turn. The end-of-stream
+	// `decorateMessageWithBadge` call drains this counter to skip its own
+	// toast (the badge is still drawn) so the same memory op never
+	// double-announces. Drained on each call; never grows unbounded.
+	let pendingSseToasts = 0;
+
+	/**
+	 * Build the toast copy for a memory op.
+	 *
+	 * @param {boolean} retrieved
+	 * @param {boolean} stored
+	 * @return {string}
+	 */
+	function memoryToastCopy(retrieved, stored) {
+		if (retrieved && stored) {
+			return __( '🧠 Used and saved long-term memory.', 'mcp-ai-wpoos' );
+		}
+		if (stored) {
+			return __( '🧠 Saved a memory.', 'mcp-ai-wpoos' );
+		}
+		return __( '🧠 Used long-term memory.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Handle a server-side `memory_event` SSE frame (G8 Phase 2).
+	 *
+	 * Fires a transient toast immediately and bumps the pending-toast
+	 * counter so the end-of-stream decorator can suppress its own toast
+	 * for the same turn.
+	 *
+	 * @param {{action:string, tool_name?:string}} payload
+	 */
+	function handleSseMemoryEvent(payload) {
+		if (!payload || typeof payload.action !== 'string') {
+			return;
+		}
+		const retrieved = payload.action === 'retrieved';
+		const stored    = payload.action === 'stored';
+		if (!retrieved && !stored) {
+			return;
+		}
+		pendingSseToasts++;
+		announceToast(memoryToastCopy(retrieved, stored), 'info');
+	}
+
 	function memoryService() {
 		return window.wpMcpAiChatMemory || null;
 	}
@@ -166,17 +212,17 @@
 		// so re-decoration on streaming updates never double-announces. The
 		// toast rides on `payload.tool_calls` already streamed inline with the
 		// assistant message — no SSE plumbing or polling required.
+		//
+		// G8 Phase 2 — when a server-side `memory_event` SSE frame already
+		// announced a toast for this turn, drain the pending counter and skip
+		// the bubble's own toast (still draw the badge).
 		if (!bubble.getAttribute('data-wp-mcp-ai-memory-toast')) {
-			let message;
-			if (retrieved && stored) {
-				message = __( '🧠 Used and saved long-term memory.', 'mcp-ai-wpoos' );
-			} else if (stored) {
-				message = __( '🧠 Saved a memory.', 'mcp-ai-wpoos' );
-			} else {
-				message = __( '🧠 Used long-term memory.', 'mcp-ai-wpoos' );
-			}
 			bubble.setAttribute('data-wp-mcp-ai-memory-toast', '1');
-			announceToast(message, 'info');
+			if (pendingSseToasts > 0) {
+				pendingSseToasts--;
+			} else {
+				announceToast(memoryToastCopy(retrieved, stored), 'info');
+			}
 		}
 	}
 
@@ -1214,7 +1260,8 @@
 		ensureToastRegion: ensureToastRegion,
 		isAvailable: isAvailable,
 		registerAutoSummary: registerAutoSummary,
-		readTranscript: readTranscript
+		readTranscript: readTranscript,
+		handleSseMemoryEvent: handleSseMemoryEvent
 	};
 
 	// Auto-attach on DOMContentLoaded and on a short interval thereafter to
