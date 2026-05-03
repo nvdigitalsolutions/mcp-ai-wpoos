@@ -46,3 +46,12 @@ Standalone addon for the NV oOS (Open Operator System) WordPress plugin that pro
 ## License
 
 GPLv3 or later
+
+## Credits
+
+This addon talks to two third-party APIs that remain owned by their respective providers and are governed by their own Terms of Service:
+
+- **ESPN Fantasy Football API** — © The Walt Disney Company / ESPN, Inc.
+- **Yahoo Fantasy Sports API** — © Yahoo / Apollo Global Management
+
+No proprietary code from either provider is bundled with this addon. For the full repo-wide attribution index, see [`CREDITS.md`](../../CREDITS.md) at the repository root.
