@@ -254,8 +254,14 @@ tracked as follow-up work:
   end-of-session capture flow itself is deferred.
 - **G8 SSE `memory_event` frames** from the agentic loop — would replace
   client-side polling for the badge and toast.
-- **G11 Drawer-driven export** — the data is already exposed by the recall
-  route; the UI affordance is deferred.
+- **G11 Drawer-driven export** — **shipped.** New "Export" button next to
+  Refresh on the Memories tab. Calls `recall()` with the active scope
+  (wing/room/query) and a high `limit` (200), wraps the records in a small
+  envelope (`exported_at`, `agent_id`, `scope`, `count`, `memories`), and
+  triggers a one-shot JSON download. The button is disabled while the request
+  is in flight to prevent duplicate downloads. No new REST route required —
+  the existing `/recall` endpoint already enforces the kill-switch + per-user
+  toggle.
 
 ## Related docs
 

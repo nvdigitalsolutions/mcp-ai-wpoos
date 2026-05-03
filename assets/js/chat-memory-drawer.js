@@ -460,6 +460,13 @@
 		refreshBtn.textContent = __( 'Refresh', 'mcp-ai-wpoos' );
 		filterRow.appendChild(refreshBtn);
 
+		const exportBtn = document.createElement('button');
+		exportBtn.type = 'button';
+		exportBtn.className = 'wp-mcp-ai-memory-drawer__export';
+		exportBtn.setAttribute('data-testid', 'wp-mcp-ai-memory-export');
+		exportBtn.textContent = __( 'Export', 'mcp-ai-wpoos' );
+		filterRow.appendChild(exportBtn);
+
 		const list = document.createElement('ul');
 		list.className = 'wp-mcp-ai-memory-drawer__list';
 		list.setAttribute('data-testid', 'wp-mcp-ai-memory-list');
@@ -832,6 +839,99 @@
 			filterTimer = window.setTimeout(loadMemories, 250);
 		});
 		refreshBtn.addEventListener('click', loadMemories);
+
+		/**
+		 * Drawer-driven export (G11).
+		 *
+		 * Calls memoryService.recall() with the active scope (wing/room/query)
+		 * and a high limit so users can take a snapshot of the slice they're
+		 * currently looking at. The result is wrapped in a small envelope with
+		 * an exported_at timestamp + scope, serialised to JSON, and offered as
+		 * a download via a single-shot anchor click. The button is disabled
+		 * while the request is in flight to prevent duplicate downloads.
+		 *
+		 * No new REST route is needed — the recall endpoint already enforces
+		 * permission, the kill-switch and the per-user toggle.
+		 */
+		let exportInFlight = false;
+		exportBtn.addEventListener('click', function() {
+			if (exportInFlight) {
+				return;
+			}
+			if (!isAvailable()) {
+				announceToast(__( 'Memory is not available right now.', 'mcp-ai-wpoos' ), 'error');
+				return;
+			}
+			exportInFlight = true;
+			exportBtn.disabled = true;
+
+			const filters = {
+				agentId: agentId,
+				wing: config.memoryWing || '',
+				room: config.memoryRoom || '',
+				limit: 200
+			};
+
+			memoryService().recall(queryInput.value || '', filters).then(function(response) {
+				const records = extractRecords(response);
+				const payload = {
+					exported_at: new Date().toISOString(),
+					agent_id: agentId,
+					scope: {
+						wing: filters.wing || null,
+						room: filters.room || null,
+						query: queryInput.value || ''
+					},
+					count: records.length,
+					memories: records
+				};
+				triggerDownload(payload);
+				announceToast(
+					i18n.sprintf(
+						/* translators: %d: number of memories exported */
+						__( 'Exported %d memor(y/ies).', 'mcp-ai-wpoos' ),
+						records.length
+					),
+					'success'
+				);
+			}).catch(function(err) {
+				announceToast(
+					(err && err.message) || __( 'Could not export memories.', 'mcp-ai-wpoos' ),
+					'error'
+				);
+			}).then(function() {
+				exportInFlight = false;
+				exportBtn.disabled = false;
+			});
+		});
+
+		/**
+		 * Trigger a one-shot JSON download for the supplied payload.
+		 *
+		 * Uses URL.createObjectURL + a synthetic anchor click + revokeObjectURL
+		 * so we don't leave the URL alive in the document. Filename embeds the
+		 * agent_id and a compact ISO timestamp.
+		 *
+		 * @param {Object} payload
+		 */
+		function triggerDownload(payload) {
+			const json = JSON.stringify(payload, null, 2);
+			const blob = new Blob([ json ], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const safeAgent = String(agentId || 'unknown').replace(/[^A-Za-z0-9_-]/g, '_');
+			const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+			const filename = 'mcp-ai-memory-' + safeAgent + '-' + stamp + '.json';
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			a.style.display = 'none';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			window.setTimeout(function() {
+				URL.revokeObjectURL(url);
+			}, 0);
+		}
 
 		let opened = false;
 		let releaseTrap = null;

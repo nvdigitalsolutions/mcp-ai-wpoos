@@ -365,6 +365,187 @@ describe( 'chat-memory-drawer', () => {
 		} );
 	} );
 
+	describe( 'export button', () => {
+		/**
+		 * Stub URL.createObjectURL / revokeObjectURL + intercept anchor clicks
+		 * so tests can assert the download path without actually triggering one.
+		 */
+		function installDownloadCaptors() {
+			const created = [];
+			const revoked = [];
+			const clicked = [];
+			window.URL.createObjectURL = jest.fn( ( blob ) => {
+				const url = 'blob:fake-' + created.length;
+				// Pull the blob's body out via the constructor — jsdom's Blob
+				// doesn't implement .text(), but we can read the original
+				// parts the SUT passed in via blob[Symbol.for('jest.bodyParts')]
+				// when we wrap it. Simpler: re-read via a FileReader fallback,
+				// or stash on a global.
+				created.push( { blob, url } );
+				return url;
+			} );
+			window.URL.revokeObjectURL = jest.fn( ( url ) => {
+				revoked.push( url );
+			} );
+			const origBlob = window.Blob;
+			window.Blob = function( parts, opts ) {
+				const b = new origBlob( parts, opts );
+				// Surface the JSON body for assertions.
+				b.__parts = parts;
+				return b;
+			};
+			window.Blob.prototype = origBlob.prototype;
+			const origClick = window.HTMLAnchorElement.prototype.click;
+			window.HTMLAnchorElement.prototype.click = function() {
+				clicked.push( {
+					href: this.getAttribute( 'href' ),
+					download: this.getAttribute( 'download' )
+				} );
+			};
+			return {
+				created,
+				revoked,
+				clicked,
+				restore: () => {
+					window.HTMLAnchorElement.prototype.click = origClick;
+					window.Blob = origBlob;
+				}
+			};
+		}
+
+		test( 'export button is rendered with a stable testid', () => {
+			installMemoryStub();
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const btn = container.querySelector( '[data-testid="wp-mcp-ai-memory-export"]' );
+			expect( btn ).not.toBeNull();
+			expect( btn.tagName ).toBe( 'BUTTON' );
+		} );
+
+		test( 'click triggers recall() with the active scope and a high limit, then downloads JSON', async () => {
+			const recallMock = jest.fn().mockResolvedValue( {
+				contexts: [
+					{ context_id: 'm-1', title: 'A', content: 'a', tags: [], tier: 'core' },
+					{ context_id: 'm-2', title: 'B', content: 'b', tags: [], tier: 'recall' }
+				]
+			} );
+			installMemoryStub( { recall: recallMock } );
+			const captors = installDownloadCaptors();
+			try {
+				const container = makeContainer();
+				window.wpMcpAiChatMemoryDrawer.attach( container );
+				container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+
+				// First call from open()/loadMemories — clear it.
+				recallMock.mockClear();
+
+				const btn = container.querySelector( '[data-testid="wp-mcp-ai-memory-export"]' );
+				btn.click();
+
+				// recall() called once with the export filter shape.
+				expect( recallMock ).toHaveBeenCalledTimes( 1 );
+				const [ query, filters ] = recallMock.mock.calls[ 0 ];
+				expect( query ).toBe( '' );
+				expect( filters.agentId ).toBe( 7 );
+				expect( filters.wing ).toBe( 'wing-a' );
+				expect( filters.limit ).toBe( 200 );
+
+				// Wait for the promise chain to flush.
+				await Promise.resolve();
+				await Promise.resolve();
+				await Promise.resolve();
+
+				// Anchor click + revoke fired.
+				expect( captors.created.length ).toBe( 1 );
+				expect( captors.clicked.length ).toBe( 1 );
+				expect( captors.clicked[ 0 ].download ).toMatch( /^mcp-ai-memory-7-/ );
+				expect( captors.clicked[ 0 ].download ).toMatch( /\.json$/ );
+
+				// The blob payload contains the records and an exported_at timestamp.
+				const blob = captors.created[ 0 ].blob;
+				expect( blob.type ).toBe( 'application/json' );
+				const text = ( blob.__parts || [] ).join( '' );
+				const parsed = JSON.parse( text );
+				expect( parsed.count ).toBe( 2 );
+				expect( parsed.agent_id ).toBe( 7 );
+				expect( parsed.scope.wing ).toBe( 'wing-a' );
+				expect( typeof parsed.exported_at ).toBe( 'string' );
+				expect( parsed.memories.length ).toBe( 2 );
+
+				// Button is re-enabled after success.
+				expect( btn.disabled ).toBe( false );
+
+				// objectURL revoked (setTimeout 0).
+				await new Promise( ( r ) => setTimeout( r, 1 ) );
+				expect( captors.revoked.length ).toBe( 1 );
+			} finally {
+				captors.restore();
+			}
+		} );
+
+		test( 'export error surfaces a toast and re-enables the button', async () => {
+			const recallMock = jest.fn()
+				.mockResolvedValueOnce( { contexts: [] } )         // initial loadMemories
+				.mockRejectedValueOnce( { message: 'boom' } );      // export click
+			installMemoryStub( { recall: recallMock } );
+			const captors = installDownloadCaptors();
+			try {
+				const container = makeContainer();
+				window.wpMcpAiChatMemoryDrawer.attach( container );
+				container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+
+				const btn = container.querySelector( '[data-testid="wp-mcp-ai-memory-export"]' );
+				btn.click();
+				expect( btn.disabled ).toBe( true );
+
+				await Promise.resolve();
+				await Promise.resolve();
+				await Promise.resolve();
+
+				expect( btn.disabled ).toBe( false );
+				expect( captors.clicked.length ).toBe( 0 );
+				const region = document.getElementById( 'wp-mcp-ai-memory-toasts' );
+				expect( region.textContent ).toContain( 'boom' );
+			} finally {
+				captors.restore();
+			}
+		} );
+
+		test( 'concurrent clicks while in flight only fire one recall()', async () => {
+			let resolveExport;
+			const recallMock = jest.fn()
+				.mockResolvedValueOnce( { contexts: [] } )
+				.mockImplementationOnce( () => new Promise( ( r ) => {
+					resolveExport = () => r( { contexts: [] } );
+				} ) );
+			installMemoryStub( { recall: recallMock } );
+			const captors = installDownloadCaptors();
+			try {
+				const container = makeContainer();
+				window.wpMcpAiChatMemoryDrawer.attach( container );
+				container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+
+				const btn = container.querySelector( '[data-testid="wp-mcp-ai-memory-export"]' );
+				btn.click();
+				btn.click();
+				btn.click();
+
+				// Initial loadMemories (1) + a single export call (2) — additional clicks ignored.
+				expect( recallMock ).toHaveBeenCalledTimes( 2 );
+
+				resolveExport();
+				await Promise.resolve();
+				await Promise.resolve();
+				await Promise.resolve();
+
+				expect( btn.disabled ).toBe( false );
+			} finally {
+				captors.restore();
+			}
+		} );
+	} );
+
 	describe( 'decorateMessageWithBadge', () => {
 		test( 'attaches the 🧠 badge when a tool call retrieved memory', () => {
 			const bubble = document.createElement( 'div' );
