@@ -20,6 +20,7 @@ describe( 'chat-memory-service', () => {
 		wakeUp: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/wake-up',
 		recall: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/recall',
 		store: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/store',
+		audit: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/audit',
 		itemBase: 'https://example.test/wp-json/mcp-ai/v1/chat-memory/',
 	};
 
@@ -131,5 +132,55 @@ describe( 'chat-memory-service', () => {
 			status: 403,
 			message: 'no',
 		} );
+	} );
+
+	test( 'audit() rejects with disabled error when service is not available', async () => {
+		await expect( memory.audit( { agentId: 1 } ) ).rejects.toMatchObject( {
+			code: 'chat_memory_disabled',
+		} );
+	} );
+
+	test( 'audit() rejects with disabled error when audit endpoint is missing', async () => {
+		// Older sites might have a stale localized config without the new endpoint.
+		const stale = Object.assign( {}, ENDPOINTS );
+		delete stale.audit;
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: stale };
+		await expect( memory.audit( { agentId: 1 } ) ).rejects.toMatchObject( {
+			code: 'chat_memory_disabled',
+		} );
+	} );
+
+	test( 'audit() builds GET query string with agent_id, limit, action_type and sends nonce', async () => {
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: ENDPOINTS };
+		const fetchMock = jest.fn().mockResolvedValue( {
+			ok: true,
+			json: () => Promise.resolve( { entries: [] } ),
+		} );
+		window.fetch = fetchMock;
+
+		await memory.audit( { agentId: 42, limit: 25, actionType: 'create' } );
+
+		expect( fetchMock ).toHaveBeenCalledTimes( 1 );
+		const [ url, options ] = fetchMock.mock.calls[ 0 ];
+		expect( url ).toMatch( /^https:\/\/example\.test\/wp-json\/mcp-ai\/v1\/chat-memory\/audit\?/ );
+		expect( url ).toContain( 'agent_id=42' );
+		expect( url ).toContain( 'limit=25' );
+		expect( url ).toContain( 'action_type=create' );
+		expect( options.method ).toBe( 'GET' );
+		expect( options.headers[ 'X-WP-Nonce' ] ).toBe( 'abc' );
+	} );
+
+	test( 'audit() omits action_type when not provided', async () => {
+		window.wpMcpAiChat = { nonce: 'abc', memoryEndpoints: ENDPOINTS };
+		const fetchMock = jest.fn().mockResolvedValue( {
+			ok: true,
+			json: () => Promise.resolve( { entries: [] } ),
+		} );
+		window.fetch = fetchMock;
+
+		await memory.audit( { agentId: 42 } );
+
+		const [ url ] = fetchMock.mock.calls[ 0 ];
+		expect( url ).not.toContain( 'action_type' );
 	} );
 } );

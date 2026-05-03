@@ -14,6 +14,7 @@
  *  - GET    /chat-memory/wake-up               Build a wake-up system block.
  *  - GET    /chat-memory/recall                Hierarchical recall (wing/room/query).
  *  - POST   /chat-memory/store                 Store a verbatim user-driven memory.
+ *  - GET    /chat-memory/audit                 Read-only audit-log feed (drawer Audit tab).
  *  - PUT    /chat-memory/(?P<context_id>...)   Update an existing memory.
  *  - DELETE /chat-memory/(?P<context_id>...)   Delete an existing memory.
  *
@@ -175,6 +176,36 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 								'default'  => true,
 							),
 						)
+					),
+				),
+			),
+			true
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/chat-memory/audit',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_logged_in' ),
+					'callback'            => array( $this, 'handle_audit' ),
+					'args'                => array(
+						'agent_id'    => array(
+							'type'     => array( 'integer', 'string' ),
+							'required' => false,
+						),
+						'limit'       => array(
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'action_type' => array(
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_key',
+							'enum'              => array( 'create', 'update', 'delete', 'access' ),
+						),
 					),
 				),
 			),
@@ -611,6 +642,51 @@ class WP_MCP_AI_REST_Chat_Memory_Controller extends WP_MCP_AI_REST_Controller_Ba
 
 		return $this->dispatch_tool( 'manage_context_lifecycle', $args );
 	}
+
+	/**
+	 * GET /chat-memory/audit
+	 *
+	 * Read-only feed of memory audit-log entries for the active agent. Backed by
+	 * the existing `memory_audit_trail` tool with `action=get_audit_log`. Used by
+	 * the Memory Drawer's "Audit" tab so end users can see the most recent
+	 * create/update/delete/access events on their memories without needing
+	 * generic tool-execution permission.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_audit( WP_REST_Request $request ) {
+		$agent_id = $this->resolve_agent_id( $request );
+		if ( is_wp_error( $agent_id ) ) {
+			return $agent_id;
+		}
+
+		$options = array();
+
+		$limit = absint( $request->get_param( 'limit' ) );
+		if ( $limit > 0 ) {
+			// Hard-cap to keep the payload small for the drawer.
+			$options['limit'] = min( 100, $limit );
+		} else {
+			$options['limit'] = 25;
+		}
+
+		$action_type = (string) $request->get_param( 'action_type' );
+		if ( '' !== $action_type ) {
+			$options['action_type'] = $action_type;
+		}
+
+		$args = array(
+			'action'   => 'get_audit_log',
+			'agent_id' => $agent_id,
+			'options'  => $options,
+		);
+
+		return $this->dispatch_tool( 'memory_audit_trail', $args );
+	}
+
 
 	/**
 	 * Resolve the agent_id for the request. Falls back to the assistant's post ID

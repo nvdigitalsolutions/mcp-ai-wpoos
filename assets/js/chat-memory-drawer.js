@@ -426,8 +426,17 @@
 		scopeTab.setAttribute('aria-selected', 'false');
 		scopeTab.textContent = __( 'Scope', 'mcp-ai-wpoos' );
 
+		const auditTab = document.createElement('button');
+		auditTab.type = 'button';
+		auditTab.className = 'wp-mcp-ai-memory-drawer__tab';
+		auditTab.setAttribute('role', 'tab');
+		auditTab.setAttribute('aria-selected', 'false');
+		auditTab.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-tab');
+		auditTab.textContent = __( 'Audit', 'mcp-ai-wpoos' );
+
 		tabs.appendChild(memoriesTab);
 		tabs.appendChild(scopeTab);
+		tabs.appendChild(auditTab);
 
 		// Memories panel.
 		const memoriesPanel = document.createElement('div');
@@ -519,26 +528,93 @@
 
 		scopePanel.appendChild(scopeForm);
 
+		// Audit panel — lazy-loaded from /chat-memory/audit on first activation.
+		const auditPanel = document.createElement('div');
+		auditPanel.className = 'wp-mcp-ai-memory-drawer__panel';
+		auditPanel.setAttribute('role', 'tabpanel');
+		auditPanel.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-panel');
+		auditPanel.hidden = true;
+
+		const auditFilterRow = document.createElement('div');
+		auditFilterRow.className = 'wp-mcp-ai-memory-drawer__filter';
+
+		const auditActionFilter = document.createElement('select');
+		auditActionFilter.className = 'wp-mcp-ai-memory-drawer__audit-filter';
+		auditActionFilter.setAttribute('aria-label', __( 'Filter audit log by action type', 'mcp-ai-wpoos' ));
+		auditActionFilter.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-filter');
+		const auditFilterOptions = [
+			{ value: '', label: __( 'All actions', 'mcp-ai-wpoos' ) },
+			{ value: 'create', label: __( 'Created', 'mcp-ai-wpoos' ) },
+			{ value: 'update', label: __( 'Updated', 'mcp-ai-wpoos' ) },
+			{ value: 'delete', label: __( 'Deleted', 'mcp-ai-wpoos' ) },
+			{ value: 'access', label: __( 'Accessed', 'mcp-ai-wpoos' ) },
+		];
+		auditFilterOptions.forEach(function(opt) {
+			const o = document.createElement('option');
+			o.value = opt.value;
+			o.textContent = opt.label;
+			auditActionFilter.appendChild(o);
+		});
+		auditFilterRow.appendChild(auditActionFilter);
+
+		const auditRefreshBtn = document.createElement('button');
+		auditRefreshBtn.type = 'button';
+		auditRefreshBtn.className = 'wp-mcp-ai-memory-drawer__refresh';
+		auditRefreshBtn.textContent = __( 'Refresh', 'mcp-ai-wpoos' );
+		auditFilterRow.appendChild(auditRefreshBtn);
+
+		const auditList = document.createElement('ul');
+		auditList.className = 'wp-mcp-ai-memory-drawer__audit-list';
+		auditList.setAttribute('data-testid', 'wp-mcp-ai-memory-audit-list');
+
+		const auditEmpty = document.createElement('p');
+		auditEmpty.className = 'wp-mcp-ai-memory-drawer__empty';
+		auditEmpty.hidden = true;
+		auditEmpty.textContent = __( 'No audit entries yet.', 'mcp-ai-wpoos' );
+
+		const auditError = document.createElement('p');
+		auditError.className = 'wp-mcp-ai-memory-drawer__error';
+		auditError.setAttribute('role', 'alert');
+		auditError.hidden = true;
+
+		auditPanel.appendChild(auditFilterRow);
+		auditPanel.appendChild(auditEmpty);
+		auditPanel.appendChild(auditError);
+		auditPanel.appendChild(auditList);
+
 		drawer.appendChild(closeBtn);
 		drawer.appendChild(heading);
 		drawer.appendChild(tabs);
 		drawer.appendChild(memoriesPanel);
 		drawer.appendChild(scopePanel);
+		drawer.appendChild(auditPanel);
 
 		container.appendChild(drawer);
 
+		let auditLoaded = false;
+
 		function setTab(name) {
 			const isMemories = name === 'memories';
+			const isScope = name === 'scope';
+			const isAudit = name === 'audit';
 			memoriesTab.classList.toggle('is-active', isMemories);
 			memoriesTab.setAttribute('aria-selected', isMemories ? 'true' : 'false');
-			scopeTab.classList.toggle('is-active', !isMemories);
-			scopeTab.setAttribute('aria-selected', isMemories ? 'false' : 'true');
+			scopeTab.classList.toggle('is-active', isScope);
+			scopeTab.setAttribute('aria-selected', isScope ? 'true' : 'false');
+			auditTab.classList.toggle('is-active', isAudit);
+			auditTab.setAttribute('aria-selected', isAudit ? 'true' : 'false');
 			memoriesPanel.hidden = !isMemories;
-			scopePanel.hidden = isMemories;
+			scopePanel.hidden = !isScope;
+			auditPanel.hidden = !isAudit;
+			if (isAudit && !auditLoaded) {
+				auditLoaded = true;
+				loadAudit();
+			}
 		}
 
 		memoriesTab.addEventListener('click', function() { setTab('memories'); });
 		scopeTab.addEventListener('click', function() { setTab('scope'); });
+		auditTab.addEventListener('click', function() { setTab('audit'); });
 
 		function clearList() {
 			while (list.firstChild) {
@@ -646,6 +722,108 @@
 			if (response.data && Array.isArray(response.data.memories)) { return response.data.memories; }
 			return [];
 		}
+
+		/**
+		 * Pull `entries` out of the audit response. The proxy returns the
+		 * `memory_audit_trail` tool's payload either at the top level (success
+		 * shape) or nested under `data` (REST envelope).
+		 */
+		function extractAuditEntries(response) {
+			if (!response || typeof response !== 'object') {
+				return [];
+			}
+			if (Array.isArray(response.entries)) { return response.entries; }
+			if (response.data && Array.isArray(response.data.entries)) { return response.data.entries; }
+			return [];
+		}
+
+		function clearAuditList() {
+			while (auditList.firstChild) {
+				auditList.removeChild(auditList.firstChild);
+			}
+		}
+
+		function renderAuditEntry(entry) {
+			const li = document.createElement('li');
+			li.className = 'wp-mcp-ai-memory-drawer__audit-item';
+
+			const action = String((entry && entry.action) || '').toLowerCase();
+			if (action) {
+				li.setAttribute('data-action', action);
+			}
+
+			const timestamp = document.createElement('time');
+			timestamp.className = 'wp-mcp-ai-memory-drawer__audit-time';
+			const ts = entry && entry.timestamp ? String(entry.timestamp) : '';
+			if (ts) {
+				timestamp.setAttribute('datetime', ts);
+				timestamp.textContent = ts;
+			} else {
+				timestamp.textContent = __( '(no timestamp)', 'mcp-ai-wpoos' );
+			}
+
+			const actionLabel = document.createElement('span');
+			actionLabel.className = 'wp-mcp-ai-memory-drawer__audit-action';
+			actionLabel.textContent = action || __( 'unknown', 'mcp-ai-wpoos' );
+
+			const meta = document.createElement('span');
+			meta.className = 'wp-mcp-ai-memory-drawer__audit-meta';
+			const contextId = entry && entry.context_id ? String(entry.context_id) : '';
+			if (contextId) {
+				meta.textContent = contextId;
+			}
+
+			li.appendChild(timestamp);
+			li.appendChild(document.createTextNode(' '));
+			li.appendChild(actionLabel);
+			if (contextId) {
+				li.appendChild(document.createTextNode(' — '));
+				li.appendChild(meta);
+			}
+
+			return li;
+		}
+
+		function loadAudit() {
+			if (!isAvailable()) {
+				return;
+			}
+			auditError.hidden = true;
+			auditEmpty.hidden = true;
+			clearAuditList();
+
+			const loading = document.createElement('li');
+			loading.className = 'wp-mcp-ai-memory-drawer__loading';
+			loading.textContent = __( 'Loading audit log…', 'mcp-ai-wpoos' );
+			auditList.appendChild(loading);
+
+			const opts = {
+				agentId: agentId,
+				limit: 50
+			};
+			if (auditActionFilter.value) {
+				opts.actionType = auditActionFilter.value;
+			}
+
+			memoryService().audit(opts).then(function(response) {
+				clearAuditList();
+				const entries = extractAuditEntries(response);
+				if (!entries.length) {
+					auditEmpty.hidden = false;
+					return;
+				}
+				entries.forEach(function(entry) {
+					auditList.appendChild(renderAuditEntry(entry));
+				});
+			}).catch(function(err) {
+				clearAuditList();
+				auditError.textContent = (err && err.message) || __( 'Could not load audit log.', 'mcp-ai-wpoos' );
+				auditError.hidden = false;
+			});
+		}
+
+		auditRefreshBtn.addEventListener('click', loadAudit);
+		auditActionFilter.addEventListener('change', loadAudit);
 
 		// Debounced filter.
 		let filterTimer = null;

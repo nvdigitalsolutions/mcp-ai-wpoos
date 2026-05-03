@@ -242,8 +242,13 @@ These items from the original gap analysis were intentionally out of scope
 for the initial integration to keep the surface area auditable. They are
 tracked as follow-up work:
 
-- **G2 Audit tab** inside the drawer — read-only feed of `wp_mcp_ai_memory_audit`
-  events. The Memories and Scope tabs are shipped; Audit is deferred.
+- **G2 Audit tab** inside the drawer — **shipped.** Lazy-loads
+  `GET /mcp-ai/v1/chat-memory/audit` (proxy → `memory_audit_trail` tool with
+  `action=get_audit_log`) on first activation. Includes an action-type filter
+  (`create` / `update` / `delete` / `access`), a Refresh button, and renders
+  each event as `[timestamp] action — context_id`. Permission gate is the
+  same `permissions_check_logged_in` callback used by `/recall`, so the
+  per-user toggle and site-wide kill-switch both apply.
 - **G6 Auto-summarise transcript** at conversation close — the
   `wp_mcp_ai_chat_memory_autosummarize` user-meta toggle exists; the
   end-of-session capture flow itself is deferred.

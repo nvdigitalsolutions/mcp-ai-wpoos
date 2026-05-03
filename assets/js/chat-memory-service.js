@@ -266,6 +266,34 @@
 	}
 
 	/**
+	 * Read the audit-log feed for the active agent. Returns the most recent
+	 * create/update/delete/access events. Used by the Memory Drawer's "Audit"
+	 * tab so users can see how their memories have changed over time without
+	 * needing generic tool-execution permission.
+	 *
+	 * @since 1.6.0
+	 *
+	 * @param {Object} options { agentId, limit, actionType }
+	 * @return {Promise<Object>} Resolves with `{ entries, total_entries, ... }`.
+	 */
+	function audit(options) {
+		if (!isAvailable()) {
+			return Promise.reject(disabledError());
+		}
+		const eps = getEndpoints();
+		if (!eps.audit) {
+			// Older sites that haven't refreshed the localized endpoints yet.
+			return Promise.reject(disabledError());
+		}
+		const qs = buildQuery({
+			agent_id: options && options.agentId,
+			limit: options && options.limit,
+			action_type: options && options.actionType
+		});
+		return request(eps.audit + qs, { method: 'GET' });
+	}
+
+	/**
 	 * Detect whether a tool result describes memory retrieval, mirroring the
 	 * detection in chat.js so the in-chat "🧠 Memory" badge can also surface
 	 * server-pushed retrieval events without re-implementing the logic.
@@ -293,6 +321,7 @@
 		update: update,
 		'delete': remove,
 		remove: remove,
+		audit: audit,
 		getPreferences: getPreferences,
 		setPreferences: setPreferences,
 		isMemoryRetrievalResult: isMemoryRetrievalResult

@@ -2112,6 +2112,7 @@ class WP_MCP_AI_Shortcode {
 			'wakeUp'      => $base . '/wake-up',
 			'recall'      => $base . '/recall',
 			'store'       => $base . '/store',
+			'audit'       => $base . '/audit',
 			'itemBase'    => $base . '/',
 		);
 

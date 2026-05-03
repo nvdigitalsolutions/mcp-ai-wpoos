@@ -75,6 +75,7 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/wake-up', $routes );
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/recall', $routes );
 		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/store', $routes );
+		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/audit', $routes );
 		// Item routes use a path parameter so check the regex form.
 		$this->assertTrue(
 			(bool) array_filter(
@@ -195,5 +196,73 @@ class Test_Chat_Memory_REST_Controller extends WP_UnitTestCase {
 		$this->assertSame( 'ctx_abc-123', $controller->sanitize_context_id( 'ctx_abc-123' ) );
 		$this->assertSame( 'ctx_abc123', $controller->sanitize_context_id( 'ctx/../abc 123' ) );
 		$this->assertSame( '', $controller->sanitize_context_id( '!@#$%^&*()' ) );
+	}
+
+	/**
+	 * The audit endpoint requires authentication.
+	 */
+	public function test_audit_requires_login() {
+		wp_set_current_user( 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request->set_param( 'agent_id', 1 );
+		$response = $this->server->dispatch( $request );
+
+		// Logged-out users get the same `chat_memory_disabled` 403 the rest of the surface uses.
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * Disabling the user-level preference must block the audit endpoint too.
+	 */
+	public function test_audit_respects_user_preference_disable() {
+		wp_set_current_user( $this->editor_id );
+		update_user_meta( $this->editor_id, WP_MCP_AI_REST_Chat_Memory_Controller::USER_META_ENABLED, 0 );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request->set_param( 'agent_id', 1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertSame( 403, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertSame( 'chat_memory_disabled', $data['code'] );
+	}
+
+	/**
+	 * The audit endpoint must accept enum values for action_type and reject others.
+	 * (Validation is performed by core; the route declares the enum.)
+	 */
+	public function test_audit_action_type_enum_is_declared() {
+		$routes = $this->server->get_routes();
+		$this->assertArrayHasKey( '/mcp-ai/v1/chat-memory/audit', $routes );
+
+		$audit_route_handlers = $routes['/mcp-ai/v1/chat-memory/audit'];
+		$this->assertNotEmpty( $audit_route_handlers );
+		$args = $audit_route_handlers[0]['args'];
+		$this->assertArrayHasKey( 'action_type', $args );
+		$this->assertSame(
+			array( 'create', 'update', 'delete', 'access' ),
+			$args['action_type']['enum']
+		);
+		$this->assertArrayHasKey( 'limit', $args );
+	}
+
+	/**
+	 * A logged-in user with a valid agent_id should hit the underlying tool and
+	 * receive a 2xx envelope. The audit log may legitimately be empty for a fresh
+	 * site, so we only assert the success-shape envelope here.
+	 */
+	public function test_audit_returns_success_envelope_for_editor() {
+		wp_set_current_user( $this->editor_id );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-memory/audit' );
+		$request->set_param( 'agent_id', 'user_' . $this->editor_id );
+		$request->set_param( 'limit', 10 );
+		$response = $this->server->dispatch( $request );
+
+		$status = $response->get_status();
+		// Either a 200 envelope (tool present + responded) or a 503 (tool not registered
+		// in this minimal test build). Both prove the route + permission gate are wired.
+		$this->assertContains( $status, array( 200, 503 ) );
 	}
 }

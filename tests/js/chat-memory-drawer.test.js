@@ -263,6 +263,108 @@ describe( 'chat-memory-drawer', () => {
 		expect( toast.classList.contains( 'wp-mcp-ai-memory-toast--success' ) ).toBe( true );
 	} );
 
+	describe( 'audit tab', () => {
+		test( 'switching to Audit lazy-loads via memoryService.audit() and renders entries', async () => {
+			const auditMock = jest.fn().mockResolvedValue( {
+				entries: [
+					{ timestamp: '2026-05-01T12:00:00Z', action: 'create', context_id: 'ctx_1' },
+					{ timestamp: '2026-05-01T13:00:00Z', action: 'update', context_id: 'ctx_2' }
+				]
+			} );
+			installMemoryStub( { audit: auditMock } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+
+			// Activating the Audit tab triggers the lazy load.
+			const auditTab = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-tab"]' );
+			expect( auditTab ).not.toBeNull();
+			auditTab.click();
+
+			expect( auditMock ).toHaveBeenCalledTimes( 1 );
+			const [ args ] = auditMock.mock.calls[ 0 ];
+			expect( args.agentId ).toBe( 7 );
+			expect( args.limit ).toBe( 50 );
+
+			// Audit panel becomes visible.
+			const panel = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-panel"]' );
+			expect( panel.hidden ).toBe( false );
+
+			// Wait for the promise chain.
+			await Promise.resolve();
+			await Promise.resolve();
+			const items = drawer.querySelectorAll( '.wp-mcp-ai-memory-drawer__audit-item' );
+			expect( items.length ).toBe( 2 );
+			expect( items[ 0 ].getAttribute( 'data-action' ) ).toBe( 'create' );
+		} );
+
+		test( 'audit tab is lazy — no audit() call until the tab is activated', () => {
+			const auditMock = jest.fn().mockResolvedValue( { entries: [] } );
+			installMemoryStub( { audit: auditMock } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			expect( auditMock ).not.toHaveBeenCalled();
+		} );
+
+		test( 'changing the action-type filter re-fires audit() with the action_type', async () => {
+			const auditMock = jest.fn().mockResolvedValue( { entries: [] } );
+			installMemoryStub( { audit: auditMock } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+			drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-tab"]' ).click();
+			await Promise.resolve();
+
+			const filter = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-filter"]' );
+			filter.value = 'delete';
+			filter.dispatchEvent( new Event( 'change' ) );
+
+			expect( auditMock ).toHaveBeenCalledTimes( 2 );
+			const [ args ] = auditMock.mock.calls[ 1 ];
+			expect( args.actionType ).toBe( 'delete' );
+		} );
+
+		test( 'empty audit response shows the empty state', async () => {
+			installMemoryStub( { audit: jest.fn().mockResolvedValue( { entries: [] } ) } );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+			drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-tab"]' ).click();
+
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const panel = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-panel"]' );
+			const empty = panel.querySelector( '.wp-mcp-ai-memory-drawer__empty' );
+			expect( empty.hidden ).toBe( false );
+		} );
+
+		test( 'audit() rejection surfaces the error state', async () => {
+			installMemoryStub( {
+				audit: jest.fn().mockRejectedValue( { message: 'forbidden' } )
+			} );
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			container.querySelector( '.wp-mcp-ai-memory-toggle' ).click();
+			const drawer = container.querySelector( '.wp-mcp-ai-memory-drawer' );
+			drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-tab"]' ).click();
+
+			await Promise.resolve();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const panel = drawer.querySelector( '[data-testid="wp-mcp-ai-memory-audit-panel"]' );
+			const error = panel.querySelector( '.wp-mcp-ai-memory-drawer__error' );
+			expect( error.hidden ).toBe( false );
+			expect( error.textContent ).toContain( 'forbidden' );
+		} );
+	} );
+
 	describe( 'decorateMessageWithBadge', () => {
 		test( 'attaches the 🧠 badge when a tool call retrieved memory', () => {
 			const bubble = document.createElement( 'div' );
