@@ -113,7 +113,7 @@ Whenever you add or upgrade a third-party library — Composer, npm, or a hand-v
 5. **Update the Pro Packages admin page** (`addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php`) `get_package_definitions()` if the dependency is a user-relevant Pro npm package — the page renders `homepage` / `license` / `copyright` fields directly from that array.
 6. **For bundled Agent Skills curated from an upstream catalogue:** update the matching `THIRD_PARTY_NOTICES.md` (under `includes/bundled-skills/` for base or `addons/pro/includes/bundled-skills/` for Pro) with the upstream commit, original author, and license. Do **not** duplicate this in `CREDITS.md` — link to it instead.
 7. **Run `bin/verify-credits.sh`** before pushing — it cross-checks Composer / npm manifests against `CREDITS.md` and surfaces any package missing an attribution entry.
-8. **Run `gh-advisory-database`** (or `composer audit` / `npm audit`) for new dependencies and address any high-severity findings before merging.
+8. **Run a vulnerability check for new dependencies** — `composer audit` for PHP, `npm audit` for JavaScript — and address any high-severity findings before merging. Maintainers using GitHub's MCP toolchain may also use the `gh-advisory-database` MCP tool for the same check.
 
 ## Project Management
 

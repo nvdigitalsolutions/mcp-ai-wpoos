@@ -384,7 +384,7 @@ secondary surfaces:
 
 | You changed… | Update |
 |--------------|--------|
-| `composer.json` (base or Pro) | This file's PHP tables; run `composer update` and refresh versions |
+| `composer.json` (base or Pro) | This file's PHP tables; run `composer install` after editing the manifest and refresh the listed versions to match `composer.lock` |
 | `package.json` (base or Pro or any addon) | This file's JavaScript tables; refresh versions; run `npm audit` |
 | Any file under `**/assets/**/vendor/` | This file's "Vendored JavaScript" section + the per-addon Credits section in that addon's `README.md` |
 | A new bundled skill curated upstream | The matching `bundled-skills/THIRD_PARTY_NOTICES.md` (do **not** duplicate here) |
