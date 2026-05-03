@@ -50,6 +50,11 @@ class WP_MCP_AI_Slash_Command_Help {
 	 * @return string Help text.
 	 */
 	public function execute( $args, $flags, $context ) {
+		// --new: list recently added commands.
+		if ( isset( $flags['new'] ) ) {
+			return $this->show_new_commands();
+		}
+
 		// Check if specific command requested.
 		if ( ! empty( $args[0] ) ) {
 			return $this->show_command_help( $args[0] );
@@ -57,6 +62,30 @@ class WP_MCP_AI_Slash_Command_Help {
 
 		// Show all commands.
 		return $this->show_all_commands( $flags );
+	}
+
+	/**
+	 * Show commands added since v2.0.
+	 *
+	 * @return string
+	 */
+	private function show_new_commands() {
+		$out  = "## New Commands (since v2.0)\n\n";
+		$out .= "The following commands were added in **v2.1.0**:\n\n";
+		$out .= "- `/markup-stats` — Show aggregate markup telemetry counters\n";
+		$out .= "- `/jobs` — List and cancel async background jobs\n";
+		$out .= "- `/status` — Aggregated system health report\n";
+		$out .= "- `/cost` — Token usage and cost summary\n";
+		$out .= "- `/tools` — Browse and inspect registered tools\n";
+		$out .= "- `/skills` — List and install agent skill packs\n";
+		$out .= "- `/preset` — Manage orchestration presets\n";
+		$out .= "- `/model` — List or set AI models for assistants\n";
+		$out .= "- `/clear` — Clear the chat window\n";
+		$out .= "- `/reset` — Reset the current session\n";
+		$out .= "- `/resume` — Resume the last saved session\n";
+		$out .= "- `/diagnose` — Generate a diagnostic bundle for support\n\n";
+		$out .= "_Use `/help <command>` for detailed information on any command._\n";
+		return $out;
 	}
 
 	/**
