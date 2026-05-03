@@ -656,6 +656,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Register Pro tool categories for recommendations.
 		add_filter( 'wp_mcp_ai_tool_categories', 'wp_mcp_ai_pro_tool_categories', 20 );
 
+		// Load Pro slash commands.
+		$pro_slash_init = WP_MCP_AI_PRO_PATH . 'includes/slash-commands/slash-commands-init.php';
+		if ( file_exists( $pro_slash_init ) ) {
+			require_once $pro_slash_init;
+		}
+
 		/**
 		 * Fires after Open Operator System Pro has completed initialization.
 		 *
