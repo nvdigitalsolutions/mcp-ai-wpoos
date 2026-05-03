@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/research-slash-command-improvements',
-        'version' => 'dev-copilot/research-slash-command-improvements',
-        'reference' => '83058907c839e87c1ed0879e34187f1e0f92df70',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-toolkits',
+        'version' => 'dev-copilot/rebuild-all-zips-with-toolkits',
+        'reference' => '4fd976daee76fe15a2377fe8f0d756489801657c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/research-slash-command-improvements',
-            'version' => 'dev-copilot/research-slash-command-improvements',
-            'reference' => '83058907c839e87c1ed0879e34187f1e0f92df70',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-toolkits',
+            'version' => 'dev-copilot/rebuild-all-zips-with-toolkits',
+            'reference' => '4fd976daee76fe15a2377fe8f0d756489801657c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
