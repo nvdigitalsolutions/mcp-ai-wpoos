@@ -96,6 +96,13 @@ class WP_MCP_AI_Pii_Filter {
 			}
 
 			$count = 0;
+			// Validate the pattern before applying it: an invalid regex returns
+			// false from preg_match, which lets us skip the entry without
+			// triggering a warning from preg_replace.
+			// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- Filter authors may supply invalid patterns; we explicitly check for false.
+			if ( false === @preg_match( $regex, '' ) ) {
+				continue;
+			}
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.preg_replace_preg_replace -- Intentional regex redaction.
 			$replaced = preg_replace( $regex, $token, $text, -1, $count );
 			if ( null === $replaced ) {

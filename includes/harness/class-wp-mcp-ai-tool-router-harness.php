@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_Router_Harness {
 		$weights_table = self::task_flag_weights();
 		$weights       = isset( $weights_table[ $task_class ] ) ? $weights_table[ $task_class ] : $weights_table['general'];
 		foreach ( $weights as $flag => $weight ) {
-			if ( in_array( $flag , $flags, true ) ) {
+			if ( in_array( $flag, $flags, true ) ) {
 				$score += (float) $weight;
 			}
 		}
