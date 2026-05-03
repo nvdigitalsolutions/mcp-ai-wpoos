@@ -15371,6 +15371,14 @@
         let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
+        // Surface tool_calls on the display payload so appendMessage can render
+        // the "🧠 Memory" badge (chat-memory-drawer auto-wire). Restore path
+        // already does this at the assistantPayload-build site; this covers the
+        // live agentic-loop path.
+        if (hasToolCalls) {
+            assistantDisplay.tool_calls = message.tool_calls;
+        }
+
         if (!hasDisplayContent) {
             let fallbackText = '';
 
@@ -17301,6 +17309,23 @@
             // Attach capability flag badges if data is available
             const capabilityFlags = options && options.capabilityFlags ? options.capabilityFlags : null;
             attachCapabilityFlagBadges(entry, capabilityFlags);
+
+            // Auto-attach the "🧠 Memory" badge when this message's tool calls
+            // touched the agent-memory subsystem. The decorator is shipped by
+            // chat-memory-drawer.js (Phase 3) and is itself idempotent + a no-op
+            // when no relevant tool was called or when the drawer is disabled.
+            if (payload && Array.isArray(payload.tool_calls) && payload.tool_calls.length
+                && window.wpMcpAiChatMemoryDrawer
+                && typeof window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge === 'function') {
+                try {
+                    window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge(entry, payload.tool_calls);
+                } catch (e) {
+                    // Never let badge decoration break message rendering.
+                    if (window.console && console.warn) {
+                        console.warn('[NV oOS] memory badge decoration failed:', e);
+                    }
+                }
+            }
 
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {

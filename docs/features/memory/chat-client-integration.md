@@ -188,10 +188,26 @@ window.wpMcpAiChatMemoryDrawer = {
 };
 ```
 
-### In-chat "🧠 Memory" badge
+### In-chat "🧠 Memory" badge (auto-wired)
 
-`decorateMessageWithBadge(bubble, toolCalls)` is exposed for downstream
-renderers to call when an assistant message's tool calls included any of:
+`appendMessage()` in `chat.js` automatically calls
+`wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( entry, payload.tool_calls )`
+on every assistant bubble whose `payload.tool_calls` is a non-empty array. The
+decorator itself is idempotent and a no-op when no memory-related tool was
+invoked, so the only requirement is that `payload.tool_calls` reaches
+`appendMessage`:
+
+- **Live agentic-loop path** — `chat.js` copies `message.tool_calls` onto
+  `assistantDisplay.tool_calls` before the `appendMessage` call (search for
+  `assistantDisplay.tool_calls = message.tool_calls`).
+- **Restore-from-storage path** — the existing `assistantPayload.tool_calls
+  = display.tool_calls` line preserves the data across reloads.
+
+A regression test (`tests/js/chat-memory-badge-wiring.test.js`) pins both
+call sites and the try/catch guard so the wiring can't be silently dropped.
+
+The badge appears whenever a message's `tool_calls` include any of these
+memory-touching tools:
 
 - `recall_memory`
 - `wake_up_context`
@@ -201,10 +217,12 @@ renderers to call when an assistant message's tool calls included any of:
 - `update_agent_memory`
 - `capture_memory`
 
-It is **idempotent** (skips bubbles already decorated), accepts both
-`{ tool: '…' }` and OpenAI-shaped `{ function: { name: '…' } }` records,
-and prefers attaching to a `.wp-mcp-ai-chat__message-header` /
-`.wp-mcp-ai-chat__message-meta` if present.
+The decorator is also exposed publicly on `window.wpMcpAiChatMemoryDrawer`
+for downstream renderers. It is **idempotent** (skips bubbles already
+decorated), accepts both `{ tool: '…' }` and OpenAI-shaped
+`{ function: { name: '…' } }` records, and prefers attaching to a
+`.wp-mcp-ai-chat__message-header` / `.wp-mcp-ai-chat__message-meta` if
+present.
 
 ### Accessibility checklist
 
@@ -226,10 +244,6 @@ tracked as follow-up work:
 
 - **G2 Audit tab** inside the drawer — read-only feed of `wp_mcp_ai_memory_audit`
   events. The Memories and Scope tabs are shipped; Audit is deferred.
-- **G3 Auto-wired in-chat "🧠 Memory" badge** — the helper
-  `wpMcpAiChatMemoryDrawer.decorateMessageWithBadge()` is shipped, but the
-  call site inside the message renderer is deferred until the assistant
-  payload exposes tool calls on the rendered DOM node.
 - **G6 Auto-summarise transcript** at conversation close — the
   `wp_mcp_ai_chat_memory_autosummarize` user-meta toggle exists; the
   end-of-session capture flow itself is deferred.
