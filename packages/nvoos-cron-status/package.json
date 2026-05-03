@@ -1,0 +1,59 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-cron-status",
+  "version": "0.1.0-alpha.1",
+  "description": "SSE-first cron/job status monitor with REST polling fallback - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-cron-status.js",
+  "module": "dist/nvoos-cron-status.js",
+  "types": "dist/nvoos-cron-status.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-cron-status.js",
+      "default": "./dist/nvoos-cron-status.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-cron-status",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-cron-status"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "cron",
+    "job-status",
+    "sse",
+    "polling",
+    "exponential-backoff",
+    "real-time",
+    "nvdigital",
+    "nvoos"
+  ],
+  "peerDependencies": {
+    "@nvdigitalsolutions/nvoos-events": "^0.1.0-alpha.1"
+  },
+  "peerDependenciesMeta": {
+    "@nvdigitalsolutions/nvoos-events": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-client-tools",
+  "version": "0.1.0-alpha.1",
+  "description": "Browser-native AI tool registry (summarize, sentiment, translate, embed, image, audio) using Transformers.js - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-client-tools.js",
+  "module": "dist/nvoos-client-tools.js",
+  "types": "dist/nvoos-client-tools.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-client-tools.js",
+      "default": "./dist/nvoos-client-tools.js"
+    }
+  },
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-client-tools",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-client-tools"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "ai",
+    "browser-ai",
+    "client-tools",
+    "tool-registry",
+    "transformers",
+    "huggingface",
+    "summarize",
+    "sentiment",
+    "translate",
+    "embeddings",
+    "nvdigital",
+    "nvoos"
+  ],
+  "peerDependencies": {
+    "@huggingface/transformers": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@huggingface/transformers": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
