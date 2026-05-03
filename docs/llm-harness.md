@@ -220,6 +220,7 @@ The plan calls out reward hacking as a first-class risk. The base subsystem ship
 vendor/bin/phpunit tests/test-harness-prompt-cue-library.php
 vendor/bin/phpunit tests/test-harness-services.php
 vendor/bin/phpunit tests/test-harness-prompt-injector.php
+vendor/bin/phpunit tests/test-harness-profile-metabox.php
 ```
 
 Coverage areas:
@@ -232,6 +233,7 @@ Coverage areas:
 - Tool router: read-only beats state-changing for `qa`, assistant preferences boost score, `wp_mcp_ai_harness_tool_score` filter override.
 - Retrieval: citation verification (positive, negative, empty), well-formed payload when no underlying tools.
 - Prompt injector: off-by-default, prepends cues when profile enabled, skips unknown cue slugs, `wp_mcp_ai_harness_inject_cue_slugs` substitution, registration via init.
+- Profile metabox: nonce-gated save, capability-gated save, checkbox-disabled-when-omitted semantics, non-UI fields (reasoning/retrieval/refine/memory) preserved on UI save.
 
 ---
 
@@ -239,7 +241,7 @@ Coverage areas:
 
 The plan is staged. The following remain as follow-up stories:
 
-- Layer A admin UI (CPT `mcp_ai_prompt_cue` + edit screen). Cues are registered via PHP today; an admin authoring surface comes next.
+- Layer A admin UI: shipped as `WP_MCP_AI_Metabox_Harness_Profile` on the Assistant edit screen. Surfaces the `enabled` toggle, the cue checkbox grid (sourced from the Cue Library), and the per-request cost ceiling. Higher-cost layer toggles (best-of-N, self-refine, retrieval gates) remain configurable via post meta and the documented filters; surfacing them in the UI is a follow-up.
 - Layer C "preferred tool families" matrix in the assistant edit screen.
 - Layer G profile-driven invocation. The eval framework is already present; the wiring from `harness_profile.evals_enabled` to a scheduled run is a small follow-up.
 - Layer H curriculum export (Pro).
