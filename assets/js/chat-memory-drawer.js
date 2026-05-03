@@ -1033,6 +1033,141 @@
 		const controller = buildDrawer(container, state);
 		container.__wpMcpAiMemoryDrawer = controller;
 		injectToggle(container, controller);
+		registerAutoSummary(container, state);
+	}
+
+	/**
+	 * Wire end-of-conversation transcript auto-capture (G6 Phase 1).
+	 *
+	 * Listens for `pagehide` (and `visibilitychange→hidden` as a fallback for
+	 * Safari/iOS) and, when the per-user `autosummarize` preference is on,
+	 * fires a single `storeBeacon()` carrying the localStorage transcript
+	 * as a `transcript_summary` memory. One-shot per page session via
+	 * sessionStorage so reload/back-forward navigation never double-captures.
+	 *
+	 * Preferences are pre-fetched once at attach time so the unload-time
+	 * handler can decide synchronously — `pagehide` cannot await network calls.
+	 *
+	 * @param {HTMLElement} container Chat container.
+	 * @param {Object}      state     Chat state (provides config + assistantId).
+	 */
+	function registerAutoSummary(container, state) {
+		const config = (state && state.config) || {};
+		const agentId = config.embeddedAssistantId || config.assistantId || 0;
+		if (!agentId) {
+			return;
+		}
+		const flagKey = 'wp-mcp-ai-memory-autosummary:' + agentId;
+		let cachedPrefs = null;
+
+		// Pre-fetch prefs so the unload handler can decide synchronously.
+		try {
+			memoryService().getPreferences().then(function(prefs) {
+				cachedPrefs = prefs || null;
+			}).catch(function() {
+				cachedPrefs = null;
+			});
+		} catch (_e) {
+			cachedPrefs = null;
+		}
+
+		function fireOnce() {
+			// One-shot per tab session.
+			try {
+				if (window.sessionStorage && window.sessionStorage.getItem(flagKey)) {
+					return;
+				}
+			} catch (_e) { /* sessionStorage may be unavailable */ }
+			if (!cachedPrefs || !cachedPrefs.enabled || !cachedPrefs.autosummarize) {
+				return;
+			}
+			const transcript = readTranscript(agentId);
+			if (!transcript || !transcript.text) {
+				return;
+			}
+			try {
+				if (window.sessionStorage) {
+					window.sessionStorage.setItem(flagKey, '1');
+				}
+			} catch (_e) { /* ignore */ }
+
+			const payload = {
+				agentId: agentId,
+				wing: config.memoryWing || '',
+				room: config.memoryRoom || '',
+				title: i18n.sprintf(
+					/* translators: %s: ISO date of the captured conversation */
+					__( 'Conversation summary — %s', 'mcp-ai-wpoos' ),
+					new Date().toISOString().slice(0, 10)
+				),
+				content: transcript.text,
+				tags: [ 'transcript-summary', 'autosummary' ],
+				contextType: 'transcript_summary',
+				importance: 'medium',
+				verbatim: true
+			};
+			try {
+				memoryService().storeBeacon(payload).catch(function() { /* fire-and-forget */ });
+			} catch (_e) { /* ignore */ }
+		}
+
+		// `pagehide` is the canonical browser-leave event and survives bfcache.
+		window.addEventListener('pagehide', fireOnce);
+		// Safari/iOS occasionally fires only `visibilitychange→hidden`.
+		document.addEventListener('visibilitychange', function() {
+			if (document.visibilityState === 'hidden') {
+				fireOnce();
+			}
+		});
+	}
+
+	/**
+	 * Read the transcript from chat-storage-service.js and produce a compact,
+	 * truncated text dump suitable for storage as a single memory record.
+	 *
+	 * Truncates from the *front* (keeping the most recent turns) at 4 KB so
+	 * very long sessions still produce a useful summary.
+	 *
+	 * @param {string|number} agentId
+	 * @return {{text:string, count:number}|null}
+	 */
+	function readTranscript(agentId) {
+		const storage = window.wpMcpAiChatStorage;
+		if (!storage || typeof storage.loadConversationFromStorage !== 'function') {
+			return null;
+		}
+		let conv;
+		try {
+			conv = storage.loadConversationFromStorage(agentId);
+		} catch (_e) {
+			return null;
+		}
+		const turns = ( conv && Array.isArray(conv.conversation) ) ? conv.conversation : [];
+		if (turns.length < 2) {
+			return null;
+		}
+		const lines = [];
+		for (let i = 0; i < turns.length; i++) {
+			const t = turns[i] || {};
+			if (t.role !== 'user' && t.role !== 'assistant') {
+				continue;
+			}
+			const content = typeof t.content === 'string' ? t.content : '';
+			if (!content.trim()) {
+				continue;
+			}
+			lines.push((t.role === 'user' ? 'User: ' : 'Assistant: ') + content);
+		}
+		if (lines.length === 0) {
+			return null;
+		}
+		let text = lines.join('\n\n');
+		const MAX_BYTES = 4096;
+		// Encode-aware truncation: chop from the front (keep most recent).
+		if (text.length > MAX_BYTES) {
+			text = '…\n\n' + text.slice(text.length - MAX_BYTES);
+		}
+		return { text: text, count: lines.length };
 	}
 
 	/**
@@ -1052,7 +1187,9 @@
 		decorateMessageWithBadge: decorateMessageWithBadge,
 		announceToast: announceToast,
 		ensureToastRegion: ensureToastRegion,
-		isAvailable: isAvailable
+		isAvailable: isAvailable,
+		registerAutoSummary: registerAutoSummary,
+		readTranscript: readTranscript
 	};
 
 	// Auto-attach on DOMContentLoaded and on a short interval thereafter to

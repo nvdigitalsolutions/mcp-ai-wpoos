@@ -579,4 +579,148 @@ describe( 'chat-memory-drawer', () => {
 			expect( bubble.querySelector( '.wp-mcp-ai-memory-badge' ) ).not.toBeNull();
 		} );
 	} );
+
+	describe( 'auto-summary on conversation close (G6)', () => {
+		/**
+		 * Install a wpMcpAiChatStorage stub returning a small transcript.
+		 */
+		function installTranscript( turns ) {
+			window.wpMcpAiChatStorage = {
+				loadConversationFromStorage: jest.fn( () => ( {
+					conversation: turns,
+					assistantId: 7,
+					sessionKey: 's'
+				} ) )
+			};
+		}
+
+		test( 'storeBeacon is exposed on the memory service', () => {
+			// Load the actual service file (not the stub) into a sandbox to verify shape.
+			const code = fs.readFileSync(
+				path.join( __dirname, '../../assets/js/chat-memory-service.js' ),
+				'utf8'
+			);
+			window.wpMcpAiChat = {
+				memoryEndpoints: {
+					recall: '/r', wakeUp: '/w', store: '/s', preferences: '/p',
+					audit: '/a', itemBase: '/i/'
+				},
+				nonce: 'NONCE'
+			};
+			delete window.wpMcpAiChatMemory;
+			// eslint-disable-next-line no-eval
+			eval( code );
+			expect( typeof window.wpMcpAiChatMemory.storeBeacon ).toBe( 'function' );
+			window.fetch = jest.fn().mockResolvedValue( {
+				ok: true,
+				json: () => Promise.resolve( { success: true } )
+			} );
+			window.wpMcpAiChatMemory.storeBeacon( {
+				agentId: 7,
+				content: 'transcript',
+				tags: [ 'transcript-summary' ]
+			} );
+			expect( window.fetch ).toHaveBeenCalledTimes( 1 );
+			const [ url, options ] = window.fetch.mock.calls[ 0 ];
+			expect( url ).toBe( '/s' );
+			expect( options.method ).toBe( 'POST' );
+			expect( options.keepalive ).toBe( true );
+			expect( options.headers[ 'X-WP-Nonce' ] ).toBe( 'NONCE' );
+			expect( JSON.parse( options.body ).content ).toBe( 'transcript' );
+		} );
+
+		test( 'pagehide is a no-op when autosummarize toggle is off', async () => {
+			const storeBeacon = jest.fn().mockResolvedValue( {} );
+			installMemoryStub( {
+				getPreferences: jest.fn().mockResolvedValue( {
+					enabled: true,
+					autosummarize: false
+				} ),
+				storeBeacon
+			} );
+			installTranscript( [
+				{ role: 'user', content: 'hi' },
+				{ role: 'assistant', content: 'hello' }
+			] );
+			window.sessionStorage.clear();
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			// Wait for the prefs prefetch.
+			await Promise.resolve();
+			await Promise.resolve();
+			window.dispatchEvent( new Event( 'pagehide' ) );
+			expect( storeBeacon ).not.toHaveBeenCalled();
+		} );
+
+		test( 'pagehide fires storeBeacon once when toggle is on', async () => {
+			const storeBeacon = jest.fn().mockResolvedValue( {} );
+			installMemoryStub( {
+				getPreferences: jest.fn().mockResolvedValue( {
+					enabled: true,
+					autosummarize: true
+				} ),
+				storeBeacon
+			} );
+			installTranscript( [
+				{ role: 'user', content: 'hi' },
+				{ role: 'assistant', content: 'hello there' },
+				{ role: 'user', content: 'thanks' }
+			] );
+			window.sessionStorage.clear();
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			await Promise.resolve();
+			await Promise.resolve();
+
+			window.dispatchEvent( new Event( 'pagehide' ) );
+			expect( storeBeacon ).toHaveBeenCalledTimes( 1 );
+			const payload = storeBeacon.mock.calls[ 0 ][ 0 ];
+			expect( payload.agentId ).toBe( 7 );
+			expect( payload.contextType ).toBe( 'transcript_summary' );
+			expect( payload.tags ).toEqual( [ 'transcript-summary', 'autosummary' ] );
+			expect( payload.content ).toContain( 'User: hi' );
+			expect( payload.content ).toContain( 'Assistant: hello there' );
+			expect( payload.title ).toMatch( /Conversation summary/ );
+
+			// Second pagehide is suppressed by the sessionStorage one-shot flag.
+			window.dispatchEvent( new Event( 'pagehide' ) );
+			expect( storeBeacon ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		test( 'pagehide is a no-op when transcript has fewer than 2 turns', async () => {
+			const storeBeacon = jest.fn().mockResolvedValue( {} );
+			installMemoryStub( {
+				getPreferences: jest.fn().mockResolvedValue( {
+					enabled: true,
+					autosummarize: true
+				} ),
+				storeBeacon
+			} );
+			installTranscript( [ { role: 'user', content: 'hi' } ] );
+			window.sessionStorage.clear();
+			const container = makeContainer();
+			window.wpMcpAiChatMemoryDrawer.attach( container );
+			await Promise.resolve();
+			await Promise.resolve();
+			window.dispatchEvent( new Event( 'pagehide' ) );
+			expect( storeBeacon ).not.toHaveBeenCalled();
+		} );
+
+		test( 'readTranscript truncates to 4 KB from the front', () => {
+			const big = 'x'.repeat( 5000 );
+			window.wpMcpAiChatStorage = {
+				loadConversationFromStorage: () => ( {
+					conversation: [
+						{ role: 'user', content: big },
+						{ role: 'assistant', content: 'tail' }
+					]
+				} )
+			};
+			const result = window.wpMcpAiChatMemoryDrawer.readTranscript( 7 );
+			expect( result ).not.toBeNull();
+			expect( result.text.startsWith( '…' ) ).toBe( true );
+			expect( result.text.length ).toBeLessThanOrEqual( 4096 + 4 );
+			expect( result.text.endsWith( 'Assistant: tail' ) ).toBe( true );
+		} );
+	} );
 } );

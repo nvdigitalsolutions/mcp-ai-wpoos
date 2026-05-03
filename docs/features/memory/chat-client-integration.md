@@ -249,9 +249,16 @@ tracked as follow-up work:
   each event as `[timestamp] action — context_id`. Permission gate is the
   same `permissions_check_logged_in` callback used by `/recall`, so the
   per-user toggle and site-wide kill-switch both apply.
-- **G6 Auto-summarise transcript** at conversation close — the
-  `wp_mcp_ai_chat_memory_autosummarize` user-meta toggle exists; the
-  end-of-session capture flow itself is deferred.
+- **G6 Auto-summarise transcript** at conversation close — **partial (Phase 1
+  shipped).** A `pagehide` (+ `visibilitychange→hidden`) handler in the
+  Memory Drawer fires a single `storeBeacon()` per page session when both
+  the site-wide kill-switch and the per-user `autosummarize` toggle are on.
+  The captured payload is the verbatim transcript (truncated to 4 KB,
+  keeping the most recent turns) tagged `transcript-summary` /
+  `autosummary` with `context_type: 'transcript_summary'`. Reuses
+  `POST /chat-memory/store` so the existing permission gates and audit
+  trail apply. **Phase 2** (true LLM-side summarisation instead of
+  verbatim capture) is still deferred.
 - **G8 SSE `memory_event` frames** from the agentic loop — would replace
   client-side polling for the badge and toast.
 - **G11 Drawer-driven export** — **shipped.** New "Export" button next to

@@ -191,6 +191,53 @@
 	}
 
 	/**
+	 * Store an entry using `fetch(..., { keepalive: true })` so the request
+	 * survives a page-unload event (pagehide / visibilitychange→hidden).
+	 *
+	 * Used by the drawer's auto-summary capture (G6) which needs to fire a
+	 * single store() as the user leaves the page. Returns a Promise that
+	 * may resolve after the page is gone — callers should not await it.
+	 *
+	 * @param {Object} payload Same shape as {@link store}.
+	 * @return {Promise<Object|null>}
+	 */
+	function storeBeacon(payload) {
+		if (!isAvailable()) {
+			return Promise.reject(disabledError());
+		}
+		const eps = getEndpoints();
+		const body = {
+			agent_id: payload && payload.agentId,
+			wing: payload && payload.wing,
+			room: payload && payload.room,
+			title: payload && payload.title,
+			content: payload && payload.content,
+			tags: payload && payload.tags,
+			importance: payload && payload.importance,
+			context_type: payload && payload.contextType,
+			verbatim: payload && payload.verbatim !== undefined ? !!payload.verbatim : true
+		};
+		return window.fetch(eps.store, {
+			method: 'POST',
+			credentials: 'same-origin',
+			keepalive: true,
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': getNonce()
+			},
+			body: JSON.stringify(body)
+		}).then(function(response) {
+			if (!response.ok) {
+				const error = new Error('HTTP ' + response.status);
+				error.status = response.status;
+				throw error;
+			}
+			return response.json().catch(function() { return null; });
+		});
+	}
+
+	/**
 	 * Update an existing memory record.
 	 *
 	 * @param {string} contextId
@@ -318,6 +365,7 @@
 		wakeUp: wakeUp,
 		recall: recall,
 		store: store,
+		storeBeacon: storeBeacon,
 		update: update,
 		'delete': remove,
 		remove: remove,
