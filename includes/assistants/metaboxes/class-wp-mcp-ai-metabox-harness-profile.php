@@ -106,6 +106,12 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		$selected     = isset( $profile['cues'] ) && is_array( $profile['cues'] ) ? $profile['cues'] : array();
 		$cues         = WP_MCP_AI_Prompt_Cue_Library::get_instance()->all();
 		$cost_ceiling = isset( $profile['cost_ceiling_usd'] ) ? (float) $profile['cost_ceiling_usd'] : WP_MCP_AI_Harness_Profile::DEFAULT_COST_CEILING_USD;
+		$reasoning    = isset( $profile['reasoning'] ) && is_array( $profile['reasoning'] ) ? $profile['reasoning'] : array();
+		$tools        = isset( $profile['tools'] ) && is_array( $profile['tools'] ) ? $profile['tools'] : array();
+		$retrieval    = isset( $profile['retrieval'] ) && is_array( $profile['retrieval'] ) ? $profile['retrieval'] : array();
+		$refine       = isset( $profile['refine'] ) && is_array( $profile['refine'] ) ? $profile['refine'] : array();
+		$memory       = isset( $profile['memory'] ) && is_array( $profile['memory'] ) ? $profile['memory'] : array();
+		$router_value = isset( $tools['router'] ) ? (string) $tools['router'] : 'fixed';
 
 		wp_nonce_field( self::NONCE_ACTION, self::NONCE_FIELD );
 		?>
@@ -171,6 +177,170 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 			</span>
 		</p>
 
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Reasoning (Layer B)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Best-of-N self-consistency. The model produces N independent reasoning traces and the controller votes on the answer. Higher N improves quality on complex tasks but multiplies token cost.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[reasoning][enabled]" value="1" <?php checked( ! empty( $reasoning['enabled'] ) ); ?> />
+					<?php esc_html_e( 'Enable best-of-N reasoning', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+			<p>
+				<label for="wp_mcp_ai_harness_profile_reasoning_n">
+					<?php esc_html_e( 'Samples (N)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<input
+					type="number"
+					id="wp_mcp_ai_harness_profile_reasoning_n"
+					name="wp_mcp_ai_harness_profile[reasoning][n_samples]"
+					min="1"
+					max="<?php echo esc_attr( (string) WP_MCP_AI_Harness_Profile::MAX_REASONING_SAMPLES ); ?>"
+					step="1"
+					value="<?php echo esc_attr( (string) ( isset( $reasoning['n_samples'] ) ? (int) $reasoning['n_samples'] : 1 ) ); ?>"
+					class="small-text"
+				/>
+				<span class="description">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: hard upper bound on samples */
+							__( 'Hard upper bound: %d.', 'mcp-ai-wpoos' ),
+							WP_MCP_AI_Harness_Profile::MAX_REASONING_SAMPLES
+						)
+					);
+					?>
+				</span>
+			</p>
+		</fieldset>
+
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Tool Router (Layer C)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Choose how the agent picks tools at each step. Fixed = the LLM picks freely from all available tools (current behaviour). Scored = the harness tool router scores candidate tools per step using the wp_mcp_ai_harness_tool_score filter.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p>
+				<label>
+					<input type="radio" name="wp_mcp_ai_harness_profile[tools][router]" value="fixed" <?php checked( 'fixed', $router_value ); ?> />
+					<?php esc_html_e( 'Fixed (default)', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+			<p>
+				<label>
+					<input type="radio" name="wp_mcp_ai_harness_profile[tools][router]" value="scored" <?php checked( 'scored', $router_value ); ?> />
+					<?php esc_html_e( 'Scored', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+		</fieldset>
+
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Retrieval (Layer D)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Retrieval-augmented answering with provenance. When citations are required, answers without supporting evidence are flagged or refused by the citation verifier.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[retrieval][enabled]" value="1" <?php checked( ! empty( $retrieval['enabled'] ) ); ?> />
+					<?php esc_html_e( 'Enable retrieval harness', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+			<p>
+				<label for="wp_mcp_ai_harness_profile_retrieval_k">
+					<?php esc_html_e( 'Top-k passages', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<input
+					type="number"
+					id="wp_mcp_ai_harness_profile_retrieval_k"
+					name="wp_mcp_ai_harness_profile[retrieval][k]"
+					min="1"
+					max="50"
+					step="1"
+					value="<?php echo esc_attr( (string) ( isset( $retrieval['k'] ) ? (int) $retrieval['k'] : 5 ) ); ?>"
+					class="small-text"
+				/>
+				<span class="description"><?php esc_html_e( 'Range: 1–50.', 'mcp-ai-wpoos' ); ?></span>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[retrieval][require_citations]" value="1" <?php checked( ! empty( $retrieval['require_citations'] ) ); ?> />
+					<?php esc_html_e( 'Require citations (refuse to answer without evidence)', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+		</fieldset>
+
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Self-Refine (Layer E)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Synchronous, bounded reflection loop. The model critiques its own draft and rewrites it up to N times. Costs scale linearly; capped by the per-request cost ceiling above.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[refine][enabled]" value="1" <?php checked( ! empty( $refine['enabled'] ) ); ?> />
+					<?php esc_html_e( 'Enable self-refine loop', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+			<p>
+				<label for="wp_mcp_ai_harness_profile_refine_iters">
+					<?php esc_html_e( 'Max iterations', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<input
+					type="number"
+					id="wp_mcp_ai_harness_profile_refine_iters"
+					name="wp_mcp_ai_harness_profile[refine][max_iters]"
+					min="1"
+					max="<?php echo esc_attr( (string) WP_MCP_AI_Harness_Profile::MAX_REFINE_ITERATIONS ); ?>"
+					step="1"
+					value="<?php echo esc_attr( (string) ( isset( $refine['max_iters'] ) ? (int) $refine['max_iters'] : 1 ) ); ?>"
+					class="small-text"
+				/>
+				<span class="description">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: hard upper bound on iterations */
+							__( 'Hard upper bound: %d.', 'mcp-ai-wpoos' ),
+							WP_MCP_AI_Harness_Profile::MAX_REFINE_ITERATIONS
+						)
+					);
+					?>
+				</span>
+			</p>
+		</fieldset>
+
+		<fieldset style="border: 1px solid #dcdcde; padding: 10px 15px; margin-top: 15px;">
+			<legend style="font-weight: 600; padding: 0 5px;"><?php esc_html_e( 'Memory Scoping (Layer F)', 'mcp-ai-wpoos' ); ?></legend>
+			<p class="description" style="margin-top: 0;">
+				<?php esc_html_e( 'Scope agent memory recall to a task class and run all writes through the PII / secret safety filter before they reach long-term memory.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[memory][scoped]" value="1" <?php checked( ! empty( $memory['scoped'] ) ); ?> />
+					<?php esc_html_e( 'Scope memory recall by task class', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+			<p>
+				<label for="wp_mcp_ai_harness_profile_memory_task_class">
+					<?php esc_html_e( 'Task class', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<input
+					type="text"
+					id="wp_mcp_ai_harness_profile_memory_task_class"
+					name="wp_mcp_ai_harness_profile[memory][task_class]"
+					value="<?php echo esc_attr( isset( $memory['task_class'] ) ? (string) $memory['task_class'] : 'general' ); ?>"
+					class="regular-text"
+				/>
+				<span class="description"><?php esc_html_e( 'Lowercase slug (e.g. support, sales, research). Defaults to "general".', 'mcp-ai-wpoos' ); ?></span>
+			</p>
+			<p>
+				<label>
+					<input type="checkbox" name="wp_mcp_ai_harness_profile[memory][pii_filter]" value="1" <?php checked( ! isset( $memory['pii_filter'] ) || ! empty( $memory['pii_filter'] ) ); ?> />
+					<?php esc_html_e( 'Run PII / secret safety filter on memory writes (recommended)', 'mcp-ai-wpoos' ); ?>
+				</label>
+			</p>
+		</fieldset>
+
 		<?php
 		$this->render_documentation_link();
 	}
@@ -210,18 +380,57 @@ class WP_MCP_AI_Metabox_Harness_Profile extends WP_MCP_AI_Metabox_Base {
 		// phpcs:enable WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		// Coerce checkbox semantics: an unchecked "enabled" box won't appear
-		// in $_POST, so default it to false.
+		// in $_POST, so default it to false. The same applies to nested
+		// checkboxes inside the per-layer fieldsets.
 		$payload = array(
 			'enabled'          => ! empty( $raw['enabled'] ),
 			'cues'             => isset( $raw['cues'] ) && is_array( $raw['cues'] ) ? $raw['cues'] : array(),
 			'cost_ceiling_usd' => isset( $raw['cost_ceiling_usd'] ) ? (float) $raw['cost_ceiling_usd'] : WP_MCP_AI_Harness_Profile::DEFAULT_COST_CEILING_USD,
 		);
 
-		// Preserve any non-UI fields the profile already carries (reasoning,
-		// retrieval, refine, memory) so saving from this metabox doesn't
-		// silently reset them.
+		// Reasoning (Layer B).
+		$reasoning_raw        = isset( $raw['reasoning'] ) && is_array( $raw['reasoning'] ) ? $raw['reasoning'] : array();
+		$payload['reasoning'] = array(
+			'enabled'   => ! empty( $reasoning_raw['enabled'] ),
+			'n_samples' => isset( $reasoning_raw['n_samples'] ) ? (int) $reasoning_raw['n_samples'] : 1,
+			'max_iters' => isset( $reasoning_raw['max_iters'] ) ? (int) $reasoning_raw['max_iters'] : 1,
+		);
+
+		// Tool router (Layer C).
+		$tools_raw        = isset( $raw['tools'] ) && is_array( $raw['tools'] ) ? $raw['tools'] : array();
+		$payload['tools'] = array(
+			'router' => isset( $tools_raw['router'] ) ? (string) $tools_raw['router'] : 'fixed',
+		);
+
+		// Retrieval (Layer D).
+		$retrieval_raw        = isset( $raw['retrieval'] ) && is_array( $raw['retrieval'] ) ? $raw['retrieval'] : array();
+		$payload['retrieval'] = array(
+			'enabled'           => ! empty( $retrieval_raw['enabled'] ),
+			'k'                 => isset( $retrieval_raw['k'] ) ? (int) $retrieval_raw['k'] : 5,
+			'require_citations' => ! empty( $retrieval_raw['require_citations'] ),
+		);
+
+		// Self-Refine (Layer E).
+		$refine_raw        = isset( $raw['refine'] ) && is_array( $raw['refine'] ) ? $raw['refine'] : array();
+		$payload['refine'] = array(
+			'enabled'   => ! empty( $refine_raw['enabled'] ),
+			'max_iters' => isset( $refine_raw['max_iters'] ) ? (int) $refine_raw['max_iters'] : 1,
+		);
+
+		// Memory scoping (Layer F). The PII filter checkbox defaults to ON
+		// when the memory section is missing entirely (e.g. older form),
+		// matching the profile's secure-by-default posture.
+		$memory_raw        = isset( $raw['memory'] ) && is_array( $raw['memory'] ) ? $raw['memory'] : null;
+		$payload['memory'] = array(
+			'scoped'     => null === $memory_raw ? false : ! empty( $memory_raw['scoped'] ),
+			'task_class' => null === $memory_raw || ! isset( $memory_raw['task_class'] ) ? 'general' : (string) $memory_raw['task_class'],
+			'pii_filter' => null === $memory_raw ? true : ! empty( $memory_raw['pii_filter'] ),
+		);
+
+		// Preserve fields that aren't (yet) surfaced in the UI so saving
+		// from this metabox doesn't silently reset them.
 		$existing = WP_MCP_AI_Harness_Profile::get( (int) $post_id );
-		foreach ( array( 'reasoning', 'tools', 'retrieval', 'refine', 'memory', 'evals_enabled', 'verifiers' ) as $passthrough ) {
+		foreach ( array( 'evals_enabled', 'verifiers' ) as $passthrough ) {
 			if ( isset( $existing[ $passthrough ] ) && ! isset( $payload[ $passthrough ] ) ) {
 				$payload[ $passthrough ] = $existing[ $passthrough ];
 			}
