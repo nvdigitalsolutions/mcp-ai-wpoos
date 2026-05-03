@@ -35,9 +35,15 @@ svc.stopRecordingStream(state);
 console.assert(stopped === 2, 'expected 2 track.stop calls, got ' + stopped);
 console.assert(state.recordingStream === null, 'recordingStream nulled');
 
-// extractTranscriptionResult parses several body shapes
+// extractTranscriptionResult unwraps body.result if present, otherwise returns body itself.
 const r1 = svc.extractTranscriptionResult({ result: { text: 'hello' } });
-console.assert(r1 && (r1.text === 'hello' || r1 === 'hello' || (r1.transcription && r1.transcription.text === 'hello') || JSON.stringify(r1).includes('hello')), 'result shape 1: ' + JSON.stringify(r1));
+console.assert(r1 && r1.text === 'hello', 'unwraps body.result: ' + JSON.stringify(r1));
+
+const r2 = svc.extractTranscriptionResult({ text: 'no wrapper' });
+console.assert(r2 && r2.text === 'no wrapper', 'returns body when no .result key: ' + JSON.stringify(r2));
+
+console.assert(svc.extractTranscriptionResult(null) === null, 'null in → null out');
+console.assert(svc.extractTranscriptionResult('not an object') === null, 'non-object in → null out');
 
 // API surface coverage
 const expected = [
