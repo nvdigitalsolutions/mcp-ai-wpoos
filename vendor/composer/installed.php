@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/research-chat-client-memory-gaps',
+        'version' => 'dev-copilot/research-chat-client-memory-gaps',
+        'reference' => 'acca28dfcd1adde16b38c802c8f02d43e1533615',
         'pretty_version' => 'dev-copilot/link-open-source-resources-to-owner',
         'version' => 'dev-copilot/link-open-source-resources-to-owner',
         'reference' => 'aed8f7523aafc24d8e787aee2dc47f972127a28b',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/research-chat-client-memory-gaps',
+            'version' => 'dev-copilot/research-chat-client-memory-gaps',
+            'reference' => 'acca28dfcd1adde16b38c802c8f02d43e1533615',
             'pretty_version' => 'dev-copilot/link-open-source-resources-to-owner',
             'version' => 'dev-copilot/link-open-source-resources-to-owner',
             'reference' => 'aed8f7523aafc24d8e787aee2dc47f972127a28b',

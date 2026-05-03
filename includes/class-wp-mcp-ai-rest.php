@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-bas
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
@@ -420,6 +421,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate tools and admin routes to Tools Controller (Phase 3.4).
 			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
 			$tools_controller->register_routes();
+
+			// Delegate chat-client ⇄ memory bridge to Chat Memory Controller (Phase 1).
+			$chat_memory_controller = new WP_MCP_AI_REST_Chat_Memory_Controller( $this->authenticator, $this->validator );
+			$chat_memory_controller->register_routes();
 
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
@@ -3518,6 +3523,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
+					// G8 Phase 2 — emit a `memory_event` SSE frame mid-stream
+					// when the tool that just ran touched the agent-memory
+					// subsystem, so the chat client can announce a transient
+					// "🧠 Used / saved long-term memory." toast immediately
+					// instead of waiting for the assistant message to render.
+					$memory_event_action = $this->classify_memory_tool_action( $tool_name );
+					if ( null !== $memory_event_action ) {
+						$this->send_sse_event(
+							'memory_event',
+							array(
+								'action'    => $memory_event_action,
+								'tool_name' => $tool_name,
+								'tool_id'   => $tool_call_id,
+							)
+						);
+					}
+
 					// Create full tool message for frontend.
 					// JSON-encode the content to match the non-streaming path format.
 					// This ensures consistent handling in the JavaScript SSE processor.
@@ -4047,6 +4069,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->send_sse_done();
 
 			$this->finish_sse();
+		}
+
+		/**
+		 * Classify a tool name as a memory-retrieving / memory-storing op.
+		 *
+		 * Mirrors the JS lists in `assets/js/chat-memory-drawer.js`. Used by the
+		 * SSE streaming path to emit `memory_event` frames mid-stream so the
+		 * chat client can announce a "🧠 Memory" toast as soon as the tool runs
+		 * (G8 Phase 2), rather than waiting for the assistant bubble to render.
+		 *
+		 * @since 1.1.14
+		 *
+		 * @param string $tool_name OpenAI-style tool function name.
+		 * @return string|null 'retrieved' / 'stored' / null when the tool is not
+		 *                     a memory tool.
+		 */
+		protected function classify_memory_tool_action( $tool_name ) {
+			if ( ! is_string( $tool_name ) || '' === $tool_name ) {
+				return null;
+			}
+			$retrieve_tools = array(
+				'recall_memory',
+				'wake_up_context',
+				'semantic_context_search',
+				'retrieve_agent_memory',
+			);
+			$store_tools    = array(
+				'store_agent_context',
+				'update_agent_memory',
+				'capture_memory',
+			);
+			if ( in_array( $tool_name, $retrieve_tools, true ) ) {
+				return 'retrieved';
+			}
+			if ( in_array( $tool_name, $store_tools, true ) ) {
+				return 'stored';
+			}
+			return null;
 		}
 
 		/**
