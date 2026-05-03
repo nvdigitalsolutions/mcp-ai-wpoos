@@ -531,6 +531,48 @@ add_action( 'wp_mcp_ai_slash_command_logged', function( $log_entry ) {
 
 ---
 
+## New Commands (v2.1.0)
+
+The following commands were added in **v2.1.0**. Full documentation lives in `docs/slash-commands/`.
+
+| Command | Capability | Description |
+|---------|-----------|-------------|
+| `/markup-stats` | `manage_options` | Show aggregate markup telemetry counters (completion/cancellation rates). Alias: `mstats`. |
+| `/jobs` | `edit_posts` | List and manage async background jobs. Supports `--all`, `--cancel`, `--status` filter. |
+| `/status` | `edit_posts` | Aggregated system health report: async health, job counts, tool-registry status. |
+| `/cost` | `edit_posts` | Token usage and cost summary with provider/model breakdown. |
+| `/tools` | `edit_posts` | Browse, filter by capability flag, and inspect registered tools (paginated). |
+| `/skills` | `edit_posts` | List, inspect, and install agent skill packs. Bundled-skills fallback included. |
+| `/preset` | `edit_posts` | List, show, and apply orchestration presets. Requires `manage_options` to apply. |
+| `/model` | `edit_posts` | List models, show or set model for an assistant, trigger discovery refresh. |
+| `/clear` | `read` | Clear the chat window (front-end signal; no server state changed). |
+| `/reset` | `read` | Reset the current session context and fires `wp_mcp_ai_session_reset`. |
+| `/resume` | `read` | Tell the client to load the most recent saved session transcript. |
+| `/diagnose` | `manage_options` | Generate a diagnostic bundle (version, PHP, errors, async health, tool count). Alias: `debug`. |
+
+Additionally, `/help --new` lists all commands added since v2.0.
+
+---
+
+## Pro-Only Commands (v2.1.0)
+
+The following commands are available exclusively in the **Pro addon** (`addons/pro/`). They hook into `wp_mcp_ai_slash_commands_initialized` and are registered by `addons/pro/includes/slash-commands/slash-commands-init.php`. Full documentation in `docs/slash-commands/`.
+
+| Command | Aliases | Min. Capability | Description |
+|---------|---------|-----------------|-------------|
+| `/schedule` | — | `edit_posts` | List, create, pause, resume, delete, run, and show history for Pro automation schedules. |
+| `/schedule-preset` | `sched-preset` | `edit_posts` | Browse, inspect, and install Pro schedule presets. Install requires `manage_options`. |
+| `/workflow-preset` | `wf-preset` | `edit_posts` | Browse, inspect, and install Workflow Builder presets. Install requires `manage_options`. |
+| `/run` | `run-workflow` | `edit_posts` | Execute a saved Workflow Builder DAG by ID or name. Supports `--dry-run`. |
+| `/agent` | `a2a` | `edit_posts` | Manage A2A tasks; send messages to / discover capabilities of remote agents. |
+| `/mcp-app` | `mcp-apps` | `manage_options` | List, test, and discover tools for MCP App connections on an assistant. |
+| `/persona` | `profile`, `assistant` | `edit_posts` | Switch the AI assistant's profession/persona; list, show, or reset personas. |
+| `/broadcast` | `notify` | `manage_options` | Send a message to an external channel (Slack, Telegram, Discord, Teams, etc.). |
+
+> **Note:** All Pro commands block guest requests and use `user_can( $user_id, 'capability' )` rather than `current_user_can()` to support headless/API contexts.
+
+---
+
 ## Support & Resources
 
 - **Documentation:** `docs/integrations/openclaw/`
@@ -540,6 +582,6 @@ add_action( 'wp_mcp_ai_slash_command_logged', function( $log_entry ) {
 
 ---
 
-**Last Updated:** February 3, 2026  
-**Status:** Phase 1 Complete  
+**Last Updated:** May 2026  
+**Status:** v2.1.0 — Phase 2 Complete  
 **License:** GPLv3 or later
