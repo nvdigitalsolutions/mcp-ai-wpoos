@@ -21,6 +21,72 @@
 
 ---
 
+## Orchestration layer vs. harness — what's the difference?
+
+The plugin has **two** complementary AI infrastructure layers. They are sometimes confused but solve different problems and operate at different points in the request lifecycle.
+
+| Aspect | **Orchestration layer** (`docs/ORCHESTRATION_REFERENCE.md`) | **LLM harness** (this doc) |
+|--------|------------------------------------------------------------|----------------------------|
+| **Question it answers** | "*How* do I run this request safely, cheaply, and at scale?" | "*What* should the model do to produce a better answer?" |
+| **Scope** | Cross-cutting infrastructure: model routing, tool execution, multi-agent coordination, budgets, health monitoring, async jobs. | Per-request *epistemic* quality: cues, reasoning traces, retrieval with provenance, self-refine, memory scoping, evals. |
+| **Mental model** | The kitchen — burners, oven temperatures, dishwasher schedules, fire suppression. | The recipe — what ingredients to use, in what order, and how to taste-test before plating. |
+| **Default behaviour** | **Always on.** The orchestration layer governs every chat request; you can tune presets but you cannot turn it "off". | **Off by default.** Every layer is gated by the per-assistant `harness_profile`. Behaviour-preserving until opted in. |
+| **Configuration unit** | Site-wide settings (presets, PSO targets, budget caps) and per-tool capability flags. | Per-assistant post meta (`_wp_mcp_ai_harness_profile`) authored from the Assistant edit screen. |
+| **What it touches** | The agentic loop, the tool registry, the reasoning controller, the multi-agent coordinator, the budget enforcer, OTel/health metrics. | The system prompt (cue prepending), the tool selection score, the retrieval payload, the draft-critique-revise loop, reflection writes, eval runs. |
+| **Primary services** | `WP_MCP_AI_Tool_Execution_Orchestrator`, `WP_MCP_AI_Tool_Load_Balancer`, `WP_MCP_AI_Reasoning_Controller`, `WP_MCP_AI_Agent_Team_Orchestrator`, `WP_MCP_AI_PSO_Optimizer_Service`, `WP_MCP_AI_Budget_Enforcement_Service`. | `WP_MCP_AI_Prompt_Cue_Library`, `WP_MCP_AI_Reasoning_Trace`, `WP_MCP_AI_Tool_Router_Harness`, `WP_MCP_AI_Retrieval_Harness`, `WP_MCP_AI_Self_Refine_Loop`, `WP_MCP_AI_Pii_Filter`. |
+| **Failure mode it prevents** | Runaway costs, stuck async jobs, capacity exhaustion, multi-agent deadlock, budget overrun. | Hallucinations, missing citations, premature answers, leaked PII in long-term memory, over-reliance on a single sample. |
+| **Admin UI surface** | NV oOS → Orchestration Dashboard (multi-page: Overview, Workflows, PSO, Health, Multi-Agent). | Assistant edit screen → "LLM Harness" metabox (per assistant). |
+| **When to extend** | You need a new execution strategy, a new model provider, a new resource preset, or a new health metric. | You need a new reasoning cue, a new verifier, a new task-class memory scope, or you want to wire profile-driven evals. |
+
+### How they interact
+
+The harness sits **on top of** the orchestration layer, not beside it:
+
+```
+┌───────────────────────── Chat request ─────────────────────────┐
+│                                                                │
+│  ┌─ Harness (per-assistant, opt-in) ─────────────────────────┐ │
+│  │  • Layer A — prepend cues to the system prompt            │ │
+│  │  • Layer B — request N reasoning samples                  │ │
+│  │  • Layer C — score candidate tools                        │ │
+│  │  • Layer D — wrap retrieval with provenance               │ │
+│  │  • Layer E — wrap the draft in a critique-revise loop     │ │
+│  │  • Layer F — scope memory writes by task class            │ │
+│  └────────────────────────┬──────────────────────────────────┘ │
+│                           │  (delegates execution to)           │
+│                           ▼                                     │
+│  ┌─ Orchestration layer (always on) ─────────────────────────┐ │
+│  │  • Language model router (which provider/model?)          │ │
+│  │  • Tool execution orchestrator (sync/async, caching)      │ │
+│  │  • Reasoning controller (task complexity → mode)          │ │
+│  │  • Multi-agent coordinator (delegate? parallelise?)       │ │
+│  │  • PSO optimizer (adaptive parameter tuning)              │ │
+│  │  • Budget enforcement (token/cost/timeout caps)           │ │
+│  │  • Health monitoring (metrics, degradation, OTel)         │ │
+│  └────────────────────────┬──────────────────────────────────┘ │
+│                           │  (returns chunks/tool calls to)     │
+│                           ▼                                     │
+│                    Streaming chat response                      │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Concrete examples
+
+- **"My assistant keeps fabricating citations."** → Harness layer D (`require_citations = true`) + Layer A `cite_or_abstain` cue. The orchestration layer cannot solve this; it doesn't read the model's content.
+- **"My async tool jobs are stuck in `queued`."** → Orchestration layer (`Async_Health_Monitor`, dead-letter handling). The harness has no opinion on async lifecycle.
+- **"This particular assistant should never call write tools first."** → Harness layer C (scored router + read-only-first preference for the `qa` task class). The orchestration layer's tool execution governs *how* it runs, not *which* tool the model picks.
+- **"Costs are ballooning across the whole site."** → Orchestration layer (`Budget_Enforcement_Service`, model routing presets). Profile cost ceilings are a per-assistant *additional* cap, not the primary lever.
+- **"I need an evidence-grounded answer with self-checking on this assistant only."** → Harness layers A + B + D + E. The orchestration layer ensures the resulting (potentially larger) request still respects site-wide budgets and timeouts.
+
+### Reading order
+
+If you're new to either subsystem, start with whichever matches your problem:
+
+- Cost / scale / async / multi-agent / health → [`docs/ORCHESTRATION_REFERENCE.md`](ORCHESTRATION_REFERENCE.md).
+- Answer quality / hallucination control / citations / reasoning depth → keep reading this document.
+
+---
+
 ## Quickstart
 
 ### 1. Turn the harness on for one assistant
