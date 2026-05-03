@@ -200,3 +200,28 @@ var label = __( 'Send message', 'mcp-ai-wpoos' );
 4. Test SSE streaming (verify chunks arrive and render correctly)
 5. Test with JavaScript disabled (graceful degradation)
 6. ESLint must pass: `npm run lint:js`
+
+---
+
+## Chat ⇄ Memory bridge (since 1.6.0)
+
+The chat client talks to the agent-memory subsystem through a small REST proxy
+mounted at `/wp-json/mcp-ai/v1/chat-memory/*` and a global JS service:
+
+- `window.wpMcpAiChatMemory` (`assets/js/chat-memory-service.js`) — `wakeUp`,
+  `recall`, `store`, `update`, `remove`, `getPreferences`, `setPreferences`.
+- `requestWakeUpContext(state)` (`chat.js`) is called once per widget init
+  immediately after `restoreConversationFromStorage`, prepending a wake-up
+  system block to the first turn.
+- Slash commands `/remember`, `/forget`, `/scope` (see
+  `includes/slash-commands/commands/class-wp-mcp-ai-slash-command-memory.php`).
+- Per-user toggles: `wp_mcp_ai_chat_memory_enabled`,
+  `wp_mcp_ai_chat_memory_autosummarize` (user meta).
+- Site-wide kill-switch: `wp_mcp_ai_chat_memory_enabled` filter.
+
+Endpoints are localized into `wpMcpAiChat.memoryEndpoints` by
+`WP_MCP_AI_Shortcode::get_chat_memory_endpoints_inline_script()` and the JS
+service silently no-ops (rejects with `chat_memory_disabled`) when they are
+absent — guests therefore never call the bridge.
+
+See `docs/features/memory/chat-client-integration.md` for the full reference.

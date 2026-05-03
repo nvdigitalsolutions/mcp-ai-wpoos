@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-bas
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-memory-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-a2a-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
@@ -420,6 +421,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate tools and admin routes to Tools Controller (Phase 3.4).
 			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
 			$tools_controller->register_routes();
+
+			// Delegate chat-client ⇄ memory bridge to Chat Memory Controller (Phase 1).
+			$chat_memory_controller = new WP_MCP_AI_REST_Chat_Memory_Controller( $this->authenticator, $this->validator );
+			$chat_memory_controller->register_routes();
 
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();

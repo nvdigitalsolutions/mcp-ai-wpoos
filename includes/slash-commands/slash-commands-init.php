@@ -386,6 +386,80 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load memory commands (/remember, /forget, /scope) — Phase 4 of chat ⇄ memory integration.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-memory.php';
+
+	$memory_command = new WP_MCP_AI_Slash_Command_Memory();
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'remember',
+		array(
+			'handler'     => array( $memory_command, 'remember' ),
+			'description' => __( 'Store the supplied text as a verbatim long-term memory for the current assistant.', 'mcp-ai-wpoos' ),
+			'usage'       => '/remember <text> [--tag=<tag>] [--importance=<low|medium|high|critical>] [--wing=<wing>] [--room=<room>] [--summary]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'memorize' ),
+			'parameters'  => array(
+				'--tag'        => array(
+					'description' => __( 'Tag(s) to attach (comma-separated or repeated).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--importance' => array(
+					'description' => __( 'Importance level: low, medium, high, critical (default: medium).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--wing'       => array(
+					'description' => __( 'Wing scope (project / client / matter).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--room'       => array(
+					'description' => __( 'Room scope (topic cluster).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--summary'    => array(
+					'description' => __( 'Summarise instead of storing verbatim.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'forget',
+		array(
+			'handler'     => array( $memory_command, 'forget' ),
+			'description' => __( 'Delete a stored memory by its context_id.', 'mcp-ai-wpoos' ),
+			'usage'       => '/forget <context_id>',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'context_id' => array(
+					'description' => __( 'The context_id of the memory to delete.', 'mcp-ai-wpoos' ),
+					'required'    => true,
+				),
+			),
+		)
+	);
+
+	$wp_mcp_ai_slash_command_handler->register(
+		'scope',
+		array(
+			'handler'     => array( $memory_command, 'scope' ),
+			'description' => __( 'Set the active wing/room scope for subsequent memory operations in this conversation.', 'mcp-ai-wpoos' ),
+			'usage'       => '/scope [<wing> [<room>]]',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'wing' => array(
+					'description' => __( 'Wing name (project / client / matter). Omit to clear scope.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'room' => array(
+					'description' => __( 'Optional room (topic cluster).', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *

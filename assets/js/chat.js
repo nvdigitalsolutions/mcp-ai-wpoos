@@ -11774,6 +11774,11 @@
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
 
+            // Phase 2 — session-boot recall: prepend the wake-up system block to the
+            // first turn when the chat-memory bridge is available and enabled. The
+            // call is non-blocking and silently no-ops when the surface is disabled.
+            requestWakeUpContext(state);
+
             // Pre-load vector store metadata if the assistant has one configured.
             // This ensures the vector store status and file counts are immediately
             // available for the agentic workflow without waiting for the first tool call.
@@ -11784,6 +11789,62 @@
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
+    }
+
+    /**
+     * Phase 2 — session-boot recall.
+     *
+     * Calls the chat-memory bridge's wake-up endpoint to fetch a top-N
+     * memory block, then stashes it on `state.wakeUpSystemBlock` so the
+     * first outgoing chat turn can prepend it to the system prompt. Silent
+     * no-op when the bridge is unavailable, disabled, or returns nothing.
+     *
+     * @param {Object} state Chat widget state.
+     */
+    function requestWakeUpContext(state) {
+        try {
+            const memoryService = window.wpMcpAiChatMemory;
+            if (!memoryService || !memoryService.isAvailable || !memoryService.isAvailable()) {
+                return;
+            }
+
+            const cfg = state && state.config ? state.config : {};
+            const agentId = cfg.embeddedAssistantId || cfg.assistantId;
+            if (!agentId) {
+                return;
+            }
+
+            // Already loaded once for this widget session.
+            if (state.wakeUpSystemBlock) {
+                return;
+            }
+
+            memoryService
+                .wakeUp({
+                    agentId: agentId,
+                    wing: cfg.memoryWing || '',
+                    room: cfg.memoryRoom || ''
+                })
+                .then(function(response) {
+                    if (!response || typeof response !== 'object') {
+                        return;
+                    }
+                    const block = response.system_block
+                        || (response.data && response.data.system_block)
+                        || '';
+                    if (typeof block === 'string' && block.length > 0) {
+                        state.wakeUpSystemBlock = block;
+                    }
+                })
+                .catch(function(error) {
+                    // Soft-fail: log but never disrupt the chat.
+                    if (window.console && window.console.debug) {
+                        window.console.debug('[NV oOS] wake-up context skipped:', error && error.message);
+                    }
+                });
+        } catch (error) {
+            // Defensive: any unexpected throw must not block chat init.
+        }
     }
 
     function restoreConversationFromStorage(state) {

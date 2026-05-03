@@ -57,6 +57,8 @@ import './chat-audio-service.js';
 import './chat-attachments-service.js';
 // eslint-disable-next-line no-unused-vars
 import './chat-transcription-service.js';
+// eslint-disable-next-line no-unused-vars
+import './chat-memory-service.js';
 
 // 5. Main chat application (depends on all above)
 // eslint-disable-next-line no-unused-vars
