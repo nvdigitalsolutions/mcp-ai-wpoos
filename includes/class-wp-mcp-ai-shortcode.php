@@ -1007,7 +1007,23 @@ class WP_MCP_AI_Shortcode {
 			// Add assistant defaults (system_prompt, temperature) for client-side execution.
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
-				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+				$resolved_assistant_id = is_numeric( $assistant_id ) ? (int) $assistant_id : 0;
+
+				/**
+				 * Apply the harness Prompt Cue injector to the system prompt
+				 * pre-localised into the page render. This is the third
+				 * (initial) chat surface alongside the REST chat path and
+				 * embedded-config endpoint; running the same filter here
+				 * keeps the three surfaces in sync.
+				 *
+				 * @since 1.4.0
+				 */
+				$config['systemPrompt'] = (string) apply_filters(
+					'wp_mcp_ai_resolved_system_prompt',
+					(string) $assistant_config_for_provider['system_prompt'],
+					$resolved_assistant_id,
+					array( 'surface' => 'shortcode_bootstrap' )
+				);
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );

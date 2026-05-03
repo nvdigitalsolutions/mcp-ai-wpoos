@@ -168,6 +168,22 @@ See [`docs/hooks-reference.md` → LLM Harness Hooks](hooks-reference.md#llm-har
 - `wp_mcp_ai_retrieval_passages` (filter)
 - `wp_mcp_ai_retrieval_claim_supported` (filter)
 - `wp_mcp_ai_pii_filter_patterns` (filter)
+- `wp_mcp_ai_resolved_system_prompt` (filter — chat-client integration)
+- `wp_mcp_ai_harness_inject_cue_slugs` (filter — late-stage cue substitution)
+
+---
+
+## Chat-client integration (Layer A)
+
+The chat surface materialises a system prompt in three places:
+
+1. **Server-side chat path** in `class-wp-mcp-ai-rest.php` (after the professional-prompt merge).
+2. **Embedded-config endpoint** in `class-wp-mcp-ai-rest-chat-controller.php` that the WebLLM client polls to refresh its prompt at runtime.
+3. **Shortcode bootstrap** in `class-wp-mcp-ai-shortcode.php` that pre-localises the prompt for the page render.
+
+All three apply the `wp_mcp_ai_resolved_system_prompt` filter. The harness `WP_MCP_AI_Harness_Prompt_Injector` is the single subscriber — it loads the assistant's harness profile and prepends every cue listed in `harness_profile.cues` (in order) using `WP_MCP_AI_Prompt_Cue_Library::apply()`. Cues *augment* the existing assistant prompt; they never overwrite it. When the profile is disabled (the default) the filter is a no-op so existing chat behaviour is preserved exactly.
+
+Sites that want to swap cues by task class — for example, "use `chain_of_thought` for math but `cite_or_abstain` for QA" — can hook `wp_mcp_ai_harness_inject_cue_slugs` to substitute the slug list on the way through without mutating the stored profile.
 
 ---
 
@@ -203,6 +219,7 @@ The plan calls out reward hacking as a first-class risk. The base subsystem ship
 # Run the harness test suites:
 vendor/bin/phpunit tests/test-harness-prompt-cue-library.php
 vendor/bin/phpunit tests/test-harness-services.php
+vendor/bin/phpunit tests/test-harness-prompt-injector.php
 ```
 
 Coverage areas:
@@ -214,6 +231,7 @@ Coverage areas:
 - Self-refine loop: early accept, revise-then-accept, iteration clamping, cost-ceiling abort, `WP_Error` propagation.
 - Tool router: read-only beats state-changing for `qa`, assistant preferences boost score, `wp_mcp_ai_harness_tool_score` filter override.
 - Retrieval: citation verification (positive, negative, empty), well-formed payload when no underlying tools.
+- Prompt injector: off-by-default, prepends cues when profile enabled, skips unknown cue slugs, `wp_mcp_ai_harness_inject_cue_slugs` substitution, registration via init.
 
 ---
 

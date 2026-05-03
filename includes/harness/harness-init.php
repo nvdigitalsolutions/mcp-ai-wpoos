@@ -23,6 +23,11 @@ require_once __DIR__ . '/class-wp-mcp-ai-reasoning-trace.php';
 require_once __DIR__ . '/class-wp-mcp-ai-tool-router-harness.php';
 require_once __DIR__ . '/class-wp-mcp-ai-retrieval-harness.php';
 require_once __DIR__ . '/class-wp-mcp-ai-self-refine-loop.php';
+require_once __DIR__ . '/class-wp-mcp-ai-harness-prompt-injector.php';
+
+// Register the chat-client cue injector. Off by default at the profile
+// level — this is just the subscriber wiring.
+WP_MCP_AI_Harness_Prompt_Injector::register();
 
 // Tools shipped with the harness subsystem.
 require_once WP_MCP_AI_PATH . 'includes/tools/harness/class-wp-mcp-ai-tool-list-prompt-cues.php';
