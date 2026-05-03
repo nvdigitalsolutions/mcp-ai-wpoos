@@ -68,15 +68,17 @@ class Test_REST_Transcript_Mining_Controller extends WP_UnitTestCase {
 	public function test_routes_are_registered() {
 		$routes = $this->server->get_routes( 'mcp-ai/v1' );
 		$this->assertArrayHasKey( '/mcp-ai/v1/transcript-mining/jobs', $routes );
+
 		$found_show   = false;
 		$found_cancel = false;
-		foreach ( $routes as $route => $_ ) {
-			if ( preg_match( '#^/mcp-ai/v1/transcript-mining/jobs/\(\?P\<id\>#', $route ) ) {
-				if ( false !== strpos( $route, '/cancel' ) ) {
-					$found_cancel = true;
-				} else {
-					$found_show = true;
-				}
+		foreach ( array_keys( $routes ) as $route ) {
+			if ( false === strpos( $route, '/mcp-ai/v1/transcript-mining/jobs/' ) ) {
+				continue;
+			}
+			if ( false !== strpos( $route, '/cancel' ) ) {
+				$found_cancel = true;
+			} else {
+				$found_show = true;
 			}
 		}
 		$this->assertTrue( $found_show, 'GET /jobs/{id} route registered' );

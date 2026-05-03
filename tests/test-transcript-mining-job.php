@@ -56,6 +56,12 @@ class Test_Transcript_Mining_Job extends WP_UnitTestCase {
 
 	/**
 	 * Tear down.
+	 *
+	 * Cleans up two transient prefixes:
+	 * - `_transient_mcp_ai_ctx_*`            — written by the underlying
+	 *   `mine_agent_memory` tool when a tick stores agent memory contexts.
+	 * - `_transient_wp_mcp_ai_tx_mine_job_*` — the job state records this
+	 *   suite exercises directly.
 	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_mine_transcripts_sessions', array( $this, 'inject_sessions' ), 10 );
