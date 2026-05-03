@@ -2166,7 +2166,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				array(
 					'post_type'      => 'mcp_ai_assistant',
 					'post_status'    => 'publish',
-					'posts_per_page' => 100, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- Bounded admin selector; sites with >100 published assistants can refine via the assistant CPT search.
+					'posts_per_page' => 100, // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- Bounded admin selector; sites with more than 100 published assistants can use the Assistants post-type screen and target the rare ones via direct ID entry in a follow-up iteration.
 					'orderby'        => 'title',
 					'order'          => 'ASC',
 					'fields'         => 'ids',
