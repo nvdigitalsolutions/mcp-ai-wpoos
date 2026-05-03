@@ -75,6 +75,22 @@ Every code change must:
 - **ABSPATH guard**: Every non-root PHP file starts with `if ( ! defined( 'ABSPATH' ) ) { exit; }`
 - **Prepared queries**: Always `$wpdb->prepare()` — never string-concatenate SQL
 
+## Third-Party Attribution
+
+When a file is **derived from**, **heavily inspired by**, or **wraps** an upstream open-source project, add `@link` and `@credit` tags to the file-level PHPDoc:
+
+```php
+/**
+ * Class summary.
+ *
+ * @link    <upstream URL>
+ * @credit  <upstream project name> by <author> (<license>)
+ * @package WP_MCP_AI
+ */
+```
+
+The full repo-wide attribution index — every Composer package, npm dependency, vendored asset, bundled skill, font, and methodology — lives in [`CREDITS.md`](CREDITS.md) at the repo root. When you add or update a dependency, also update `CREDITS.md`, `docs/THIRD_PARTY_ASSETS.md` (for JS), and the relevant per-addon `README.md` Credits section. For Pro npm packages, the `get_package_definitions()` array in `addons/pro/includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php` powers the in-product Credits surface — keep its `homepage` / `license` / `copyright` fields in sync.
+
 ## Tool Implementation Pattern
 
 ```php

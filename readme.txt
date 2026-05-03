@@ -1598,7 +1598,21 @@ Review your chosen provider's privacy policy before use.
 
 Open Operator System is developed and maintained by [NV Digital Solutions](https://nvdigitalsolutions.com/).
 
-Special thanks to the open source community and all contributors.
+NV oOS stands on the shoulders of an extraordinary open-source ecosystem. The full, authoritative list of every third-party library, vendored asset, bundled skill, font, and methodology that ships with NV oOS — together with each upstream owner, license, and source URL — is maintained in [CREDITS.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md).
+
+Highlight acknowledgements (non-exhaustive):
+
+* **PHP libraries:** Guzzle (guzzlehttp), Symfony components, PSR interfaces (PHP-FIG), league/oauth2-client, php-http/discovery, Nyholm/psr7, rahul900day/tiktoken-php — all MIT-licensed.
+* **Pro addon PHP libraries:** TCPDF (Nicola Asuni), Dompdf, PHPSpreadsheet, PHPWord (PHPOffice), smalot/pdfparser, Masterminds/html5-php, sabberworm/php-css-parser, dvdoug/BoxPacker, maennchen/ZipStream-PHP, thiagoalessio/tesseract-ocr-for-php, MarkBaker/PHPComplex, MarkBaker/PHPMatrix, thecodingmachine/safe.
+* **JavaScript libraries (base):** Chart.js, DOMPurify (cure53), @microsoft/fetch-event-source, marked (markedjs), React (Meta), reactflow (xyflow), @dnd-kit (Claude Lefebvre), @mlc-ai/web-llm, @neplex/vectorizer, ky (sindresorhus), Konva (konvajs).
+* **JavaScript libraries (Pro / addons):** Sharp (lovell), pdfkit, pdf-lib, exceljs, docx (dolanmiu), tesseract.js (naptha), pdf.js (Mozilla), Cheerio, Stripe, Twitter API v2 (PLhery), Turf.js, KaTeX, mathjs, MJML, axios, validator.js, libphonenumber-js, qrcode (soldair), Tone.js, @strudel/web (TidalCycles / Felix Roos), Tonal, WebMidi, Cytoscape (The Cytoscape Consortium) + cytoscape-fcose / cose-base / layout-base (iVis lab, Bilkent), Cornerstone3D and dicom-parser.
+* **Bundled Agent Skills:** curated from anthropics/skills (© Anthropic, MIT) and Lonsdale201/wp-agent-skills (© Soczó Kristóf, MIT). Per-skill attribution lives in `includes/bundled-skills/THIRD_PARTY_NOTICES.md` and `addons/pro/includes/bundled-skills/THIRD_PARTY_NOTICES.md`.
+* **Fonts:** DejaVu Fonts project, GNU FreeFont, KaTeX fonts.
+* **Methodology / inspiration:** MemPalace, Letta/MemGPT, Zep, mem0, Cognee, BMAD-METHOD, and the broader GSD context-engineering community — see CREDITS.md for full attribution.
+
+If you spot a missing or incorrect attribution, please open an issue with the `credits` label at https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues — corrections are treated as priority fixes.
+
+Special thanks to every contributor and to the open source community at large.
 
 == Licensing ==
 

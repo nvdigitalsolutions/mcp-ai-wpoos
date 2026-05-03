@@ -51,6 +51,17 @@ GGUF models for server-side inference are downloaded from Hugging Face.
 - Terms: https://huggingface.co/terms-of-service
 - Privacy: https://huggingface.co/privacy
 
+== Credits ==
+
+This addon embeds and integrates with several open-source projects. No upstream code is modified; each retains its original license.
+
+* WebLLM — https://github.com/mlc-ai/web-llm — Apache-2.0 © MLC AI
+* llama.cpp — https://github.com/ggerganov/llama.cpp — MIT © Georgi Gerganov and contributors
+* Hugging Face model distribution — https://huggingface.co/ — model weights are governed by each model author's license
+* Pre-configured model authors — Meta (Llama), Mistral AI (Mistral), Microsoft (Phi), Alibaba (Qwen), Google (Gemma), DeepSeek, and others — credits and licenses live with each model card
+
+For the full repo-wide attribution index, see CREDITS.md at the repository root: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CREDITS.md
+
 == Changelog ==
 
 = 1.0.0 =
