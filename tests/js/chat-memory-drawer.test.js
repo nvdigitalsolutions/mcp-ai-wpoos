@@ -580,6 +580,60 @@ describe( 'chat-memory-drawer', () => {
 		} );
 	} );
 
+	describe( 'memory-event toast (G8)', () => {
+		function getToasts() {
+			const region = document.getElementById( 'wp-mcp-ai-memory-toasts' );
+			return region ? region.querySelectorAll( '[data-testid="wp-mcp-ai-memory-toast"]' ) : [];
+		}
+
+		test( 'fires a single toast when a retrieve tool was called', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [
+				{ tool: 'recall_memory' }
+			] );
+			const toasts = getToasts();
+			expect( toasts.length ).toBe( 1 );
+			expect( toasts[ 0 ].textContent ).toMatch( /Used long-term memory/ );
+			expect( bubble.getAttribute( 'data-wp-mcp-ai-memory-toast' ) ).toBe( '1' );
+		} );
+
+		test( 'fires the "saved" copy when only a store tool was called', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [
+				{ function: { name: 'store_agent_context' } }
+			] );
+			const toasts = getToasts();
+			expect( toasts.length ).toBe( 1 );
+			expect( toasts[ 0 ].textContent ).toMatch( /Saved a memory/ );
+		} );
+
+		test( 'fires the combined copy when both retrieve and store tools were called', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [
+				{ tool: 'recall_memory' },
+				{ tool: 'store_agent_context' }
+			] );
+			const toasts = getToasts();
+			expect( toasts.length ).toBe( 1 );
+			expect( toasts[ 0 ].textContent ).toMatch( /Used and saved long-term memory/ );
+		} );
+
+		test( 'no toast when no memory tool was called', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [
+				{ tool: 'create_post' }
+			] );
+			expect( getToasts().length ).toBe( 0 );
+		} );
+
+		test( 'is idempotent across re-decorations of the same bubble', () => {
+			const bubble = document.createElement( 'div' );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [ { tool: 'recall_memory' } ] );
+			window.wpMcpAiChatMemoryDrawer.decorateMessageWithBadge( bubble, [ { tool: 'recall_memory' } ] );
+			expect( getToasts().length ).toBe( 1 );
+		} );
+	} );
+
 	describe( 'auto-summary on conversation close (G6)', () => {
 		/**
 		 * Install a wpMcpAiChatStorage stub returning a small transcript.

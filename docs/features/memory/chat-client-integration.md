@@ -259,8 +259,16 @@ tracked as follow-up work:
   `POST /chat-memory/store` so the existing permission gates and audit
   trail apply. **Phase 2** (true LLM-side summarisation instead of
   verbatim capture) is still deferred.
-- **G8 SSE `memory_event` frames** from the agentic loop — would replace
-  client-side polling for the badge and toast.
+- **G8 SSE `memory_event` frames** — **partial (toast shipped).** A
+  transient toast is now announced inside `decorateMessageWithBadge` whenever
+  the assistant message's `payload.tool_calls` includes a memory tool —
+  "🧠 Used long-term memory.", "🧠 Saved a memory." or "🧠 Used and saved
+  long-term memory." depending on which tools fired. The toast is
+  one-shot per bubble (idempotent via `data-wp-mcp-ai-memory-toast="1"`)
+  and rides on the existing inline tool-call metadata, so no SSE plumbing
+  or polling is required. A pure server-side `memory_event` SSE frame is
+  still deferred — the inline-metadata approach already covers the
+  user-visible objective.
 - **G11 Drawer-driven export** — **shipped.** New "Export" button next to
   Refresh on the Memories tab. Calls `recall()` with the active scope
   (wing/room/query) and a high `limit` (200), wraps the records in a small

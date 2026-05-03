@@ -125,14 +125,21 @@
 			return;
 		}
 
-		const used = toolCalls.some(function(call) {
+		let retrieved = false;
+		let stored    = false;
+		toolCalls.forEach(function(call) {
 			const name = call && (call.tool || call.name || (call.function && call.function.name));
-			return name && (
-				TOOLS_THAT_RETRIEVE_MEMORY.indexOf(name) !== -1 ||
-				TOOLS_THAT_STORE_MEMORY.indexOf(name) !== -1
-			);
+			if (!name) {
+				return;
+			}
+			if (TOOLS_THAT_RETRIEVE_MEMORY.indexOf(name) !== -1) {
+				retrieved = true;
+			}
+			if (TOOLS_THAT_STORE_MEMORY.indexOf(name) !== -1) {
+				stored = true;
+			}
 		});
-		if (!used) {
+		if (!retrieved && !stored) {
 			return;
 		}
 
@@ -152,6 +159,24 @@
 			header.appendChild(badge);
 		} else {
 			bubble.insertBefore(badge, bubble.firstChild);
+		}
+
+		// G8 (user-visible) — fire a single transient toast per bubble so users
+		// notice that long-term memory was touched. Idempotent via a data flag
+		// so re-decoration on streaming updates never double-announces. The
+		// toast rides on `payload.tool_calls` already streamed inline with the
+		// assistant message — no SSE plumbing or polling required.
+		if (!bubble.getAttribute('data-wp-mcp-ai-memory-toast')) {
+			let message;
+			if (retrieved && stored) {
+				message = __( '🧠 Used and saved long-term memory.', 'mcp-ai-wpoos' );
+			} else if (stored) {
+				message = __( '🧠 Saved a memory.', 'mcp-ai-wpoos' );
+			} else {
+				message = __( '🧠 Used long-term memory.', 'mcp-ai-wpoos' );
+			}
+			bubble.setAttribute('data-wp-mcp-ai-memory-toast', '1');
+			announceToast(message, 'info');
 		}
 	}
 
